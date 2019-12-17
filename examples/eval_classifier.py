@@ -9,7 +9,7 @@ from armory.eval import Evaluator
 
 if __name__ == "__main__":
     config = {
-        "toolkit": "ART",
+        "model_wrapper": "ART",
         "model_file": "armory.baseline_models.tf1.simple_keras",
         "model_name": "SIMPLE_MODEL",
         "defense": None,
