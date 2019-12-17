@@ -4,7 +4,7 @@ FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
 MAINTAINER Sean Morgan <sean.morgan@twosixlabs.com>
 
 RUN apt-get -y -qq update && \
-    apt-get install -y wget vim build-essential
+    apt-get install -y wget vim build-essential git
 
 # Install Conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
@@ -18,5 +18,13 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH=/opt/conda/bin:$PATH
 
-# TODO: Temporarily just install TF for testing
-RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets tensorflow==1.15
+RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets
+RUN /opt/conda/bin/pip install git+https://github.com/IBM/adversarial-robustness-toolbox.git@dev_1.1.0
+
+ # FIXME: Temporarily just install TF for testing
+RUN /opt/conda/bin/pip install tensorflow==1.15
+
+WORKDIR /armory
+
+# Keep container running!
+CMD tail -f /dev/null

@@ -2,12 +2,12 @@
 python -m examples.eval_classifier
 """
 from armory.eval import Evaluator
-from armory.baseline_models.tf1.simple_keras import SIMPLE_MODEL
 
 
 if __name__ == "__main__":
     config = {
-        "model": SIMPLE_MODEL,
+        "model_file": "armory.baseline_models.tf1.simple_keras",
+        "model_name": "SIMPLE_MODEL",
         "attack": "fgsm",
         "data": "mnist",
         "performer": "ta2.twosix",
@@ -16,4 +16,4 @@ if __name__ == "__main__":
     }
 
     rig = Evaluator(config)
-    rig.test_classifer()
+    rig.run_config()
