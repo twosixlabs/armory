@@ -9,11 +9,14 @@ from armory.eval import Evaluator
 
 if __name__ == "__main__":
     config = {
+        "toolkit": "ART",
         "model_file": "armory.baseline_models.tf1.simple_keras",
         "model_name": "SIMPLE_MODEL",
+        "defense": None,
         "attack": "fgsm",
         "data": "mnist",
-        "performer": "ta2.twosix",
+        "performer_name": "ta2.twosix",
+        "performer_repo": None,
         "adversarial_knowledge": dict(model="white", defense="aware", data="full"),
         "adversarial_budget": dict(norm="Linf", epsilon="0.3", input_output="inf"),
     }
