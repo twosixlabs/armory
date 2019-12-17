@@ -1,5 +1,8 @@
 """
 python -m examples.eval_classifier
+
+This is an example of running ARMORY evaluation for a simple classifier on MNIST.
+The results will be serialized into a JSON file in project root.
 """
 from armory.eval import Evaluator
 

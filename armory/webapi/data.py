@@ -1,11 +1,16 @@
 """
-
+API queries to download and use common datasets.
 """
-
 import tensorflow_datasets as tfds
 
 
-def mnist_data():
+def mnist_data() -> (dict, dict):
+    """
+    returns:
+        Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
+    """
+
+    # TODO: Return generators instead of all data in memory
     train_ds = tfds.load("mnist", split=tfds.Split.TRAIN, batch_size=-1)
     test_ds = tfds.load("mnist", split=tfds.Split.TEST, batch_size=-1)
 

@@ -26,9 +26,9 @@ def get_version(rel_path):
 
 
 setup(
-    name="Adversarial Robustness Evaluation Platform for DARPA GARD",
+    name="armory",
     version=get_version("armory/__init__.py"),
-    description="IBM Adversarial machine learning toolbox",
+    description="Adversarial Robustness Evaluation Platform for DARPA GARD",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Two Six Labs",

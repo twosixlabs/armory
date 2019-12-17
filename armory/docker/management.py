@@ -1,5 +1,5 @@
 """
-
+Docker orchestration managers for ARMORY.
 """
 import docker
 import os
@@ -13,24 +13,6 @@ logger = logging.getLogger(__name__)
 coloredlogs.install()
 
 
-class ManagementInstance(object):
-    """
-    This object will manage ArmoryInstance objects.
-    """
-
-    def __init__(self):
-        self.instances = {}
-
-    def start_armory_instance(self):
-        temp_inst = ArmoryInstance()
-        self.instances[temp_inst.docker_container.short_id] = temp_inst
-        return temp_inst
-
-    def stop_armory_instance(self, instance):
-        logger.info(f"Stoping instance: {instance.docker_container.short_id}")
-        del self.instances[instance.docker_container.short_id]
-
-
 class ArmoryInstance(object):
     """
     This object will control a specific docker container.
@@ -41,7 +23,6 @@ class ArmoryInstance(object):
         self.output_dir = _project_root / Path("outputs/")
         os.makedirs(self.output_dir, exist_ok=True)
 
-        # Get a tempdir and stand up a container
         self.docker_client = docker.from_env()
         self.disk_location = _project_root
 
@@ -56,3 +37,21 @@ class ArmoryInstance(object):
 
     def __del__(self):
         self.docker_container.stop()
+
+
+class ManagementInstance(object):
+    """
+    This object will manage ArmoryInstance objects.
+    """
+
+    def __init__(self):
+        self.instances = {}
+
+    def start_armory_instance(self) -> ArmoryInstance:
+        temp_inst = ArmoryInstance()
+        self.instances[temp_inst.docker_container.short_id] = temp_inst
+        return temp_inst
+
+    def stop_armory_instance(self, instance: ArmoryInstance) -> None:
+        logger.info(f"Stoping instance: {instance.docker_container.short_id}")
+        del self.instances[instance.docker_container.short_id]

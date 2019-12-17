@@ -1,5 +1,5 @@
 """
-Evaluation orchestration.
+Evaluators control launching of ARMORY evaluations.
 """
 import os
 import json
@@ -20,7 +20,7 @@ class Evaluator(object):
         self._verify_config()
         self.manager = ManagementInstance()
 
-    def _verify_config(self):
+    def _verify_config(self) -> None:
         assert isinstance(self.config, dict)
 
         if self.config["data"] not in SUPPORTED_DATASETS:
@@ -29,7 +29,7 @@ class Evaluator(object):
                 f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
             )
 
-    def run_config(self):
+    def run_config(self) -> None:
         tmp_config = "eval-config.json"
         with open(tmp_config, "w") as fp:
             json.dump(self.config, fp)
@@ -37,9 +37,11 @@ class Evaluator(object):
         runner = self.manager.start_armory_instance()
         logger.info("Running Evaluation...")
         runner.docker_container.exec_run(
-            f"python -m armory.eval.classifier {tmp_config}", stdout=True, stderr=True
+            f"python -m armory.eval.classification {tmp_config}",
+            stdout=True,
+            stderr=True,
         )
-        logger.info("Evaluation Results saved to `evaluation-results.json")
+        logger.info("Evaluation Results written to `outputs/evaluation-results.json")
 
         os.remove("eval-config.json")
         self.manager.stop_armory_instance(runner)

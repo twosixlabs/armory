@@ -5,6 +5,7 @@ Classifier evaluation within ARMORY
 import json
 import sys
 import numpy as np
+
 from armory.webapi.data import SUPPORTED_DATASETS
 from art.attacks import FastGradientMethod
 from importlib import import_module
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 coloredlogs.install()
 
 
-def evaluate_classifier(config_path):
+def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
@@ -68,5 +69,5 @@ def evaluate_classifier(config_path):
 
 
 if __name__ == "__main__":
-    config_path = sys.argv[0]
+    config_path = sys.argv[-1]
     evaluate_classifier(config_path)

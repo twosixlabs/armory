@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
 
 
-def make_model():
+def make_model() -> keras.Model:
     model = Sequential()
     model.add(
         Conv2D(
