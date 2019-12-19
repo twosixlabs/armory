@@ -2,18 +2,21 @@
 Adversarial Robustness Evaluation Platform for DARPA GARD
 
 # Installation
+Python 3.6+ is required.
 ```
 pip install git+https://github.com/twosixlabs/armory.git
 ```
 
 # Docker
-The docker container is required form running evaluations. 
+The docker container is required for running evaluations.
 ```
 docker build -t twosixlabs/armory:0.1 .
 ```
+Since ARMORY uses python to orchestrate docker, it is necessary to install it outside of a 
+docker container on the host system.
 
 # Datasets
-We have standardize datasets for Armory to subclass TensorFlow Datasets:
+We have standardized datasets for Armory to subclass TensorFlow Datasets:
 https://github.com/tensorflow/datasets
 
 These datastructures support coversion to numpy arrays so they will work for all 
