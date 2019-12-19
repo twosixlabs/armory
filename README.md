@@ -12,8 +12,7 @@ The docker container is required for running evaluations.
 ```
 docker build -t twosixlabs/armory:0.1 .
 ```
-Since ARMORY uses python to orchestrate docker, it is necessary to install it outside of a 
-docker container on the host system.
+Since ARMORY launches Docker containers, the package must be ran on system host.
 
 # Datasets
 We have standardized datasets for Armory to subclass TensorFlow Datasets:
