@@ -1,7 +1,6 @@
 black
 coloredlogs
 docker
-tensorflow
 tensorflow-datasets
 
 # Waiting on Release
