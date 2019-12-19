@@ -1,7 +1,8 @@
 black
 coloredlogs
 docker
+tensorflow
 tensorflow-datasets
 
 # Waiting on Release
--e git+https://github.com/IBM/adversarial-robustness-toolbox.git@dev_1.1.0
+art -e git+https://github.com/IBM/adversarial-robustness-toolbox.git@dev_1.1.0
