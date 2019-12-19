@@ -1,0 +1,7 @@
+black
+coloredlogs
+docker
+tensorflow-datasets
+
+# Waiting on Release
+art -e git+https://github.com/IBM/adversarial-robustness-toolbox.git@dev_1.1.0
