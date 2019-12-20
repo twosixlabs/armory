@@ -13,11 +13,7 @@ from armory.eval.export import Export
 
 
 import logging
-import coloredlogs
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-coloredlogs.install()
 
 
 def evaluate_classifier(config_path: str) -> None:
