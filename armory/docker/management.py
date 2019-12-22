@@ -6,11 +6,7 @@ import os
 from pathlib import Path
 
 import logging
-import coloredlogs
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-coloredlogs.install()
 
 
 class ArmoryInstance(object):

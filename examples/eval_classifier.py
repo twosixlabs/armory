@@ -4,8 +4,11 @@ python -m examples.eval_classifier
 This is an example of running ARMORY evaluation for a simple classifier on MNIST.
 The results will be serialized into a JSON file in project root.
 """
-from armory.eval import Evaluator
 
+import logging, coloredlogs
+coloredlogs.install(level=logging.INFO)
+
+from armory.eval import Evaluator
 
 if __name__ == "__main__":
     config = {
@@ -20,6 +23,5 @@ if __name__ == "__main__":
         "adversarial_knowledge": dict(model="white", defense="aware", data="full"),
         "adversarial_budget": dict(norm="Linf", epsilon="0.3", input_output="inf"),
     }
-
     rig = Evaluator(config)
     rig.run_config()

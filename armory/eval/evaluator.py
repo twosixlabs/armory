@@ -7,11 +7,7 @@ from armory.webapi.data import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
 
 import logging
-import coloredlogs
-
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-coloredlogs.install()
 
 
 class Evaluator(object):
