@@ -53,5 +53,5 @@ class ManagementInstance(object):
         return temp_inst
 
     def stop_armory_instance(self, instance: ArmoryInstance) -> None:
-        logger.info(f"Stoping instance: {instance.docker_container.short_id}")
+        logger.info(f"Stopping instance: {instance.docker_container.short_id}")
         del self.instances[instance.docker_container.short_id]

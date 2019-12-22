@@ -34,14 +34,24 @@ class Evaluator(object):
         with open(tmp_config, "w") as fp:
             json.dump(self.config, fp)
 
-        runner = self.manager.start_armory_instance()
-        logger.info("Running Evaluation...")
-        runner.docker_container.exec_run(
-            f"python -m armory.eval.classification {tmp_config}",
-            stdout=True,
-            stderr=True,
-        )
-        logger.info("Evaluation Results written to `outputs/evaluation-results.json")
+        try:
+            runner = self.manager.start_armory_instance()
+        except Exception:
+            logger.exception("Starting instance failed. Is Docker Daemon running?")
+            return
 
-        os.remove("eval-config.json")
-        self.manager.stop_armory_instance(runner)
+        try:
+            logger.info("Running Evaluation...")
+            runner.docker_container.exec_run(
+                f"python -m armory.eval.classification {tmp_config}",
+                stdout=True,
+                stderr=True,
+            )
+            logger.info(
+                "Evaluation Results written to `outputs/evaluation-results.json"
+            )
+        except KeyboardInterrupt:
+            logger.warning("Evaluation interrupted by user. Stopping container.")
+        finally:
+            os.remove("eval-config.json")
+            self.manager.stop_armory_instance(runner)
