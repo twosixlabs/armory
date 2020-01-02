@@ -35,3 +35,10 @@ All contributions to the repository must be formatted with [black](https://githu
 ```
 black .
 ```
+
+All JSON files committed to the repository must be formatted with Python's [json.tool](https://docs.python.org/3/library/json.html#module-json.tool)
+with the `--sort-keys` argument:
+```
+python -m json.tool input_file.json input_file.json --sort-keys
+```
+
