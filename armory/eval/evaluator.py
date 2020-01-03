@@ -26,22 +26,21 @@ class Evaluator(object):
             )
 
     def run_config(self) -> None:
-        tmp_config = "eval-config.json"
-        with open(tmp_config, "w") as fp:
+        tmp_config_fn = "tmp-eval-config.json"
+        with open(tmp_config_fn, "w") as fp:
             json.dump(self.config, fp)
 
         try:
             runner = self.manager.start_armory_instance()
-        except Exception:
+        except Exception as e:
+            logger.exception(e)
             logger.exception("Starting instance failed. Is Docker Daemon running?")
             return
 
         try:
             logger.info("Running Evaluation...")
-            runner.docker_container.exec_run(
-                f"python -m armory.eval.classification {tmp_config}",
-                stdout=True,
-                stderr=True,
+            runner.exec_cmd(
+                f"python -m {self.config['eval_type']} {tmp_config_fn}",
             )
             logger.info(
                 "Evaluation Results written to `outputs/evaluation-results.json"
@@ -49,5 +48,5 @@ class Evaluator(object):
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
-            os.remove("eval-config.json")
+            os.remove(tmp_config_fn)
             self.manager.stop_armory_instance(runner)
