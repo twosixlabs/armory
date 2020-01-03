@@ -7,6 +7,7 @@ from armory.webapi.data import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,9 +43,6 @@ class Evaluator(object):
                 f"python -m armory.eval.classification {tmp_config}",
                 stdout=True,
                 stderr=True,
-            )
-            logger.info(
-                "Evaluation Results written to `outputs/evaluation-results.json"
             )
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
