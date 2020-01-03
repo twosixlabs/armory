@@ -23,10 +23,12 @@ class ArmoryInstance(object):
         self.docker_client = docker.from_env()
         self.disk_location = _project_root
 
+        user_id = os.getuid()
         self.docker_container = self.docker_client.containers.run(
             "twosixlabs/armory:0.1",
             remove=True,
             detach=True,
+            user=f"{user_id}:{user_id}",
             volumes={self.disk_location: {"bind": "/armory", "mode": "rw"}},
         )
 

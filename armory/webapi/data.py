@@ -11,8 +11,12 @@ def mnist_data() -> (dict, dict):
     """
 
     # TODO: Return generators instead of all data in memory
-    train_ds = tfds.load("mnist", split=tfds.Split.TRAIN, batch_size=-1)
-    test_ds = tfds.load("mnist", split=tfds.Split.TEST, batch_size=-1)
+    train_ds = tfds.load(
+        "mnist", split=tfds.Split.TRAIN, batch_size=-1, data_dir="datasets/"
+    )
+    test_ds = tfds.load(
+        "mnist", split=tfds.Split.TEST, batch_size=-1, data_dir="datasets/"
+    )
 
     return (
         tfds.as_numpy(train_ds),

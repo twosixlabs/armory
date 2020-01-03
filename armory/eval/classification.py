@@ -63,6 +63,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     exporter = Export(benign_accuracy, adversarial_accuracy)
     exporter.save()
+    logger.info("Evaluation Results written to `outputs/evaluation-results.json")
 
 
 if __name__ == "__main__":
