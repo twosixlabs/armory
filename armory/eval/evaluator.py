@@ -3,10 +3,13 @@ Evaluators control launching of ARMORY evaluations.
 """
 import os
 import json
+import requests
+
 from armory.webapi.data import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +35,7 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance()
-        except Exception as e:
-            logger.exception(e)
+        except requests.exceptions.ConnectionError:
             logger.exception("Starting instance failed. Is Docker Daemon running?")
             return
 

@@ -41,8 +41,8 @@ class ArmoryInstance(object):
             print(out.decode())
 
     def __del__(self):
-        self.docker_container.stop()
-
+        if hasattr(self, "docker_container"):  # needed if there is an error in __init__
+            self.docker_container.stop()
 
 class ManagementInstance(object):
     """
