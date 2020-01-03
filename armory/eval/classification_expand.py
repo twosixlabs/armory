@@ -2,6 +2,7 @@
 Classifier evaluation within ARMORY
 """
 
+import collections
 import importlib
 import json
 import logging
@@ -18,7 +19,7 @@ log = logging.getLogger(__name__)
 
 def _evaluate_classifier(config: dict) -> None:
     """
-    Evaluate a config file for classiifcation robustness against attack.
+    Evaluate a config file for classification robustness against attack.
     """
 
     # TODO: Preprocessing needs to be refactored elsewhere!
@@ -43,7 +44,6 @@ def _evaluate_classifier(config: dict) -> None:
     y_pred = classifier.predict(x_test)
     benign_accuracy = np.sum(np.argmax(y_pred, axis=1) == y_test) / len(y_test)
     log.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
-
 
     # Generate adversarial test examples
     knowledge = config["adversarial_knowledge"]
@@ -74,25 +74,57 @@ def _evaluate_classifier(config: dict) -> None:
         else:
             raise NotImplementedError("Use 'all' for epsilon")
         x_test_adv = attack.generate(x=x_test)
-        y_pred_adv = classifier.predict(x_test_adv)
-        # TODO
-        epsilons = distance.norm(x_test, x_test_adv)
-        for i in range(len(x_test_adv)):
-            if np.argmax(y_pred[i], axis=1) == 
-            if np.argmax(y_pred, axis=1) == y_test)
 
-    
+        # TODO: should we quantize to [0, 1, ..., 255] for MNIST?
+        diff = (x_test_adv - x_test).reshape(x_test.shape[0], -1)
+        epsilons = np.linalg.norm(diff, ord=fgm_norm_map[norm], axis=1)
+        y_pred_adv = classifier.predict(x_test_adv)
+
+        # Ignore benign misclassifications - no perturbation needed
+        min_value, max_value = 0, 1
+        epsilons[np.argmax(y_pred, axis=1) != y_test] = min_value
+
+        # Truncate all epsilons to within min, max bounds [0, max]
+        epsilons = np.clip(epsilons, min_value, max_value)
+
+        # When all attacks fail, set perturbation to max
+        epsilons[
+            (np.argmax(y_pred_adv, axis=1) == y_test)
+            & (np.argmax(y_pred, axis=1) == y_test)
+        ] = max_value
+
+        # generate curve
+        adversarial_accuracy = np.sum(np.argmax(y_pred_adv, axis=1) == y_test) / len(
+            y_test
+        )
+
     # failed examples:
 
     # verify epsilon values?
 
     # Evaluate the ART classifier on adversarial test examples
-    adversarial_accuracy = np.sum(np.argmax(y_pred_adv, axis=1) == y_test) / len(
-        y_test
-    )
     log.info(
         "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
+
+
+def roc_epsilon(epsilons, min_value=None, max_value=None):
+    if not len(epsilons):
+        raise ValueError("epsilons cannot be empty")
+    c = collections.Counter()
+    c.update(epsilons)
+    unique_epsilons, counts = zip(*sorted(list(c.items())))
+    unique_epsilons = np.array(unique_epsilons)
+    ccounts = np.cumsum(counts)
+    accuracy = list(ccounts / ccounts[-1])
+    if min_value is not None and min_value != unique_epsilons[0]:
+        unique_epsilons.insert(0, min_value)
+        accuracy.insert(0, 0)
+    if max_value is not None and max_value != unique_epsilons[-1]:
+        unique_epsilons.append(max_value)
+        accuracy.append(1)
+
+    return np.array(unique_epsilons), np.array(accuracy)
 
 
 def evaluate_classifier(config_path: str) -> None:
@@ -105,7 +137,7 @@ def evaluate_classifier(config_path: str) -> None:
         config = json.load(fp)
 
     benign_accuracy, adversarial_accuracy = _evaluate_classifer(config)
-    
+
     exporter = Export(benign_accuracy, adversarial_accuracy)
     exporter.save()
 

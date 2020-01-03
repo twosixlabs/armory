@@ -6,6 +6,7 @@ Runs ARMORY evaluation on basic MNIST model across all epsilon/delta values
 """
 
 import logging, coloredlogs
+
 coloredlogs.install(level=logging.INFO)
 
 from armory.eval import Evaluator
@@ -21,7 +22,9 @@ if __name__ == "__main__":
         "performer_name": "ta2.twosix",
         "performer_repo": None,
         "adversarial_knowledge": dict(model="white", defense="aware", data="full"),
-        "adversarial_budget": dict(norm=["L1", "L2", "Linf"], epsilon="all", input_output="inf"),
+        "adversarial_budget": dict(
+            norm=["L1", "L2", "Linf"], epsilon="all", input_output="inf"
+        ),
     }
     rig = Evaluator(config)
     rig.run_config()

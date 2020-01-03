@@ -6,6 +6,7 @@ The results will be serialized into a JSON file in project root.
 """
 
 import logging, coloredlogs
+
 coloredlogs.install(level=logging.INFO)
 
 from armory.eval import Evaluator
