@@ -2,6 +2,7 @@
 
 ## Set up logging for a library
 import logging
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 

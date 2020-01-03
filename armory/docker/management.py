@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,12 +33,7 @@ class ArmoryInstance(object):
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str):
-        log = self.docker_container.exec_run(
-            cmd,
-            stdout=True,
-            stderr=True,
-            stream=True
-        )
+        log = self.docker_container.exec_run(cmd, stdout=True, stderr=True, stream=True)
 
         for out in log.output:
             print(out.decode())
