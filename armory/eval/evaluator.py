@@ -29,7 +29,7 @@ class Evaluator(object):
             )
 
     def run_config(self) -> None:
-        tmp_config_fn = "tmp-eval-config.json"
+        tmp_config_fn = ".tmp-eval-config.json"
         with open(tmp_config_fn, "w") as fp:
             json.dump(self.config, fp)
 
