@@ -30,8 +30,7 @@ class Evaluator(object):
 
     def run_config(self) -> None:
         tmp_dir = "tmp"
-        if not os.path.isdir(tmp_dir):
-            os.mkdir(tmp_dir)
+        os.makedirs(tmp_dir, exist_ok=True)
         tmp_config = os.path.join(tmp_dir, "eval-config.json")
         with open(tmp_config, "w") as fp:
             json.dump(self.config, fp)
