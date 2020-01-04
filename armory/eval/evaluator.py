@@ -29,8 +29,10 @@ class Evaluator(object):
             )
 
     def run_config(self) -> None:
-        tmp_config_fn = ".tmp-eval-config.json"
-        with open(tmp_config_fn, "w") as fp:
+        tmp_dir = "tmp"
+        os.makedirs(tmp_dir, exist_ok=True)
+        tmp_config = os.path.join(tmp_dir, "eval-config.json")
+        with open(tmp_config, "w") as fp:
             json.dump(self.config, fp)
 
         try:
@@ -45,5 +47,5 @@ class Evaluator(object):
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
-            os.remove(tmp_config_fn)
+            os.remove(tmp_config)
             self.manager.stop_armory_instance(runner)
