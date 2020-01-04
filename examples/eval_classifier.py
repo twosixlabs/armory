@@ -4,16 +4,19 @@ python -m examples.eval_classifier
 This is an example of running ARMORY evaluation for a simple classifier on MNIST.
 The results will be serialized into a JSON file in project root.
 """
-
-import logging, coloredlogs
-coloredlogs.install(level=logging.INFO)
+import coloredlogs
+import logging
 
 from armory.eval import Evaluator
+
+coloredlogs.install(level=logging.INFO)
+
 
 if __name__ == "__main__":
     config = {
         "model_wrapper": "ART",
         "model_file": "armory.baseline_models.tf1.simple_keras",
+        "eval_type": "armory.eval.classification",
         "model_name": "SIMPLE_MODEL",
         "defense": None,
         "attack": "fgsm",

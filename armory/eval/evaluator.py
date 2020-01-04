@@ -43,11 +43,7 @@ class Evaluator(object):
 
         try:
             logger.info("Running Evaluation...")
-            runner.docker_container.exec_run(
-                f"python -m armory.eval.classification {tmp_config}",
-                stdout=True,
-                stderr=True,
-            )
+            runner.exec_cmd(f"python -m {self.config['eval_type']} {tmp_config}",)
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
