@@ -43,7 +43,7 @@ class Evaluator(object):
 
         try:
             logger.info("Running Evaluation...")
-            runner.exec_cmd(f"python -m {self.config['eval_type']} {tmp_config_fn}",)
+            runner.exec_cmd(f"python -m {self.config['eval_type']} {tmp_config}",)
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
