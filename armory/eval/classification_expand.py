@@ -12,6 +12,7 @@ import numpy as np
 
 from armory.eval.export import Export
 from armory.webapi.data import SUPPORTED_DATASETS
+from armory.art_experimental import attacks as attacks_extended
 from art import attacks
 
 log = logging.getLogger(__name__)
@@ -64,7 +65,8 @@ def _evaluate_classifier(config: dict) -> None:
             if norm not in fgm_norm_map:
                 raise ValueError(f"norm {norm} not valid for fgm")
 
-            attack = attacks.FastGradientMethod(
+            attack = attacks_extended.FGMBinarySearch(
+            #attack = attacks.FastGradientMethod(
                 classifier=classifier,
                 norm=fgm_norm_map[norm],
                 eps=1.0,
