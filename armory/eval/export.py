@@ -5,7 +5,9 @@ import json
 
 
 class Export(object):
-    def __init__(self, performer: str, baseline_accuracy: str, adversarial_accuracy: str):
+    def __init__(
+        self, performer: str, baseline_accuracy: str, adversarial_accuracy: str
+    ):
         self.data = {
             "performer": performer,
             "baseline_accuracy": baseline_accuracy,
