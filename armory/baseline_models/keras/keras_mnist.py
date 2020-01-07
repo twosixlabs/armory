@@ -6,8 +6,10 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
 
+keras.backend.clear_session()
 
-def make_model() -> keras.Model:
+
+def make_mnist_model() -> keras.Model:
     model = Sequential()
     model.add(
         Conv2D(
@@ -34,11 +36,11 @@ def make_model() -> keras.Model:
     model.add(Dense(10, activation="softmax"))
 
     model.compile(
-        loss=keras.losses.categorical_crossentropy,
-        optimizer=keras.optimizers.SGD(lr=0.01),
+        loss=keras.losses.sparse_categorical_crossentropy,
+        optimizer=keras.optimizers.Adam(lr=0.003),
         metrics=["accuracy"],
     )
     return model
 
 
-SIMPLE_MODEL = KerasClassifier(make_model())
+MNIST_MODEL = KerasClassifier(make_mnist_model())
