@@ -15,7 +15,7 @@ docker build -t twosixlabs/armory:0.1 .
 Since ARMORY launches Docker containers, the package must be ran on system host.
 
 # Datasets
-We have standardized datasets for Armory to subclass TensorFlow Datasets:
+We have standardized datasets for Armory that subclass TensorFlow Datasets:
 https://github.com/tensorflow/datasets
 
 These datastructures support coversion to numpy arrays so they will work for all 
