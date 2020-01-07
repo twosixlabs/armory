@@ -40,7 +40,6 @@ class DatasetTest(unittest.TestCase):
 
 
 class KerasTest(unittest.TestCase):
-
     def test_keras_mnist(self):
         batch_size = 64
         epochs = 2

@@ -30,15 +30,21 @@ def mnist_data(batch_size: int, epochs: int):
     num_train = mnist_builder.info.splits["train"].num_examples
     num_test = mnist_builder.info.splits["test"].num_examples
 
-    train_ds = tfds.load("mnist",
-        split="train", batch_size=batch_size, as_supervised=True, data_dir="datasets/"
+    train_ds = tfds.load(
+        "mnist",
+        split="train",
+        batch_size=batch_size,
+        as_supervised=True,
+        data_dir="datasets/",
     )
     train_ds = train_ds.map(_normalize_img_dataset)
     train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
     # TODO: Issue#13 Make generator once ART accepts generators in attack/defense methods
-    test_ds = tfds.load("mnist", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/")
+    test_ds = tfds.load(
+        "mnist", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
+    )
     test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
     test_x = _normalize_img(test_x)
 
@@ -59,15 +65,21 @@ def cifar10_data(batch_size: int, epochs: int):
     num_train = mnist_builder.info.splits["train"].num_examples
     num_test = mnist_builder.info.splits["test"].num_examples
 
-    train_ds = tfds.load("cifar10",
-                         split="train", batch_size=batch_size, as_supervised=True, data_dir="datasets/"
-                         )
+    train_ds = tfds.load(
+        "cifar10",
+        split="train",
+        batch_size=batch_size,
+        as_supervised=True,
+        data_dir="datasets/",
+    )
     train_ds = train_ds.map(_normalize_img_dataset)
     train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
     # TODO: Issue#13 Make generator once ART accepts generators in attack/defense methods
-    test_ds = tfds.load("cifar10", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/")
+    test_ds = tfds.load(
+        "cifar10", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
+    )
     test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
     test_x = _normalize_img(test_x)
 

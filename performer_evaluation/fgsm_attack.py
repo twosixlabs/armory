@@ -58,9 +58,11 @@ def evaluate_classifier(config_path: str) -> None:
         )
     )
 
-    exporter = Export(performer=config['performer_name'],
-                      baseline_accuracy=str(benign_accuracy[1]),
-                      adversarial_accuracy=str(adversarial_accuracy[1]))
+    exporter = Export(
+        performer=config["performer_name"],
+        baseline_accuracy=str(benign_accuracy[1]),
+        adversarial_accuracy=str(adversarial_accuracy[1]),
+    )
     exporter.save()
     logger.info("Evaluation Results written to `outputs/evaluation-results.json")
 
