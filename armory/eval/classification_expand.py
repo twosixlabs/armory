@@ -6,27 +6,87 @@ import collections
 import importlib
 import json
 import logging
+import shutil
 import sys
+import time
 
 import numpy as np
 
 from armory.eval.export import Export
 from armory.webapi.data import SUPPORTED_DATASETS
 from armory.art_experimental import attacks as attacks_extended
+from armory.eval import plot
 from art import attacks
 
+import coloredlogs
+coloredlogs.install(level=logging.DEBUG)
+
 log = logging.getLogger(__name__)
+
+
+SUPPORTED_NORMS = set(['L0', 'L1', 'L2', 'Linf'])
+SUPPORTED_GOALS = set(["targeted", "untargeted"])
+
+def validate_config(config: dict) -> None:
+    """
+    Validate config for use in this script.
+    """
+    for k in (
+        "adversarial_budget",
+        "adversarial_goal",
+        "adversarial_knowledge",
+        "data",
+        "model_file",
+        "model_name",
+    ):
+        if k not in config:
+            raise ValueError(f"{k} missing from config")
+    if "epsilon" not in config["adversarial_budget"]:
+        raise ValueError("\"epsilon\" missing from config[\"adversarial_budget\"]")
+    if config["adversarial_budget"]["epsilon"] != "all":
+        raise NotImplementedError("Use 'all' for epsilon for this script")
+    goal = config["adversarial_goal"]
+    if goal not in SUPPORTED_GOALS:
+        raise ValueError(f'{goal} not in supported goals {SUPPORTED_GOALS}')
+    if goal == "targeted":
+        raise NotImplementedError("targeted goal not complete")
+    if "norm" not in config["adversarial_budget"]:
+        raise ValueError(f"{k} missing from config[\"adversarial_budget\"]")
+    norms = config["adversarial_budget"]["norm"]
+    if not isinstance(norms, list):
+        norms = [norms]
+    for norm in norms:
+        if norm not in SUPPORTED_NORMS:
+            raise ValueError(f"norm {norm} not in supported norms {SUPPORTED_NORMS}")
+        elif norm == "L0":
+            raise NotImplementedError("Norm L0 not tested yet")
+
+
+def _normalize_img(img_batch):
+    norm_batch = img_batch.astype(np.float32) / 255.0
+    return norm_batch
+
+
+def project_to_mnist_input(x):
+    """
+    Map input tensor to original space
+    """
+    if x.dtype not in (float, np.float32):
+        raise ValueError("Projection assumes float input")
+    if np.isnan(x).any():
+        raise ValueError("Cannot project nan values to int input")
+
+    # clip first to deal with any infinite values that may arise
+    x = (x.clip(0, 1) * 255.0).round()
+    # skip the actual casting to uint8, as we are going to normalize again to float
+    return _normalize_img(x)
 
 
 def _evaluate_classifier(config: dict) -> None:
     """
     Evaluate a config file for classification robustness against attack.
     """
-
-    # TODO: Preprocessing needs to be refactored elsewhere!
-    def _normalize_img(img_batch):
-        norm_batch = img_batch.astype(np.float32) / 255.0
-        return norm_batch
+    validate_config(config)
 
     classifier_module = importlib.import_module(config["model_file"])
     classifier = getattr(classifier_module, config["model_name"])
@@ -38,8 +98,15 @@ def _evaluate_classifier(config: dict) -> None:
     x_train, x_test = _normalize_img(x_train), _normalize_img(x_test)
 
     classifier.fit(
-        x_train, y_train, batch_size=64, nb_epochs=3,
+        x_train, y_train, batch_size=64, nb_epochs=1,
     )
+
+    # TODO: Add subsampling
+    subsample = 100
+    x_test = x_test[::subsample]
+    y_test = y_test[::subsample]
+
+    # TODO: Add defended model to compare against
 
     # Evaluate the ART classifier on benign test examples
     y_pred = classifier.predict(x_test)
@@ -55,78 +122,107 @@ def _evaluate_classifier(config: dict) -> None:
     if not isinstance(norms, list):
         norms = [norms]
 
+    results = {}
+    # Assume min_value = 0
+    max_value = 1.0
+    input_dim = np.product(x_test.shape[1:])
+    norm_map = {  # from norm name to (fgm_input, max_epsilon)
+        "L0": (0, input_dim),
+        "L1": (1, input_dim * max_value),
+        "L2": (2, np.sqrt(input_dim) * max_value),
+        "Linf": (np.inf, max_value),
+    }
+    epsilon_granularity = 1/40
     for norm in norms:
-        if config["adversarial_budget"]["epsilon"] == "all":
-            fgm_norm_map = {
-                "L1": 1,
-                "L2": 2,
-                "Linf": np.inf,
-            }
-            if norm not in fgm_norm_map:
-                raise ValueError(f"norm {norm} not valid for fgm")
+        lp_norm, max_epsilon = norm_map[norm]
 
-            attack = attacks_extended.FGMBinarySearch(
-            #attack = attacks.FastGradientMethod(
-                classifier=classifier,
-                norm=fgm_norm_map[norm],
-                eps=1.0,
-                eps_step=0.1,
-                minimal=True,  # find minimum epsilon
-            )
-        else:
-            raise NotImplementedError("Use 'all' for epsilon")
+        # Currently looking at untargeted attacks,
+        #     where adversary accuracy ~ 1 - benign accuracy (except incorrect benign)
+        attack = attacks_extended.FGMBinarySearch(
+        #attack = attacks.FastGradientMethod(
+            classifier=classifier,
+            norm=lp_norm,
+            eps=max_epsilon,
+            eps_step=epsilon_granularity * max_epsilon,
+            minimal=True,  # find minimum epsilon
+        )
         x_test_adv = attack.generate(x=x_test)
-
-        # TODO: should we quantize to [0, 1, ..., 255] for MNIST?
+        
+        # Map into the original input space (bound and quantize) and back to float
+        # TODO: enable this
+        #x_test_adv = project_to_mnist_input(x_test_adv)
+        
         diff = (x_test_adv - x_test).reshape(x_test.shape[0], -1)
-        epsilons = np.linalg.norm(diff, ord=fgm_norm_map[norm], axis=1)
+        epsilons = np.linalg.norm(diff, ord=lp_norm, axis=1)
+        if np.isnan(epsilons).any():
+            raise ValueError(f"Epsilons have nan values in norm {norm}")
+        min_epsilon = 0
+        if (epsilons < min_epsilon).any() or (epsilons > max_epsilon).any():
+            raise ValueError(f"Epsilons have values outside bounds in norm {norm}")
+        # Truncate all epsilons to within min, max bounds [0, max]
+        # epsilons = np.clip(epsilons, min_epsilon, max_epsilon)
+
         y_pred_adv = classifier.predict(x_test_adv)
 
         # Ignore benign misclassifications - no perturbation needed
-        min_value, max_value = 0, 1
-        epsilons[np.argmax(y_pred, axis=1) != y_test] = min_value
+        epsilons[np.argmax(y_pred, axis=1) != y_test] = min_epsilon
 
-        # Truncate all epsilons to within min, max bounds [0, max]
-        epsilons = np.clip(epsilons, min_value, max_value)
-
-        # When all attacks fail, set perturbation to max
+        # When all attacks fail, set perturbation to None
+        epsilons = epsilons.astype(object)
         epsilons[
             (np.argmax(y_pred_adv, axis=1) == y_test)
             & (np.argmax(y_pred, axis=1) == y_test)
-        ] = max_value
+        ] = None
+
+        adv_acc = np.sum(np.argmax(y_pred_adv, axis=1) != y_test) / len(y_test)
 
         # generate curve
-        adversarial_accuracy = np.sum(np.argmax(y_pred_adv, axis=1) == y_test) / len(
-            y_test
-        )
+        unique_epsilons, accuracy = roc_epsilon(epsilons, min_epsilon=min_epsilon, max_epsilon=max_epsilon)
 
-    # failed examples:
+        results[norm] = {
+            "epsilons": list(unique_epsilons),
+            "metric": "Categorical Accuracy",
+            "values": list(accuracy),
+        }
+        # Evaluate the ART classifier on adversarial test examples
+        log.info(f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%")
 
-    # verify epsilon values?
+    # TODO: This should be moved to the Export module
+    filepath = f"outputs/classifier_extended_{int(time.time())}.json"
+    with open(filepath, "w") as f:
+        output_dict = {
+            "config": config,
+            "results": results,
+        }
+        json.dump(output_dict, f, sort_keys=True, indent=4)
+    shutil.copyfile(filepath, "outputs/latest.json")
 
-    # Evaluate the ART classifier on adversarial test examples
-    log.info(
-        "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
-    )
+    # NOTE: These generate a LOT of debug logs
+    log.info(f"Now plotting results")
+    plot.classification(filepath)
+    plot.classification("outputs/latest.json")
 
-
-def roc_epsilon(epsilons, min_value=None, max_value=None):
+def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
     if not len(epsilons):
         raise ValueError("epsilons cannot be empty")
+    total = len(epsilons)
+    failures = (epsilons == None).sum()
+    epsilons = epsilons[epsilons != None].astype(float)
     c = collections.Counter()
     c.update(epsilons)
     unique_epsilons, counts = zip(*sorted(list(c.items())))
-    unique_epsilons = np.array(unique_epsilons)
+    unique_epsilons = list(unique_epsilons)
     ccounts = np.cumsum(counts)
-    accuracy = list(ccounts / ccounts[-1])
-    if min_value is not None and min_value != unique_epsilons[0]:
-        unique_epsilons.insert(0, min_value)
-        accuracy.insert(0, 0)
-    if max_value is not None and max_value != unique_epsilons[-1]:
-        unique_epsilons.append(max_value)
-        accuracy.append(1)
+    accuracy = list(1 - (ccounts / total))
 
-    return np.array(unique_epsilons), np.array(accuracy)
+    if min_epsilon is not None and min_epsilon != unique_epsilons[0]:
+        unique_epsilons.insert(0, min_epsilon)
+        accuracy.insert(0, accuracy[0])
+    if max_epsilon is not None and max_epsilon != unique_epsilons[-1]:
+        unique_epsilons.append(max_epsilon)
+        accuracy.append(accuracy[-1])  # don't assume perfect attack success
+
+    return [float(x) for x in unique_epsilons], [float(x) for x in accuracy]
 
 
 def evaluate_classifier(config_path: str) -> None:
@@ -138,14 +234,10 @@ def evaluate_classifier(config_path: str) -> None:
     with open(config_path) as fp:
         config = json.load(fp)
 
-    benign_accuracy, adversarial_accuracy = _evaluate_classifer(config)
+    benign_accuracy, adversarial_accuracy = _evaluate_classifier(config)
 
     exporter = Export(benign_accuracy, adversarial_accuracy)
     exporter.save()
-
-
-def set_attack(classifier, method, epsilon):
-    pass
 
 
 # TODO: load training set adversarial examples (for optimal attack line) ??

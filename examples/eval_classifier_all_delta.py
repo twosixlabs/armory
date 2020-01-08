@@ -8,7 +8,7 @@ Runs ARMORY evaluation on basic MNIST model across all epsilon/delta values
 import logging, coloredlogs
 import json
 
-coloredlogs.install(level=logging.INFO)
+coloredlogs.install(level=logging.DEBUG)
 
 from armory.eval import Evaluator
 

@@ -40,7 +40,7 @@ class Evaluator(object):
         try:
             logger.info("Running Evaluation...")
             runner.docker_container.exec_run(
-                f"python -m armory.eval.classification {tmp_config}",
+                f"python -m armory.eval.classification_expand {tmp_config}",
                 stdout=True,
                 stderr=True,
             )
