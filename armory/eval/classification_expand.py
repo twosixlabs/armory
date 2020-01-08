@@ -101,7 +101,7 @@ def _evaluate_classifier(config: dict) -> None:
         x_train, y_train, batch_size=64, nb_epochs=1,
     )
 
-    # TODO: Add subsampling
+    # TODO: Add subsampling (for quick testing)
     subsample = 100
     x_test = x_test[::subsample]
     y_test = y_test[::subsample]
@@ -149,8 +149,8 @@ def _evaluate_classifier(config: dict) -> None:
         x_test_adv = attack.generate(x=x_test)
         
         # Map into the original input space (bound and quantize) and back to float
-        # TODO: enable this
-        #x_test_adv = project_to_mnist_input(x_test_adv)
+        # NOTE: this step makes many of the attacks fail
+        x_test_adv = project_to_mnist_input(x_test_adv)
         
         diff = (x_test_adv - x_test).reshape(x_test.shape[0], -1)
         epsilons = np.linalg.norm(diff, ord=lp_norm, axis=1)
