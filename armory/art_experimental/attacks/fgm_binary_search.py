@@ -45,7 +45,6 @@ class FGMBinarySearch(attacks.FastGradientMethod):
             else:
                 success = batch_classes[[i]] != adv_class
             return success, adv_batch
-            
 
         tolerance = self.eps_step
         for i in range(len(batch)):
@@ -53,8 +52,8 @@ class FGMBinarySearch(attacks.FastGradientMethod):
             min_eps = 0
             max_eps = self.eps
             while max_eps - min_eps > tolerance:
-                mid_eps = (max_eps + min_eps)/2
-                #print(min_eps, mid_eps, max_eps, tolerance)
+                mid_eps = (max_eps + min_eps) / 2
+                # print(min_eps, mid_eps, max_eps, tolerance)
 
                 success, adv_i = check_epsilon(i, mid_eps)
                 if success:
@@ -62,9 +61,9 @@ class FGMBinarySearch(attacks.FastGradientMethod):
                     max_eps = mid_eps
                 else:
                     min_eps = mid_eps
-            
+
         return adv_batch
-            
+
     def _minimal_perturbation_linear_batch(self, batch, batch_labels, adv_batch=None):
         """
         Rewrite of inner loop for linear search
@@ -83,14 +82,12 @@ class FGMBinarySearch(attacks.FastGradientMethod):
         while active.size > 0 and current_eps <= self.eps:
             # Adversarial crafting
             adv_batch[active] = self._apply_perturbation(
-                batch[active],
-                perturbation[active],
-                current_eps,
+                batch[active], perturbation[active], current_eps,
             )
 
             # Check for success
             adv_preds = self.classifier.predict(adv_batch[active])
-            #adv_preds = self.classifier.predict(adv_batch)  # can we pare this down?
+            # adv_preds = self.classifier.predict(adv_batch)  # can we pare this down?
             adv_classes[active] = np.argmax(adv_preds, axis=1)
             # If targeted active check to see whether we have hit the target
             if self.targeted:
@@ -110,11 +107,9 @@ class FGMBinarySearch(attacks.FastGradientMethod):
 
         # Compute perturbation with implicit batching
         for start in range(0, adv_x.shape[0], self.batch_size):
-            end = start + self.batch_size 
+            end = start + self.batch_size
             adv_batch = self._minimal_perturbation_binary_batch(
-                x[start:end],
-                y[start:end],
-                adv_x[start:end],
+                x[start:end], y[start:end], adv_x[start:end],
             )
 
         return adv_x

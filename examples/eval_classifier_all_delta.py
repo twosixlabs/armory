@@ -13,7 +13,7 @@ coloredlogs.install(level=logging.DEBUG)
 from armory.eval import Evaluator
 
 if __name__ == "__main__":
-    with open('examples/mnist_config.json') as f:
+    with open("examples/mnist_config.json") as f:
         config = json.load(f)
     rig = Evaluator(config)
     rig.run_config()

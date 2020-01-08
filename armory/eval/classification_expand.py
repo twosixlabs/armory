@@ -19,13 +19,15 @@ from armory.eval import plot
 from art import attacks
 
 import coloredlogs
+
 coloredlogs.install(level=logging.DEBUG)
 
 log = logging.getLogger(__name__)
 
 
-SUPPORTED_NORMS = set(['L0', 'L1', 'L2', 'Linf'])
+SUPPORTED_NORMS = set(["L0", "L1", "L2", "Linf"])
 SUPPORTED_GOALS = set(["targeted", "untargeted"])
+
 
 def validate_config(config: dict) -> None:
     """
@@ -42,16 +44,16 @@ def validate_config(config: dict) -> None:
         if k not in config:
             raise ValueError(f"{k} missing from config")
     if "epsilon" not in config["adversarial_budget"]:
-        raise ValueError("\"epsilon\" missing from config[\"adversarial_budget\"]")
+        raise ValueError('"epsilon" missing from config["adversarial_budget"]')
     if config["adversarial_budget"]["epsilon"] != "all":
         raise NotImplementedError("Use 'all' for epsilon for this script")
     goal = config["adversarial_goal"]
     if goal not in SUPPORTED_GOALS:
-        raise ValueError(f'{goal} not in supported goals {SUPPORTED_GOALS}')
+        raise ValueError(f"{goal} not in supported goals {SUPPORTED_GOALS}")
     if goal == "targeted":
         raise NotImplementedError("targeted goal not complete")
     if "norm" not in config["adversarial_budget"]:
-        raise ValueError(f"{k} missing from config[\"adversarial_budget\"]")
+        raise ValueError(f'{k} missing from config["adversarial_budget"]')
     norms = config["adversarial_budget"]["norm"]
     if not isinstance(norms, list):
         norms = [norms]
@@ -132,14 +134,14 @@ def _evaluate_classifier(config: dict) -> None:
         "L2": (2, np.sqrt(input_dim) * max_value),
         "Linf": (np.inf, max_value),
     }
-    epsilon_granularity = 1/40
+    epsilon_granularity = 1 / 40
     for norm in norms:
         lp_norm, max_epsilon = norm_map[norm]
 
         # Currently looking at untargeted attacks,
         #     where adversary accuracy ~ 1 - benign accuracy (except incorrect benign)
         attack = attacks_extended.FGMBinarySearch(
-        #attack = attacks.FastGradientMethod(
+            # attack = attacks.FastGradientMethod(
             classifier=classifier,
             norm=lp_norm,
             eps=max_epsilon,
@@ -147,11 +149,11 @@ def _evaluate_classifier(config: dict) -> None:
             minimal=True,  # find minimum epsilon
         )
         x_test_adv = attack.generate(x=x_test)
-        
+
         # Map into the original input space (bound and quantize) and back to float
         # NOTE: this step makes many of the attacks fail
         x_test_adv = project_to_mnist_input(x_test_adv)
-        
+
         diff = (x_test_adv - x_test).reshape(x_test.shape[0], -1)
         epsilons = np.linalg.norm(diff, ord=lp_norm, axis=1)
         if np.isnan(epsilons).any():
@@ -177,7 +179,9 @@ def _evaluate_classifier(config: dict) -> None:
         adv_acc = np.sum(np.argmax(y_pred_adv, axis=1) != y_test) / len(y_test)
 
         # generate curve
-        unique_epsilons, accuracy = roc_epsilon(epsilons, min_epsilon=min_epsilon, max_epsilon=max_epsilon)
+        unique_epsilons, accuracy = roc_epsilon(
+            epsilons, min_epsilon=min_epsilon, max_epsilon=max_epsilon
+        )
 
         results[norm] = {
             "epsilons": list(unique_epsilons),
@@ -201,6 +205,7 @@ def _evaluate_classifier(config: dict) -> None:
     log.info(f"Now plotting results")
     plot.classification(filepath)
     plot.classification("outputs/latest.json")
+
 
 def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
     if not len(epsilons):
