@@ -8,6 +8,7 @@
             "Linf"
         ]
     },
+    "adversarial_goal": "untargeted",
     "adversarial_knowledge": {
         "data": "full",
         "defense": "aware",
