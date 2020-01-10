@@ -8,9 +8,9 @@ import tensorflow as tf
 import numpy as np
 
 
-if tf.__version__[0] == '1':
+if tf.__version__[0] == "1":
     keras_backend = tf.keras.backend
-elif tf.__version__[0] == '2':
+elif tf.__version__[0] == "2":
     keras_backend = tf.compat.v1.keras.backend
 else:
     raise ImportError(f"Requires TensorFlow 1 or 2, not {tf.__version__}")

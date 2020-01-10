@@ -17,12 +17,19 @@ from armory.eval import Evaluator
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Run Armory from config file.')
-    parser.add_argument('filepath', metavar='<json_config>', type=str, help='json config file')
-    parser.add_argument('-d', '--debug', dest='log_level',
-                        action='store_const', const=logging.DEBUG,
-                        default=logging.INFO,
-                        help='Debug output (logging=DEBUG)')
+    parser = argparse.ArgumentParser(description="Run Armory from config file.")
+    parser.add_argument(
+        "filepath", metavar="<json_config>", type=str, help="json config file"
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
     args = parser.parse_args()
 
     coloredlogs.install(level=args.log_level)

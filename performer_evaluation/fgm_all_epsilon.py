@@ -97,7 +97,7 @@ def _evaluate_classifier(config: dict) -> None:
     train_ds, test_ds, num_train, num_test = SUPPORTED_DATASETS[config["data"]](
         batch_size=-1, epochs=1, normalize=False,
     )
-    
+
     x_train, y_train = train_ds
     x_test, y_test = test_ds
     x_train, x_test = _normalize_img(x_train), _normalize_img(x_test)
@@ -243,6 +243,7 @@ def evaluate_classifier(config_path: str) -> None:
         config = json.load(fp)
 
     _evaluate_classifier(config)
+
 
 #    exporter = Export(benign_accuracy, adversarial_accuracy)
 #    exporter.save()
