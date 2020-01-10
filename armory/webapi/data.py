@@ -8,6 +8,14 @@ import tensorflow as tf
 import numpy as np
 
 
+if tf.__version__[0] == '1':
+    keras_backend = tf.keras.backend
+elif tf.__version__[0] == '2':
+    keras_backend = tf.compat.v1.keras.backend
+else:
+    raise ImportError(f"Requires TensorFlow 1 or 2, not {tf.__version__}")
+
+
 def _curl(url, dirpath, filename):
     """
     git clone url from dirpath location
@@ -33,9 +41,11 @@ def _normalize_img(img):
 
 
 # TODO: Normalize is temporary until this is better refactored (Issue #10)
-def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
+def mnist_data(batch_size: int = -1, epochs: int = 1, normalize: bool = False):
     """
-    Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
+    Returns (train_ds, (x_test, y_test), num_train, num_test)
+        if batch_size == -1, train_ds = (x_train, y_train)
+        else train_ds is a data generator
 
     :param batch_size:
     :param epochs: Number of times to repeat generator
@@ -43,7 +53,7 @@ def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
     """
     import tensorflow_datasets as tfds
 
-    default_graph = tf.keras.backend.get_session().graph
+    default_graph = keras_backend.get_session().graph
 
     mnist_builder = tfds.builder("mnist")
     num_train = mnist_builder.info.splits["train"].num_examples
@@ -58,7 +68,8 @@ def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
     )
     if normalize:
         train_ds = train_ds.map(_normalize_img_dataset)
-    train_ds = train_ds.repeat(epochs)
+    if batch_size != -1 and epochs > 1:
+        train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
     # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
@@ -73,9 +84,11 @@ def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
 
 
 # TODO: Normalize is temporary until this is better refactored (Issue #10)
-def cifar10_data(batch_size: int, epochs: int, normalize: bool = False):
+def cifar10_data(batch_size: int = -1, epochs: int = 1, normalize: bool = False):
     """
-    Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
+    Returns (train_ds, (x_test, y_test), num_train, num_test)
+        if batch_size == -1, train_ds = (x_train, y_train)
+        else train_ds is a data generator
 
     :param batch_size:
     :param epochs: Number of times to repeat generator
@@ -83,7 +96,7 @@ def cifar10_data(batch_size: int, epochs: int, normalize: bool = False):
     """
     import tensorflow_datasets as tfds
 
-    default_graph = tf.keras.backend.get_session().graph
+    default_graph = keras_backend.get_session().graph
 
     mnist_builder = tfds.builder("cifar10")
     num_train = mnist_builder.info.splits["train"].num_examples
@@ -99,7 +112,8 @@ def cifar10_data(batch_size: int, epochs: int, normalize: bool = False):
 
     if normalize:
         train_ds = train_ds.map(_normalize_img_dataset)
-    train_ds = train_ds.repeat(epochs)
+    if batch_size != -1 and epochs > 1:
+        train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
     # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
