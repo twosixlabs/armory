@@ -16,7 +16,8 @@ def _normalize_img(img):
     return img
 
 
-def mnist_data(batch_size: int, epochs: int):
+# TODO: Normalize is temporary until this is better refactored (Issue #10)
+def mnist_data(batch_size: int, epochs: int, normalize: bool=False):
     """
     Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
 
@@ -37,21 +38,23 @@ def mnist_data(batch_size: int, epochs: int):
         as_supervised=True,
         data_dir="datasets/",
     )
-    train_ds = train_ds.map(_normalize_img_dataset)
+    if normalize:
+        train_ds = train_ds.map(_normalize_img_dataset)
     train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
-    # TODO: Issue#13 Make generator once ART accepts generators in attack/defense methods
+    # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
     test_ds = tfds.load(
         "mnist", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
     )
     test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
-    test_x = _normalize_img(test_x)
+    if normalize:
+        test_x = _normalize_img(test_x)
 
     return train_ds, (test_x, test_y), num_train, num_test
 
-
-def cifar10_data(batch_size: int, epochs: int):
+# TODO: Normalize is temporary until this is better refactored (Issue #10)
+def cifar10_data(batch_size: int, epochs: int, normalize: bool=False):
     """
     Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
 
@@ -72,16 +75,20 @@ def cifar10_data(batch_size: int, epochs: int):
         as_supervised=True,
         data_dir="datasets/",
     )
-    train_ds = train_ds.map(_normalize_img_dataset)
+
+    if normalize:
+        train_ds = train_ds.map(_normalize_img_dataset)
+
     train_ds = train_ds.repeat(epochs)
     train_ds = tfds.as_numpy(train_ds, graph=default_graph)
 
-    # TODO: Issue#13 Make generator once ART accepts generators in attack/defense methods
+    # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
     test_ds = tfds.load(
         "cifar10", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
     )
     test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
-    test_x = _normalize_img(test_x)
+    if normalize:
+        test_x = _normalize_img(test_x)
 
     return train_ds, (test_x, test_y), num_train, num_test
 

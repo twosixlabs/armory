@@ -44,7 +44,7 @@ class KerasTest(unittest.TestCase):
         batch_size = 64
         epochs = 2
         train_ds, test_ds, num_train, _ = SUPPORTED_DATASETS["mnist"](
-            batch_size=batch_size, epochs=epochs
+            batch_size=batch_size, epochs=epochs, normalize=True
         )
 
         classifier_module = import_module("armory.baseline_models.keras.keras_mnist")
@@ -61,7 +61,7 @@ class KerasTest(unittest.TestCase):
         batch_size = 64
         epochs = 2
         train_ds, test_ds, num_train, _ = SUPPORTED_DATASETS["cifar10"](
-            batch_size=batch_size, epochs=epochs
+            batch_size=batch_size, epochs=epochs, normalize=True
         )
 
         classifier_module = import_module("armory.baseline_models.keras.keras_cifar")

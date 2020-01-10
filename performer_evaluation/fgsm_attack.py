@@ -28,7 +28,7 @@ def evaluate_classifier(config_path: str) -> None:
         config = json.load(fp)
 
     train_ds, test_ds, num_train, num_test = SUPPORTED_DATASETS[config["data"]](
-        batch_size=batch_size, epochs=epochs
+        batch_size=batch_size, epochs=epochs, normalize=True
     )
     x_test, y_test = test_ds
 
