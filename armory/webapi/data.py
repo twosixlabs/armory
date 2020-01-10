@@ -4,16 +4,13 @@ API queries to download and use common datasets.
 
 import os
 
-import numpy as np
-
-import tensorflow_datasets as tfds
-
 
 def mnist_data() -> (dict, dict):
     """
     returns:
         Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
     """
+    import tensorflow_datasets as tfds
 
     # TODO: Return generators instead of all data in memory
     train_ds = tfds.load(
@@ -60,6 +57,7 @@ def digit(zero_pad=False, rootdir='datasets/external', subdir='free-spoken-digit
     subdir - standard folder structur for git repo
     url - standard github url
     """
+    import numpy as np
     from scipy.io import wavfile
 
     dirpath = os.path.join(rootdir, subdir)
