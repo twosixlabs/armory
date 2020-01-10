@@ -4,6 +4,22 @@ API queries to download and use common datasets.
 
 import os
 import zipfile
+import tensorflow as tf
+import numpy as np
+
+
+def _curl(url, dirpath, filename):
+    """
+    git clone url from dirpath location
+    """
+    import subprocess
+
+    try:
+        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(f"curl failed to download: {e}")
 
 
 def _normalize_img_dataset(img, label):
@@ -17,7 +33,7 @@ def _normalize_img(img):
 
 
 # TODO: Normalize is temporary until this is better refactored (Issue #10)
-def mnist_data(batch_size: int, epochs: int, normalize: bool=False):
+def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
     """
     Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
 
@@ -26,6 +42,7 @@ def mnist_data(batch_size: int, epochs: int, normalize: bool=False):
     :return:
     """
     import tensorflow_datasets as tfds
+
     default_graph = tf.keras.backend.get_session().graph
 
     mnist_builder = tfds.builder("mnist")
@@ -54,8 +71,9 @@ def mnist_data(batch_size: int, epochs: int, normalize: bool=False):
 
     return train_ds, (test_x, test_y), num_train, num_test
 
+
 # TODO: Normalize is temporary until this is better refactored (Issue #10)
-def cifar10_data(batch_size: int, epochs: int, normalize: bool=False):
+def cifar10_data(batch_size: int, epochs: int, normalize: bool = False):
     """
     Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
 
@@ -64,6 +82,7 @@ def cifar10_data(batch_size: int, epochs: int, normalize: bool=False):
     :return:
     """
     import tensorflow_datasets as tfds
+
     default_graph = tf.keras.backend.get_session().graph
 
     mnist_builder = tfds.builder("cifar10")
@@ -92,20 +111,6 @@ def cifar10_data(batch_size: int, epochs: int, normalize: bool=False):
         test_x = _normalize_img(test_x)
 
     return train_ds, (test_x, test_y), num_train, num_test
-
-
-def _curl(url, dirpath, filename):
-    """
-    git clone url from dirpath location
-    """
-    import subprocess
-
-    try:
-        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
-    except subprocess.CalledProcessError as e:
-        raise subprocess.CalledProcessError(f"curl failed to download: {e}")
 
 
 def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
