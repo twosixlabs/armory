@@ -1,0 +1,26 @@
+{
+    "adversarial_budget": {
+        "epsilon": "all",
+        "input_output": "inf",
+        "norm": [
+            "L1",
+            "L2",
+            "Linf"
+        ]
+    },
+    "adversarial_goal": "untargeted",
+    "adversarial_knowledge": {
+        "data": "full",
+        "defense": "aware",
+        "model": "white"
+    },
+    "attack": "fgsm",
+    "data": "mnist",
+    "defense": null,
+    "eval_file": "performer_evaluation.fgm_all_epsilon",
+    "model_file": "armory.baseline_models.tf1.simple_keras",
+    "model_name": "SIMPLE_MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix",
+    "performer_repo": null
+}
