@@ -43,4 +43,4 @@ def make_mnist_model() -> keras.Model:
     return model
 
 
-MNIST_MODEL = KerasClassifier(make_mnist_model())
+MODEL = KerasClassifier(make_mnist_model())

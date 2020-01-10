@@ -48,7 +48,7 @@ class KerasTest(unittest.TestCase):
         )
 
         classifier_module = import_module("armory.baseline_models.keras.keras_mnist")
-        classifier = getattr(classifier_module, "MNIST_MODEL")
+        classifier = getattr(classifier_module, "MODEL")
 
         steps_per_epoch = int(num_train / batch_size)
         history = classifier._model.fit_generator(
@@ -65,7 +65,7 @@ class KerasTest(unittest.TestCase):
         )
 
         classifier_module = import_module("armory.baseline_models.keras.keras_cifar")
-        classifier = getattr(classifier_module, "CIFAR10_MODEL")
+        classifier = getattr(classifier_module, "MODEL")
 
         steps_per_epoch = int(num_train / batch_size)
         history = classifier._model.fit_generator(

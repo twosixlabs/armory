@@ -17,7 +17,7 @@ if __name__ == "__main__":
     config = {
         "performer_name": "ta2.twosix",
         "model_file": "armory.baseline_models.keras.keras_mnist",
-        "model_name": "MNIST_MODEL",
+        "model_name": "MODEL",
         "eval_file": "performer_evaluation.fgsm_attack",
         "data": "mnist",
         # "performer_repo": None,

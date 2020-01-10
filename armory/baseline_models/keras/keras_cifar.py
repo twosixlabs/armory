@@ -43,4 +43,4 @@ def make_cifar10_model() -> keras.Model:
     return model
 
 
-CIFAR10_MODEL = KerasClassifier(make_cifar10_model())
+MODEL = KerasClassifier(make_cifar10_model())
