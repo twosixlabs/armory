@@ -32,15 +32,16 @@ def _curl(url, dirpath, filename):
     git clone url from dirpath location
     """
     import subprocess
+
     try:
-        subprocess.check_call(['curl', '-L', url, '--output', filename], cwd=dirpath)
+        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
     except FileNotFoundError as e:
         raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
     except subprocess.CalledProcessError as e:
         raise subprocess.CalledProcessError(f"curl failed to download: {e}")
 
 
-def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
+def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
     """
     returns:
         Return tuple of dictionaries containing numpy arrays.
@@ -59,9 +60,9 @@ def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
     import numpy as np
     from scipy.io import wavfile
 
-    url = 'https://github.com/Jakobovski/free-spoken-digit-dataset/archive/v1.0.8.zip'
-    zip_file = 'free-spoken-digit-dataset-1.0.8.zip'
-    subdir = 'free-spoken-digit-dataset-1.0.8/recordings'
+    url = "https://github.com/Jakobovski/free-spoken-digit-dataset/archive/v1.0.8.zip"
+    zip_file = "free-spoken-digit-dataset-1.0.8.zip"
+    subdir = "free-spoken-digit-dataset-1.0.8/recordings"
 
     dirpath = os.path.join(rootdir, subdir)
     if not os.path.isdir(dirpath):
@@ -72,9 +73,9 @@ def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
             _curl(url, rootdir, zip_file)
 
         # Extract and clean up
-        with zipfile.ZipFile(zip_filepath, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
             zip_ref.extractall(rootdir)
-        os.remove(zip_filepath) 
+        os.remove(zip_filepath)
 
     # TODO: Return generators instead of all data in memory
     # NOTE: issue #21
@@ -85,7 +86,7 @@ def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
     train_audio, train_labels = [], []
     test_audio, test_labels = [], []
     for sample in range(50):
-        for name in 'jackson', 'nicolas', 'theo':  #, 'yweweler': not yet in release
+        for name in "jackson", "nicolas", "theo":  # , 'yweweler': not yet in release
             for digit in range(10):
                 filepath = os.path.join(dirpath, f"{digit}_{name}_{sample}.wav")
                 try:
@@ -97,7 +98,9 @@ def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
                 if audio.dtype != dtype:
                     raise ValueError(f"{filepath} dtype {audio.dtype} != {dtype}")
                 if zero_pad:
-                    audio = np.hstack([audio, np.zeros(max_length - len(audio), dtype=np.int16)])
+                    audio = np.hstack(
+                        [audio, np.zeros(max_length - len(audio), dtype=np.int16)]
+                    )
                 if sample >= 5:
                     train_audio.append(audio)
                     train_labels.append(digit)
@@ -106,12 +109,12 @@ def digit(zero_pad=False, rootdir='datasets/external') -> (dict, dict):
                     test_labels.append(digit)
 
     train_ds = {
-        'audio': np.array(train_audio),
-        'label': np.array(train_labels),
+        "audio": np.array(train_audio),
+        "label": np.array(train_labels),
     }
     test_ds = {
-        'audio': np.array(test_audio),
-        'label': np.array(test_labels),
+        "audio": np.array(test_audio),
+        "label": np.array(test_labels),
     }
     return train_ds, test_ds
 
