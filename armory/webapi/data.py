@@ -4,27 +4,8 @@ API queries to download and use common datasets.
 
 import os
 import zipfile
-
-
-def mnist_data() -> (dict, dict):
-    """
-    returns:
-        Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
-    """
-    import tensorflow_datasets as tfds
-
-    # TODO: Return generators instead of all data in memory
-    train_ds = tfds.load(
-        "mnist", split=tfds.Split.TRAIN, batch_size=-1, data_dir="datasets/"
-    )
-    test_ds = tfds.load(
-        "mnist", split=tfds.Split.TEST, batch_size=-1, data_dir="datasets/"
-    )
-
-    return (
-        tfds.as_numpy(train_ds),
-        tfds.as_numpy(test_ds),
-    )
+import tensorflow as tf
+import numpy as np
 
 
 def _curl(url, dirpath, filename):
@@ -41,6 +22,97 @@ def _curl(url, dirpath, filename):
         raise subprocess.CalledProcessError(f"curl failed to download: {e}")
 
 
+def _normalize_img_dataset(img, label):
+    img = tf.cast(img, tf.float32) / 255.0
+    return img, label
+
+
+def _normalize_img(img):
+    img = img.astype(np.float32) / 255.0
+    return img
+
+
+# TODO: Normalize is temporary until this is better refactored (Issue #10)
+def mnist_data(batch_size: int, epochs: int, normalize: bool = False):
+    """
+    Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
+
+    :param batch_size:
+    :param epochs: Number of times to repeat generator
+    :return:
+    """
+    import tensorflow_datasets as tfds
+
+    default_graph = tf.keras.backend.get_session().graph
+
+    mnist_builder = tfds.builder("mnist")
+    num_train = mnist_builder.info.splits["train"].num_examples
+    num_test = mnist_builder.info.splits["test"].num_examples
+
+    train_ds = tfds.load(
+        "mnist",
+        split="train",
+        batch_size=batch_size,
+        as_supervised=True,
+        data_dir="datasets/",
+    )
+    if normalize:
+        train_ds = train_ds.map(_normalize_img_dataset)
+    train_ds = train_ds.repeat(epochs)
+    train_ds = tfds.as_numpy(train_ds, graph=default_graph)
+
+    # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
+    test_ds = tfds.load(
+        "mnist", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
+    )
+    test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
+    if normalize:
+        test_x = _normalize_img(test_x)
+
+    return train_ds, (test_x, test_y), num_train, num_test
+
+
+# TODO: Normalize is temporary until this is better refactored (Issue #10)
+def cifar10_data(batch_size: int, epochs: int, normalize: bool = False):
+    """
+    Tuple of dictionaries containing numpy arrays. Keys are {`image`, `label`}
+
+    :param batch_size:
+    :param epochs: Number of times to repeat generator
+    :return:
+    """
+    import tensorflow_datasets as tfds
+
+    default_graph = tf.keras.backend.get_session().graph
+
+    mnist_builder = tfds.builder("cifar10")
+    num_train = mnist_builder.info.splits["train"].num_examples
+    num_test = mnist_builder.info.splits["test"].num_examples
+
+    train_ds = tfds.load(
+        "cifar10",
+        split="train",
+        batch_size=batch_size,
+        as_supervised=True,
+        data_dir="datasets/",
+    )
+
+    if normalize:
+        train_ds = train_ds.map(_normalize_img_dataset)
+    train_ds = train_ds.repeat(epochs)
+    train_ds = tfds.as_numpy(train_ds, graph=default_graph)
+
+    # TODO: Make generator once ART accepts generators in attack/defense methods (Issue #13)
+    test_ds = tfds.load(
+        "cifar10", split="test", batch_size=-1, as_supervised=True, data_dir="datasets/"
+    )
+    test_x, test_y = tfds.as_numpy(test_ds, graph=default_graph)
+    if normalize:
+        test_x = _normalize_img(test_x)
+
+    return train_ds, (test_x, test_y), num_train, num_test
+
+
 def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
     """
     returns:
@@ -51,7 +123,7 @@ def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
             dtype of internal arrays are np.int16
             min length = 1148 samples
             max length = 18262 samples
-    
+
     zero_pad - whether to pad the audio samples to the same length
         if done, this returns `audio` arrays as 2D np.int16 arrays
 
@@ -119,4 +191,4 @@ def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
     return train_ds, test_ds
 
 
-SUPPORTED_DATASETS = {"mnist": mnist_data, "digit": digit}
+SUPPORTED_DATASETS = {"mnist": mnist_data, "cifar10": cifar10_data, "digit": digit}
