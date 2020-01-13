@@ -31,7 +31,6 @@ class FGMBinarySearch(attacks.FastGradientMethod):
         if adv_batch is None:
             adv_batch = batch.copy()
         batch_classes = np.argmax(batch_labels, axis=1)
-        adv_classes = batch_classes.copy()
 
         # Get perturbation
         perturbation = self._compute_perturbation(batch, batch_labels)
