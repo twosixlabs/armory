@@ -8,14 +8,6 @@ import tensorflow as tf
 import numpy as np
 
 
-if tf.__version__[0] == "1":
-    keras_backend = tf.keras.backend
-elif tf.__version__[0] == "2":
-    keras_backend = tf.compat.v1.keras.backend
-else:
-    raise ImportError(f"Requires TensorFlow 1 or 2, not {tf.__version__}")
-
-
 def _curl(url, dirpath, filename):
     """
     git clone url from dirpath location
@@ -53,7 +45,7 @@ def mnist_data(batch_size: int = -1, epochs: int = 1, normalize: bool = False):
     """
     import tensorflow_datasets as tfds
 
-    default_graph = keras_backend.get_session().graph
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
 
     mnist_builder = tfds.builder("mnist")
     num_train = mnist_builder.info.splits["train"].num_examples
@@ -96,7 +88,7 @@ def cifar10_data(batch_size: int = -1, epochs: int = 1, normalize: bool = False)
     """
     import tensorflow_datasets as tfds
 
-    default_graph = keras_backend.get_session().graph
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
 
     mnist_builder = tfds.builder("cifar10")
     num_train = mnist_builder.info.splits["train"].num_examples
