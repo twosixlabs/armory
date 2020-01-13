@@ -107,7 +107,7 @@ class FGMBinarySearch(attacks.FastGradientMethod):
         # Compute perturbation with implicit batching
         for start in range(0, adv_x.shape[0], self.batch_size):
             end = start + self.batch_size
-            adv_batch = self._minimal_perturbation_binary_batch(
+            self._minimal_perturbation_binary_batch(
                 x[start:end], y[start:end], adv_x[start:end],
             )
 
