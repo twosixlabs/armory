@@ -27,6 +27,15 @@ class FGMBinarySearch(attacks.FastGradientMethod):
         """
         Iteratively compute the minimal perturbation necessary to make the 
         class prediction change, using binary search.
+
+        batch - np array of features for batch (x)
+        batch_labels - np array of labels for batch, a 2D array of probabilites (y)
+        adv_batch - same shape as batch (x^hat)
+            This method returns the adv_batch that is computed for the given x and y
+            If adv_batch is None, it creates a new array to return
+            Else, it modifies the existing array that is passed in
+
+        Returns - computed adv_batch
         """
         if adv_batch is None:
             adv_batch = batch.copy()
@@ -66,6 +75,15 @@ class FGMBinarySearch(attacks.FastGradientMethod):
     def _minimal_perturbation_linear_batch(self, batch, batch_labels, adv_batch=None):
         """
         Rewrite of inner loop for linear search
+
+        batch - np array of features for batch (x)
+        batch_labels - np array of labels for batch, a 2D array of probabilites (y)
+        adv_batch - same shape as batch (x^hat)
+            This method returns the adv_batch that is computed for the given x and y
+            If adv_batch is None, it creates a new array to return
+            Else, it modifies the existing array that is passed in
+
+        Returns - computed adv_batch
         """
         if adv_batch is None:
             adv_batch = batch.copy()
