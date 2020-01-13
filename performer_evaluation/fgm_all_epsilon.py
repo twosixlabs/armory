@@ -244,12 +244,6 @@ def evaluate_classifier(config_path: str) -> None:
     _evaluate_classifier(config)
 
 
-#    exporter = Export(benign_accuracy, adversarial_accuracy)
-#    exporter.save()
-
-
-# TODO: load training set adversarial examples (for optimal attack line) ??
-
 if __name__ == "__main__":
     config_path = sys.argv[-1]
     evaluate_classifier(config_path)
