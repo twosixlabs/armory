@@ -55,6 +55,7 @@ class Evaluator(object):
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
-            shutil.rmtree("external_repos")
+            if os.path.exists("external_repos"):
+                shutil.rmtree("external_repos")
             os.remove(tmp_config)
             self.manager.stop_armory_instance(runner)
