@@ -5,6 +5,7 @@ import os
 import logging
 import requests
 import tarfile
+import shutil
 
 import coloredlogs
 
@@ -44,7 +45,11 @@ def download_and_extract(config: dict) -> None:
         dl_directory_name = tar.getnames()[0]
         tar.extractall(path="external_repos")
 
-        os.rename(f"external_repos/{dl_directory_name}", f"external_repos/{repo_name}")
+        # Always overwrite existing repositories to keep them at HEAD
+        final_dir_name = f"external_repos/{repo_name}"
+        if os.path.isdir(final_dir_name):
+            shutil.rmtree(final_dir_name)
+        os.rename(f"external_repos/{dl_directory_name}", final_dir_name)
         os.remove(tar_filename)
 
     else:
