@@ -22,5 +22,5 @@
     "model_name": "MODEL",
     "model_wrapper": "ART",
     "performer_name": "ta2.twosix",
-    "performer_repo": null
+    "external_github_repo": null
 }
