@@ -5,9 +5,17 @@
 import unittest
 from armory.webapi.data import SUPPORTED_DATASETS
 from importlib import import_module
+import types
 
 
 class DatasetTest(unittest.TestCase):
+    def test_generators(self):
+        for name, dataset in SUPPORTED_DATASETS.items():
+            train_ds, test_ds, num_train, num_test = dataset(batch_size=1, epochs=1)
+            self.assertIsInstance(
+                train_ds, types.GeneratorType, msg=f"{name} does not return generator"
+            )
+
     def test_batching(self):
         batch_size = 48
         train_ds, test_ds, num_train, num_test = SUPPORTED_DATASETS["mnist"](

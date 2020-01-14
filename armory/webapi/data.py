@@ -119,7 +119,22 @@ def cifar10_data(batch_size: int = -1, epochs: int = 1, normalize: bool = False)
     return train_ds, (test_x, test_y), num_train, num_test
 
 
-def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
+def _create_generator(train_ds, batch_size, epochs):
+    """
+    Create generator from in-memory dataset.
+
+    Keep leftover (partial-batch).
+    """
+    x_train, y_train = train_ds
+    n = len(x_train)
+    for epoch in range(epochs):
+        for i in range(0, n, batch_size):
+            yield x_train[i : i + batch_size], y_train[i : i + batch_size]
+
+
+def digit(
+    batch_size: int = -1, epochs: int = 1, zero_pad=False, rootdir="datasets/external"
+):
     """
     returns:
         Return tuple of dictionaries containing numpy arrays.
@@ -186,15 +201,18 @@ def digit(zero_pad=False, rootdir="datasets/external") -> (dict, dict):
                     test_audio.append(audio)
                     test_labels.append(digit)
 
-    train_ds = {
-        "audio": np.array(train_audio),
-        "label": np.array(train_labels),
-    }
-    test_ds = {
-        "audio": np.array(test_audio),
-        "label": np.array(test_labels),
-    }
-    return train_ds, test_ds
+    train_ds = (np.array(train_audio), np.array(train_labels))
+    test_ds = (np.array(test_audio), np.array(test_labels))
+    # Generator
+    if batch_size < -1 or batch_size == 0:
+        raise ValueError(f"batch_size cannot be {batch_size}")
+    batch_size = int(batch_size)
+    epochs = int(epochs)
+    if batch_size > 0:
+        if epochs < 1:
+            raise ValueError(f"epochs {epochs} must be >= 1 when batch_size != -1")
+        train_ds = _create_generator(train_ds, batch_size, epochs)
+    return train_ds, test_ds, len(train_audio), len(test_audio)
 
 
 SUPPORTED_DATASETS = {"mnist": mnist_data, "cifar10": cifar10_data, "digit": digit}
