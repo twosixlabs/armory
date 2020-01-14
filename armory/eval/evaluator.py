@@ -4,9 +4,11 @@ Evaluators control launching of ARMORY evaluations.
 import os
 import json
 import requests
+import shutil
 
 from armory.webapi.data import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
+from armory.utils.external_repo import download_and_extract
 
 import logging
 
@@ -19,6 +21,9 @@ class Evaluator(object):
         self._verify_config()
         self.manager = ManagementInstance()
 
+        if self.config["external_github_repo"]:
+            self._download_external()
+
     def _verify_config(self) -> None:
         assert isinstance(self.config, dict)
 
@@ -27,6 +32,9 @@ class Evaluator(object):
                 f"Configured data {self.config['data']} not found in"
                 f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
             )
+
+    def _download_external(self):
+        download_and_extract(self.config)
 
     def run_config(self) -> None:
         tmp_dir = "tmp"
@@ -47,5 +55,6 @@ class Evaluator(object):
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
+            shutil.rmtree("external_repos")
             os.remove(tmp_config)
             self.manager.stop_armory_instance(runner)
