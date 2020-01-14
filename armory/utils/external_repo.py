@@ -15,9 +15,10 @@ log = logging.getLogger(__name__)
 
 def download_and_extract(config: dict) -> None:
     """
+    Downloads and extracts an external repository for use within ARMORY.
 
-    :param config:
-    :return:
+    Private repositories require a `GITHUB_TOKEN` environment variable.
+    :param config: Dictionary of loaded configuration info
     """
     os.makedirs("external_repos", exist_ok=True)
     headers = {}
