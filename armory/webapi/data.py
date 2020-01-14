@@ -204,7 +204,7 @@ def digit(
     train_ds = (np.array(train_audio), np.array(train_labels))
     test_ds = (np.array(test_audio), np.array(test_labels))
     # Generator
-    if batch_size < -2 or batch_size == 0:
+    if batch_size < -1 or batch_size == 0:
         raise ValueError(f"batch_size cannot be {batch_size}")
     batch_size = int(batch_size)
     epochs = int(epochs)
