@@ -8,6 +8,11 @@ In order to access private external repos you'll need to set an
 environment variable `GITHUB_TOKEN` which corresponds to a user token 
 with repo access.
 
+```
+export GITHUB_TOKEN="5555e8b..."
+python run_evaluation.py examples/external_repo.json
+```
+
 Tokens can be created here:
 https://github.com/settings/tokens
 
