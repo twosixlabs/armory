@@ -2,7 +2,7 @@
 python run_evaluation.py <json_config>
 
 Try: 
-python run_evaluation.py examples/mnist_fgsm_all_epsilon.json
+python run_evaluation.py examples/mnist_fgm_all_epsilon.json
 
 This runs an arbitrary config file. Results are output to the `outputs/` directory.
 """

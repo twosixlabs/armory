@@ -17,7 +17,7 @@
     "attack": "fgsm",
     "data": "mnist",
     "defense": null,
-    "eval_file": "performer_evaluation.fgsm_all_epsilon",
+    "eval_file": "performer_evaluation.fgm_all_epsilon",
     "model_file": "armory.baseline_models.keras.keras_mnist",
     "model_name": "MODEL",
     "model_wrapper": "ART",

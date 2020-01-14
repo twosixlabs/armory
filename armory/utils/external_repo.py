@@ -23,20 +23,22 @@ def download_and_extract(config: dict) -> None:
     os.makedirs("external_repos", exist_ok=True)
     headers = {}
     external_repo = config["external_github_repo"]
-    repo_name = external_repo.split('/')[-1]
+    repo_name = external_repo.split("/")[-1]
 
     if "GITHUB_TOKEN" in os.environ:
-        headers = {'Authorization': f'token {os.getenv("GITHUB_TOKEN")}'}
+        headers = {"Authorization": f'token {os.getenv("GITHUB_TOKEN")}'}
 
-    response = requests.get(f"https://api.github.com/repos/{external_repo}/tarball/master",
-                            headers=headers,
-                            stream=True)
+    response = requests.get(
+        f"https://api.github.com/repos/{external_repo}/tarball/master",
+        headers=headers,
+        stream=True,
+    )
 
     if response.status_code == 200:
         logging.info(f"Downloading external repo: {external_repo}")
 
-        tar_filename = repo_name+'.tar.gz'
-        with open(tar_filename, 'wb') as f:
+        tar_filename = repo_name + ".tar.gz"
+        with open(tar_filename, "wb") as f:
             f.write(response.raw.read())
         tar = tarfile.open(tar_filename, "r:gz")
         dl_directory_name = tar.getnames()[0]
@@ -46,5 +48,7 @@ def download_and_extract(config: dict) -> None:
         os.remove(tar_filename)
 
     else:
-        logging.error("Unable to download repository. If it's private make sure "
-                      "`GITHUB_TOKEN` environment variable is set")
+        raise ConnectionError(
+            "Unable to download repository. If it's private make sure "
+            "`GITHUB_TOKEN` environment variable is set"
+        )
