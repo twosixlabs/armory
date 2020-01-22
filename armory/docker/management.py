@@ -26,6 +26,7 @@ class ArmoryInstance(object):
         user_id = os.getuid()
         self.docker_container = self.docker_client.containers.run(
             "twosixlabs/armory:0.1",
+            runtime="nvidia",
             remove=True,
             detach=True,
             user=f"{user_id}:{user_id}",
