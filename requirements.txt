@@ -1,6 +1,4 @@
-black
 coloredlogs
 docker
-tensorflow-datasets
-adversarial-robustness-toolbox
 requests
+pytest

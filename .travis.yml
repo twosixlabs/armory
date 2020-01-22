@@ -1,0 +1,19 @@
+dist: xenial
+language: minimal
+
+services:
+  - docker
+
+stages:
+  - test
+
+jobs:
+  include:
+    - language: python
+      python: 3.7
+      name: "PyTest"
+      before_install:
+        - python --version
+        - python -m pip install -r requirements.txt
+      script:
+        - pytest -s --disable-warnings
