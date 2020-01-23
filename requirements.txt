@@ -1,4 +1,7 @@
 coloredlogs
 docker
+tensorflow-datasets
+adversarial-robustness-toolbox
 requests
 pytest
+tensorflow==1.15
