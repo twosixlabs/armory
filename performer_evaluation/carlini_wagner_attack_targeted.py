@@ -71,7 +71,7 @@ def evaluate_classifier(config_path: str) -> None:
             batch_size=128,
         )
     else:
-        raise ValueError
+        raise ValueError("Invalid attack {config['attack']}: only CarliniL2Method and CarliniInfMethod supported")
 
     num_classes = 10
     num_attacked_pts = 100
