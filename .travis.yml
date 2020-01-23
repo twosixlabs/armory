@@ -16,4 +16,5 @@ jobs:
         - python --version
         - python -m pip install -r requirements.txt
       script:
+        - docker build -t twosixlabs/armory:0.1 .
         - pytest -s --disable-warnings
