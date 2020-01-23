@@ -1,5 +1,5 @@
 # ARMORY
-Adversarial Robustness Evaluation Platform for DARPA GARD
+Adversarial Robustness Evaluation Platform
 
 # Installation
 Python 3.6+ is required.
