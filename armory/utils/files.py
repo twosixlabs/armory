@@ -4,6 +4,7 @@ Utilities related to files
 
 import json
 import os
+import subprocess
 
 
 def json_dump_pretty(obj, filepath):
@@ -66,6 +67,56 @@ def json_tool_recursive(rootdir="", ignore_hidden=True):
                     print(f"error: cannot format {filepath}: {e}")
                     errored += 1
 
+    def plural(count):
+        if count == 1:
+            return f"{count} file"
+        return f"{count} files"
+
+    changed, stayed, errored = [plural(x) for x in (changed, stayed, errored)]
+    print(
+        f"{changed} reformatted, {stayed} left unchanged, {errored} failed to reformat."
+    )
+
+
+def json_tool_git(rootdir="."):
+    """
+    Uses git command line to find json files not ignored by git.
+
+    If rootdir is ".", uses current working directory.
+    """
+    if not isinstance(rootdir, str):
+        raise ValueError(f"rootdir must be a string, not {rootdir}")
+    if not rootdir:
+        rootdir = "."
+    changed, stayed, errored = 0, 0, 0
+
+    def get_paths(cmd):
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if err:
+            raise ValueError(f"Error calling {cmd}: {err}")
+        out = str(out, encoding="utf-8")
+        lines = out.splitlines()
+        return lines
+
+    filepaths = []
+    filepaths.extend(get_paths(["git", "ls-files", rootdir]))
+    filepaths.extend(get_paths(["git", "ls-files", rootdir, "--exclude-standard", "--others"]))
+
+    filepaths = [x for x in filepaths if x.lower().endswith(".json")]
+    for filepath in filepaths:
+        try:
+            if json_tool(filepath):
+                print(f"reformatted {filepath}")
+                changed += 1
+            else:
+                stayed += 1
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:
+            print(f"error: cannot format {filepath}: {e}")
+            errored += 1
+        
     def plural(count):
         if count == 1:
             return f"{count} file"
