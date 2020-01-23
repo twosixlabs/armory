@@ -13,12 +13,6 @@ import os
 import subprocess
 
 
-def json_dump_pretty(obj, filepath):
-    with open(filepath, "w") as f:
-        json.dump(obj, f, sort_keys=True, indent=4)
-        f.write("\n")  # This newline is added by json.tool
-
-
 def json_dumps_pretty(obj):
     return json.dumps(obj, sort_keys=True, indent=4) + "\n"
 
