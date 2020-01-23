@@ -107,7 +107,9 @@ def json_tool_git(rootdir="."):
 
     filepaths = []
     filepaths.extend(get_paths(["git", "ls-files", rootdir]))
-    filepaths.extend(get_paths(["git", "ls-files", rootdir, "--exclude-standard", "--others"]))
+    filepaths.extend(
+        get_paths(["git", "ls-files", rootdir, "--exclude-standard", "--others"])
+    )
 
     filepaths = [x for x in filepaths if x.lower().endswith(".json")]
     for filepath in filepaths:
@@ -122,7 +124,7 @@ def json_tool_git(rootdir="."):
         except Exception as e:
             print(f"error: cannot format {filepath}: {e}")
             errored += 1
-        
+
     def plural(count):
         if count == 1:
             return f"{count} file"
