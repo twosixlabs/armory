@@ -6,7 +6,7 @@ Format is the same as Python's built in json.tool
     However, it overcomes some command line errors in rewriting the same file
 """
 
-from armory.util import files
+from armory.utils import files
 
 
 if __name__ == "__main__":
