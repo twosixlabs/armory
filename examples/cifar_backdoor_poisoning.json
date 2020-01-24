@@ -1,0 +1,21 @@
+{
+    "adversarial_budget": {
+        "percent_poisons": "all"
+    },
+    "adversarial_goal": "targeted",
+    "adversarial_knowledge": {
+        "data": "partial",
+        "model": "black"
+    },
+    "attack": "backdoor_poisoning",
+    "data": "cifar10",
+    "defense": null,
+    "eval_file": "performer_evaluation.poisoning_attack_backdoor",
+    "external_github_repo": null,
+    "model_file": "armory.baseline_models.keras.keras_cifar",
+    "model_name": "MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix",
+    "source_class": 0,
+    "target_class": 9
+}
