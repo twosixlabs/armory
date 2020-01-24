@@ -8,7 +8,6 @@ import tensorflow as tf
 import numpy as np
 
 
-
 def _curl(url, dirpath, filename):
     """
     git clone url from dirpath location
@@ -214,5 +213,6 @@ def digit(
             raise ValueError(f"epochs {epochs} must be >= 1 when batch_size != -1")
         train_ds = _create_generator(train_ds, batch_size, epochs)
     return train_ds, test_ds, len(train_audio), len(test_audio)
+
 
 SUPPORTED_DATASETS = {"mnist": mnist_data, "cifar10": cifar10_data, "digit": digit}
