@@ -3,11 +3,11 @@
 """
 import os
 import logging
-import requests
 import tarfile
 import shutil
 
 import coloredlogs
+import requests
 
 coloredlogs.install(level=logging.DEBUG)
 

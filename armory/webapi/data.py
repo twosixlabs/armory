@@ -4,6 +4,7 @@ API queries to download and use common datasets.
 
 import os
 import zipfile
+
 import tensorflow as tf
 import numpy as np
 

@@ -4,14 +4,14 @@ Classifier evaluation within ARMORY
 
 import json
 import sys
+import logging
+from importlib import import_module
+
+from art.attacks import FastGradientMethod
 
 from armory.webapi.data import SUPPORTED_DATASETS
-from art.attacks import FastGradientMethod
-from importlib import import_module
 from armory.eval.export import Export
 
-
-import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
