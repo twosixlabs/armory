@@ -45,7 +45,7 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance()
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             logger.exception("Starting instance failed. Is Docker Daemon running?")
             return
 
