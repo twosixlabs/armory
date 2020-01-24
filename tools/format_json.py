@@ -5,9 +5,12 @@ Output is meant to look similar to `black`
 Format is the same as Python's built in json.tool
     However, it overcomes some command line errors in rewriting the same file
 
-Usage: python -m scripts.format_json
+Usage: python -m scripts.format_json [path] [--no-git]
+    path - run from designated path instead of current working directory
+    --no-git - whether to not use git (default) and instead apply recursively
 """
 
+import argparse
 import json
 import os
 import subprocess
@@ -37,35 +40,23 @@ def json_tool(filepath) -> bool:
     return False
 
 
-def json_tool_recursive(rootdir="", ignore_hidden=True):
-    """
-    Recursively combs root directory for json files, rewriting them.
 
-    If rootdir is "", uses current working directory.
-    """
+
+def _inner_loop(filepaths):
     changed, stayed, errored = 0, 0, 0
-
-    rootdir = rootdir or os.getcwd()
-    for root, dirs, files in os.walk(rootdir):
-        dirs.sort()
-        files.sort()
-        if ignore_hidden:
-            dirs[:] = [x for x in dirs if not x.startswith(".")]
-            files[:] = [x for x in files if not x.startswith(".")]
-        for f in files:
-            if f.lower().endswith(".json"):
-                filepath = os.path.join(root, f)
-                try:
-                    if json_tool(filepath):
-                        print(f"reformatted {filepath}")
-                        changed += 1
-                    else:
-                        stayed += 1
-                except KeyboardInterrupt:
-                    raise
-                except Exception as e:
-                    print(f"error: cannot format {filepath}: {e}")
-                    errored += 1
+    for filepath in filepaths:
+        if filepath.lower().endswith(".json"):
+            try:
+                if json_tool(filepath):
+                    print(f"reformatted {filepath}")
+                    changed += 1
+                else:
+                    stayed += 1
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(f"error: cannot format {filepath}: {e}")
+                errored += 1
 
     def plural(count):
         if count == 1:
@@ -76,6 +67,27 @@ def json_tool_recursive(rootdir="", ignore_hidden=True):
     print(
         f"{changed} reformatted, {stayed} left unchanged, {errored} failed to reformat."
     )
+
+
+def json_tool_recursive(rootdir=".", ignore_hidden=True):
+    """
+    Recursively combs root directory for json files, rewriting them.
+    """
+    if os.path.isfile(rootdir):
+        filepaths = [rootdir]
+    else:
+        filepaths = []
+        rootdir = rootdir or os.getcwd()
+        for root, dirs, files in os.walk(rootdir):
+            dirs.sort()
+            files.sort()
+            if ignore_hidden:
+                dirs[:] = [x for x in dirs if not x.startswith(".")]
+                files[:] = [x for x in files if not x.startswith(".")]
+            for f in files:
+                filepaths.append(os.path.join(root, f))
+    
+    _inner_loop(filepaths)
 
 
 def json_tool_git(rootdir="."):
@@ -99,36 +111,22 @@ def json_tool_git(rootdir="."):
         lines = out.splitlines()
         return lines
 
-    filepaths = []
-    filepaths.extend(get_paths(["git", "ls-files", rootdir]))
+    filepaths = get_paths(["git", "ls-files", rootdir])
     filepaths.extend(
         get_paths(["git", "ls-files", rootdir, "--exclude-standard", "--others"])
     )
-
-    filepaths = [x for x in filepaths if x.lower().endswith(".json")]
-    for filepath in filepaths:
-        try:
-            if json_tool(filepath):
-                print(f"reformatted {filepath}")
-                changed += 1
-            else:
-                stayed += 1
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            print(f"error: cannot format {filepath}: {e}")
-            errored += 1
-
-    def plural(count):
-        if count == 1:
-            return f"{count} file"
-        return f"{count} files"
-
-    changed, stayed, errored = [plural(x) for x in (changed, stayed, errored)]
-    print(
-        f"{changed} reformatted, {stayed} left unchanged, {errored} failed to reformat."
-    )
+    _inner_loop(filepaths)
 
 
 if __name__ == "__main__":
-    json_tool_git()
+    parser = argparse.ArgumentParser(description='Lint JSON files.')
+    parser.add_argument('path', nargs='?', default=".", type=str, help='path to start looking from')
+    parser.add_argument('--no-git', dest='no_git', nargs='?', const=True, default=False, type=bool, help="whether to use git to locate files (default) or os.walk")
+    parser.add_argument('--hidden', nargs='?', const=True, default=False, type=bool,
+        help="whether to consider hidden files and directories. Only applies to --no-git")
+    args = parser.parse_args()
+
+    if args.no_git:
+        json_tool_recursive(args.path, not args.hidden)
+    else:
+        json_tool_git(args.path)
