@@ -41,5 +41,5 @@ log = logging.getLogger(__name__)
 # ...
 ```
 
-Exceptions are allowed when import error handling or a specific import order is required.
+Exceptions are allowed for import error handling, required import ordering, or in-class/function imports.
 
