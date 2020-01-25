@@ -1,13 +1,12 @@
 """
 Script to format all JSON in git repo.
 
-Output is meant to look similar to `black`
 Format is the same as Python's built in json.tool
     However, it overcomes some command line errors in rewriting the same file
 
 Usage: python -m scripts.format_json [path] [--no-git]
-    path - run from designated path instead of current working directory
-    --no-git - whether to not use git (default) and instead apply recursively
+    :argument path: Script will run from designated path instead of current working directory
+    :argument --no-git: Whether to not to use git/gitignore to find files (default). Otherwise recursive.
 """
 
 import argparse
@@ -38,8 +37,6 @@ def json_tool(filepath) -> bool:
             f.write(output)
         return True
     return False
-
-
 
 
 def _inner_loop(filepaths):
@@ -86,7 +83,7 @@ def json_tool_recursive(rootdir=".", ignore_hidden=True):
                 files[:] = [x for x in files if not x.startswith(".")]
             for f in files:
                 filepaths.append(os.path.join(root, f))
-    
+
     _inner_loop(filepaths)
 
 
@@ -100,7 +97,6 @@ def json_tool_git(rootdir="."):
         raise ValueError(f"rootdir must be a string, not {rootdir}")
     if not rootdir:
         rootdir = "."
-    changed, stayed, errored = 0, 0, 0
 
     def get_paths(cmd):
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -119,11 +115,27 @@ def json_tool_git(rootdir="."):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Lint JSON files.')
-    parser.add_argument('path', nargs='?', default=".", type=str, help='path to start looking from')
-    parser.add_argument('--no-git', dest='no_git', nargs='?', const=True, default=False, type=bool, help="whether to use git to locate files (default) or os.walk")
-    parser.add_argument('--hidden', nargs='?', const=True, default=False, type=bool,
-        help="whether to consider hidden files and directories. Only applies to --no-git")
+    parser = argparse.ArgumentParser(description="Lint JSON files.")
+    parser.add_argument(
+        "path", nargs="?", default=".", type=str, help="path to start looking from"
+    )
+    parser.add_argument(
+        "--no-git",
+        dest="no_git",
+        nargs="?",
+        const=True,
+        default=False,
+        type=bool,
+        help="whether to use git to locate files (default) or os.walk",
+    )
+    parser.add_argument(
+        "--hidden",
+        nargs="?",
+        const=True,
+        default=False,
+        type=bool,
+        help="whether to consider hidden files and directories. Only applies to --no-git",
+    )
     args = parser.parse_args()
 
     if args.no_git:
