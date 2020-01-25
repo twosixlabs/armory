@@ -15,7 +15,7 @@ jobs:
       before_install:
         - python --version
         - python -m pip install -r requirements.txt
-        - python -m pip install -r requirements-test.txt
+        - python -m pip install -r test-requirements.txt
       script:
         - docker build -t twosixlabs/armory:0.1 .
         - pytest -s --disable-warnings
