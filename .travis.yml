@@ -6,6 +6,7 @@ services:
 
 stages:
   - test
+  - lint
 
 jobs:
   include:
@@ -20,7 +21,7 @@ jobs:
       script:
         - docker build -t twosixlabs/armory:0.1 .
         - pytest -s --disable-warnings
-    - stage: test
+    - stage: lint
       language: python
       python: 3.7
       name: "Black Formatting"
