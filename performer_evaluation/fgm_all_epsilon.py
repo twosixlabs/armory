@@ -10,15 +10,15 @@ import shutil
 import sys
 import time
 
+import coloredlogs
 import numpy as np
+from art import attacks
 
 from armory.eval.export import Export
 from armory.webapi.data import SUPPORTED_DATASETS
 from armory.art_experimental import attacks as attacks_extended
 from armory.eval import plot
-from art import attacks
 
-import coloredlogs
 
 coloredlogs.install(level=logging.DEBUG)
 

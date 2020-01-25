@@ -1,11 +1,13 @@
 """
 Docker orchestration managers for ARMORY.
 """
-import docker
+
+import logging
 import os
 from pathlib import Path
 
-import logging
+import docker
+
 
 logger = logging.getLogger(__name__)
 

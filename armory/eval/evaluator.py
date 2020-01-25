@@ -1,16 +1,18 @@
 """
 Evaluators control launching of ARMORY evaluations.
 """
+
 import os
 import json
-import requests
+import logging
 import shutil
+
+import requests
 
 from armory.webapi.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
 from armory.utils.external_repo import download_and_extract
 
-import logging
 
 logger = logging.getLogger(__name__)
 
