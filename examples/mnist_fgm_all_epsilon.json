@@ -18,9 +18,9 @@
     "data": "mnist",
     "defense": null,
     "eval_file": "performer_evaluation.fgm_all_epsilon",
+    "external_github_repo": null,
     "model_file": "armory.baseline_models.keras.keras_mnist",
     "model_name": "MODEL",
     "model_wrapper": "ART",
-    "performer_name": "ta2.twosix",
-    "external_github_repo": null
+    "performer_name": "ta2.twosix"
 }
