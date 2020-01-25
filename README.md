@@ -1,4 +1,6 @@
 # ARMORY
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+
 Adversarial Robustness Evaluation Platform
 
 # Installation
@@ -8,11 +10,16 @@ pip install git+https://github.com/twosixlabs/armory.git
 ```
 
 # Docker
-The docker container is required for running evaluations.
+Armory is intended to be a lightweight python package which standardizes all evaluations
+inside a docker container. 
 ```
 docker build -t twosixlabs/armory:0.1 .
 ```
-Since ARMORY launches Docker containers, the package must be ran on system host.
+Since ARMORY launches Docker containers, the python package must be ran on system host.
+
+# Evaluation
+Typically evaluations are ran using the [run_evaluation script](run_evaluation.py). 
+Please [see example configuration files](examples/).
 
 # Datasets
 We have standardized datasets for Armory that subclass TensorFlow Datasets:
@@ -22,8 +29,7 @@ These datastructures support coversion to numpy arrays so they will work for all
 frameworks that we support.
 
 
-# Evaluation
-[See examples](examples/).
+
 
 # APIs
 * Data
