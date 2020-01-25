@@ -5,7 +5,6 @@ Uses binary search to quickly find optimal epsilon values per test point
 """
 
 import numpy as np
-
 from art import attacks
 
 
