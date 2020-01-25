@@ -19,7 +19,6 @@ Imports in python files should be organized into three blocks, after the docstri
 * Block 3: internal package imports
 These blocks should be separated by a single empty line. Here is an example:
 ```python
-To make it easier to identify and keep track of requirements, I propose the following style for imports:
 """
 Docstring
 """
@@ -32,7 +31,7 @@ import requests
 import numpy as np
 from art import defences
 
-from armory.webapi.data import SUPPORTED_DATASETS                                         
+from armory.webapi.common import SUPPORTED_DATASETS                                         
 from armory.docker.management import ManagementInstance                                   
 from armory.utils.external_repo import download_and_extract
 
