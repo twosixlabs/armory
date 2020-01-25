@@ -9,7 +9,8 @@ stages:
 
 jobs:
   include:
-    - language: python
+    - stage: test
+      language: python
       python: 3.7
       name: "PyTest"
       before_install:
@@ -19,3 +20,12 @@ jobs:
       script:
         - docker build -t twosixlabs/armory:0.1 .
         - pytest -s --disable-warnings
+    - stage: test
+      language: python
+      python: 3.7
+      name: "Black Formatting"
+      before_install:
+        - python --version
+        - python -m pip install black
+      script:
+        - black --check ./
