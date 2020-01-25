@@ -4,7 +4,7 @@ Script to format all JSON in git repo.
 Format is the same as Python's built in json.tool
     However, it overcomes some command line errors in rewriting the same file
 
-Usage: python -m scripts.format_json [path] [--no-git]
+Usage: python -m tools.format_json [path] [--no-git]
     :argument path: Script will run from designated path instead of current working directory
     :argument --no-git: Whether to not to use git/gitignore to find files (default). Otherwise recursive.
 """
