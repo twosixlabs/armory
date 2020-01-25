@@ -1,4 +1,5 @@
 {
+    "use_gpu": false,
     "attack": "fgsm",
     "data": "mnist",
     "defense": null,
