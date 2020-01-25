@@ -1,14 +1,18 @@
 """
 Evaluators control launching of ARMORY evaluations.
 """
+
 import os
 import json
+import logging
+import shutil
+
 import requests
 
-from armory.webapi.data import SUPPORTED_DATASETS
+from armory.webapi.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
+from armory.utils.external_repo import download_and_extract
 
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +23,9 @@ class Evaluator(object):
         self._verify_config()
         self.manager = ManagementInstance()
 
+        if self.config["external_github_repo"]:
+            self._download_external()
+
     def _verify_config(self) -> None:
         assert isinstance(self.config, dict)
 
@@ -27,6 +34,9 @@ class Evaluator(object):
                 f"Configured data {self.config['data']} not found in"
                 f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
             )
+
+    def _download_external(self):
+        download_and_extract(self.config)
 
     def run_config(self) -> None:
         tmp_dir = "tmp"
@@ -37,19 +47,17 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance()
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             logger.exception("Starting instance failed. Is Docker Daemon running?")
             return
 
         try:
             logger.info("Running Evaluation...")
-            runner.docker_container.exec_run(
-                f"python -m armory.eval.classification {tmp_config}",
-                stdout=True,
-                stderr=True,
-            )
+            runner.exec_cmd(f"python -m {self.config['eval_file']} {tmp_config}",)
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
+            if os.path.exists("external_repos"):
+                shutil.rmtree("external_repos")
             os.remove(tmp_config)
             self.manager.stop_armory_instance(runner)

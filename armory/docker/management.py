@@ -1,11 +1,13 @@
 """
 Docker orchestration managers for ARMORY.
 """
-import docker
+
+import logging
 import os
 from pathlib import Path
 
-import logging
+import docker
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +36,16 @@ class ArmoryInstance(object):
 
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
+    def exec_cmd(self, cmd: str):
+        log = self.docker_container.exec_run(cmd, stdout=True, stderr=True, stream=True)
+
+        for out in log.output:
+            print(out.decode())
+
     def __del__(self):
         if hasattr(self, "docker_container"):  # needed if there is an error in __init__
             self.docker_container.stop()
+
 
 class ManagementInstance(object):
     """

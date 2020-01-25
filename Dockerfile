@@ -18,8 +18,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH=/opt/conda/bin:$PATH
 
-RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets
-RUN /opt/conda/bin/pip install git+https://github.com/IBM/adversarial-robustness-toolbox.git@dev_1.1.0
+RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets adversarial-robustness-toolbox
 
  # FIXME: Temporarily just install TF for testing
 RUN /opt/conda/bin/pip install tensorflow==1.15
