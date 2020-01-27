@@ -21,7 +21,13 @@ class Evaluator(object):
     def __init__(self, config: dict):
         self.config = config
         self._verify_config()
-        self.manager = ManagementInstance()
+
+        runtime = "runc"
+        if "use_gpu" in self.config.keys():
+            if self.config["use_gpu"]:
+                runtime = "nvidia"
+
+        self.manager = ManagementInstance(runtime=runtime)
 
         if self.config["external_github_repo"]:
             self._download_external()
