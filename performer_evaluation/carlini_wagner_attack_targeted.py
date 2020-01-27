@@ -58,6 +58,7 @@ def evaluate_classifier(config_path: str) -> None:
             max_doubling=5,
             batch_size=1,
         )
+        attack_shrt = "L2"
     elif config["attack"] == "CarliniLInfMethod":
         attack = CarliniLInfMethod(
             classifier,
@@ -70,8 +71,11 @@ def evaluate_classifier(config_path: str) -> None:
             eps=0.3,
             batch_size=128,
         )
+        attack_shrt = "LInf"
     else:
-        raise ValueError(f"Invalid attack {config['attack']}: only CarliniL2Method and CarliniInfMethod supported")
+        raise ValueError(
+            f"Invalid attack {config['attack']}: only CarliniL2Method and CarliniInfMethod supported"
+        )
 
     num_classes = 10
     num_attacked_pts = 100
@@ -85,11 +89,22 @@ def evaluate_classifier(config_path: str) -> None:
     targeted_attack_success_rate = classifier._model.evaluate(
         x_test_adv[:num_attacked_pts], y_target[:num_attacked_pts], batch_size=64
     )
-    logger.info(
-        "Targeted attack success rate: {}%".format(
-            targeted_attack_success_rate[1] * 100
-        )
+
+    clean_accuracy = classifier._model.evaluate(
+        x_test[num_attacked_pts:], y_test[num_attacked_pts:]
     )
+
+    results = dict()
+    results["targeted_attack_success_rate"] = targeted_attack_success_rate[1] * 100
+    results["clean_input_classification_accuracy"] = clean_accuracy[1] * 100
+
+    filepath = f"outputs/carlini_wagner_attack_{attack_shrt}_targeted_output.json"
+    with open(filepath, "w") as f:
+        output_dict = {
+            "config": config,
+            "results": results,
+        }
+        json.dump(output_dict, f, sort_keys=True, indent=4)
 
 
 if __name__ == "__main__":
