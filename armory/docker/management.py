@@ -25,14 +25,20 @@ class ArmoryInstance(object):
         self.docker_client = docker.from_env()
         self.disk_location = _project_root
 
-        user_id = os.getuid()
+        container_args = {
+            "runtime": runtime,
+            "remove": True,
+            "detach": True,
+            "volumes": {self.disk_location: {"bind": "/armory", "mode": "rw"}},
+        }
+
+        # Windows docker does not require syncronizing file and directoriy permissions via uid and gid.
+        if os.name != "nt":
+            user_id = os.getuid()
+            container_args["user"] = f"{user_id}:{user_id}"
+
         self.docker_container = self.docker_client.containers.run(
-            "twosixlabs/armory:0.1",
-            runtime=runtime,
-            remove=True,
-            detach=True,
-            user=f"{user_id}:{user_id}",
-            volumes={self.disk_location: {"bind": "/armory", "mode": "rw"}},
+            "twosixlabs/armory:0.1", **container_args
         )
 
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")

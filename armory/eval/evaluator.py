@@ -59,7 +59,8 @@ class Evaluator(object):
 
         try:
             logger.info("Running Evaluation...")
-            runner.exec_cmd(f"python -m {self.config['eval_file']} {tmp_config}",)
+            unix_config_path = tmp_config.replace("\\", "/")
+            runner.exec_cmd(f"python -m {self.config['eval_file']} {unix_config_path}")
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
