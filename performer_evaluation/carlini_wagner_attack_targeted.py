@@ -2,15 +2,14 @@
 Classifier evaluation within ARMORY
 """
 
+from importlib import import_module
 import json
+import logging
 import sys
 
-from armory.webapi.data import SUPPORTED_DATASETS
 from art.attacks import CarliniL2Method, CarliniLInfMethod
-from importlib import import_module
 
-
-import logging
+from armory.webapi.data import SUPPORTED_DATASETS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
