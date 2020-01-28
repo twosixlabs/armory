@@ -189,7 +189,9 @@ def _evaluate_classifier(config: dict) -> None:
             "values": list(accuracy),
         }
         # Evaluate the ART classifier on adversarial test examples
-        logger.info(f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%")
+        logger.info(
+            f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%"
+        )
 
     # TODO: This should be moved to the Export module
     filepath = f"outputs/classifier_extended_{int(time.time())}.json"

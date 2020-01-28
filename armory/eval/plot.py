@@ -4,7 +4,8 @@ Plot output json files
 import json
 
 import logging
-logger = logging.getLogger('matplotlib')
+
+logger = logging.getLogger("matplotlib")
 logger.setLevel(logging.INFO)
 
 from matplotlib import pyplot as plt

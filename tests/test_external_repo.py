@@ -8,7 +8,7 @@ from armory.utils.external_repo import download_and_extract
 class ExternalRepoTest(unittest.TestCase):
     def test_download(self):
         # Skip test if token is unavailable
-        if os.environ.get('GITHUB_TOKEN') is None:
+        if os.environ.get("GITHUB_TOKEN") is None:
             return
 
         with open("tests/test_data/external_repo.json") as f:
