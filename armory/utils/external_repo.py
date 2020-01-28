@@ -11,7 +11,7 @@ import requests
 
 coloredlogs.install(level=logging.DEBUG)
 
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def download_and_extract(config: dict) -> None:
