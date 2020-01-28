@@ -6,6 +6,7 @@ import os
 import json
 import logging
 import shutil
+from pathlib import Path
 
 import requests
 
@@ -59,7 +60,7 @@ class Evaluator(object):
 
         try:
             logger.info("Running Evaluation...")
-            unix_config_path = tmp_config.replace("\\", "/")
+            unix_config_path = Path(tmp_config).as_posix()
             runner.exec_cmd(f"python -m {self.config['eval_file']} {unix_config_path}")
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
