@@ -1,11 +1,13 @@
 """
 Plot output json files
 """
-
 import json
 
-import matplotlib.pyplot as plt
-from matplotlib.backends import backend_pdf
+import logging
+logger = logging.getLogger('matplotlib')
+logger.setLevel(logging.INFO)
+
+from matplotlib import pyplot as plt
 
 
 def classification(
@@ -57,6 +59,5 @@ def classification(
             plt.show()
         else:
             plt.tight_layout()
-            with backend_pdf.PdfPages(output_filepath.format(norm)) as f:
-                plt.savefig(f, format="pdf")
+            plt.savefig(output_filepath.format(norm), format="pdf")
         plt.close()

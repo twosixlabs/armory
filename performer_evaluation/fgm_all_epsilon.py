@@ -10,7 +10,6 @@ import shutil
 import sys
 import time
 
-import coloredlogs
 import numpy as np
 from art import attacks
 
@@ -19,10 +18,8 @@ from armory.webapi.data import SUPPORTED_DATASETS
 from armory.art_experimental import attacks as attacks_extended
 from armory.eval import plot
 
-
-coloredlogs.install(level=logging.DEBUG)
-
-log = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 SUPPORTED_NORMS = set(["L0", "L1", "L2", "Linf"])
@@ -116,7 +113,7 @@ def _evaluate_classifier(config: dict) -> None:
     # Evaluate the ART classifier on benign test examples
     y_pred = classifier.predict(x_test)
     benign_accuracy = np.sum(np.argmax(y_pred, axis=1) == y_test) / len(y_test)
-    log.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
+    logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Generate adversarial test examples
     knowledge = config["adversarial_knowledge"]
@@ -192,7 +189,7 @@ def _evaluate_classifier(config: dict) -> None:
             "values": list(accuracy),
         }
         # Evaluate the ART classifier on adversarial test examples
-        log.info(f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%")
+        logger.info(f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%")
 
     # TODO: This should be moved to the Export module
     filepath = f"outputs/classifier_extended_{int(time.time())}.json"
@@ -204,8 +201,7 @@ def _evaluate_classifier(config: dict) -> None:
         json.dump(output_dict, f, sort_keys=True, indent=4)
     shutil.copyfile(filepath, "outputs/latest.json")
 
-    # NOTE: These generate a LOT of debug logs
-    log.info(f"Now plotting results")
+    logger.info(f"Now plotting results")
     plot.classification(filepath)
     plot.classification("outputs/latest.json")
 
