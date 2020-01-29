@@ -1,10 +1,12 @@
 # ARMORY
+[![Travis Nightly](https://travis-ci.com/twosixlabs/armory.svg?token=mDXSPweWiXNcpsV8rz4z&branch=master)](https://travis-ci.com/twosixlabs/armory)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Adversarial Robustness Evaluation Platform
+Adversarial Robustness Evaluation Test Bed
 
 # Installation
-Python 3.6+ is required.
+Python 3.5+ is required.
 ```
 pip install git+https://github.com/twosixlabs/armory.git
 ```
