@@ -85,8 +85,12 @@ class Evaluator(object):
             return
 
         try:
+            unix_config_path = Path(tmp_config).as_posix()
             logger.info("Container ready for interactive use.\n"
-                    f"*** In command line, run: docker exec -itu0 {runner.docker_container.short_id} bash\n"
+                     "*** In command line, run:\n"
+                    f"    docker exec -itu0 {runner.docker_container.short_id} bash\n"
+                    "*** To run your script in the container:\n"
+                    f"    python -m {self.config['eval_file']} {unix_config_path}\n"
                     "*** To gracefully shut down container, press: Ctrl-C")
             while True:
                 time.sleep(1)
