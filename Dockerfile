@@ -21,7 +21,7 @@ ENV PATH=/opt/conda/bin:$PATH
 RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets adversarial-robustness-toolbox
 
  # FIXME: Temporarily just install TF for testing
-RUN /opt/conda/bin/pip install tensorflow==1.15
+RUN /opt/conda/bin/pip install tensorflow==1.15 scipy
 
 WORKDIR /armory
 

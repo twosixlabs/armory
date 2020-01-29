@@ -9,12 +9,11 @@ import logging
 import shutil
 import sys
 import time
+from typing import Callable
 
 import numpy as np
-from art import attacks
 
-from armory.eval.export import Export
-from armory.webapi.data import SUPPORTED_DATASETS
+from armory.data.data import SUPPORTED_DATASETS
 from armory.art_experimental import attacks as attacks_extended
 from armory.eval import plot
 
@@ -22,10 +21,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-SUPPORTED_NORMS = set(["L0", "L1", "L2", "Linf"])
-SUPPORTED_GOALS = set(["targeted", "untargeted"])
+SUPPORTED_NORMS = {"L0", "L1", "L2", "Linf"}
+SUPPORTED_GOALS = {"targeted", "untargeted"}
 
 
+# TODO: Merge this with global parser (Issue #59)
 def validate_config(config: dict) -> None:
     """
     Validate config for use in this script.
@@ -61,12 +61,7 @@ def validate_config(config: dict) -> None:
             raise NotImplementedError("Norm L0 not tested yet")
 
 
-def _normalize_img(img_batch):
-    norm_batch = img_batch.astype(np.float32) / 255.0
-    return norm_batch
-
-
-def project_to_mnist_input(x):
+def project_to_mnist_input(x: np.ndarray, preprocessing_fn: Callable):
     """
     Map input tensor to original space
     """
@@ -78,7 +73,7 @@ def project_to_mnist_input(x):
     # clip first to deal with any infinite values that may arise
     x = (x.clip(0, 1) * 255.0).round()
     # skip the actual casting to uint8, as we are going to normalize again to float
-    return _normalize_img(x)
+    return preprocessing_fn(x)
 
 
 def _evaluate_classifier(config: dict) -> None:
@@ -89,15 +84,12 @@ def _evaluate_classifier(config: dict) -> None:
 
     classifier_module = importlib.import_module(config["model_file"])
     classifier = getattr(classifier_module, config["model_name"])
+    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     # retrofitted to work with existing code
-    train_ds, test_ds, num_train, num_test = SUPPORTED_DATASETS[config["data"]](
-        batch_size=-1, epochs=1, normalize=False,
+    x_train, y_train, x_test, y_test = SUPPORTED_DATASETS[config["data"]](
+        preprocessing_fn=preprocessing_fn
     )
-
-    x_train, y_train = train_ds
-    x_test, y_test = test_ds
-    x_train, x_test = _normalize_img(x_train), _normalize_img(x_test)
 
     classifier.fit(
         x_train, y_train, batch_size=64, nb_epochs=1,
@@ -152,7 +144,7 @@ def _evaluate_classifier(config: dict) -> None:
 
         # Map into the original input space (bound and quantize) and back to float
         # NOTE: this step makes many of the attacks fail
-        x_test_adv = project_to_mnist_input(x_test_adv)
+        x_test_adv = project_to_mnist_input(x_test_adv, preprocessing_fn)
 
         diff = (x_test_adv - x_test).reshape(x_test.shape[0], -1)
         epsilons = np.linalg.norm(diff, ord=lp_norm, axis=1)
