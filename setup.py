@@ -26,9 +26,9 @@ def get_version(rel_path):
 
 
 setup(
-    name="armory",
+    name="armory-evaluation",
     version=get_version("armory/__init__.py"),
-    description="Adversarial Robustness Evaluation Platform for DARPA GARD",
+    description="Adversarial Robustness Test Bed",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Two Six Labs",
