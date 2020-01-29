@@ -108,7 +108,7 @@ def _evaluate_classifier(config: dict) -> None:
     logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Generate adversarial test examples
-    knowledge = config["adversarial_knowledge"]
+    # knowledge = config["adversarial_knowledge"]
     # TODO: add adversarial knowledge
 
     budget = config["adversarial_budget"]
