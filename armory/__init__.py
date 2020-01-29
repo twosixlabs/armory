@@ -1,6 +1,6 @@
 """Adversarial Robustness Evaluation Platform for DARPA GARD"""
 
-## Set up logging for a library
+# Set up logging for a library
 import logging
 
 logger = logging.getLogger(__name__)

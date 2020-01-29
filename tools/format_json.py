@@ -23,7 +23,7 @@ def json_tool(filepath) -> bool:
     """
     Equivalent to json.tool utility, except returns whether changes were made
 
-    Returns whether changes were made 
+    Returns whether changes were made
     """
 
     with open(filepath) as f:

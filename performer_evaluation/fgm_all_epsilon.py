@@ -212,7 +212,7 @@ def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
     if not len(epsilons):
         raise ValueError("epsilons cannot be empty")
     total = len(epsilons)
-    epsilons = epsilons[epsilons != None].astype(float)
+    epsilons = epsilons[epsilons is not None].astype(float)
     c = collections.Counter()
     c.update(epsilons)
     unique_epsilons, counts = zip(*sorted(list(c.items())))
