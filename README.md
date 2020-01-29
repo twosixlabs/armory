@@ -6,7 +6,7 @@
 Adversarial Robustness Evaluation Test Bed
 
 # Installation
-Python 3.5+ is required.
+Python 3.6+ is required.
 ```
 pip install git+https://github.com/twosixlabs/armory.git
 ```
@@ -29,8 +29,6 @@ https://github.com/tensorflow/datasets
 
 These datastructures support coversion to numpy arrays so they will work for all 
 frameworks that we support.
-
-
 
 
 # APIs
