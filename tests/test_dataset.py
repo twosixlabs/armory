@@ -33,7 +33,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(test_y.shape[0], 150)
         for X in train_x, test_x:
             for x in X:
-                self.assertTrue(1148 <= len(x) <= 18262) 
+                self.assertTrue(1148 <= len(x) <= 18262)
 
 
 class KerasTest(unittest.TestCase):
