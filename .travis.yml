@@ -30,3 +30,4 @@ jobs:
         - python -m pip install black
       script:
         - black --check ./
+        - python -m tools.format_json --check 
