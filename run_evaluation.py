@@ -47,10 +47,22 @@ if __name__ == "__main__":
         default=logging.INFO,
         help="Debug output (logging=DEBUG)",
     )
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        dest="interactive",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to all interactive access to container",
+    )
     args = parser.parse_args()
 
     coloredlogs.install(level=args.log_level)
     with open(args.filepath) as f:
         config = json.load(f)
     rig = Evaluator(config)
-    rig.run_config()
+    if args.interactive:
+        rig.run_interactive()
+    else:
+        rig.run_config()
