@@ -72,9 +72,7 @@ def _inner_loop(filepaths, check=False):
             f"{c} would be reformatted, {s} would be left unchanged, {e} would fail to reformat."
         )
     else:
-        print(
-            f"{c} reformatted, {s} left unchanged, {e} failed to reformat."
-        )
+        print(f"{c} reformatted, {s} left unchanged, {e} failed to reformat.")
 
     return bool(changed or errored)
 
