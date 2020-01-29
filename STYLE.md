@@ -31,7 +31,7 @@ import requests
 import numpy as np
 from art import defences
 
-from armory.webapi.common import SUPPORTED_DATASETS                                         
+from armory.data.common import SUPPORTED_DATASETS                                         
 from armory.docker.management import ManagementInstance                                   
 from armory.utils.external_repo import download_and_extract
 

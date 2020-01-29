@@ -5,7 +5,7 @@ Ensure common.SUPPORTED_DATASETS (which doesn't depend on external libs)
 
 import unittest
 
-from armory.webapi import common, data
+from armory.data import data, common
 
 
 class SupportedTest(unittest.TestCase):
