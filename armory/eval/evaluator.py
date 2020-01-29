@@ -86,7 +86,7 @@ class Evaluator(object):
 
         try:
             logger.info("Container ready for interactive use.\n"
-                    f"*** In command line, run: docker exec -it {runner.docker_container.short_id} bash\n"
+                    f"*** In command line, run: docker exec -itu0 {runner.docker_container.short_id} bash\n"
                     "*** To gracefully shut down container, press: Ctrl-C")
             while True:
                 time.sleep(1)
