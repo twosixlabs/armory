@@ -126,6 +126,8 @@ def digit(
                     raise ValueError(f"{filepath} sample rate {s_r} != {sample_rate}")
                 if audio.dtype != dtype:
                     raise ValueError(f"{filepath} dtype {audio.dtype} != {dtype}")
+                if not (min_length <= len(audio) <= max_length):
+                    raise ValueError(f"{filepath} audio length {len(audio)}")
                 if zero_pad:
                     audio = np.hstack(
                         [audio, np.zeros(max_length - len(audio), dtype=np.int16)]
