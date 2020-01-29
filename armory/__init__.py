@@ -1,4 +1,4 @@
-"""Adversarial Robustness Evaluation Platform for DARPA GARD"""
+"""Adversarial Robustness Test Bed"""
 
 ## Set up logging for a library
 import logging
