@@ -30,4 +30,5 @@ jobs:
         - python -m pip install black flake8
       script:
         - black --check ./
+        - python -m tools.format_json --check 
         - flake8
