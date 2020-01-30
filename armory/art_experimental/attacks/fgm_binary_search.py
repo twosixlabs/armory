@@ -24,7 +24,7 @@ class FGMBinarySearch(attacks.FastGradientMethod):
 
     def _minimal_perturbation_binary_batch(self, batch, batch_labels, adv_batch=None):
         """
-        Iteratively compute the minimal perturbation necessary to make the 
+        Iteratively compute the minimal perturbation necessary to make the
         class prediction change, using binary search.
 
         batch - np array of features for batch (x)
@@ -116,7 +116,7 @@ class FGMBinarySearch(attacks.FastGradientMethod):
 
     def _minimal_perturbation(self, x, y) -> np.ndarray:
         """
-        Iteratively compute the minimal perturbation necessary to make the 
+        Iteratively compute the minimal perturbation necessary to make the
         class prediction change, using binary search.
         """
         adv_x = x.copy()

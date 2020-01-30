@@ -8,6 +8,7 @@ import logging
 import shutil
 from pathlib import Path
 
+import docker
 import requests
 
 from armory.data.common import SUPPORTED_DATASETS
@@ -54,8 +55,17 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance()
-        except requests.exceptions.RequestException:
-            logger.exception("Starting instance failed. Is Docker Daemon running?")
+        except requests.exceptions.RequestException as e:
+            logger.exception("Starting instance failed.")
+            if (
+                isinstance(e, docker.errors.APIError)
+                and str(e)
+                == r'400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
+                and self.config.get("use_gpu")
+            ):
+                logger.error('nvidia runtime failed. Set config "use_gpu" to false')
+            else:
+                logger.error("Is Docker Daemon running?")
             return
 
         try:

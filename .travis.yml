@@ -24,10 +24,11 @@ jobs:
     - stage: lint
       language: python
       python: 3.7
-      name: "Black Formatting"
+      name: "Lint and Formatting"
       before_install:
         - python --version
-        - python -m pip install black
+        - python -m pip install black flake8
       script:
         - black --check ./
         - python -m tools.format_json --check 
+        - flake8
