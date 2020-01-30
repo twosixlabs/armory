@@ -204,13 +204,13 @@ def imagenet_adversarial(
 
     image_label_ds = image_label_ds.batch(num_images)
     image_label_ds = tf.data.experimental.get_single_element(image_label_ds)
-    clean_x, adv_x, label = tfds.as_numpy(image_label_ds)
+    clean_x, adv_x, labels = tfds.as_numpy(image_label_ds)
 
     if preprocessing_fn:
         clean_x = preprocessing_fn(clean_x)
         adv_x = preprocessing_fn(adv_x)
 
-    return clean_x, adv_x, label
+    return clean_x, adv_x, labels
 
 
 SUPPORTED_DATASETS = {
