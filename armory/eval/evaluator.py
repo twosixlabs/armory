@@ -6,6 +6,7 @@ import os
 import json
 import logging
 import shutil
+import time
 from pathlib import Path
 
 import docker
@@ -75,6 +76,40 @@ class Evaluator(object):
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
+            if os.path.exists("external_repos"):
+                shutil.rmtree("external_repos")
+            os.remove(tmp_config)
+            self.manager.stop_armory_instance(runner)
+
+    def run_interactive(self) -> None:
+        tmp_dir = "tmp"
+        os.makedirs(tmp_dir, exist_ok=True)
+        tmp_config = os.path.join(tmp_dir, "eval-config.json")
+        with open(tmp_config, "w") as fp:
+            json.dump(self.config, fp)
+
+        try:
+            runner = self.manager.start_armory_instance()
+        except requests.exceptions.RequestException:
+            logger.exception("Starting instance failed. Is Docker Daemon running?")
+            return
+
+        try:
+            unix_config_path = Path(tmp_config).as_posix()
+            logger.info(
+                "Container ready for interactive use.\n"
+                "*** In a new terminal, run the following to attach to the container:\n"
+                f"    docker exec -itu0 {runner.docker_container.short_id} bash\n"
+                "*** To run your script in the container:\n"
+                f"    python -m {self.config['eval_file']} {unix_config_path}\n"
+                "*** To gracefully shut down container, press: Ctrl-C"
+            )
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.warning("Keyboard interrupt caught")
+        finally:
+            logger.warning("Shutting down interactive container")
             if os.path.exists("external_repos"):
                 shutil.rmtree("external_repos")
             os.remove(tmp_config)
