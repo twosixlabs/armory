@@ -12,6 +12,12 @@ It is based off of Python's [json.tool](https://docs.python.org/3/library/json.h
 with the `--sort-keys` argument, though overcomes an issue in 3.6 which made it unable to rewrite
 the file it was reading from.
 
+We use [Flake8](https://flake8.pycqa.org/) for non-formatting PEP style enforcement.
+```
+flake8
+```
+Our repo-specific Flake8 configuration is detailed in `.flake8`.
+
 # Import Style
 Imports in python files should be organized into three blocks, after the docstring, and before other code:
 * Block 1: built-in package imports
