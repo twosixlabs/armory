@@ -90,8 +90,9 @@ class KerasTest(unittest.TestCase):
 
         predictions = classifier.predict(clean_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        self.assertGreater(accuracy, 0.5)
+        self.assertGreater(accuracy, 0.65)
 
         predictions = classifier.predict(adv_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        self.assertLess(accuracy, 0.04)
+        print(accuracy)
+        self.assertLess(accuracy, 0.02)

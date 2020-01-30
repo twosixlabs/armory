@@ -210,6 +210,10 @@ def imagenet_adversarial(
         clean_x = preprocessing_fn(clean_x)
         adv_x = preprocessing_fn(adv_x)
 
+    # Temporary flip from BGR to RGB since dataset was saved in BGR.
+    clean_x = clean_x[..., ::-1]
+    adv_x = adv_x[..., ::-1]
+
     return clean_x, adv_x, labels
 
 
