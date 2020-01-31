@@ -1,6 +1,6 @@
 # ignore .git, .conda, etc.
 .*
-# ignore large dataset repos
+# ignore large directories
 datasets/
 # ignore temp directories
 outputs/
