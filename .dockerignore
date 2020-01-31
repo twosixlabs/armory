@@ -1,0 +1,7 @@
+# ignore .git, .conda, etc.
+.*
+# ignore large dataset repos
+datasets/
+# ignore temp directories
+outputs/
+tmp/
