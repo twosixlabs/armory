@@ -172,12 +172,12 @@ def imagenet_adversarial(
             "clean-image": tf.io.FixedLenFeature([], tf.string),
         }
 
-        example = tf.parse_single_example(serialized_example, ds_features)
+        example = tf.io.parse_single_example(serialized_example, ds_features)
 
-        clean_img = tf.decode_raw(example["clean-image"], tf.float32)
+        clean_img = tf.io.decode_raw(example["clean-image"], tf.float32)
         clean_img = tf.reshape(clean_img, (example["height"], example["width"], -1))
 
-        adv_img = tf.decode_raw(example["adv-image"], tf.float32)
+        adv_img = tf.io.decode_raw(example["adv-image"], tf.float32)
         adv_img = tf.reshape(adv_img, (example["height"], example["width"], -1))
 
         label = tf.cast(example["label"], tf.int32)
