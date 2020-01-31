@@ -1,6 +1,6 @@
-<div align="center">
-  <img src=".logo.png" width="50%">
-</div>
+<p align="center">
+  <img src=".logo.png" width="50%" title="ARMORY logo">
+</p>
 
 -----------------
 [![Travis Nightly](https://travis-ci.com/twosixlabs/armory.svg?token=mDXSPweWiXNcpsV8rz4z&branch=master)](https://travis-ci.com/twosixlabs/armory)
