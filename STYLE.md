@@ -18,6 +18,13 @@ flake8
 ```
 Our repo-specific Flake8 configuration is detailed in `.flake8`.
 
+### Pre-commit Hooks
+
+If you want those tools to run automatically before each commit, run:
+```bash
+cat tools/pre-commit.sh > .git/hooks/pre-commit
+```
+
 # Import Style
 Imports in python files should be organized into three blocks, after the docstring, and before other code:
 * Block 1: built-in package imports
