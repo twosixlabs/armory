@@ -2,7 +2,7 @@ import os
 import json
 import unittest
 import shutil
-from armory.utils.external_repo import download_and_extract
+from armory.utils.external_repo import download_and_extract_repo
 
 
 class ExternalRepoTest(unittest.TestCase):
@@ -16,7 +16,7 @@ class ExternalRepoTest(unittest.TestCase):
 
         repo_name = config["external_github_repo"].split("/")[-1]
 
-        download_and_extract(config)
+        download_and_extract_repo(config)
         self.assertTrue(os.path.exists(f"external_repos/{repo_name}"))
 
         shutil.rmtree("external_repos")

@@ -14,7 +14,7 @@ import requests
 
 from armory.data.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
-from armory.utils.external_repo import download_and_extract
+from armory.utils.external_repo import download_and_extract_repo
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,9 @@ class Evaluator(object):
         if self.config["external_github_repo"]:
             self._download_external()
 
+        if self.config["use_armory_private"]:
+            self._download_private()
+
     def _verify_config(self) -> None:
         assert isinstance(self.config, dict)
 
@@ -45,7 +48,11 @@ class Evaluator(object):
             )
 
     def _download_external(self):
-        download_and_extract(self.config)
+        download_and_extract_repo(self.config["external_github_repo"])
+
+    @staticmethod
+    def _download_private():
+        download_and_extract_repo("twosixlabs/armory-private")
 
     def run_config(self) -> None:
         tmp_dir = "tmp"
