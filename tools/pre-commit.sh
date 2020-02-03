@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-python -m black --check ./
+python -m black --check ./ > /dev/null 2>&1
 need_format=$?
 
 set -e
