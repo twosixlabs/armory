@@ -6,10 +6,7 @@ import logging
 import tarfile
 import shutil
 
-import coloredlogs
 import requests
-
-coloredlogs.install(level=logging.DEBUG)
 
 logger = logging.getLogger(__name__)
 
