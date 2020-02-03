@@ -35,6 +35,12 @@ class DatasetTest(unittest.TestCase):
             for x in X:
                 self.assertTrue(1148 <= len(x) <= 18262)
 
+    def test_imagenet_adv(self):
+        clean_x, adv_x, labels = SUPPORTED_DATASETS["imagenet_adversarial"]()
+        self.assertEqual(clean_x.shape[0], 1000)
+        self.assertEqual(adv_x.shape[0], 1000)
+        self.assertEqual(labels.shape[0], 1000)
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
@@ -72,3 +78,21 @@ class KerasTest(unittest.TestCase):
         predictions = classifier.predict(test_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == test_y) / len(test_y)
         self.assertGreater(accuracy, 0.4)
+
+    def test_keras_imagenet(self):
+        classifier_module = import_module("armory.baseline_models.keras.keras_resnet50")
+        classifier = getattr(classifier_module, "MODEL")
+        preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
+
+        clean_x, adv_x, labels = SUPPORTED_DATASETS["imagenet_adversarial"](
+            preprocessing_fn
+        )
+
+        predictions = classifier.predict(clean_x)
+        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
+        self.assertGreater(accuracy, 0.65)
+
+        predictions = classifier.predict(adv_x)
+        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
+        print(accuracy)
+        self.assertLess(accuracy, 0.02)

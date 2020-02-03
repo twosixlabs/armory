@@ -1,4 +1,5 @@
-import tensorflow as tf
 from art.classifiers import KerasClassifier
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 
-RESNET50 = KerasClassifier(tf.keras.applications.resnet50.ResNet50())
+preprocessing_fn = preprocess_input
+MODEL = KerasClassifier(ResNet50(weights="imagenet"))

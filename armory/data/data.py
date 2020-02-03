@@ -147,4 +147,77 @@ def digit(
     )
 
 
-SUPPORTED_DATASETS = {"mnist": mnist_data, "cifar10": cifar10_data, "digit": digit}
+def imagenet_adversarial(
+    preprocessing_fn: Callable = None, rootdir: str = "datasets/external",
+) -> (np.ndarray, np.ndarray, np.ndarray):
+    """
+    ILSVRC12 adversarial image dataset for ResNet50
+
+    ProjectedGradientDescent
+        Iterations = 10
+        Max pertibation epsilon = 8
+        Attack step size = 2
+        Targeted = True
+
+    :param rootdir: Directory where the dataset is stored
+    :return: (Adversarial_images, Labels)
+    """
+
+    def _parse(serialized_example):
+        ds_features = {
+            "height": tf.io.FixedLenFeature([], tf.int64),
+            "width": tf.io.FixedLenFeature([], tf.int64),
+            "label": tf.io.FixedLenFeature([], tf.int64),
+            "adv-image": tf.io.FixedLenFeature([], tf.string),
+            "clean-image": tf.io.FixedLenFeature([], tf.string),
+        }
+
+        example = tf.io.parse_single_example(serialized_example, ds_features)
+
+        clean_img = tf.io.decode_raw(example["clean-image"], tf.float32)
+        clean_img = tf.reshape(clean_img, (example["height"], example["width"], -1))
+
+        adv_img = tf.io.decode_raw(example["adv-image"], tf.float32)
+        adv_img = tf.reshape(adv_img, (example["height"], example["width"], -1))
+
+        label = tf.cast(example["label"], tf.int32)
+        return clean_img, adv_img, label
+
+    url = (
+        "https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/"
+        "ILSVRC12_ResNet50_PGD_adversarial_dataset_v0.1.tfrecords"
+    )
+    filename = url.split("/")[-1]
+    subdir = "imagenet_adv"
+    dirpath = os.path.join(rootdir, subdir)
+    tfrecord_fn = os.path.join(dirpath, filename)
+    num_images = 1000
+
+    os.makedirs(dirpath, exist_ok=True)
+    if not os.path.isfile(tfrecord_fn):
+        curl(url, dirpath, filename)
+
+    adv_ds = tf.data.TFRecordDataset(filenames=[tfrecord_fn])
+    image_label_ds = adv_ds.map(lambda example_proto: _parse(example_proto))
+
+    image_label_ds = image_label_ds.batch(num_images)
+    image_label_ds = tf.data.experimental.get_single_element(image_label_ds)
+    clean_x, adv_x, labels = tfds.as_numpy(image_label_ds)
+
+    if preprocessing_fn:
+        clean_x = preprocessing_fn(clean_x)
+        adv_x = preprocessing_fn(adv_x)
+
+    # Temporary flip from BGR to RGB since dataset was saved in BGR.
+    clean_x = clean_x[..., ::-1]
+    adv_x = adv_x[..., ::-1]
+
+    return clean_x, adv_x, labels
+
+
+SUPPORTED_DATASETS = {
+    "mnist": mnist_data,
+    "cifar10": cifar10_data,
+    "digit": digit,
+    "imagenet_adversarial": imagenet_adversarial,
+}
