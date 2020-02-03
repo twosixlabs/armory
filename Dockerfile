@@ -1,4 +1,4 @@
-# Armory Container v0.1.0
+# Armory Container v0.1.1
 
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
 MAINTAINER Sean Morgan <sean.morgan@twosixlabs.com>
@@ -18,7 +18,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH=/opt/conda/bin:$PATH
 
-RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets adversarial-robustness-toolbox
+RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets adversarial-robustness-toolbox boto3
 
  # FIXME: Temporarily just install TF for testing
 RUN /opt/conda/bin/pip install tensorflow==1.15 scipy

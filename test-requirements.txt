@@ -1,6 +1,7 @@
-flake8
+adversarial-robustness-toolbox
 black
+boto3
+flake8
 pytest
 tensorflow==1.15
 tensorflow-datasets
-adversarial-robustness-toolbox

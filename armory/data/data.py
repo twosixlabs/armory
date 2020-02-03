@@ -9,7 +9,7 @@ from typing import Callable
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from armory.data.utils import curl
+from armory.data.utils import curl, download_file_from_s3
 
 
 def _in_memory_dataset_tfds(
@@ -148,7 +148,7 @@ def digit(
 
 
 def imagenet_adversarial(
-    preprocessing_fn: Callable = None, rootdir: str = "datasets/external",
+    preprocessing_fn: Callable = None, dirpath: str = "datasets/external/imagenet_adv",
 ) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -159,7 +159,8 @@ def imagenet_adversarial(
         Attack step size = 2
         Targeted = True
 
-    :param rootdir: Directory where the dataset is stored
+    :param preprocessing_fn: Callable function to preprocess inputs
+    :param dirpath: Directory where the dataset is stored
     :return: (Adversarial_images, Labels)
     """
 
@@ -183,21 +184,18 @@ def imagenet_adversarial(
         label = tf.cast(example["label"], tf.int32)
         return clean_img, adv_img, label
 
-    url = (
-        "https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/"
-        "ILSVRC12_ResNet50_PGD_adversarial_dataset_v0.1.tfrecords"
-    )
-    filename = url.split("/")[-1]
-    subdir = "imagenet_adv"
-    dirpath = os.path.join(rootdir, subdir)
-    tfrecord_fn = os.path.join(dirpath, filename)
     num_images = 1000
+    filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v0.1.tfrecords"
+    output_filepath = os.path.join(dirpath, filename)
 
     os.makedirs(dirpath, exist_ok=True)
-    if not os.path.isfile(tfrecord_fn):
-        curl(url, dirpath, filename)
+    download_file_from_s3(
+        bucket_name="armory-public-data",
+        key=f"imagenet-adv/{filename}",
+        local_path=output_filepath,
+    )
 
-    adv_ds = tf.data.TFRecordDataset(filenames=[tfrecord_fn])
+    adv_ds = tf.data.TFRecordDataset(filenames=[output_filepath])
     image_label_ds = adv_ds.map(lambda example_proto: _parse(example_proto))
 
     image_label_ds = image_label_ds.batch(num_images)

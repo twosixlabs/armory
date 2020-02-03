@@ -19,7 +19,7 @@ pip install git+https://github.com/twosixlabs/armory.git
 Armory is intended to be a lightweight python package which standardizes all evaluations
 inside a docker container. 
 ```
-docker build -t twosixlabs/armory:0.1 .
+docker build -t twosixlabs/armory:0.1.1 .
 ```
 Since ARMORY launches Docker containers, the python package must be ran on system host.
 
