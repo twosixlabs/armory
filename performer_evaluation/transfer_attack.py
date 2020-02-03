@@ -33,11 +33,13 @@ def evaluate_classifier(config_path: str) -> None:
     )
 
     # Evaluate the ART classifier on benign test examples
+    logger.info("Predicting on clean dataset...")
     predictions = classifier.predict(clean_x)
     benign_accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
     logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Evaluate the ART classifier on adversarial examples from transfer attack
+    logger.info("Predicting on adversarial dataset...")
     predictions = classifier.predict(adv_x)
     adversarial_accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(
         labels

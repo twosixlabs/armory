@@ -39,15 +39,6 @@ if __name__ == "__main__":
         "filepath", metavar="<json_config>", type=str, help="json config file"
     )
     parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
-    parser.add_argument(
         "-i",
         "--interactive",
         dest="interactive",
@@ -58,7 +49,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    coloredlogs.install(level=args.log_level)
+    coloredlogs.install(level=logging.INFO)
     with open(args.filepath) as f:
         config = json.load(f)
     rig = Evaluator(config)
