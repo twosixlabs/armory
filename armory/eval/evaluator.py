@@ -31,13 +31,15 @@ class Evaluator(object):
             if self.config["use_gpu"]:
                 runtime = "nvidia"
 
+        if "external_github_repo" in self.config.keys():
+            if self.config["external_github_repo"]:
+                self._download_external()
+
+        if "use_armory_private" in self.config.keys():
+            if self.config["use_armory_private"]:
+                self._download_private()
+
         self.manager = ManagementInstance(runtime=runtime)
-
-        if self.config["external_github_repo"]:
-            self._download_external()
-
-        if self.config["use_armory_private"]:
-            self._download_private()
 
     def _verify_config(self) -> None:
         assert isinstance(self.config, dict)
