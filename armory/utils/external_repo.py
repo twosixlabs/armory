@@ -46,7 +46,7 @@ def download_and_extract_repo(external_repo_name: str) -> None:
         if os.path.isdir(final_dir_name):
             shutil.rmtree(final_dir_name)
         os.rename(f"external_repos/{dl_directory_name}", final_dir_name)
-        os.remove(tar_filename)
+        # os.remove(tar_filename)
 
     else:
         raise ConnectionError(
