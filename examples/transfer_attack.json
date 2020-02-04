@@ -1,0 +1,11 @@
+{
+    "attack": null,
+    "data": "imagenet_adversarial",
+    "defense": null,
+    "eval_file": "eval_scripts.transfer_attack",
+    "external_github_repo": null,
+    "model_file": "armory.baseline_models.keras.keras_inception_resnet_v2",
+    "model_name": "MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix"
+}

@@ -1,0 +1,11 @@
+{
+    "attack": "fgsm",
+    "data": "mnist",
+    "defense": null,
+    "eval_file": "eval_scripts.fgsm_attack",
+    "external_github_repo": "twosixlabs/armory-performer",
+    "model_file": "armory.baseline_models.keras.keras_mnist",
+    "model_name": "MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix"
+}
