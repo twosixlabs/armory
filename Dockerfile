@@ -1,7 +1,6 @@
 # Armory Container v0.1.1
 
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04
-MAINTAINER Sean Morgan <sean.morgan@twosixlabs.com>
 
 RUN apt-get -y -qq update && \
     apt-get install -y wget vim build-essential git
@@ -20,7 +19,6 @@ ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install coloredlogs docker tensorflow-datasets adversarial-robustness-toolbox boto3
 
- # FIXME: Temporarily just install TF for testing
 RUN /opt/conda/bin/pip install tensorflow==1.15 scipy
 
 WORKDIR /armory
