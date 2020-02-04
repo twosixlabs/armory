@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(self, config: dict):
+        self.extra_env_vars = None
         self.config = config
         self._verify_config()
 
@@ -50,9 +51,12 @@ class Evaluator(object):
     def _download_external(self):
         download_and_extract_repo(self.config["external_github_repo"])
 
-    @staticmethod
-    def _download_private():
+    def _download_private(self):
         download_and_extract_repo("twosixlabs/armory-private")
+        self.extra_env_vars = {
+            "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
+            "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
+        }
 
     def run_config(self) -> None:
         tmp_dir = "tmp"
@@ -62,7 +66,7 @@ class Evaluator(object):
             json.dump(self.config, fp)
 
         try:
-            runner = self.manager.start_armory_instance()
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
         except requests.exceptions.RequestException as e:
             logger.exception("Starting instance failed.")
             if (
@@ -96,7 +100,7 @@ class Evaluator(object):
             json.dump(self.config, fp)
 
         try:
-            runner = self.manager.start_armory_instance()
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
         except requests.exceptions.RequestException:
             logger.exception("Starting instance failed. Is Docker Daemon running?")
             return
