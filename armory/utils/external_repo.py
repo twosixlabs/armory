@@ -1,5 +1,5 @@
 """
-
+Utils to pull external repos for evaluation
 """
 import os
 import logging
@@ -11,29 +11,28 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def download_and_extract(config: dict) -> None:
+def download_and_extract_repo(external_repo_name: str) -> None:
     """
     Downloads and extracts an external repository for use within ARMORY.
 
     Private repositories require a `GITHUB_TOKEN` environment variable.
-    :param config: Dictionary of loaded configuration info
+    :param external_repo_name: String name of "organization/repo-name"
     """
     os.makedirs("external_repos", exist_ok=True)
     headers = {}
-    external_repo = config["external_github_repo"]
-    repo_name = external_repo.split("/")[-1]
+    repo_name = external_repo_name.split("/")[-1]
 
     if "GITHUB_TOKEN" in os.environ:
         headers = {"Authorization": f'token {os.getenv("GITHUB_TOKEN")}'}
 
     response = requests.get(
-        f"https://api.github.com/repos/{external_repo}/tarball/master",
+        f"https://api.github.com/repos/{external_repo_name}/tarball/master",
         headers=headers,
         stream=True,
     )
 
     if response.status_code == 200:
-        logging.info(f"Downloading external repo: {external_repo}")
+        logging.info(f"Downloading external repo: {external_repo_name}")
 
         tar_filename = repo_name + ".tar.gz"
         with open(tar_filename, "wb") as f:

@@ -17,7 +17,7 @@ class ArmoryInstance(object):
     This object will control a specific docker container.
     """
 
-    def __init__(self, runtime="runc"):
+    def __init__(self, runtime: str = "runc", envs: dict = None):
         _project_root = Path(__file__).parents[2]
         self.output_dir = _project_root / Path("outputs/")
         os.makedirs(self.output_dir, exist_ok=True)
@@ -36,6 +36,9 @@ class ArmoryInstance(object):
         if os.name != "nt":
             user_id = os.getuid()
             container_args["user"] = f"{user_id}:{user_id}"
+
+        if envs:
+            container_args["environment"] = envs
 
         self.docker_container = self.docker_client.containers.run(
             "twosixlabs/armory:0.1.1", **container_args
@@ -63,8 +66,8 @@ class ManagementInstance(object):
         self.instances = {}
         self.runtime = runtime
 
-    def start_armory_instance(self) -> ArmoryInstance:
-        temp_inst = ArmoryInstance(runtime=self.runtime)
+    def start_armory_instance(self, envs: dict = None) -> ArmoryInstance:
+        temp_inst = ArmoryInstance(runtime=self.runtime, envs=envs)
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst
 

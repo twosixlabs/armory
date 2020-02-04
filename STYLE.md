@@ -47,7 +47,7 @@ from art import defences
 
 from armory.data.common import SUPPORTED_DATASETS                                         
 from armory.docker.management import ManagementInstance                                   
-from armory.utils.external_repo import download_and_extract
+from armory.utils.external_repo import download_and_extract_repo
 
 
 logger = logging.getLogger(__name__)
