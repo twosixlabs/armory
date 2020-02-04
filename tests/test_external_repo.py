@@ -18,5 +18,6 @@ class ExternalRepoTest(unittest.TestCase):
 
         download_and_extract_repo(config["external_github_repo"])
         self.assertTrue(os.path.exists(f"external_repos/{repo_name}"))
+        self.assertTrue(os.path.isfile(f"external_repos/{repo_name}/README.md"))
 
         shutil.rmtree("external_repos")
