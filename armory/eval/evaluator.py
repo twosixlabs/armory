@@ -26,10 +26,10 @@ class Evaluator(object):
         self.config = config
         self._verify_config()
 
-        runtime = "runc"
+        kwargs = dict(runtime="runc")
         if "use_gpu" in self.config.keys():
             if self.config["use_gpu"]:
-                runtime = "nvidia"
+                kwargs["runtime"] = "nvidia"
 
         if "external_github_repo" in self.config.keys():
             if self.config["external_github_repo"]:
@@ -39,7 +39,10 @@ class Evaluator(object):
             if self.config["use_armory_private"]:
                 self._download_private()
 
-        self.manager = ManagementInstance(runtime=runtime)
+        name = self.config.get("docker_image:tag")
+        if name:
+            kwargs["name"] = name
+        self.manager = ManagementInstance(**kwargs)
 
     def _verify_config(self) -> None:
         assert isinstance(self.config, dict)

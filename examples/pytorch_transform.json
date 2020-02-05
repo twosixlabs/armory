@@ -1,0 +1,25 @@
+{
+    "attack": {
+        "algorithm": "fgsm",
+        "epsilon": "all",
+        "knowledge": "white",
+        "norm": "Linf"
+    },
+    "data": "imagenet_adversarial",
+    "defense": {
+        "class": "ReluToReluX",
+        "kwargs": {
+            "max_value": 2.0
+        },
+        "module": "armory.art_experimental.defences.transformer",
+        "type": "transform"
+    },
+    "docker_image:tag": "twosixlabs/armory-pytorch:0.1.1",
+    "eval_file": "eval_scripts.pytorch_transform",
+    "external_github_repo": null,
+    "model_file": "armory.baseline_models.pytorch.imagenet",
+    "model_name": "MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix",
+    "use_gpu": false
+}
