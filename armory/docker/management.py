@@ -41,7 +41,7 @@ class ArmoryInstance(object):
             container_args["environment"] = envs
 
         self.docker_container = self.docker_client.containers.run(
-            "twosixlabs/armory:0.1.1", **container_args
+            "twosixarmory/armory:0.1.1", **container_args
         )
 
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
