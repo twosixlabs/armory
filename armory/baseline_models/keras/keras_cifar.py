@@ -2,12 +2,13 @@
 
 """
 import numpy as np
-import tensorflow.keras as keras
+import tensorflow as tf
+
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
 
-keras.backend.clear_session()
+tf.compat.v1.keras.backend.clear_session()
 
 
 def preprocessing_fn(img):
@@ -15,7 +16,7 @@ def preprocessing_fn(img):
     return img
 
 
-def make_cifar10_model() -> keras.Model:
+def make_cifar10_model() -> tf.keras.Model:
     model = Sequential()
     model.add(
         Conv2D(
@@ -42,8 +43,8 @@ def make_cifar10_model() -> keras.Model:
     model.add(Dense(10, activation="softmax"))
 
     model.compile(
-        loss=keras.losses.sparse_categorical_crossentropy,
-        optimizer=keras.optimizers.Adam(lr=0.003),
+        loss=tf.keras.losses.sparse_categorical_crossentropy,
+        optimizer=tf.keras.optimizers.Adam(lr=0.003),
         metrics=["accuracy"],
     )
     return model
