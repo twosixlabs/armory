@@ -1,0 +1,22 @@
+{
+    "adversarial_budget": {
+        "norm": [
+            "L2"
+        ]
+    },
+    "adversarial_goal": "targeted",
+    "adversarial_knowledge": {
+        "data": "full",
+        "defense": "aware",
+        "model": "white"
+    },
+    "attack": "CarliniL2Method",
+    "data": "cifar10",
+    "defense": null,
+    "eval_file": "eval_scripts.carlini_wagner_attack_targeted",
+    "external_github_repo": null,
+    "model_file": "armory.baseline_models.keras.keras_cifar",
+    "model_name": "MODEL",
+    "model_wrapper": "ART",
+    "performer_name": "ta2.twosix"
+}
