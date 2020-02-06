@@ -19,7 +19,7 @@ jobs:
         - python -m pip install -r requirements.txt
         - python -m pip install -r test-requirements.txt
       script:
-        - docker build -t twosixlabs/armory:0.1.1 .
+        - docker pull twosixarmory/armory:0.1.1
         - pytest -s --disable-warnings
     - stage: lint
       language: python

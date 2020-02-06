@@ -7,16 +7,30 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-Adversarial Robustness Evaluation Test Bed
+ARMORY is a test bed for running scalable evaluations of adversarial defenses. 
+Configuration files are used to launch local or cloud instances of the ARMORY docker 
+container. Models, datasets, and evaluation scripts can be pulled from external 
+repositories or from the baselines within this project.
 
-# Installation
+# Setup
 Python 3.6+ is required.
+
+### Installation
 ```
 pip install git+https://github.com/twosixlabs/armory.git
 ```
 
-# Docker
-Docker is required to run ARMORY.
+### Docker
+Armory is intended to be a lightweight python package which standardizes all evaluations
+inside a docker container. Users are encouraged to use the available image on dockerhub:
+```
+docker pull twosixarmory/armory:0.1.1
+```
+
+However if there are issues downloading (e.g. proxy) it can be built within this repo:
+```
+docker build -t twosixarmory/armory:0.1.1 .
+```
 
 Docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
 On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
@@ -24,26 +38,14 @@ On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to chan
 * [Windows](https://docs.docker.com/docker-for-windows/)
 * [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
-Armory is intended to be a lightweight python package which standardizes all evaluations
-inside a docker container. 
-```
-docker build -t twosixlabs/armory:0.1.1 .
-```
+
+# Usage
 Since ARMORY launches Docker containers, the python package must be ran on system host.
 
-# Evaluation
 Typically evaluations are ran using the [run_evaluation script](run_evaluation.py). 
 Please [see example configuration files](examples/).
 
-# Datasets
-We have standardized datasets for Armory that subclass TensorFlow Datasets:
-https://github.com/tensorflow/datasets
 
-These datastructures support coversion to numpy arrays so they will work for all 
-frameworks that we support.
-
-
-# APIs
-* Data
-* Adversarial data
-* Kubeflow AWS
+Debugging evaluations can be performed interactively by passing `--interactive` and 
+following the instructions to attach to the container in order to use pdb or other
+interactive tools.
