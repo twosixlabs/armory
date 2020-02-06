@@ -79,7 +79,7 @@ def preprocessing_fn(X, inplace=False):
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 MODEL = PyTorchClassifier(
     resnet50(pretrained=True),
-    loss=nn.CrossEntropyLoss(),  # nn.CrossEntropyLess().cpu() ? .cuda()?
+    loss=nn.CrossEntropyLoss(),
     optimizer=None,  # This should only be needed for training
     input_shape=(224, 224, 3),
     nb_classes=1000,
