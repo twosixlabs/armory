@@ -22,8 +22,13 @@ pip install git+https://github.com/twosixlabs/armory.git
 
 ### Docker
 Armory is intended to be a lightweight python package which standardizes all evaluations
-inside a docker container. Users are encouraged to use the available image on dockerhub 
-,however if there are issues downloading (e.g. proxy) it can be built within this repo:
+inside a docker container. Users are encouraged to use the available image on dockerhub:
+```
+docker pull twosixarmory/armory:0.1.1
+```
+
+
+However if there are issues downloading (e.g. proxy) it can be built within this repo:
 ```
 docker build -t twosixarmory/armory:0.1.1 .
 ```
