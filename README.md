@@ -21,6 +21,11 @@ inside a docker container.
 ```
 docker build -t twosixlabs/armory:0.1.1 .
 ```
+To use PyTorch inside the container, build the following container after the previous command:
+```
+docker build -t twosixlabs/armory-pytorch:0.1.1 --file Dockerfile-pytorch .
+```
+
 Since ARMORY launches Docker containers, the python package must be ran on system host.
 
 # Evaluation
