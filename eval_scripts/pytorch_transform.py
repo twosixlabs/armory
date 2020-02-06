@@ -11,7 +11,7 @@ import coloredlogs
 import numpy as np
 
 from armory.data import data
-from armory.art_experimental.defences import transformer
+from armory.art_experimental import defences as defences_ext
 
 
 logger = logging.getLogger(__name__)
@@ -32,12 +32,13 @@ def _evaluate_classifier(config: dict) -> None:
     if defense:
         defense_module = importlib.import_module(defense["module"])
         DefenseClass = getattr(defense_module, defense["class"])
-        transform = DefenseClass(**defense.get("kwargs", {}))
-        if not isinstance(transform, transformer.Transformer):
+        transformer = DefenseClass(**defense.get("kwargs", {}))
+        if not isinstance(transformer, defences_ext.Transformer):
             raise ValueError(
-                f'{defense["module"]}.{"class"} is not an instance of transformer.Transformer'
+                f'{defense["module"]}.{"class"} is not an instance of '
+                f"{defences_ext.Transformer}"
             )
-        defended_classifier = transform(classifier)
+        defended_classifier = transformer.transform(classifier)
 
     # retrofitted to work with existing code
 
