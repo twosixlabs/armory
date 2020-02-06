@@ -25,11 +25,14 @@ Armory is intended to be a lightweight python package which standardizes all eva
 inside a docker container. Users are encouraged to use the available image on dockerhub:
 ```
 docker pull twosixarmory/armory:0.1.1
+docker pull twosixlabs/armory-pytorch:0.1.1
 ```
 
 However if there are issues downloading (e.g. proxy) it can be built within this repo:
 ```
 docker build -t twosixarmory/armory:0.1.1 .
+docker build -t twosixlabs/armory-pytorch:0.1.1 --file Dockerfile-pytorch .
+
 ```
 
 Docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).

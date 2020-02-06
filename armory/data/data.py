@@ -202,13 +202,14 @@ def imagenet_adversarial(
     image_label_ds = tf.data.experimental.get_single_element(image_label_ds)
     clean_x, adv_x, labels = tfds.as_numpy(image_label_ds)
 
-    if preprocessing_fn:
-        clean_x = preprocessing_fn(clean_x)
-        adv_x = preprocessing_fn(adv_x)
-
     # Temporary flip from BGR to RGB since dataset was saved in BGR.
     clean_x = clean_x[..., ::-1]
     adv_x = adv_x[..., ::-1]
+
+    # Preprocessing should always be done on RGB inputs
+    if preprocessing_fn:
+        clean_x = preprocessing_fn(clean_x)
+        adv_x = preprocessing_fn(adv_x)
 
     return clean_x, adv_x, labels
 
@@ -219,3 +220,17 @@ SUPPORTED_DATASETS = {
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
 }
+
+
+def load(name, *args, **kwargs):
+    """
+    Return dataset or raise KeyError
+
+    Convenience function, essentially.
+    """
+    dataset_function = SUPPORTED_DATASETS.get(name)
+    if dataset_function is None:
+        raise KeyError(
+            f"{name} is not in supported datasets: {SUPPORTED_DATASETS.keys()}"
+        )
+    return dataset_function(*args, **kwargs)
