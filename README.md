@@ -16,6 +16,14 @@ pip install git+https://github.com/twosixlabs/armory.git
 ```
 
 # Docker
+Docker is required to run ARMORY.
+
+Docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
+On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
+* [Mac](https://docs.docker.com/docker-for-mac/).
+* [Windows](https://docs.docker.com/docker-for-windows/)
+* [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+
 Armory is intended to be a lightweight python package which standardizes all evaluations
 inside a docker container. 
 ```
