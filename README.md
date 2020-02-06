@@ -27,11 +27,16 @@ inside a docker container. Users are encouraged to use the available image on do
 docker pull twosixarmory/armory:0.1.1
 ```
 
-
 However if there are issues downloading (e.g. proxy) it can be built within this repo:
 ```
 docker build -t twosixarmory/armory:0.1.1 .
 ```
+
+Docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
+On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
+* [Mac](https://docs.docker.com/docker-for-mac/).
+* [Windows](https://docs.docker.com/docker-for-windows/)
+* [Linux](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
 
 
 # Usage
