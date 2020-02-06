@@ -62,7 +62,7 @@ class ManagementInstance(object):
     This object will manage ArmoryInstance objects.
     """
 
-    def __init__(self, runtime="runc", name: str = "twosixlabs/armory:0.1.1"):
+    def __init__(self, runtime="runc", name: str = "twosixarmory/armory:0.1.1"):
         self.instances = {}
         self.runtime = runtime
         self.name = name
