@@ -28,7 +28,7 @@ class ReluX(activation.Hardtanh):
 
     Examples::
 
-        >>> m = ReLUM(1.5)
+        >>> m = ReluX(1.5)
         >>> input = torch.randn(2)
         >>> output = m(input)
     """
