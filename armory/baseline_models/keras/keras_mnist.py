@@ -7,8 +7,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
 
-tf.compat.v1.keras.backend.clear_session()
-
 
 def preprocessing_fn(img):
     img = img.astype(np.float32) / 255.0
