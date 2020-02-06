@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# TODO: Refactor
+# TODO: Refactor (Issue #112)
 def roc_targeted_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
     if not len(epsilons):
         raise ValueError("epsilons cannot be empty")
