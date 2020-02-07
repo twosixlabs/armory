@@ -2,6 +2,7 @@
     "attack": "fgsm",
     "data": "mnist",
     "defense": null,
+    "docker_image": "twosixarmory/tf1:0.2.0",
     "eval_file": "external_repos.armory-external.evaluations.fgm_attack",
     "external_github_repo": "twosixlabs/armory-external",
     "model_file": "armory.baseline_models.keras.keras_mnist",

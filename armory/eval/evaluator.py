@@ -11,6 +11,7 @@ from pathlib import Path
 
 import docker
 import requests
+from docker.errors import ImageNotFound
 
 from armory.data.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
@@ -27,21 +28,26 @@ class Evaluator(object):
         self._verify_config()
 
         kwargs = dict(runtime="runc")
-        if "use_gpu" in self.config.keys():
-            if self.config["use_gpu"]:
-                kwargs["runtime"] = "nvidia"
+        if self.config.get("use_gpu", None):
+            kwargs["runtime"] = "nvidia"
 
-        if "external_github_repo" in self.config.keys():
-            if self.config["external_github_repo"]:
-                self._download_external()
+        if self.config.get("external_github_repo", None):
+            self._download_external()
 
-        if "use_armory_private" in self.config.keys():
-            if self.config["use_armory_private"]:
-                self._download_private()
+        if self.config.get("use_armory_private", None):
+            self._download_private()
 
-        name = self.config.get("docker_image:tag")
-        if name:
-            kwargs["name"] = name
+        image_name = self.config.get("docker_image")
+        kwargs["image_name"] = image_name
+
+        # Download docker image on host
+        docker_client = docker.from_env()
+        try:
+            docker_client.images.get(kwargs["image_name"])
+        except ImageNotFound:
+            logger.info(f"Image {image_name} was not found. Downloading...")
+            docker_client.images.pull(image_name)
+
         self.manager = ManagementInstance(**kwargs)
 
     def _verify_config(self) -> None:
@@ -52,6 +58,9 @@ class Evaluator(object):
                 f"Configured data {self.config['data']} not found in"
                 f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
             )
+
+        if not self.config.get("docker_image"):
+            raise ValueError("Configurations must have a `docker_image` specified.")
 
     def _download_external(self):
         download_and_extract_repo(self.config["external_github_repo"])

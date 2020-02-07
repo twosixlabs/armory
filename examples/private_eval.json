@@ -3,6 +3,7 @@
     "data": "imagenet_adversarial",
     "data_file": "external_repos.armory-private.private_data.data",
     "defense": null,
+    "docker_image": "twosixarmory/tf1:0.2.0",
     "eval_file": "external_repos.armory-private.evaluations.transfer_attack",
     "external_github_repo": null,
     "model_file": "armory.baseline_models.keras.keras_inception_resnet_v2",

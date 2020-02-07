@@ -13,6 +13,7 @@
     "attack": "CarliniLInfMethod",
     "data": "cifar10",
     "defense": null,
+    "docker_image": "twosixarmory/tf1:0.2.0",
     "eval_file": "eval_scripts.carlini_wagner_attack_targeted",
     "external_github_repo": null,
     "model_file": "armory.baseline_models.keras.keras_cifar",
