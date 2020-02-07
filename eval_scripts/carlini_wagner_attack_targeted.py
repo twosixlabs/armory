@@ -11,7 +11,7 @@ import sys
 import numpy as np
 from art.attacks import CarliniL2Method, CarliniLInfMethod
 
-from armory.data.data import SUPPORTED_DATASETS
+from armory.data import data
 from armory.eval import plot
 
 
@@ -64,8 +64,8 @@ def evaluate_classifier(config_path: str) -> None:
     classifier = getattr(classifier_module, config["model_name"])
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    x_train, y_train, x_test, y_test = SUPPORTED_DATASETS[config["data"]](
-        preprocessing_fn=preprocessing_fn
+    x_train, y_train, x_test, y_test = data.load(
+        config["data"], preprocessing_fn=preprocessing_fn
     )
 
     classifier.fit(x_train, y_train, batch_size=batch_size, nb_epochs=epochs)

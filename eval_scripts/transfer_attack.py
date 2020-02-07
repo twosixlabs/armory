@@ -9,7 +9,7 @@ from importlib import import_module
 
 import numpy as np
 
-from armory.data.data import SUPPORTED_DATASETS
+from armory.data import data
 from armory.eval.export import Export
 
 
@@ -28,8 +28,8 @@ def evaluate_classifier(config_path: str) -> None:
     classifier = getattr(classifier_module, config["model_name"])
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_x, adv_x, labels = SUPPORTED_DATASETS[config["data"]](
-        preprocessing_fn=preprocessing_fn
+    clean_x, adv_x, labels = data.load(
+        config["data"], preprocessing_fn=preprocessing_fn
     )
 
     # Evaluate the ART classifier on benign test examples

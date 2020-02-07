@@ -13,7 +13,7 @@ from typing import Callable
 
 import numpy as np
 
-from armory.data.data import SUPPORTED_DATASETS
+from armory.data import data
 from armory.art_experimental import attacks as attacks_extended
 from armory.eval import plot
 
@@ -87,8 +87,8 @@ def _evaluate_classifier(config: dict) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     # retrofitted to work with existing code
-    x_train, y_train, x_test, y_test = SUPPORTED_DATASETS[config["data"]](
-        preprocessing_fn=preprocessing_fn
+    x_train, y_train, x_test, y_test = data.load(
+        config["data"], preprocessing_fn=preprocessing_fn
     )
 
     classifier.fit(

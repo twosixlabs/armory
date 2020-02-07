@@ -10,7 +10,7 @@ from importlib import import_module
 import numpy as np
 
 from art.attacks import FastGradientMethod
-from armory.data.data import SUPPORTED_DATASETS
+from armory.data import data
 from armory.eval.export import Export
 
 
@@ -32,8 +32,8 @@ def evaluate_classifier(config_path: str) -> None:
     classifier = getattr(classifier_module, config["model_name"])
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    train_x, train_y, test_x, test_y = SUPPORTED_DATASETS[config["data"]](
-        preprocessing_fn=preprocessing_fn
+    train_x, train_y, test_x, test_y = data.load(
+        config["data"], preprocessing_fn=preprocessing_fn
     )
 
     classifier.fit(train_x, train_y, batch_size=batch_size, nb_epochs=epochs)
