@@ -30,7 +30,7 @@ def dl_files():
 
 
 def main():
-    manager = ManagementInstance()
+    manager = ManagementInstance(image_name="twosixarmory/tf1:0.2.0")
     runner = manager.start_armory_instance()
     runner.exec_cmd(
         "python -c 'from tools.download_all_data import dl_files; dl_files()'"

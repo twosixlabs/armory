@@ -8,5 +8,6 @@
     "model_name": "MODEL",
     "model_wrapper": "ART",
     "performer_name": "ta2.twosix",
-    "use_gpu": true
+    "docker_image": "twosixarmory/tf1:0.2.0",
+    "use_gpu": false
 }

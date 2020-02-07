@@ -8,7 +8,6 @@ from pathlib import Path
 
 import docker
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -17,12 +16,11 @@ class ArmoryInstance(object):
     This object will control a specific docker container.
     """
 
-    def __init__(self, name, runtime: str = "runc", envs: dict = None):
+    def __init__(self, image_name, runtime: str = "runc", envs: dict = None):
+        self.docker_client = docker.from_env()
         _project_root = Path(__file__).parents[2]
         self.output_dir = _project_root / Path("outputs/")
         os.makedirs(self.output_dir, exist_ok=True)
-
-        self.docker_client = docker.from_env()
         self.disk_location = _project_root
 
         container_args = {
@@ -32,7 +30,8 @@ class ArmoryInstance(object):
             "volumes": {self.disk_location: {"bind": "/armory", "mode": "rw"}},
         }
 
-        # Windows docker does not require syncronizing file and directoriy permissions via uid and gid.
+        # Windows docker does not require syncronizing file and
+        # directoriy permissions via uid and gid.
         if os.name != "nt":
             user_id = os.getuid()
             container_args["user"] = f"{user_id}:{user_id}"
@@ -41,7 +40,7 @@ class ArmoryInstance(object):
             container_args["environment"] = envs
 
         self.docker_container = self.docker_client.containers.run(
-            name, **container_args
+            image_name, **container_args
         )
 
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
@@ -62,10 +61,10 @@ class ManagementInstance(object):
     This object will manage ArmoryInstance objects.
     """
 
-    def __init__(self, runtime="runc", name: str = "twosixarmory/armory:0.1.1"):
+    def __init__(self, image_name: str, runtime="runc"):
         self.instances = {}
         self.runtime = runtime
-        self.name = name
+        self.name = image_name
 
     def start_armory_instance(self, envs: dict = None) -> ArmoryInstance:
         temp_inst = ArmoryInstance(self.name, runtime=self.runtime, envs=envs)

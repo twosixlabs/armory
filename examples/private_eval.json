@@ -9,5 +9,6 @@
     "model_name": "MODEL",
     "model_wrapper": "ART",
     "performer_name": "ta2.twosix",
-    "use_armory_private": true
+    "use_armory_private": true,
+    "docker_image": "twosixarmory/tf1:0.2.0"
 }

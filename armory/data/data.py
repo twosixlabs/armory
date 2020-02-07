@@ -11,6 +11,8 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 from armory.data.utils import curl, download_file_from_s3
 
+os.environ['KMP_WARNINGS'] = '0'
+
 
 def _in_memory_dataset_tfds(
     dataset_name: str, preprocessing_fn: Callable
