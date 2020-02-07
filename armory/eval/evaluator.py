@@ -16,6 +16,7 @@ from docker.errors import ImageNotFound
 from armory.data.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
 from armory.utils.external_repo import download_and_extract_repo
+from armory.utils.printing import bold, red
 
 
 logger = logging.getLogger(__name__)
@@ -122,12 +123,27 @@ class Evaluator(object):
         try:
             unix_config_path = Path(tmp_config).as_posix()
             logger.info(
-                "Container ready for interactive use.\n"
-                "*** In a new terminal, run the following to attach to the container:\n"
-                f"    docker exec -itu0 {runner.docker_container.short_id} bash\n"
-                "*** To run your script in the container:\n"
-                f"    python -m {self.config['eval_file']} {unix_config_path}\n"
-                "*** To gracefully shut down container, press: Ctrl-C"
+                "\n".join(
+                    [
+                        "Container ready for interactive use.",
+                        bold(
+                            "*** In a new terminal, run the following to attach to the container:"
+                        ),
+                        bold(
+                            red(
+                                f"    docker exec -itu0 {runner.docker_container.short_id} bash"
+                            )
+                        ),
+                        bold("*** To run your script in the container:"),
+                        bold(
+                            red(
+                                f"    python -m {self.config['eval_file']} {unix_config_path}"
+                            )
+                        ),
+                        bold("*** To gracefully shut down container, press: Ctrl-C"),
+                        "",
+                    ]
+                )
             )
             while True:
                 time.sleep(1)
@@ -135,6 +151,64 @@ class Evaluator(object):
             logger.warning("Keyboard interrupt caught")
         finally:
             logger.warning("Shutting down interactive container")
+            self.manager.stop_armory_instance(runner)
+        if os.path.exists("external_repos"):
+            shutil.rmtree("external_repos")
+        os.remove(tmp_config)
+
+    def run_jupyter(self, host_port=8888) -> None:
+        container_port = 8888
+        tmp_dir = "tmp"
+        os.makedirs(tmp_dir, exist_ok=True)
+        tmp_config = os.path.join(tmp_dir, "eval-config.json")
+        with open(tmp_config, "w") as fp:
+            json.dump(self.config, fp)
+
+        try:
+            runner = self.manager.start_armory_instance(
+                envs=self.extra_env_vars, ports={container_port: host_port}
+            )
+        except requests.exceptions.RequestException as e:
+            logger.exception("Starting instance failed.")
+            if str(e).endswith(
+                f'Bind for 0.0.0.0:{host_port} failed: port is already allocated")'
+            ):
+                logger.error(
+                    f"Port {host_port} already in use. Try a different one with '--port <port>'"
+                )
+            else:
+                logger.error("Is Docker Daemon running?")
+            return
+
+        try:
+            logger.info(
+                "\n".join(
+                    [
+                        "About to launch jupyter.",
+                        bold(
+                            "*** To connect to jupyter, please open the following in a browser:"
+                        ),
+                        bold(red(f"    http://127.0.0.1:{host_port}")),
+                        bold(
+                            "*** To connect on the command line as well, in a new terminal, run:"
+                        ),
+                        bold(
+                            f"    docker exec -itu0 {runner.docker_container.short_id} bash"
+                        ),
+                        bold("*** To gracefully shut down container, press: Ctrl-C"),
+                        "",
+                        "Jupyter notebook log:",
+                    ]
+                )
+            )
+            runner.exec_cmd(
+                "jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''",
+                user="root",
+            )
+        except KeyboardInterrupt:
+            logger.warning("Keyboard interrupt caught")
+        finally:
+            logger.warning("Shutting down jupyter container")
             if os.path.exists("external_repos"):
                 shutil.rmtree("external_repos")
             os.remove(tmp_config)

@@ -71,7 +71,6 @@ def run(command_args, prog, description):
 
     class PortNumber(argparse.Action):
         def __call__(self, parser, namespace, values, option_string=None):
-            print((self.metavar,))
             if not 0 < values < 2 ** 16:
                 raise argparse.ArgumentError(self, "port numbers must be in (0, 65535]")
             setattr(namespace, self.dest, values)
@@ -92,8 +91,10 @@ def run(command_args, prog, description):
     with open(args.filepath) as f:
         config = json.load(f)
     rig = Evaluator(config)
-    if args.interactive or args.jupyter:
+    if args.interactive:
         rig.run_interactive()
+    elif args.jupyter:
+        rig.run_jupyter(host_port=args.port)
     else:
         rig.run_config()
 
