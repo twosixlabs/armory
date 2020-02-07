@@ -25,19 +25,21 @@ class Evaluator(object):
     def __init__(self, config: dict):
         self.extra_env_vars = None
         self.config = config
-        self._verify_config()
+
+        # TODO: Update this!!!
+        # self._verify_config()
 
         kwargs = dict(runtime="runc")
-        if self.config.get("use_gpu", None):
+        if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
 
-        if self.config.get("external_github_repo", None):
+        if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
 
-        if self.config.get("use_armory_private", None):
+        if self.config["sysconfig"].get("use_armory_private", None):
             self._download_private()
 
-        image_name = self.config.get("docker_image")
+        image_name = self.config["sysconfig"].get("docker_image")
         kwargs["image_name"] = image_name
 
         # Download docker image on host
@@ -97,7 +99,9 @@ class Evaluator(object):
         try:
             logger.info("Running Evaluation...")
             unix_config_path = Path(tmp_config).as_posix()
-            runner.exec_cmd(f"python -m {self.config['eval_file']} {unix_config_path}")
+            runner.exec_cmd(
+                f"python -m {self.config['evaluation']['eval_file']} {unix_config_path}"
+            )
         except KeyboardInterrupt:
             logger.warning("Evaluation interrupted by user. Stopping container.")
         finally:
@@ -126,7 +130,7 @@ class Evaluator(object):
                 "*** In a new terminal, run the following to attach to the container:\n"
                 f"    docker exec -itu0 {runner.docker_container.short_id} bash\n"
                 "*** To run your script in the container:\n"
-                f"    python -m {self.config['eval_file']} {unix_config_path}\n"
+                f"    python -m {self.config['evaluation']['eval_file']} {unix_config_path}\n"
                 "*** To gracefully shut down container, press: Ctrl-C"
             )
             while True:
