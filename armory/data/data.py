@@ -2,6 +2,7 @@
 Download and preprocess common datasets.
 """
 
+import logging
 import os
 import zipfile
 from typing import Callable
@@ -10,6 +11,9 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from armory.data.utils import curl, download_file_from_s3
+
+
+logger = logging.getLogger(__name__)
 
 
 def _in_memory_dataset_tfds(

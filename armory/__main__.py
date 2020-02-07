@@ -81,9 +81,7 @@ def download_all_datasets():
 
     manager = ManagementInstance()
     runner = manager.start_armory_instance()
-    runner.exec_cmd(
-        "python -c 'from armory.data import data; data.download_all()'" 
-    )
+    runner.exec_cmd("python -c 'from armory.data import data; data.download_all()'")
     manager.stop_armory_instance(runner)
 
 
