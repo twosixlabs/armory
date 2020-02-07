@@ -53,4 +53,10 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
+    entry_points={
+        "console_scripts": [
+            "armory = armory.__main__:main",
+            "armory-download = armory.__main__:download_all_datasets",
+        ]
+    },
 )

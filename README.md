@@ -45,7 +45,7 @@ On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to chan
 # Usage
 Since ARMORY launches Docker containers, the python package must be ran on system host.
 
-Typically evaluations are ran using the [run_evaluation script](run_evaluation.py). 
+Typically evaluations are ran using the [main module](armory/__main__.py). 
 Please [see example configuration files](examples/).
 
 
