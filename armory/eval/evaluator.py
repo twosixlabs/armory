@@ -60,9 +60,7 @@ class Evaluator(object):
             )
 
         if not self.config.get("docker_image"):
-            raise ValueError(
-                "Configurations must have a `docker_image` specified."
-            )
+            raise ValueError("Configurations must have a `docker_image` specified.")
 
     def _download_external(self):
         download_and_extract_repo(self.config["external_github_repo"])
