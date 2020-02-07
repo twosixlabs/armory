@@ -2,6 +2,7 @@
 Download and preprocess common datasets.
 """
 
+import logging
 import os
 import zipfile
 from typing import Callable
@@ -12,6 +13,9 @@ import tensorflow_datasets as tfds
 from armory.data.utils import curl, download_file_from_s3
 
 os.environ['KMP_WARNINGS'] = '0'
+
+
+logger = logging.getLogger(__name__)
 
 
 def _in_memory_dataset_tfds(
@@ -236,3 +240,16 @@ def load(name, *args, **kwargs):
             f"{name} is not in supported datasets: {SUPPORTED_DATASETS.keys()}"
         )
     return dataset_function(*args, **kwargs)
+
+
+def download_all():
+    """
+    Download all datasets to cache.
+    """
+
+    for name, func in SUPPORTED_DATASETS.items():
+        logger.info(f"Downloading (if necessary) dataset {name}")
+        try:
+            func()
+        except Exception:
+            logger.exception(f"Loading dataset {name} failed.")
