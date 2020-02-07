@@ -7,12 +7,13 @@ python run_evaluation.py examples/mnist_fgm_all_epsilon.json
 This runs an arbitrary config file. Results are output to the `outputs/` directory.
 """
 
-def main():
-    import argparse
-    import json
-    import logging
-    import sys
+import argparse
+import json
+import logging
+import sys
 
+
+def main():
     try:
         import coloredlogs
 
@@ -65,6 +66,28 @@ def main():
         rig.run_interactive()
     else:
         rig.run_config()
+
+
+def download_all_datasets():
+    """
+    Script to download all datasets and docker container for offline usage.
+
+    Running from project root:
+        python -m tools.download_all_data
+    """
+
+    import coloredlogs
+
+    from armory.docker.management import ManagementInstance
+
+    coloredlogs.install(level=logging.INFO)
+
+    manager = ManagementInstance()
+    runner = manager.start_armory_instance()
+    runner.exec_cmd(
+        "python -c 'from armory.data import data; data.download_all()'" 
+    )
+    manager.stop_armory_instance(runner)
 
 
 if __name__ == "__main__":

@@ -234,3 +234,16 @@ def load(name, *args, **kwargs):
             f"{name} is not in supported datasets: {SUPPORTED_DATASETS.keys()}"
         )
     return dataset_function(*args, **kwargs)
+
+
+def download_all():
+    """
+    Download all datasets to cache.
+    """
+
+    for name, func in SUPPORTED_DATASETS.items():
+        logger.info(f"Downloading (if necessary) dataset {name}")
+        try:
+            func()
+        except Exception:
+            logger.exception(f"Loading dataset {name} failed.")
