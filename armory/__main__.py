@@ -65,3 +65,7 @@ def main():
         rig.run_interactive()
     else:
         rig.run_config()
+
+
+if __name__ == "__main__":
+    main()
