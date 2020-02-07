@@ -2,13 +2,7 @@
     "adhoc": {
         "batch_size": 16
     },
-    "attack": {
-        "budget": null,
-        "knowledge": null,
-        "kwargs": null,
-        "module": null,
-        "name": null
-    },
+    "attack": null,
     "dataset": {
         "name": "imagenet_adversarial"
     },
