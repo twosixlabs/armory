@@ -71,9 +71,6 @@ def main():
 def download_all_datasets():
     """
     Script to download all datasets and docker container for offline usage.
-
-    Running from project root:
-        python -m tools.download_all_data
     """
 
     import coloredlogs
