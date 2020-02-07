@@ -79,7 +79,7 @@ def download_all_datasets():
 
     coloredlogs.install(level=logging.INFO)
 
-    manager = ManagementInstance()
+    manager = ManagementInstance(image_name="twosixarmory/tf1:0.2.0")
     runner = manager.start_armory_instance()
     runner.exec_cmd("python -c 'from armory.data import data; data.download_all()'")
     manager.stop_armory_instance(runner)
