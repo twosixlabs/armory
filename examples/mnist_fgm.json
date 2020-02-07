@@ -5,7 +5,7 @@
     },
     "attack": {
         "budget": null,
-        "knowlege": "white",
+        "knowledge": "white",
         "kwargs": {
             "eps": 0.2
         },
