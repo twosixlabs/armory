@@ -10,8 +10,6 @@ from importlib import import_module
 import numpy as np
 
 from armory.data import data
-from armory.eval.export import Export
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -75,7 +73,7 @@ def evaluate_classifier(config_path: str) -> None:
             "config": config,
             "results": {
                 "baseline_accuracy": str(benign_accuracy),
-                "adversarial_accuracy": str(adversarial_accuracy)
+                "adversarial_accuracy": str(adversarial_accuracy),
             },
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)

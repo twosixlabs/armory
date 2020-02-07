@@ -102,7 +102,7 @@ def evaluate_classifier(config_path: str) -> None:
             classifier=classifier,
             norm=lp_norm,
             eps=max_epsilon,
-            **attack_config["kwargs"]
+            **attack_config["kwargs"],
         )
         x_test_adv = attack.generate(x=x_test)
 
