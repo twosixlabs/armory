@@ -9,7 +9,6 @@ import logging
 import sys
 
 import numpy as np
-from art.attacks import CarliniL2Method, CarliniLInfMethod
 
 from armory.data import data
 from armory.eval import plot
@@ -51,43 +50,49 @@ def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
-    batch_size = 64
-    epochs = 3
-    num_classes = 10
-    num_attacked_pts = 100
-    seed = 123
-
     with open(config_path, "r") as fp:
         config = json.load(fp)
 
-    classifier_module = import_module(config["model_file"])
-    classifier = getattr(classifier_module, config["model_name"])
+    model_config = config["model"]
+    classifier_module = import_module(model_config["module"])
+    classifier_fn = getattr(classifier_module, model_config["name"])
+    classifier = classifier_fn(
+        model_config["model_kwargs"], model_config["wrapper_kwargs"]
+    )
+
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     x_train, y_train, x_test, y_test = data.load(
-        config["data"], preprocessing_fn=preprocessing_fn
+        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
-    classifier.fit(x_train, y_train, batch_size=batch_size, nb_epochs=epochs)
+    classifier.fit(
+        x_train,
+        y_train,
+        batch_size=config["adhoc"]["batch_size"],
+        nb_epochs=config["adhoc"]["epochs"],
+    )
 
     # Generate adversarial test examples
-    if config["attack"] == "CarliniL2Method":
-        attack = CarliniL2Method(classifier=classifier, targeted=True)
-        norm = "L2"
+    attack_config = config["attack"]
+    attack_module = import_module(attack_config["module"])
+    attack_fn = getattr(attack_module, attack_config["name"])
+
+    attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
+    norm = attack_config["budget"]["norm"][0]
+    if norm == "L2":
         lp_norm = 2
-    elif config["attack"] == "CarliniLInfMethod":
-        attack = CarliniLInfMethod(classifier, targeted=True)
-        norm = "Linf"
+    elif norm == "Linf":
         lp_norm = np.inf
     else:
         raise ValueError(
-            f"Invalid attack {config['attack']}: only CarliniL2Method and CarliniInfMethod supported"
+            f"Adversarial budget must have a norm of L2 or Linf. Found {norm} in config"
         )
 
-    y_target = (y_test + 1) % num_classes
+    y_target = (y_test + 1) % config["adhoc"]["num_classes"]
 
-    np.random.seed(seed)
-    indices = np.random.choice(x_test.shape[0], num_attacked_pts)
+    np.random.seed(config["adhoc"]["seed"])
+    indices = np.random.choice(x_test.shape[0], config["adhoc"]["num_attacked_pts"])
 
     x_test_sample = x_test[indices]
     y_test_sample = y_test[indices]

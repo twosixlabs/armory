@@ -3,18 +3,17 @@ Classifier evaluation within ARMORY
 """
 
 import collections
-import importlib
 import json
 import logging
 import shutil
 import sys
 import time
+from importlib import import_module
 from typing import Callable
 
 import numpy as np
 
 from armory.data import data
-from armory.art_experimental import attacks as attacks_extended
 from armory.eval import plot
 
 logger = logging.getLogger(__name__)
@@ -23,42 +22,6 @@ logger.setLevel(logging.DEBUG)
 
 SUPPORTED_NORMS = {"L0", "L1", "L2", "Linf"}
 SUPPORTED_GOALS = {"targeted", "untargeted"}
-
-
-# TODO: Merge this with global parser (Issue #59)
-def validate_config(config: dict) -> None:
-    """
-    Validate config for use in this script.
-    """
-    for k in (
-        "adversarial_budget",
-        "adversarial_goal",
-        "adversarial_knowledge",
-        "data",
-        "model_file",
-        "model_name",
-    ):
-        if k not in config:
-            raise ValueError(f"{k} missing from config")
-    if "epsilon" not in config["adversarial_budget"]:
-        raise ValueError('"epsilon" missing from config["adversarial_budget"]')
-    if config["adversarial_budget"]["epsilon"] != "all":
-        raise NotImplementedError("Use 'all' for epsilon for this script")
-    goal = config["adversarial_goal"]
-    if goal not in SUPPORTED_GOALS:
-        raise ValueError(f"{goal} not in supported goals {SUPPORTED_GOALS}")
-    if goal == "targeted":
-        raise NotImplementedError("targeted goal not complete")
-    if "norm" not in config["adversarial_budget"]:
-        raise ValueError(f'{k} missing from config["adversarial_budget"]')
-    norms = config["adversarial_budget"]["norm"]
-    if not isinstance(norms, list):
-        norms = [norms]
-    for norm in norms:
-        if norm not in SUPPORTED_NORMS:
-            raise ValueError(f"norm {norm} not in supported norms {SUPPORTED_NORMS}")
-        elif norm == "L0":
-            raise NotImplementedError("Norm L0 not tested yet")
 
 
 def project_to_mnist_input(x: np.ndarray, preprocessing_fn: Callable):
@@ -76,45 +39,49 @@ def project_to_mnist_input(x: np.ndarray, preprocessing_fn: Callable):
     return preprocessing_fn(x)
 
 
-def _evaluate_classifier(config: dict) -> None:
+def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classification robustness against attack.
     """
-    validate_config(config)
+    with open(config_path) as fp:
+        config = json.load(fp)
 
-    classifier_module = importlib.import_module(config["model_file"])
-    classifier = getattr(classifier_module, config["model_name"])
+    model_config = config["model"]
+    classifier_module = import_module(model_config["module"])
+    classifier_fn = getattr(classifier_module, model_config["name"])
+    classifier = classifier_fn(
+        model_config["model_kwargs"], model_config["wrapper_kwargs"]
+    )
+
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     # retrofitted to work with existing code
     x_train, y_train, x_test, y_test = data.load(
-        config["data"], preprocessing_fn=preprocessing_fn
+        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
     classifier.fit(
-        x_train, y_train, batch_size=64, nb_epochs=1,
+        x_train,
+        y_train,
+        batch_size=config["adhoc"]["batch_size"],
+        nb_epochs=config["adhoc"]["epochs"],
     )
 
-    # TODO: Add subsampling (for quick testing)
+    # Speeds up testing...
     subsample = 100
     x_test = x_test[::subsample]
     y_test = y_test[::subsample]
-
-    # TODO: Add defended model to compare against
 
     # Evaluate the ART classifier on benign test examples
     y_pred = classifier.predict(x_test)
     benign_accuracy = np.sum(np.argmax(y_pred, axis=1) == y_test) / len(y_test)
     logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
-    # Generate adversarial test examples
-    # knowledge = config["adversarial_knowledge"]
-    # TODO: add adversarial knowledge
-
-    budget = config["adversarial_budget"]
+    attack_config = config["attack"]
+    attack_module = import_module(attack_config["module"])
+    attack_fn = getattr(attack_module, attack_config["name"])
+    budget = attack_config["budget"]
     norms = budget["norm"]
-    if not isinstance(norms, list):
-        norms = [norms]
 
     results = {}
     # Assume min_value = 0
@@ -126,19 +93,16 @@ def _evaluate_classifier(config: dict) -> None:
         "L2": (2, np.sqrt(input_dim) * max_value),
         "Linf": (np.inf, max_value),
     }
-    epsilon_granularity = 1 / 40
     for norm in norms:
         lp_norm, max_epsilon = norm_map[norm]
 
         # Currently looking at untargeted attacks,
-        #     where adversary accuracy ~ 1 - benign accuracy (except incorrect benign)
-        attack = attacks_extended.FGMBinarySearch(
-            # attack = attacks.FastGradientMethod(
+        # where adversary accuracy ~ 1 - benign accuracy (except incorrect benign)
+        attack = attack_fn(
             classifier=classifier,
             norm=lp_norm,
             eps=max_epsilon,
-            eps_step=epsilon_granularity * max_epsilon,
-            minimal=True,  # find minimum epsilon
+            **attack_config["kwargs"],
         )
         x_test_adv = attack.generate(x=x_test)
 
@@ -153,8 +117,6 @@ def _evaluate_classifier(config: dict) -> None:
         min_epsilon = 0
         if (epsilons < min_epsilon).any() or (epsilons > max_epsilon).any():
             raise ValueError(f"Epsilons have values outside bounds in norm {norm}")
-        # Truncate all epsilons to within min, max bounds [0, max]
-        # epsilons = np.clip(epsilons, min_epsilon, max_epsilon)
 
         y_pred_adv = classifier.predict(x_test_adv)
 
@@ -185,7 +147,6 @@ def _evaluate_classifier(config: dict) -> None:
             f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%"
         )
 
-    # TODO: This should be moved to the Export module
     filepath = f"outputs/classifier_extended_{int(time.time())}.json"
     with open(filepath, "w") as f:
         output_dict = {
@@ -220,18 +181,6 @@ def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
         accuracy.append(accuracy[-1])  # don't assume perfect attack success
 
     return [float(x) for x in unique_epsilons], [float(x) for x in accuracy]
-
-
-def evaluate_classifier(config_path: str) -> None:
-    """
-    Evaluate a config file for classification robustness against attack.
-
-    Export values.
-    """
-    with open(config_path) as fp:
-        config = json.load(fp)
-
-    _evaluate_classifier(config)
 
 
 if __name__ == "__main__":

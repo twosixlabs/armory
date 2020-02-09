@@ -1,25 +1,35 @@
 {
-    "attack": {
-        "algorithm": "fgsm",
-        "epsilon": "all",
-        "knowledge": "white",
-        "norm": "Linf"
+    "adhoc": {
+        "batch_size": 16
     },
-    "data": "imagenet_adversarial",
+    "attack": null,
+    "dataset": {
+        "name": "imagenet_adversarial"
+    },
     "defense": {
-        "class": "ReluToReluX",
         "kwargs": {
             "max_value": 2.0
         },
         "module": "armory.art_experimental.defences.transformer",
-        "type": "transform"
+        "name": "ReluToReluX"
     },
-    "docker_image": "twosixarmory/pytorch:0.2.0",
-    "eval_file": "eval_scripts.pytorch_transform",
-    "external_github_repo": null,
-    "model_file": "armory.baseline_models.pytorch.imagenet",
-    "model_name": "MODEL",
-    "model_wrapper": "ART",
-    "performer_name": "ta2.twosix",
-    "use_gpu": false
+    "evaluation": {
+        "eval_file": "armory.eval_scripts.pytorch_transform"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {
+            "pretrained": true
+        },
+        "module": "armory.baseline_models.pytorch.imagenet",
+        "name": "get_art_model",
+        "wrapper_kwargs": {
+            "nb_classes": 1000
+        }
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.2.0",
+        "external_github_repo": null,
+        "use_gpu": false
+    }
 }

@@ -77,11 +77,13 @@ def preprocessing_fn(X, inplace=False):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-MODEL = PyTorchClassifier(
-    resnet50(pretrained=True),
-    loss=nn.CrossEntropyLoss(),
-    optimizer=None,  # This should only be needed for training
-    input_shape=(224, 224, 3),
-    nb_classes=1000,
-    preprocessing=None,
-)
+def get_art_model(model_kwargs, wrapper_kwargs):
+    model = resnet50(**model_kwargs)
+    wrapped_model = PyTorchClassifier(
+        model,
+        loss=nn.CrossEntropyLoss(),
+        optimizer=None,
+        input_shape=(224, 224, 3),
+        **wrapper_kwargs,
+    )
+    return wrapped_model
