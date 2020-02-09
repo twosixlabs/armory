@@ -246,10 +246,15 @@ def download_all():
     """
     Download all datasets to cache.
     """
-
+    errors = []
     for name, func in SUPPORTED_DATASETS.items():
         logger.info(f"Downloading (if necessary) dataset {name}")
         try:
             func()
         except Exception:
+            errors.append(name)
             logger.exception(f"Loading dataset {name} failed.")
+    if errors:
+        logger.info("All datasets downloaded successfully")
+    else:
+        logger.error(f"The following datasets failed to download: {errors}")

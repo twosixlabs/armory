@@ -11,14 +11,17 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def download_and_extract_repo(external_repo_name: str) -> None:
+DIRPATH = "external_repos"
+
+
+def download_and_extract_repo(external_repo_name: str, dirpath: str = DIRPATH) -> None:
     """
     Downloads and extracts an external repository for use within ARMORY.
 
     Private repositories require a `GITHUB_TOKEN` environment variable.
     :param external_repo_name: String name of "organization/repo-name"
     """
-    os.makedirs("external_repos", exist_ok=True)
+    os.makedirs(dirpath, exist_ok=True)
     headers = {}
     repo_name = external_repo_name.split("/")[-1]
 
@@ -39,13 +42,13 @@ def download_and_extract_repo(external_repo_name: str) -> None:
             f.write(response.raw.read())
         tar = tarfile.open(tar_filename, "r:gz")
         dl_directory_name = tar.getnames()[0]
-        tar.extractall(path="external_repos")
+        tar.extractall(path=dirpath)
 
         # Always overwrite existing repositories to keep them at HEAD
-        final_dir_name = f"external_repos/{repo_name}"
+        final_dir_name = os.path.join(dirpath, repo_name)
         if os.path.isdir(final_dir_name):
             shutil.rmtree(final_dir_name)
-        os.rename(f"external_repos/{dl_directory_name}", final_dir_name)
+        os.rename(os.path.join(dirpath, dl_directory_name), final_dir_name)
         # os.remove(tar_filename)
 
     else:

@@ -15,17 +15,23 @@ from docker.errors import ImageNotFound
 
 from armory.data.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
-from armory.utils.external_repo import download_and_extract_repo
+from armory.utils import external_repo
+from armory.utils.printing import bold, red
 
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
-    def __init__(self, config: dict):
+    def __init__(
+        self, config: dict, tmp_dir="tmp", container_config_name="eval-config.json"
+    ):
         self.extra_env_vars = None
         self.config = config
         self._verify_config()
+        self.tmp_dir = tmp_dir
+        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
+        self.unix_config_path = Path(self.tmp_config).as_posix()
 
         kwargs = dict(runtime="runc")
         if self.config.get("use_gpu", None):
@@ -63,27 +69,66 @@ class Evaluator(object):
             raise ValueError("Configurations must have a `docker_image` specified.")
 
     def _download_external(self):
-        download_and_extract_repo(self.config["external_github_repo"])
+        external_repo.download_and_extract_repo(self.config["external_github_repo"])
 
     def _download_private(self):
-        download_and_extract_repo("twosixlabs/armory-private")
+        external_repo.download_and_extract_repo("twosixlabs/armory-private")
         self.extra_env_vars = {
             "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
             "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
         }
 
-    def run_config(self) -> None:
-        tmp_dir = "tmp"
-        os.makedirs(tmp_dir, exist_ok=True)
-        tmp_config = os.path.join(tmp_dir, "eval-config.json")
-        with open(tmp_config, "w") as fp:
-            json.dump(self.config, fp)
+    def _write_tmp(self):
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        if os.path.exists(self.tmp_config):
+            logger.warning(f"Overwriting {self.tmp_config}!")
+        with open(self.tmp_config, "w") as f:
+            json.dump(self.config, f)
 
+    def _delete_tmp(self):
+        if os.path.exists(external_repo.DIRPATH):
+            try:
+                shutil.rmtree(external_repo.DIRPATH)
+            except OSError as e:
+                if not isinstance(e, FileNotFoundError):
+                    logger.exception(
+                        f"Error removing external repo {external_repo.DIRPATH}"
+                    )
         try:
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
+            os.remove(self.tmp_config)
+        except OSError as e:
+            if not isinstance(e, FileNotFoundError):
+                logger.exception(f"Error removing tmp config {self.tmp_config}")
+
+    def run(self, interactive=False, jupyter=False, host_port=8888) -> None:
+        container_port = 8888
+        self._write_tmp()
+        ports = {container_port: host_port} if jupyter else None
+        try:
+            runner = self.manager.start_armory_instance(
+                envs=self.extra_env_vars, ports=ports
+            )
+            try:
+                if jupyter:
+                    self._run_jupyter(runner, host_port=host_port)
+                elif interactive:
+                    self._run_interactive_bash(runner)
+                else:
+                    self._run_config(runner)
+            except KeyboardInterrupt:
+                logger.warning("Keyboard interrupt caught")
+            finally:
+                logger.warning("Shutting down container")
+                self.manager.stop_armory_instance(runner)
         except requests.exceptions.RequestException as e:
             logger.exception("Starting instance failed.")
-            if (
+            if str(e).endswith(
+                f'Bind for 0.0.0.0:{host_port} failed: port is already allocated")'
+            ):
+                logger.error(
+                    f"Port {host_port} already in use. Try a different one with '--port <port>'"
+                )
+            elif (
                 isinstance(e, docker.errors.APIError)
                 and str(e)
                 == r'400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
@@ -92,50 +137,43 @@ class Evaluator(object):
                 logger.error('nvidia runtime failed. Set config "use_gpu" to false')
             else:
                 logger.error("Is Docker Daemon running?")
-            return
+        self._delete_tmp()
 
-        try:
-            logger.info("Running Evaluation...")
-            unix_config_path = Path(tmp_config).as_posix()
-            runner.exec_cmd(f"python -m {self.config['eval_file']} {unix_config_path}")
-        except KeyboardInterrupt:
-            logger.warning("Evaluation interrupted by user. Stopping container.")
-        finally:
-            if os.path.exists("external_repos"):
-                shutil.rmtree("external_repos")
-            os.remove(tmp_config)
-            self.manager.stop_armory_instance(runner)
+    def _run_config(self, runner) -> None:
+        logger.info(bold(red("Running evaluation script")))
+        runner.exec_cmd(f"python -m {self.config['eval_file']} {self.unix_config_path}")
 
-    def run_interactive(self) -> None:
-        tmp_dir = "tmp"
-        os.makedirs(tmp_dir, exist_ok=True)
-        tmp_config = os.path.join(tmp_dir, "eval-config.json")
-        with open(tmp_config, "w") as fp:
-            json.dump(self.config, fp)
+    def _run_interactive_bash(self, runner) -> None:
+        lines = [
+            "Container ready for interactive use.",
+            bold(
+                "*** In a new terminal, run the following to attach to the container:"
+            ),
+            bold(red(f"    docker exec -itu0 {runner.docker_container.short_id} bash")),
+            bold("*** To run your script in the container:"),
+            bold(
+                red(f"    python -m {self.config['eval_file']} {self.unix_config_path}")
+            ),
+            bold("*** To gracefully shut down container, press: Ctrl-C"),
+            "",
+        ]
+        logger.info("\n".join(lines))
+        while True:
+            time.sleep(1)
 
-        try:
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
-        except requests.exceptions.RequestException:
-            logger.exception("Starting instance failed. Is Docker Daemon running?")
-            return
-
-        try:
-            unix_config_path = Path(tmp_config).as_posix()
-            logger.info(
-                "Container ready for interactive use.\n"
-                "*** In a new terminal, run the following to attach to the container:\n"
-                f"    docker exec -itu0 {runner.docker_container.short_id} bash\n"
-                "*** To run your script in the container:\n"
-                f"    python -m {self.config['eval_file']} {unix_config_path}\n"
-                "*** To gracefully shut down container, press: Ctrl-C"
-            )
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            logger.warning("Keyboard interrupt caught")
-        finally:
-            logger.warning("Shutting down interactive container")
-            if os.path.exists("external_repos"):
-                shutil.rmtree("external_repos")
-            os.remove(tmp_config)
-            self.manager.stop_armory_instance(runner)
+    def _run_jupyter(self, runner, host_port=8888) -> None:
+        lines = [
+            "About to launch jupyter.",
+            bold("*** To connect to jupyter, please open the following in a browser:"),
+            bold(red(f"    http://127.0.0.1:{host_port}")),
+            bold("*** To connect on the command line as well, in a new terminal, run:"),
+            bold(f"    docker exec -itu0 {runner.docker_container.short_id} bash"),
+            bold("*** To gracefully shut down container, press: Ctrl-C"),
+            "",
+            "Jupyter notebook log:",
+        ]
+        logger.info("\n".join(lines))
+        runner.exec_cmd(
+            "jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''",
+            user="root",
+        )
