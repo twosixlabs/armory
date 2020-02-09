@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
-    def __init__(self, config: dict, container_config_name="eval-config.json"):
+    def __init__(self, config_path: str, container_config_name="eval-config.json"):
         self.extra_env_vars = None
         self.config = load_config(config_path)
         self.tmp_config = os.path.join(paths.TMP, container_config_name)
