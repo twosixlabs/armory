@@ -12,7 +12,7 @@ Attack (JSON or null)
     module: String 
     name: String
     kwargs = JSON
-    knowledge: String or None
+    knowledge: String
     budget: JSON
 
 Dataset (JSON or null)
@@ -31,13 +31,13 @@ Metric (JSON or null)
     name: String
     kwargs: JSON
 
-Model
+Model (JSON or null)
     name: String
     module: String
     model_kwargs: JSON
     wrapper_kwargs: JSON
 
-SysConfig
+SysConfig (JSON)
     docker_image: String
     external_github_repo: String
     gpu

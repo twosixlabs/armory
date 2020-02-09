@@ -13,8 +13,8 @@ import docker
 import requests
 from docker.errors import ImageNotFound
 
-from armory.data.common import SUPPORTED_DATASETS
 from armory.docker.management import ManagementInstance
+from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
 
@@ -24,16 +24,13 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self, config: dict, tmp_dir="tmp", container_config_name="eval-config.json"
+        self, config_path: str, tmp_dir="tmp", container_config_name="eval-config.json"
     ):
         self.extra_env_vars = None
-        self.config = config
+        self.config = load_config(config_path)
         self.tmp_dir = tmp_dir
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
         self.unix_config_path = Path(self.tmp_config).as_posix()
-
-        # TODO: Update this!!!
-        # self._verify_config()
 
         kwargs = dict(runtime="runc")
         if self.config["sysconfig"].get("use_gpu", None):
@@ -57,18 +54,6 @@ class Evaluator(object):
             docker_client.images.pull(image_name)
 
         self.manager = ManagementInstance(**kwargs)
-
-    def _verify_config(self) -> None:
-        assert isinstance(self.config, dict)
-
-        if self.config["data"] not in SUPPORTED_DATASETS:
-            raise ValueError(
-                f"Configured data {self.config['data']} not found in"
-                f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
-            )
-
-        if not self.config.get("docker_image"):
-            raise ValueError("Configurations must have a `docker_image` specified.")
 
     def _download_external(self):
         external_repo.download_and_extract_repo(self.config["external_github_repo"])
@@ -154,7 +139,9 @@ class Evaluator(object):
             bold(red(f"    docker exec -itu0 {runner.docker_container.short_id} bash")),
             bold("*** To run your script in the container:"),
             bold(
-                red(f"    python -m {self.config['evaluation']['eval_file']} {self.unix_config_path}")
+                red(
+                    f"    python -m {self.config['evaluation']['eval_file']} {self.unix_config_path}"
+                )
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",
@@ -163,7 +150,8 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    def _run_jupyter(self, runner, host_port=8888) -> None:
+    @staticmethod
+    def _run_jupyter(runner, host_port=8888) -> None:
         lines = [
             "About to launch jupyter.",
             bold("*** To connect to jupyter, please open the following in a browser:"),

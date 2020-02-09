@@ -4,6 +4,7 @@
     "dataset": {
         "name": "imagenet_adversarial"
     },
+    "defense": null,
     "evaluation": {
         "eval_file": "armory.eval_scripts.transfer_attack"
     },
