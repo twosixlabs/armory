@@ -36,6 +36,23 @@ except ImportError as e:
     sys.exit(1)
 
 
+class PortNumber(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if not 0 < values < 2 ** 16:
+            raise argparse.ArgumentError(self, "port numbers must be in (0, 65535]")
+        setattr(namespace, self.dest, values)
+
+
+class Command(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values not in COMMANDS:
+            raise argparse.ArgumentError(
+                self,
+                f"{values} invalid.\n" f"<command> must be one of {list(COMMANDS)}",
+            )
+        setattr(namespace, self.dest, values)
+
+
 def run(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -68,13 +85,6 @@ def run(command_args, prog, description):
         default=False,
         help="Whether to set up Jupyter notebook from container",
     )
-
-    class PortNumber(argparse.Action):
-        def __call__(self, parser, namespace, values, option_string=None):
-            if not 0 < values < 2 ** 16:
-                raise argparse.ArgumentError(self, "port numbers must be in (0, 65535]")
-            setattr(namespace, self.dest, values)
-
     parser.add_argument(
         "-p",
         "--port",
@@ -91,12 +101,7 @@ def run(command_args, prog, description):
     with open(args.filepath) as f:
         config = json.load(f)
     rig = Evaluator(config)
-    if args.interactive:
-        rig.run_interactive()
-    elif args.jupyter:
-        rig.run_jupyter(host_port=args.port)
-    else:
-        rig.run_config()
+    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
 def download_all_datasets(command_args, prog, description):
@@ -135,7 +140,10 @@ def download_all_datasets(command_args, prog, description):
 PROGRAM = "armory"
 COMMANDS = {
     "run": (run, "run armory from config file"),
-    "download": (download_all_datasets, "download all datasets used by armory"),
+    "download_all_datasets": (
+        download_all_datasets,
+        "download all datasets used by armory",
+    ),
 }
 
 
@@ -166,17 +174,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
-
-    class Command(argparse.Action):
-        def __call__(self, parser, namespace, values, option_string=None):
-            if values not in COMMANDS:
-                raise argparse.ArgumentError(
-                    self,
-                    f"<command> {values} invalid.\n"
-                    f"<command> must be one of {list(COMMANDS)}",
-                )
-            setattr(namespace, self.dest, values)
-
     parser.add_argument(
         "command", metavar="<command>", type=str, help="armory command", action=Command,
     )
