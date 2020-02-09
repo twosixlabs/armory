@@ -13,7 +13,7 @@ def preprocessing_fn(img):
     return img
 
 
-def make_mnist_model() -> tf.keras.Model:
+def make_mnist_model(**kwargs) -> tf.keras.Model:
     model = Sequential()
     model.add(
         Conv2D(
@@ -47,4 +47,7 @@ def make_mnist_model() -> tf.keras.Model:
     return model
 
 
-MODEL = KerasClassifier(make_mnist_model())
+def get_art_model(model_kwargs, wrapper_kwargs):
+    model = make_mnist_model(**model_kwargs)
+    wrapped_model = KerasClassifier(model, **wrapper_kwargs)
+    return wrapped_model

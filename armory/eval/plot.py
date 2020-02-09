@@ -22,9 +22,8 @@ def classification(
         config = blob["config"]
         all_results = blob["results"]
 
-    name = config["performer_name"]
-    data = config["data"]
-    knowledge = config["adversarial_knowledge"]["model"]
+    data = config["dataset"]["name"]
+    knowledge = config["attack"]["knowledge"]
     defense = config["defense"]
 
     if output_filepath is None and not show:
@@ -33,7 +32,7 @@ def classification(
             output_filepath = output_filepath[: -len(".json")]
         output_filepath += "_{}.pdf"
 
-    main_title = f"{name}: {data} for {knowledge}-box attack with {defense} defense."
+    main_title = f"{data} for {knowledge}-box attack with {defense} defense."
     for norm, results in all_results.items():
         mapping = {
             "L0": r"$L_0$",

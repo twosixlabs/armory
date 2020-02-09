@@ -14,7 +14,7 @@ def preprocessing_fn(img):
     return img
 
 
-def make_cifar10_model() -> tf.keras.Model:
+def make_cifar_model(**kwargs) -> tf.keras.Model:
     model = Sequential()
     model.add(
         Conv2D(
@@ -48,4 +48,7 @@ def make_cifar10_model() -> tf.keras.Model:
     return model
 
 
-MODEL = KerasClassifier(make_cifar10_model())
+def get_art_model(model_kwargs, wrapper_kwargs):
+    model = make_cifar_model(**model_kwargs)
+    wrapped_model = KerasClassifier(model, **wrapper_kwargs)
+    return wrapped_model

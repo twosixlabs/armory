@@ -10,7 +10,6 @@ This runs an arbitrary config file. Results are output to the `outputs/` directo
 """
 
 import argparse
-import json
 import logging
 import sys
 
@@ -98,9 +97,7 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    with open(args.filepath) as f:
-        config = json.load(f)
-    rig = Evaluator(config)
+    rig = Evaluator(args.filepath)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 

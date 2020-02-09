@@ -1,23 +1,41 @@
 {
-    "adversarial_budget": {
-        "norm": [
-            "Linf"
-        ]
+    "adhoc": {
+        "batch_size": 64,
+        "epochs": 3,
+        "num_attacked_pts": 100,
+        "num_classes": 10,
+        "seed": 123
     },
-    "adversarial_goal": "targeted",
-    "adversarial_knowledge": {
-        "data": "full",
-        "defense": "aware",
-        "model": "white"
+    "attack": {
+        "budget": {
+            "norm": [
+                "Linf"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "targeted": true
+        },
+        "module": "art.attacks",
+        "name": "CarliniL2Method"
     },
-    "attack": "CarliniLInfMethod",
-    "data": "cifar10",
+    "dataset": {
+        "name": "cifar10"
+    },
     "defense": null,
-    "docker_image": "twosixarmory/tf1:0.2.0",
-    "eval_file": "eval_scripts.carlini_wagner_attack_targeted",
-    "external_github_repo": null,
-    "model_file": "armory.baseline_models.keras.keras_cifar",
-    "model_name": "MODEL",
-    "model_wrapper": "ART",
-    "performer_name": "ta2.twosix"
+    "evaluation": {
+        "eval_file": "armory.eval_scripts.carlini_wagner_attack_targeted"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.keras_cifar",
+        "name": "get_art_model",
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.2.0",
+        "external_github_repo": null,
+        "use_gpu": false
+    }
 }

@@ -5,4 +5,9 @@ from tensorflow.keras.applications.inception_resnet_v2 import (
 )
 
 preprocessing_fn = preprocess_input
-MODEL = KerasClassifier(InceptionResNetV2(weights="imagenet"))
+
+
+def get_art_model(model_kwargs, wrapper_kwargs):
+    model = InceptionResNetV2(**model_kwargs)
+    wrapped_model = KerasClassifier(model, **wrapper_kwargs)
+    return wrapped_model

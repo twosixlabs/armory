@@ -1,31 +1,22 @@
 {
     "adhoc": {
         "batch_size": 64,
-        "epochs": 1
+        "epochs": 3
     },
     "attack": {
-        "budget": {
-            "norm": [
-                "L1",
-                "L2",
-                "Linf"
-            ]
-        },
+        "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "eps_step": 0.025,
-            "minimal": true
+            "eps": 0.2
         },
-        "module": "armory.art_experimental.attacks",
-        "name": "FGMBinarySearch"
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
     },
     "dataset": {
         "name": "mnist"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.eval_scripts.fgm_all_epsilon"
-    },
+    "evaluation": null,
     "metric": null,
     "model": {
         "model_kwargs": {},
