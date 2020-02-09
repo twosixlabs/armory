@@ -48,7 +48,8 @@ class KerasTest(unittest.TestCase):
         epochs = 2
 
         classifier_module = import_module("armory.baseline_models.keras.keras_mnist")
-        classifier = getattr(classifier_module, "MODEL")
+        classifier_fn = getattr(classifier_module, "get_art_model")
+        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         train_x, train_y, test_x, test_y = data.load(
@@ -66,7 +67,8 @@ class KerasTest(unittest.TestCase):
         epochs = 2
 
         classifier_module = import_module("armory.baseline_models.keras.keras_cifar")
-        classifier = getattr(classifier_module, "MODEL")
+        classifier_fn = getattr(classifier_module, "get_art_model")
+        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         train_x, train_y, test_x, test_y = data.load(
@@ -81,7 +83,8 @@ class KerasTest(unittest.TestCase):
 
     def test_keras_imagenet(self):
         classifier_module = import_module("armory.baseline_models.keras.keras_resnet50")
-        classifier = getattr(classifier_module, "MODEL")
+        classifier_fn = getattr(classifier_module, "get_art_model")
+        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_x, adv_x, labels = data.load("imagenet_adversarial", preprocessing_fn)
