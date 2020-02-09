@@ -4,9 +4,11 @@ Docker orchestration managers for ARMORY.
 
 import logging
 import os
-from pathlib import Path
 
 import docker
+
+from armory import paths
+
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +22,20 @@ class ArmoryInstance(object):
         self, image_name, runtime: str = "runc", envs: dict = None, ports: dict = None
     ):
         self.docker_client = docker.from_env()
-        _project_root = Path(__file__).parents[2]
-        self.output_dir = _project_root / Path("outputs/")
-        os.makedirs(self.output_dir, exist_ok=True)
-        self.disk_location = _project_root
+        if envs is None:
+            envs = {}
+        envs["PYTHONPATH"] = envs.get("PYTHONPATH", "") + ":/armory"
 
+        os.makedirs(paths.OUTPUTS, exist_ok=True)
         container_args = {
             "runtime": runtime,
             "remove": True,
             "detach": True,
-            "volumes": {self.disk_location: {"bind": "/armory", "mode": "rw"}},
+            "volumes": {
+                paths.CWD: {"bind": "/armory", "mode": "rw"},
+                paths.PROJECT_ROOT: {"bind": "/root/armory_project", "mode": "rw"},
+                paths.USER_ARMORY: {"bind": "/root/.armory", "mode": "rw"},
+            },
         }
         if ports is not None:
             container_args["ports"] = ports

@@ -7,9 +7,11 @@ import torch
 from torch import nn
 from torchvision import models
 
+from armory import paths
+
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = "datasets/pytorch/models"
+os.environ["TORCH_HOME"] = os.path.join(paths.DATASETS, "pytorch", "models")
 
 
 def resnet50(pretrained=True):
