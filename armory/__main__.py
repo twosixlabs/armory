@@ -10,7 +10,6 @@ This runs an arbitrary config file. Results are output to the `outputs/` directo
 """
 
 import argparse
-import json
 import logging
 import sys
 
