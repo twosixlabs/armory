@@ -30,7 +30,6 @@
         "module": "armory.art_experimental.poison_detection",
         "name": "SpectralSignatureDefense"
     },
-    "docker_image": "twosixarmory/tf1:0.2.0",
     "evaluation": {
         "eval_file": "armory.eval_scripts.poisoning_attack_backdoor"
     },
