@@ -168,7 +168,7 @@ def usage():
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(usage())
         sys.exit(1)
@@ -182,3 +182,7 @@ if __name__ == "__main__":
     func, description = COMMANDS[args.command]
     prog = f"{PROGRAM} {args.command}"
     func(sys.argv[2:], prog, description)
+
+
+if __name__ == "__main__":
+    main()
