@@ -140,7 +140,7 @@ def download_all_datasets(command_args, prog, description):
 PROGRAM = "armory"
 COMMANDS = {
     "run": (run, "run armory from config file"),
-    "download_all_datasets": (
+    "download-all-datasets": (
         download_all_datasets,
         "download all datasets used by armory",
     ),
