@@ -13,8 +13,6 @@ import numpy as np
 
 from armory.eval.plot_poisoning import classification_poisoning
 from armory.data import data
-from armory.art_experimental import attacks as attacks_extended
-from armory.art_experimental import poison_detection as poison_detection_extended
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
