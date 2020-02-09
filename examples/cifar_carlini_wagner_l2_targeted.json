@@ -2,8 +2,8 @@
     "adhoc": {
         "batch_size": 64,
         "epochs": 3,
-        "num_classes": 10,
         "num_attacked_pts": 100,
+        "num_classes": 10,
         "seed": 123
     },
     "attack": {
