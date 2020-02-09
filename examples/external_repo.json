@@ -1,13 +1,34 @@
 {
-    "attack": "fgsm",
-    "data": "mnist",
+    "adhoc": {
+        "batch_size": 64,
+        "epochs": 3
+    },
+    "attack": {
+        "budget": null,
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "name": "mnist"
+    },
     "defense": null,
-    "docker_image": "twosixarmory/tf1:0.2.0",
-    "eval_file": "external_repos.armory-external.evaluations.fgm_attack",
-    "external_github_repo": "twosixlabs/armory-external",
-    "model_file": "armory.baseline_models.keras.keras_mnist",
-    "model_name": "MODEL",
-    "model_wrapper": "ART",
-    "performer_name": "ta2.twosix",
-    "use_gpu": false
+    "evaluation": {
+        "eval_file": "external_repos.armory-external.evaluations.fgm_attack"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.keras_mnist",
+        "name": "get_art_model",
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.2.0",
+        "external_github_repo": "twosixlabs/armory-external",
+        "use_gpu": false
+    }
 }
