@@ -128,7 +128,7 @@ class Evaluator(object):
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
-        runner.exec_cmd(f"python -m {self.config['eval_file']} {self.unix_config_path}")
+        runner.exec_cmd(f"python -m {self.config['evaluation']['eval_file']} {self.unix_config_path}")
 
     def _run_interactive_bash(self, runner) -> None:
         lines = [

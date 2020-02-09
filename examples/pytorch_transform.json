@@ -23,7 +23,9 @@
         },
         "module": "armory.baseline_models.pytorch.imagenet",
         "name": "get_art_model",
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "nb_classes": 1000
+        }
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.2.0",

@@ -84,7 +84,6 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         loss=nn.CrossEntropyLoss(),
         optimizer=None,
         input_shape=(224, 224, 3),
-        nb_classes=1000,
         **wrapper_kwargs,
     )
     return wrapped_model
