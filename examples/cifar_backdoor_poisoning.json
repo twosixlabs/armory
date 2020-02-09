@@ -16,8 +16,7 @@
             ]
         },
         "knowledge": "black",
-        "kwargs": {
-        },
+        "kwargs": {},
         "module": "armory.art_experimental.attacks",
         "name": "PoisoningAttackBackdoor"
     },
