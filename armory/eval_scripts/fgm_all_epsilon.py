@@ -14,7 +14,7 @@ from typing import Callable
 
 import numpy as np
 
-from armory.data import data
+from armory.data import datasets
 from armory.eval import plot
 from armory import paths
 
@@ -58,7 +58,7 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     # retrofitted to work with existing code
-    x_train, y_train, x_test, y_test = data.load(
+    x_train, y_train, x_test, y_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
