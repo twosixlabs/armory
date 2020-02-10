@@ -16,8 +16,6 @@ class ExternalRepoTest(unittest.TestCase):
         repo_name = repo.split("/")[-1]
 
         download_and_extract_repo(repo)
-        
-        
         self.assertTrue(os.path.exists(f"{paths.EXTERNAL_REPOS}/{repo_name}"))
         self.assertTrue(os.path.isfile(f"{paths.EXTERNAL_REPOS}/{repo_name}/README.md"))
 
