@@ -31,7 +31,12 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.keras_mnist",
         "name": "get_art_model",
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "clip_values": [
+                0,
+                1
+            ]
+        }
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.2.1",

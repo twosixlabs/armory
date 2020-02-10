@@ -49,7 +49,7 @@ def evaluate_classifier(config_path: str) -> None:
     defended_classifier = transformer.transform(classifier)
 
     # retrofitted to work with existing code
-
+    logger.info(f"Loading dataset {config['dataset']['name']}.")
     clean_x, adv_x, labels = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
