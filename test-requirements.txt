@@ -3,5 +3,5 @@ black
 boto3
 flake8
 pytest
-tensorflow==1.15
+tensorflow==1.15.2
 tensorflow-datasets
