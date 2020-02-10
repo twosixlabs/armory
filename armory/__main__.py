@@ -125,8 +125,8 @@ def download_all_datasets(command_args, prog, description):
             "import logging",
             "import coloredlogs",
             "coloredlogs.install(logging.INFO)",
-            "from armory.data import data",
-            "data.download_all()",
+            "from armory.data import datasets",
+            "datasets.download_all()",
         ]
     )
     runner.exec_cmd(f"python -c '{cmd}'")

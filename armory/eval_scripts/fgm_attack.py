@@ -10,7 +10,7 @@ from importlib import import_module
 
 import numpy as np
 
-from armory.data import data
+from armory.data import datasets
 from armory import paths
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    train_x, train_y, test_x, test_y = data.load(
+    train_x, train_y, test_x, test_y = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
