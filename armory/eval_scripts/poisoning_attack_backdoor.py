@@ -12,7 +12,7 @@ import time
 import numpy as np
 
 from armory.eval.plot_poisoning import classification_poisoning
-from armory.data import data
+from armory.data import datasets
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -63,7 +63,7 @@ def evaluate_classifier(config_path: str) -> None:
     classifier_fn = getattr(classifier_module, model_config["name"])
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    x_clean_train, y_clean_train, x_clean_test, y_clean_test = data.load(
+    x_clean_train, y_clean_train, x_clean_test, y_clean_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
