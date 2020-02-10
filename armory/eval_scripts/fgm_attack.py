@@ -33,10 +33,14 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
     train_x, train_y, test_x, test_y = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
+    logger.info(
+        f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+    )
     classifier.fit(
         train_x,
         train_y,
@@ -69,6 +73,7 @@ def evaluate_classifier(config_path: str) -> None:
         "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
+    logger.info("Saving json output...")
     filepath = os.path.join(paths.OUTPUTS, "evaluation-results.json")
     with open(filepath, "w") as f:
         output_dict = {
