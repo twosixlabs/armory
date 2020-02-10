@@ -43,8 +43,8 @@ Note: Since ARMORY launches Docker containers, the python package must be ran on
 As an example:
 ```
 pip install armory-testbed
-git clone https://github.com/twosixlabs/armory-external.git
-cd armory-external
+git clone https://github.com/twosixlabs/armory-example.git
+cd armory-example
 armory run example_config.json
 ```
 
