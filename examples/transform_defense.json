@@ -14,7 +14,7 @@
         "name": "ReluToReluX"
     },
     "evaluation": {
-        "eval_file": "armory.eval_scripts.pytorch_transform"
+        "eval_file": "armory.eval_scripts.transform_defense"
     },
     "metric": null,
     "model": {

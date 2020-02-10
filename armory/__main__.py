@@ -4,7 +4,7 @@ OR
 armory run <json_config>
 
 Try:
-    <json_config> = 'examples/mnist_fgm_all_epsilon.json'
+    <json_config> = 'examples/fgm_attack_binary_search.json'
 
 This runs an arbitrary config file. Results are output to the `outputs/` directory.
 """
