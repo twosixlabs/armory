@@ -123,9 +123,9 @@ def download_all_data(command_args, prog, description):
     print("Downloading all docker images....")
     docker_client = docker.from_env()
     docker_images = [
-        "twosixarmory/tf1:0.3.0",
-        "twosixarmory/tf2:0.3.0",
-        "twosixarmory/pytorch:0.3.0",
+        "twosixarmory/tf1:0.3.3",
+        "twosixarmory/tf2:0.3.3",
+        "twosixarmory/pytorch:0.3.3",
     ]
     for image in docker_images:
         try:
@@ -135,7 +135,7 @@ def download_all_data(command_args, prog, description):
             docker_client.images.pull(image)
 
     print("Downloading all datasets and model weights...")
-    manager = ManagementInstance(image_name="twosixarmory/tf1:0.3.0")
+    manager = ManagementInstance(image_name="twosixarmory/tf1:0.3.3")
     runner = manager.start_armory_instance()
     cmd = "; ".join(
         [

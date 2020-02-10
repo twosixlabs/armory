@@ -76,7 +76,7 @@ def cifar10_data(
     returns:
         train_x, train_y, test_x, test_y
     """
-    return _in_memory_dataset_tfds("cifar10:3.0.0", preprocessing_fn=preprocessing_fn)
+    return _in_memory_dataset_tfds("cifar10.3.3.0", preprocessing_fn=preprocessing_fn)
 
 
 def digit(
