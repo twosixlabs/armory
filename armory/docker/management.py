@@ -40,12 +40,6 @@ class ArmoryInstance(object):
         if ports is not None:
             container_args["ports"] = ports
 
-        # Windows docker does not require syncronizing file and
-        # directoriy permissions via uid and gid.
-        if os.name != "nt":
-            user_id = os.getuid()
-            container_args["user"] = f"{user_id}:{user_id}"
-
         if envs:
             container_args["environment"] = envs
 
