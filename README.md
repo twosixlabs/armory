@@ -17,7 +17,7 @@ Python 3.6+ is required.
 
 ## Installation
 ``` 
-pip install git+https://github.com/twosixlabs/armory.git
+pip install armory-testbed
 ```
 
 Upon installing armory, a directory will be created at `~/.armory`. This user 
