@@ -15,6 +15,7 @@ PROJECT_ROOT = Path(__file__).parents[1]
 CWD = os.getcwd()
 USER = os.path.expanduser("~")
 USER_ARMORY = os.path.join(USER, ".armory")
+USER_KERAS = os.path.join(USER, ".keras")
 ARMORY_CONFIG = os.path.join(USER_ARMORY, "config.json")
 if os.path.exists(ARMORY_CONFIG):
     try:
