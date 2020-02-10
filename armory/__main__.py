@@ -118,7 +118,7 @@ def download_all_data(command_args, prog, description):
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
-    manager = ManagementInstance(image_name="twosixarmory/tf1:0.2.1")
+    manager = ManagementInstance(image_name="twosixarmory/tf1:0.3.0")
     runner = manager.start_armory_instance()
     cmd = "; ".join(
         [
