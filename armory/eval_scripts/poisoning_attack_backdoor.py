@@ -65,7 +65,7 @@ def evaluate_classifier(config_path: str) -> None:
     classifier_fn = getattr(classifier_module, model_config["name"])
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    logger.info(f"Loading dataset {config['dataset']['name']}.")
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
     x_clean_train, y_clean_train, x_clean_test, y_clean_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
@@ -98,7 +98,7 @@ def evaluate_classifier(config_path: str) -> None:
             model_config["model_kwargs"], model_config["wrapper_kwargs"]
         )
         logger.info(
-            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}"
+            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
         )
         classifier.fit(
             x_clean_train, y_clean_train, batch_size=batch_size, nb_epochs=epochs
@@ -132,7 +132,7 @@ def evaluate_classifier(config_path: str) -> None:
             is_poison, x_poison, y_poison = attack.generate(
                 x_clean_train, y_clean_train
             )
-            logger.info(f"Fitting poisoned model with poison fraction {frac_poison}.")
+            logger.info(f"Fitting poisoned model with poison fraction {frac_poison}...")
             classifier.fit(x_poison, y_poison, batch_size=batch_size, nb_epochs=epochs)
 
             x_test_targeted = x_clean_test[y_clean_test == source_class]
@@ -169,7 +169,7 @@ def evaluate_classifier(config_path: str) -> None:
 
             logger.info(
                 f"Fitting poisoned model with poisons filtered by defense {config['defense']['name']} "
-                f"with poison fraction {frac_poison}:"
+                f"with poison fraction {frac_poison}..."
             )
             classifier_defended.fit(
                 x_poison[indices_to_keep == 1],
@@ -206,7 +206,7 @@ def evaluate_classifier(config_path: str) -> None:
         logger.info(f"Trial {trial+1}/{n_trials} completed.")
 
     summarized_metrics = summarize_metrics(raw_metrics)
-    logger.info("Saving json output.")
+    logger.info("Saving json output...")
     filepath = os.path.join(
         paths.OUTPUTS, f"backdoor_performance_{int(time.time())}.json"
     )
