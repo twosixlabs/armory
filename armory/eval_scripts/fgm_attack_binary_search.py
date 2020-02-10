@@ -57,11 +57,14 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    # retrofitted to work with existing code
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
     x_train, y_train, x_test, y_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
+    logger.info(
+        f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+    )
     classifier.fit(
         x_train,
         y_train,
@@ -106,6 +109,7 @@ def evaluate_classifier(config_path: str) -> None:
             eps=max_epsilon,
             **attack_config["kwargs"],
         )
+        logger.info(f"Generating adversarial examples for norm {norm}...")
         x_test_adv = attack.generate(x=x_test)
 
         # Map into the original input space (bound and quantize) and back to float
@@ -149,6 +153,7 @@ def evaluate_classifier(config_path: str) -> None:
             f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%"
         )
 
+    logger.info("Saving json output...")
     filepath = os.path.join(
         paths.OUTPUTS, f"classifier_extended_{int(time.time())}.json"
     )
@@ -160,7 +165,7 @@ def evaluate_classifier(config_path: str) -> None:
         json.dump(output_dict, f, sort_keys=True, indent=4)
     shutil.copyfile(filepath, os.path.join(paths.OUTPUTS, "latest.json"))
 
-    logger.info(f"Now plotting results")
+    logger.info(f"Now plotting results...")
     plot.classification(filepath)
     plot.classification(os.path.join(paths.OUTPUTS, "latest.json"))
 

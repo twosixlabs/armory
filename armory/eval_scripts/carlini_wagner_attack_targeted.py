@@ -64,10 +64,14 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
     x_train, y_train, x_test, y_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
+    logger.info(
+        f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+    )
     classifier.fit(
         x_train,
         y_train,
@@ -100,6 +104,7 @@ def evaluate_classifier(config_path: str) -> None:
     y_test_sample = y_test[indices]
     y_target_sample = y_target[indices]
 
+    logger.info("Generating adversarial examples...")
     x_test_adv = attack.generate(x=x_test_sample, y=y_target_sample)
 
     diff = (x_test_adv - x_test_sample).reshape(x_test_adv.shape[0], -1)
@@ -146,6 +151,7 @@ def evaluate_classifier(config_path: str) -> None:
         f"Finished attacking on norm {norm}. Attack success: {targeted_attack_success_rate * 100}%"
     )
 
+    logger.info("Saving json output...")
     filepath = os.path.join(
         paths.OUTPUTS, f"carlini_wagner_attack_{norm}_targeted_output.json"
     )
@@ -155,6 +161,7 @@ def evaluate_classifier(config_path: str) -> None:
             "results": results,
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
+    logger.info("Plotting results...")
     plot.classification(filepath)
 
 

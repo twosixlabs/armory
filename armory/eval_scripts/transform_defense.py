@@ -49,13 +49,13 @@ def evaluate_classifier(config_path: str) -> None:
     defended_classifier = transformer.transform(classifier)
 
     # retrofitted to work with existing code
-
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
     clean_x, adv_x, labels = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
     logger.debug(f"Original model:\n{classifier}")
-    logger.info("Predicting on clean dataset")
+    logger.info("Predicting on clean dataset...")
     clean_y_pred = classifier.predict(clean_x, batch_size=batch_size)
     clean_accuracy = np.sum(np.argmax(clean_y_pred, axis=1) == labels) / len(labels)
     logger.info(f"Accuracy on benign test examples: {clean_accuracy * 100}%")
