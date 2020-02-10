@@ -20,13 +20,6 @@ Python 3.6+ is required.
 pip install git+https://github.com/twosixlabs/armory.git
 ```
 
-### Usage
-```
-pip install armory-testbed
-armory run examples/
-
-```
-
 ### Docker
 Armory is intended to be a lightweight python package which standardizes all evaluations
 inside a docker container. Users are encouraged to use the available image on dockerhub:
