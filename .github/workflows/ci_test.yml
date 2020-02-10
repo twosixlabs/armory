@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - master
-
+jobs:
   pytest:
     name: PyTest
     runs-on: ubuntu-18.04
@@ -17,11 +17,13 @@ on:
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
-      - name: download docker image
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run python tests
         run: |
-          docker pull twosixarmory/armory:0.2.1
-          python -m pip install -r requirements.txt
-          python -m pip install -r test-requirements.txt
+          docker pull twosixarmory/tf1:0.2.1
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
           pytest -s --disable-warnings
   flake8-test:
     name: Flake8
