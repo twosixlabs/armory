@@ -1,0 +1,47 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  pytest:
+    name: PyTest
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run python tests
+        run: |
+          docker pull twosixarmory/tf1:0.2.1
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pytest -s --disable-warnings
+  flake8-test:
+    name: Flake8
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+      - name: install flake8
+        run: pip install flake8
+      - name: Run flake8
+        run: flake8
+  black-test:
+    name: Black code format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+      - name: install black
+        run: pip install black
+      - name: Ensure contributor used ("black ./") before commit
+        run: black --check ./

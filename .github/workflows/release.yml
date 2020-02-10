@@ -1,0 +1,47 @@
+name: armory-release
+
+on:
+  release:
+    tags:
+      - v*
+
+jobs:
+  release-test:
+    name: Test release on Ubuntu
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }
+      - name: Release test Ubuntu
+        run: |
+          docker pull twosixarmory/armory:0.2.1
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -r test-requirements.txt
+          pytest -s --disable-warnings
+
+  release-wheel:
+    name: Build release wheel
+    needs: [release-test]
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }
+      - name: Build manylinux2010 wheels
+        run: |
+          pip install wheel
+          python setup.py bdist_wheel
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_token }}
