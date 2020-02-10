@@ -12,7 +12,6 @@ from botocore.client import Config
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def download_file_from_s3(bucket_name: str, key: str, local_path: str):
