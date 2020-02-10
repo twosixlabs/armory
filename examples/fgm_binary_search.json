@@ -24,7 +24,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory.eval_scripts.fgm_all_epsilon"
+        "eval_file": "armory.eval_scripts.fgm_attack_binary_search"
     },
     "metric": null,
     "model": {
