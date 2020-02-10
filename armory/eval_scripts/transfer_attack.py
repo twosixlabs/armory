@@ -3,13 +3,15 @@ Classifier evaluation within ARMORY
 """
 
 import json
+import os
 import sys
 import logging
 from importlib import import_module
 
 import numpy as np
 
-from armory.data import data
+from armory import paths
+from armory.data import datasets
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,7 +33,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_x, adv_x, labels = data.load(
+    clean_x, adv_x, labels = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
@@ -51,7 +53,7 @@ def evaluate_classifier(config_path: str) -> None:
         "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
-    filepath = "outputs/evaluation-results.json"
+    filepath = os.path.join(paths.OUTPUTS, "evaluation-results.json")
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,

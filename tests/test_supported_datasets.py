@@ -5,7 +5,7 @@ Ensure common.SUPPORTED_DATASETS (which doesn't depend on external libs)
 
 import unittest
 
-from armory.data import data, common
+from armory.data import datasets, common
 
 
 class SupportedTest(unittest.TestCase):
@@ -13,10 +13,10 @@ class SupportedTest(unittest.TestCase):
         for k in common.SUPPORTED_DATASETS:
             self.assertIn(
                 k,
-                data.SUPPORTED_DATASETS,
+                datasets.SUPPORTED_DATASETS,
                 f"{k} in common.SUPPORTED_DATASETS but not data.SUPPORTED_DATASETS",
             )
-        for k in data.SUPPORTED_DATASETS:
+        for k in datasets.SUPPORTED_DATASETS:
             self.assertIn(
                 k,
                 common.SUPPORTED_DATASETS,
@@ -24,7 +24,7 @@ class SupportedTest(unittest.TestCase):
             )
 
     def test_functions(self):
-        for name, function in data.SUPPORTED_DATASETS.items():
+        for name, function in datasets.SUPPORTED_DATASETS.items():
             self.assertTrue(
                 callable(function),
                 f"function {function} for dataset {name} is not callable",

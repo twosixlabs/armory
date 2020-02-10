@@ -26,7 +26,7 @@ def get_version(rel_path):
 
 
 setup(
-    name="armory-evaluation",
+    name="armory-testbed",
     version=get_version("armory/__init__.py"),
     description="Adversarial Robustness Test Bed",
     long_description=long_description,
@@ -53,10 +53,5 @@ setup(
     ],
     packages=find_packages(),
     include_package_data=True,
-    entry_points={
-        "console_scripts": [
-            "armory = armory.__main__:main",
-            "armory-download = armory.__main__:download_all_datasets",
-        ]
-    },
+    entry_points={"console_scripts": ["armory = armory.__main__:main"]},
 )

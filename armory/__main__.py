@@ -101,9 +101,9 @@ def run(command_args, prog, description):
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
-def download_all_datasets(command_args, prog, description):
+def download_all_data(command_args, prog, description):
     """
-    Script to download all datasets and docker container for offline usage.
+    Script to download all datasets and model weights for offline usage.
     """
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -126,7 +126,9 @@ def download_all_datasets(command_args, prog, description):
             "import coloredlogs",
             "coloredlogs.install(logging.INFO)",
             "from armory.data import data",
+            "from armory.data import model_weights",
             "data.download_all()",
+            "model_weights.download_all()",
         ]
     )
     runner.exec_cmd(f"python -c '{cmd}'")
@@ -137,9 +139,9 @@ def download_all_datasets(command_args, prog, description):
 PROGRAM = "armory"
 COMMANDS = {
     "run": (run, "run armory from config file"),
-    "download_all_datasets": (
-        download_all_datasets,
-        "download all datasets used by armory",
+    "download-all-data": (
+        download_all_data,
+        "download all datasets and model weights used by armory",
     ),
 }
 
@@ -165,7 +167,7 @@ def usage():
     return "\n".join(lines)
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(usage())
         sys.exit(1)
@@ -179,3 +181,7 @@ if __name__ == "__main__":
     func, description = COMMANDS[args.command]
     prog = f"{PROGRAM} {args.command}"
     func(sys.argv[2:], prog, description)
+
+
+if __name__ == "__main__":
+    main()

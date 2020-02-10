@@ -6,12 +6,14 @@ import collections
 from importlib import import_module
 import json
 import logging
+import os
 import sys
 
 import numpy as np
 
-from armory.data import data
+from armory.data import datasets
 from armory.eval import plot
+from armory import paths
 
 
 logger = logging.getLogger(__name__)
@@ -62,7 +64,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    x_train, y_train, x_test, y_test = data.load(
+    x_train, y_train, x_test, y_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
@@ -144,7 +146,9 @@ def evaluate_classifier(config_path: str) -> None:
         f"Finished attacking on norm {norm}. Attack success: {targeted_attack_success_rate * 100}%"
     )
 
-    filepath = f"outputs/carlini_wagner_attack_{norm}_targeted_output.json"
+    filepath = os.path.join(
+        paths.OUTPUTS, f"carlini_wagner_attack_{norm}_targeted_output.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,

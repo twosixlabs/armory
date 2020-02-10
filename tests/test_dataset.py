@@ -7,26 +7,26 @@ import unittest
 import numpy as np
 from importlib import import_module
 
-from armory.data import data
+from armory.data import datasets
 
 
 class DatasetTest(unittest.TestCase):
     def test_mnist(self):
-        train_x, train_y, test_x, test_y = data.load("mnist")
+        train_x, train_y, test_x, test_y = datasets.load("mnist")
         self.assertEqual(train_x.shape[0], 60000)
         self.assertEqual(train_y.shape[0], 60000)
         self.assertEqual(test_x.shape[0], 10000)
         self.assertEqual(test_y.shape[0], 10000)
 
     def test_cifar10(self):
-        train_x, train_y, test_x, test_y = data.load("cifar10")
+        train_x, train_y, test_x, test_y = datasets.load("cifar10")
         self.assertEqual(train_x.shape[0], 50000)
         self.assertEqual(train_y.shape[0], 50000)
         self.assertEqual(test_x.shape[0], 10000)
         self.assertEqual(test_y.shape[0], 10000)
 
     def test_digit(self):
-        train_x, train_y, test_x, test_y = data.load("digit")
+        train_x, train_y, test_x, test_y = datasets.load("digit")
         self.assertEqual(train_x.shape[0], 1350)
         self.assertEqual(train_y.shape[0], 1350)
         self.assertEqual(test_x.shape[0], 150)
@@ -36,7 +36,7 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(1148 <= len(x) <= 18262)
 
     def test_imagenet_adv(self):
-        clean_x, adv_x, labels = data.load("imagenet_adversarial")
+        clean_x, adv_x, labels = datasets.load("imagenet_adversarial")
         self.assertEqual(clean_x.shape[0], 1000)
         self.assertEqual(adv_x.shape[0], 1000)
         self.assertEqual(labels.shape[0], 1000)
@@ -52,7 +52,7 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        train_x, train_y, test_x, test_y = data.load(
+        train_x, train_y, test_x, test_y = datasets.load(
             "mnist", preprocessing_fn=preprocessing_fn
         )
 
@@ -71,7 +71,7 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        train_x, train_y, test_x, test_y = data.load(
+        train_x, train_y, test_x, test_y = datasets.load(
             "cifar10", preprocessing_fn=preprocessing_fn
         )
 
@@ -87,7 +87,7 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        clean_x, adv_x, labels = data.load("imagenet_adversarial", preprocessing_fn)
+        clean_x, adv_x, labels = datasets.load("imagenet_adversarial", preprocessing_fn)
 
         predictions = classifier.predict(clean_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)

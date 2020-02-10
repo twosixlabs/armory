@@ -5,6 +5,7 @@ Classifier evaluation within ARMORY
 import collections
 import json
 import logging
+import os
 import shutil
 import sys
 import time
@@ -13,8 +14,9 @@ from typing import Callable
 
 import numpy as np
 
-from armory.data import data
+from armory.data import datasets
 from armory.eval import plot
+from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -56,7 +58,7 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     # retrofitted to work with existing code
-    x_train, y_train, x_test, y_test = data.load(
+    x_train, y_train, x_test, y_test = datasets.load(
         config["dataset"]["name"], preprocessing_fn=preprocessing_fn
     )
 
@@ -147,18 +149,20 @@ def evaluate_classifier(config_path: str) -> None:
             f"Finished attacking on norm {norm}. Attack success: {adv_acc * 100}%"
         )
 
-    filepath = f"outputs/classifier_extended_{int(time.time())}.json"
+    filepath = os.path.join(
+        paths.OUTPUTS, f"classifier_extended_{int(time.time())}.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,
             "results": results,
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    shutil.copyfile(filepath, "outputs/latest.json")
+    shutil.copyfile(filepath, os.path.join(paths.OUTPUTS, "latest.json"))
 
     logger.info(f"Now plotting results")
     plot.classification(filepath)
-    plot.classification("outputs/latest.json")
+    plot.classification(os.path.join(paths.OUTPUTS, "latest.json"))
 
 
 def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):
