@@ -125,9 +125,9 @@ def download_all_data(command_args, prog, description):
             "import logging",
             "import coloredlogs",
             "coloredlogs.install(logging.INFO)",
-            "from armory.data import data",
+            "from armory.data import datasets",
             "from armory.data import model_weights",
-            "data.download_all()",
+            "datasets.download_all()",
             "model_weights.download_all()",
         ]
     )
