@@ -19,4 +19,4 @@ class ExternalRepoTest(unittest.TestCase):
         self.assertTrue(os.path.exists(f"{paths.EXTERNAL_REPOS}/{repo_name}"))
         self.assertTrue(os.path.isfile(f"{paths.EXTERNAL_REPOS}/{repo_name}/README.md"))
 
-        shutil.rmtree("external_repos")
+        shutil.rmtree(f"{paths.EXTERNAL_REPOS}/{repo_name}")
