@@ -28,7 +28,7 @@
         }
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.2.1",
+        "docker_image": "twosixarmory/pytorch:0.3.0",
         "external_github_repo": null,
         "use_gpu": false
     }

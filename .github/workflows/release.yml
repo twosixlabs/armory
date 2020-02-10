@@ -2,6 +2,7 @@ name: armory-release
 
 on:
   release:
+    types: [published]
     tags:
       - v*
 
@@ -19,11 +20,9 @@ jobs:
           python-version: ${{ matrix.python-version }
       - name: Release test Ubuntu
         run: |
-          docker pull twosixarmory/armory:0.2.1
-          python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
           python -m pip install -r test-requirements.txt
-          pytest -s --disable-warnings
+          pytest -s --disable-warnings --ignore=tests/test_docker_management.py
 
   release-wheel:
     name: Build release wheel
@@ -37,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }
-      - name: Build manylinux2010 wheels
+      - name: Build and release wheel
         run: |
           pip install wheel
           python setup.py bdist_wheel

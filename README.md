@@ -63,17 +63,17 @@ Armory is intended to be a lightweight python package which standardizes all eva
 inside a docker container. Users are encouraged to use the available images on 
 dockerhub:
 ```
-docker pull twosixarmory/tf1:0.2.1
-docker pull twosixarmory/tf2:0.2.1
-docker pull twosixarmory/pytorch:0.2.1
+docker pull twosixarmory/tf1:0.3.0
+docker pull twosixarmory/tf2:0.3.0
+docker pull twosixarmory/pytorch:0.3.0
 ```
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
 within this repo:
 ```
-docker build --target armory-tf1 -t twosixarmory/tf1:0.2.1 .
-docker build --target armory-tf2 -t twosixarmory/tf2:0.2.1 .
-docker build --target armory-pytorch -t twosixarmory/pytorch:0.2.1 .
+docker build --target armory-tf1 -t twosixarmory/tf1:0.3.0 .
+docker build --target armory-tf2 -t twosixarmory/tf2:0.3.0 .
+docker build --target armory-pytorch -t twosixarmory/pytorch:0.3.0 .
 ```
 
 ### Docker Mounts
