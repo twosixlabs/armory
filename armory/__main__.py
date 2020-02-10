@@ -15,6 +15,8 @@ import sys
 
 try:
     import coloredlogs
+    import docker
+    from docker.errors import ImageNotFound
 
     from armory.eval import Evaluator
     from armory.docker.management import ManagementInstance
@@ -118,6 +120,21 @@ def download_all_data(command_args, prog, description):
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
+    print("Downloading all docker images....")
+    docker_client = docker.from_env()
+    docker_images = [
+        "twosixarmory/tf1:0.2.1",
+        "twosixarmory/tf2:0.2.1",
+        "twosixarmory/pytorch:0.2.1",
+    ]
+    for image in docker_images:
+        try:
+            docker_client.images.get(image)
+        except ImageNotFound:
+            print(f"Image {image} was not found. Downloading...")
+            docker_client.images.pull(image)
+
+    print("Downloading all datasets and model weights...")
     manager = ManagementInstance(image_name="twosixarmory/tf1:0.2.1")
     runner = manager.start_armory_instance()
     cmd = "; ".join(
