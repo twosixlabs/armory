@@ -1,4 +1,4 @@
-# Armory Containers v0.2.0
+# Armory Containers v0.2.1
 
 ########## Base #################
 
@@ -21,18 +21,19 @@ ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install tensorflow-datasets requests docker jupyterlab coloredlogs boto3 adversarial-robustness-toolbox==1.1.0
 
-WORKDIR /armory
 
 ########## TF 1.15 #################
 
 FROM armory-base AS armory-tf1
 RUN /opt/conda/bin/conda install tensorflow==1.15.0
+CMD /opt/conda/bin/pip install armory-testbed==0.2.1
 CMD tail -f /dev/null
 
 ########## TF 2.1 #################
 
 FROM armory-base AS armory-tf2
 RUN /opt/conda/bin/pip install tensorflow==2.1.0
+CMD /opt/conda/bin/pip install armory-testbed==0.2.1
 CMD tail -f /dev/null
 
 ########## PyTorch 1.4 #################
@@ -41,6 +42,7 @@ CMD tail -f /dev/null
 FROM armory-tf1 AS armory-pytorch
 
 RUN /opt/conda/bin/conda install pytorch==1.4 torchvision cudatoolkit=10.1 -c pytorch
+CMD /opt/conda/bin/pip install armory-testbed==0.2.1
 CMD tail -f /dev/null
 
 #####################################
