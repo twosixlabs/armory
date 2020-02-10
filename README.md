@@ -15,7 +15,7 @@ repositories or from the baselines within this project.
 # Setup
 Python 3.6+ is required.
 
-### Installation
+## Installation
 ``` 
 pip install git+https://github.com/twosixlabs/armory.git
 ```
@@ -24,7 +24,7 @@ Upon installing armory, a directory will be created at `~/.armory`. This user
 specific folder is the default directory for downloaded datasets and evaluation 
 outputs. Defaults can be changed by editing `~/.armory/config.json`
 
-### Usage
+# Usage
 
 ARMORY works by running an evaluation configuration file within the armory docker 
 ecosystem. To do this, simply run `armory run <path_to_evaluation.json>`. 
@@ -59,7 +59,7 @@ At the moment our evaluations are created so that attacks and defenses may be
 interchanged. To do this we standardize all attacks and defenses as subclasses of 
 their respective implementations in [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
 
-### Docker
+# Docker
 Armory is intended to be a lightweight python package which standardizes all evaluations
 inside a docker container. Users are encouraged to use the available images on 
 dockerhub:
@@ -78,12 +78,12 @@ docker build --target armory-pytorch -t twosixarmory/pytorch:0.2.0 .
 ```
 
 ### Docker Mounts
-By default when launching an ARMORY instance the current working directory as well as 
-the armory installation wil be mounted as volumes in the container. This enables 
-users to run modules from ARMORY baselines, as well as modules from the user project.
+By default when launching an ARMORY instance the current working directory will be mounted
+as your default directory.This enables users to run modules from ARMORY baselines, 
+as well as modules from the user project.
 
 ### Docker Setup
-Docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
+Depending on the task, docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
 On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
 * [Mac](https://docs.docker.com/docker-for-mac/)
 * [Windows](https://docs.docker.com/docker-for-windows/)
