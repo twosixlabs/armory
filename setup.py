@@ -26,7 +26,7 @@ def get_version(rel_path):
 
 
 setup(
-    name="armory-evaluation",
+    name="armory-testbed",
     version=get_version("armory/__init__.py"),
     description="Adversarial Robustness Test Bed",
     long_description=long_description,
