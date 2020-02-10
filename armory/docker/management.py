@@ -24,7 +24,7 @@ class ArmoryInstance(object):
         self.docker_client = docker.from_env()
         if envs is None:
             envs = {}
-        envs["PYTHONPATH"] = envs.get("PYTHONPATH", "") + ":/armory"
+        envs["PYTHONPATH"] = "/armory:/root/armory_project"
 
         os.makedirs(paths.OUTPUTS, exist_ok=True)
         container_args = {
