@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="tools/static_content/logo.png" width="50%" title="ARMORY logo">
+  <img src="https://github.com/twosixlabs/armory/blob/master/tools/static_content/logo.png" width="50%" title="ARMORY logo">
 </div>
 
 -----------------
