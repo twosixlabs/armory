@@ -1,4 +1,4 @@
-# Armory Containers v0.2.0
+# Armory Containers v0.3.0
 
 ########## Base #################
 
