@@ -31,6 +31,7 @@ class ArmoryInstance(object):
             "volumes": {
                 paths.CWD: {"bind": "/workspace", "mode": "rw"},
                 paths.USER_ARMORY: {"bind": "/root/.armory", "mode": "rw"},
+                paths.USER_KERAS: {"bind": "/root/.keras", "mode": "rw"},
             },
         }
         if ports is not None:
