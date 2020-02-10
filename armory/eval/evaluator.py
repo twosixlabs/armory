@@ -17,20 +17,19 @@ from armory.docker.management import ManagementInstance
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
-
+from armory import paths
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
-    def __init__(
-        self, config_path: str, tmp_dir="tmp", container_config_name="eval-config.json"
-    ):
+    def __init__(self, config_path: str, container_config_name="eval-config.json"):
         self.extra_env_vars = None
         self.config = load_config(config_path)
-        self.tmp_dir = tmp_dir
-        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
-        self.unix_config_path = Path(self.tmp_config).as_posix()
+        self.tmp_config = os.path.join(paths.TMP, container_config_name)
+        self.unix_config_path = Path(
+            os.path.join(paths.DOCKER_TMP, container_config_name)
+        ).as_posix()
 
         kwargs = dict(runtime="runc")
         if self.config["sysconfig"].get("use_gpu", None):
@@ -66,20 +65,20 @@ class Evaluator(object):
         }
 
     def _write_tmp(self):
-        os.makedirs(self.tmp_dir, exist_ok=True)
+        os.makedirs(paths.TMP, exist_ok=True)
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting {self.tmp_config}!")
         with open(self.tmp_config, "w") as f:
             json.dump(self.config, f)
 
     def _delete_tmp(self):
-        if os.path.exists(external_repo.DIRPATH):
+        if os.path.exists(paths.EXTERNAL_REPOS):
             try:
-                shutil.rmtree(external_repo.DIRPATH)
+                shutil.rmtree(paths.EXTERNAL_REPOS)
             except OSError as e:
                 if not isinstance(e, FileNotFoundError):
                     logger.exception(
-                        f"Error removing external repo {external_repo.DIRPATH}"
+                        f"Error removing external repo {paths.EXTERNAL_REPOS}"
                     )
         try:
             os.remove(self.tmp_config)

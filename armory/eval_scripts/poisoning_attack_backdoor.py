@@ -5,6 +5,7 @@ Classifier evaluation within ARMORY
 from importlib import import_module
 import json
 import logging
+import os
 import shutil
 import sys
 import time
@@ -13,6 +14,7 @@ import numpy as np
 
 from armory.eval.plot_poisoning import classification_poisoning
 from armory.data import data
+from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -195,13 +197,15 @@ def evaluate_classifier(config_path: str) -> None:
         logger.info(f"Trial {trial+1}/{n_trials} completed.")
 
     summarized_metrics = summarize_metrics(raw_metrics)
-    filepath = f"outputs/backdoor_performance_{int(time.time())}.json"
+    filepath = os.path.join(
+        paths.OUTPUTS, f"backdoor_performance_{int(time.time())}.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {"config": config, "results": summarized_metrics}
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    shutil.copyfile(filepath, "outputs/latest.json")
+    shutil.copyfile(filepath, os.path.join(paths.OUTPUTS, "latest.json"))
     classification_poisoning(filepath)
-    classification_poisoning("outputs/latest.json")
+    classification_poisoning(os.path.join(paths.OUTPUTS, "latest.json"))
 
 
 if __name__ == "__main__":

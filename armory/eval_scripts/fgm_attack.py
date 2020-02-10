@@ -3,6 +3,7 @@ Classifier evaluation within ARMORY
 """
 
 import json
+import os
 import sys
 import logging
 from importlib import import_module
@@ -10,6 +11,7 @@ from importlib import import_module
 import numpy as np
 
 from armory.data import data
+from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -67,7 +69,7 @@ def evaluate_classifier(config_path: str) -> None:
         "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
-    filepath = "outputs/evaluation-results.json"
+    filepath = os.path.join(paths.OUTPUTS, "evaluation-results.json")
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,

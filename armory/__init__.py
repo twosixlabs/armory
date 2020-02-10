@@ -11,6 +11,7 @@ from armory import baseline_models
 from armory import docker
 from armory import eval
 from armory import webapi
+from armory import paths
 
 # Semantic Version
 __version__ = "0.1.0"
