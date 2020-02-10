@@ -14,10 +14,7 @@ Configuration files are used to launch local or cloud instances of the ARMORY do
 container. Models, datasets, and evaluation scripts can be pulled from external 
 repositories or from the baselines within this project.
 
-# Setup
-Python 3.6+ is required.
-
-## Installation
+# Installation
 ``` 
 pip install armory-testbed
 ```
