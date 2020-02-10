@@ -197,7 +197,9 @@ def evaluate_classifier(config_path: str) -> None:
         logger.info(f"Trial {trial+1}/{n_trials} completed.")
 
     summarized_metrics = summarize_metrics(raw_metrics)
-    filepath = os.path.join(paths.OUTPUTS, f"backdoor_performance_{int(time.time())}.json")
+    filepath = os.path.join(
+        paths.OUTPUTS, f"backdoor_performance_{int(time.time())}.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {"config": config, "results": summarized_metrics}
         json.dump(output_dict, f, sort_keys=True, indent=4)

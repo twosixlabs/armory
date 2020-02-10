@@ -146,7 +146,9 @@ def evaluate_classifier(config_path: str) -> None:
         f"Finished attacking on norm {norm}. Attack success: {targeted_attack_success_rate * 100}%"
     )
 
-    filepath = os.path.join(paths.OUTPUTS, f"carlini_wagner_attack_{norm}_targeted_output.json")
+    filepath = os.path.join(
+        paths.OUTPUTS, f"carlini_wagner_attack_{norm}_targeted_output.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,
