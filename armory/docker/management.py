@@ -22,9 +22,6 @@ class ArmoryInstance(object):
         self, image_name, runtime: str = "runc", envs: dict = None, ports: dict = None
     ):
         self.docker_client = docker.from_env()
-        if envs is None:
-            envs = {}
-        envs["PYTHONPATH"] = "/armory:/root/armory_project"
 
         os.makedirs(paths.OUTPUTS, exist_ok=True)
         container_args = {
@@ -32,8 +29,7 @@ class ArmoryInstance(object):
             "remove": True,
             "detach": True,
             "volumes": {
-                paths.CWD: {"bind": "/armory", "mode": "rw"},
-                paths.PROJECT_ROOT: {"bind": "/root/armory_project", "mode": "rw"},
+                paths.CWD: {"bind": "/workspace", "mode": "rw"},
                 paths.USER_ARMORY: {"bind": "/root/.armory", "mode": "rw"},
                 paths.USER_KERAS: {"bind": "/root/.keras", "mode": "rw"},
             },

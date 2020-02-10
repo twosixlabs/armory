@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="tools/static_content/logo.png" width="50%" title="ARMORY logo">
+  <img src="https://github.com/twosixlabs/armory/blob/master/tools/static_content/logo.png" width="50%" title="ARMORY logo">
 </div>
 
 -----------------
@@ -17,7 +17,7 @@ Python 3.6+ is required.
 
 ## Installation
 ``` 
-pip install git+https://github.com/twosixlabs/armory.git
+pip install armory-testbed
 ```
 
 Upon installing armory, a directory will be created at `~/.armory`. This user 
@@ -43,8 +43,8 @@ Note: Since ARMORY launches Docker containers, the python package must be ran on
 As an example:
 ```
 pip install armory-testbed
-git clone https://github.com/twosixlabs/armory-external.git
-cd armory-external
+git clone https://github.com/twosixlabs/armory-example.git
+cd armory-example
 armory run example_config.json
 ```
 
@@ -64,17 +64,17 @@ Armory is intended to be a lightweight python package which standardizes all eva
 inside a docker container. Users are encouraged to use the available images on 
 dockerhub:
 ```
-docker pull twosixarmory/tf1:0.2.0
-docker pull twosixarmory/tf2:0.2.0
-docker pull twosixarmory/pytorch:0.2.0
+docker pull twosixarmory/tf1:0.2.1
+docker pull twosixarmory/tf2:0.2.1
+docker pull twosixarmory/pytorch:0.2.1
 ```
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
 within this repo:
 ```
-docker build --target armory-tf1 -t twosixarmory/tf1:0.2.0 .
-docker build --target armory-tf2 -t twosixarmory/tf2:0.2.0 .
-docker build --target armory-pytorch -t twosixarmory/pytorch:0.2.0 .
+docker build --target armory-tf1 -t twosixarmory/tf1:0.2.1 .
+docker build --target armory-tf2 -t twosixarmory/tf2:0.2.1 .
+docker build --target armory-pytorch -t twosixarmory/pytorch:0.2.1 .
 ```
 
 ### Docker Mounts

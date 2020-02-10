@@ -6,7 +6,6 @@ from setuptools import find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-install_requires = []
 tests_require = []
 docs_require = []
 
@@ -25,6 +24,10 @@ def get_version(rel_path):
     raise RuntimeError("Unable to find version string.")
 
 
+with open("requirements.txt") as f:
+    required_pkgs = f.read().splitlines()
+
+
 setup(
     name="armory-testbed",
     version=get_version("armory/__init__.py"),
@@ -35,7 +38,7 @@ setup(
     author_email="armory@twosixlabs.com",
     url="https://https://github.com/twosixlabs/armory",
     license="MIT",
-    install_requires=install_requires,
+    install_requires=required_pkgs,
     tests_require=tests_require,
     extras_require={"tests": tests_require, "docs": docs_require},
     classifiers=[
