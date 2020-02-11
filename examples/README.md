@@ -46,8 +46,7 @@ Model (JSON or null)
 SysConfig (JSON - Required)
     docker_image: String
     external_github_repo: String
-    gpu
-        use_gpu: Boolean
+    use_gpu: Boolean
 ```
 
 ### External Repos
