@@ -17,7 +17,7 @@ Adhoc (JSON or null)
 Attack (JSON or null)
     module: String 
     name: String
-    kwargs = JSON
+    kwargs: JSON
     knowledge: String
     budget: JSON
 
