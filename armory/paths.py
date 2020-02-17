@@ -35,10 +35,9 @@ else:
 
 DATASETS = config.get("datasets") or os.path.join(USER_ARMORY, "datasets")
 EXTERNAL_REPOS = os.path.join(DATASETS, "external_repos")
-MODELS = config.get("models") or os.path.join(USER_ARMORY, "models")
 TMP = config.get("tmp") or os.path.join(USER_ARMORY, "tmp")
 OUTPUTS = config.get("outputs") or os.path.join(USER_ARMORY, "outputs")
 
-DOCKER = "/root"
+DOCKER = "/"
 DOCKER_ARMORY = os.path.join(DOCKER, ".armory")
 DOCKER_TMP = Path(os.path.join(DOCKER_ARMORY, "tmp")).as_posix()

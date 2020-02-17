@@ -30,12 +30,18 @@ class ArmoryInstance(object):
             "detach": True,
             "volumes": {
                 paths.CWD: {"bind": "/workspace", "mode": "rw"},
-                paths.USER_ARMORY: {"bind": "/root/.armory", "mode": "rw"},
-                paths.USER_KERAS: {"bind": "/root/.keras", "mode": "rw"},
+                paths.USER_ARMORY: {"bind": "/.armory", "mode": "rw"},
+                paths.USER_KERAS: {"bind": "/.keras", "mode": "rw"},
             },
         }
         if ports is not None:
             container_args["ports"] = ports
+
+        # Windows docker does not require syncronizing file and
+        # directoriy permissions via uid and gid.
+        if os.name != "nt":
+            user_id = os.getuid()
+            container_args["user"] = f"{user_id}:{user_id}"
 
         if envs:
             container_args["environment"] = envs
@@ -55,7 +61,8 @@ class ArmoryInstance(object):
             print(out.decode())
 
     def __del__(self):
-        if hasattr(self, "docker_container"):  # needed if there is an error in __init__
+        # Needed if there is an error in __init__
+        if hasattr(self, "docker_container"):
             self.docker_container.stop()
 
 
