@@ -165,6 +165,6 @@ class Evaluator(object):
         ]
         logger.info("\n".join(lines))
         runner.exec_cmd(
-            "jupyter notebook --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''",
+            "jupyter lab --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''",
             user="root",
         )
