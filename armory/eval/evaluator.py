@@ -55,7 +55,9 @@ class Evaluator(object):
         self.manager = ManagementInstance(**kwargs)
 
     def _download_external(self):
-        external_repo.download_and_extract_repo(self.config["external_github_repo"])
+        external_repo.download_and_extract_repo(
+            self.config["sysconfig"]["external_github_repo"]
+        )
 
     def _download_private(self):
         external_repo.download_and_extract_repo("twosixlabs/armory-private")
