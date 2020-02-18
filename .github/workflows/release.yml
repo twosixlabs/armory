@@ -2,7 +2,7 @@ name: armory-release
 
 on:
   release:
-    types: [published, updated]
+    types: [published]
     tags:
       - v*
 
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
         with:
-          python-version: ${{ matrix.python-version }
+          python-version: ${{ matrix.python-version }}
       - name: Build and release wheel
         run: |
           pip install wheel
