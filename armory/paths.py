@@ -29,11 +29,11 @@ if os.path.exists(ARMORY_CONFIG):
         raise
 else:
     os.makedirs(USER_ARMORY, exist_ok=True)
-    config = {}
+    config = {"cached_dataset_dir": os.path.join(USER_ARMORY, "datasets")}
     with open(ARMORY_CONFIG, "w") as f:
         json.dump(config, f)
 
-DATASETS = config.get("datasets") or os.path.join(USER_ARMORY, "datasets")
+DATASETS = config.get("cached_dataset_dir") or os.path.join(USER_ARMORY, "datasets")
 EXTERNAL_REPOS = os.path.join(DATASETS, "external_repos")
 MODELS = config.get("models") or os.path.join(USER_ARMORY, "models")
 TMP = config.get("tmp") or os.path.join(USER_ARMORY, "tmp")
