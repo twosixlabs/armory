@@ -41,9 +41,11 @@ class HostPaths:
         self.armory_dir = os.path.join(self.user_dir, ".armory")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.armory_config = os.path.join(self.armory_dir, "config.json")
-        self.config = _parse_global_config(self.armory_config, self.armory_dir)
-        self.dataset_dir = self.config.get("cached_dataset_dir")
-        self.output_dir = self.config.get("output_dir")
+
+        # Parse paths from config
+        config = _parse_global_config(self.armory_config, self.armory_dir)
+        self.dataset_dir = config.get("cached_dataset_dir")
+        self.output_dir = config.get("output_dir")
         self.external_repo_dir = os.path.join(self.dataset_dir, "external_repos")
 
 
