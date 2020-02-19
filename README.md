@@ -93,8 +93,7 @@ To display the set of current images:
 ```
 docker images
 ```
-To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/)
-or this [StackOverflow post](https://stackoverflow.com/questions/44785585/how-to-delete-all-docker-local-docker-images).
+To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
 Note that if you delete the wrong image(s), this may require re-downloading them.
 
 In order to see the set of containers that are running:
