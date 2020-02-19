@@ -12,10 +12,9 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 from armory.data.utils import curl, download_file_from_s3
-from armory import paths
+from armory.paths import DockerPaths
 
 os.environ["KMP_WARNINGS"] = "0"
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +24,14 @@ def _in_memory_dataset_tfds(
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
+    docker_paths = DockerPaths()
+
     train_x, train_y = tfds.load(
         dataset_name,
         batch_size=-1,
         split="train",
         as_supervised=True,
-        data_dir=paths.DATASETS,
+        data_dir=docker_paths.dataset_dir,
     )
 
     test_x, test_y = tfds.load(
@@ -38,7 +39,7 @@ def _in_memory_dataset_tfds(
         batch_size=-1,
         split="test",
         as_supervised=True,
-        data_dir=paths.DATASETS,
+        data_dir=docker_paths.dataset_dir,
     )
 
     train_x = tfds.as_numpy(train_x, graph=default_graph)
@@ -80,7 +81,8 @@ def cifar10_data(
 
 
 def digit(
-    zero_pad: bool = False, rootdir: str = os.path.join(paths.DATASETS, "external"),
+    zero_pad: bool = False,
+    rootdir: str = os.path.join(DockerPaths().dataset_dir, "external"),
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     An audio dataset of spoken digits:
@@ -157,7 +159,7 @@ def digit(
 
 def imagenet_adversarial(
     preprocessing_fn: Callable = None,
-    dirpath: str = os.path.join(paths.DATASETS, "external", "imagenet_adv"),
+    dirpath: str = os.path.join(DockerPaths().dataset_dir, "external", "imagenet_adv"),
 ) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     ILSVRC12 adversarial image dataset for ResNet50

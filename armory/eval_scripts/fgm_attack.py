@@ -11,7 +11,7 @@ from importlib import import_module
 import numpy as np
 
 from armory.data import datasets
-from armory import paths
+from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -21,6 +21,8 @@ def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
+    docker_paths = DockerPaths()
+
     with open(config_path, "r") as fp:
         config = json.load(fp)
 
@@ -74,7 +76,7 @@ def evaluate_classifier(config_path: str) -> None:
     )
 
     logger.info("Saving json output...")
-    filepath = os.path.join(paths.OUTPUTS, "evaluation-results.json")
+    filepath = os.path.join(docker_paths.output_dir, "evaluation-results.json")
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,

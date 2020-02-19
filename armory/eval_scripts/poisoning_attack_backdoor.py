@@ -14,7 +14,7 @@ import numpy as np
 
 from armory.eval.plot_poisoning import classification_poisoning
 from armory.data import datasets
-from armory import paths
+from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -57,6 +57,8 @@ def evaluate_classifier(config_path: str) -> None:
     Evaluate a config file for classifcation robustness against attack.
     """
     # Generate adversarial test examples
+    docker_paths = DockerPaths()
+
     with open(config_path, "r") as fp:
         config = json.load(fp)
 
@@ -208,14 +210,14 @@ def evaluate_classifier(config_path: str) -> None:
     summarized_metrics = summarize_metrics(raw_metrics)
     logger.info("Saving json output...")
     filepath = os.path.join(
-        paths.OUTPUTS, f"backdoor_performance_{int(time.time())}.json"
+        docker_paths.output_dir, f"backdoor_performance_{int(time.time())}.json"
     )
     with open(filepath, "w") as f:
         output_dict = {"config": config, "results": summarized_metrics}
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    shutil.copyfile(filepath, os.path.join(paths.OUTPUTS, "latest.json"))
+    shutil.copyfile(filepath, os.path.join(docker_paths.output_dir, "latest.json"))
     classification_poisoning(filepath)
-    classification_poisoning(os.path.join(paths.OUTPUTS, "latest.json"))
+    classification_poisoning(os.path.join(docker_paths.output_dir, "latest.json"))
 
 
 if __name__ == "__main__":

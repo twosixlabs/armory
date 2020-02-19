@@ -17,18 +17,21 @@ from armory.docker.management import ManagementInstance
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
-from armory import paths
+from armory.paths import HostPaths, DockerPaths
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
     def __init__(self, config_path: str, container_config_name="eval-config.json"):
+        self.host_paths = HostPaths()
+        self.docker_paths = DockerPaths()
+
         self.extra_env_vars = None
         self.config = load_config(config_path)
-        self.tmp_config = os.path.join(paths.TMP, container_config_name)
-        self.unix_config_path = Path(
-            os.path.join(paths.DOCKER_TMP, container_config_name)
+        self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
+        self.docker_config_path = Path(
+            os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
 
         kwargs = dict(runtime="runc")
@@ -67,20 +70,20 @@ class Evaluator(object):
         }
 
     def _write_tmp(self):
-        os.makedirs(paths.TMP, exist_ok=True)
+        os.makedirs(self.host_paths.tmp_dir, exist_ok=True)
         if os.path.exists(self.tmp_config):
-            logger.warning(f"Overwriting {self.tmp_config}!")
+            logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
             json.dump(self.config, f)
 
     def _delete_tmp(self):
-        if os.path.exists(paths.EXTERNAL_REPOS):
+        if os.path.exists(self.host_paths.external_repo_dir):
             try:
-                shutil.rmtree(paths.EXTERNAL_REPOS)
+                shutil.rmtree(self.host_paths.external_repo_dir)
             except OSError as e:
                 if not isinstance(e, FileNotFoundError):
                     logger.exception(
-                        f"Error removing external repo {paths.EXTERNAL_REPOS}"
+                        f"Error removing external repo {self.host_paths.external_repo_dir}"
                     )
         try:
             os.remove(self.tmp_config)
@@ -130,20 +133,28 @@ class Evaluator(object):
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
         runner.exec_cmd(
-            f"python -m {self.config['evaluation']['eval_file']} {self.unix_config_path}"
+            f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
         )
 
     def _run_interactive_bash(self, runner) -> None:
+        if os.name != "nt":
+            user_id = os.getuid()
+        else:
+            user_id = 0
         lines = [
             "Container ready for interactive use.",
             bold(
                 "*** In a new terminal, run the following to attach to the container:"
             ),
-            bold(red(f"    docker exec -itu0 {runner.docker_container.short_id} bash")),
+            bold(
+                red(
+                    f"    docker exec -itu{user_id} {runner.docker_container.short_id} bash"
+                )
+            ),
             bold("*** To run your script in the container:"),
             bold(
                 red(
-                    f"    python -m {self.config['evaluation']['eval_file']} {self.unix_config_path}"
+                    f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
                 )
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),

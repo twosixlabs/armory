@@ -8,7 +8,7 @@ import shutil
 
 import requests
 
-from armory import paths
+from armory.paths import HostPaths
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,9 @@ def download_and_extract_repo(external_repo_name: str) -> None:
     Private repositories require a `GITHUB_TOKEN` environment variable.
     :param external_repo_name: String name of "organization/repo-name"
     """
-    os.makedirs(paths.EXTERNAL_REPOS, exist_ok=True)
+    host_paths = HostPaths()
+
+    os.makedirs(host_paths.external_repo_dir, exist_ok=True)
     headers = {}
     repo_name = external_repo_name.split("/")[-1]
 
@@ -37,18 +39,21 @@ def download_and_extract_repo(external_repo_name: str) -> None:
     if response.status_code == 200:
         logging.info(f"Downloading external repo: {external_repo_name}")
 
-        tar_filename = os.path.join(paths.EXTERNAL_REPOS, repo_name + ".tar.gz")
+        tar_filename = os.path.join(host_paths.external_repo_dir, repo_name + ".tar.gz")
         with open(tar_filename, "wb") as f:
             f.write(response.raw.read())
         tar = tarfile.open(tar_filename, "r:gz")
         dl_directory_name = tar.getnames()[0]
-        tar.extractall(path=paths.EXTERNAL_REPOS)
+        tar.extractall(path=host_paths.external_repo_dir)
 
         # Always overwrite existing repositories to keep them at HEAD
-        final_dir_name = os.path.join(paths.EXTERNAL_REPOS, repo_name)
+        final_dir_name = os.path.join(host_paths.external_repo_dir, repo_name)
         if os.path.isdir(final_dir_name):
             shutil.rmtree(final_dir_name)
-        os.rename(os.path.join(paths.EXTERNAL_REPOS, dl_directory_name), final_dir_name)
+        os.rename(
+            os.path.join(host_paths.external_repo_dir, dl_directory_name),
+            final_dir_name,
+        )
         # os.remove(tar_filename)
 
     else:
