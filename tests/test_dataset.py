@@ -102,7 +102,7 @@ class KerasTest(unittest.TestCase):
 
         clean_x, adv_x, labels = datasets.load(
             "imagenet_adversarial",
-            preprocessing_fn,
+            preprocessing_fn=preprocessing_fn,
             dataset_dir=HostPaths().dataset_dir,
         )
 
