@@ -11,7 +11,7 @@ from importlib import import_module
 import numpy as np
 
 from armory.paths import DockerPaths
-from armory.data import datasets
+from armory.utils.config_loading import load_dataset
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,8 +36,8 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    clean_x, adv_x, labels = datasets.load(
-        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
+    clean_x, adv_x, labels = load_dataset(
+        config["dataset"], preprocessing_fn=preprocessing_fn
     )
 
     # Evaluate the ART classifier on benign test examples

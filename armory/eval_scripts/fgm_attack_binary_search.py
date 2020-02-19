@@ -14,7 +14,7 @@ from typing import Callable
 
 import numpy as np
 
-from armory.data import datasets
+from armory.utils.config_loading import load_dataset
 from armory.eval import plot
 from armory.paths import DockerPaths
 
@@ -60,8 +60,8 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    x_train, y_train, x_test, y_test = datasets.load(
-        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
+    x_train, y_train, x_test, y_test = load_dataset(
+        config["dataset"], preprocessing_fn=preprocessing_fn
     )
 
     logger.info(

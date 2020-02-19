@@ -10,7 +10,7 @@ from importlib import import_module
 import coloredlogs
 import numpy as np
 
-from armory.data import datasets
+from armory.utils.config_loading import load_dataset
 from armory.art_experimental import defences as defences_ext
 
 
@@ -50,8 +50,8 @@ def evaluate_classifier(config_path: str) -> None:
 
     # retrofitted to work with existing code
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    clean_x, adv_x, labels = datasets.load(
-        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
+    clean_x, adv_x, labels = load_dataset(
+        config["dataset"], preprocessing_fn=preprocessing_fn
     )
 
     logger.debug(f"Original model:\n{classifier}")
