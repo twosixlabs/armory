@@ -29,8 +29,17 @@ def _parse_global_config(path, armory_dir):
         with open(path, "w") as f:
             json.dump(config, f)
 
-    os.makedirs(config["cached_dataset_dir"], exist_ok=True)
-    os.makedirs(config["output_dir"], exist_ok=True)
+    try:
+        os.makedirs(config["cached_dataset_dir"], exist_ok=True)
+        os.makedirs(config["output_dir"], exist_ok=True)
+
+    # TODO: Recommend to use armory config (#165)
+    except KeyError:
+        raise KeyError(
+            "Error parsing config.json. If you previously ran an older "
+            "version of armory you may need to remove the ~/.armory directory since"
+            "permission changes."
+        )
     return config
 
 

@@ -27,6 +27,11 @@ class Evaluator(object):
         self.host_paths = HostPaths()
         self.docker_paths = DockerPaths()
 
+        if os.name != "nt":
+            self.user_id, self.group_id = os.getuid(), os.getgid()
+        else:
+            self.user_id, self.group_id = 0, 0
+
         self.extra_env_vars = None
         self.config = load_config(config_path)
         self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
@@ -137,10 +142,6 @@ class Evaluator(object):
         )
 
     def _run_interactive_bash(self, runner) -> None:
-        if os.name != "nt":
-            user_id = os.getuid()
-        else:
-            user_id = 0
         lines = [
             "Container ready for interactive use.",
             bold(
@@ -148,7 +149,7 @@ class Evaluator(object):
             ),
             bold(
                 red(
-                    f"    docker exec -itu{user_id} {runner.docker_container.short_id} bash"
+                    f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
                 )
             ),
             bold("*** To run your script in the container:"),
@@ -164,14 +165,15 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    @staticmethod
-    def _run_jupyter(runner, host_port=8888) -> None:
+    def _run_jupyter(self, runner, host_port=8888) -> None:
         lines = [
             "About to launch jupyter.",
             bold("*** To connect to jupyter, please open the following in a browser:"),
             bold(red(f"    http://127.0.0.1:{host_port}")),
             bold("*** To connect on the command line as well, in a new terminal, run:"),
-            bold(f"    docker exec -itu0 {runner.docker_container.short_id} bash"),
+            bold(
+                f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
+            ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",
             "Jupyter notebook log:",
