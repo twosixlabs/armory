@@ -46,7 +46,8 @@ class ArmoryInstance(object):
         # directoriy permissions via uid and gid.
         if os.name != "nt":
             user_id = os.getuid()
-            container_args["user"] = f"{user_id}:{user_id}"
+            group_id = os.getgid()
+            container_args["user"] = f"{user_id}:{group_id}"
 
         if envs:
             container_args["environment"] = envs
