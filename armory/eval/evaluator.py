@@ -139,8 +139,10 @@ class Evaluator(object):
     def _run_interactive_bash(self, runner) -> None:
         if os.name != "nt":
             user_id = os.getuid()
+            group_id = os.getgid()
         else:
             user_id = 0
+            group_id = 0
         lines = [
             "Container ready for interactive use.",
             bold(
@@ -148,7 +150,7 @@ class Evaluator(object):
             ),
             bold(
                 red(
-                    f"    docker exec -itu{user_id} {runner.docker_container.short_id} bash"
+                    f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
                 )
             ),
             bold("*** To run your script in the container:"),
