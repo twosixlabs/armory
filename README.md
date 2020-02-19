@@ -89,7 +89,7 @@ On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to chan
 
 ### Docker Cleanup
 Subsequent versions of ARMORY will download new Docker images, but will not clean up existing ones.
-To display the set of curret images:
+To display the set of current images:
 ```
 docker images
 ```
