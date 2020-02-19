@@ -16,7 +16,7 @@ import numpy as np
 
 from armory.data import datasets
 from armory.eval import plot
-from armory import paths
+from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -45,6 +45,8 @@ def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classification robustness against attack.
     """
+    docker_paths = DockerPaths()
+
     with open(config_path) as fp:
         config = json.load(fp)
 
@@ -155,7 +157,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     logger.info("Saving json output...")
     filepath = os.path.join(
-        paths.OUTPUTS, f"classifier_extended_{int(time.time())}.json"
+        docker_paths.output_dir, f"classifier_extended_{int(time.time())}.json"
     )
     with open(filepath, "w") as f:
         output_dict = {
@@ -163,11 +165,11 @@ def evaluate_classifier(config_path: str) -> None:
             "results": results,
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    shutil.copyfile(filepath, os.path.join(paths.OUTPUTS, "latest.json"))
+    shutil.copyfile(filepath, os.path.join(docker_paths.output_dir, "latest.json"))
 
     logger.info(f"Now plotting results...")
     plot.classification(filepath)
-    plot.classification(os.path.join(paths.OUTPUTS, "latest.json"))
+    plot.classification(os.path.join(docker_paths.output_dir, "latest.json"))
 
 
 def roc_epsilon(epsilons, min_epsilon=None, max_epsilon=None):

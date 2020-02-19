@@ -13,8 +13,7 @@ import numpy as np
 
 from armory.data import datasets
 from armory.eval import plot
-from armory import paths
-
+from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -52,6 +51,8 @@ def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
+    docker_paths = DockerPaths()
+
     with open(config_path, "r") as fp:
         config = json.load(fp)
 
@@ -153,7 +154,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     logger.info("Saving json output...")
     filepath = os.path.join(
-        paths.OUTPUTS, f"carlini_wagner_attack_{norm}_targeted_output.json"
+        docker_paths.output_dir, f"carlini_wagner_attack_{norm}_targeted_output.json"
     )
     with open(filepath, "w") as f:
         output_dict = {

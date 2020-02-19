@@ -12,16 +12,15 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 from armory.data.utils import curl, download_file_from_s3
-from armory import paths
+from armory.paths import DockerPaths
 
 os.environ["KMP_WARNINGS"] = "0"
-
 
 logger = logging.getLogger(__name__)
 
 
 def _in_memory_dataset_tfds(
-    dataset_name: str, preprocessing_fn: Callable
+    dataset_name: str, dataset_dir: str, preprocessing_fn: Callable,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
@@ -30,7 +29,7 @@ def _in_memory_dataset_tfds(
         batch_size=-1,
         split="train",
         as_supervised=True,
-        data_dir=paths.DATASETS,
+        data_dir=dataset_dir,
     )
 
     test_x, test_y = tfds.load(
@@ -38,7 +37,7 @@ def _in_memory_dataset_tfds(
         batch_size=-1,
         split="test",
         as_supervised=True,
-        data_dir=paths.DATASETS,
+        data_dir=dataset_dir,
     )
 
     train_x = tfds.as_numpy(train_x, graph=default_graph)
@@ -54,7 +53,7 @@ def _in_memory_dataset_tfds(
 
 
 def mnist_data(
-    preprocessing_fn: Callable = None,
+    dataset_dir: str = None, preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     Handwritten digits dataset:
@@ -63,11 +62,15 @@ def mnist_data(
     returns:
         train_x, train_y, test_x, test_y
     """
-    return _in_memory_dataset_tfds("mnist:3.0.0", preprocessing_fn=preprocessing_fn)
+    if not dataset_dir:
+        dataset_dir = DockerPaths().dataset_dir
+    return _in_memory_dataset_tfds(
+        "mnist:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    )
 
 
 def cifar10_data(
-    preprocessing_fn: Callable = None,
+    dataset_dir: str = None, preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     Ten class image dataset:
@@ -76,11 +79,15 @@ def cifar10_data(
     returns:
         train_x, train_y, test_x, test_y
     """
-    return _in_memory_dataset_tfds("cifar10:3.0.0", preprocessing_fn=preprocessing_fn)
+    if not dataset_dir:
+        dataset_dir = DockerPaths().dataset_dir
+    return _in_memory_dataset_tfds(
+        "cifar10:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    )
 
 
 def digit(
-    zero_pad: bool = False, rootdir: str = os.path.join(paths.DATASETS, "external"),
+    zero_pad: bool = False, dataset_dir: str = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     An audio dataset of spoken digits:
@@ -93,16 +100,20 @@ def digit(
 
     :param zero_pad: Boolean to pad the audio samples to the same length
         if `True`, this returns `audio` arrays as 2D np.int16 arrays
-    :param rootdir: Directory where the dataset is stored
+    :param dataset_dir: Directory where cached datasets are stored
     :return: Train/Test arrays of audio and labels. Sample Rate is 8000 Hz
     """
     from scipy.io import wavfile
+
+    if not dataset_dir:
+        dataset_dir = DockerPaths().dataset_dir
+
+    rootdir = os.path.join(dataset_dir, "external")
 
     url = "https://github.com/Jakobovski/free-spoken-digit-dataset/archive/v1.0.8.zip"
     zip_file = "free-spoken-digit-dataset-1.0.8.zip"
     subdir = "free-spoken-digit-dataset-1.0.8/recordings"
 
-    # TODO: Refactor as a decorator for external downloads
     dirpath = os.path.join(rootdir, subdir)
     if not os.path.isdir(dirpath):
         zip_filepath = os.path.join(rootdir, zip_file)
@@ -156,8 +167,7 @@ def digit(
 
 
 def imagenet_adversarial(
-    preprocessing_fn: Callable = None,
-    dirpath: str = os.path.join(paths.DATASETS, "external", "imagenet_adv"),
+    dataset_dir: str = None, preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -168,8 +178,8 @@ def imagenet_adversarial(
         Attack step size = 2
         Targeted = True
 
+    :param dataset_dir: Directory where cached datasets are stored
     :param preprocessing_fn: Callable function to preprocess inputs
-    :param dirpath: Directory where the dataset is stored
     :return: (Adversarial_images, Labels)
     """
 
@@ -193,8 +203,12 @@ def imagenet_adversarial(
         label = tf.cast(example["label"], tf.int32)
         return clean_img, adv_img, label
 
+    if not dataset_dir:
+        dataset_dir = DockerPaths().dataset_dir
+
     num_images = 1000
     filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v0.1.tfrecords"
+    dirpath = os.path.join(dataset_dir, "external", "imagenet_adv")
     output_filepath = os.path.join(dirpath, filename)
 
     os.makedirs(dirpath, exist_ok=True)
