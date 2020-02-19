@@ -10,7 +10,7 @@ from importlib import import_module
 
 import numpy as np
 
-from armory.data import datasets
+from armory.data.utils import load_dataset
 from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,8 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    train_x, train_y, test_x, test_y = datasets.load(
-        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
+    train_x, train_y, test_x, test_y = load_dataset(
+        config["dataset"], preprocessing_fn=preprocessing_fn
     )
 
     logger.info(

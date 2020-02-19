@@ -5,6 +5,7 @@ Utils for data processing
 import os
 import logging
 import subprocess
+from importlib import import_module
 
 import boto3
 from botocore import UNSIGNED
@@ -12,6 +13,17 @@ from botocore.client import Config
 
 
 logger = logging.getLogger(__name__)
+
+
+def load_dataset(dataset_config, *args, **kwargs):
+    """
+    Return dataset or raise KeyError
+
+    Convenience function, essentially.
+    """
+    dataset_module = import_module(dataset_config["module"])
+    dataset_fn = getattr(dataset_module, dataset_config["name"])
+    return dataset_fn(*args, **kwargs)
 
 
 def download_file_from_s3(bucket_name: str, key: str, local_path: str):

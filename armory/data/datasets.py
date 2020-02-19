@@ -245,20 +245,6 @@ SUPPORTED_DATASETS = {
 }
 
 
-def load(name, *args, **kwargs):
-    """
-    Return dataset or raise KeyError
-
-    Convenience function, essentially.
-    """
-    dataset_function = SUPPORTED_DATASETS.get(name)
-    if dataset_function is None:
-        raise KeyError(
-            f"{name} is not in supported datasets: {SUPPORTED_DATASETS.keys()}"
-        )
-    return dataset_function(*args, **kwargs)
-
-
 def download_all():
     """
     Download all datasets to cache.

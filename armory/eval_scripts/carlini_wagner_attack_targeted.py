@@ -11,7 +11,7 @@ import sys
 
 import numpy as np
 
-from armory.data import datasets
+from armory.data.utils import load_dataset
 from armory.eval import plot
 from armory.paths import DockerPaths
 
