@@ -103,5 +103,3 @@ docker ps
 ARMORY will attempt to gracefully shut down all containers it launches;
 however, certain errors may prevent shutdown and leave running containers.
 To shut down these containers, please see the docs for [Docker stop](https://docs.docker.com/engine/reference/commandline/stop/) and [Docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
-
-
