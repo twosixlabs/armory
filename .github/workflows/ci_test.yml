@@ -45,3 +45,11 @@ jobs:
         run: pip install black
       - name: Ensure contributor used ("black ./") before commit
         run: black --check ./
+  json-format-test:
+    name: JSON file format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+      - name: Ensure contributor used ("python -m tools.format_json") before commit
+        run: python -m tools.format_json --check
