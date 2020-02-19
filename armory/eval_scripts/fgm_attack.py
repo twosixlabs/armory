@@ -10,7 +10,7 @@ from importlib import import_module
 
 import numpy as np
 
-from armory.data.utils import load_dataset
+from armory.utils.config_loading import load_dataset
 from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)

@@ -22,6 +22,7 @@ Attack (JSON or null)
     budget: JSON
 
 Dataset (JSON or null)
+    module: String
     name: String
 
 Defense (JSON or null)
