@@ -89,17 +89,18 @@ On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to chan
 
 ### Docker Cleanup
 Subsequent versions of ARMORY will download new Docker images, but will not clean up existing ones.
+To display the set of curret images:
 ```
 docker images
 ```
-will display the set of current images. To delete images, see the `docker rmi` [Documentation](https://docs.docker.com/engine/reference/commandline/rmi/)
+To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/)
 or this [StackOverflow post](https://stackoverflow.com/questions/44785585/how-to-delete-all-docker-local-docker-images).
-Note that if you delete the wrong image(s), this may require redownloading them.
+Note that if you delete the wrong image(s), this may require re-downloading them.
 
-In order to see the set of containers that are running, run:
+In order to see the set of containers that are running:
 ```
 docker ps
 ```
 ARMORY will attempt to gracefully shut down all containers it launches;
 however, certain errors may prevent shutdown and leave running containers.
-To shut down these containers, please see the docs for [Docker stop](https://docs.docker.com/engine/reference/commandline/stop/) and [Docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
+To shut down these containers, please see the docs for [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) and [docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
