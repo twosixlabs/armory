@@ -19,9 +19,7 @@ def load_model(model_config):
     """
     model_module = import_module(model_config["module"])
     model_fn = getattr(model_module, model_config["name"])
-    model = model_fn(
-        model_config["model_kwargs"], model_config["wrapper_kwargs"]
-    )
+    model = model_fn(model_config["model_kwargs"], model_config["wrapper_kwargs"])
 
     # If no preprocessing function with model return `None`
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)

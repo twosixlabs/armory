@@ -1,8 +1,6 @@
 import json
 from typing import Optional
 
-from armory.data.common import SUPPORTED_DATASETS
-
 
 def _verify_adhoc(config: Optional[dict]):
     if config is None:
