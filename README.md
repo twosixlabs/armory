@@ -86,3 +86,22 @@ Depending on the task, docker memory for an ARMORY container must be at least 8 
 On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
 * [Mac](https://docs.docker.com/docker-for-mac/)
 * [Windows](https://docs.docker.com/docker-for-windows/)
+
+### Docker Cleanup
+Subsequent versions of ARMORY will download new Docker images, but will not clean up existing ones.
+```
+docker images
+```
+will display the set of current images. To delete images, see the `docker rmi` [Documentation](https://docs.docker.com/engine/reference/commandline/rmi/)
+or this [StackOverflow post](https://stackoverflow.com/questions/44785585/how-to-delete-all-docker-local-docker-images).
+Note that if you delete the wrong image(s), this may require redownloading them.
+
+In order to see the set of containers that are running, run:
+```
+docker ps
+```
+ARMORY will attempt to gracefully shut down all containers it launches;
+however, certain errors may prevent shutdown and leave running containers.
+To shut down these containers, please see the docs for [Docker stop](https://docs.docker.com/engine/reference/commandline/stop/) and [Docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
+
+
