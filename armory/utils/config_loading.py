@@ -6,9 +6,7 @@ from importlib import import_module
 
 def load_dataset(dataset_config, *args, **kwargs):
     """
-    Return dataset or raise KeyError
-
-    Convenience function, essentially.
+    Loads a dataset from configuration file
     """
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
@@ -16,6 +14,9 @@ def load_dataset(dataset_config, *args, **kwargs):
 
 
 def load_model(model_config):
+    """
+    Loads a model and preprocessing function from configuration file
+    """
     model_module = import_module(model_config["module"])
     model_fn = getattr(model_module, model_config["name"])
     model = model_fn(
