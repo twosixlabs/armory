@@ -194,7 +194,7 @@ def clean(command_args, prog, description):
     tags = set()
     for image in docker_client.images.list():
         tags.update(image.tags)
-    
+
     for tag in sorted(tags):
         if images.is_old(tag):
             print(f"Attempting to remove tag {tag}")

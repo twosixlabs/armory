@@ -16,6 +16,7 @@ ALL = (
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 
+
 def is_old(tag: str):
     """
     Return True if tag is an old armory container, False otherwise
