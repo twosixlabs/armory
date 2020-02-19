@@ -6,12 +6,11 @@ import json
 import os
 import sys
 import logging
-from importlib import import_module
 
 import numpy as np
 
 from armory.paths import DockerPaths
-from armory.utils.config_loading import load_dataset
+from armory.utils.config_loading import load_dataset, load_model
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,13 +26,7 @@ def evaluate_classifier(config_path: str) -> None:
         config = json.load(fp)
 
     model_config = config["model"]
-    classifier_module = import_module(model_config["module"])
-    classifier_fn = getattr(classifier_module, model_config["name"])
-    classifier = classifier_fn(
-        model_config["model_kwargs"], model_config["wrapper_kwargs"]
-    )
-
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
+    classifier, preprocessing_fn = load_model(model_config)
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
     clean_x, adv_x, labels = load_dataset(
