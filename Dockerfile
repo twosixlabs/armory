@@ -48,7 +48,7 @@ CMD tail -f /dev/null
 ########## PyTorch 1.4 #################
 # TF used for dataset loading
 FROM armory-tf1 AS armory-pytorch
-RUN /opt/conda/bin/conda install pytorch==1.4 torchvision==0.5.0 cudatoolkit==10.1 -c pytorch
+RUN /opt/conda/bin/pip install torch==1.4 torchvision==0.5.0
 
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
