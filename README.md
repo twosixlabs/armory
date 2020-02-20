@@ -54,7 +54,7 @@ interactive tools. There is also support for `--jupyter` which will open a port 
 the container and allow notebooks to be ran inside the armory environment.
 
 ### Custom Attacks and Defenses
-At the moment our evaluations are created so that attacks and defenses may be 
+Our evaluations are created so that attacks and defenses may be 
 interchanged. To do this we standardize all attacks and defenses as subclasses of 
 their respective implementations in [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
 
