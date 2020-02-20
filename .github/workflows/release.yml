@@ -44,3 +44,28 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.pypi_token }}
+
+  release-docker:
+    name: Build and release docker images
+    needs: [release-wheel]
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6']
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Build and release docker images
+        run: |
+          version=$(python -c "import armory; print(armory.__version__)")
+          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+
+          docker build --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
+          docker build --build-arg armory_version=${version} --target armory-tf2 -t twosixarmory/tf2:${version} .
+          docker build --build-arg armory_version=${version} --target armory-pytorch -t twosixarmory/pytorch:${version} .
+
+          docker push twosixarmory/tf1:${version}
+          docker push twosixarmory/tf2:${version}
+          docker push twosixarmory/pytorch:${version}

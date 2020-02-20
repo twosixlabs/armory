@@ -3,7 +3,7 @@ Simple data poisoning backdoor attack
 """
 
 import numpy as np
-from art.attacks.attack import PoisoningAttack
+from art.attacks import PoisoningAttack
 
 
 class PoisoningAttackBackdoor(PoisoningAttack):
