@@ -52,7 +52,7 @@ def _in_memory_dataset_tfds(
     return train_x, train_y, test_x, test_y
 
 
-def mnist_data(
+def mnist(
     dataset_dir: str = None, preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
@@ -69,7 +69,7 @@ def mnist_data(
     )
 
 
-def cifar10_data(
+def cifar10(
     dataset_dir: str = None, preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
@@ -238,8 +238,8 @@ def imagenet_adversarial(
 
 
 SUPPORTED_DATASETS = {
-    "mnist": mnist_data,
-    "cifar10": cifar10_data,
+    "mnist": mnist,
+    "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
 }

@@ -14,7 +14,7 @@
     },
     "dataset": {
         "module": "armory.data.datasets",
-        "name": "mnist_data"
+        "name": "mnist"
     },
     "defense": null,
     "evaluation": {

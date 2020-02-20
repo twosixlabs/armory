@@ -22,7 +22,7 @@
     },
     "dataset": {
         "module": "armory.data.datasets",
-        "name": "cifar10_data"
+        "name": "cifar10"
     },
     "defense": {
         "kwargs": {

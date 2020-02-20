@@ -13,7 +13,7 @@ from armory.paths import HostPaths
 
 class DatasetTest(unittest.TestCase):
     def test_mnist(self):
-        train_x, train_y, test_x, test_y = datasets.mnist_data(
+        train_x, train_y, test_x, test_y = datasets.mnist(
             dataset_dir=HostPaths().dataset_dir
         )
         self.assertEqual(train_x.shape[0], 60000)
@@ -22,7 +22,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(test_y.shape[0], 10000)
 
     def test_cifar10(self):
-        train_x, train_y, test_x, test_y = datasets.cifar10_data(
+        train_x, train_y, test_x, test_y = datasets.cifar10(
             dataset_dir=HostPaths().dataset_dir
         )
         self.assertEqual(train_x.shape[0], 50000)
@@ -61,7 +61,7 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        train_x, train_y, test_x, test_y = datasets.mnist_data(
+        train_x, train_y, test_x, test_y = datasets.mnist(
             preprocessing_fn=preprocessing_fn, dataset_dir=HostPaths().dataset_dir,
         )
 
@@ -80,7 +80,7 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        train_x, train_y, test_x, test_y = datasets.cifar10_data(
+        train_x, train_y, test_x, test_y = datasets.cifar10(
             preprocessing_fn=preprocessing_fn, dataset_dir=HostPaths().dataset_dir,
         )
 
