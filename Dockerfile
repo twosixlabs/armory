@@ -49,7 +49,10 @@ CMD tail -f /dev/null
 FROM armory-base AS armory-pytorch
 
 # TF used for dataset loading
-RUN /opt/conda/bin/conda install tensorflow==1.15.0 pytorch==1.4 torchvision cudatoolkit=10.1 -c pytorch
+RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
+ pytorch==1.4 \
+ torchvision==0.5.0 \
+ cudatoolkit=10.1 -c pytorch
 
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
