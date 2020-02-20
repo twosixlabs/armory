@@ -60,20 +60,16 @@ their respective implementations in [adversarial-robustness-toolbox](https://git
 
 # Docker
 Armory is intended to be a lightweight python package which standardizes all evaluations
-inside a docker container. Users are encouraged to use the available images on 
-dockerhub:
-```
-docker pull twosixarmory/tf1:0.3.3
-docker pull twosixarmory/tf2:0.3.3
-docker pull twosixarmory/pytorch:0.3.3
-```
+inside a docker container. Docker images will be pulled as needed when evaluations are 
+ran.
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
 within this repo:
 ```
-docker build --target armory-tf1 -t twosixarmory/tf1:0.3.3 .
-docker build --target armory-tf2 -t twosixarmory/tf2:0.3.3 .
-docker build --target armory-pytorch -t twosixarmory/pytorch:0.3.3 .
+version=$(python -c "import armory; print(armory.__version__)")
+docker build --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
+docker build --build-arg armory_version=${version} --target armory-tf2 -t twosixarmory/tf2:${version} .
+docker build --build-arg armory_version=${version} --target armory-pytorch -t twosixarmory/pytorch:${version} .
 ```
 
 ### Docker Mounts
