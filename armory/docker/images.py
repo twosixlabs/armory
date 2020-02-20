@@ -2,6 +2,8 @@
 Enables programmatic accessing of most recent docker images
 """
 
+from distutils import version
+
 import armory
 
 USER = "twosixarmory"
@@ -15,6 +17,7 @@ ALL = (
     PYTORCH,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
+VERSION = version.StrictVersion(TAG)
 
 
 def is_old(tag: str):
@@ -28,6 +31,12 @@ def is_old(tag: str):
     tokens = tag.split(":")
     if len(tokens) != 2:
         return False
-    if tokens[0] in REPOSITORIES:
-        return True
+    repo, tag = tokens
+    if repo in REPOSITORIES:
+        try:
+            if version.StrictVersion(tag) < VERSION:
+                return True
+        except (AttributeError, ValueError):
+            # Catch empty tag and tag parsing errors
+            pass
     return False
