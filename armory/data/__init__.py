@@ -1,4 +1,3 @@
 """
 Data methods in ARMORY
 """
-
