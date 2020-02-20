@@ -1,4 +1,4 @@
-# Armory Containers v0.4.0
+# Armory Containers v0.4.1
 
 ########## Base #################
 
@@ -46,9 +46,13 @@ RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
 CMD tail -f /dev/null
 
 ########## PyTorch 1.4 #################
+FROM armory-base AS armory-pytorch
+
 # TF used for dataset loading
-FROM armory-tf1 AS armory-pytorch
-RUN /opt/conda/bin/conda install pytorch==1.4 torchvision==0.5.0 cudatoolkit==10.1 -c pytorch
+RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
+ pytorch==1.4 \
+ torchvision==0.5.0 \
+ cudatoolkit=10.1 -c pytorch
 
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}

@@ -18,4 +18,4 @@ from armory import webapi
 from armory import paths
 
 # Semantic Version
-__version__ = "0.4.0"
+__version__ = "0.4.1"
