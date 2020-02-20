@@ -17,6 +17,7 @@ from armory.docker.management import ManagementInstance
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
+from armory.utils import docker_api
 from armory.paths import HostPaths, DockerPaths
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class Evaluator(object):
             docker_client.images.get(kwargs["image_name"])
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
-            docker_client.images.pull(image_name)
+            docker_api.pull_verbose(docker_client, image_name)
 
         self.manager = ManagementInstance(**kwargs)
 

@@ -21,6 +21,7 @@ try:
     from armory.eval import Evaluator
     from armory.docker.management import ManagementInstance
     from armory.docker import images
+    from armory.utils import docker_api
 except ImportError as e:
     module = e.name
     print(f"ERROR: cannot import '{module}'", file=sys.stderr)
@@ -112,7 +113,7 @@ def _pull_docker_images(docker_client=None):
             docker_client.images.get(image)
         except ImageNotFound:
             print(f"Image {image} was not found. Downloading...")
-            docker_client.images.pull(image)
+            docker_api.pull_verbose(docker_client, image)
 
 
 def download_all_data(command_args, prog, description):
