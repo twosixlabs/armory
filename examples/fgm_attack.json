@@ -13,6 +13,7 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
+        "module": "armory.data.datasets",
         "name": "mnist"
     },
     "defense": null,

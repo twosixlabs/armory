@@ -20,6 +20,7 @@
         "name": "CarliniL2Method"
     },
     "dataset": {
+        "module": "armory.data.datasets",
         "name": "cifar10"
     },
     "defense": null,

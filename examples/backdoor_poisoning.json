@@ -21,6 +21,7 @@
         "name": "PoisoningAttackBackdoor"
     },
     "dataset": {
+        "module": "armory.data.datasets",
         "name": "cifar10"
     },
     "defense": {

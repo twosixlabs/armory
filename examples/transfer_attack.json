@@ -2,6 +2,7 @@
     "adhoc": null,
     "attack": null,
     "dataset": {
+        "module": "armory.data.datasets",
         "name": "imagenet_adversarial"
     },
     "defense": null,

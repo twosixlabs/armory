@@ -1,8 +1,6 @@
 import json
 from typing import Optional
 
-from armory.data.common import SUPPORTED_DATASETS
-
 
 def _verify_adhoc(config: Optional[dict]):
     if config is None:
@@ -44,11 +42,13 @@ def _verify_dataset(config: Optional[dict]):
     if config is None:
         return
     else:
-        if config["name"] not in SUPPORTED_DATASETS:
-            raise ValueError(
-                f"Configured data {config['name']} not found in"
-                f" supported datasets: {list(SUPPORTED_DATASETS.keys())}"
-            )
+        if "module" not in config.keys():
+            raise ValueError("A `module` must be specified in dataset json")
+        assert isinstance(config["module"], str)
+
+        if "name" not in config.keys():
+            raise ValueError("A `name` must be specified in dataset json")
+        assert isinstance(config["name"], str)
 
 
 def _verify_defense(config: Optional[dict]):

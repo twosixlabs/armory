@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 from armory.eval.plot_poisoning import classification_poisoning
-from armory.data import datasets
+from armory.utils.config_loading import load_dataset
 from armory.paths import DockerPaths
 
 logger = logging.getLogger(__name__)
@@ -68,8 +68,8 @@ def evaluate_classifier(config_path: str) -> None:
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    x_clean_train, y_clean_train, x_clean_test, y_clean_test = datasets.load(
-        config["dataset"]["name"], preprocessing_fn=preprocessing_fn
+    x_clean_train, y_clean_train, x_clean_test, y_clean_test = load_dataset(
+        config["dataset"], preprocessing_fn=preprocessing_fn
     )
 
     batch_size = config["adhoc"]["batch_size"]
