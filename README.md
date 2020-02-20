@@ -84,13 +84,23 @@ On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to chan
 * [Windows](https://docs.docker.com/docker-for-windows/)
 
 ### Docker Cleanup
-Subsequent versions of ARMORY will download new Docker images, but will not clean up existing ones.
+Running `armory download-all-data` will download new Docker images, but will not clean up old images.
+
+To download new images and clean up old images:
+```
+armory clean
+```
+If containers are currently running that use the old images, this will fail.
+In that case, either stop them with first or run:
+```
+armory clean --force
+```
+
 To display the set of current images:
 ```
 docker images
 ```
-To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
-Note that if you delete the wrong image(s), this may require re-downloading them.
+To manually delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
 
 In order to see the set of containers that are running:
 ```

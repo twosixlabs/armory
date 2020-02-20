@@ -20,6 +20,7 @@ try:
 
     from armory.eval import Evaluator
     from armory.docker.management import ManagementInstance
+    from armory.docker import images
 except ImportError as e:
     module = e.name
     print(f"ERROR: cannot import '{module}'", file=sys.stderr)
@@ -103,6 +104,17 @@ def run(command_args, prog, description):
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
+def _pull_docker_images(docker_client=None):
+    if docker_client is None:
+        docker_client = docker.from_env(version="auto")
+    for image in images.ALL:
+        try:
+            docker_client.images.get(image)
+        except ImageNotFound:
+            print(f"Image {image} was not found. Downloading...")
+            docker_client.images.pull(image)
+
+
 def download_all_data(command_args, prog, description):
     """
     Script to download all datasets and model weights for offline usage.
@@ -121,21 +133,10 @@ def download_all_data(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     print("Downloading all docker images....")
-    docker_client = docker.from_env()
-    docker_images = [
-        "twosixarmory/tf1:0.3.3",
-        "twosixarmory/tf2:0.3.3",
-        "twosixarmory/pytorch:0.3.3",
-    ]
-    for image in docker_images:
-        try:
-            docker_client.images.get(image)
-        except ImageNotFound:
-            print(f"Image {image} was not found. Downloading...")
-            docker_client.images.pull(image)
+    _pull_docker_images()
 
     print("Downloading all datasets and model weights...")
-    manager = ManagementInstance(image_name="twosixarmory/tf1:0.3.3")
+    manager = ManagementInstance(image_name=images.TF1)
     runner = manager.start_armory_instance()
     cmd = "; ".join(
         [
@@ -152,6 +153,62 @@ def download_all_data(command_args, prog, description):
     manager.stop_armory_instance(runner)
 
 
+def clean(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        dest="force",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to remove images of running containers",
+    )
+    parser.add_argument(
+        "--no-download",
+        dest="download",
+        action="store_const",
+        const=False,
+        default=True,
+        help="If set, will not attempt to pull images before removing existing",
+    )
+    args = parser.parse_args(command_args)
+
+    coloredlogs.install(level=args.log_level)
+
+    docker_client = docker.from_env(version="auto")
+    if args.download:
+        print("Pulling the latest docker images")
+        _pull_docker_images(docker_client)
+
+    print("Deleting old docker images")
+    tags = set()
+    for image in docker_client.images.list():
+        tags.update(image.tags)
+
+    for tag in sorted(tags):
+        if images.is_old(tag):
+            print(f"Attempting to remove tag {tag}")
+            try:
+                docker_client.images.remove(tag, force=args.force)
+                print(f"* Tag {tag} removed")
+            except docker.errors.APIError as e:
+                if not args.force and "(must force)" in str(e):
+                    print(e)
+                    print(f"Cannot delete tag {tag}. Must use `--force`")
+                else:
+                    raise
+
+
 # command, (function, description)
 PROGRAM = "armory"
 COMMANDS = {
@@ -160,6 +217,7 @@ COMMANDS = {
         download_all_data,
         "download all datasets and model weights used by armory",
     ),
+    "clean": (clean, "download new and remove all old armory docker images"),
 }
 
 
