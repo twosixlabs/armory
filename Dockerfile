@@ -23,7 +23,7 @@ RUN /opt/conda/bin/pip install \
     tensorflow-datasets==2.0.0 \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
-    adversarial-robustness-toolbox==1.1.0 \
+    adversarial-robustness-toolbox==1.1.1 \
     Pillow==7.0.0
 
 WORKDIR /workspace
