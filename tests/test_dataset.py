@@ -50,6 +50,19 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(adv_x.shape[0], 1000)
         self.assertEqual(labels.shape[0], 1000)
 
+    def test_german_traffic_sign(self):
+        train_x, train_y, test_x, test_y = datasets.german_traffic_sign(
+            dataset_dir=HostPaths().dataset_dir
+        )
+        self.assertEqual(train_x.shape[0], 39209)
+        self.assertEqual(train_y.shape[0], 39209)
+        self.assertEqual(test_x.shape[0], 12630)
+        self.assertEqual(test_y.shape[0], 12630)
+        for X in train_x, test_x:
+            for x in X:
+                self.assertTrue(25 <= x.shape[0] <= 232)
+                self.assertTrue(25 <= x.shape[1] <= 266)
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
