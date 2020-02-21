@@ -18,6 +18,7 @@ try:
     import docker
     from docker.errors import ImageNotFound
 
+    import armory
     from armory.eval import Evaluator
     from armory.docker.management import ManagementInstance
     from armory.docker import images
@@ -235,6 +236,7 @@ def usage():
         lines.append(f"    {name} - {description}")
     lines.extend(
         [
+            "    -v, --version - get current armory version",
             "",
             f"Run '{PROGRAM} <command> --help' for more information on a command.",
             " ",
@@ -247,6 +249,9 @@ def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(usage())
         sys.exit(1)
+    elif sys.argv[1] in ("-v", "--version"):
+        print(f"armory {armory.__version__}")
+        sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
     parser.add_argument(
