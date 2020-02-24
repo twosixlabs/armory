@@ -2,6 +2,7 @@
 Download and preprocess common datasets.
 """
 
+import csv
 import logging
 import os
 import zipfile
@@ -237,11 +238,98 @@ def imagenet_adversarial(
     return clean_x, adv_x, labels
 
 
+def german_traffic_sign(
+    preprocessing_fn: Callable = None, dataset_dir: str = None,
+) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    """
+    German traffic sign dataset with 43 classes and over
+    50,000 images.
+
+    :param preprocessing_fn: Callable function to preprocess inputs
+    :param dataset_dir: Directory where cached datasets are stored
+    :return: (train_images,train_labels,test_images,test_labels)
+    """
+
+    from PIL import Image
+
+    def _read_images(prefix, gtFile, im_list, label_list):
+        with open(gtFile, newline="") as csvFile:
+            gtReader = csv.reader(
+                csvFile, delimiter=";"
+            )  # csv parser for annotations file
+            gtReader.__next__()  # skip header
+            # loop over all images in current annotations file
+            for row in gtReader:
+                try:
+                    tmp = Image.open(os.path.join(prefix, row[0]))
+                    # First column is filename
+                except IOError as e:
+                    raise IOError(f"Could not open image with PIL. {e}")
+                im_list.append(np.array(tmp))
+                tmp.close()
+                label_list.append(int(row[7]))  # the 8th column is the label
+
+    if not dataset_dir:
+        dataset_dir = DockerPaths().dataset_dir
+
+    rootdir = os.path.join(dataset_dir, "external")
+    subdir = "GTSRB"
+    dirpath = os.path.join(rootdir, subdir)
+
+    urls = [
+        "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Training_Images.zip",
+        "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
+        "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip",
+    ]
+    dirs = [rootdir, rootdir, dirpath]
+    if not os.path.isdir(dirpath):
+        for url, dir in zip(urls, dirs):
+            zip_file = url.split("/")[-1]
+            zip_filepath = os.path.join(dir, zip_file)
+            # Download file if it does not exist
+            if not os.path.isfile(zip_filepath):
+                os.makedirs(dir, exist_ok=True)
+                curl(url, dir, zip_file)
+
+            # Extract and clean up
+            with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
+                zip_ref.extractall(dir)
+            os.remove(zip_filepath)
+
+    train_images, train_labels = [], []
+    test_images, test_labels = [], []
+
+    for c in range(0, 43):
+        prefix = os.path.join(
+            dirpath, "Final_Training", "Images", format(c, "05d")
+        )  # subdirectory for class
+        gtFile = os.path.join(
+            prefix, "GT-" + format(c, "05d") + ".csv"
+        )  # annotations file
+        _read_images(prefix, gtFile, train_images, train_labels)
+
+    prefix = os.path.join(dirpath, "Final_Test", "Images")
+    gtFile = os.path.join(dirpath, "GT-final_test.csv")
+    _read_images(prefix, gtFile, test_images, test_labels)
+
+    if preprocessing_fn:
+        train_images = preprocessing_fn(train_images)
+        test_images = preprocessing_fn(test_images)
+
+    return (
+        np.array(train_images),
+        np.array(train_labels),
+        np.array(test_images),
+        np.array(test_labels),
+    )
+
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
+    "german_traffic_sign": german_traffic_sign,
 }
 
 
