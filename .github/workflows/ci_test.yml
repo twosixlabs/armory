@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - master
+      - r*
+
   pull_request:
     branches:
       - master
+      - r*
 jobs:
   pytest:
     name: PyTest
