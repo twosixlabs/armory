@@ -12,6 +12,6 @@ then
     exit $need_format
 fi
 
-yamllint ./
+yamllint --no-warnings ./
 
 python -m flake8
