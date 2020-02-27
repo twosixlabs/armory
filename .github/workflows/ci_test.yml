@@ -1,5 +1,7 @@
+---
 name: GitHub CI
 
+# yamllint disable-line rule:truthy
 on:
   push:
     branches:
@@ -54,5 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
-      - name: Ensure contributor used ("python -m tools.format_json") before commit
+      - name: >
+          Ensure contributor used ("python -m tools.format_json")
+          before commit
         run: python -m tools.format_json --check
