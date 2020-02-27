@@ -8,7 +8,7 @@ import shutil
 
 import requests
 
-from armory.paths import HostPaths
+from armory import paths
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def download_and_extract_repo(external_repo_name: str) -> None:
     Private repositories require a `GITHUB_TOKEN` environment variable.
     :param external_repo_name: String name of "organization/repo-name"
     """
-    host_paths = HostPaths()
+    host_paths = paths.host()
 
     os.makedirs(host_paths.external_repo_dir, exist_ok=True)
     headers = {}

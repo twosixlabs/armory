@@ -7,11 +7,11 @@ import torch
 from torch import nn
 from torchvision import models
 
-from armory.paths import DockerPaths
+from armory import paths
 
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = os.path.join(DockerPaths().dataset_dir, "pytorch", "models")
+os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
 
 def resnet50(pretrained=True):
