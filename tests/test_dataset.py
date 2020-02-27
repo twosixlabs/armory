@@ -131,7 +131,7 @@ class KerasTest(unittest.TestCase):
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_x, adv_x, labels = datasets.imagenet_adversarial(
-            preprocessing_fn=preprocessing_fn, dataset_dir=HostPaths().dataset_dir,
+            preprocessing_fn=preprocessing_fn, dataset_dir=paths.host().dataset_dir,
         )
 
         predictions = classifier.predict(clean_x)
