@@ -35,7 +35,7 @@ evaluation script that is written in the `evaluation['eval_file']` field of the
 config.
 
 For more detailed information on the evaluation config file please see the 
-[documentation](examples/README.md).
+[documentation in our example repo](https://github.com/twosixlabs/armory-example/tree/master/examples).
 
 Note: Since ARMORY launches Docker containers, the python package must be ran on system host.
 
@@ -44,7 +44,7 @@ As an example:
 pip install armory-testbed
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
-armory run example_config.json
+armory run examples/fgm_attack.json
 ```
 
 ### Interactive Debugging of Evaluations
