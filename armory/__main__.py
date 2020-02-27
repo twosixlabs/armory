@@ -11,33 +11,19 @@ This runs an arbitrary config file. Results are output to the `outputs/` directo
 
 import argparse
 import logging
+import os
 import sys
 
-try:
-    import coloredlogs
-    import docker
-    from docker.errors import ImageNotFound
+import coloredlogs
+import docker
+from docker.errors import ImageNotFound
 
-    import armory
-    from armory.eval import Evaluator
-    from armory.docker.management import ManagementInstance
-    from armory.docker import images
-    from armory.utils import docker_api
-except ImportError as e:
-    module = e.name
-    print(f"ERROR: cannot import '{module}'", file=sys.stderr)
-    try:
-        with open("requirements.txt") as f:
-            requirements = f.read().splitlines()
-    except OSError:
-        print(f"ERROR: cannot locate 'requirements.txt'", file=sys.stderr)
-        sys.exit(1)
-
-    if module in requirements:
-        print(f"    Please run: $ pip install -r requirements.txt", file=sys.stderr)
-    else:
-        print(f"ERROR: {module} not in requirements. Please submit bug report!!!")
-    sys.exit(1)
+import armory
+from armory import paths
+from armory.eval import Evaluator
+from armory.docker.management import ManagementInstance
+from armory.docker import images
+from armory.utils import docker_api
 
 
 class PortNumber(argparse.Action):
@@ -102,6 +88,7 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
+    paths.init()
     rig = Evaluator(args.filepath)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
@@ -133,6 +120,7 @@ def download_all_data(command_args, prog, description):
     )
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
+    paths.init()
 
     print("Downloading all docker images....")
     _pull_docker_images()
@@ -211,6 +199,95 @@ def clean(command_args, prog, description):
                     raise
 
 
+def _get_path(name, default_path, absolute_required=False):
+    answer = None
+    while answer is None:
+        try:
+            answer = input(f'{name} [DEFAULT: "{default_path}"]: ')
+        except EOFError:
+            answer = ""
+        if not answer:
+            answer = default_path
+        answer = os.path.expanduser(answer)
+        # resolve / simplify absolute and relative paths
+        if os.path.isabs(answer):
+            answer = os.path.abspath(answer)
+        elif absolute_required:
+            print(f"Invalid answer: '{answer}' Absolute path required for {name}")
+            answer = None
+        else:
+            answer = os.path.relpath(answer)
+        # print(f'    Resolved path: "{answer}"')
+    return answer
+
+
+def configure(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
+    args = parser.parse_args(command_args)
+    coloredlogs.install(level=args.log_level)
+
+    default = paths.default()
+
+    instructions = "\n".join(
+        [
+            "Configuring paths for armory usage",
+            f'    This configuration will be stored at "{default.armory_config}"',
+            "",
+            "Instructions:",
+            "-------------",
+            "    Please enter desired target directory for the following paths.",
+            "    If left empty, the default path will be used.",
+            "    Relative paths will be w.r.t. the directory armory is launched from",
+            "    Absolute paths (and '~' user paths) will be constant.",
+            "        Absolute paths are required for 'datasets' and 'models'",
+            "",
+        ]
+    )
+    print(instructions)
+
+    config = {
+        "dataset_dir": _get_path(
+            "datasets", default.dataset_dir, absolute_required=True
+        ),
+        "model_dir": _get_path("models", default.model_dir, absolute_required=True),
+        "tmp_dir": _get_path("tmp", default.tmp_dir),
+        "output_dir": _get_path("output", default.output_dir),
+    }
+    print("Resolved paths:")
+    print(f"    datasets: {config['dataset_dir']}")
+    print(f"    models:   {config['model_dir']}")
+    print(f"    tmp:      {config['tmp_dir']}")
+    print(f"    output:   {config['output_dir']}")
+    print()
+    save = None
+    while save is None:
+        if os.path.isfile(default.armory_config):
+            print("WARNING: this will overwrite existing configuration.")
+            print("    Press Ctrl-C to abort.")
+        answer = input("Save this configuration? [y/N] ")
+        if answer in ("Y", "y"):
+            print("Saving configuration...")
+            paths.save_config(config)
+            print("Configure successful")
+            save = True
+        elif answer in ("N", "n"):
+            print("Configuration not saved")
+            save = False
+        else:
+            print(f"Invalid selection: {answer}")
+        print()
+    print("Configure complete")
+
+
 # command, (function, description)
 PROGRAM = "armory"
 COMMANDS = {
@@ -220,6 +297,7 @@ COMMANDS = {
         "download all datasets and model weights used by armory",
     ),
     "clean": (clean, "download new and remove all old armory docker images"),
+    "configure": (configure, "set up armory and dataset paths"),
 }
 
 
