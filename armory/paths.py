@@ -108,9 +108,11 @@ class HostPaths:
             self.external_repo_dir = default().external_repo_dir
 
     def makedirs(self):
+        logger.info("Creating armory directories if they do not exist")
         os.makedirs(self.dataset_dir, exist_ok=True)
         os.makedirs(self.model_dir, exist_ok=True)
-        # tmp and output dirs should be handled by evaluator
+        os.makedirs(self.tmp_dir, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
 
 
 class HostDefault:
