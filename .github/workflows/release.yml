@@ -1,7 +1,6 @@
 ---
 name: armory-release
 
-# yamllint disable-line rule:truthy
 on:
   repository_dispatch:
     types: build-and-release
