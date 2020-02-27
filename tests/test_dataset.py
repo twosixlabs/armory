@@ -119,7 +119,6 @@ class KerasTest(unittest.TestCase):
 
         predictions = classifier.predict(adv_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        print(accuracy)
         self.assertLess(accuracy, 0.02)
 
     def test_keras_imagenet_transfer(self):
@@ -140,5 +139,4 @@ class KerasTest(unittest.TestCase):
 
         predictions = classifier.predict(adv_x)
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        print(accuracy)
         self.assertLess(accuracy, 0.72)
