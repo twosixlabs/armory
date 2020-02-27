@@ -31,7 +31,6 @@ class ArmoryInstance(object):
             "detach": True,
             "volumes": {
                 host_paths.cwd: {"bind": docker_paths.cwd, "mode": "rw"},
-                #                host_paths.armory_dir: {"bind": docker_paths.armory_dir, "mode": "rw"},
                 host_paths.dataset_dir: {
                     "bind": docker_paths.dataset_dir,
                     "mode": "rw",
