@@ -208,7 +208,7 @@ def imagenet_adversarial(
         dataset_dir = DockerPaths().dataset_dir
 
     num_images = 1000
-    filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v0.1.tfrecords"
+    filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
     dirpath = os.path.join(dataset_dir, "external", "imagenet_adv")
     output_filepath = os.path.join(dirpath, filename)
 
@@ -225,10 +225,6 @@ def imagenet_adversarial(
     image_label_ds = image_label_ds.batch(num_images)
     image_label_ds = tf.data.experimental.get_single_element(image_label_ds)
     clean_x, adv_x, labels = tfds.as_numpy(image_label_ds)
-
-    # Temporary flip from BGR to RGB since dataset was saved in BGR.
-    clean_x = clean_x[..., ::-1]
-    adv_x = adv_x[..., ::-1]
 
     # Preprocessing should always be done on RGB inputs
     if preprocessing_fn:
