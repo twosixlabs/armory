@@ -121,3 +121,24 @@ class KerasTest(unittest.TestCase):
         accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
         print(accuracy)
         self.assertLess(accuracy, 0.02)
+
+    def test_keras_imagenet_transfer(self):
+        classifier_module = import_module(
+            "armory.baseline_models.keras.keras_inception_resnet_v2"
+        )
+        classifier_fn = getattr(classifier_module, "get_art_model")
+        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
+        preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
+
+        clean_x, adv_x, labels = datasets.imagenet_adversarial(
+            preprocessing_fn=preprocessing_fn, dataset_dir=HostPaths().dataset_dir,
+        )
+
+        predictions = classifier.predict(clean_x)
+        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
+        self.assertGreater(accuracy, 0.75)
+
+        predictions = classifier.predict(adv_x)
+        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
+        print(accuracy)
+        self.assertLess(accuracy, 0.72)
