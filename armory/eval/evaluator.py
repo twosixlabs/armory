@@ -33,7 +33,7 @@ class Evaluator(object):
         else:
             self.user_id, self.group_id = 0, 0
 
-        self.extra_env_vars = None
+        self.extra_env_vars = dict()
         self.config = load_config(config_path)
         self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
         self.docker_config_path = Path(
@@ -46,6 +46,9 @@ class Evaluator(object):
 
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
+            self.extra_env_vars.update(
+                {"PYTHONPATH": self.docker_paths.dataset_dir + "/external_repos"}
+            )
 
         if self.config["sysconfig"].get("use_armory_private", None):
             self._download_private()
@@ -70,10 +73,12 @@ class Evaluator(object):
 
     def _download_private(self):
         external_repo.download_and_extract_repo("twosixlabs/armory-private")
-        self.extra_env_vars = {
-            "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
-            "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
-        }
+        self.extra_env_vars.update(
+            {
+                "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
+                "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
+            }
+        )
 
     def _write_tmp(self):
         os.makedirs(self.host_paths.tmp_dir, exist_ok=True)
