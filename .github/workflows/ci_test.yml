@@ -59,7 +59,7 @@ jobs:
       - name: install yamllint
         run: pip install yamllint
       - name: Run yamllint
-        run: yamllint ./
+        run: yamllint --no-warnings ./
   json-format-test:
     name: JSON file format
     runs-on: ubuntu-18.04
