@@ -31,7 +31,7 @@ WORKDIR /workspace
 ########## TF 1.15 #################
 
 FROM armory-base AS armory-tf1
-RUN /opt/conda/bin/conda install tensorflow-gpu==1.15.2
+RUN /opt/conda/bin/conda install tensorflow-gpu==1.15.0
 
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
