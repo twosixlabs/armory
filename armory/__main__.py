@@ -199,7 +199,7 @@ def clean(command_args, prog, description):
                     raise
 
 
-def _get_path(name, default_path, absolute_required=False):
+def _get_path(name, default_path, absolute_required=True):
     answer = None
     while answer is None:
         try:
@@ -217,7 +217,6 @@ def _get_path(name, default_path, absolute_required=False):
             answer = None
         else:
             answer = os.path.relpath(answer)
-        # print(f'    Resolved path: "{answer}"')
     return answer
 
 
@@ -242,32 +241,31 @@ def configure(command_args, prog, description):
             "Configuring paths for armory usage",
             f'    This configuration will be stored at "{default.armory_config}"',
             "",
-            "Instructions:",
-            "-------------",
-            "    Please enter desired target directory for the following paths.",
+            "Please enter desired target directory for the following paths.",
             "    If left empty, the default path will be used.",
-            "    Relative paths will be w.r.t. the directory armory is launched from",
-            "    Absolute paths (and '~' user paths) will be constant.",
-            "        Absolute paths are required for 'datasets' and 'models'",
+            "    Absolute paths (which include '~' user paths) are required.",
             "",
         ]
     )
     print(instructions)
 
     config = {
-        "dataset_dir": _get_path(
-            "datasets", default.dataset_dir, absolute_required=True
-        ),
-        "model_dir": _get_path("models", default.model_dir, absolute_required=True),
+        "dataset_dir": _get_path("datasets", default.dataset_dir),
+        "model_dir": _get_path("models", default.model_dir),
         "tmp_dir": _get_path("tmp", default.tmp_dir),
         "output_dir": _get_path("output", default.output_dir),
     }
-    print("Resolved paths:")
-    print(f"    datasets: {config['dataset_dir']}")
-    print(f"    models:   {config['model_dir']}")
-    print(f"    tmp:      {config['tmp_dir']}")
-    print(f"    output:   {config['output_dir']}")
-    print()
+    resolved = "\n".join(
+        [
+            "Resolved paths:",
+            f"    datasets: {config['dataset_dir']}",
+            f"    models:   {config['model_dir']}",
+            f"    tmp:      {config['tmp_dir']}",
+            f"    output:   {config['output_dir']}",
+            "",
+        ]
+    )
+    print(resolved)
     save = None
     while save is None:
         if os.path.isfile(default.armory_config):
