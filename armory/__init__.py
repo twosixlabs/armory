@@ -10,7 +10,7 @@ logger.addHandler(logging.NullHandler())
 # Submodule imports
 try:
     import coloredlogs
-    
+
     from armory import art_experimental
     from armory import baseline_models
     from armory import data
