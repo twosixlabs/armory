@@ -249,18 +249,18 @@ def configure(command_args, prog, description):
     print(instructions)
 
     config = {
-        "dataset_dir": _get_path("datasets", default.dataset_dir),
-        "model_dir": _get_path("models", default.model_dir),
-        "tmp_dir": _get_path("tmp", default.tmp_dir),
-        "output_dir": _get_path("output", default.output_dir),
+        "dataset_dir": _get_path("dataset_dir", default.dataset_dir),
+        "saved_model_dir": _get_path("saved_model_dir", default.saved_model_dir),
+        "tmp_dir": _get_path("tmp_dir", default.tmp_dir),
+        "output_dir": _get_path("output_dir", default.output_dir),
     }
     resolved = "\n".join(
         [
             "Resolved paths:",
-            f"    datasets: {config['dataset_dir']}",
-            f"    models:   {config['model_dir']}",
-            f"    tmp:      {config['tmp_dir']}",
-            f"    output:   {config['output_dir']}",
+            f"    dataset_dir:     {config['dataset_dir']}",
+            f"    saved_model_dir: {config['saved_model_dir']}",
+            f"    tmp_dir:         {config['tmp_dir']}",
+            f"    output_dir:      {config['output_dir']}",
             "",
         ]
     )

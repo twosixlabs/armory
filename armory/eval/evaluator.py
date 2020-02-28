@@ -47,7 +47,7 @@ class Evaluator(object):
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
             self.extra_env_vars.update(
-                {"PYTHONPATH": self.docker_paths.dataset_dir + "/external_repos"}
+                {"PYTHONPATH": self.docker_paths.external_repo_dir}
             )
 
         if self.config["sysconfig"].get("use_armory_private", None):

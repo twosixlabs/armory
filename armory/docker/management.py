@@ -35,7 +35,10 @@ class ArmoryInstance(object):
                     "bind": docker_paths.dataset_dir,
                     "mode": "rw",
                 },
-                host_paths.model_dir: {"bind": docker_paths.model_dir, "mode": "rw"},
+                host_paths.saved_model_dir: {
+                    "bind": docker_paths.saved_model_dir,
+                    "mode": "rw",
+                },
                 host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
                 host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },

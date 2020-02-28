@@ -34,7 +34,7 @@ def docker():
 def validate_config(config):
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
-    keys = ("dataset_dir", "model_dir", "output_dir", "tmp_dir")
+    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir")
     for key in keys:
         if key not in config:
             raise KeyError(f"config is missing key {key}")
@@ -86,14 +86,14 @@ class HostPaths:
         if os.path.isfile(self.armory_config):
             # Parse paths from config
             config = load_config()
-            for k in "dataset_dir", "model_dir", "output_dir", "tmp_dir":
+            for k in "dataset_dir", "saved_model_dir", "output_dir", "tmp_dir":
                 setattr(self, k, config[k])
-            self.external_repo_dir = os.path.join(self.dataset_dir, "external_repos")
+            self.external_repo_dir = os.path.join(self.tmp_dir, "external")
         else:
             logger.warning(f"No {self.armory_config} file. Using default paths.")
             logger.warning("Please run `armory configure`")
             self.dataset_dir = default().dataset_dir
-            self.model_dir = default().model_dir
+            self.saved_model_dir = default().saved_model_dir
             self.tmp_dir = default().tmp_dir
             self.output_dir = default().output_dir
             self.external_repo_dir = default().external_repo_dir
@@ -101,7 +101,7 @@ class HostPaths:
     def makedirs(self):
         logger.info("Creating armory directories if they do not exist")
         os.makedirs(self.dataset_dir, exist_ok=True)
-        os.makedirs(self.model_dir, exist_ok=True)
+        os.makedirs(self.saved_model_dir, exist_ok=True)
         os.makedirs(self.tmp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -114,10 +114,10 @@ class HostDefault:
         self.armory_config = os.path.join(self.armory_dir, "config.json")
 
         self.dataset_dir = os.path.join(self.armory_dir, "datasets")
-        self.model_dir = os.path.join(self.armory_dir, "models")
+        self.saved_model_dir = os.path.join(self.armory_dir, "saved_models")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
-        self.external_repo_dir = os.path.join(self.dataset_dir, "external_repos")
+        self.external_repo_dir = os.path.join(self.dataset_dir, "external")
 
 
 class DockerPaths:
@@ -125,7 +125,7 @@ class DockerPaths:
         self.cwd = "/workspace"
         armory_dir = "/armory"
         self.dataset_dir = armory_dir + "/datasets"
-        self.model_dir = armory_dir + "/models"
+        self.saved_model_dir = armory_dir + "/saved_models"
         self.tmp_dir = armory_dir + "/tmp"
         self.output_dir = armory_dir + "/outputs"
-        # TODO: external_repo_dir?
+        self.external_repo_dir = self.tmp_dir + "/external"
