@@ -31,15 +31,6 @@ def docker():
     return _MAP["docker"]
 
 
-def init():
-    """
-    Load configurations
-    """
-    default()
-    host()
-    docker()
-
-
 def validate_config(config):
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
