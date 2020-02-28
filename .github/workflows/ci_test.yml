@@ -1,3 +1,4 @@
+---
 name: GitHub CI
 
 on:
@@ -48,6 +49,16 @@ jobs:
         run: pip install black
       - name: Ensure contributor used ("black ./") before commit
         run: black --check ./
+  yamllint-test:
+    name: Yamllint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+      - name: install yamllint
+        run: pip install yamllint
+      - name: Run yamllint
+        run: yamllint --no-warnings ./
   json-format-test:
     name: JSON file format
     runs-on: ubuntu-18.04

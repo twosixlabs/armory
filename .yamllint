@@ -1,0 +1,13 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 135
+    level: error
+  comments-indentation:
+    level: error
+  document-start:
+    level: error
+  indentation: {spaces: 2, check-multi-line-strings: true, indent-sequences: true}
+  truthy: disable
