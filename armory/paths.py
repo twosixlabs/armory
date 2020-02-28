@@ -117,7 +117,7 @@ class HostDefault:
         self.saved_model_dir = os.path.join(self.armory_dir, "saved_models")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
-        self.external_repo_dir = os.path.join(self.dataset_dir, "external")
+        self.external_repo_dir = os.path.join(self.tmp_dir, "external")
 
 
 class DockerPaths:
