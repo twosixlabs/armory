@@ -18,6 +18,14 @@ flake8
 ```
 Our repo-specific Flake8 configuration is detailed in `.flake8`.
 
+Our repo uses [yamllint](https://yamllint.readthedocs.io/en/stable/) for enforcement of YAML
+syntax and formatting.
+```
+yamllint --no-warnings
+```
+
+Our repo-specific configuration for yamllint is found in `.yamllint`.
+
 ### Pre-commit Hooks
 
 If you want those tools to run automatically before each commit, run:
