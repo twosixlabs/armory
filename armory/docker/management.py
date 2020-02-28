@@ -7,7 +7,7 @@ import os
 
 import docker
 
-from armory.paths import HostPaths, DockerPaths
+from armory import paths
 
 
 logger = logging.getLogger(__name__)
@@ -21,8 +21,8 @@ class ArmoryInstance(object):
     def __init__(
         self, image_name, runtime: str = "runc", envs: dict = None, ports: dict = None
     ):
-        host_paths = HostPaths()
-        docker_paths = DockerPaths()
+        host_paths = paths.host()
+        docker_paths = paths.docker()
         self.docker_client = docker.from_env(version="auto")
 
         container_args = {
@@ -30,13 +30,17 @@ class ArmoryInstance(object):
             "remove": True,
             "detach": True,
             "volumes": {
-                host_paths.cwd: {"bind": "/workspace", "mode": "rw"},
-                host_paths.armory_dir: {"bind": docker_paths.armory_dir, "mode": "rw"},
+                host_paths.cwd: {"bind": docker_paths.cwd, "mode": "rw"},
                 host_paths.dataset_dir: {
                     "bind": docker_paths.dataset_dir,
                     "mode": "rw",
                 },
+                host_paths.saved_model_dir: {
+                    "bind": docker_paths.saved_model_dir,
+                    "mode": "rw",
+                },
                 host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
+                host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
         }
         if ports is not None:

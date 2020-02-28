@@ -2,13 +2,13 @@ import os
 import unittest
 import shutil
 
-from armory.paths import HostPaths
+from armory import paths
 from armory.utils.external_repo import download_and_extract_repo
 
 
 class ExternalRepoTest(unittest.TestCase):
     def test_download(self):
-        host_paths = HostPaths()
+        host_paths = paths.host()
         repo = "twosixlabs/armory-example"
         repo_name = repo.split("/")[-1]
 

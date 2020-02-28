@@ -18,15 +18,15 @@ from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
-from armory.paths import HostPaths, DockerPaths
+from armory import paths
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
     def __init__(self, config_path: str, container_config_name="eval-config.json"):
-        self.host_paths = HostPaths()
-        self.docker_paths = DockerPaths()
+        self.host_paths = paths.host()
+        self.docker_paths = paths.docker()
 
         if os.name != "nt":
             self.user_id, self.group_id = os.getuid(), os.getgid()
@@ -47,7 +47,7 @@ class Evaluator(object):
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
             self.extra_env_vars.update(
-                {"PYTHONPATH": self.docker_paths.dataset_dir + "/external_repos"}
+                {"PYTHONPATH": self.docker_paths.external_repo_dir}
             )
 
         if self.config["sysconfig"].get("use_armory_private", None):

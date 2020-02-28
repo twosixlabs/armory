@@ -13,7 +13,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 from armory.data.utils import curl, download_file_from_s3
-from armory.paths import DockerPaths
+from armory import paths
 
 os.environ["KMP_WARNINGS"] = "0"
 
@@ -64,7 +64,7 @@ def mnist(
         train_x, train_y, test_x, test_y
     """
     if not dataset_dir:
-        dataset_dir = DockerPaths().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
     return _in_memory_dataset_tfds(
         "mnist:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
     )
@@ -81,7 +81,7 @@ def cifar10(
         train_x, train_y, test_x, test_y
     """
     if not dataset_dir:
-        dataset_dir = DockerPaths().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
     return _in_memory_dataset_tfds(
         "cifar10:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
     )
@@ -107,7 +107,7 @@ def digit(
     from scipy.io import wavfile
 
     if not dataset_dir:
-        dataset_dir = DockerPaths().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
 
     rootdir = os.path.join(dataset_dir, "external")
 
@@ -205,7 +205,7 @@ def imagenet_adversarial(
         return clean_img, adv_img, label
 
     if not dataset_dir:
-        dataset_dir = DockerPaths().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
 
     num_images = 1000
     filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
@@ -266,7 +266,7 @@ def german_traffic_sign(
                 label_list.append(int(row[7]))  # the 8th column is the label
 
     if not dataset_dir:
-        dataset_dir = DockerPaths().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
 
     rootdir = os.path.join(dataset_dir, "external")
     subdir = "GTSRB"
