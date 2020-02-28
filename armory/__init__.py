@@ -2,7 +2,6 @@
 
 # Set up logging for a library
 import logging
-import sys
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -22,9 +21,9 @@ try:
     from armory import webapi
 except ImportError as e:
     module = e.name
-    print(f"ERROR: cannot import '{module}' module", file=sys.stderr)
-    print(f"    Please run: $ pip install -r requirements.txt", file=sys.stderr)
-    sys.exit(1)
+    print(f"ERROR: cannot import '{module}' module")
+    print(f"    Please run: $ pip install -r requirements.txt")
+    raise
 
 
 # Semantic Version
