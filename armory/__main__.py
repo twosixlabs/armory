@@ -88,7 +88,7 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host().makedirs()
+    paths.host()
     rig = Evaluator(args.filepath)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
@@ -120,7 +120,7 @@ def download_all_data(command_args, prog, description):
     )
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
-    paths.host().makedirs()
+    paths.host()
 
     print("Downloading all docker images....")
     _pull_docker_images()

@@ -98,7 +98,6 @@ class HostPaths:
             self.output_dir = default().output_dir
             self.external_repo_dir = default().external_repo_dir
 
-    def makedirs(self):
         logger.info("Creating armory directories if they do not exist")
         os.makedirs(self.dataset_dir, exist_ok=True)
         os.makedirs(self.saved_model_dir, exist_ok=True)
