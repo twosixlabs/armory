@@ -270,8 +270,8 @@ def configure(command_args, prog, description):
         if os.path.isfile(default.armory_config):
             print("WARNING: this will overwrite existing configuration.")
             print("    Press Ctrl-C to abort.")
-        answer = input("Save this configuration? [y/N] ")
-        if answer in ("Y", "y"):
+        answer = input("Save this configuration? [Y/n] ")
+        if answer in ("Y", "y", ""):
             print("Saving configuration...")
             paths.save_config(config)
             print("Configure successful")
