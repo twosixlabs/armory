@@ -27,7 +27,6 @@ outputs. Defaults can be changed by editing `~/.armory/config.json`
 
 ARMORY works by running an evaluation configuration file within the armory docker 
 ecosystem. To do this, simply run `armory run <path_to_evaluation.json>`. 
-Please [see example configuration files](examples/) for runnable configs.
 
 The current working directory and armory installation directory will be mounted 
 inside the container and the `armory.eval.Evaluator` class will proceed to run the 
@@ -42,6 +41,7 @@ Note: Since ARMORY launches Docker containers, the python package must be ran on
 As an example:
 ```
 pip install armory-testbed
+armory configure
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
 armory run examples/fgm_attack.json
