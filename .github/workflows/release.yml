@@ -6,51 +6,51 @@ on:
     types: build-and-release
 
 jobs:
-  release-test:
-    name: Test release on Ubuntu
-    runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: ['3.6', '3.7']
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Release test Ubuntu
-        run: |
-          python -m pip install -r requirements.txt
-          python -m pip install -r test-requirements.txt
-          pytest -s --disable-warnings --ignore=tests/test_docker_management.py
+#   release-test:
+#     name: Test release on Ubuntu
+#     runs-on: ubuntu-18.04
+#     strategy:
+#       matrix:
+#         python-version: ['3.6', '3.7']
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           ref: ${{ github.event.client_payload.branch }}
+#       - uses: actions/setup-python@v1
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - name: Release test Ubuntu
+#         run: |
+#           python -m pip install -r requirements.txt
+#           python -m pip install -r test-requirements.txt
+#           pytest -s --disable-warnings --ignore=tests/test_docker_management.py
 
-  release-wheel:
-    name: Build release wheel
-    needs: [release-test]
-    runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: ['3.6', '3.7', '3.8']
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Build and release wheel
-        run: |
-          pip install wheel
-          python setup.py bdist_wheel
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_token }}
+#   release-wheel:
+#     name: Build release wheel
+#     needs: [release-test]
+#     runs-on: ubuntu-18.04
+#     strategy:
+#       matrix:
+#         python-version: ['3.6', '3.7', '3.8']
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           ref: ${{ github.event.client_payload.branch }}
+#       - uses: actions/setup-python@v1
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - name: Build and release wheel
+#         run: |
+#           pip install wheel
+#           python setup.py bdist_wheel
+#       - uses: pypa/gh-action-pypi-publish@master
+#         with:
+#           user: __token__
+#           password: ${{ secrets.pypi_token }}
 
   release-docker:
     name: Build and release docker images
-    needs: [release-wheel]
+#     needs: [release-wheel]
     runs-on: ubuntu-18.04
     strategy:
       matrix:
