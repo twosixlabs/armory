@@ -109,7 +109,7 @@ def digit(
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
-    rootdir = os.path.join(dataset_dir, "external")
+    rootdir = os.path.join(dataset_dir, "digit")
 
     url = "https://github.com/Jakobovski/free-spoken-digit-dataset/archive/v1.0.8.zip"
     zip_file = "free-spoken-digit-dataset-1.0.8.zip"
@@ -209,7 +209,7 @@ def imagenet_adversarial(
 
     num_images = 1000
     filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
-    dirpath = os.path.join(dataset_dir, "external", "imagenet_adv")
+    dirpath = os.path.join(dataset_dir, "imagenet_adversarial", "imagenet_adv")
     output_filepath = os.path.join(dirpath, filename)
 
     os.makedirs(dirpath, exist_ok=True)
@@ -268,7 +268,7 @@ def german_traffic_sign(
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
-    rootdir = os.path.join(dataset_dir, "external")
+    rootdir = os.path.join(dataset_dir, "german_traffic_sign")
     subdir = "GTSRB"
     dirpath = os.path.join(rootdir, subdir)
 
