@@ -6,51 +6,28 @@ on:
     types: build-and-release
 
 jobs:
-#   release-test:
-#     name: Test release on Ubuntu
-#     runs-on: ubuntu-18.04
-#     strategy:
-#       matrix:
-#         python-version: ['3.6', '3.7']
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           ref: ${{ github.event.client_payload.branch }}
-#       - uses: actions/setup-python@v1
-#         with:
-#           python-version: ${{ matrix.python-version }}
-#       - name: Release test Ubuntu
-#         run: |
-#           python -m pip install -r requirements.txt
-#           python -m pip install -r test-requirements.txt
-#           pytest -s --disable-warnings --ignore=tests/test_docker_management.py
+  release-test:
+    name: Test release on Ubuntu
+    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7']
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Release test Ubuntu
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -r test-requirements.txt
+          pytest -s --disable-warnings --ignore=tests/test_docker_management.py
 
-#   release-wheel:
-#     name: Build release wheel
-#     needs: [release-test]
-#     runs-on: ubuntu-18.04
-#     strategy:
-#       matrix:
-#         python-version: ['3.6', '3.7', '3.8']
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           ref: ${{ github.event.client_payload.branch }}
-#       - uses: actions/setup-python@v1
-#         with:
-#           python-version: ${{ matrix.python-version }}
-#       - name: Build and release wheel
-#         run: |
-#           pip install wheel
-#           python setup.py bdist_wheel
-#       - uses: pypa/gh-action-pypi-publish@master
-#         with:
-#           user: __token__
-#           password: ${{ secrets.pypi_token }}
-
-  release-docker:
-    name: Build and release docker images
-#     needs: [release-wheel]
+  release-wheel:
+    name: Build release wheel
+    needs: [release-test]
     runs-on: ubuntu-18.04
     strategy:
       matrix:
@@ -62,20 +39,11 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Build and release docker images
+      - name: Build and release wheel
         run: |
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-                    
-          docker build --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
-          docker push twosixarmory/tf1:${version}
-          docker image rm -f twosixarmory/tf1:${version}
-
-          docker build --build-arg armory_version=${version} --target armory-tf2 -t twosixarmory/tf2:${version} .
-          docker push twosixarmory/tf2:${version}
-          docker image rm -f twosixarmory/tf2:${version}
-
-          docker build --build-arg armory_version=${version} --target armory-pytorch -t twosixarmory/pytorch:${version} .
-          docker push twosixarmory/pytorch:${version}
-          docker image rm -f twosixarmory/pytorch:${version}
+          pip install wheel
+          python setup.py bdist_wheel
+      - uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_token }}
