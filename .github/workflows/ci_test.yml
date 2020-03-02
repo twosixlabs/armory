@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run python tests
         run: |
-          docker pull twosixarmory/tf1:0.4.1
+          docker pull twosixarmory/tf1:0.5.0
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pytest -s --disable-warnings
