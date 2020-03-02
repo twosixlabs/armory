@@ -1,5 +1,3 @@
-# Armory Containers v0.4.1
-
 ########## Base #################
 
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04 AS armory-base
