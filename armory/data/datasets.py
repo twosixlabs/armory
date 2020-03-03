@@ -2,8 +2,8 @@
 Download and preprocess common datasets.
 Each standard dataset resides in its own subdirectory under dataset_dir based
 upon the name of the function in the datasets file.
-The download subdirectory under datset_dir is reserved for caching.
-The private subdirectory under dataset_dir is reserved for private datasets.
+The 'download' subdirectory under dataset_dir is reserved for caching.
+The 'private' subdirectory under dataset_dir is reserved for private datasets.
 """
 
 import csv
