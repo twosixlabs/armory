@@ -339,8 +339,13 @@ def ucf101(
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
-    return _in_memory_dataset_tfds(
-        "ucf101:2.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    dataset_name = "ucf101"
+    return tfds.load(
+        dataset_name,
+        batch_size=-1,
+        as_supervised=True,
+        split="ucf101_1",
+        data_dir=dataset_dir,
     )
 
 
