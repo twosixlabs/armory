@@ -21,10 +21,28 @@ import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
+from armory.data.resisc45 import resisc45_split  # noqa: F401
+
 
 os.environ["KMP_WARNINGS"] = "0"
 
 logger = logging.getLogger(__name__)
+
+CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
+tfds.download.add_checksums_dir(CHECKSUMS_DIR)
+
+
+def use_host_paths():
+    global DEFAULT_DATASET_DIR
+    DEFAULT_DATASET_DIR = paths.host().dataset_dir
+
+
+def use_docker_paths():
+    global DEFAULT_DATASET_DIR
+    DEFAULT_DATASET_DIR = paths.docker().dataset_dir
+
+
+use_docker_paths()
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -141,7 +159,7 @@ def digit(
     from scipy.io import wavfile
 
     if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DEFAULT_DATASET_DIR
 
     rootdir = os.path.join(dataset_dir, "digit")
 
@@ -239,7 +257,7 @@ def imagenet_adversarial(
         return clean_img, adv_img, label
 
     if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DEFAULT_DATASET_DIR
 
     num_images = 1000
     filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
@@ -300,7 +318,7 @@ def german_traffic_sign(
                 label_list.append(int(row[7]))  # the 8th column is the label
 
     if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DEFAULT_DATASET_DIR
 
     rootdir = os.path.join(dataset_dir, "german_traffic_sign")
     subdir = "GTSRB"
@@ -354,12 +372,52 @@ def german_traffic_sign(
     )
 
 
+def resisc45(
+    preprocessing_fn: Callable = None, dataset_dir: str = None,
+) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    """
+    REmote Sensing Image Scene Classification (RESISC) dataset
+        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
+
+    Contains 31,500 images covering 45 scene classes with 700 images per class
+
+    Uses TFDS:
+        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
+
+    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
+        Each sample is a 256 x 256 3-color (RGB) image
+    Dimensions of y: (31500,) of int, with values in range(45)
+
+    returns:
+        train, validation, test
+
+    Generated using tensorflow_datasets scripts:
+
+    # NOTE: I had to symlink the external.resisc45_split file
+    touch /Users/davidslater/git/davidslater/armory/armory/data/url_checksums/resisc45_split.txt
+    python -m tensorflow_datasets.scripts.download_and_prepare --datasets=resisc45_split \
+            --module_import=external.resisc45_split \
+            --register_checksums --checksums_dir=/Users/davidslater/git/davidslater/armory/armory/data/url_checksums
+    """
+
+    if not dataset_dir:
+        dataset_dir = DEFAULT_DATASET_DIR
+
+    dataset = "resisc45_split:3.0.0"
+    kwargs = dict(batch_size=-1, as_supervised=True, data_dir=dataset_dir,)
+    train = tfds.load(dataset, split="train", **kwargs)
+    validation = tfds.load(dataset, split="validation", **kwargs)
+    test = tfds.load(dataset, split="test", **kwargs)
+    return train, validation, test
+
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
     "german_traffic_sign": german_traffic_sign,
+    "resisc45": resisc45,
 }
 
 
