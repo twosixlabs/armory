@@ -129,30 +129,6 @@ class Resisc45Split(tfds.core.GeneratorBasedBuilder):
             )
         return splits
 
-    #    print(paths)
-    #    path = paths[0]
-    #
-    #    return [
-    #        tfds.core.SplitGenerator(
-    #            name=tfds.Split.TRAIN,
-    #            gen_kwargs={
-    #                "datapath": os.path.join(path, "train"),
-    #            },
-    #        ),
-    #        tfds.core.SplitGenerator(
-    #            name=tfds.Split.VALIDATION,
-    #            gen_kwargs={
-    #                "datapath": os.path.join(path, "validation"),
-    #            },
-    #        ),
-    #        tfds.core.SplitGenerator(
-    #            name=tfds.Split.TEST,
-    #            gen_kwargs={
-    #                "datapath": os.path.join(path, "test"),
-    #            },
-    #        ),
-    #    ]
-
     def _generate_examples(self, path):
         """Yields examples."""
         for label in tf.io.gfile.listdir(path):
