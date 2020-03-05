@@ -362,14 +362,6 @@ def resisc45(
 
     returns:
         train, validation, test
-
-    Generated using tensorflow_datasets scripts:
-
-    # NOTE: I had to symlink the external.resisc45_split file
-    touch /Users/davidslater/git/davidslater/armory/armory/data/url_checksums/resisc45_split.txt
-    python -m tensorflow_datasets.scripts.download_and_prepare --datasets=resisc45_split \
-            --module_import=external.resisc45_split \
-            --register_checksums --checksums_dir=/Users/davidslater/git/davidslater/armory/armory/data/url_checksums
     """
 
     if not dataset_dir:
