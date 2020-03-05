@@ -354,12 +354,31 @@ def german_traffic_sign(
     )
 
 
+def ucf101(
+    dataset_dir: str = None, preprocessing_fn: Callable = None,
+) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    """
+    Handwritten digits dataset:
+        http://yann.lecun.com/exdb/mnist/
+
+    returns:
+        train_x, train_y, test_x, test_y
+    """
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
+    return _in_memory_dataset_tfds(
+        "ucf101:2.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    )
+
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
     "german_traffic_sign": german_traffic_sign,
+    "ucf101": ucf101,
 }
 
 
