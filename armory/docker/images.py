@@ -17,13 +17,36 @@ ALL = (
     PYTORCH,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
-VERSION = version.StrictVersion(TAG)
+
+
+def dev_version(tag):
+    """
+    Return version.LooseVersion class for given version tag
+    """
+    if not tag.endswith(armory.DEV):
+        raise ValueError(f"invalid dev tag: {tag} does not end with {armory.DEV}")
+
+    # check that the remaining version number is strict
+    strict = tag[: -len(armory.DEV)]
+    version.StrictVersion(strict)
+    return version.LooseVersion(tag)
+
+
+if TAG.endswith(armory.DEV):
+    VERSION = dev_version(TAG)
+else:
+    VERSION = version.StrictVersion(TAG)
 
 
 def is_old(tag: str):
     """
     Return True if tag is an old armory container, False otherwise
+
+    If current version is dev, only returns True for old "-dev" containers.
     """
+    if armory.is_dev():
+        raise NotImplementedError("dev tag")
+
     if not isinstance(tag, str):
         raise ValueError(f"tag must be of type str, not type {type(tag)}")
     if tag in ALL:
@@ -34,7 +57,13 @@ def is_old(tag: str):
     repo, tag = tokens
     if repo in REPOSITORIES:
         try:
-            if version.StrictVersion(tag) < VERSION:
+            if armory.is_dev():
+                if not tag.endswith(armory.DEV):
+                    return False
+                tag = dev_version(tag)
+                if tag < VERSION:
+                    return True
+            elif version.StrictVersion(tag) < VERSION:
                 return True
         except (AttributeError, ValueError):
             # Catch empty tag and tag parsing errors
