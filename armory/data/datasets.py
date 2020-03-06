@@ -328,11 +328,11 @@ def german_traffic_sign(
 
 def ucf101(dataset_dir: str = None, preprocessing_fn: Callable = None,) -> dict:
     """
-    Handwritten digits dataset:
-        http://yann.lecun.com/exdb/mnist/
+    UCF 101 Action Recognition Dataset
+        https://www.crcv.ucf.edu/data/UCF101.php
 
     returns:
-        train_x, train_y, test_x, test_y
+        {'train': (train_x, train_y), 'test': (test_x, test_y)}
     """
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
