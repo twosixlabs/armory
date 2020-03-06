@@ -16,9 +16,11 @@ NOTE: if the current version is not `-dev`, it may overwrite an existing release
 only using the local repository instead of pulling from PyPI. This is desired behavior,
 and enables easier integration testing of release candidates before PyPI publication.
 
+These should be rebuilt after any changes to the repo on the current branch.
+
 # Testing
 
-Local testing with docker on a development branch should be done from the repo base directory using
+Local testing with docker on a development branch can also be done from the repo base directory using
 ```
 python -m armory
 ```
