@@ -354,9 +354,7 @@ def german_traffic_sign(
     )
 
 
-def ucf101(
-    dataset_dir: str = None, preprocessing_fn: Callable = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+def ucf101(dataset_dir: str = None, preprocessing_fn: Callable = None,) -> dict:
     """
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
@@ -367,14 +365,18 @@ def ucf101(
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
-    dataset_name = "ucf101"
-    return tfds.load(
+    dataset_name = "ucf101/ucf101_1"
+    x = tfds.load(
         dataset_name,
         batch_size=-1,
-        as_supervised=True,
-        split="ucf101_1",
+        #  as_supervised=True,  # None for ucf101 dataset
         data_dir=dataset_dir,
     )
+
+    #  replicate `as_supervised=True` functionality:
+    x["train"] = (x["train"]["video"], x["train"]["label"])
+    x["test"] = (x["test"]["video"], x["test"]["label"])
+    return x
 
 
 SUPPORTED_DATASETS = {
