@@ -346,7 +346,7 @@ def german_traffic_sign(
 
 def resisc45(
     preprocessing_fn: Callable = None, dataset_dir: str = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+):
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
         http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
