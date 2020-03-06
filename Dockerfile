@@ -26,25 +26,34 @@ RUN /opt/conda/bin/pip install \
 
 WORKDIR /workspace
 
-########## TF 1.15 #################
 
-FROM armory-base AS armory-tf1
+########## TF 1.15 Base #################
+
+FROM armory-base AS armory-base-tf1
 RUN /opt/conda/bin/conda install tensorflow-gpu==1.15.0
 
+########## TF 1.15 #################
+
+FROM armory-base-tf1 AS armory-tf1
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
 CMD tail -f /dev/null
 
-########## TF 2.1 #################
-FROM armory-base AS armory-tf2
+########## TF 2.1 Base #################
+
+FROM armory-base AS armory-base-tf2
 RUN /opt/conda/bin/conda install tensorflow-gpu==2.1.0
 
+########## TF 2.1 #################
+
+FROM armory-base-tf2 AS armory-tf2
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
 CMD tail -f /dev/null
 
-########## PyTorch 1.4 #################
-FROM armory-base AS armory-pytorch
+########## PyTorch 1.4 Base #################
+
+FROM armory-base AS armory-base-pytorch
 
 # TF used for dataset loading
 RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
@@ -52,8 +61,32 @@ RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
  torchvision==0.5.0 \
  cudatoolkit=10.1 -c pytorch
 
+########## PyTorch 1.4 #################
+
+FROM armory-base-pytorch AS armory-pytorch
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
+CMD tail -f /dev/null
+
+########## TF 1.15 Dev #################
+
+FROM armory-base-tf1 AS armory-tf1-dev
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/
+CMD tail -f /dev/null
+
+########## TF 2.1 Dev #################
+
+FROM armory-base-tf2 AS armory-tf2-dev
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/
+CMD tail -f /dev/null
+
+########## PyTorch 1.4 Dev #################
+
+FROM armory-base-pytorch AS armory-pytorch-dev
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/
 CMD tail -f /dev/null
 
 #####################################
