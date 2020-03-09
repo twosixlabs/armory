@@ -27,4 +27,9 @@ except ImportError as e:
 
 
 # Semantic Version
-__version__ = "0.5.0"
+__version__ = "0.5.0-dev"
+DEV = "-dev"
+
+
+def is_dev():
+    return __version__.endswith(DEV)

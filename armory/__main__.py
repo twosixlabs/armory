@@ -100,6 +100,8 @@ def _pull_docker_images(docker_client=None):
         try:
             docker_client.images.get(image)
         except ImageNotFound:
+            if armory.is_dev():
+                raise NotImplementedError("For dev, please build locally")
             print(f"Image {image} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image)
 
@@ -185,6 +187,7 @@ def clean(command_args, prog, description):
     for image in docker_client.images.list():
         tags.update(image.tags)
 
+    # If dev version, only remove old dev-tagged containers
     for tag in sorted(tags):
         if images.is_old(tag):
             print(f"Attempting to remove tag {tag}")
@@ -325,7 +328,7 @@ def main():
         print(usage())
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version"):
-        print(f"armory {armory.__version__}")
+        print(f"{armory.__version__}")
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
