@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
 
@@ -26,70 +27,97 @@ os.environ["KMP_WARNINGS"] = "0"
 logger = logging.getLogger(__name__)
 
 
-def _in_memory_dataset_tfds(
-    dataset_name: str, dataset_dir: str, preprocessing_fn: Callable,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+class ArmoryDataGenerator(DataGenerator):
+    def __init__(self, generator, size, batch_size, preprocessing_fn=None):
+        super().__init__(size, batch_size)
+        self.preprocessing_fn = preprocessing_fn
+        self.generator = generator
+        self.total_iterations = size // batch_size
+
+    def get_batch(self) -> (np.ndarray, np.ndarray):
+        x, y = next(self.generator)
+        if self.preprocessing_fn:
+            x = self.preprocessing_fn(x)
+
+        return x, y
+
+
+def _generator_from_tfds(
+    dataset_name: str,
+    split_type: str,
+    batch_size: int,
+    epochs: int,
+    dataset_dir: str,
+    preprocessing_fn: Callable,
+):
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
-    train_x, train_y = tfds.load(
+    ds, ds_info = tfds.load(
         dataset_name,
-        batch_size=-1,
-        split="train",
+        split=split_type,
         as_supervised=True,
         data_dir=dataset_dir,
+        with_info=True,
     )
 
-    test_x, test_y = tfds.load(
-        dataset_name,
-        batch_size=-1,
-        split="test",
-        as_supervised=True,
-        data_dir=dataset_dir,
+    ds = ds.repeat(epochs)
+    ds = ds.shuffle(batch_size * 10)
+    ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    ds = tfds.as_numpy(ds, graph=default_graph)
+
+    generator = ArmoryDataGenerator(
+        ds,
+        size=epochs * ds_info.splits[split_type].num_examples,
+        batch_size=batch_size,
+        preprocessing_fn=preprocessing_fn,
     )
 
-    train_x = tfds.as_numpy(train_x, graph=default_graph)
-    train_y = tfds.as_numpy(train_y, graph=default_graph)
-    test_x = tfds.as_numpy(test_x, graph=default_graph)
-    test_y = tfds.as_numpy(test_y, graph=default_graph)
-
-    if preprocessing_fn:
-        train_x = preprocessing_fn(train_x)
-        test_x = preprocessing_fn(test_x)
-
-    return train_x, train_y, test_x, test_y
+    return generator
 
 
 def mnist(
-    dataset_dir: str = None, preprocessing_fn: Callable = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
-
-    returns:
-        train_x, train_y, test_x, test_y
     """
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-    return _in_memory_dataset_tfds(
-        "mnist:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    return _generator_from_tfds(
+        "mnist:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
     )
 
 
 def cifar10(
-    dataset_dir: str = None, preprocessing_fn: Callable = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
         https://www.cs.toronto.edu/~kriz/cifar.html
-
-    returns:
-        train_x, train_y, test_x, test_y
     """
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-    return _in_memory_dataset_tfds(
-        "cifar10:3.0.0", dataset_dir=dataset_dir, preprocessing_fn=preprocessing_fn
+    return _generator_from_tfds(
+        "cifar10:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
     )
 
 

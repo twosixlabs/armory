@@ -1,7 +1,6 @@
 {
     "adhoc": {
-        "batch_size": 64,
-        "epochs": 3
+        "train_epochs": 3
     },
     "attack": {
         "budget": null,
@@ -13,24 +12,20 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
+        "batch_size": 64,
         "module": "armory.data.datasets",
         "name": "mnist"
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory-example.evaluations.fgm_attack"
+        "eval_file": "tests.test_evals.fgm_attack"
     },
     "metric": null,
     "model": {
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.keras_mnist",
         "name": "get_art_model",
-        "wrapper_kwargs": {
-            "clip_values": [
-                0,
-                1
-            ]
-        }
+        "wrapper_kwargs": {}
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.5.0",
