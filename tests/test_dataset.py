@@ -93,6 +93,54 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(25 <= x.shape[0] <= 232)
                 self.assertTrue(25 <= x.shape[1] <= 266)
 
+    def test_librespeech_train(self):
+        train_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_train",
+            epochs=1,
+            batch_size=1,
+            dataset_dir=paths.host().dataset_dir,
+        )
+        self.assertEqual(train_dataset.size, 1371)
+        self.assertEqual(train_dataset.batch_size, 1)
+        self.assertEqual(train_dataset.total_iterations, 1371)
+
+        x, y = train_dataset.get_batch()
+        self.assertEqual(x.shape[0], 1)
+        self.assertTrue(23120 <= x.shape[1] <= 519760)
+        self.assertEqual(y.shape, (1,))
+
+    def test_librespeech_val(self):
+        val_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_val",
+            epochs=1,
+            batch_size=1,
+            dataset_dir=paths.host().dataset_dir,
+        )
+        self.assertEqual(val_dataset.size, 692)
+        self.assertEqual(val_dataset.batch_size, 1)
+        self.assertEqual(val_dataset.total_iterations, 692)
+
+        x, y = val_dataset.get_batch()
+        self.assertEqual(x.shape[0], 1)
+        self.assertTrue(26239 <= x.shape[1] <= 516960)
+        self.assertEqual(y.shape, (1,))
+
+    def test_librespeech_test(self):
+        test_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_test",
+            epochs=1,
+            batch_size=1,
+            dataset_dir=paths.host().dataset_dir,
+        )
+        self.assertEqual(test_dataset.size, 640)
+        self.assertEqual(test_dataset.batch_size, 1)
+        self.assertEqual(test_dataset.total_iterations, 640)
+
+        x, y = test_dataset.get_batch()
+        self.assertEqual(x.shape[0])
+        self.assertTrue(24080 <= x.shape[1] <= 522320)
+        self.assertEqual(y.shape, (1,))
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):

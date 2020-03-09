@@ -373,6 +373,11 @@ def librispeech_speakerid(
     returns:
         Generator
     """
+    if batch_size != 1:
+        raise NotImplementedError(
+            "Processing of variable length inputs not yet implemented."
+        )
+
     flags = []
     default_graph = tf.compat.v1.keras.backend.get_session().graph
     dl_config = tfds.download.DownloadConfig(
