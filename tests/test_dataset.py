@@ -12,6 +12,21 @@ from armory import paths
 
 
 class DatasetTest(unittest.TestCase):
+    def test_batch_size_consistency(self):
+        train_dataset = datasets.mnist(
+            split_type="train",
+            epochs=1,
+            batch_size=101,
+            dataset_dir=paths.host().dataset_dir,
+        )
+
+        while True:
+            try:
+                x, y, = train_dataset.get_batch()
+                self.assertEqual(x.shape[0], 101)
+            except StopIteration:
+                break
+
     def test_mnist_train(self):
         train_dataset = datasets.mnist(
             split_type="train",

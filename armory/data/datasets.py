@@ -51,7 +51,6 @@ def _generator_from_tfds(
 
     ds, ds_info = tfds.load(
         dataset_name,
-        batch_size=batch_size,
         split=split_type,
         as_supervised=True,
         data_dir=dataset_dir,
@@ -60,6 +59,7 @@ def _generator_from_tfds(
 
     ds = ds.repeat(epochs)
     ds = ds.shuffle(batch_size * 10)
+    ds = ds.batch(batch_size, drop_remainder=True)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
     ds = tfds.as_numpy(ds, graph=default_graph)
 
