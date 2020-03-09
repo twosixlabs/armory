@@ -373,8 +373,12 @@ def german_traffic_sign(
 
 
 def resisc45(
-    preprocessing_fn: Callable = None, dataset_dir: str = None,
-):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
         http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
@@ -388,19 +392,16 @@ def resisc45(
         Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (31500,) of int, with values in range(45)
 
-    returns:
-        train, validation, test
+    split_type - one of ("train", "validation", "test")
     """
-
-    if not dataset_dir:
-        dataset_dir = DEFAULT_DATASET_DIR
-
-    dataset = "resisc45_split:3.0.0"
-    kwargs = dict(batch_size=-1, as_supervised=True, data_dir=dataset_dir,)
-    train = tfds.load(dataset, split="train", **kwargs)
-    validation = tfds.load(dataset, split="validation", **kwargs)
-    test = tfds.load(dataset, split="test", **kwargs)
-    return train, validation, test
+    return _generator_from_tfds(
+        "resisc45_split:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+    )
 
 
 SUPPORTED_DATASETS = {
