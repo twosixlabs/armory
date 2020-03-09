@@ -328,7 +328,7 @@ def main():
         print(usage())
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version"):
-        print(f"armory {armory.__version__}")
+        print(f"{armory.__version__}")
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
