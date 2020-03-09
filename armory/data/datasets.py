@@ -398,21 +398,6 @@ def ucf101(
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
     )
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
-    dataset_name = "ucf101/ucf101_1:2.0.0"
-    x = tfds.load(
-        dataset_name,
-        batch_size=-1,
-        #  as_supervised=True,  # None for ucf101 dataset
-        data_dir=dataset_dir,
-    )
-
-    #  replicate `as_supervised=True` functionality:
-    x["train"] = (x["train"]["video"], x["train"]["label"])
-    x["test"] = (x["test"]["video"], x["test"]["label"])
-    return x
 
 
 SUPPORTED_DATASETS = {
