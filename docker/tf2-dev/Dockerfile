@@ -1,0 +1,7 @@
+########## TF 2.1 Dev #################
+
+ARG armory_version
+FROM twosixarmory/tf2-base:${armory_version} AS armory-tf2-dev
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/
+CMD tail -f /dev/null

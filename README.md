@@ -64,12 +64,15 @@ inside a docker container. Docker images will be pulled as needed when evaluatio
 ran.
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
-within this repo:
+within the repo, after downloading from the latest [release](https://github.com/twosixlabs/armory/releases):
 ```
-version=$(python -c "import armory; print(armory.__version__)")
-docker build --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
-docker build --build-arg armory_version=${version} --target armory-tf2 -t twosixarmory/tf2:${version} .
-docker build --build-arg armory_version=${version} --target armory-pytorch -t twosixarmory/pytorch:${version} .
+bash docker/build.sh
+```
+If only a specific target image is desired, run the relevant lines in `docker/build.sh`.
+NOTE: if the repo is pulled from master instead of pip installed, and is currently on a non-release branch,
+you will instead need to run:
+```
+bash docker/build-dev.sh
 ```
 
 ### Docker Mounts
