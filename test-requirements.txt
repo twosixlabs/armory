@@ -1,9 +1,11 @@
 adversarial-robustness-toolbox
+apache-beam
 black
 boto3
 flake8
 pillow
+pydub
 pytest
 tensorflow==1.15.2
-tensorflow-datasets
+tensorflow-datasets==2.1.0
 yamllint

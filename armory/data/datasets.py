@@ -17,14 +17,19 @@ from typing import Callable
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import apache_beam as beam
 
 from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
+from armory.data.librispeech import librispeech_split  # noqa: F401
 
 os.environ["KMP_WARNINGS"] = "0"
 
 logger = logging.getLogger(__name__)
+
+CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
+tfds.download.add_checksums_dir(CHECKSUMS_DIR)
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -354,12 +359,48 @@ def german_traffic_sign(
     )
 
 
+def librispeech_speakerid(
+    split_type: str,
+    batch_size: int,
+    epochs: int,
+    dataset_dir: str,
+    preprocessing_fn: Callable,
+):
+    """
+    Librispeech dev dataset with custom split used for speaker
+    identification
+
+    returns:
+        Generator
+    """
+    flags = []
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+    builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
+
+    builder.download_and_prepare(
+        download_dir=os.path.join(dataset_dir, "librispeech"),
+        download_config=dl_config,
+    )
+    ds = builder.as_dataset(split=split_type, as_supervised=True)
+    ds = ds.repeat(epochs)
+    ds = ds.shuffle(batch_size * 10)
+    ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    ds = tfds.as_numpy(ds, graph=default_graph)
+    # Preprocessing to be used again once merged with generator code
+    return ds
+
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
     "german_traffic_sign": german_traffic_sign,
+    "librispeech_speakerid": librispeech_speakerid,
 }
 
 
