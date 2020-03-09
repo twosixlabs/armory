@@ -59,7 +59,7 @@ def _generator_from_tfds(
 
     ds = ds.repeat(epochs)
     ds = ds.shuffle(batch_size * 10)
-    ds = ds.batch(batch_size, drop_remainder=True)
+    ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
     ds = tfds.as_numpy(ds, graph=default_graph)
 
