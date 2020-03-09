@@ -1,4 +1,4 @@
-version=$(python -c "import armory; print(armory.__version__)")
+version=$(python -m armory --version)
 
 docker build --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
 
