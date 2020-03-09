@@ -64,7 +64,7 @@ inside a docker container. Docker images will be pulled as needed when evaluatio
 ran.
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
-within this repo:
+within the repo, after downloading from the latest [release](https://github.com/twosixlabs/armory/releases):
 ```
 bash docker/build.sh
 ```

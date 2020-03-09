@@ -7,10 +7,7 @@ These dev versions will not be published to PyPI or Dockerhub, and so must be bu
 
 The primary docker images for testing and development should be built locally as follows:
 ```
-version=$(python -c "import armory; print(armory.__version__)")
-docker build --build-arg armory_version=${version} --target armory-tf1-dev -t twosixarmory/tf1:${version} .
-docker build --build-arg armory_version=${version} --target armory-tf2-dev -t twosixarmory/tf2:${version} .
-docker build --build-arg armory_version=${version} --target armory-pytorch-dev -t twosixarmory/pytorch:${version} .
+bash docker/build-dev.sh
 ```
 NOTE: if the current version is not `-dev`, it may overwrite an existing release Dockerfile,
 only using the local repository instead of pulling from PyPI. This is desired behavior,

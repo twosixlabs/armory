@@ -1,4 +1,9 @@
 version=$(python -m armory --version)
+if [[ $version == *"-dev" ]]; then
+    echo "Armory version $version is a '-dev' branch. To build docker images, use:"
+    echo "bash docker/build-dev.sh"
+    exit
+fi
 
 docker build --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
 docker build --file docker/tf1/Dockerfile --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
