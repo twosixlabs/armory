@@ -44,6 +44,9 @@ def _generator_from_tfds(
     dataset_dir: str,
     preprocessing_fn: Callable,
 ):
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
     ds, ds_info = tfds.load(
@@ -81,8 +84,6 @@ def mnist(
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
     """
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
     return _generator_from_tfds(
         "mnist:3.0.0",
         split_type=split_type,
@@ -104,8 +105,6 @@ def cifar10(
     Ten class image dataset:
         https://www.cs.toronto.edu/~kriz/cifar.html
     """
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
     return _generator_from_tfds(
         "cifar10:3.0.0",
         split_type=split_type,
