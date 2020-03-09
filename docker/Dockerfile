@@ -22,6 +22,10 @@ RUN /opt/conda/bin/pip install \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
     adversarial-robustness-toolbox==1.1.1 \
-    Pillow==7.0.0
+    Pillow==7.0.0 \
+    pydub==0.23.1 \
+    apache-beam==2.18.0
+
+RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2
 
 WORKDIR /workspace
