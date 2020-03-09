@@ -93,6 +93,24 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(25 <= x.shape[0] <= 232)
                 self.assertTrue(25 <= x.shape[1] <= 266)
 
+    def test_resisc45(self):
+        for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
+            batch_size = 16
+            epochs = 1
+            test_dataset = datasets.resisc45(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,
+            )
+            self.assertEqual(test_dataset.size, size)
+            self.assertEqual(test_dataset.batch_size, batch_size)
+            self.assertEqual(test_dataset.total_iterations, size // batch_size)
+
+            x, y = test_dataset.get_batch()
+            self.assertEqual(x.shape, (batch_size, 256, 256, 3))
+            self.assertEqual(y.shape, (batch_size,))
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
