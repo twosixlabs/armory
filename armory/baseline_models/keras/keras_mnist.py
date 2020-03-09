@@ -49,5 +49,5 @@ def make_mnist_model(**kwargs) -> tf.keras.Model:
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = make_mnist_model(**model_kwargs)
-    wrapped_model = KerasClassifier(model, **wrapper_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(0, 1), **wrapper_kwargs)
     return wrapped_model

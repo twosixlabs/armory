@@ -11,7 +11,7 @@ class ConfigurationTest(unittest.TestCase):
 
     def test_no_evaluation(self):
         with self.assertRaisesRegex(ValueError, "Evaluation field must contain"):
-            load_config("tests/test_data/missing_eval.json")
+            load_config("tests/test_configs/missing_eval.json")
 
     @staticmethod
     def test_all_examples():

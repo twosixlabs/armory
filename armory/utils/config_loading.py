@@ -10,7 +10,8 @@ def load_dataset(dataset_config, *args, **kwargs):
     """
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
-    return dataset_fn(*args, **kwargs)
+    batch_size = dataset_config["batch_size"]
+    return dataset_fn(batch_size=batch_size, *args, **kwargs)
 
 
 def load_model(model_config):
