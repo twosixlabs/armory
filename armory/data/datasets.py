@@ -68,8 +68,8 @@ def _generator_from_tfds(
     dataset_dir: str,
     preprocessing_fn: Callable,
 ):
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
+    if dataset_dir is None:
+        dataset_dir = DEFAULT_DATASET_DIR
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
