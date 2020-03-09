@@ -17,7 +17,7 @@ class DatasetTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=600,
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.host().dataset_dir,
         )
         self.assertEqual(train_dataset.size, 60000)
         self.assertEqual(train_dataset.batch_size, 600)
@@ -32,7 +32,7 @@ class DatasetTest(unittest.TestCase):
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.host().dataset_dir,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -47,7 +47,7 @@ class DatasetTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=500,
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.host().dataset_dir,
         )
         self.assertEqual(train_dataset.size, 50000)
         self.assertEqual(train_dataset.batch_size, 500)
@@ -62,7 +62,7 @@ class DatasetTest(unittest.TestCase):
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.host().dataset_dir,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
