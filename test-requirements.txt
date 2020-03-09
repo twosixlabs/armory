@@ -7,5 +7,5 @@ pillow
 pydub
 pytest
 tensorflow==1.15.2
-tensorflow-datasets==2.1.0
+tensorflow-datasets
 yamllint

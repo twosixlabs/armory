@@ -385,13 +385,19 @@ def librispeech_speakerid(
         download_config=dl_config,
     )
     ds = builder.as_dataset(split=split_type, as_supervised=True)
+    ds_info = builder.info
     ds = ds.repeat(epochs)
     ds = ds.shuffle(batch_size * 10)
     ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
     ds = tfds.as_numpy(ds, graph=default_graph)
-    # Preprocessing to be used again once merged with generator code
-    return ds
+    generator = ArmoryDataGenerator(
+        ds,
+        size=epochs * ds_info.splits[split_type].num_examples,
+        batch_size=batch_size,
+        preprocessing_fn=preprocessing_fn,
+    )
+    return generator
 
 
 SUPPORTED_DATASETS = {
