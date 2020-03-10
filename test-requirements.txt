@@ -2,6 +2,7 @@ adversarial-robustness-toolbox
 apache-beam
 black
 boto3
+ffmpeg
 flake8
 pillow
 pydub
