@@ -383,7 +383,7 @@ def librispeech_speakerid(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
-    builder = tfds.buildxer("librispeech_split:1.1.0", data_dir=dataset_dir)
+    builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
 
     builder.download_and_prepare(
         download_dir=os.path.join(dataset_dir, "librispeech"),
