@@ -170,17 +170,35 @@ class KerasTest(unittest.TestCase):
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-        clean_x, adv_x, labels = datasets.imagenet_adversarial(
-            preprocessing_fn=preprocessing_fn, dataset_dir=paths.host().dataset_dir,
+        clean_dataset = datasets.imagenet_adversarial(
+            split_type="clean",
+            epochs=1,
+            batch_size=100,
+            dataset_dir=paths.host().dataset_dir,
+            preprocessing_fn=preprocessing_fn,
         )
 
-        predictions = classifier.predict(clean_x)
-        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        self.assertGreater(accuracy, 0.65)
+        adv_dataset = datasets.imagenet_adversarial(
+            split_type="adversarial",
+            epochs=1,
+            batch_size=100,
+            dataset_dir=paths.host().dataset_dir,
+            preprocessing_fn=preprocessing_fn,
+        )
 
-        predictions = classifier.predict(adv_x)
-        accuracy = np.sum(np.argmax(predictions, axis=1) == labels) / len(labels)
-        self.assertLess(accuracy, 0.02)
+        accuracy = 0
+        for _ in range(clean_dataset.total_iterations):
+            x, y = clean_dataset.get_batch()
+            predictions = classifier.predict(x)
+            accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+        self.assertGreater(accuracy / clean_dataset.total_iterations, 0.65)
+
+        accuracy = 0
+        for _ in range(adv_dataset.total_iterations):
+            x, y = adv_dataset.get_batch()
+            predictions = classifier.predict(x)
+            accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+        self.assertLess(accuracy / adv_dataset.total_iterations, 0.02)
 
     def test_keras_imagenet_transfer(self):
         classifier_module = import_module(
