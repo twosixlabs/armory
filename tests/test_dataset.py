@@ -113,7 +113,7 @@ class DatasetTest(unittest.TestCase):
 
             x, y = test_dataset.get_batch()
             # video length is variable so we don't compare 2nd dim
-            self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 320, 240, 3))
+            self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 240, 320, 3))
             self.assertEqual(y.shape, (batch_size,))
 
     def test_librispeech_train(self):
