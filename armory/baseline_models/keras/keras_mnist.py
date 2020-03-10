@@ -9,6 +9,7 @@ from art.classifiers import KerasClassifier
 
 
 def preprocessing_fn(img):
+    # Model will trained with inputs normalized from 0 to 1
     img = img.astype(np.float32) / 255.0
     return img
 
