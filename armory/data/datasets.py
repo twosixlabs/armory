@@ -349,16 +349,22 @@ def imagenet_adversarial(
 
 
 def german_traffic_sign(
-    preprocessing_fn: Callable = None, dataset_dir: str = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    preprocessing_fn: Callable = None,
+    dataset_dir: str = None,
+) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over
     50,000 images.
 
     :param preprocessing_fn: Callable function to preprocess inputs
     :param dataset_dir: Directory where cached datasets are stored
-    :return: (train_images,train_labels,test_images,test_labels)
+    :return: generator
     """
+
+    # TODO: Refactor so it does not download the data from a different split
 
     from PIL import Image
 
@@ -422,16 +428,18 @@ def german_traffic_sign(
     gtFile = os.path.join(dirpath, "GT-final_test.csv")
     _read_images(prefix, gtFile, test_images, test_labels)
 
-    if preprocessing_fn:
-        train_images = preprocessing_fn(train_images)
-        test_images = preprocessing_fn(test_images)
-
-    return (
-        np.array(train_images),
-        np.array(train_labels),
-        np.array(test_images),
-        np.array(test_labels),
-    )
+    if split_type == "train":
+        return _generator_from_np(
+            train_images, train_labels, batch_size, epochs, preprocessing_fn
+        )
+    elif split_type == "test":
+        return _generator_from_np(
+            test_images, test_labels, batch_size, epochs, preprocessing_fn
+        )
+    else:
+        raise ValueError(
+            f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
+        )
 
 
 def librispeech_speakerid(
