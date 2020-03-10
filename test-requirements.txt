@@ -1,8 +1,11 @@
 adversarial-robustness-toolbox
+apache-beam
 black
 boto3
+ffmpeg
 flake8
 pillow
+pydub
 pytest
 tensorflow==1.15.2
 tensorflow-datasets

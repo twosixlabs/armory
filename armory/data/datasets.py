@@ -17,10 +17,12 @@ from typing import Callable
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import apache_beam as beam
 
 from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
+from armory.data.librispeech import librispeech_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 
 
@@ -359,6 +361,54 @@ def german_traffic_sign(
     )
 
 
+def librispeech_speakerid(
+    split_type: str,
+    batch_size: int,
+    epochs: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+):
+    """
+    Librispeech dev dataset with custom split used for speaker
+    identification
+
+    returns:
+        Generator
+    """
+    if batch_size != 1:
+        raise NotImplementedError(
+            "Processing of variable length inputs not yet implemented."
+        )
+
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
+    flags = []
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+    builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
+
+    builder.download_and_prepare(
+        download_dir=os.path.join(dataset_dir, "downloads"), download_config=dl_config,
+    )
+    ds = builder.as_dataset(split=split_type, as_supervised=True)
+    ds_info = builder.info
+    ds = ds.repeat(epochs)
+    ds = ds.shuffle(batch_size * 10)
+    ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    ds = tfds.as_numpy(ds, graph=default_graph)
+    generator = ArmoryDataGenerator(
+        ds,
+        size=epochs * ds_info.splits[split_type].num_examples,
+        batch_size=batch_size,
+        preprocessing_fn=preprocessing_fn,
+    )
+    return generator
+
+
 def resisc45(
     split_type: str,
     epochs: int,
@@ -398,6 +448,7 @@ SUPPORTED_DATASETS = {
     "imagenet_adversarial": imagenet_adversarial,
     "german_traffic_sign": german_traffic_sign,
     "resisc45": resisc45,
+    "librispeech_speakerid": librispeech_speakerid,
 }
 
 

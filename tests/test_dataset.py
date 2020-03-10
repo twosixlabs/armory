@@ -2,8 +2,8 @@
 Test cases for ARMORY datasets.
 """
 
-import os
 import unittest
+import os
 
 import numpy as np
 from importlib import import_module
@@ -93,6 +93,61 @@ class DatasetTest(unittest.TestCase):
             for x in X:
                 self.assertTrue(25 <= x.shape[0] <= 232)
                 self.assertTrue(25 <= x.shape[1] <= 266)
+
+    def test_librispeech_train(self):
+        dataset_dir = paths.host().dataset_dir
+        if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
+            self.skipTest("Librispeech dataset not downloaded.")
+
+        train_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_train",
+            epochs=1,
+            batch_size=1,
+            dataset_dir=dataset_dir,
+        )
+        self.assertEqual(train_dataset.size, 1371)
+        self.assertEqual(train_dataset.batch_size, 1)
+        self.assertEqual(train_dataset.total_iterations, 1371)
+
+        x, y = train_dataset.get_batch()
+        self.assertEqual(x.shape[0], 1)
+        self.assertTrue(23120 <= x.shape[1] <= 519760)
+        self.assertEqual(y.shape, (1,))
+
+    def test_librispeech_val(self):
+        dataset_dir = paths.host().dataset_dir
+        if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
+            self.skipTest("Librispeech dataset not downloaded.")
+        val_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_val", epochs=1, batch_size=1, dataset_dir=dataset_dir,
+        )
+        self.assertEqual(val_dataset.size, 692)
+        self.assertEqual(val_dataset.batch_size, 1)
+        self.assertEqual(val_dataset.total_iterations, 692)
+
+        x, y = val_dataset.get_batch()
+        self.assertEqual(x.shape[0], 1)
+        self.assertTrue(26239 <= x.shape[1] <= 516960)
+        self.assertEqual(y.shape, (1,))
+
+    def test_librispeech_test(self):
+        dataset_dir = paths.host().dataset_dir
+        if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
+            self.skipTest("Librispeech dataset not downloaded.")
+        test_dataset = datasets.librispeech_speakerid(
+            split_type="dev_clean_test",
+            epochs=1,
+            batch_size=1,
+            dataset_dir=dataset_dir,
+        )
+        self.assertEqual(test_dataset.size, 640)
+        self.assertEqual(test_dataset.batch_size, 1)
+        self.assertEqual(test_dataset.total_iterations, 640)
+
+        x, y = test_dataset.get_batch()
+        self.assertEqual(x.shape[0], 1)
+        self.assertTrue(24080 <= x.shape[1] <= 522320)
+        self.assertEqual(y.shape, (1,))
 
     def test_resisc45(self):
         """
