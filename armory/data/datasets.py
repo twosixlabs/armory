@@ -205,7 +205,8 @@ def imagenet_adversarial(
     batch_size: int,
     epochs: int,
     split_type: str,
-        dataset_dir: str = None, preprocessing_fn: Callable = None,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     ILSVRC12 adversarial image dataset for ResNet50

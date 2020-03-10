@@ -7,7 +7,7 @@ from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
 def preprocess_input_inception_resnet_v2(img):
     # Model was trained with inputs normalized from -1 to 1
     img /= 127.5
-    img -= 1.
+    img -= 1.0
     return img
 
 

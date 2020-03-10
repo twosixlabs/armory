@@ -74,8 +74,10 @@ class DatasetTest(unittest.TestCase):
 
     def test_imagenet_adv(self):
         test_dataset = datasets.imagenet_adversarial(
-            dataset_dir=paths.host().dataset_dir, split_type="clean",
-            batch_size=100, epochs=1
+            dataset_dir=paths.host().dataset_dir,
+            split_type="clean",
+            batch_size=100,
+            epochs=1,
         )
         self.assertEqual(test_dataset.size, 1000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -209,11 +211,11 @@ class KerasTest(unittest.TestCase):
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_dataset = datasets.imagenet_adversarial(
-                        split_type="clean",
-                        epochs=1,
-                        batch_size=100,
-                        dataset_dir=paths.host().dataset_dir,
-                        preprocessing_fn=preprocessing_fn,
+            split_type="clean",
+            epochs=1,
+            batch_size=100,
+            dataset_dir=paths.host().dataset_dir,
+            preprocessing_fn=preprocessing_fn,
         )
 
         adv_dataset = datasets.imagenet_adversarial(
@@ -237,4 +239,3 @@ class KerasTest(unittest.TestCase):
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertLess(accuracy / adv_dataset.total_iterations, 0.73)
-
