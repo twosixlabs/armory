@@ -56,7 +56,13 @@ def _generator_from_tfds(
     epochs: int,
     dataset_dir: str,
     preprocessing_fn: Callable,
+    as_supervised: bool = True,
+    supervised_xy_keys=None,
 ):
+    """
+    If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
+        supervised_xy_keys=('video', 'label')  # ucf101 dataset
+    """
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
@@ -65,10 +71,24 @@ def _generator_from_tfds(
     ds, ds_info = tfds.load(
         dataset_name,
         split=split_type,
-        as_supervised=True,
+        as_supervised=as_supervised,
         data_dir=dataset_dir,
         with_info=True,
     )
+    if not as_supervised:
+        try:
+            x_key, y_key = supervised_xy_keys
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
+                f" tuple, not {supervised_xy_keys}"
+            )
+        if not isinstance(x_key, str) or not isinstance(y_key, str):
+            raise ValueError(
+                f"supervised_xy_keys be a tuple of strings,"
+                f" not {type(x_key), type(y_key)}"
+            )
+        ds = ds.map(lambda x: (x[x_key], x[y_key]))
 
     ds = ds.repeat(epochs)
     ds = ds.shuffle(batch_size * 10)
@@ -441,12 +461,39 @@ def resisc45(
     )
 
 
+def ucf101(
+    split_type: str,
+    epochs: int,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+) -> ArmoryDataGenerator:
+    """
+    UCF 101 Action Recognition Dataset
+        https://www.crcv.ucf.edu/data/UCF101.php
+    """
+    if batch_size != 1:
+        raise NotImplementedError("Due to variable length input, batch_size must be 1")
+
+    return _generator_from_tfds(
+        "ucf101/ucf101_1:2.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("video", "label"),
+    )
+
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
     "german_traffic_sign": german_traffic_sign,
+    "ucf101": ucf101,
     "resisc45": resisc45,
     "librispeech_speakerid": librispeech_speakerid,
 }

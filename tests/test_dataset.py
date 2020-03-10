@@ -2,8 +2,8 @@
 Test cases for ARMORY datasets.
 """
 
-import unittest
 import os
+import unittest
 
 import numpy as np
 from importlib import import_module
@@ -93,6 +93,28 @@ class DatasetTest(unittest.TestCase):
             for x in X:
                 self.assertTrue(25 <= x.shape[0] <= 232)
                 self.assertTrue(25 <= x.shape[1] <= 266)
+
+    def test_ucf101(self):
+        if not os.path.isdir(
+            os.path.join(paths.host().dataset_dir, "ucf101", "ucf101_1", "2.0.0")
+        ):
+            self.skipTest("ucf101 dataset not locally available.")
+
+        for split, size in [("train", 9537), ("test", 3783)]:
+            batch_size = 1
+            epochs = 1
+            test_dataset = datasets.ucf101(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,
+            )
+            self.assertEqual(test_dataset.size, size)
+
+            x, y = test_dataset.get_batch()
+            # video length is variable so we don't compare 2nd dim
+            self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 240, 320, 3))
+            self.assertEqual(y.shape, (batch_size,))
 
     def test_librispeech_train(self):
         dataset_dir = paths.host().dataset_dir
