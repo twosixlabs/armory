@@ -100,10 +100,10 @@ class DatasetTest(unittest.TestCase):
         ):
             self.skipTest("ucf101 dataset not locally available.")
 
-        for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
+        for split, size in [("train", 9537), ("test", 3783)]:
             batch_size = 1
             epochs = 1
-            test_dataset = datasets.resisc45(
+            test_dataset = datasets.ucf101(
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
@@ -112,7 +112,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(test_dataset.size, size)
 
             x, y = test_dataset.get_batch()
-            # video length is variable
+            # video length is variable so we don't compare 2nd dim
             self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 320, 240, 3))
             self.assertEqual(y.shape, (batch_size,))
 
