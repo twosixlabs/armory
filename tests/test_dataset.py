@@ -116,6 +116,32 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 320, 240, 3))
             self.assertEqual(y.shape, (batch_size,))
 
+    def test_resisc45(self):
+        """
+        Skip test if not locally available
+        """
+        if not os.path.isdir(
+            os.path.join(paths.host().dataset_dir, "resisc45_split", "3.0.0")
+        ):
+            self.skipTest("resisc45_split dataset not locally available.")
+
+        for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
+            batch_size = 16
+            epochs = 1
+            test_dataset = datasets.resisc45(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,
+            )
+            self.assertEqual(test_dataset.size, size)
+            self.assertEqual(test_dataset.batch_size, batch_size)
+            self.assertEqual(test_dataset.total_iterations, size // batch_size)
+
+            x, y = test_dataset.get_batch()
+            self.assertEqual(x.shape, (batch_size, 256, 256, 3))
+            self.assertEqual(y.shape, (batch_size,))
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
