@@ -1,5 +1,9 @@
 """
-Utility to split main data into three separate folders from original download
+Utility to split main data into three separate folders from original download.
+
+This script is to break the original RAR file into 3 separate folders for
+    upload as .tar.gz files into the armory-public s3 bucket. It is not called
+    by armory.data.datasets.resisc45()
 """
 
 import os

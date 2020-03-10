@@ -32,19 +32,6 @@ CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
 
 
-def use_host_paths():
-    global DEFAULT_DATASET_DIR
-    DEFAULT_DATASET_DIR = paths.host().dataset_dir
-
-
-def use_docker_paths():
-    global DEFAULT_DATASET_DIR
-    DEFAULT_DATASET_DIR = paths.docker().dataset_dir
-
-
-use_docker_paths()
-
-
 class ArmoryDataGenerator(DataGenerator):
     def __init__(self, generator, size, batch_size, preprocessing_fn=None):
         super().__init__(size, batch_size)
@@ -68,8 +55,8 @@ def _generator_from_tfds(
     dataset_dir: str,
     preprocessing_fn: Callable,
 ):
-    if dataset_dir is None:
-        dataset_dir = DEFAULT_DATASET_DIR
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
@@ -159,7 +146,7 @@ def digit(
     from scipy.io import wavfile
 
     if not dataset_dir:
-        dataset_dir = DEFAULT_DATASET_DIR
+        dataset_dir = paths.docker().dataset_dir
 
     rootdir = os.path.join(dataset_dir, "digit")
 
@@ -257,7 +244,7 @@ def imagenet_adversarial(
         return clean_img, adv_img, label
 
     if not dataset_dir:
-        dataset_dir = DEFAULT_DATASET_DIR
+        dataset_dir = paths.docker().dataset_dir
 
     num_images = 1000
     filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
@@ -318,7 +305,7 @@ def german_traffic_sign(
                 label_list.append(int(row[7]))  # the 8th column is the label
 
     if not dataset_dir:
-        dataset_dir = DEFAULT_DATASET_DIR
+        dataset_dir = paths.docker().dataset_dir
 
     rootdir = os.path.join(dataset_dir, "german_traffic_sign")
     subdir = "GTSRB"

@@ -2,6 +2,7 @@
 Test cases for ARMORY datasets.
 """
 
+import os
 import unittest
 
 import numpy as np
@@ -94,6 +95,14 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(25 <= x.shape[1] <= 266)
 
     def test_resisc45(self):
+        """
+        Skip test if not locally available
+        """
+        if not os.path.isdir(
+            os.path.join(paths.host().dataset_dir, "resisc45_split", "3.0.0")
+        ):
+            self.skipTest("resisc45_split dataset not locally available.")
+
         for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
             batch_size = 16
             epochs = 1
