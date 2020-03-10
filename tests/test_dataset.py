@@ -17,7 +17,7 @@ class DatasetTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=600,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
         )
         self.assertEqual(train_dataset.size, 60000)
         self.assertEqual(train_dataset.batch_size, 600)
@@ -32,7 +32,7 @@ class DatasetTest(unittest.TestCase):
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -47,7 +47,7 @@ class DatasetTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=500,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
         )
         self.assertEqual(train_dataset.size, 50000)
         self.assertEqual(train_dataset.batch_size, 500)
@@ -62,7 +62,7 @@ class DatasetTest(unittest.TestCase):
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -74,7 +74,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_imagenet_adv(self):
         clean_x, adv_x, labels = datasets.imagenet_adversarial(
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.docker().dataset_dir
         )
         self.assertEqual(clean_x.shape[0], 1000)
         self.assertEqual(adv_x.shape[0], 1000)
@@ -82,7 +82,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_german_traffic_sign(self):
         train_x, train_y, test_x, test_y = datasets.german_traffic_sign(
-            dataset_dir=paths.host().dataset_dir
+            dataset_dir=paths.docker().dataset_dir
         )
         self.assertEqual(train_x.shape[0], 39209)
         self.assertEqual(train_y.shape[0], 39209)
@@ -105,14 +105,14 @@ class KerasTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=600,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
             preprocessing_fn=preprocessing_fn,
         )
         test_dataset = datasets.mnist(
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -137,14 +137,14 @@ class KerasTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=500,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
             preprocessing_fn=preprocessing_fn,
         )
         test_dataset = datasets.cifar10(
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=paths.docker().dataset_dir,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -166,7 +166,7 @@ class KerasTest(unittest.TestCase):
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_x, adv_x, labels = datasets.imagenet_adversarial(
-            preprocessing_fn=preprocessing_fn, dataset_dir=paths.host().dataset_dir,
+            preprocessing_fn=preprocessing_fn, dataset_dir=paths.docker().dataset_dir,
         )
 
         predictions = classifier.predict(clean_x)
@@ -186,7 +186,7 @@ class KerasTest(unittest.TestCase):
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_x, adv_x, labels = datasets.imagenet_adversarial(
-            preprocessing_fn=preprocessing_fn, dataset_dir=paths.host().dataset_dir,
+            preprocessing_fn=preprocessing_fn, dataset_dir=paths.docker().dataset_dir,
         )
 
         predictions = classifier.predict(clean_x)
