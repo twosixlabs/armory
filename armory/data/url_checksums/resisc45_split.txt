@@ -1,0 +1,3 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc45_test.tar.gz 58428483 13670e5ce420c1bb9a2716a7d544405e4ee1b03247210d09da57a351ed46774d
+https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc45_train.tar.gz 291448728 4067ca9d0027ab69cae78d0b3f7c5596f83f586d144eb4bfb86ac7ad7e57db15
+https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc45_validation.tar.gz 58163558 db04359b48af71f8e27c62474e1d56f451e9f2c7861eea3e3d04fcf1414c906f
