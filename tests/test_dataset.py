@@ -2,6 +2,7 @@
 Test cases for ARMORY datasets.
 """
 
+import os
 import unittest
 
 import numpy as np
@@ -94,7 +95,26 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(25 <= x.shape[1] <= 266)
 
     def test_ucf101(self):
-        pass
+        if not os.path.isdir(
+            os.path.join(paths.host().dataset_dir, "ucf101", "ucf101_1", "2.0.0")
+        ):
+            self.skipTest("ucf101 dataset not locally available.")
+
+        for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
+            batch_size = 1
+            epochs = 1
+            test_dataset = datasets.resisc45(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,
+            )
+            self.assertEqual(test_dataset.size, size)
+
+            x, y = test_dataset.get_batch()
+            # video length is variable
+            self.assertEqual(x.shape[:1] + x.shape[2:], (batch_size, 320, 240, 3))
+            self.assertEqual(y.shape, (batch_size,))
 
 
 class KerasTest(unittest.TestCase):
