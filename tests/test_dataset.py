@@ -93,6 +93,9 @@ class DatasetTest(unittest.TestCase):
                 self.assertTrue(25 <= x.shape[0] <= 232)
                 self.assertTrue(25 <= x.shape[1] <= 266)
 
+    def test_ucf101(self):
+        pass
+
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
