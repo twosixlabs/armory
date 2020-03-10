@@ -363,7 +363,7 @@ def librispeech_speakerid(
     split_type: str,
     batch_size: int,
     epochs: int,
-    dataset_dir: str,
+    dataset_dir: str = None,
     preprocessing_fn: Callable = None,
 ):
     """
@@ -378,6 +378,9 @@ def librispeech_speakerid(
             "Processing of variable length inputs not yet implemented."
         )
 
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
     flags = []
     default_graph = tf.compat.v1.keras.backend.get_session().graph
     dl_config = tfds.download.DownloadConfig(
@@ -386,8 +389,7 @@ def librispeech_speakerid(
     builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
 
     builder.download_and_prepare(
-        download_dir=os.path.join(dataset_dir, "librispeech"),
-        download_config=dl_config,
+        download_dir=os.path.join(dataset_dir, "downloads"), download_config=dl_config,
     )
     ds = builder.as_dataset(split=split_type, as_supervised=True)
     ds_info = builder.info
