@@ -96,7 +96,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_ucf101(self):
         if not os.path.isdir(
-            os.path.join(paths.host().dataset_dir, "ucf101", "ucf101_1", "2.0.0")
+            os.path.join(paths.docker().dataset_dir, "ucf101", "ucf101_1", "2.0.0")
         ):
             self.skipTest("ucf101 dataset not locally available.")
 
@@ -107,7 +107,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.host().dataset_dir,
+                dataset_dir=paths.docker().dataset_dir,
             )
             self.assertEqual(test_dataset.size, size)
 
@@ -117,7 +117,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(y.shape, (batch_size,))
 
     def test_librispeech_train(self):
-        dataset_dir = paths.host().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
 
@@ -137,7 +137,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(y.shape, (1,))
 
     def test_librispeech_val(self):
-        dataset_dir = paths.host().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
         val_dataset = datasets.librispeech_speakerid(
@@ -153,7 +153,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(y.shape, (1,))
 
     def test_librispeech_test(self):
-        dataset_dir = paths.host().dataset_dir
+        dataset_dir = paths.docker().dataset_dir
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
         test_dataset = datasets.librispeech_speakerid(
@@ -176,7 +176,7 @@ class DatasetTest(unittest.TestCase):
         Skip test if not locally available
         """
         if not os.path.isdir(
-            os.path.join(paths.host().dataset_dir, "resisc45_split", "3.0.0")
+            os.path.join(paths.docker().dataset_dir, "resisc45_split", "3.0.0")
         ):
             self.skipTest("resisc45_split dataset not locally available.")
 
@@ -187,7 +187,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.host().dataset_dir,
+                dataset_dir=paths.docker().dataset_dir,
             )
             self.assertEqual(test_dataset.size, size)
             self.assertEqual(test_dataset.batch_size, batch_size)
