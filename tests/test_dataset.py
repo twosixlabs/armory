@@ -73,6 +73,31 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(x.shape, (100, 32, 32, 3))
         self.assertEqual(y.shape, (100,))
 
+    def test_digit(self):
+        epochs = 1
+        batch_size = 1
+        num_users = 3
+        min_length = 1148
+        max_length = 18262
+        for split, size in [
+            ("train", 45 * num_users * 10),
+            ("test", 5 * num_users * 10),
+        ]:
+            test_dataset = datasets.digit(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,  # TODO: docker()
+            )
+            self.assertEqual(test_dataset.size, size)
+            self.assertEqual(test_dataset.batch_size, batch_size)
+
+            x, y = test_dataset.get_batch()
+            self.assertEqual(x.shape[0], batch_size)
+            self.assertEqual(x.ndim, 2)
+            self.assertTrue(min_length <= x.shape[1] <= max_length)
+            self.assertEqual(y.shape, (batch_size,))
+
     def test_imagenet_adv(self):
         clean_x, adv_x, labels = datasets.imagenet_adversarial(
             dataset_dir=paths.host().dataset_dir

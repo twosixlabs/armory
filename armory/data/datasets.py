@@ -106,6 +106,51 @@ def _generator_from_tfds(
     return generator
 
 
+def _inner_generator(
+    X: list, Y: list, batch_size: int, epochs: int, drop_remainder: bool = False
+):
+    """
+    Create a generator from lists (or arrays) of numpy arrays
+    """
+    num_examples = len(X)
+    batch_size = int(batch_size)
+    epochs = int(epochs)
+    if len(X) != len(Y):
+        raise ValueError("X and Y must have the same length")
+    if epochs < 0:
+        raise ValueError("epochs cannot be negative")
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+
+    if drop_remainder:
+        num_examples = (num_examples // batch_size) * batch_size
+    if num_examples == 0:
+        return
+
+    Z = list(zip(X, Y))
+    for epoch in range(epochs):
+        np.random.shuffle(Z)
+        for start in range(0, num_examples, batch_size):
+            x_list, y_list = zip(*Z[start : start + batch_size])
+            yield np.stack(x_list), np.stack(y_list)
+
+
+def _generator_from_np(
+    X: list, Y: list, batch_size: int, epochs: int, preprocessing_fn: Callable,
+) -> ArmoryDataGenerator:
+    """
+    Create generator from (X, Y) lists numpy arrays
+    """
+    ds = _inner_generator(X, Y, batch_size, epochs, drop_remainder=False)
+
+    return ArmoryDataGenerator(
+        ds,
+        size=epochs * len(X),
+        batch_size=batch_size,
+        preprocessing_fn=preprocessing_fn,
+    )
+
+
 def mnist(
     split_type: str,
     epochs: int,
@@ -149,8 +194,13 @@ def cifar10(
 
 
 def digit(
-    zero_pad: bool = False, dataset_dir: str = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    zero_pad: bool = False,
+) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
@@ -162,6 +212,7 @@ def digit(
 
     :param zero_pad: Boolean to pad the audio samples to the same length
         if `True`, this returns `audio` arrays as 2D np.int16 arrays
+
     :param dataset_dir: Directory where cached datasets are stored
     :return: Train/Test arrays of audio and labels. Sample Rate is 8000 Hz
     """
@@ -169,6 +220,18 @@ def digit(
 
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
+    if batch_size > 1 and not zero_pad:
+        raise ValueError(
+            f"batch_size {batch_size} > 1 must use zero_pad = True"
+            " due to variable length input"
+        )
+
+    if split_type == "train":
+        samples = range(5, 50)
+    elif split_type == "test":
+        samples = range(5)
+    else:
+        raise ValueError(f"split_type {split_type} must be one of ('train', 'test')")
 
     rootdir = os.path.join(dataset_dir, "digit")
 
@@ -193,9 +256,8 @@ def digit(
     max_length = 18262
     min_length = 1148
     dtype = np.int16
-    train_audio, train_labels = [], []
-    test_audio, test_labels = [], []
-    for sample in range(50):
+    audio_list, labels = [], []
+    for sample in samples:
         for name in "jackson", "nicolas", "theo":  # , 'yweweler': not yet in release
             for digit in range(10):
                 filepath = os.path.join(dirpath, f"{digit}_{name}_{sample}.wav")
@@ -213,19 +275,10 @@ def digit(
                     audio = np.hstack(
                         [audio, np.zeros(max_length - len(audio), dtype=np.int16)]
                     )
-                if sample >= 5:
-                    train_audio.append(audio)
-                    train_labels.append(digit)
-                else:
-                    test_audio.append(audio)
-                    test_labels.append(digit)
+                audio_list.append(audio)
+                labels.append(digit)
 
-    return (
-        np.array(train_audio),
-        np.array(train_labels),
-        np.array(test_audio),
-        np.array(test_labels),
-    )
+    return _generator_from_np(audio_list, labels, batch_size, epochs, preprocessing_fn)
 
 
 def imagenet_adversarial(
