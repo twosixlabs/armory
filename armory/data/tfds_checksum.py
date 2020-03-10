@@ -1,5 +1,9 @@
 """
-TensorFlow Datasets has a horrible way to generate checksums.
+TensorFlow Datasets requires a lot of work to generate checksums.
+    Specifically, you need to have TFDS cloned locally,
+    have your file importable locally from TFDS, and then run a script from the repo.
+    There does not appear to be a programmatic way of doing it with simple
+    imports from TFDS.
 
 This fills in the gap. A checksums file should be a txt file with one line per file.
 
