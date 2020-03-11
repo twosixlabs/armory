@@ -31,12 +31,15 @@ def get_art_model(model_kwargs, wrapper_kwargs):
     model = ResNet50(**model_kwargs)
     wrapped_model = KerasClassifier(
         model,
-        clip_values=np.array(
-            [
-                255.0 - IMAGENET_MEANS[0],
-                255.0 - IMAGENET_MEANS[1],
-                255.0 - IMAGENET_MEANS[2],
-            ]
+        clip_values=(
+            np.array([0.0, 0.0, 0.0]),
+            np.array(
+                [
+                    255.0 - IMAGENET_MEANS[0],
+                    255.0 - IMAGENET_MEANS[1],
+                    255.0 - IMAGENET_MEANS[2],
+                ]
+            ),
         ),
         **wrapper_kwargs
     )
