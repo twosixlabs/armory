@@ -32,7 +32,13 @@ def get_art_model(model_kwargs, wrapper_kwargs):
     wrapped_model = KerasClassifier(
         model,
         clip_values=(
-            np.array([0.0, 0.0, 0.0]),
+            np.array(
+                [
+                    0.0 - IMAGENET_MEANS[0],
+                    0.0 - IMAGENET_MEANS[1],
+                    0.0 - IMAGENET_MEANS[2],
+                    ]
+            ),
             np.array(
                 [
                     255.0 - IMAGENET_MEANS[0],
