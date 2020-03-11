@@ -364,8 +364,6 @@ def german_traffic_sign(
     :return: generator
     """
 
-    # TODO: Refactor so it does not download the data from a different split
-
     if split_type not in ["train", "test"]:
         raise ValueError(
             f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
