@@ -349,16 +349,25 @@ def imagenet_adversarial(
 
 
 def german_traffic_sign(
-    preprocessing_fn: Callable = None, dataset_dir: str = None,
-) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    preprocessing_fn: Callable = None,
+    dataset_dir: str = None,
+) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over
     50,000 images.
 
     :param preprocessing_fn: Callable function to preprocess inputs
     :param dataset_dir: Directory where cached datasets are stored
-    :return: (train_images,train_labels,test_images,test_labels)
+    :return: generator
     """
+
+    if split_type not in ["train", "test"]:
+        raise ValueError(
+            f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
+        )
 
     from PIL import Image
 
@@ -385,7 +394,9 @@ def german_traffic_sign(
     rootdir = os.path.join(dataset_dir, "german_traffic_sign")
     subdir = "GTSRB"
     dirpath = os.path.join(rootdir, subdir)
+    num_classes = 43
 
+    # Download all data on the first call regardless of split
     urls = [
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Training_Images.zip",
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
@@ -405,33 +416,23 @@ def german_traffic_sign(
             with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
                 zip_ref.extractall(dir)
             os.remove(zip_filepath)
+    images, labels = [], []
+    if split_type == "train":
+        for c in range(0, num_classes):
+            prefix = os.path.join(
+                dirpath, "Final_Training", "Images", format(c, "05d")
+            )  # subdirectory for class
+            gtFile = os.path.join(
+                prefix, "GT-" + format(c, "05d") + ".csv"
+            )  # annotations file
+            _read_images(prefix, gtFile, images, labels)
+        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
 
-    train_images, train_labels = [], []
-    test_images, test_labels = [], []
-
-    for c in range(0, 43):
-        prefix = os.path.join(
-            dirpath, "Final_Training", "Images", format(c, "05d")
-        )  # subdirectory for class
-        gtFile = os.path.join(
-            prefix, "GT-" + format(c, "05d") + ".csv"
-        )  # annotations file
-        _read_images(prefix, gtFile, train_images, train_labels)
-
-    prefix = os.path.join(dirpath, "Final_Test", "Images")
-    gtFile = os.path.join(dirpath, "GT-final_test.csv")
-    _read_images(prefix, gtFile, test_images, test_labels)
-
-    if preprocessing_fn:
-        train_images = preprocessing_fn(train_images)
-        test_images = preprocessing_fn(test_images)
-
-    return (
-        np.array(train_images),
-        np.array(train_labels),
-        np.array(test_images),
-        np.array(test_labels),
-    )
+    elif split_type == "test":
+        prefix = os.path.join(dirpath, "Final_Test", "Images")
+        gtFile = os.path.join(dirpath, "GT-final_test.csv")
+        _read_images(prefix, gtFile, images, labels)
+        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
 
 
 def librispeech_speakerid(
