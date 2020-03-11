@@ -37,7 +37,7 @@ def get_art_model(model_kwargs, wrapper_kwargs):
                     0.0 - IMAGENET_MEANS[0],
                     0.0 - IMAGENET_MEANS[1],
                     0.0 - IMAGENET_MEANS[2],
-                    ]
+                ]
             ),
             np.array(
                 [
