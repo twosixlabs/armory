@@ -123,6 +123,28 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(x.shape[:1] + x.shape[3:], (batch_size, 3))
             self.assertEqual(y.shape, (batch_size,))
 
+    def test_imagenette(self):
+        if not os.path.isdir(
+            os.path.join(paths.host().dataset_dir, "imagenette", "full-size", "0.1.0")
+        ):
+            self.skipTest("imagenette dataset not locally available.")
+
+        for split, size in [("train", 12894), ("validation", 500)]:
+            batch_size = 1
+            epochs = 1
+            test_dataset = datasets.imagenette(
+                split_type=split,
+                epochs=epochs,
+                batch_size=batch_size,
+                dataset_dir=paths.host().dataset_dir,
+            )
+            self.assertEqual(test_dataset.size, size)
+
+            x, y = test_dataset.get_batch()
+            # image dimensions are variable so we don't compare 2nd dim or 3rd dim
+            self.assertEqual(x.shape[:1] + x.shape[3:], (batch_size, 3))
+            self.assertEqual(y.shape, (batch_size,))
+
     def test_ucf101(self):
         if not os.path.isdir(
             os.path.join(paths.host().dataset_dir, "ucf101", "ucf101_1", "2.0.0")

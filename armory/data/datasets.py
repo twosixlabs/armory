@@ -348,6 +348,30 @@ def imagenet_adversarial(
     return clean_x, adv_x, labels
 
 
+def imagenette(
+    split_type: str,
+    epochs: int,
+    batch_size: int,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+) -> ArmoryDataGenerator:
+    """
+    Smaller subset of 10 classes of Imagenet
+        https://github.com/fastai/imagenette
+    """
+    if batch_size != 1:
+        raise NotImplementedError("Due to variable length input, batch_size must be 1")
+
+    return _generator_from_tfds(
+        "imagenette/full-size:0.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+    )
+
+
 def german_traffic_sign(
     split_type: str,
     epochs: int,
@@ -546,6 +570,7 @@ SUPPORTED_DATASETS = {
     "cifar10": cifar10,
     "digit": digit,
     "imagenet_adversarial": imagenet_adversarial,
+    "imagenette": imagenette,
     "german_traffic_sign": german_traffic_sign,
     "ucf101": ucf101,
     "resisc45": resisc45,
