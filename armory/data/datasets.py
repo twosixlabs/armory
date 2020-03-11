@@ -366,6 +366,11 @@ def german_traffic_sign(
 
     # TODO: Refactor so it does not download the data from a different split
 
+    if split_type not in ["train", "test"]:
+        raise ValueError(
+            f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
+        )
+
     from PIL import Image
 
     def _read_images(prefix, gtFile, im_list, label_list):
@@ -391,7 +396,9 @@ def german_traffic_sign(
     rootdir = os.path.join(dataset_dir, "german_traffic_sign")
     subdir = "GTSRB"
     dirpath = os.path.join(rootdir, subdir)
+    num_classes = 43
 
+    # Download all data on the first call regardless of split
     urls = [
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Training_Images.zip",
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
@@ -411,35 +418,23 @@ def german_traffic_sign(
             with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
                 zip_ref.extractall(dir)
             os.remove(zip_filepath)
-
-    train_images, train_labels = [], []
-    test_images, test_labels = [], []
-
-    for c in range(0, 43):
-        prefix = os.path.join(
-            dirpath, "Final_Training", "Images", format(c, "05d")
-        )  # subdirectory for class
-        gtFile = os.path.join(
-            prefix, "GT-" + format(c, "05d") + ".csv"
-        )  # annotations file
-        _read_images(prefix, gtFile, train_images, train_labels)
-
-    prefix = os.path.join(dirpath, "Final_Test", "Images")
-    gtFile = os.path.join(dirpath, "GT-final_test.csv")
-    _read_images(prefix, gtFile, test_images, test_labels)
-
+    images, labels = [], []
     if split_type == "train":
-        return _generator_from_np(
-            train_images, train_labels, batch_size, epochs, preprocessing_fn
-        )
+        for c in range(0, num_classes):
+            prefix = os.path.join(
+                dirpath, "Final_Training", "Images", format(c, "05d")
+            )  # subdirectory for class
+            gtFile = os.path.join(
+                prefix, "GT-" + format(c, "05d") + ".csv"
+            )  # annotations file
+            _read_images(prefix, gtFile, images, labels)
+        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
+
     elif split_type == "test":
-        return _generator_from_np(
-            test_images, test_labels, batch_size, epochs, preprocessing_fn
-        )
-    else:
-        raise ValueError(
-            f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
-        )
+        prefix = os.path.join(dirpath, "Final_Test", "Images")
+        gtFile = os.path.join(dirpath, "GT-final_test.csv")
+        _read_images(prefix, gtFile, images, labels)
+        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
 
 
 def librispeech_speakerid(
