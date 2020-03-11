@@ -24,5 +24,5 @@ def preprocessing_fn(x: np.ndarray) -> np.ndarray:
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = InceptionResNetV2(**model_kwargs)
-    wrapped_model = KerasClassifier(model, clip_values=(-1, 1), **wrapper_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(-1.0, 1.0), **wrapper_kwargs)
     return wrapped_model
