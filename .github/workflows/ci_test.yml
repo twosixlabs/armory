@@ -26,9 +26,10 @@ jobs:
       - name: Run python tests
         run: |
           pip install -r requirements.txt
+          version=$(python -m armory --version)
           bash docker/build-dev-minimal.sh
-          pip install -r test-requirements.txt
-          pytest -s --disable-warnings
+          docker run -w /armory_dev twosixarmory/tf1:${version} \
+          pytest -s --disable-warnings --ignore=tests/test_host
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04

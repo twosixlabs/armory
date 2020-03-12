@@ -33,3 +33,15 @@ A simple end-to-end integration test can be launched with
 ```
 python -m armory run tests/test_data/fgm_attack_test.json
 ```
+
+For running `pytest`, users should follow the `.github/workflows/ci_test.yml` process. This splits tests into those used on the host:
+```
+pytest -s --disable-warnings tests/test_host
+```
+and the rest, which are run in the container (after building):
+```
+version=$(python -m armory --version)
+bash docker/build-dev-minimal.sh
+docker run -w /armory_dev twosixarmory/tf1:${version} bash \
+    pytest -s --disable-warnings --ignore=tests/test_host
+```
