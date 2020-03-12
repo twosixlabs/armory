@@ -29,12 +29,12 @@ def download_and_extract_repo(external_repo_name: str) -> None:
     if "@" in external_repo_name:
         split_repo = external_repo_name.split("@")
         org_repo_name = split_repo[0]
-        repo_name = org_repo_name.split('/')[-1]
+        repo_name = org_repo_name.split("/")[-1]
         branch = split_repo[1]
     else:
         branch = "master"
         org_repo_name = external_repo_name
-        repo_name = external_repo_name.split('/')[-1]
+        repo_name = external_repo_name.split("/")[-1]
 
     if "GITHUB_TOKEN" in os.environ:
         headers = {"Authorization": f'token {os.getenv("GITHUB_TOKEN")}'}
