@@ -163,7 +163,7 @@ class DatasetTest(unittest.TestCase):
         if not os.path.exists(os.path.join(DATASET_DIR, "librispeech_dev_clean_split")):
             self.skipTest("Librispeech dataset not downloaded.")
 
-        splits = ("train", "val", "test")
+        splits = ("train", "validation", "test")
         sizes = (1371, 692, 640)
         min_dim1s = (23120, 26239, 24080)
         max_dim1s = (519760, 516960, 522320)
