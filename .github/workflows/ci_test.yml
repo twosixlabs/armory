@@ -29,8 +29,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
-          version=$(python -m armory --version)
-          bash docker/build-dev-minimal.sh
           pytest -s ./tests/test_host/
   pytest-tf1:
     name: PyTest TF1
