@@ -50,15 +50,15 @@ def get_art_model(model_kwargs, wrapper_kwargs):
                 [
                     0.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
                     0.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
-                    0.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2]
-                    ]
+                    0.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
+                ]
             ),
             np.array(
                 [
                     1.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
                     1.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
                     1.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
-                    ]
+                ]
             ),
         )
     )
