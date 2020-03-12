@@ -11,14 +11,13 @@ from importlib import import_module
 from armory.data import datasets
 from armory import paths
 
+DATASET_DIR = paths.docker().dataset_dir
+
 
 class DatasetTest(unittest.TestCase):
     def test_mnist_train(self):
         train_dataset = datasets.mnist(
-            split_type="train",
-            epochs=1,
-            batch_size=600,
-            dataset_dir=paths.docker().dataset_dir,
+            split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
         )
         self.assertEqual(train_dataset.size, 60000)
         self.assertEqual(train_dataset.batch_size, 600)
@@ -30,10 +29,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_mnist_test(self):
         test_dataset = datasets.mnist(
-            split_type="test",
-            epochs=1,
-            batch_size=100,
-            dataset_dir=paths.docker().dataset_dir,
+            split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -45,10 +41,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_cifar_train(self):
         train_dataset = datasets.cifar10(
-            split_type="train",
-            epochs=1,
-            batch_size=500,
-            dataset_dir=paths.docker().dataset_dir,
+            split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
         )
         self.assertEqual(train_dataset.size, 50000)
         self.assertEqual(train_dataset.batch_size, 500)
@@ -60,10 +53,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_cifar_test(self):
         test_dataset = datasets.cifar10(
-            split_type="test",
-            epochs=1,
-            batch_size=100,
-            dataset_dir=paths.docker().dataset_dir,
+            split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
         )
         self.assertEqual(test_dataset.size, 10000)
         self.assertEqual(test_dataset.batch_size, 100)
@@ -87,7 +77,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.host().dataset_dir,  # TODO: docker()
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(test_dataset.size, size)
             self.assertEqual(test_dataset.batch_size, batch_size)
@@ -100,7 +90,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_imagenet_adv(self):
         test_dataset = datasets.imagenet_adversarial(
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=DATASET_DIR,
             split_type="clean",
             batch_size=100,
             epochs=1,
@@ -121,7 +111,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.host().dataset_dir,
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(test_dataset.size, size)
 
@@ -132,7 +122,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_imagenette(self):
         if not os.path.isdir(
-            os.path.join(paths.host().dataset_dir, "imagenette", "full-size", "0.1.0")
+            os.path.join(DATASET_DIR, "imagenette", "full-size", "0.1.0")
         ):
             self.skipTest("imagenette dataset not locally available.")
 
@@ -143,7 +133,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.host().dataset_dir,
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(test_dataset.size, size)
 
@@ -153,9 +143,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(y.shape, (batch_size,))
 
     def test_ucf101(self):
-        if not os.path.isdir(
-            os.path.join(paths.docker().dataset_dir, "ucf101", "ucf101_1", "2.0.0")
-        ):
+        if not os.path.isdir(os.path.join(DATASET_DIR, "ucf101", "ucf101_1", "2.0.0")):
             self.skipTest("ucf101 dataset not locally available.")
 
         for split, size in [("train", 9537), ("test", 3783)]:
@@ -165,7 +153,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.docker().dataset_dir,
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(test_dataset.size, size)
 
@@ -175,7 +163,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(y.shape, (batch_size,))
 
     def test_librispeech_train(self):
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DATASET_DIR
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
 
@@ -195,7 +183,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(y.shape, (1,))
 
     def test_librispeech_val(self):
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DATASET_DIR
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
         val_dataset = datasets.librispeech_speakerid(
@@ -211,7 +199,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(y.shape, (1,))
 
     def test_librispeech_test(self):
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = DATASET_DIR
         if not os.path.exists(os.path.join(dataset_dir, "librispeech_split")):
             self.skipTest("Librispeech dataset not downloaded.")
         test_dataset = datasets.librispeech_speakerid(
@@ -233,9 +221,7 @@ class DatasetTest(unittest.TestCase):
         """
         Skip test if not locally available
         """
-        if not os.path.isdir(
-            os.path.join(paths.docker().dataset_dir, "resisc45_split", "3.0.0")
-        ):
+        if not os.path.isdir(os.path.join(DATASET_DIR, "resisc45_split", "3.0.0")):
             self.skipTest("resisc45_split dataset not locally available.")
 
         for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
@@ -245,7 +231,7 @@ class DatasetTest(unittest.TestCase):
                 split_type=split,
                 epochs=epochs,
                 batch_size=batch_size,
-                dataset_dir=paths.docker().dataset_dir,
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(test_dataset.size, size)
             self.assertEqual(test_dataset.batch_size, batch_size)
@@ -267,14 +253,14 @@ class KerasTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=600,
-            dataset_dir=paths.docker().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
         test_dataset = datasets.mnist(
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.docker().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -299,14 +285,14 @@ class KerasTest(unittest.TestCase):
             split_type="train",
             epochs=1,
             batch_size=500,
-            dataset_dir=paths.docker().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
         test_dataset = datasets.cifar10(
             split_type="test",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.docker().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -331,7 +317,7 @@ class KerasTest(unittest.TestCase):
             split_type="clean",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -339,7 +325,7 @@ class KerasTest(unittest.TestCase):
             split_type="adversarial",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -369,7 +355,7 @@ class KerasTest(unittest.TestCase):
             split_type="clean",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -377,7 +363,7 @@ class KerasTest(unittest.TestCase):
             split_type="adversarial",
             epochs=1,
             batch_size=100,
-            dataset_dir=paths.host().dataset_dir,
+            dataset_dir=DATASET_DIR,
             preprocessing_fn=preprocessing_fn,
         )
 
