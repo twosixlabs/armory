@@ -42,5 +42,6 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         optimizer=torch.optim.Adam(model.parameters(), lr=0.003),
         input_shape=(224, 224, 3),
         **wrapper_kwargs,
-        clip_values=(0.0, 1.0))
+        clip_values=(0.0, 1.0)
+    )
     return wrapped_model
