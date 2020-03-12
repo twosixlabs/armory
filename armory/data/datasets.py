@@ -484,6 +484,8 @@ def librispeech_dev_clean(
     Librispeech dev dataset with custom split used for speaker
     identification
 
+    split_type - one of ("train", "validation", "test")
+
     returns:
         Generator
     """

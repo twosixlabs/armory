@@ -25,7 +25,7 @@ _URL = "http://www.openslr.org/12"
 _DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/librispeech/"
 _DL_URLS = {
     "train": _DL_URL + "librispeech-dev-clean-train.tar.gz",
-    "val": _DL_URL + "librispeech-dev-clean-val.tar.gz",
+    "validation": _DL_URL + "librispeech-dev-clean-val.tar.gz",
     "test": _DL_URL + "librispeech-dev-clean-test.tar.gz",
 }
 
