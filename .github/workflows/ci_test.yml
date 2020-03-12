@@ -28,6 +28,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
+          version=$(python -m armory --version)
 
           bash docker/build-dev-minimal.sh
           pytest -s ./tests/test_host/
@@ -41,9 +42,10 @@ jobs:
           python-version: '3.6'
       - name: Run armory TF1 docker tests
         run: |
-          bash docker/build-dev-minimal.sh
           pip install -r requirements.txt
           version=$(python -m armory --version)
+
+          bash docker/build-dev-minimal.sh
           docker run -w /armory_dev twosixarmory/tf1:${version} \
           pytest -s ./tests/test_docker_tf1/
   flake8-test:
