@@ -27,11 +27,18 @@ def download_and_extract_repo(external_repo_name: str) -> None:
     headers = {}
     repo_name = external_repo_name.split("/")[-1]
 
+    if "@" in repo_name:
+        split_repo = external_repo_name.split("@")
+        repo_name = split_repo[0]
+        branch = split_repo[1]
+    else:
+        branch = "master"
+
     if "GITHUB_TOKEN" in os.environ:
         headers = {"Authorization": f'token {os.getenv("GITHUB_TOKEN")}'}
 
     response = requests.get(
-        f"https://api.github.com/repos/{external_repo_name}/tarball/master",
+        f"https://api.github.com/repos/{external_repo_name}/tarball/{branch}",
         headers=headers,
         stream=True,
     )

@@ -18,7 +18,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.test_evals.fgm_attack"
+        "eval_file": "tests.data.test_evals.fgm_attack"
     },
     "metric": null,
     "model": {

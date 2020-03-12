@@ -19,3 +19,16 @@ class ExternalRepoTest(unittest.TestCase):
         )
 
         shutil.rmtree(f"{host_paths.external_repo_dir}/{repo_name}")
+
+    def test_download_branch(self):
+        host_paths = paths.host()
+        repo = "twosixlabs/armory-example@armory-0.6"
+        repo_name = repo.split("/")[-1]
+
+        download_and_extract_repo(repo)
+        self.assertTrue(os.path.exists(f"{host_paths.external_repo_dir}/{repo_name}"))
+        self.assertTrue(
+            os.path.isfile(f"{host_paths.external_repo_dir}/{repo_name}/README.md")
+        )
+
+        shutil.rmtree(f"{host_paths.external_repo_dir}/{repo_name}")
