@@ -22,7 +22,7 @@ import apache_beam as beam
 from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
-from armory.data.librispeech import librispeech_split  # noqa: F401
+from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 
 
@@ -473,7 +473,7 @@ def german_traffic_sign(
         return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
 
 
-def librispeech_speakerid(
+def librispeech_dev_clean(
     split_type: str,
     batch_size: int,
     epochs: int,
@@ -500,7 +500,7 @@ def librispeech_speakerid(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
-    builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
+    builder = tfds.builder("librispeech_dev_clean_split:1.1.0", data_dir=dataset_dir)
 
     builder.download_and_prepare(
         download_dir=os.path.join(dataset_dir, "downloads"), download_config=dl_config,
@@ -588,7 +588,7 @@ SUPPORTED_DATASETS = {
     "german_traffic_sign": german_traffic_sign,
     "ucf101": ucf101,
     "resisc45": resisc45,
-    "librispeech_speakerid": librispeech_speakerid,
+    "librispeech_dev_clean": librispeech_dev_clean,
 }
 
 
