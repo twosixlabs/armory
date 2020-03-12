@@ -23,7 +23,8 @@ class ExternalRepoTest(unittest.TestCase):
     def test_download_branch(self):
         host_paths = paths.host()
         repo = "twosixlabs/armory-example@armory-0.6"
-        repo_name = repo.split("/")[-1]
+        org_repo_name = repo.split("@")[0]
+        repo_name = org_repo_name.split("/")[-1]
 
         download_and_extract_repo(repo)
         self.assertTrue(os.path.exists(f"{host_paths.external_repo_dir}/{repo_name}"))
