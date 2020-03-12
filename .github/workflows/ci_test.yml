@@ -17,8 +17,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['macos-latest', 'windows-latest', 'ubuntu-18.04']
-        python-version: ['3.6', '3.7', '3.8']
+        os: ['ubuntu-18.04', 'windows-latest']
+        python-version: ['3.6']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
@@ -28,6 +28,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
+
+          bash docker/build-dev-minimal.sh
           pytest -s ./tests/test_host/
   pytest-tf1:
     name: PyTest TF1
