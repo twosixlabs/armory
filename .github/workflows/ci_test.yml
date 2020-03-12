@@ -25,6 +25,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run armory host tests
+        shell: bash
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
