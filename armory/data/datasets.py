@@ -282,7 +282,11 @@ def digit(
 
 
 def imagenet_adversarial(
-    dataset_dir: str = None, preprocessing_fn: Callable = None,
+    batch_size: int,
+    epochs: int,
+    split_type: str,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
 ) -> (np.ndarray, np.ndarray, np.ndarray):
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -298,7 +302,7 @@ def imagenet_adversarial(
     :return: (Adversarial_images, Labels)
     """
 
-    def _parse(serialized_example):
+    def _parse(serialized_example, split_type):
         ds_features = {
             "height": tf.io.FixedLenFeature([], tf.int64),
             "width": tf.io.FixedLenFeature([], tf.int64),
@@ -309,14 +313,21 @@ def imagenet_adversarial(
 
         example = tf.io.parse_single_example(serialized_example, ds_features)
 
-        clean_img = tf.io.decode_raw(example["clean-image"], tf.float32)
-        clean_img = tf.reshape(clean_img, (example["height"], example["width"], -1))
-
-        adv_img = tf.io.decode_raw(example["adv-image"], tf.float32)
-        adv_img = tf.reshape(adv_img, (example["height"], example["width"], -1))
+        if split_type == "clean":
+            img = tf.io.decode_raw(example["clean-image"], tf.float32)
+            img = tf.reshape(img, (example["height"], example["width"], -1))
+        elif split_type == "adversarial":
+            img = tf.io.decode_raw(example["adv-image"], tf.float32)
+            img = tf.reshape(img, (example["height"], example["width"], -1))
 
         label = tf.cast(example["label"], tf.int32)
-        return clean_img, adv_img, label
+        return img, label
+
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
+
+    acceptable_splits = ["clean", "adversarial"]
+    if split_type not in acceptable_splits:
+        raise ValueError(f"split_type must be one of {acceptable_splits}")
 
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
@@ -333,19 +344,22 @@ def imagenet_adversarial(
         local_path=output_filepath,
     )
 
-    adv_ds = tf.data.TFRecordDataset(filenames=[output_filepath])
-    image_label_ds = adv_ds.map(lambda example_proto: _parse(example_proto))
+    ds = tf.data.TFRecordDataset(filenames=[output_filepath])
+    ds = ds.map(lambda example_proto: _parse(example_proto, split_type))
+    ds = ds.repeat(epochs)
+    ds = ds.shuffle(batch_size * 10)
+    ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    ds = tfds.as_numpy(ds, graph=default_graph)
 
-    image_label_ds = image_label_ds.batch(num_images)
-    image_label_ds = tf.data.experimental.get_single_element(image_label_ds)
-    clean_x, adv_x, labels = tfds.as_numpy(image_label_ds)
+    generator = ArmoryDataGenerator(
+        ds,
+        size=epochs * num_images,
+        batch_size=batch_size,
+        preprocessing_fn=preprocessing_fn,
+    )
 
-    # Preprocessing should always be done on RGB inputs
-    if preprocessing_fn:
-        clean_x = preprocessing_fn(clean_x)
-        adv_x = preprocessing_fn(adv_x)
-
-    return clean_x, adv_x, labels
+    return generator
 
 
 def imagenette(

@@ -1,10 +1,14 @@
 from art.classifiers import KerasClassifier
 import numpy as np
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.inception_resnet_v2 import (
-    InceptionResNetV2,
-    preprocess_input as preprocess_input_inception_resnet_v2,
-)
+from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
+
+
+def preprocess_input_inception_resnet_v2(img):
+    # Model was trained with inputs normalized from -1 to 1
+    img /= 127.5
+    img -= 1.0
+    return img
 
 
 def preprocessing_fn(x: np.ndarray) -> np.ndarray:
@@ -20,5 +24,5 @@ def preprocessing_fn(x: np.ndarray) -> np.ndarray:
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = InceptionResNetV2(**model_kwargs)
-    wrapped_model = KerasClassifier(model, **wrapper_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(-1.0, 1.0), **wrapper_kwargs)
     return wrapped_model

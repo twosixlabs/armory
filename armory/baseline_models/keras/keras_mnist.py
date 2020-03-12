@@ -9,6 +9,7 @@ from art.classifiers import KerasClassifier
 
 
 def preprocessing_fn(img):
+    # Model will trained with inputs normalized from 0 to 1
     img = img.astype(np.float32) / 255.0
     return img
 
@@ -49,5 +50,5 @@ def make_mnist_model(**kwargs) -> tf.keras.Model:
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = make_mnist_model(**model_kwargs)
-    wrapped_model = KerasClassifier(model, clip_values=(0, 1), **wrapper_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs)
     return wrapped_model
