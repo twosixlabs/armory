@@ -2,6 +2,7 @@ import logging
 import os
 
 from art.classifiers import PyTorchClassifier
+import numpy as np
 import torch
 from torchvision import models
 
@@ -16,6 +17,10 @@ def resnet50(pretrained=True):
     return models.resnet50(pretrained=pretrained)
 
 
+IMAGENET_MEANS = [0.485, 0.456, 0.406]
+IMAGENET_STDEV = [0.229, 0.224, 0.225]
+
+
 def preprocessing_fn(img):
     """
     Standardize, then normalize imagenet images
@@ -24,9 +29,7 @@ def preprocessing_fn(img):
     img /= 255.0
 
     # Normalize images ImageNet means
-    means = [0.485, 0.456, 0.406]
-    stds = [0.229, 0.224, 0.225]
-    for i, (mean, std) in enumerate(zip(means, stds)):
+    for i, (mean, std) in enumerate(zip(IMAGENET_MEANS, IMAGENET_STDEV)):
         img[i] -= mean
         img[i] /= std
 
@@ -42,6 +45,21 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         optimizer=torch.optim.Adam(model.parameters(), lr=0.003),
         input_shape=(224, 224, 3),
         **wrapper_kwargs,
-        clip_values=(0.0, 1.0)
+        clip_values=(
+            np.array(
+                [
+                    0.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
+                    0.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
+                    0.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2]
+                    ]
+            ),
+            np.array(
+                [
+                    1.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
+                    1.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
+                    1.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
+                    ]
+            ),
+        )
     )
     return wrapped_model
