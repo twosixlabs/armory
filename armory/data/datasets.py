@@ -22,7 +22,7 @@ import apache_beam as beam
 from art.data_generators import DataGenerator
 from armory.data.utils import curl, download_file_from_s3
 from armory import paths
-from armory.data.librispeech import librispeech_split  # noqa: F401
+from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 
 
@@ -58,6 +58,7 @@ def _generator_from_tfds(
     preprocessing_fn: Callable,
     as_supervised: bool = True,
     supervised_xy_keys=None,
+    download_and_prepare_kwargs=None,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -74,6 +75,7 @@ def _generator_from_tfds(
         as_supervised=as_supervised,
         data_dir=dataset_dir,
         with_info=True,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
     )
     if not as_supervised:
         try:
@@ -473,7 +475,7 @@ def german_traffic_sign(
         return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
 
 
-def librispeech_speakerid(
+def librispeech_dev_clean(
     split_type: str,
     batch_size: int,
     epochs: int,
@@ -484,6 +486,8 @@ def librispeech_speakerid(
     Librispeech dev dataset with custom split used for speaker
     identification
 
+    split_type - one of ("train", "validation", "test")
+
     returns:
         Generator
     """
@@ -492,33 +496,20 @@ def librispeech_speakerid(
             "Processing of variable length inputs not yet implemented."
         )
 
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
     flags = []
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
-    builder = tfds.builder("librispeech_split:1.1.0", data_dir=dataset_dir)
 
-    builder.download_and_prepare(
-        download_dir=os.path.join(dataset_dir, "downloads"), download_config=dl_config,
-    )
-    ds = builder.as_dataset(split=split_type, as_supervised=True)
-    ds_info = builder.info
-    ds = ds.repeat(epochs)
-    ds = ds.shuffle(batch_size * 10)
-    ds = ds.batch(batch_size, drop_remainder=False)
-    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-    ds = tfds.as_numpy(ds, graph=default_graph)
-    generator = ArmoryDataGenerator(
-        ds,
-        size=epochs * ds_info.splits[split_type].num_examples,
+    return _generator_from_tfds(
+        "librispeech_dev_clean_split:1.1.0",
+        split_type=split_type,
         batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
     )
-    return generator
 
 
 def resisc45(
@@ -588,7 +579,7 @@ SUPPORTED_DATASETS = {
     "german_traffic_sign": german_traffic_sign,
     "ucf101": ucf101,
     "resisc45": resisc45,
-    "librispeech_speakerid": librispeech_speakerid,
+    "librispeech_dev_clean": librispeech_dev_clean,
 }
 
 

@@ -24,9 +24,9 @@ audiobooks from the LibriVox project, and has been carefully segmented and align
 _URL = "http://www.openslr.org/12"
 _DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/librispeech/"
 _DL_URLS = {
-    "dev_clean_train": _DL_URL + "librispeech-dev-clean-train.tar.gz",
-    "dev_clean_val": _DL_URL + "librispeech-dev-clean-val.tar.gz",
-    "dev_clean_test": _DL_URL + "librispeech-dev-clean-test.tar.gz",
+    "train": _DL_URL + "librispeech-dev-clean-train.tar.gz",
+    "validation": _DL_URL + "librispeech-dev-clean-val.tar.gz",
+    "test": _DL_URL + "librispeech-dev-clean-test.tar.gz",
 }
 
 
@@ -92,7 +92,7 @@ def _make_builder_configs():
     return configs
 
 
-class LibrispeechSplit(tfds.core.BeamBasedBuilder):
+class LibrispeechDevCleanSplit(tfds.core.BeamBasedBuilder):
     """Librispeech dataset."""
 
     BUILDER_CONFIGS = _make_builder_configs()
