@@ -5,6 +5,7 @@ on:
   repository_dispatch:
     types: build-and-release
 
+jobs:
   release-wheel:
     name: Build release wheel
     runs-on: ubuntu-18.04
