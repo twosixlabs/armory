@@ -44,6 +44,7 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build-dev-minimal.sh tf1
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
   pytest-tf2:
     name: PyTest TF2
     runs-on: ubuntu-18.04
@@ -58,6 +59,7 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build-dev-minimal.sh tf2
           docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_tf2
   pytest-pytorch:
     name: PyTest PyTorch
     runs-on: ubuntu-18.04
@@ -72,6 +74,7 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build-dev-minimal.sh pytorch
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_pytorch
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04
