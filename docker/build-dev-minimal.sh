@@ -13,6 +13,6 @@ if [[ "$1" != "pytorch" && "$1" != "tf1" && "$1" != "tf2" ]]; then
 fi
 
 version=$(python -m armory --version)
-docker build --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
-docker build --file docker/${1}/Dockerfile --build-arg armory_version=${version} --target armory-${1}-base -t twosixarmory/${1}-base:${version} .
-docker build --file docker/${1}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${1}-dev -t twosixarmory/${1}:${version} .
+docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
+docker build --force-rm --file docker/${1}/Dockerfile --build-arg armory_version=${version} --target armory-${1}-base -t twosixarmory/${1}-base:${version} .
+docker build --force-rm --file docker/${1}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${1}-dev -t twosixarmory/${1}:${version} .
