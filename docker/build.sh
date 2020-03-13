@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 version=$(python -m armory --version)
 if [[ $version == *"-dev" ]]; then
     echo "Armory version $version is a '-dev' branch. To build docker images, use:"

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 version=$(python -m armory --version)
 
 docker build --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
