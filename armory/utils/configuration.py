@@ -48,6 +48,10 @@ def _verify_dataset(config: Optional[dict]):
 
         if "name" not in config.keys():
             raise ValueError("A `name` must be specified in dataset json")
+
+        if "batch_size" not in config.keys():
+            raise ValueError("A `batch size` must be specified in dataset json")
+
         assert isinstance(config["name"], str)
 
 
