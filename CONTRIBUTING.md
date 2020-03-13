@@ -43,5 +43,5 @@ and the rest, which are run in the container (after building):
 version=$(python -m armory --version)
 bash docker/build-dev-minimal.sh
 docker run -w /armory_dev twosixarmory/tf1:${version} bash \
-    pytest -s --disable-warnings --ignore=tests/test_host
+    pytest -s --disable-warnings --ignore=tests/test_docker
 ```

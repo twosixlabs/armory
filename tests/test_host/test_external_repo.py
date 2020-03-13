@@ -1,4 +1,5 @@
 import os
+import pathlib
 import unittest
 import shutil
 
@@ -15,7 +16,13 @@ class ExternalRepoTest(unittest.TestCase):
         download_and_extract_repo(repo)
         self.assertTrue(os.path.exists(f"{host_paths.external_repo_dir}/{repo_name}"))
         self.assertTrue(
-            os.path.isfile(f"{host_paths.external_repo_dir}/{repo_name}/README.md")
+            os.path.isfile(
+                str(
+                    pathlib.Path(
+                        f"{host_paths.external_repo_dir}/{repo_name}/README.md"
+                    )
+                )
+            )
         )
 
-        shutil.rmtree(f"{host_paths.external_repo_dir}/{repo_name}")
+        shutil.rmtree(str(pathlib.Path(f"{host_paths.external_repo_dir}/{repo_name}")))

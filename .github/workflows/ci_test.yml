@@ -12,24 +12,38 @@ on:
       - master
       - r*
 jobs:
-  pytest:
-    name: PyTest
-    runs-on: ubuntu-18.04
+  pytest-host:
+    name: PyTest Host
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
         python-version: ['3.6']
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run python tests
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pytest -s ./tests/test_host/
+  pytest-tf1:
+    name: PyTest TF1
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory TF1 docker tests
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
           bash docker/build-dev-minimal.sh
-          docker run -w /armory_dev twosixarmory/tf1:${version} \
-          pytest -s --disable-warnings --ignore=tests/test_host
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04
