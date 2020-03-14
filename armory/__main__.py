@@ -371,6 +371,58 @@ def launch(command_args, prog, description):
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
+def bash(command_args, prog, description):
+    delimiter = "--"
+    usage = "armory bash <docker image> [-d] [--use-gpu] -- <bash command>"
+    parser = argparse.ArgumentParser(prog=prog, description=description, usage=usage)
+    parser.add_argument(
+        "docker_image",
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
+    parser.add_argument(
+        "--use-gpu",
+        dest="use_gpu",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use GPU when launching",
+    )
+    try:
+        index = command_args.index(delimiter)
+    except ValueError:
+        print(f"ERROR: delimiter '{delimiter}' is required.")
+        parser.print_help()
+        sys.exit(1)
+    bash_args = command_args[index + 1 :]
+    armory_args = command_args[:index]
+    if not bash_args:
+        print("ERROR: bash command required")
+        parser.print_help()
+        sys.exit(1)
+    args = parser.parse_args(armory_args)
+
+    coloredlogs.install(level=args.log_level)
+    paths.host()
+
+    config = {
+        "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
+    }
+    rig = Evaluator(config)
+    rig.run(command=" ".join(bash_args))
+
+
 # command, (function, description)
 PROGRAM = "armory"
 COMMANDS = {
@@ -382,6 +434,7 @@ COMMANDS = {
     "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
     "launch": (launch, "launch a given docker container in armory"),
+    "bash": (bash, "run a single bash command in the container"),
 }
 
 

@@ -110,7 +110,9 @@ class Evaluator(object):
             if not isinstance(e, FileNotFoundError):
                 logger.exception(f"Error removing tmp config {self.tmp_config}")
 
-    def run(self, interactive=False, jupyter=False, host_port=8888) -> None:
+    def run(
+        self, interactive=False, jupyter=False, host_port=8888, command=None
+    ) -> None:
         container_port = 8888
         self._write_tmp()
         ports = {container_port: host_port} if jupyter else None
@@ -123,6 +125,8 @@ class Evaluator(object):
                     self._run_jupyter(runner, host_port=host_port)
                 elif interactive:
                     self._run_interactive_bash(runner)
+                elif command:
+                    self._run_command(runner, command)
                 else:
                     self._run_config(runner)
             except KeyboardInterrupt:
@@ -157,6 +161,10 @@ class Evaluator(object):
         runner.exec_cmd(
             f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
         )
+
+    def _run_command(self, runner, command) -> None:
+        logger.info(bold(red(f"Running bash command: {command}")))
+        runner.exec_cmd(command)
 
     def _run_interactive_bash(self, runner) -> None:
         lines = [
