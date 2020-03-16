@@ -2,7 +2,6 @@
 Enables programmatic accessing of most recent docker images
 """
 
-from distutils import version
 import pkg_resources
 
 import armory
@@ -17,12 +16,22 @@ ALL = (
     TF2,
     PYTORCH,
 )
-REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
+ARMORY_BASE = f"{USER}/armory:{TAG}"
+TF1_BASE = f"{USER}/tf1-base:{TAG}"
+TF2_BASE = f"{USER}/tf2-base:{TAG}"
+PYTORCH_BASE = f"{USER}/pytorch-base:{TAG}"
+BASES = (
+    ARMORY_BASE,
+    TF1_BASE,
+    TF2_BASE,
+    PYTORCH_BASE,
+)
+REPOSITORIES = tuple(x.split(":")[0] for x in (ALL + BASES))
 
 
 def parse_version(tag):
     """
-    Return version.LooseVersion class for given version tag
+    Return PEP 440 version for given version tag
     """
     if not isinstance(tag, str):
         raise ValueError(f"tag is a {type(tag)}, not a str")
@@ -32,8 +41,10 @@ def parse_version(tag):
         numeric_tag = tag
     if len(numeric_tag.split(".")) != 3:
         raise ValueError(f"tag {tag} must be of form 'major.minor.patch[-dev]'")
-    version.StrictVersion(numeric_tag)
-    return pkg_resources.parse_version(tag)
+    version = pkg_resources.parse_version(tag)
+    if not isinstance(version, pkg_resources.extern.packaging.version.Version):
+        raise ValueError(f"tag {tag} parses to type {type(version)}, not Version")
+    return version
 
 
 VERSION = parse_version(armory.__version__)
