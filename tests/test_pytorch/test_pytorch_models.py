@@ -11,7 +11,9 @@ DATASET_DIR = paths.docker().dataset_dir
 
 class PyTorchModelsTest(unittest.TestCase):
     def test_pytorch_mnist(self):
-        classifier_module = import_module("armory.baseline_models.pytorch.pytorch_mnist")
+        classifier_module = import_module(
+            "armory.baseline_models.pytorch.pytorch_mnist"
+        )
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")

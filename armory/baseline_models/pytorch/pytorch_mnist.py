@@ -1,5 +1,3 @@
-
-
 import torch
 import numpy as np
 import torch.nn as nn
@@ -43,10 +41,13 @@ def make_mnist_model(**kwargs):
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = make_mnist_model(**model_kwargs)
-    wrapped_model = PyTorchClassifier(model, loss=nn.CrossEntropyLoss(),
-    optimizer=torch.optim.Adam(model.parameters(), lr=0.003),
-    input_shape=(1, 28, 28),
-    nb_classes=10,
-    clip_values=(0.0, 1.0), **wrapper_kwargs)
+    wrapped_model = PyTorchClassifier(
+        model,
+        loss=nn.CrossEntropyLoss(),
+        optimizer=torch.optim.Adam(model.parameters(), lr=0.003),
+        input_shape=(1, 28, 28),
+        nb_classes=10,
+        clip_values=(0.0, 1.0),
+        **wrapper_kwargs
+    )
     return wrapped_model
-
