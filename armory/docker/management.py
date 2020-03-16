@@ -2,8 +2,10 @@
 Docker orchestration managers for ARMORY.
 """
 
+import datetime
 import logging
 import os
+import shutil
 
 import docker
 
@@ -11,6 +13,32 @@ from armory import paths
 
 
 logger = logging.getLogger(__name__)
+
+
+def tmp_output_subdir(retries=10):
+    """
+    Return the name of the tmp and output subdirectories.
+
+    retries - number of times to retry folder creation before returning an error
+        if retries < 0, it will retry indefinitely.
+    """
+    tries = int(retries) + 1
+    host_paths = paths.host()
+    while tries:
+        try:
+            subdir = datetime.datetime.utcnow().isoformat()
+            tmp_subdir = os.path.join(host_paths.tmp_dir, subdir)
+            output_subdir = os.path.join(host_paths.output_dir, subdir)
+            os.mkdir(tmp_subdir)
+            os.mkdir(output_subdir)
+            return tmp_subdir, output_subdir
+        except FileExistsError:
+            tries -= 1
+            if tries:
+                logger.warning(
+                    f"Failed to create {tmp_subdir} or {output_subdir}. Retrying..."
+                )
+    raise ValueError("Failed to create tmp and output subdirectories")
 
 
 class ArmoryInstance(object):
@@ -25,6 +53,7 @@ class ArmoryInstance(object):
         docker_paths = paths.docker()
         self.docker_client = docker.from_env(version="auto")
 
+        self.tmp_subdir, self.output_subdir = tmp_output_subdir()
         container_args = {
             "runtime": runtime,
             "remove": True,
@@ -39,8 +68,8 @@ class ArmoryInstance(object):
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",
                 },
-                host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
-                host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
+                self.output_subdir: {"bind": docker_paths.output_dir, "mode": "rw"},
+                self.tmp_subdir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
         }
         if ports is not None:
@@ -72,6 +101,11 @@ class ArmoryInstance(object):
 
     def __del__(self):
         # Needed if there is an error in __init__
+        logger.info(f"Deleting tmp_output_subdir {self.tmp_output_subdir}")
+        try:
+            shutil.rmtree(self.tmp_output_subdir)
+        except OSError:
+            logger.warning(f"Failed to delete {self.tmp_output_subdir}")
         if hasattr(self, "docker_container"):
             self.docker_container.stop()
 
