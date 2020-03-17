@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+# Build a docker image for specific framework. Optionally `all` frameworks can be built.
+# Ex: `bash docker/build.sh pytorch`
+if [ "$#" -ne 1 ]; then
+    echo "Please pass a single argument to specify which framework to build. Must be either \`tf1\`, \`tf2\` or \`pytorch\` or \`all\`"
+    exit 1
+fi
+
+# Parse framework argument
+if [[ "$1" != "pytorch" && "$1" != "tf1" && "$1" != "tf2" && "$1" != "all" ]]; then
+    echo "Framework argument must be either \`tf1\`, \`tf2\` or \`pytorch\` or \`all\`"
+    exit 1
+fi
+
+# Parse Version
 version=$(python -m armory --version)
 if [[ $version == *"-dev" ]]; then
     echo "Armory version $version is a '-dev' branch. To build docker images, use:"
@@ -6,7 +20,17 @@ if [[ $version == *"-dev" ]]; then
     exit
 fi
 
-docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
-docker build --force-rm --file docker/tf1/Dockerfile --build-arg armory_version=${version} --target armory-tf1 -t twosixarmory/tf1:${version} .
-docker build --force-rm --file docker/tf2/Dockerfile --build-arg armory_version=${version} --target armory-tf2 -t twosixarmory/tf2:${version} .
-docker build --force-rm --file docker/pytorch/Dockerfile --build-arg armory_version=${version} --target armory-pytorch -t twosixarmory/pytorch:${version} .
+# Build images
+if [[ "$1" == "all" ]]; then
+  echo "Building docker images for all frameworks..."
+  for framework in "tf1" "tf2" "pytorch"; do
+    docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
+    docker build --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-base -t twosixarmory/${framework}-base:${version} .
+    docker build --force-rm --file docker/${framework}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-dev -t twosixarmory/${framework}:${version} .
+  done
+else
+    docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
+    docker build --force-rm --file docker/${1}/Dockerfile --build-arg armory_version=${version} --target armory-${1}-base -t twosixarmory/${1}-base:${version} .
+    docker build --force-rm --file docker/${1}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${1}-dev -t twosixarmory/${1}:${version} .
+fi
+
