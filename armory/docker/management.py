@@ -2,10 +2,8 @@
 Docker orchestration managers for ARMORY.
 """
 
-import datetime
 import logging
 import os
-import shutil
 
 import docker
 
@@ -15,45 +13,34 @@ from armory import paths
 logger = logging.getLogger(__name__)
 
 
-def tmp_output_subdir(retries=10):
-    """
-    Return the name of the tmp and output subdirectories.
-
-    retries - number of times to retry folder creation before returning an error
-        if retries < 0, it will retry indefinitely.
-    """
-    tries = int(retries) + 1
-    host_paths = paths.host()
-    while tries:
-        try:
-            subdir = datetime.datetime.utcnow().isoformat()
-            tmp_subdir = os.path.join(host_paths.tmp_dir, subdir)
-            output_subdir = os.path.join(host_paths.output_dir, subdir)
-            os.mkdir(tmp_subdir)
-            os.mkdir(output_subdir)
-            return tmp_subdir, output_subdir
-        except FileExistsError:
-            tries -= 1
-            if tries:
-                logger.warning(
-                    f"Failed to create {tmp_subdir} or {output_subdir}. Retrying..."
-                )
-    raise ValueError("Failed to create tmp and output subdirectories")
-
-
 class ArmoryInstance(object):
     """
     This object will control a specific docker container.
     """
 
     def __init__(
-        self, image_name, runtime: str = "runc", envs: dict = None, ports: dict = None
+        self,
+        image_name,
+        runtime: str = "runc",
+        envs: dict = None,
+        ports: dict = None,
+        container_subdir: str = None,
     ):
-        host_paths = paths.host()
-        docker_paths = paths.docker()
         self.docker_client = docker.from_env(version="auto")
 
-        self.tmp_subdir, self.output_subdir = tmp_output_subdir()
+        host_paths = paths.host()
+        docker_paths = paths.docker()
+        if container_subdir:
+            docker_tmp_dir = os.path.join(docker_paths.tmp_dir, container_subdir)
+            docker_output_dir = os.path.join(docker_paths.output_dir, container_subdir)
+            host_tmp_dir = os.path.join(host_paths.tmp_dir, container_subdir)
+            host_output_dir = os.path.join(host_paths.output_dir, container_subdir)
+        else:
+            docker_tmp_dir = docker_paths.tmp_dir
+            docker_output_dir = docker_paths.output_dir
+            host_tmp_dir = host_paths.tmp_dir
+            host_output_dir = host_paths.output_dir
+
         container_args = {
             "runtime": runtime,
             "remove": True,
@@ -68,8 +55,8 @@ class ArmoryInstance(object):
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",
                 },
-                self.output_subdir: {"bind": docker_paths.output_dir, "mode": "rw"},
-                self.tmp_subdir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
+                host_output_dir: {"bind": docker_output_dir, "mode": "rw"},
+                host_tmp_dir: {"bind": docker_tmp_dir, "mode": "rw"},
             },
         }
         if ports is not None:
@@ -101,11 +88,6 @@ class ArmoryInstance(object):
 
     def __del__(self):
         # Needed if there is an error in __init__
-        logger.info(f"Deleting tmp_output_subdir {self.tmp_output_subdir}")
-        try:
-            shutil.rmtree(self.tmp_output_subdir)
-        except OSError:
-            logger.warning(f"Failed to delete {self.tmp_output_subdir}")
         if hasattr(self, "docker_container"):
             self.docker_container.stop()
 
@@ -121,10 +103,14 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None
+        self, envs: dict = None, ports: dict = None, container_subdir: str = None,
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name, runtime=self.runtime, envs=envs, ports=ports
+            self.name,
+            runtime=self.runtime,
+            envs=envs,
+            ports=ports,
+            container_subdir=container_subdir,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

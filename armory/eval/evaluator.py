@@ -2,6 +2,7 @@
 Evaluators control launching of ARMORY evaluations.
 """
 
+import datetime
 import os
 import json
 import logging
@@ -23,6 +24,40 @@ from armory import paths
 logger = logging.getLogger(__name__)
 
 
+def tmp_output_subdir(retries=10):
+    """
+    Return (<subdir name>, <tmp subdir path>, <output subdir path>)
+
+    retries - number of times to retry folder creation before returning an error
+        if retries < 0, it will retry indefinitely.
+    """
+    tries = int(retries) + 1
+    host_paths = paths.host()
+    while tries:
+        subdir = datetime.datetime.utcnow().isoformat()
+        # Use tmp_subdir for locking
+        try:
+            tmp_subdir = os.path.join(host_paths.tmp_dir, subdir)
+            os.mkdir(tmp_subdir)
+        except FileExistsError:
+            tries -= 1
+            if tries:
+                logger.warning(f"Failed to create {tmp_subdir}. Retrying...")
+            continue
+
+        try:
+            output_subdir = os.path.join(host_paths.output_dir, subdir)
+            os.mkdir(output_subdir)
+        except OSError:
+            logger.exception(
+                f"Sync failure: created {tmp_subdir} but failed on {output_subdir}. Exiting."
+            )
+            raise
+        return subdir, tmp_subdir, output_subdir
+
+    raise ValueError("Failed to create tmp and output subdirectories")
+
+
 class Evaluator(object):
     def __init__(self, config_path: str, container_config_name="eval-config.json"):
         self.host_paths = paths.host()
@@ -35,9 +70,13 @@ class Evaluator(object):
 
         self.extra_env_vars = dict()
         self.config = load_config(config_path)
-        self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
+        self.container_subdir, self.tmp_dir, self.output_dir = tmp_output_subdir()
+        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
+        self.external_repo_dir = paths.get_external(self.tmp_dir)
         self.docker_config_path = Path(
-            os.path.join(self.docker_paths.tmp_dir, container_config_name)
+            os.path.join(
+                self.docker_paths.tmp_dir, self.container_subdir, container_config_name
+            )
         ).as_posix()
 
         kwargs = dict(runtime="runc")
@@ -68,11 +107,14 @@ class Evaluator(object):
 
     def _download_external(self):
         external_repo.download_and_extract_repo(
-            self.config["sysconfig"]["external_github_repo"]
+            self.config["sysconfig"]["external_github_repo"],
+            external_repo_dir=self.external_repo_dir,
         )
 
     def _download_private(self):
-        external_repo.download_and_extract_repo("twosixlabs/armory-private")
+        external_repo.download_and_extract_repo(
+            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
+        )
         self.extra_env_vars.update(
             {
                 "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
@@ -81,34 +123,37 @@ class Evaluator(object):
         )
 
     def _write_tmp(self):
-        os.makedirs(self.host_paths.tmp_dir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
             json.dump(self.config, f)
 
     def _delete_tmp(self):
-        if os.path.exists(self.host_paths.external_repo_dir):
+        if os.path.exists(self.external_repo_dir):
             try:
-                shutil.rmtree(self.host_paths.external_repo_dir)
+                shutil.rmtree(self.external_repo_dir)
             except OSError as e:
                 if not isinstance(e, FileNotFoundError):
                     logger.exception(
-                        f"Error removing external repo {self.host_paths.external_repo_dir}"
+                        f"Error removing external repo {self.external_repo_dir}"
                     )
+
         try:
-            os.remove(self.tmp_config)
+            logger.info(f"Deleting tmp_dir {self.tmp_dir}")
+            shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                logger.exception(f"Error removing tmp config {self.tmp_config}")
+                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
 
     def run(self, interactive=False, jupyter=False, host_port=8888) -> None:
+        container_subdir, tmp_subdir_path, output_subdir_path = tmp_output_subdir()
         container_port = 8888
         self._write_tmp()
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports
+                envs=self.extra_env_vars, ports=ports, container_subdir=container_subdir
             )
             try:
                 if jupyter:
