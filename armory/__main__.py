@@ -43,6 +43,23 @@ class Command(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+DOCKER_IMAGES = {"tf1": images.TF1, "tf2": images.TF2, "pytorch": images.PYTORCH}
+
+
+class DockerImage(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values in images.ALL:
+            setattr(namespace, self.dest, values)
+        elif values.lower() in DOCKER_IMAGES:
+            setattr(namespace, self.dest, DOCKER_IMAGES[values])
+        else:
+            raise argparse.ArgumentError(
+                self,
+                f"{values} invalid.\n"
+                f" must be one of {DOCKER_IMAGES} or {images.ALL}",
+            )
+
+
 def run(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -64,7 +81,7 @@ def run(command_args, prog, description):
         action="store_const",
         const=True,
         default=False,
-        help="Whether to all interactive access to container",
+        help="Whether to allow interactive access to container",
     )
     parser.add_argument(
         "-j",
@@ -290,6 +307,124 @@ def configure(command_args, prog, description):
     print("Configure complete")
 
 
+def launch(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument(
+        "docker_image",
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
+    parser.add_argument(
+        "-i",
+        "--interactive",
+        dest="interactive",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to allow interactive access to container",
+    )
+    parser.add_argument(
+        "-j",
+        "--jupyter",
+        dest="jupyter",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to set up Jupyter notebook from container",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        dest="port",
+        type=int,
+        action=PortNumber,
+        metavar="",
+        default=8888,
+        help="Port number {0, ..., 65535} to connect to Jupyter on",
+    )
+    parser.add_argument(
+        "--use-gpu",
+        dest="use_gpu",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use GPU when launching",
+    )
+    args = parser.parse_args(command_args)
+
+    coloredlogs.install(level=args.log_level)
+    paths.host()
+
+    config = {
+        "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
+    }
+    rig = Evaluator(config)
+    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+
+
+def exec(command_args, prog, description):
+    delimiter = "--"
+    usage = "armory exec <docker image> [-d] [--use-gpu] -- <exec command>"
+    parser = argparse.ArgumentParser(prog=prog, description=description, usage=usage)
+    parser.add_argument(
+        "docker_image",
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="log_level",
+        action="store_const",
+        const=logging.DEBUG,
+        default=logging.INFO,
+        help="Debug output (logging=DEBUG)",
+    )
+    parser.add_argument(
+        "--use-gpu",
+        dest="use_gpu",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use GPU when launching",
+    )
+    try:
+        index = command_args.index(delimiter)
+    except ValueError:
+        print(f"ERROR: delimiter '{delimiter}' is required.")
+        parser.print_help()
+        sys.exit(1)
+    exec_args = command_args[index + 1 :]
+    armory_args = command_args[:index]
+    if not exec_args:
+        print("ERROR: exec command required")
+        parser.print_help()
+        sys.exit(1)
+    args = parser.parse_args(armory_args)
+
+    coloredlogs.install(level=args.log_level)
+    paths.host()
+
+    config = {
+        "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
+    }
+    rig = Evaluator(config)
+    rig.run(command=" ".join(exec_args))
+
+
 # command, (function, description)
 PROGRAM = "armory"
 COMMANDS = {
@@ -300,6 +435,8 @@ COMMANDS = {
     ),
     "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
+    "launch": (launch, "launch a given docker container in armory"),
+    "exec": (exec, "run a single exec command in the container"),
 }
 
 
@@ -326,10 +463,10 @@ def usage():
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
         print(usage())
         sys.exit(1)
-    elif sys.argv[1] in ("-v", "--version"):
+    elif sys.argv[1] in ("-v", "--version", "version"):
         print(f"{armory.__version__}")
         sys.exit(0)
 

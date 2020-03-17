@@ -8,6 +8,7 @@ import logging
 import shutil
 import time
 from pathlib import Path
+from typing import Union
 
 import docker
 import requests
@@ -24,7 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
-    def __init__(self, config_path: str, container_config_name="eval-config.json"):
+    def __init__(
+        self, config_path: Union[str, dict], container_config_name="eval-config.json"
+    ):
         self.host_paths = paths.host()
         self.docker_paths = paths.docker()
 
@@ -34,7 +37,12 @@ class Evaluator(object):
             self.user_id, self.group_id = 0, 0
 
         self.extra_env_vars = dict()
-        self.config = load_config(config_path)
+        if isinstance(config_path, str):
+            self.config = load_config(config_path)
+        elif isinstance(config_path, dict):
+            self.config = config_path
+        else:
+            raise ValueError(f"config_path {config_path} must be a str or dict")
         self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
@@ -102,7 +110,9 @@ class Evaluator(object):
             if not isinstance(e, FileNotFoundError):
                 logger.exception(f"Error removing tmp config {self.tmp_config}")
 
-    def run(self, interactive=False, jupyter=False, host_port=8888) -> None:
+    def run(
+        self, interactive=False, jupyter=False, host_port=8888, command=None
+    ) -> None:
         container_port = 8888
         self._write_tmp()
         ports = {container_port: host_port} if jupyter else None
@@ -115,6 +125,8 @@ class Evaluator(object):
                     self._run_jupyter(runner, host_port=host_port)
                 elif interactive:
                     self._run_interactive_bash(runner)
+                elif command:
+                    self._run_command(runner, command)
                 else:
                     self._run_config(runner)
             except KeyboardInterrupt:
@@ -131,21 +143,28 @@ class Evaluator(object):
                     f"Port {host_port} already in use. Try a different one with '--port <port>'"
                 )
             elif (
-                isinstance(e, docker.errors.APIError)
-                and str(e)
-                == r'400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
-                and self.config.get("use_gpu")
+                str(e)
+                == '400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
             ):
-                logger.error('nvidia runtime failed. Set config "use_gpu" to false')
+                logger.error(
+                    'NVIDIA runtime failed. Either install nvidia-docker or set config "use_gpu" to false'
+                )
             else:
                 logger.error("Is Docker Daemon running?")
         self._delete_tmp()
 
     def _run_config(self, runner) -> None:
+        if self.config.get("evaluation") is None:
+            logger.info(bold(red("No evaluation script to run")))
+            return
         logger.info(bold(red("Running evaluation script")))
         runner.exec_cmd(
             f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
         )
+
+    def _run_command(self, runner, command) -> None:
+        logger.info(bold(red(f"Running bash command: {command}")))
+        runner.exec_cmd(command)
 
     def _run_interactive_bash(self, runner) -> None:
         lines = [
@@ -158,15 +177,20 @@ class Evaluator(object):
                     f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
                 )
             ),
-            bold("*** To run your script in the container:"),
-            bold(
-                red(
-                    f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
-                )
-            ),
-            bold("*** To gracefully shut down container, press: Ctrl-C"),
-            "",
         ]
+        if self.config.get("evaluation"):
+            lines.extend(
+                [
+                    bold("*** To run your script in the container:"),
+                    bold(
+                        red(
+                            f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
+                        )
+                    ),
+                    bold("*** To gracefully shut down container, press: Ctrl-C"),
+                    "",
+                ]
+            )
         logger.info("\n".join(lines))
         while True:
             time.sleep(1)
