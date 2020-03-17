@@ -81,7 +81,7 @@ def run(command_args, prog, description):
         action="store_const",
         const=True,
         default=False,
-        help="Whether to all interactive access to container",
+        help="Whether to allow interactive access to container",
     )
     parser.add_argument(
         "-j",
@@ -330,7 +330,7 @@ def launch(command_args, prog, description):
         action="store_const",
         const=True,
         default=False,
-        help="Whether to all interactive access to container",
+        help="Whether to allow interactive access to container",
     )
     parser.add_argument(
         "-j",
@@ -371,9 +371,9 @@ def launch(command_args, prog, description):
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
-def bash(command_args, prog, description):
+def exec(command_args, prog, description):
     delimiter = "--"
-    usage = "armory bash <docker image> [-d] [--use-gpu] -- <bash command>"
+    usage = "armory exec <docker image> [-d] [--use-gpu] -- <exec command>"
     parser = argparse.ArgumentParser(prog=prog, description=description, usage=usage)
     parser.add_argument(
         "docker_image",
@@ -405,10 +405,10 @@ def bash(command_args, prog, description):
         print(f"ERROR: delimiter '{delimiter}' is required.")
         parser.print_help()
         sys.exit(1)
-    bash_args = command_args[index + 1 :]
+    exec_args = command_args[index + 1 :]
     armory_args = command_args[:index]
-    if not bash_args:
-        print("ERROR: bash command required")
+    if not exec_args:
+        print("ERROR: exec command required")
         parser.print_help()
         sys.exit(1)
     args = parser.parse_args(armory_args)
@@ -420,7 +420,7 @@ def bash(command_args, prog, description):
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
     }
     rig = Evaluator(config)
-    rig.run(command=" ".join(bash_args))
+    rig.run(command=" ".join(exec_args))
 
 
 # command, (function, description)
@@ -434,7 +434,7 @@ COMMANDS = {
     "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
     "launch": (launch, "launch a given docker container in armory"),
-    "bash": (bash, "run a single bash command in the container"),
+    "exec": (exec, "run a single exec command in the container"),
 }
 
 
