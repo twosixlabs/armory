@@ -1,7 +1,7 @@
 import unittest
+from importlib import import_module
 
 import numpy as np
-from importlib import import_module
 
 from armory.data import datasets
 from armory import paths
