@@ -2,7 +2,7 @@
 Enables programmatic accessing of most recent docker images
 """
 
-from distutils import version
+import pkg_resources
 
 import armory
 
@@ -16,26 +16,38 @@ ALL = (
     TF2,
     PYTORCH,
 )
-REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
+ARMORY_BASE = f"{USER}/armory:{TAG}"
+TF1_BASE = f"{USER}/tf1-base:{TAG}"
+TF2_BASE = f"{USER}/tf2-base:{TAG}"
+PYTORCH_BASE = f"{USER}/pytorch-base:{TAG}"
+BASES = (
+    ARMORY_BASE,
+    TF1_BASE,
+    TF2_BASE,
+    PYTORCH_BASE,
+)
+REPOSITORIES = tuple(x.split(":")[0] for x in (ALL + BASES))
 
 
-def dev_version(tag):
+def parse_version(tag):
     """
-    Return version.LooseVersion class for given version tag
+    Return PEP 440 version for given version tag
     """
-    if not tag.endswith(armory.DEV):
-        raise ValueError(f"invalid dev tag: {tag} does not end with {armory.DEV}")
+    if not isinstance(tag, str):
+        raise ValueError(f"tag is a {type(tag)}, not a str")
+    if tag.endswith(armory.DEV):
+        numeric_tag = tag[: -len(armory.DEV)]
+    else:
+        numeric_tag = tag
+    if len(numeric_tag.split(".")) != 3:
+        raise ValueError(f"tag {tag} must be of form 'major.minor.patch[-dev]'")
+    version = pkg_resources.parse_version(tag)
+    if not isinstance(version, pkg_resources.extern.packaging.version.Version):
+        raise ValueError(f"tag {tag} parses to type {type(version)}, not Version")
+    return version
 
-    # check that the remaining version number is strict
-    strict = tag[: -len(armory.DEV)]
-    version.StrictVersion(strict)
-    return version.LooseVersion(tag)
 
-
-if TAG.endswith(armory.DEV):
-    VERSION = dev_version(TAG)
-else:
-    VERSION = version.StrictVersion(TAG)
+VERSION = parse_version(armory.__version__)
 
 
 def is_old(tag: str):
@@ -44,9 +56,6 @@ def is_old(tag: str):
 
     If current version is dev, only returns True for old "-dev" containers.
     """
-    if armory.is_dev():
-        raise NotImplementedError("dev tag")
-
     if not isinstance(tag, str):
         raise ValueError(f"tag must be of type str, not type {type(tag)}")
     if tag in ALL:
@@ -57,14 +66,10 @@ def is_old(tag: str):
     repo, tag = tokens
     if repo in REPOSITORIES:
         try:
-            if armory.is_dev():
-                if not tag.endswith(armory.DEV):
-                    return False
-                tag = dev_version(tag)
-                if tag < VERSION:
-                    return True
-            elif version.StrictVersion(tag) < VERSION:
-                return True
+            other = parse_version(tag)
+            if other < VERSION:
+                # return True if both prerelease or both not prerelease
+                return not (other.is_prerelease ^ VERSION.is_prerelease)
         except (AttributeError, ValueError):
             # Catch empty tag and tag parsing errors
             pass
