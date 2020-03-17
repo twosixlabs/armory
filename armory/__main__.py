@@ -101,7 +101,9 @@ def _pull_docker_images(docker_client=None):
             docker_client.images.get(image)
         except ImageNotFound:
             if armory.is_dev():
-                raise NotImplementedError("For dev, please build locally")
+                raise ValueError(
+                    "For '-dev', please run 'docker/build-dev.sh' locally before running armory"
+                )
             print(f"Image {image} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image)
 
