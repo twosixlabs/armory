@@ -9,20 +9,13 @@ from armory.utils.external_repo import download_and_extract_repo
 
 class ExternalRepoTest(unittest.TestCase):
     def test_download(self):
-        host_paths = paths.host()
+        external_repo_dir = pathlib.Path(paths.host().external_repo_dir)
         repo = "twosixlabs/armory-example"
         repo_name = repo.split("/")[-1]
 
-        download_and_extract_repo(repo)
-        self.assertTrue(os.path.exists(f"{host_paths.external_repo_dir}/{repo_name}"))
-        self.assertTrue(
-            os.path.isfile(
-                str(
-                    pathlib.Path(
-                        f"{host_paths.external_repo_dir}/{repo_name}/README.md"
-                    )
-                )
-            )
-        )
+        download_and_extract_repo(repo, external_repo_dir=external_repo_dir)
+        basedir = external_repo_dir / repo_name
 
-        shutil.rmtree(str(pathlib.Path(f"{host_paths.external_repo_dir}/{repo_name}")))
+        self.assertTrue(os.path.exists(basedir))
+        self.assertTrue(os.path.isfile(basedir / "README.md"))
+        shutil.rmtree(basedir)
