@@ -12,7 +12,7 @@ DATASET_DIR = paths.docker().dataset_dir
 class PyTorchModelsTest(unittest.TestCase):
     def test_pytorch_mnist(self):
         classifier_module = import_module(
-            "armory.baseline_models.pytorch.pytorch_mnist"
+            "armory.baseline_models.pytorch.mnist"
         )
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
@@ -46,7 +46,7 @@ class PyTorchModelsTest(unittest.TestCase):
 
     def test_keras_cifar(self):
         classifier_module = import_module(
-            "armory.baseline_models.pytorch.pytorch_cifar"
+            "armory.baseline_models.pytorch.cifar"
         )
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
