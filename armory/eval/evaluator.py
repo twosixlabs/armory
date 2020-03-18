@@ -36,6 +36,8 @@ def tmp_output_subdir(retries=10):
     host_paths = paths.host()
     while tries:
         subdir = datetime.datetime.utcnow().isoformat()
+        # ":" characters violate docker-py volume specifications
+        subdir = subdir.replace(":", "-")
         # Use tmp_subdir for locking
         try:
             tmp_subdir = os.path.join(host_paths.tmp_dir, subdir)
@@ -110,6 +112,9 @@ class Evaluator(object):
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image_name)
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Docker connection refused. Is Docker Daemon running?")
+            raise
 
         self.manager = ManagementInstance(**kwargs)
 
@@ -147,24 +152,32 @@ class Evaluator(object):
                         f"Error removing external repo {self.external_repo_dir}"
                     )
 
+        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
-            logger.info(f"Deleting tmp_dir {self.tmp_dir}")
             shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
                 logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
 
+        logger.info(f"Removing output_dir {self.output_dir} if empty")
+        try:
+            os.rmdir(self.output_dir)
+        except OSError:
+            pass
+
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
     ) -> None:
-        container_subdir, tmp_subdir_path, output_subdir_path = tmp_output_subdir()
         container_port = 8888
         self._write_tmp()
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports, container_subdir=container_subdir
+                envs=self.extra_env_vars,
+                ports=ports,
+                container_subdir=self.container_subdir,
             )
+            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 if jupyter:
                     self._run_jupyter(runner, host_port=host_port)
