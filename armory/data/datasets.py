@@ -565,6 +565,9 @@ def librispeech_dev_clean(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
 
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
     if cache_dataset and not os.path.isdir(
         os.path.join(dataset_dir, "librispeech_dev_clean_split", "plain_text", "1.1.0")
     ):
@@ -631,6 +634,9 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
 
     if cache_dataset and not os.path.isdir(
         os.path.join(dataset_dir, "ucf101", "ucf101_1", "2.0.0")
