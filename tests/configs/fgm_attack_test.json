@@ -23,7 +23,7 @@
     "metric": null,
     "model": {
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.keras_mnist",
+        "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
         "wrapper_kwargs": {}
     },

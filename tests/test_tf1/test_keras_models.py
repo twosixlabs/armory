@@ -11,7 +11,7 @@ DATASET_DIR = paths.docker().dataset_dir
 
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
-        classifier_module = import_module("armory.baseline_models.keras.keras_mnist")
+        classifier_module = import_module("armory.baseline_models.keras.mnist")
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
@@ -43,7 +43,7 @@ class KerasTest(unittest.TestCase):
         self.assertGreater(accuracy / test_dataset.total_iterations, 0.9)
 
     def test_keras_cifar(self):
-        classifier_module = import_module("armory.baseline_models.keras.keras_cifar")
+        classifier_module = import_module("armory.baseline_models.keras.cifar")
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
@@ -75,7 +75,7 @@ class KerasTest(unittest.TestCase):
         self.assertGreater(accuracy / test_dataset.total_iterations, 0.3)
 
     def test_keras_imagenet(self):
-        classifier_module = import_module("armory.baseline_models.keras.keras_resnet50")
+        classifier_module = import_module("armory.baseline_models.keras.resnet50")
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
@@ -112,7 +112,7 @@ class KerasTest(unittest.TestCase):
 
     def test_keras_imagenet_transfer(self):
         classifier_module = import_module(
-            "armory.baseline_models.keras.keras_inception_resnet_v2"
+            "armory.baseline_models.keras.inception_resnet_v2"
         )
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
