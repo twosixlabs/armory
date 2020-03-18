@@ -9,7 +9,8 @@ from armory.utils.external_repo import download_and_extract_repo
 
 class ExternalRepoTest(unittest.TestCase):
     def test_download(self):
-        external_repo_dir = pathlib.Path(paths.host().external_repo_dir)
+        tmp_subdir = pathlib.Path(paths.host().tmp_dir, "test-external-repo-subdir")
+        external_repo_dir = pathlib.Path(paths.get_external(tmp_subdir))
         repo = "twosixlabs/armory-example"
         repo_name = repo.split("/")[-1]
 
@@ -20,9 +21,5 @@ class ExternalRepoTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(basedir / "README.md"))
         shutil.rmtree(basedir)
         os.remove(external_repo_dir / (repo_name + ".tar.gz"))
-        try:
-            os.rmdir(external_repo_dir)
-        except OSError:
-            # Only delete if empty
-            pass
-        self.assertFalse(os.path.exists(external_repo_dir))
+        os.rmdir(external_repo_dir)
+        os.rmdir(tmp_subdir)

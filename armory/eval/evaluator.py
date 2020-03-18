@@ -2,7 +2,6 @@
 Evaluators control launching of ARMORY evaluations.
 """
 
-import datetime
 import os
 import json
 import logging
@@ -16,6 +15,7 @@ import requests
 from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
+from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
@@ -23,42 +23,6 @@ from armory.utils import docker_api
 from armory import paths
 
 logger = logging.getLogger(__name__)
-
-
-def tmp_output_subdir(retries=10):
-    """
-    Return (<subdir name>, <tmp subdir path>, <output subdir path>)
-
-    retries - number of times to retry folder creation before returning an error
-        if retries < 0, it will retry indefinitely.
-    """
-    tries = int(retries) + 1
-    host_paths = paths.host()
-    while tries:
-        subdir = datetime.datetime.utcnow().isoformat()
-        # ":" characters violate docker-py volume specifications
-        subdir = subdir.replace(":", "-")
-        # Use tmp_subdir for locking
-        try:
-            tmp_subdir = os.path.join(host_paths.tmp_dir, subdir)
-            os.mkdir(tmp_subdir)
-        except FileExistsError:
-            tries -= 1
-            if tries:
-                logger.warning(f"Failed to create {tmp_subdir}. Retrying...")
-            continue
-
-        try:
-            output_subdir = os.path.join(host_paths.output_dir, subdir)
-            os.mkdir(output_subdir)
-        except OSError:
-            logger.exception(
-                f"Sync failure: created {tmp_subdir} but failed on {output_subdir}. Exiting."
-            )
-            raise
-        return subdir, tmp_subdir, output_subdir
-
-    raise ValueError("Failed to create tmp and output subdirectories")
 
 
 class Evaluator(object):
@@ -80,7 +44,11 @@ class Evaluator(object):
             self.config = config_path
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
-        self.container_subdir, self.tmp_dir, self.output_dir = tmp_output_subdir()
+        (
+            self.container_subdir,
+            self.tmp_dir,
+            self.output_dir,
+        ) = volumes_util.tmp_output_subdir()
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
         self.external_repo_dir = paths.get_external(self.tmp_dir)
         self.docker_config_path = Path(
