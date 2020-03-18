@@ -30,16 +30,11 @@ class ArmoryInstance(object):
 
         host_paths = paths.host()
         docker_paths = paths.docker()
+        host_tmp_dir = host_paths.tmp_dir
+        host_output_dir = host_paths.output_dir
         if container_subdir:
-            docker_tmp_dir = os.path.join(docker_paths.tmp_dir, container_subdir)
-            docker_output_dir = os.path.join(docker_paths.output_dir, container_subdir)
-            host_tmp_dir = os.path.join(host_paths.tmp_dir, container_subdir)
-            host_output_dir = os.path.join(host_paths.output_dir, container_subdir)
-        else:
-            docker_tmp_dir = docker_paths.tmp_dir
-            docker_output_dir = docker_paths.output_dir
-            host_tmp_dir = host_paths.tmp_dir
-            host_output_dir = host_paths.output_dir
+            host_tmp_dir = os.path.join(host_tmp_dir, container_subdir)
+            host_output_dir = os.path.join(host_output_dir, container_subdir)
 
         container_args = {
             "runtime": runtime,
@@ -55,8 +50,8 @@ class ArmoryInstance(object):
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",
                 },
-                host_output_dir: {"bind": docker_output_dir, "mode": "rw"},
-                host_tmp_dir: {"bind": docker_tmp_dir, "mode": "rw"},
+                host_output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
+                host_tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
         }
         if ports is not None:
