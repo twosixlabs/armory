@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/librispeech/librispeech_dev_clean_split.tar.gz 594480525 162261219552d789c8c93fcc0aac595825244f688fa7219449f8629b68fdd666

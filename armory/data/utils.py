@@ -4,6 +4,7 @@ Utils for data processing
 """
 import logging
 import hashlib
+import tarfile
 import os
 import subprocess
 
@@ -72,3 +73,15 @@ def verify_sha256(filepath: str, hash_value: str, block_size: int = 4096):
     value = sha256(filepath, block_size=block_size)
     if value != hash_value:
         raise ValueError(f"sha256 hash of {filepath}: {value} != {hash_value}")
+
+
+def download_verify_dataset_cache(dataset_dir, checksum_file):
+    tmp_tar_fn = "tmp.tar.gz"
+    with open(checksum_file, "r") as fh:
+        url, _, hash = fh.readline().strip().split()
+    curl(url, dataset_dir, tmp_tar_fn)
+    tar_filepath = os.path.join(dataset_dir, tmp_tar_fn)
+    verify_sha256(tar_filepath, hash)
+    with tarfile.open(tar_filepath, "r:gz") as tar_ref:
+        tar_ref.extractall(dataset_dir)
+    os.remove(tar_filepath)

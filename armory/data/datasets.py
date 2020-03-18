@@ -20,7 +20,7 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import curl, download_file_from_s3
+from armory.data.utils import curl, download_file_from_s3, download_verify_dataset_cache
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
+CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_url_checksums")
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -548,6 +549,7 @@ def librispeech_dev_clean(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -562,6 +564,16 @@ def librispeech_dev_clean(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
+
+    if cache_dataset and not os.path.isdir(
+        os.path.join(dataset_dir, "librispeech_dev_clean_split", "plain_text", "1.1.0")
+    ):
+        download_verify_dataset_cache(
+            dataset_dir=dataset_dir,
+            checksum_file=os.path.join(
+                CACHED_CHECKSUMS_DIR, "librispeech_dev_clean_split.txt"
+            ),
+        )
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split:1.1.0",
@@ -613,11 +625,20 @@ def ucf101(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+
+    if cache_dataset and not os.path.isdir(
+        os.path.join(dataset_dir, "ucf101", "ucf101_1", "2.0.0")
+    ):
+        download_verify_dataset_cache(
+            dataset_dir=dataset_dir,
+            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, "ucf101.txt"),
+        )
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
