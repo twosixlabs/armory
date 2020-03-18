@@ -190,7 +190,7 @@ class DatasetTest(unittest.TestCase):
             self.skipTest("resisc45_split dataset not locally available.")
 
         for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
-            batch_size = 16
+            batch_size = 15
             epochs = 1
             test_dataset = datasets.resisc45(
                 split_type=split,
