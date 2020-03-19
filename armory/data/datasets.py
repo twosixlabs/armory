@@ -358,7 +358,7 @@ def imagenet_adversarial(
 
     ProjectedGradientDescent
         Iterations = 10
-        Max pertibation epsilon = 8
+        Max perturbation epsilon = 8
         Attack step size = 2
         Targeted = True
 
@@ -565,17 +565,11 @@ def librispeech_dev_clean(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
 
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
-    if cache_dataset and not os.path.isdir(
-        os.path.join(dataset_dir, "librispeech_dev_clean_split", "plain_text", "1.1.0")
-    ):
-        download_verify_dataset_cache(
-            dataset_dir=dataset_dir,
-            checksum_file=os.path.join(
-                CACHED_CHECKSUMS_DIR, "librispeech_dev_clean_split.txt"
-            ),
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir,
+            name="librispeech_dev_clean_split",
+            subpath=os.path.join("plain_text", "1.1.0"),
         )
 
     return _generator_from_tfds(
@@ -596,6 +590,7 @@ def resisc45(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -612,6 +607,11 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir, name="resisc45_split", subpath="3.0.0",
+        )
+
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
         split_type=split_type,
@@ -635,15 +635,9 @@ def ucf101(
         https://www.crcv.ucf.edu/data/UCF101.php
     """
 
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
-    if cache_dataset and not os.path.isdir(
-        os.path.join(dataset_dir, "ucf101", "ucf101_1", "2.0.0")
-    ):
-        download_verify_dataset_cache(
-            dataset_dir=dataset_dir,
-            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, "ucf101.txt"),
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir, name="ucf101", subpath=os.path.join("ucf101_1", "2.0.0"),
         )
 
     return _generator_from_tfds(
@@ -657,6 +651,17 @@ def ucf101(
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
     )
+
+
+def _cache_dataset(dataset_dir: str, name: str, subpath: str):
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
+    if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
+        download_verify_dataset_cache(
+            dataset_dir=dataset_dir,
+            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
+        )
 
 
 SUPPORTED_DATASETS = {

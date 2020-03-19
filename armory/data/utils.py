@@ -7,6 +7,9 @@ import hashlib
 import tarfile
 import os
 import subprocess
+import shutil
+import random
+import string
 
 import boto3
 from botocore import UNSIGNED
@@ -75,13 +78,52 @@ def verify_sha256(filepath: str, hash_value: str, block_size: int = 4096):
         raise ValueError(f"sha256 hash of {filepath}: {value} != {hash_value}")
 
 
+def verify_size(filepath: str, file_size: int):
+    size = os.path.getsize(filepath)
+    if size != file_size:
+        raise ValueError(f"file size of {filepath}: {size} != {file_size}")
+
+
 def download_verify_dataset_cache(dataset_dir, checksum_file):
-    tmp_tar_fn = "tmp.tar.gz"
     with open(checksum_file, "r") as fh:
-        url, _, hash = fh.readline().strip().split()
-    curl(url, dataset_dir, tmp_tar_fn)
-    tar_filepath = os.path.join(dataset_dir, tmp_tar_fn)
-    verify_sha256(tar_filepath, hash)
-    with tarfile.open(tar_filepath, "r:gz") as tar_ref:
-        tar_ref.extractall(dataset_dir)
-    os.remove(tar_filepath)
+        url, file_length, hash = fh.readline().strip().split()
+    # download
+    cache_dir = os.path.join(dataset_dir, "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    tar_filepath = os.path.join(cache_dir, os.path.basename(url))
+    if not os.path.exists(tar_filepath):
+        curl(url, dataset_dir, tar_filepath)
+
+    # verification
+    try:
+        verify_size(tar_filepath, int(file_length))
+        logger.info("Verifying sha256 hash of download...")
+        verify_sha256(tar_filepath, hash)
+    except ValueError:
+        os.remove(tar_filepath)
+        logger.info("Cached file download failed. Falling back to processing data...")
+        return
+
+    tmp_dir = os.path.join(
+        cache_dir,
+        "tmp_" + "".join(random.choice(string.ascii_lowercase) for _ in range(16)),
+    )
+    os.makedirs(tmp_dir)
+
+    logger.info("Extracting .tfrecord files from download...")
+    try:
+        with tarfile.open(tar_filepath, "r:gz") as tar_ref:
+            tar_ref.extractall(tmp_dir)
+    except tarfile.ReadError:
+        logger.info(f"Could not read tarfile: {tar_filepath}")
+        logger.info("Falling back to processing data...")
+        return
+    except tarfile.ExtractError:
+        logger.info(f"Could not extract tarfile: {tar_filepath}")
+        logger.info("Falling back to processing data...")
+        return
+
+    # move tmp_dir subdirectory to dataset_dir (tarball does not contain files at root level)
+    for directory in os.listdir(path=tmp_dir):
+        shutil.move(os.path.join(tmp_dir, directory), dataset_dir)
+    os.rmdir(tmp_dir)
