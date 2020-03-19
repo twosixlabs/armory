@@ -214,7 +214,7 @@ class DatasetTest(unittest.TestCase):
 
     def test_variable_length(self):
         """
-        Skip test if not locally available
+        Test batches with variable length items using digit dataset
         """
         size = 1350
         batch_size = 4
