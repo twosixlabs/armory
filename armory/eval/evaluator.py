@@ -15,6 +15,7 @@ import requests
 from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
+from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
@@ -43,9 +44,17 @@ class Evaluator(object):
             self.config = config_path
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
-        self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
+        (
+            self.container_subdir,
+            self.tmp_dir,
+            self.output_dir,
+        ) = volumes_util.tmp_output_subdir()
+        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
+        self.external_repo_dir = paths.get_external(self.tmp_dir)
         self.docker_config_path = Path(
-            os.path.join(self.docker_paths.tmp_dir, container_config_name)
+            os.path.join(
+                self.docker_paths.tmp_dir, self.container_subdir, container_config_name
+            )
         ).as_posix()
 
         kwargs = dict(runtime="runc")
@@ -71,16 +80,22 @@ class Evaluator(object):
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image_name)
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Docker connection refused. Is Docker Daemon running?")
+            raise
 
         self.manager = ManagementInstance(**kwargs)
 
     def _download_external(self):
         external_repo.download_and_extract_repo(
-            self.config["sysconfig"]["external_github_repo"]
+            self.config["sysconfig"]["external_github_repo"],
+            external_repo_dir=self.external_repo_dir,
         )
 
     def _download_private(self):
-        external_repo.download_and_extract_repo("twosixlabs/armory-private")
+        external_repo.download_and_extract_repo(
+            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
+        )
         self.extra_env_vars.update(
             {
                 "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
@@ -89,26 +104,34 @@ class Evaluator(object):
         )
 
     def _write_tmp(self):
-        os.makedirs(self.host_paths.tmp_dir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
             json.dump(self.config, f)
 
     def _delete_tmp(self):
-        if os.path.exists(self.host_paths.external_repo_dir):
+        if os.path.exists(self.external_repo_dir):
             try:
-                shutil.rmtree(self.host_paths.external_repo_dir)
+                shutil.rmtree(self.external_repo_dir)
             except OSError as e:
                 if not isinstance(e, FileNotFoundError):
                     logger.exception(
-                        f"Error removing external repo {self.host_paths.external_repo_dir}"
+                        f"Error removing external repo {self.external_repo_dir}"
                     )
+
+        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
-            os.remove(self.tmp_config)
+            shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                logger.exception(f"Error removing tmp config {self.tmp_config}")
+                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
+
+        logger.info(f"Removing output_dir {self.output_dir} if empty")
+        try:
+            os.rmdir(self.output_dir)
+        except OSError:
+            pass
 
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
@@ -118,8 +141,11 @@ class Evaluator(object):
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports
+                envs=self.extra_env_vars,
+                ports=ports,
+                container_subdir=self.container_subdir,
             )
+            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 if jupyter:
                     self._run_jupyter(runner, host_port=host_port)
