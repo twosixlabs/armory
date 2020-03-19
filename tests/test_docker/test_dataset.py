@@ -13,52 +13,41 @@ DATASET_DIR = paths.docker().dataset_dir
 
 class DatasetTest(unittest.TestCase):
     def test_mnist_train(self):
-        train_dataset = datasets.mnist(
-            split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
-        )
-        self.assertEqual(train_dataset.size, 60000)
-        self.assertEqual(train_dataset.batch_size, 600)
-        self.assertEqual(train_dataset.total_iterations, 100)
+        batch_size = 600
+        for split, size in [("train", 60000), ("test", 10000)]:
+            train_dataset = datasets.mnist(
+                split_type=split,
+                epochs=1,
+                batch_size=batch_size,
+                dataset_dir=DATASET_DIR,
+            )
+            self.assertEqual(train_dataset.size, size)
+            self.assertEqual(train_dataset.batch_size, batch_size)
+            self.assertEqual(
+                train_dataset.total_iterations,
+                size // batch_size + bool(size % batch_size),
+            )
 
-        x, y = train_dataset.get_batch()
-        self.assertEqual(x.shape, (600, 28, 28, 1))
-        self.assertEqual(y.shape, (600,))
-
-    def test_mnist_test(self):
-        test_dataset = datasets.mnist(
-            split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
-        )
-        self.assertEqual(test_dataset.size, 10000)
-        self.assertEqual(test_dataset.batch_size, 100)
-        self.assertEqual(test_dataset.total_iterations, 100)
-
-        x, y = test_dataset.get_batch()
-        self.assertEqual(x.shape, (100, 28, 28, 1))
-        self.assertEqual(y.shape, (100,))
+            x, y = train_dataset.get_batch()
+            self.assertEqual(x.shape, (batch_size, 28, 28, 1))
+            self.assertEqual(y.shape, (batch_size,))
 
     def test_cifar_train(self):
-        train_dataset = datasets.cifar10(
-            split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
-        )
-        self.assertEqual(train_dataset.size, 50000)
-        self.assertEqual(train_dataset.batch_size, 500)
-        self.assertEqual(train_dataset.total_iterations, 100)
+        batch_size = 500
+        for split, size in [("train", 50000), ("test", 10000)]:
+            train_dataset = datasets.cifar10(
+                split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
+            )
+            self.assertEqual(train_dataset.size, size)
+            self.assertEqual(train_dataset.batch_size, batch_size)
+            self.assertEqual(
+                train_dataset.total_iterations,
+                size // batch_size + bool(size % batch_size),
+            )
 
-        x, y = train_dataset.get_batch()
-        self.assertEqual(x.shape, (500, 32, 32, 3))
-        self.assertEqual(y.shape, (500,))
-
-    def test_cifar_test(self):
-        test_dataset = datasets.cifar10(
-            split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
-        )
-        self.assertEqual(test_dataset.size, 10000)
-        self.assertEqual(test_dataset.batch_size, 100)
-        self.assertEqual(test_dataset.total_iterations, 100)
-
-        x, y = test_dataset.get_batch()
-        self.assertEqual(x.shape, (100, 32, 32, 3))
-        self.assertEqual(y.shape, (100,))
+            x, y = train_dataset.get_batch()
+            self.assertEqual(x.shape, (batch_size, 32, 32, 3))
+            self.assertEqual(y.shape, (batch_size,))
 
     def test_digit(self):
         epochs = 1
