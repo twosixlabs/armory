@@ -175,7 +175,10 @@ class DatasetTest(unittest.TestCase):
             )
             self.assertEqual(train_dataset.size, size)
             self.assertEqual(train_dataset.batch_size, batch_size)
-            self.assertEqual(train_dataset.total_iterations, size)
+            self.assertEqual(
+                train_dataset.total_iterations,
+                size // batch_size + bool(size % batch_size),
+            )
 
             x, y = train_dataset.get_batch()
             self.assertEqual(x.shape[0], 1)
@@ -200,8 +203,35 @@ class DatasetTest(unittest.TestCase):
             )
             self.assertEqual(test_dataset.size, size)
             self.assertEqual(test_dataset.batch_size, batch_size)
-            self.assertEqual(test_dataset.total_iterations, size // batch_size)
+            self.assertEqual(
+                test_dataset.total_iterations,
+                size // batch_size + bool(size % batch_size),
+            )
 
             x, y = test_dataset.get_batch()
             self.assertEqual(x.shape, (batch_size, 256, 256, 3))
             self.assertEqual(y.shape, (batch_size,))
+
+    def test_variable_length(self):
+        """
+        Test batches with variable length items using digit dataset
+        """
+        size = 1350
+        batch_size = 4
+        test_dataset = datasets.digit(
+            split_type="train",
+            epochs=1,
+            batch_size=batch_size,
+            dataset_dir=DATASET_DIR,
+        )
+        self.assertEqual(
+            test_dataset.total_iterations, size // batch_size + bool(size % batch_size)
+        )
+
+        x, y = test_dataset.get_batch()
+        self.assertEqual(x.dtype, object)
+        self.assertEqual(x.shape, (batch_size,))
+        for x_i in x:
+            self.assertEqual(x_i.ndim, 1)
+            self.assertTrue(1148 <= len(x_i) <= 18262)
+        self.assertEqual(y.shape, (batch_size,))
