@@ -35,7 +35,7 @@ class DatasetTest(unittest.TestCase):
         batch_size = 500
         for split, size in [("train", 50000), ("test", 10000)]:
             dataset = datasets.cifar10(
-                split_type="train",
+                split_type=split,
                 epochs=1,
                 batch_size=batch_size,
                 dataset_dir=DATASET_DIR,
