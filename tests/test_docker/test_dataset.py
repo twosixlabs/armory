@@ -77,16 +77,18 @@ class DatasetTest(unittest.TestCase):
 
     def test_imagenet_adv(self):
         batch_size = 100
+        total_size = 1000
         test_dataset = datasets.imagenet_adversarial(
             dataset_dir=DATASET_DIR,
             split_type="clean",
             batch_size=batch_size,
             epochs=1,
         )
-        self.assertEqual(test_dataset.size, 1000)
+        self.assertEqual(test_dataset.size, total_size)
         self.assertEqual(test_dataset.batch_size, batch_size)
         self.assertEqual(
-            test_dataset.total_iterations, batch_size + bool(1000 % batch_size)
+            test_dataset.total_iterations,
+            total_size // batch_size + bool(total_size % batch_size),
         )
 
         x, y = test_dataset.get_batch()
