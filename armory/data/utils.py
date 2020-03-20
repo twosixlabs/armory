@@ -4,8 +4,12 @@ Utils for data processing
 """
 import logging
 import hashlib
+import tarfile
 import os
 import subprocess
+import shutil
+import random
+import string
 
 import boto3
 from botocore import UNSIGNED
@@ -72,3 +76,91 @@ def verify_sha256(filepath: str, hash_value: str, block_size: int = 4096):
     value = sha256(filepath, block_size=block_size)
     if value != hash_value:
         raise ValueError(f"sha256 hash of {filepath}: {value} != {hash_value}")
+
+
+def verify_size(filepath: str, file_size: int):
+    size = os.path.getsize(filepath)
+    if size != file_size:
+        raise ValueError(f"file size of {filepath}: {size} != {file_size}")
+
+
+def move_merge(source, dest):
+    dest_location = os.path.join(dest, os.path.basename(source))
+    if not os.path.exists(dest_location):
+        shutil.move(source, dest)
+        return
+
+        # Move up a directory, as shutil.move will error
+    filepaths = [
+        os.path.join(source, x) for x in os.listdir(source) if not x.startswith(".")
+    ]
+    if len(filepaths) != 1 or not os.path.isdir(filepaths[0]):
+        raise ValueError(f"{source} not a single branch directory. Cannot recurse.")
+    move_merge(filepaths[0], dest_location)
+    os.rmdir(source)
+
+
+def download_verify_dataset_cache(dataset_dir, checksum_file, name):
+    with open(checksum_file, "r") as fh:
+        url, file_length, hash = fh.readline().strip().split()
+    # download
+    cache_dir = os.path.join(dataset_dir, "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    tar_filepath = os.path.join(cache_dir, os.path.basename(url))
+    if not os.path.exists(tar_filepath):
+        logger.info(f"Downloading dataset: {name}...")
+        try:
+            curl(url, dataset_dir, tar_filepath)
+        except KeyboardInterrupt:
+            logger.exception("Keyboard interrupt caught")
+            if os.path.exists(tar_filepath):
+                os.remove(tar_filepath)
+            raise
+    else:
+        logger.info("Dataset already downloaded.")
+
+    # verification
+    try:
+        verify_size(tar_filepath, int(file_length))
+        logger.info("Verifying sha256 hash of download...")
+        verify_sha256(tar_filepath, hash)
+    except ValueError:
+        if os.path.exists(tar_filepath):
+            os.remove(tar_filepath)
+        logger.warning(
+            "Cached file download failed. Falling back to processing data..."
+        )
+        return
+
+    tmp_dir = os.path.join(
+        cache_dir,
+        "tmp_" + "".join(random.choice(string.ascii_lowercase) for _ in range(16)),
+    )
+    os.makedirs(tmp_dir)
+
+    logger.info("Extracting .tfrecord files from download...")
+    try:
+        with tarfile.open(tar_filepath, "r:gz") as tar_ref:
+            tar_ref.extractall(tmp_dir)
+    except tarfile.ReadError:
+        logger.warning(f"Could not read tarfile: {tar_filepath}")
+        logger.warning("Falling back to processing data...")
+        return
+    except tarfile.ExtractError:
+        logger.warning(f"Could not extract tarfile: {tar_filepath}")
+        logger.warning("Falling back to processing data...")
+        return
+
+    filepaths = [
+        os.path.join(tmp_dir, x) for x in os.listdir(tmp_dir) if not x.startswith(".")
+    ]
+    if len(filepaths) != 1 or not os.path.isdir(filepaths[0]):
+        raise ValueError(
+            f"{tmp_dir} not a single branch directory. tfrecord archive corrupted."
+        )
+    move_merge(filepaths[0], dataset_dir)
+    try:
+        shutil.rmtree(tmp_dir)
+    except OSError as e:
+        if not isinstance(e, FileNotFoundError):
+            logger.exception(f"Error removing temporary directory {tmp_dir}")

@@ -20,7 +20,7 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import curl, download_file_from_s3
+from armory.data.utils import curl, download_file_from_s3, download_verify_dataset_cache
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
+CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_url_checksums")
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -357,7 +358,7 @@ def imagenet_adversarial(
 
     ProjectedGradientDescent
         Iterations = 10
-        Max pertibation epsilon = 8
+        Max perturbation epsilon = 8
         Attack step size = 2
         Targeted = True
 
@@ -548,6 +549,7 @@ def librispeech_dev_clean(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -562,6 +564,13 @@ def librispeech_dev_clean(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
+
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir,
+            name="librispeech_dev_clean_split",
+            subpath=os.path.join("plain_text", "1.1.0"),
+        )
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split:1.1.0",
@@ -581,6 +590,7 @@ def resisc45(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -597,6 +607,11 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir, name="resisc45_split", subpath="3.0.0",
+        )
+
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
         split_type=split_type,
@@ -613,11 +628,17 @@ def ucf101(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+
+    if cache_dataset:
+        _cache_dataset(
+            dataset_dir, name="ucf101", subpath=os.path.join("ucf101_1", "2.0.0"),
+        )
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
@@ -630,6 +651,18 @@ def ucf101(
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
     )
+
+
+def _cache_dataset(dataset_dir: str, name: str, subpath: str):
+    if not dataset_dir:
+        dataset_dir = paths.docker().dataset_dir
+
+    if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
+        download_verify_dataset_cache(
+            dataset_dir=dataset_dir,
+            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
+            name=name,
+        )
 
 
 SUPPORTED_DATASETS = {
