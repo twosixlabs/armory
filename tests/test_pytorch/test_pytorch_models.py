@@ -11,9 +11,7 @@ DATASET_DIR = paths.docker().dataset_dir
 
 class PyTorchModelsTest(unittest.TestCase):
     def test_pytorch_mnist(self):
-        classifier_module = import_module(
-            "armory.baseline_models.pytorch.pytorch_mnist"
-        )
+        classifier_module = import_module("armory.baseline_models.pytorch.mnist")
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
@@ -45,9 +43,7 @@ class PyTorchModelsTest(unittest.TestCase):
         self.assertGreater(accuracy / test_dataset.total_iterations, 0.9)
 
     def test_keras_cifar(self):
-        classifier_module = import_module(
-            "armory.baseline_models.pytorch.pytorch_cifar"
-        )
+        classifier_module = import_module("armory.baseline_models.pytorch.cifar")
         classifier_fn = getattr(classifier_module, "get_art_model")
         classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
