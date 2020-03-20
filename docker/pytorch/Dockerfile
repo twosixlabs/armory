@@ -7,7 +7,7 @@ FROM twosixarmory/armory:${armory_version} AS armory-pytorch-base
 RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
  pytorch==1.4 \
  torchvision==0.5.0 \
- cudatoolkit=10.1 -c pytorch
+ cudatoolkit=9.2 -c pytorch
 
 ########## PyTorch 1.4 Release #################
 
