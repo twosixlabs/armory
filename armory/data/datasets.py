@@ -661,6 +661,7 @@ def _cache_dataset(dataset_dir: str, name: str, subpath: str):
         download_verify_dataset_cache(
             dataset_dir=dataset_dir,
             checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
+            name=name,
         )
 
 

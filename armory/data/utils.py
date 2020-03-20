@@ -84,7 +84,23 @@ def verify_size(filepath: str, file_size: int):
         raise ValueError(f"file size of {filepath}: {size} != {file_size}")
 
 
-def download_verify_dataset_cache(dataset_dir, checksum_file):
+def move_merge(source, dest):
+    dest_location = os.path.join(dest, os.path.basename(source))
+    if not os.path.exists(dest_location):
+        shutil.move(source, dest)
+        return
+
+        # Move up a directory, as shutil.move will error
+    filepaths = [
+        os.path.join(source, x) for x in os.listdir(source) if not x.startswith(".")
+    ]
+    if len(filepaths) != 1 or not os.path.isdir(filepaths[0]):
+        raise ValueError(f"{source} not a single branch directory. Cannot recurse.")
+    move_merge(filepaths[0], dest_location)
+    os.rmdir(source)
+
+
+def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     with open(checksum_file, "r") as fh:
         url, file_length, hash = fh.readline().strip().split()
     # download
@@ -92,7 +108,16 @@ def download_verify_dataset_cache(dataset_dir, checksum_file):
     os.makedirs(cache_dir, exist_ok=True)
     tar_filepath = os.path.join(cache_dir, os.path.basename(url))
     if not os.path.exists(tar_filepath):
-        curl(url, dataset_dir, tar_filepath)
+        logger.info(f"Downloading dataset: {name}...")
+        try:
+            curl(url, dataset_dir, tar_filepath)
+        except KeyboardInterrupt:
+            logger.exception("Keyboard interrupt caught")
+            if os.path.exists(tar_filepath):
+                os.remove(tar_filepath)
+            raise
+    else:
+        logger.info("Dataset already downloaded.")
 
     # verification
     try:
@@ -100,8 +125,11 @@ def download_verify_dataset_cache(dataset_dir, checksum_file):
         logger.info("Verifying sha256 hash of download...")
         verify_sha256(tar_filepath, hash)
     except ValueError:
-        os.remove(tar_filepath)
-        logger.info("Cached file download failed. Falling back to processing data...")
+        if os.path.exists(tar_filepath):
+            os.remove(tar_filepath)
+        logger.warning(
+            "Cached file download failed. Falling back to processing data..."
+        )
         return
 
     tmp_dir = os.path.join(
@@ -115,15 +143,24 @@ def download_verify_dataset_cache(dataset_dir, checksum_file):
         with tarfile.open(tar_filepath, "r:gz") as tar_ref:
             tar_ref.extractall(tmp_dir)
     except tarfile.ReadError:
-        logger.info(f"Could not read tarfile: {tar_filepath}")
-        logger.info("Falling back to processing data...")
+        logger.warning(f"Could not read tarfile: {tar_filepath}")
+        logger.warning("Falling back to processing data...")
         return
     except tarfile.ExtractError:
-        logger.info(f"Could not extract tarfile: {tar_filepath}")
-        logger.info("Falling back to processing data...")
+        logger.warning(f"Could not extract tarfile: {tar_filepath}")
+        logger.warning("Falling back to processing data...")
         return
 
-    # move tmp_dir subdirectory to dataset_dir (tarball does not contain files at root level)
-    for directory in os.listdir(path=tmp_dir):
-        shutil.move(os.path.join(tmp_dir, directory), dataset_dir)
-    os.rmdir(tmp_dir)
+    filepaths = [
+        os.path.join(tmp_dir, x) for x in os.listdir(tmp_dir) if not x.startswith(".")
+    ]
+    if len(filepaths) != 1 or not os.path.isdir(filepaths[0]):
+        raise ValueError(
+            f"{tmp_dir} not a single branch directory. tfrecord archive corrupted."
+        )
+    move_merge(filepaths[0], dataset_dir)
+    try:
+        shutil.rmtree(tmp_dir)
+    except OSError as e:
+        if not isinstance(e, FileNotFoundError):
+            logger.exception(f"Error removing temporary directory {tmp_dir}")
