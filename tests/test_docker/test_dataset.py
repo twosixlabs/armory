@@ -35,7 +35,10 @@ class DatasetTest(unittest.TestCase):
         batch_size = 500
         for split, size in [("train", 50000), ("test", 10000)]:
             dataset = datasets.cifar10(
-                split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
+                split_type="train",
+                epochs=1,
+                batch_size=batch_size,
+                dataset_dir=DATASET_DIR,
             )
             self.assertEqual(dataset.size, size)
             self.assertEqual(dataset.batch_size, batch_size)
@@ -73,16 +76,22 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(y.shape, (batch_size,))
 
     def test_imagenet_adv(self):
+        batch_size = 100
         test_dataset = datasets.imagenet_adversarial(
-            dataset_dir=DATASET_DIR, split_type="clean", batch_size=100, epochs=1,
+            dataset_dir=DATASET_DIR,
+            split_type="clean",
+            batch_size=batch_size,
+            epochs=1,
         )
         self.assertEqual(test_dataset.size, 1000)
-        self.assertEqual(test_dataset.batch_size, 100)
-        self.assertEqual(test_dataset.total_iterations, 10)
+        self.assertEqual(test_dataset.batch_size, batch_size)
+        self.assertEqual(
+            test_dataset.total_iterations, batch_size + bool(1000 % batch_size)
+        )
 
         x, y = test_dataset.get_batch()
-        self.assertEqual(x.shape, (100, 224, 224, 3))
-        self.assertEqual(y.shape, (100,))
+        self.assertEqual(x.shape, (batch_size, 224, 224, 3))
+        self.assertEqual(y.shape, (batch_size,))
 
     def test_german_traffic_sign(self):
         for split, size in [("train", 39209), ("test", 12630)]:
