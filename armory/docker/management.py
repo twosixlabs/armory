@@ -19,11 +19,22 @@ class ArmoryInstance(object):
     """
 
     def __init__(
-        self, image_name, runtime: str = "runc", envs: dict = None, ports: dict = None
+        self,
+        image_name,
+        runtime: str = "runc",
+        envs: dict = None,
+        ports: dict = None,
+        container_subdir: str = None,
     ):
+        self.docker_client = docker.from_env(version="auto")
+
         host_paths = paths.host()
         docker_paths = paths.docker()
-        self.docker_client = docker.from_env(version="auto")
+        host_tmp_dir = host_paths.tmp_dir
+        host_output_dir = host_paths.output_dir
+        if container_subdir:
+            host_tmp_dir = os.path.join(host_tmp_dir, container_subdir)
+            host_output_dir = os.path.join(host_output_dir, container_subdir)
 
         container_args = {
             "runtime": runtime,
@@ -39,8 +50,8 @@ class ArmoryInstance(object):
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",
                 },
-                host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
-                host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
+                host_output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
+                host_tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
         }
         if ports is not None:
@@ -87,10 +98,14 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None
+        self, envs: dict = None, ports: dict = None, container_subdir: str = None,
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name, runtime=self.runtime, envs=envs, ports=ports
+            self.name,
+            runtime=self.runtime,
+            envs=envs,
+            ports=ports,
+            container_subdir=container_subdir,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

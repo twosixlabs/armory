@@ -35,14 +35,45 @@ tfds.download.add_checksums_dir(CHECKSUMS_DIR)
 
 
 class ArmoryDataGenerator(DataGenerator):
-    def __init__(self, generator, size, batch_size, preprocessing_fn=None):
+    """
+    Returns batches of data.
+
+    variable_length - if True, returns a 1D object array of arrays for x.
+    """
+
+    def __init__(
+        self, generator, size, batch_size, preprocessing_fn=None, variable_length=False
+    ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
         self.generator = generator
-        self.total_iterations = size // batch_size
+        # drop_remainder is False
+        self.total_iterations = size // batch_size + bool(size % batch_size)
+        self.variable_length = variable_length
+        if self.variable_length:
+            self.current = 0
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
-        x, y = next(self.generator)
+        if self.variable_length:
+            # build the batch
+            x_list, y_list = [], []
+            for i in range(self.batch_size):
+                x_i, y_i = next(self.generator)
+                x_list.append(x_i)
+                y_list.append(y_i)
+                self.current += 1
+                # handle end of epoch partial batches
+                if self.current == self.size:
+                    self.current = 0
+                    break
+            x = np.empty((len(x_list),), dtype=object)
+            for i in range(len(x_list)):
+                x[i] = x_list[i]
+            # only handles variable-length x, currently
+            y = np.hstack(y_list)
+        else:
+            x, y = next(self.generator)
+
         if self.preprocessing_fn:
             x = self.preprocessing_fn(x)
 
@@ -59,10 +90,13 @@ def _generator_from_tfds(
     as_supervised: bool = True,
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
+    variable_length=False,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
+    if variable_length=True and batch_size > 1:
+        output batches are 1D np.arrays of objects
     """
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
@@ -76,6 +110,7 @@ def _generator_from_tfds(
         data_dir=dataset_dir,
         with_info=True,
         download_and_prepare_kwargs=download_and_prepare_kwargs,
+        shuffle_files=True,
     )
     if not as_supervised:
         try:
@@ -93,8 +128,11 @@ def _generator_from_tfds(
         ds = ds.map(lambda x: (x[x_key], x[y_key]))
 
     ds = ds.repeat(epochs)
-    ds = ds.shuffle(batch_size * 10)
-    ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+    if variable_length and batch_size > 1:
+        ds = ds.batch(1, drop_remainder=False)
+    else:
+        ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
     ds = tfds.as_numpy(ds, graph=default_graph)
 
@@ -103,13 +141,19 @@ def _generator_from_tfds(
         size=epochs * ds_info.splits[split_type].num_examples,
         batch_size=batch_size,
         preprocessing_fn=preprocessing_fn,
+        variable_length=bool(variable_length and batch_size > 1),
     )
 
     return generator
 
 
 def _inner_generator(
-    X: list, Y: list, batch_size: int, epochs: int, drop_remainder: bool = False
+    X: list,
+    Y: list,
+    batch_size: int,
+    epochs: int,
+    drop_remainder: bool = False,
+    variable_length=False,
 ):
     """
     Create a generator from lists (or arrays) of numpy arrays
@@ -134,17 +178,31 @@ def _inner_generator(
         np.random.shuffle(Z)
         for start in range(0, num_examples, batch_size):
             x_list, y_list = zip(*Z[start : start + batch_size])
-            yield np.stack(x_list), np.stack(y_list)
+            if variable_length:
+                x = np.empty((len(x_list),), dtype=object)
+                for i in range(len(x_list)):
+                    x[i] = x_list[i]
+            else:
+                x = np.stack(x_list)
+            yield x, np.stack(y_list)
 
 
 def _generator_from_np(
-    X: list, Y: list, batch_size: int, epochs: int, preprocessing_fn: Callable,
+    X: list,
+    Y: list,
+    batch_size: int,
+    epochs: int,
+    preprocessing_fn: Callable,
+    variable_length: bool = False,
 ) -> ArmoryDataGenerator:
     """
     Create generator from (X, Y) lists numpy arrays
     """
-    ds = _inner_generator(X, Y, batch_size, epochs, drop_remainder=False)
+    ds = _inner_generator(
+        X, Y, batch_size, epochs, drop_remainder=False, variable_length=variable_length
+    )
 
+    # variable_length not needed for ArmoryDataGenerator because np handles it
     return ArmoryDataGenerator(
         ds,
         size=epochs * len(X),
@@ -222,11 +280,8 @@ def digit(
 
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
-    if batch_size > 1 and not zero_pad:
-        raise ValueError(
-            f"batch_size {batch_size} > 1 must use zero_pad = True"
-            " due to variable length input"
-        )
+
+    variable_length = not zero_pad and batch_size > 1
 
     if split_type == "train":
         samples = range(5, 50)
@@ -280,7 +335,14 @@ def digit(
                 audio_list.append(audio)
                 labels.append(digit)
 
-    return _generator_from_np(audio_list, labels, batch_size, epochs, preprocessing_fn)
+    return _generator_from_np(
+        audio_list,
+        labels,
+        batch_size,
+        epochs,
+        preprocessing_fn,
+        variable_length=variable_length,
+    )
 
 
 def imagenet_adversarial(
@@ -375,8 +437,6 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
-    if batch_size != 1:
-        raise NotImplementedError("Due to variable length input, batch_size must be 1")
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
@@ -385,6 +445,7 @@ def imagenette(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        variable_length=bool(batch_size > 1),
     )
 
 
@@ -408,6 +469,7 @@ def german_traffic_sign(
         raise ValueError(
             f"Split value of {split_type} is invalid for German traffic sign dataset. Must be one of 'train' or 'test'."
         )
+    variable_length = bool(batch_size > 1)
 
     from PIL import Image
 
@@ -466,19 +528,24 @@ def german_traffic_sign(
                 prefix, "GT-" + format(c, "05d") + ".csv"
             )  # annotations file
             _read_images(prefix, gtFile, images, labels)
-        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
-
-    elif split_type == "test":
+    else:  # split_type == "test"
         prefix = os.path.join(dirpath, "Final_Test", "Images")
         gtFile = os.path.join(dirpath, "GT-final_test.csv")
         _read_images(prefix, gtFile, images, labels)
-        return _generator_from_np(images, labels, batch_size, epochs, preprocessing_fn)
+    return _generator_from_np(
+        images,
+        labels,
+        batch_size,
+        epochs,
+        preprocessing_fn,
+        variable_length=variable_length,
+    )
 
 
 def librispeech_dev_clean(
     split_type: str,
-    batch_size: int,
     epochs: int,
+    batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
 ):
@@ -491,11 +558,6 @@ def librispeech_dev_clean(
     returns:
         Generator
     """
-    if batch_size != 1:
-        raise NotImplementedError(
-            "Processing of variable length inputs not yet implemented."
-        )
-
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -509,6 +571,7 @@ def librispeech_dev_clean(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         download_and_prepare_kwargs={"download_config": dl_config},
+        variable_length=bool(batch_size > 1),
     )
 
 
@@ -555,8 +618,6 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
-    if batch_size != 1:
-        raise NotImplementedError("Due to variable length input, batch_size must be 1")
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
@@ -567,6 +628,7 @@ def ucf101(
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
+        variable_length=bool(batch_size > 1),
     )
 
 
