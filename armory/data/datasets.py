@@ -61,7 +61,7 @@ class ArmoryDataGenerator(DataGenerator):
             x_list, y_list = [], []
             for i in range(self.batch_size):
                 x_i, y_i = next(self.generator)
-                x_list.append(x_i)
+                x_list.append(x_i[0])
                 y_list.append(y_i)
                 self.current += 1
                 # handle end of epoch partial batches
