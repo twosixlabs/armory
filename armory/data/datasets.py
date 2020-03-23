@@ -24,6 +24,7 @@ from armory.data.utils import curl, download_file_from_s3, download_verify_datas
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
