@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
+      - env:
+        GITHUB_TOKEN: ${{ secrets.github_public_token }}
       - name: Run armory host tests
         shell: bash
         run: |
