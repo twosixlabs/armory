@@ -25,9 +25,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run armory host tests
-      - env:
-          GITHUB_TOKEN: ${{ secrets.github_public_token }}
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_public_token }}
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
