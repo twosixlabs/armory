@@ -49,7 +49,7 @@ def evaluate_classifier(config_path: str) -> None:
     )
 
     classifier.fit_generator(
-        train_data_generator, nb_epochs=train_data_generator.total_iterations,
+        train_data_generator, nb_epochs=train_epochs,
     )
 
     # Evaluate the ART classifier on benign test examples
