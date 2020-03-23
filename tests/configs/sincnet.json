@@ -1,0 +1,45 @@
+{
+    "adhoc": {
+        "epochs": 1,
+        "num_attacked_pts": 100,
+        "num_classes": 40,
+        "seed": 123
+    },
+    "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "targeted": true
+        },
+        "module": "art.attacks",
+        "name": "CarliniL2Method"
+    },
+    "dataset": {
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean",
+        "batch_size": 1
+    },
+    "defense": null,
+    "evaluation": {
+        "eval_file": "tests.evals.raw_audio_scenario"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {
+            "pretrained": true,
+            "model_file": "model_sincnet.pkl"
+        },
+        "module": "armory.baseline_models.pytorch.sincnet",
+        "name": "get_art_model",
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "hkakitani/SincNet",
+        "use_gpu": true
+    }
+}
