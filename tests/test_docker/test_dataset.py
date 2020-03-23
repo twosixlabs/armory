@@ -24,7 +24,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(dataset.size, size)
             self.assertEqual(dataset.batch_size, batch_size)
             self.assertEqual(
-                dataset.total_iterations, size // batch_size + bool(size % batch_size),
+                dataset.batches_per_epoch, size // batch_size + bool(size % batch_size),
             )
 
             x, y = dataset.get_batch()
@@ -43,7 +43,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(dataset.size, size)
             self.assertEqual(dataset.batch_size, batch_size)
             self.assertEqual(
-                dataset.total_iterations, size // batch_size + bool(size % batch_size),
+                dataset.batches_per_epoch, size // batch_size + bool(size % batch_size),
             )
 
             x, y = dataset.get_batch()
@@ -87,7 +87,7 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(test_dataset.size, total_size)
         self.assertEqual(test_dataset.batch_size, batch_size)
         self.assertEqual(
-            test_dataset.total_iterations,
+            test_dataset.batches_per_epoch,
             total_size // batch_size + bool(total_size % batch_size),
         )
 
@@ -174,7 +174,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(dataset.size, size)
             self.assertEqual(dataset.batch_size, batch_size)
             self.assertEqual(
-                dataset.total_iterations, size // batch_size + bool(size % batch_size),
+                dataset.batches_per_epoch, size // batch_size + bool(size % batch_size),
             )
 
             x, y = dataset.get_batch()
@@ -201,7 +201,7 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(dataset.size, size)
             self.assertEqual(dataset.batch_size, batch_size)
             self.assertEqual(
-                dataset.total_iterations, size // batch_size + bool(size % batch_size),
+                dataset.batches_per_epoch, size // batch_size + bool(size % batch_size),
             )
 
             x, y = dataset.get_batch()
@@ -221,7 +221,7 @@ class DatasetTest(unittest.TestCase):
             dataset_dir=DATASET_DIR,
         )
         self.assertEqual(
-            dataset.total_iterations, size // batch_size + bool(size % batch_size)
+            dataset.batches_per_epoch, size // batch_size + bool(size % batch_size)
         )
 
         x, y = dataset.get_batch()

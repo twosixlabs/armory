@@ -43,19 +43,13 @@ class ArmoryDataGenerator(DataGenerator):
     """
 
     def __init__(
-        self,
-        generator,
-        size,
-        batch_size,
-        epochs,
-        preprocessing_fn=None,
-        variable_length=False,
+        self, generator, size, batch_size, preprocessing_fn=None, variable_length=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
         self.generator = generator
         # drop_remainder is False
-        self.total_iterations = epochs * (size // batch_size + bool(size % batch_size))
+        self.batches_per_epoch = size // batch_size + bool(size % batch_size)
         self.variable_length = variable_length
         if self.variable_length:
             self.current = 0
@@ -147,7 +141,6 @@ def _generator_from_tfds(
         ds,
         size=ds_info.splits[split_type].num_examples,
         batch_size=batch_size,
-        epochs=epochs,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(variable_length and batch_size > 1),
     )
@@ -213,8 +206,7 @@ def _generator_from_np(
     # variable_length not needed for ArmoryDataGenerator because np handles it
     return ArmoryDataGenerator(
         ds,
-        size=len(X),
-        epochs=epochs,
+        size=len(X) * epochs,
         batch_size=batch_size,
         preprocessing_fn=preprocessing_fn,
     )
@@ -427,8 +419,7 @@ def imagenet_adversarial(
 
     generator = ArmoryDataGenerator(
         ds,
-        size=num_images,
-        epochs=epochs,
+        size=num_images * epochs,
         batch_size=batch_size,
         preprocessing_fn=preprocessing_fn,
     )
