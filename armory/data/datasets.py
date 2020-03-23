@@ -24,6 +24,7 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
+from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -257,89 +258,19 @@ def digit(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
-    zero_pad: bool = False,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
-
-    Audio samples are of different length, so this returns a numpy object array
-            dtype of internal arrays are np.int16
-            min length = 1148 samples
-            max length = 18262 samples
-
-    :param zero_pad: Boolean to pad the audio samples to the same length
-        if `True`, this returns `audio` arrays as 2D np.int16 arrays
-
-    :param dataset_dir: Directory where cached datasets are stored
-    :return: Train/Test arrays of audio and labels. Sample Rate is 8000 Hz
     """
-    from scipy.io import wavfile
-
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
-    variable_length = not zero_pad and batch_size > 1
-
-    if split_type == "train":
-        samples = range(5, 50)
-    elif split_type == "test":
-        samples = range(5)
-    else:
-        raise ValueError(f"split_type {split_type} must be one of ('train', 'test')")
-
-    rootdir = os.path.join(dataset_dir, "digit")
-
-    url = "https://github.com/Jakobovski/free-spoken-digit-dataset/archive/v1.0.8.zip"
-    zip_file = "free-spoken-digit-dataset-1.0.8.zip"
-    subdir = "free-spoken-digit-dataset-1.0.8/recordings"
-
-    dirpath = os.path.join(rootdir, subdir)
-    if not os.path.isdir(dirpath):
-        zip_filepath = os.path.join(rootdir, zip_file)
-        # Download file if it does not exist
-        if not os.path.isfile(zip_filepath):
-            os.makedirs(rootdir, exist_ok=True)
-            curl(url, rootdir, zip_file)
-
-        # Extract and clean up
-        with zipfile.ZipFile(zip_filepath, "r") as zip_ref:
-            zip_ref.extractall(rootdir)
-        os.remove(zip_filepath)
-
-    sample_rate = 8000
-    max_length = 18262
-    min_length = 1148
-    dtype = np.int16
-    audio_list, labels = [], []
-    for sample in samples:
-        for name in "jackson", "nicolas", "theo":  # , 'yweweler': not yet in release
-            for digit in range(10):
-                filepath = os.path.join(dirpath, f"{digit}_{name}_{sample}.wav")
-                try:
-                    s_r, audio = wavfile.read(filepath)
-                except FileNotFoundError as e:
-                    raise FileNotFoundError(f"digit dataset incomplete. {e}")
-                if s_r != sample_rate:
-                    raise ValueError(f"{filepath} sample rate {s_r} != {sample_rate}")
-                if audio.dtype != dtype:
-                    raise ValueError(f"{filepath} dtype {audio.dtype} != {dtype}")
-                if not (min_length <= len(audio) <= max_length):
-                    raise ValueError(f"{filepath} audio length {len(audio)}")
-                if zero_pad:
-                    audio = np.hstack(
-                        [audio, np.zeros(max_length - len(audio), dtype=np.int16)]
-                    )
-                audio_list.append(audio)
-                labels.append(digit)
-
-    return _generator_from_np(
-        audio_list,
-        labels,
-        batch_size,
-        epochs,
-        preprocessing_fn,
-        variable_length=variable_length,
+    return _generator_from_tfds(
+        "digit:1.0.8",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        variable_length=bool(batch_size > 1),
     )
 
 
