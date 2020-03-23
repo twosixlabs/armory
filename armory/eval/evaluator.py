@@ -52,9 +52,7 @@ class Evaluator(object):
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
         self.external_repo_dir = paths.get_external(self.tmp_dir)
         self.docker_config_path = Path(
-            os.path.join(
-                self.docker_paths.tmp_dir, self.container_subdir, container_config_name
-            )
+            os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
 
         kwargs = dict(runtime="runc")
