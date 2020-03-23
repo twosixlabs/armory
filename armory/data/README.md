@@ -17,7 +17,7 @@ datasets to the armory repository and standardizes them across all evaluations.
 ### Audio Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:---------- |:----------- |:------- |:-------- |:-------- |:------- |
-| `digit` | Audio dataset of spoken digits | (N, variable_length) | int16 | (N,) | int64 |
+| `digit` | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 |
 | `librispeech_dev_clean` | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 |
 
 ### Video Datasets
