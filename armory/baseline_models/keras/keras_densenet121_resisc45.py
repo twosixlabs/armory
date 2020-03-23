@@ -1,0 +1,68 @@
+from art.classifiers import KerasClassifier
+import os
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing import image
+# Load Keras dependencies:
+from tensorflow.keras.applications.densenet import DenseNet121 # Should this be tensorflow.keras.applications....? as in the resnet or inception resnet example
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Flatten, Conv2D
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras import optimizers
+
+from armory import paths
+
+num_classes = 45
+
+def preprocess_input_densenet121_resisc(img):
+    # Model was trained with Caffe preprocessing on the images
+    # load the mean and std of the [0,1] normalized dataset
+    resisc_mean = np.load(os.path.join(paths.docker().dataset_dir,'resisc45_split/3.0.0/resisc-45_rgb_means.npy'))
+    resisc_std = np.load(os.path.join(paths.docker().dataset_dir,'resisc45_split/3.0.0/resisc-45_rgb_stdevs.npy'))
+    # Normalize images: divide by 255 for [0,1] range
+    img_norm = img / 255.
+    # Divide by normalized channel means from rgb_means.npy
+    # divide each channel by normalized channel stdevs from rgb_stdevs.npy
+    output_img = np.divide(np.subtract(img_norm, resisc_mean), resisc_std)
+    return output_img
+
+def preprocessing_fn(x: np.ndarray) -> np.ndarray:
+    shape = (224, 224)  # Expected input shape of model
+    output = []
+    for i in range(x.shape[0]):
+        im_raw = image.array_to_img(x[i])
+        im = image.img_to_array(im_raw.resize(shape))
+        output.append(im)
+    output = preprocess_input_densenet121_resisc(np.array(output))
+    return output
+
+def make_densenet121_resisc_model(**kwargs) -> tf.keras.Model:
+    # Load ImageNet pre-trained DenseNet
+    model_notop = DenseNet121(include_top=False, weights=None,input_shape=(224,224,3))
+
+    # Add new layers
+    x = GlobalAveragePooling2D()(model_notop.output)
+    predictions = Dense(num_classes, activation = 'softmax')(x)
+
+    # Create graph of new model and freeze pre-trained layers
+    new_model = Model(inputs = model_notop.input, outputs = predictions)
+    
+    for layer in new_model.layers[:-1]:
+        layer.trainable = False
+        if 'bn' == layer.name[-2:]: # allow batchnorm layers to be trainable
+            layer.trainable = True    
+
+    #compile the model
+    new_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # How to load weights into a model loaded from pre-trained?
+    filepath = os.path.join(paths.docker().saved_model_dir,'cp-densenet-resisc-pp-1-epoch-37-val_acc-0.93.hdf5')
+    new_model.load_weights(filepath)
+    return new_model
+
+def get_art_model(model_kwargs, wrapper_kwargs):
+    model = make_densenet121_resisc_model(**model_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(0, 1.0), **wrapper_kwargs) # Should clip values be shifted by the mean? Scaled by the standard deviation? As this is Caffe preprocessing
+    return wrapped_model
