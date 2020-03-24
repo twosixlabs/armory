@@ -2,98 +2,26 @@
 TensorFlow Dataset for resisc45 with train/validate/test splits
 """
 
+import csv
 import os
 
-import tensorflow.compat.v2 as tf
+import PIL
 import tensorflow_datasets.public_api as tfds
 
-_CITATION = """\
-@article{Cheng_2017,
-   title={Remote Sensing Image Scene Classification: Benchmark and State of the Art},
-   volume={105},
-   ISSN={1558-2256},
-   url={http://dx.doi.org/10.1109/JPROC.2017.2675998},
-   DOI={10.1109/jproc.2017.2675998},
-   number={10},
-   journal={Proceedings of the IEEE},
-   publisher={Institute of Electrical and Electronics Engineers (IEEE)},
-   author={Cheng, Gong and Han, Junwei and Lu, Xiaoqiang},
-   year={2017},
-   month={Oct},
-   pages={1865-1883}
-}"""
-
 _DESCRIPTION = """\
-RESISC45 dataset is a publicly available benchmark for Remote Sensing Image
-Scene Classification (RESISC), created by Northwestern Polytechnical University
-(NWPU). This dataset contains 31,500 images, covering 45 scene classes with 700
-images in each class. This is a variation of that dataset with 500/100/100
-train/validate/test splits for each class.
+German traffic sign dataset with 43 classes and over 50,000 images.
 """
 
-_LABELS = [
-    "airplane",
-    "airport",
-    "baseball_diamond",
-    "basketball_court",
-    "beach",
-    "bridge",
-    "chaparral",
-    "church",
-    "circular_farmland",
-    "cloud",
-    "commercial_area",
-    "dense_residential",
-    "desert",
-    "forest",
-    "freeway",
-    "golf_course",
-    "ground_track_field",
-    "harbor",
-    "industrial_area",
-    "intersection",
-    "island",
-    "lake",
-    "meadow",
-    "medium_residential",
-    "mobile_home_park",
-    "mountain",
-    "overpass",
-    "palace",
-    "parking_lot",
-    "railway",
-    "railway_station",
-    "rectangular_farmland",
-    "river",
-    "roundabout",
-    "runway",
-    "sea_ice",
-    "ship",
-    "snowberg",
-    "sparse_residential",
-    "stadium",
-    "storage_tank",
-    "tennis_court",
-    "terrace",
-    "thermal_power_station",
-    "wetland",
-]
+_HOMEPAGE = "http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset"
 
-_URL = "http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html"
+_NUM_CLASSES = 43
+_LABELS = [str(x) for x in range(_NUM_CLASSES)]
 
-_URL_PREFIX = "https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/"
-_URLS = [
-    os.path.join(_URL_PREFIX, x)
-    for x in (
-        "resisc45_train.tar.gz",
-        "resisc45_validation.tar.gz",
-        "resisc45_test.tar.gz",
-    )
-]
+_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/german-traffic-sign/german_traffic_sign.tar.gz"
 
 
-class Resisc45Split(tfds.core.GeneratorBasedBuilder):
-    """NWPU Remote Sensing Image Scene Classification (RESISC) Dataset."""
+class GermanTrafficSign(tfds.core.GeneratorBasedBuilder):
+    """German traffic sign image dataset"""
 
     VERSION = tfds.core.Version("3.0.0")
 
@@ -103,39 +31,61 @@ class Resisc45Split(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=tfds.features.FeaturesDict(
                 {
-                    "image": tfds.features.Image(shape=[256, 256, 3]),
+                    "image": tfds.features.Image(shape=[None, None, 3]),
                     "label": tfds.features.ClassLabel(names=_LABELS),
                     "filename": tfds.features.Text(),
                 }
             ),
             supervised_keys=("image", "label"),
-            homepage=_URL,
-            citation=_CITATION,
+            homepage=_HOMEPAGE,
         )
 
     def _split_generators(self, dl_manager):
         """Returns SplitGenerators."""
-        paths = dl_manager.download_and_extract(_URLS)
-        splits = []
-        for path, subdir, name in zip(
-            paths,
-            ["train", "validation", "test"],
-            [tfds.Split.TRAIN, tfds.Split.VALIDATION, tfds.Split.TEST],
-        ):
-            splits.append(
-                tfds.core.SplitGenerator(
-                    name=name, gen_kwargs={"path": os.path.join(path, subdir)}
-                )
-            )
+        path = os.path.join(dl_manager.download_and_extract(_URL), "GTSRB")
+        splits = [
+            tfds.core.SplitGenerator(name=x, gen_kwargs={"path": path, "split": x})
+            for x in (tfds.Split.TRAIN, tfds.Split.TEST)
+        ]
         return splits
 
-    def _generate_examples(self, path):
-        """Yields examples."""
-        for label in tf.io.gfile.listdir(path):
-            for filename in tf.io.gfile.glob(os.path.join(path, label, "*.jpg")):
-                example = {
-                    "image": filename,
-                    "label": label,
-                    "filename": os.path.basename(filename),
-                }
-                yield filename, example
+    def _generate_examples(self, path, split):
+        """Yields examples. Converts PPM files to BMP before yielding."""
+
+        def _read_images(prefix, gtFile):
+            with open(gtFile, newline="") as csvFile:
+                gtReader = csv.reader(csvFile, delimiter=";")
+                next(gtReader)  # skip header
+                # loop over all images in current annotations file
+                for i, row in enumerate(gtReader):
+                    ppm_filename = row[0]
+                    ppm_filepath = os.path.join(prefix, ppm_filename)
+                    # translate ppm files to bmp files
+                    base, ext = os.path.splitext(ppm_filename)
+                    bmp_filename = base + ".bmp"
+                    bmp_filepath = os.path.join(prefix, bmp_filename)
+                    with PIL.Image.open(ppm_filepath) as image:
+                        image.save(bmp_filepath, "BMP")
+
+                    example = {
+                        "image": bmp_filepath,
+                        "label": row[7],
+                        "filename": bmp_filename,
+                    }
+                    yield bmp_filepath, example
+
+        if split is tfds.Split.TRAIN:
+            for c in range(_NUM_CLASSES):
+                # subdirectory for class
+                prefix = os.path.join(path, "Final_Training", "Images", f"{c:05d}")
+                # annotations file
+                gtFile = os.path.join(prefix, f"GT-{c:05d}.csv")
+                for x in _read_images(prefix, gtFile):
+                    yield x
+        elif split is tfds.Split.TEST:
+            prefix = os.path.join(path, "Final_Test", "Images")
+            gtFile = os.path.join(path, "GT-final_test.csv")
+            for x in _read_images(prefix, gtFile):
+                yield x
+        else:
+            raise ValueError(f"split_type {split} not in ('train', 'test')")

@@ -453,13 +453,17 @@ def german_traffic_sign(
     dataset_dir: str = None,
 ) -> ArmoryDataGenerator:
     """
-    German traffic sign dataset with 43 classes and over
-    50,000 images.
-
-    :param preprocessing_fn: Callable function to preprocess inputs
-    :param dataset_dir: Directory where cached datasets are stored
-    :return: generator
+    German traffic sign dataset with 43 classes and over 50,000 images.
     """
+    return _generator_from_tfds(
+        "german_traffic_sign:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        variable_length=bool(batch_size > 1),
+    )
 
     if split_type not in ["train", "test"]:
         raise ValueError(
