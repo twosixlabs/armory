@@ -93,7 +93,7 @@ def _generator_from_tfds(
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
     variable_length=False,
-    shuffle=True,
+    shuffle_files=True,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -113,7 +113,7 @@ def _generator_from_tfds(
         data_dir=dataset_dir,
         with_info=True,
         download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=True,
+        shuffle_files=shuffle_files,
     )
     if not as_supervised:
         try:
@@ -131,7 +131,8 @@ def _generator_from_tfds(
         ds = ds.map(lambda x: (x[x_key], x[y_key]))
 
     ds = ds.repeat(epochs)
-    ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+    if shuffle_files:
+        ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
     if variable_length and batch_size > 1:
         ds = ds.batch(1, drop_remainder=False)
     else:
@@ -369,7 +370,7 @@ def imagenet_adversarial(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        shuffle=False,
+        shuffle_files=False,
     )
 
 

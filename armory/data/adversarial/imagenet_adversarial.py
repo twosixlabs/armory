@@ -29,10 +29,8 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=tfds.features.FeaturesDict(
                 {
-                    "image": tfds.features.Tensor(
-                        shape=[None, None, 3], dtype=tf.float32
-                    ),
-                    "label": tfds.features.Tensor(shape=[1], dtype=tf.int32),
+                    "image": tfds.features.Tensor(shape=[224, 224, 3], dtype=tf.uint8),
+                    "label": tfds.features.Tensor(shape=(), dtype=tf.int64),
                 }
             ),
             supervised_keys=("image", "label"),
@@ -56,8 +54,6 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
         else:
             raise ValueError(f"split {split} not in ('adversarial', 'clean')")
 
-        ds = tf.data.TFRecordDataset(filenames=[path])
-
         def _parse(serialized_example, key):
             ds_features = {
                 "height": tf.io.FixedLenFeature([], tf.int64),
@@ -69,10 +65,15 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
             example = tf.io.parse_single_example(serialized_example, ds_features)
 
             img = tf.io.decode_raw(example[key], tf.float32)
-            img = tf.reshape(img, (example["height"], example["width"], -1))
-            label = tf.cast(example["label"], tf.int32)
-            return img, label
+            # float values are integers in [0.0, 255.0] for clean and adversarial
+            img = tf.cast(img, tf.uint8)
+            img = tf.reshape(img, (example["height"], example["width"], 3))
+            return img, example["label"]
 
+        ds = tf.data.TFRecordDataset(filenames=[path])
         ds = ds.map(lambda x: _parse(x, key))
-        for i, (img, label) in ds.enumerate:
-            yield str(i), {"image": img, "label": label}
+        ds = ds.batch(1)
+        default_graph = tf.compat.v1.keras.backend.get_session().graph
+        ds = tfds.as_numpy(ds, graph=default_graph)
+        for i, (img, label) in enumerate(ds):
+            yield str(i), {"image": img[0], "label": label[0]}
