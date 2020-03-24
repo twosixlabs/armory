@@ -51,15 +51,15 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
-    """ Training the model -- all this commented code can be deleted""" 
+    """ Training the model -- all this commented code can be deleted"""
     # Never training - model already trained # classifier.fit_generator(train_data_generator, nb_epochs=nb_epochs)
-    #logger.info(
+    # logger.info(
     #    f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
-    #)#
+    # )#
 
-    #if DEMO:
+    # if DEMO:
     #    nb_epochs = 10
-    #else:
+    # else:
     #    nb_epochs = train_data_generator.total_iterations
     ###
     # Evaluate the ART classifier on benign test examples
@@ -68,7 +68,7 @@ def evaluate_classifier(config_path: str) -> None:
     cnt = 0
 
     if DEMO:
-        print('demo: 3 iterations')
+        print("demo: 3 iterations")
         iterations = 3
     else:
         iterations = test_data_generator.total_iterations // 2
@@ -79,9 +79,7 @@ def evaluate_classifier(config_path: str) -> None:
         benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
     benign_accuracy = benign_accuracy / cnt
-    logger.info(
-        "Accuracy on benign test examples: {}%".format(benign_accuracy * 100)
-    )
+    logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Generate adversarial test examples
     attack_config = config["attack"]
@@ -102,9 +100,7 @@ def evaluate_classifier(config_path: str) -> None:
         cnt += 1
     adversarial_accuracy = adversarial_accuracy / cnt
     logger.info(
-        "Accuracy on adversarial test examples: {}%".format(
-            adversarial_accuracy * 100 
-        )
+        "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
     logger.info("Saving json output...")
