@@ -363,7 +363,7 @@ def imagenet_adversarial(
     """
 
     return _generator_from_tfds(
-        "imagenet_adversarial:1.0",
+        "imagenet_adversarial:1.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
