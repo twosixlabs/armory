@@ -11,6 +11,7 @@ datasets.
 import logging
 import os
 from typing import Callable
+import json
 
 import numpy as np
 import tensorflow as tf
@@ -466,19 +467,52 @@ SUPPORTED_DATASETS = {
 }
 
 
-def download_all():
+def download_all(dataset_names):
     """
-    Download all datasets to cache.
+    Download all datasets for a scenario or requested datset to cache.
     """
-    errors = []
-    for name, func in SUPPORTED_DATASETS.items():
-        logger.info(f"Downloading (if necessary) dataset {name}")
-        try:
-            func()
-        except Exception:
-            errors.append(name)
-            logger.exception(f"Loading dataset {name} failed.")
-    if errors:
-        logger.info("All datasets downloaded successfully")
+    if dataset_names.lower().endswith(".json"):
+        datasets_to_download = _read_validate_data_download_config(dataset_names)[
+            "datasets"
+        ]["names"]
+        for dataset_to_download in datasets_to_download:
+            _download_data(dataset_to_download)
     else:
-        logger.error(f"The following datasets failed to download: {errors}")
+        _download_data(dataset_names)
+
+
+def _download_data(dataset_name):
+    """
+    Download a single dataset to cache.
+    """
+    if dataset_name not in SUPPORTED_DATASETS.keys():
+        raise ValueError(
+            f"dataset {dataset_name} not supported. Must be one of {list(SUPPORTED_DATASETS.keys())}"
+        )
+
+    func = SUPPORTED_DATASETS[dataset_name]
+
+    logger.info(f"Downloading (if necessary) dataset {dataset_name}...")
+
+    if dataset_name == "imagenet_adversarial":
+        kwargs = {"epochs": 1, "batch_size": 1}
+    else:
+        kwargs = {"split_type": "train", "epochs": 1, "batch_size": 1}
+
+    try:
+        func(**kwargs)
+        logger.info(f"Successfully downloaded dataset {dataset_name}.")
+    except Exception:
+        logger.exception(f"Loading dataset {dataset_name} failed.")
+
+
+def _read_validate_data_download_config(config_filepath):
+    with open(config_filepath) as f:
+        config = json.load(f)
+    if "datasets" not in config.keys():
+        raise ValueError(
+            "At least one dataset must be specified in download data config json"
+        )
+    if not isinstance(config["datasets"], dict):
+        raise ValueError("datasets must be dictionary")
+    return config

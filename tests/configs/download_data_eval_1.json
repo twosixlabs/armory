@@ -1,0 +1,10 @@
+{
+    "datasets": {
+        "names": [
+            "resisc45",
+            "ucf101",
+            "german_traffic_sign",
+            "librispeech_dev_clean"
+        ]
+    }
+}

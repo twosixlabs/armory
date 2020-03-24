@@ -60,6 +60,33 @@ class DockerImage(argparse.Action):
             )
 
 
+SCENARIO_DATASETS = {
+    "resisc45",
+    "ucf101",
+    "german_traffic_sign",
+    "librispeech_dev_clean",
+}
+
+
+class Scenario(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values.lower().endswith(".json"):
+            if os.path.isfile(values):
+                setattr(namespace, self.dest, values)
+            else:
+                raise argparse.ArgumentError(
+                    self, f"Config json file: {values} not found."
+                )
+        elif values.lower() in SCENARIO_DATASETS:
+            setattr(namespace, self.dest, values)
+        else:
+            raise argparse.ArgumentError(
+                self,
+                f"{values} invalid.\n"
+                f"<scenario> must be one of {list(SCENARIO_DATASETS)} or a config json file.",
+            )
+
+
 def run(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -139,6 +166,13 @@ def download_all_data(command_args, prog, description):
         default=logging.INFO,
         help="Debug output (logging=DEBUG)",
     )
+    parser.add_argument(
+        metavar="<scenario>",
+        dest="scenario",
+        type=str,
+        action=Scenario,
+        help="scenario for which to download data or config json file",
+    )
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
     paths.host()
@@ -146,18 +180,17 @@ def download_all_data(command_args, prog, description):
     print("Downloading all docker images....")
     _pull_docker_images()
 
-    print("Downloading all datasets and model weights...")
+    print("Downloading requested datasets and model weights...")
     manager = ManagementInstance(image_name=images.TF1)
     runner = manager.start_armory_instance()
+
     cmd = "; ".join(
         [
             "import logging",
             "import coloredlogs",
             "coloredlogs.install(logging.INFO)",
             "from armory.data import datasets",
-            "from armory.data import model_weights",
-            "datasets.download_all()",
-            "model_weights.download_all()",
+            f'datasets.download_all("{args.scenario}")',
         ]
     )
     runner.exec_cmd(f"python -c '{cmd}'")
@@ -431,7 +464,7 @@ COMMANDS = {
     "run": (run, "run armory from config file"),
     "download-all-data": (
         download_all_data,
-        "download all datasets and model weights used by armory",
+        "download all datasets and model weights used for a given evaluation scenario",
     ),
     "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
