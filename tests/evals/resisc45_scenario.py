@@ -77,9 +77,8 @@ def evaluate_classifier(config_path: str) -> None:
         predictions = classifier.predict(x)
         benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
-    logger.info(
-        "Accuracy on benign test examples: {}%".format(benign_accuracy * 100 / cnt)
-    )
+    benign_accuracy = benign_accuracy / cnt
+    logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Generate adversarial test examples
     attack_config = config["attack"]
@@ -98,10 +97,9 @@ def evaluate_classifier(config_path: str) -> None:
         predictions = classifier.predict(test_x_adv)
         adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
+    adversarial_accuracy = adversarial_accuracy / cnt
     logger.info(
-        "Accuracy on adversarial test examples: {}%".format(
-            adversarial_accuracy * 100 / cnt
-        )
+        "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
     logger.info("Saving json output...")
