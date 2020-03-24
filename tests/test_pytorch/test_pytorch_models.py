@@ -68,7 +68,7 @@ class PyTorchModelsTest(unittest.TestCase):
         )
 
         accuracy = 0
-        for _ in range(test_dataset.total_iterations):
+        for _ in range(test_dataset.batches_per_epoch):
             x, y = test_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)

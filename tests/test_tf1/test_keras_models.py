@@ -135,14 +135,14 @@ class KerasTest(unittest.TestCase):
         )
 
         accuracy = 0
-        for _ in range(clean_dataset.total_iterations):
+        for _ in range(clean_dataset.batches_per_epoch):
             x, y = clean_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertGreater(accuracy / clean_dataset.total_iterations, 0.75)
 
         accuracy = 0
-        for _ in range(adv_dataset.total_iterations):
+        for _ in range(adv_dataset.batches_per_epoch):
             x, y = adv_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
