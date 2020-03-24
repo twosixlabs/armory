@@ -32,15 +32,15 @@ class KerasTest(unittest.TestCase):
         )
 
         classifier.fit_generator(
-            train_dataset, nb_epochs=train_dataset.total_iterations,
+            train_dataset, nb_epochs=1,
         )
 
         accuracy = 0
-        for _ in range(test_dataset.total_iterations):
+        for _ in range(test_dataset.batches_per_epoch):
             x, y = test_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / test_dataset.total_iterations, 0.9)
+        self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.9)
 
     def test_keras_cifar(self):
         classifier_module = import_module("armory.baseline_models.keras.cifar")
@@ -64,15 +64,15 @@ class KerasTest(unittest.TestCase):
         )
 
         classifier.fit_generator(
-            train_dataset, nb_epochs=train_dataset.total_iterations,
+            train_dataset, nb_epochs=1,
         )
 
         accuracy = 0
-        for _ in range(test_dataset.total_iterations):
+        for _ in range(test_dataset.batches_per_epoch):
             x, y = test_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / test_dataset.total_iterations, 0.3)
+        self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.3)
 
     def test_keras_imagenet(self):
         classifier_module = import_module("armory.baseline_models.keras.resnet50")
@@ -97,18 +97,18 @@ class KerasTest(unittest.TestCase):
         )
 
         accuracy = 0
-        for _ in range(clean_dataset.total_iterations):
+        for _ in range(clean_dataset.batches_per_epoch):
             x, y = clean_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / clean_dataset.total_iterations, 0.65)
+        self.assertGreater(accuracy / clean_dataset.batches_per_epoch, 0.65)
 
         accuracy = 0
-        for _ in range(adv_dataset.total_iterations):
+        for _ in range(adv_dataset.batches_per_epoch):
             x, y = adv_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertLess(accuracy / adv_dataset.total_iterations, 0.02)
+        self.assertLess(accuracy / adv_dataset.batches_per_epoch, 0.02)
 
     def test_keras_imagenet_transfer(self):
         classifier_module = import_module(
@@ -135,15 +135,15 @@ class KerasTest(unittest.TestCase):
         )
 
         accuracy = 0
-        for _ in range(clean_dataset.total_iterations):
+        for _ in range(clean_dataset.batches_per_epoch):
             x, y = clean_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / clean_dataset.total_iterations, 0.75)
+        self.assertGreater(accuracy / clean_dataset.batches_per_epoch, 0.75)
 
         accuracy = 0
-        for _ in range(adv_dataset.total_iterations):
+        for _ in range(adv_dataset.batches_per_epoch):
             x, y = adv_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertLess(accuracy / adv_dataset.total_iterations, 0.73)
+        self.assertLess(accuracy / adv_dataset.batches_per_epoch, 0.73)

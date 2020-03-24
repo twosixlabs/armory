@@ -32,15 +32,15 @@ class PyTorchModelsTest(unittest.TestCase):
         )
 
         classifier.fit_generator(
-            train_dataset, nb_epochs=train_dataset.total_iterations,
+            train_dataset, nb_epochs=1,
         )
 
         accuracy = 0
-        for _ in range(test_dataset.total_iterations):
+        for _ in range(test_dataset.batches_per_epoch):
             x, y = test_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / test_dataset.total_iterations, 0.9)
+        self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.9)
 
     def test_keras_cifar(self):
         classifier_module = import_module("armory.baseline_models.pytorch.cifar")
@@ -64,12 +64,12 @@ class PyTorchModelsTest(unittest.TestCase):
         )
 
         classifier.fit_generator(
-            train_dataset, nb_epochs=train_dataset.total_iterations,
+            train_dataset, nb_epochs=1,
         )
 
         accuracy = 0
-        for _ in range(test_dataset.total_iterations):
+        for _ in range(test_dataset.batches_per_epoch):
             x, y = test_dataset.get_batch()
             predictions = classifier.predict(x)
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        self.assertGreater(accuracy / test_dataset.total_iterations, 0.3)
+        self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.3)
