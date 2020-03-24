@@ -205,10 +205,7 @@ def _generator_from_np(
 
     # variable_length not needed for ArmoryDataGenerator because np handles it
     return ArmoryDataGenerator(
-        ds,
-        size=len(X) * epochs,
-        batch_size=batch_size,
-        preprocessing_fn=preprocessing_fn,
+        ds, size=len(X), batch_size=batch_size, preprocessing_fn=preprocessing_fn,
     )
 
 
@@ -418,10 +415,7 @@ def imagenet_adversarial(
     ds = tfds.as_numpy(ds, graph=default_graph)
 
     generator = ArmoryDataGenerator(
-        ds,
-        size=num_images * epochs,
-        batch_size=batch_size,
-        preprocessing_fn=preprocessing_fn,
+        ds, size=num_images, batch_size=batch_size, preprocessing_fn=preprocessing_fn,
     )
 
     return generator
