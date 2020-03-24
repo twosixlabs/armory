@@ -67,5 +67,7 @@ def download_and_extract_repo(
     else:
         raise ConnectionError(
             "Unable to download repository. If it's private make sure "
-            "`GITHUB_TOKEN` environment variable is set"
+            "`GITHUB_TOKEN` environment variable is set\n"
+            f"status_code is {response.status_code}\n"
+            f"full response is {response.text}"
         )
