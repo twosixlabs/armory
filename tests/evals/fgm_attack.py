@@ -37,26 +37,26 @@ def evaluate_classifier(config_path: str) -> None:
         split_type="train",
         preprocessing_fn=preprocessing_fn,
     )
-    test_data_generator = load_dataset(
-        config["dataset"],
-        epochs=2,
-        split_type="test",
-        preprocessing_fn=preprocessing_fn,
-    )
 
     logger.info(
         f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
     )
 
     classifier.fit_generator(
-        train_data_generator, nb_epochs=train_data_generator.total_iterations,
+        train_data_generator, nb_epochs=train_epochs,
     )
 
     # Evaluate the ART classifier on benign test examples
     logger.info("Running inference on benign examples...")
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
     benign_accuracy = 0
     cnt = 0
-    for _ in range(test_data_generator.total_iterations // 2):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         predictions = classifier.predict(x)
         benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
@@ -72,11 +72,16 @@ def evaluate_classifier(config_path: str) -> None:
 
     # Evaluate the ART classifier on adversarial test examples
     logger.info("Generating / testing adversarial examples...")
-
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
     attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
     adversarial_accuracy = 0
     cnt = 0
-    for _ in range(test_data_generator.total_iterations // 2):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         test_x_adv = attack.generate(x=x)
         predictions = classifier.predict(test_x_adv)

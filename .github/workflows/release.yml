@@ -6,39 +6,16 @@ on:
     types: build-and-release
 
 jobs:
-  release-test:
-    name: Test release on Ubuntu
-    runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: ['3.6', '3.7']
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Release test Ubuntu
-        run: |
-          python -m pip install -r requirements.txt
-          python -m pip install -r test-requirements.txt
-          pytest -s --disable-warnings --ignore=tests/test_host
-
   release-wheel:
     name: Build release wheel
-    needs: [release-test]
     runs-on: ubuntu-18.04
-    strategy:
-      matrix:
-        python-version: ['3.6']
     steps:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.6'
       - name: Build and release wheel
         run: |
           pip install wheel
@@ -47,3 +24,57 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.pypi_token }}
+  release-tf1-docker:
+    name: Build and release tf1 docker image
+    needs: [release-wheel]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Build and release docker images
+        run: |
+          python -m pip install -r requirements.txt
+          version=$(python -c "import armory; print(armory.__version__)")
+          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          bash docket/build.sh tf1
+          docker push twosixarmory/tf1:${version}
+  release-tf2-docker:
+    name: Build and release tf2 docker image
+    needs: [release-wheel]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Build and release docker images
+        run: |
+          python -m pip install -r requirements.txt
+          version=$(python -c "import armory; print(armory.__version__)")
+          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          bash docket/build.sh tf2
+          docker push twosixarmory/tf2:${version}
+  release-pytorch-docker:
+    name: Build and release tf2 docker image
+    needs: [release-wheel]
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Build and release docker images
+        run: |
+          python -m pip install -r requirements.txt
+          version=$(python -c "import armory; print(armory.__version__)")
+          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          bash docket/build.sh pytorch
+          docker push twosixarmory/pytorch:${version}

@@ -23,7 +23,7 @@
     "metric": null,
     "model": {
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.keras_resisc45",
+        "module": "armory.baseline_models.keras.resisc45",
         "name": "get_art_model",
         "wrapper_kwargs": {}
     },

@@ -41,7 +41,7 @@ pytest -s --disable-warnings tests/test_host
 and the rest, which are run in the container (after building):
 ```
 version=$(python -m armory --version)
-bash docker/build-dev-minimal.sh
+bash docker/build-dev.sh all
 docker run -w /armory_dev twosixarmory/tf1:${version} bash \
     pytest -s --disable-warnings --ignore=tests/test_docker
 ```

@@ -8,12 +8,14 @@ import logging
 import shutil
 import time
 from pathlib import Path
+from typing import Union
 
 import docker
 import requests
 from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
+from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
 from armory.utils.printing import bold, red
@@ -24,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
-    def __init__(self, config_path: str, container_config_name="eval-config.json"):
+    def __init__(
+        self, config_path: Union[str, dict], container_config_name="eval-config.json"
+    ):
         self.host_paths = paths.host()
         self.docker_paths = paths.docker()
 
@@ -34,8 +38,19 @@ class Evaluator(object):
             self.user_id, self.group_id = 0, 0
 
         self.extra_env_vars = dict()
-        self.config = load_config(config_path)
-        self.tmp_config = os.path.join(self.host_paths.tmp_dir, container_config_name)
+        if isinstance(config_path, str):
+            self.config = load_config(config_path)
+        elif isinstance(config_path, dict):
+            self.config = config_path
+        else:
+            raise ValueError(f"config_path {config_path} must be a str or dict")
+        (
+            self.container_subdir,
+            self.tmp_dir,
+            self.output_dir,
+        ) = volumes_util.tmp_output_subdir()
+        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
+        self.external_repo_dir = paths.get_external(self.tmp_dir)
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
@@ -63,16 +78,22 @@ class Evaluator(object):
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image_name)
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Docker connection refused. Is Docker Daemon running?")
+            raise
 
         self.manager = ManagementInstance(**kwargs)
 
     def _download_external(self):
         external_repo.download_and_extract_repo(
-            self.config["sysconfig"]["external_github_repo"]
+            self.config["sysconfig"]["external_github_repo"],
+            external_repo_dir=self.external_repo_dir,
         )
 
     def _download_private(self):
-        external_repo.download_and_extract_repo("twosixlabs/armory-private")
+        external_repo.download_and_extract_repo(
+            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
+        )
         self.extra_env_vars.update(
             {
                 "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
@@ -81,40 +102,55 @@ class Evaluator(object):
         )
 
     def _write_tmp(self):
-        os.makedirs(self.host_paths.tmp_dir, exist_ok=True)
+        os.makedirs(self.tmp_dir, exist_ok=True)
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
             json.dump(self.config, f)
 
     def _delete_tmp(self):
-        if os.path.exists(self.host_paths.external_repo_dir):
+        if os.path.exists(self.external_repo_dir):
             try:
-                shutil.rmtree(self.host_paths.external_repo_dir)
+                shutil.rmtree(self.external_repo_dir)
             except OSError as e:
                 if not isinstance(e, FileNotFoundError):
                     logger.exception(
-                        f"Error removing external repo {self.host_paths.external_repo_dir}"
+                        f"Error removing external repo {self.external_repo_dir}"
                     )
+
+        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
-            os.remove(self.tmp_config)
+            shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                logger.exception(f"Error removing tmp config {self.tmp_config}")
+                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
 
-    def run(self, interactive=False, jupyter=False, host_port=8888) -> None:
+        logger.info(f"Removing output_dir {self.output_dir} if empty")
+        try:
+            os.rmdir(self.output_dir)
+        except OSError:
+            pass
+
+    def run(
+        self, interactive=False, jupyter=False, host_port=8888, command=None
+    ) -> None:
         container_port = 8888
         self._write_tmp()
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports
+                envs=self.extra_env_vars,
+                ports=ports,
+                container_subdir=self.container_subdir,
             )
+            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 if jupyter:
                     self._run_jupyter(runner, host_port=host_port)
                 elif interactive:
                     self._run_interactive_bash(runner)
+                elif command:
+                    self._run_command(runner, command)
                 else:
                     self._run_config(runner)
             except KeyboardInterrupt:
@@ -131,21 +167,28 @@ class Evaluator(object):
                     f"Port {host_port} already in use. Try a different one with '--port <port>'"
                 )
             elif (
-                isinstance(e, docker.errors.APIError)
-                and str(e)
-                == r'400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
-                and self.config.get("use_gpu")
+                str(e)
+                == '400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
             ):
-                logger.error('nvidia runtime failed. Set config "use_gpu" to false')
+                logger.error(
+                    'NVIDIA runtime failed. Either install nvidia-docker or set config "use_gpu" to false'
+                )
             else:
                 logger.error("Is Docker Daemon running?")
         self._delete_tmp()
 
     def _run_config(self, runner) -> None:
+        if self.config.get("evaluation") is None:
+            logger.info(bold(red("No evaluation script to run")))
+            return
         logger.info(bold(red("Running evaluation script")))
         runner.exec_cmd(
             f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
         )
+
+    def _run_command(self, runner, command) -> None:
+        logger.info(bold(red(f"Running bash command: {command}")))
+        runner.exec_cmd(command)
 
     def _run_interactive_bash(self, runner) -> None:
         lines = [
@@ -158,15 +201,20 @@ class Evaluator(object):
                     f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
                 )
             ),
-            bold("*** To run your script in the container:"),
-            bold(
-                red(
-                    f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
-                )
-            ),
-            bold("*** To gracefully shut down container, press: Ctrl-C"),
-            "",
         ]
+        if self.config.get("evaluation"):
+            lines.extend(
+                [
+                    bold("*** To run your script in the container:"),
+                    bold(
+                        red(
+                            f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
+                        )
+                    ),
+                    bold("*** To gracefully shut down container, press: Ctrl-C"),
+                    "",
+                ]
+            )
         logger.info("\n".join(lines))
         while True:
             time.sleep(1)
