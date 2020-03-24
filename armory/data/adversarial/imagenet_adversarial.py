@@ -21,7 +21,7 @@ _URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/ILSVR
 class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
     """ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"""
 
-    VERSION = tfds.core.Version("1.0")
+    VERSION = tfds.core.Version("1.0.0")
 
     def _info(self):
         return tfds.core.DatasetInfo(
