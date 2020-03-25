@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/digit/digit-1.0.8.tar.gz 7066583 046bb9a7b30cef1a335329d05ccbf40d43c35112a99e50f2b33618f2a6489220
