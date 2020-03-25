@@ -9,7 +9,7 @@ datasets to the armory repository and standardizes them across all evaluations.
 |:---------- |:----------- |:------- |:-------- |:-------- |:------- |
 | `cifar10` | CIFAR 10 classes image dataset | (N, 32, 32, 3) | uint8 | (N,) | int64 |
 | `german_traffic_sign` | German traffic sign dataset | (N, variable_height, variable_width, 3) | uint8 | (N,) | int64 |
-| `imagenet_adversarial` | ILSVRC12 adversarial image dataset from ResNet50 | (N, 224, 224, 3) | float32 | (N,) | int32 |
+| `imagenet_adversarial` | ILSVRC12 adversarial image dataset from ResNet50 | (N, 224, 224, 3) | uint8 | (N,) | int64 |
 | `imagenette` | Smaller subset of 10 classes from Imagenet | (N, variable_height, variable_width, 3) | uint8  | (N,) | int64 |
 | `mnist` | MNIST hand written digit image dataset | (N, 28, 28, 1) | uint8 | (N,) | int64 |
 | `resisc45` | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | uint8 | (N,) | int64 |

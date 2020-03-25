@@ -18,11 +18,12 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import download_file_from_s3, download_verify_dataset_cache
+from armory.data.utils import download_verify_dataset_cache
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
+from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -92,6 +93,7 @@ def _generator_from_tfds(
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
     variable_length=False,
+    shuffle_files=True,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -111,7 +113,7 @@ def _generator_from_tfds(
         data_dir=dataset_dir,
         with_info=True,
         download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=True,
+        shuffle_files=shuffle_files,
     )
     if not as_supervised:
         try:
@@ -129,7 +131,8 @@ def _generator_from_tfds(
         ds = ds.map(lambda x: (x[x_key], x[y_key]))
 
     ds = ds.repeat(epochs)
-    ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+    if shuffle_files:
+        ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
     if variable_length and batch_size > 1:
         ds = ds.batch(1, drop_remainder=False)
     else:
@@ -213,12 +216,12 @@ def digit(
 
 
 def imagenet_adversarial(
-    batch_size: int,
-    epochs: int,
     split_type: str,
+    epochs: int,
+    batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
-) -> (np.ndarray, np.ndarray, np.ndarray):
+) -> ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
 
@@ -227,67 +230,17 @@ def imagenet_adversarial(
         Max perturbation epsilon = 8
         Attack step size = 2
         Targeted = True
-
-    :param dataset_dir: Directory where cached datasets are stored
-    :param preprocessing_fn: Callable function to preprocess inputs
-    :return: (Adversarial_images, Labels)
     """
 
-    def _parse(serialized_example, split_type):
-        ds_features = {
-            "height": tf.io.FixedLenFeature([], tf.int64),
-            "width": tf.io.FixedLenFeature([], tf.int64),
-            "label": tf.io.FixedLenFeature([], tf.int64),
-            "adv-image": tf.io.FixedLenFeature([], tf.string),
-            "clean-image": tf.io.FixedLenFeature([], tf.string),
-        }
-
-        example = tf.io.parse_single_example(serialized_example, ds_features)
-
-        if split_type == "clean":
-            img = tf.io.decode_raw(example["clean-image"], tf.float32)
-            img = tf.reshape(img, (example["height"], example["width"], -1))
-        elif split_type == "adversarial":
-            img = tf.io.decode_raw(example["adv-image"], tf.float32)
-            img = tf.reshape(img, (example["height"], example["width"], -1))
-
-        label = tf.cast(example["label"], tf.int32)
-        return img, label
-
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
-
-    acceptable_splits = ["clean", "adversarial"]
-    if split_type not in acceptable_splits:
-        raise ValueError(f"split_type must be one of {acceptable_splits}")
-
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
-    num_images = 1000
-    filename = "ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
-    dirpath = os.path.join(dataset_dir, "imagenet_adversarial", "imagenet_adv")
-    output_filepath = os.path.join(dirpath, filename)
-
-    os.makedirs(dirpath, exist_ok=True)
-    download_file_from_s3(
-        bucket_name="armory-public-data",
-        key=f"imagenet-adv/{filename}",
-        local_path=output_filepath,
+    return _generator_from_tfds(
+        "imagenet_adversarial:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        shuffle_files=False,
     )
-
-    ds = tf.data.TFRecordDataset(filenames=[output_filepath])
-    ds = ds.map(lambda example_proto: _parse(example_proto, split_type))
-    ds = ds.repeat(epochs)
-    ds = ds.shuffle(batch_size * 10)
-    ds = ds.batch(batch_size, drop_remainder=False)
-    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-    ds = tfds.as_numpy(ds, graph=default_graph)
-
-    generator = ArmoryDataGenerator(
-        ds, size=num_images, batch_size=batch_size, preprocessing_fn=preprocessing_fn,
-    )
-
-    return generator
 
 
 def imagenette(
