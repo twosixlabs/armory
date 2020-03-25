@@ -1,5 +1,5 @@
 """
-TensorFlow Dataset for resisc45 with train/validate/test splits
+German traffic sign dataset with 43 classes and over 50,000 images.
 """
 
 import csv
