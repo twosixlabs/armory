@@ -10,7 +10,6 @@ datasets.
 
 import logging
 import os
-import zipfile
 from typing import Callable
 
 import numpy as np
@@ -19,7 +18,7 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import curl, download_file_from_s3, download_verify_dataset_cache
+from armory.data.utils import download_file_from_s3, download_verify_dataset_cache
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
@@ -147,67 +146,6 @@ def _generator_from_tfds(
     )
 
     return generator
-
-
-def _inner_generator(
-    X: list,
-    Y: list,
-    batch_size: int,
-    epochs: int,
-    drop_remainder: bool = False,
-    variable_length=False,
-):
-    """
-    Create a generator from lists (or arrays) of numpy arrays
-    """
-    num_examples = len(X)
-    batch_size = int(batch_size)
-    epochs = int(epochs)
-    if len(X) != len(Y):
-        raise ValueError("X and Y must have the same length")
-    if epochs < 0:
-        raise ValueError("epochs cannot be negative")
-    if batch_size < 1:
-        raise ValueError("batch_size must be positive")
-
-    if drop_remainder:
-        num_examples = (num_examples // batch_size) * batch_size
-    if num_examples == 0:
-        return
-
-    Z = list(zip(X, Y))
-    for epoch in range(epochs):
-        np.random.shuffle(Z)
-        for start in range(0, num_examples, batch_size):
-            x_list, y_list = zip(*Z[start : start + batch_size])
-            if variable_length:
-                x = np.empty((len(x_list),), dtype=object)
-                for i in range(len(x_list)):
-                    x[i] = x_list[i]
-            else:
-                x = np.stack(x_list)
-            yield x, np.stack(y_list)
-
-
-def _generator_from_np(
-    X: list,
-    Y: list,
-    batch_size: int,
-    epochs: int,
-    preprocessing_fn: Callable,
-    variable_length: bool = False,
-) -> ArmoryDataGenerator:
-    """
-    Create generator from (X, Y) lists numpy arrays
-    """
-    ds = _inner_generator(
-        X, Y, batch_size, epochs, drop_remainder=False, variable_length=variable_length
-    )
-
-    # variable_length not needed for ArmoryDataGenerator because np handles it
-    return ArmoryDataGenerator(
-        ds, size=len(X), batch_size=batch_size, preprocessing_fn=preprocessing_fn,
-    )
 
 
 def mnist(
