@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/german-traffic-sign/german_traffic_sign.tar.gz 367878784 0a39ee87e4cfd83b293eae21c0206dee304b2d09e17bcce369c97e4807c5ce3f
