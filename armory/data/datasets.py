@@ -24,7 +24,7 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
-from armory.data.adversarial import imagenet_adversaril  # noqa: F401
+from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
