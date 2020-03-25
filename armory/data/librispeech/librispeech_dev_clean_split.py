@@ -251,6 +251,6 @@ def _generate_librispeech_examples(directory):
                     "chapter_id": chapter_id,
                     "speech": os.path.join(path, audio_file),
                     "text": transcript,
-                    "label": speaker_id,
+                    "label": str(speaker_id),
                 }
                 yield key, example
