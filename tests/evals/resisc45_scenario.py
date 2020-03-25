@@ -17,9 +17,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-DEMO = True
-
-
 def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
@@ -38,48 +35,31 @@ def evaluate_classifier(config_path: str) -> None:
         split_type="train",
         preprocessing_fn=preprocessing_fn,
     )
-    # val_data_generator = load_dataset(
-    #     config["dataset"],
-    #     epochs=2,
-    #     split_type="validation",
-    #     preprocessing_fn=preprocessing_fn,
-    # )
-    test_data_generator = load_dataset(
-        config["dataset"],
-        epochs=2,
-        split_type="test",
-        preprocessing_fn=preprocessing_fn,
-    )
 
     logger.info(
         f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
     )
 
-    if DEMO:
-        nb_epochs = 10
-    else:
-        nb_epochs = train_data_generator.total_iterations
-
-    classifier.fit_generator(train_data_generator, nb_epochs=nb_epochs)
+    classifier.fit_generator(train_data_generator, nb_epochs=1)
 
     # Evaluate the ART classifier on benign test examples
     logger.info("Running inference on benign examples...")
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
+
     benign_accuracy = 0
     cnt = 0
-
-    if DEMO:
-        iterations = 3
-    else:
-        iterations = test_data_generator.total_iterations // 2
-
-    for _ in range(iterations):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         predictions = classifier.predict(x)
         benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
-    logger.info(
-        "Accuracy on benign test examples: {}%".format(benign_accuracy * 100 / cnt)
-    )
+    benign_accuracy = benign_accuracy / cnt
+    logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
 
     # Generate adversarial test examples
     attack_config = config["attack"]
@@ -88,20 +68,25 @@ def evaluate_classifier(config_path: str) -> None:
 
     # Evaluate the ART classifier on adversarial test examples
     logger.info("Generating / testing adversarial examples...")
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
 
     attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
     adversarial_accuracy = 0
     cnt = 0
-    for _ in range(iterations):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         test_x_adv = attack.generate(x=x)
         predictions = classifier.predict(test_x_adv)
         adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
+    adversarial_accuracy = adversarial_accuracy / cnt
     logger.info(
-        "Accuracy on adversarial test examples: {}%".format(
-            adversarial_accuracy * 100 / cnt
-        )
+        "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
     )
 
     logger.info("Saving json output...")
