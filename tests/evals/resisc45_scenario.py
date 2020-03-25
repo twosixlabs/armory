@@ -100,7 +100,9 @@ def evaluate_classifier(config_path: str) -> None:
             },
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    logger.info(f"Evaluation Results written <output_dir>/basic-resisc-evaluation-results.json")
+    logger.info(
+        f"Evaluation Results written <output_dir>/basic-resisc-evaluation-results.json"
+    )
 
 
 if __name__ == "__main__":
