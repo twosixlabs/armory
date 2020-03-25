@@ -1,0 +1,9 @@
+---
+site_name: Armory
+nav:
+  - Home: index.md
+  - Datasets: datasets.md
+  - Docker: docker.md
+  - Configuration Files: configuration_files.md
+  - Scenarios: scenarios.md
+theme: readthedocs
