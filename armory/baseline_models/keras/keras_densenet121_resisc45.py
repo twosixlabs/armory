@@ -56,7 +56,7 @@ def preprocessing_fn(x: np.ndarray) -> np.ndarray:
     return output
 
 
-def make_densenet121_resisc_model(**kwargs) -> tf.keras.Model:
+def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
     # Load ImageNet pre-trained DenseNet
     model_notop = DenseNet121(
         include_top=False, weights=None, input_shape=(224, 224, 3)
@@ -79,11 +79,13 @@ def make_densenet121_resisc_model(**kwargs) -> tf.keras.Model:
         optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
     )
 
-    # How to load weights into a model loaded from pre-trained?
-    filepath = os.path.join(
-        paths.docker().saved_model_dir, "densenet121-resisc45-val_acc-0.93.hdf5"
-    )
-    new_model.load_weights(filepath)
+    pretrained = model_kwargs["pretrained"]
+    if pretrained:
+        # load weights into a model loaded from pre-trained
+        filepath = os.path.join(
+            paths.docker().saved_model_dir, "DenseNet121", model_kwargs["model_file"]
+        )
+        new_model.load_weights(filepath)
     return new_model
 
 
