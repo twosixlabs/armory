@@ -16,10 +16,6 @@ from armory import paths
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-DEMO = False
-
-
 def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
@@ -31,19 +27,6 @@ def evaluate_classifier(config_path: str) -> None:
     classifier, preprocessing_fn = load_model(model_config)
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    train_epochs = config["adhoc"]["train_epochs"]
-    train_data_generator = load_dataset(
-        config["dataset"],
-        epochs=train_epochs,
-        split_type="train",
-        preprocessing_fn=preprocessing_fn,
-    )
-    # val_data_generator = load_dataset(
-    #     config["dataset"],
-    #     epochs=2,
-    #     split_type="validation",
-    #     preprocessing_fn=preprocessing_fn,
-    # )
     test_data_generator = load_dataset(
         config["dataset"],
         epochs=2,
@@ -51,29 +34,12 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
-    """ Training the model -- all this commented code can be deleted"""
-    # Never training - model already trained # classifier.fit_generator(train_data_generator, nb_epochs=nb_epochs)
-    # logger.info(
-    #    f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
-    # )#
-
-    # if DEMO:
-    #    nb_epochs = 10
-    # else:
-    #    nb_epochs = train_data_generator.total_iterations
-    ###
     # Evaluate the ART classifier on benign test examples
     logger.info("Running inference on benign examples...")
     benign_accuracy = 0
     cnt = 0
 
-    if DEMO:
-        print("demo: 3 iterations")
-        iterations = 3
-    else:
-        iterations = test_data_generator.total_iterations // 2
-
-    for _ in range(iterations):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         predictions = classifier.predict(x)
         benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
@@ -92,7 +58,7 @@ def evaluate_classifier(config_path: str) -> None:
     attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
     adversarial_accuracy = 0
     cnt = 0
-    for _ in range(iterations):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         test_x_adv = attack.generate(x=x)
         predictions = classifier.predict(test_x_adv)
