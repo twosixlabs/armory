@@ -52,7 +52,7 @@ ran.
 3) `armory launch <tf1|tf2|pytorch> --jupyter`. 
 Similar to the interactive launch, this will spin up a container for a specific 
 framework, but will instead return the web address of a jupyter lab server where 
-debugging can be performed. To close the jupyter server simple run CTRL+C from the 
+debugging can be performed. To close the jupyter server simply run CTRL+C from the 
 terminal where this command was ran.
 
 4) `armory exec <tf1|tf2|pytorch> -- <cmd>`. 

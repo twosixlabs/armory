@@ -5,15 +5,15 @@ inside a docker container. Docker images will be pulled as needed when evaluatio
 ran.
 
 However if there are issues downloading the images (e.g. proxy) they can be built 
-within the repo, after downloading from the latest [release](https://github.com/twosixlabs/armory/releases):
+from the repo:
 ```
-bash docker/build.sh
+bash docker/build.sh <tf1|tf2|pytorch|all>
 ```
-If only a specific target image is desired, run the relevant lines in `docker/build.sh`.
-NOTE: if the repo is pulled from master instead of pip installed, and is currently on a non-release branch,
-you will instead need to run:
+
+NOTE: if you're a developer working on armory from the master branch, you will need to 
+build the dev containers: 
 ```
-bash docker/build-dev.sh
+bash docker/build-dev.sh <tf1|tf2|pytorch|all>
 ```
 
 ### Docker Mounts
