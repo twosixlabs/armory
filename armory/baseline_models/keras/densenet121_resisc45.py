@@ -16,16 +16,23 @@ num_classes = 45
 
 @functools.lru_cache(maxsize=1)
 def mean_std():
-    resisc_mean = np.load(
-        os.path.join(
-            paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_means.npy"
-        )
+    resisc_mean = np.array(
+        [0.36386173189316956, 0.38118692953271804, 0.33867067558870334,]
     )
-    resisc_std = np.load(
-        os.path.join(
-            paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_stdevs.npy"
-        )
+    resisc_std = np.array(
+        [0.04141580824287572, 0.03434043817936333, 0.034124928477786254,]
     )
+
+    # resisc_mean = np.load(
+    #    os.path.join(
+    #        paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_means.npy"
+    #    )
+    # )
+    # resisc_std = np.load(
+    #    os.path.join(
+    #        paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_stdevs.npy"
+    #    )
+    # )
     return resisc_mean, resisc_std
 
 
@@ -35,8 +42,7 @@ def preprocess_input_densenet121_resisc(img):
     # Normalize images: divide by 255 for [0,1] range
     mean, std = mean_std()
     img_norm = img / 255.0
-    # Divide by normalized channel means from rgb_means.npy
-    # divide each channel by normalized channel stdevs from rgb_stdevs.npy
+    # Standardize the dataset on a per-channel basis
     output_img = (img_norm - mean) / std
     return output_img
 
