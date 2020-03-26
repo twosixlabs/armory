@@ -1,0 +1,1 @@
+armory-public-data librispeech/librispeech_dev_clean_split.tar.gz 594065047 56604e5f8a4376f6cdf2f4df7c56c3b2623ad6ce95eeebd74c6fdf5bcc63b687

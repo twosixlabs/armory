@@ -3,7 +3,7 @@
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04 AS armory
 
 RUN apt-get -y -qq update && \
-    apt-get install -y wget vim build-essential git curl
+    apt-get install -y wget vim build-essential git 
 
 # Install Conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
