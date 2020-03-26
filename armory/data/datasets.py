@@ -95,8 +95,6 @@ def _generator_from_tfds(
     variable_length=False,
     shuffle_files=True,
     cache_dataset: bool = True,
-    cache_name: str = None,
-    cache_subpath: str = None,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -108,12 +106,8 @@ def _generator_from_tfds(
         dataset_dir = paths.docker().dataset_dir
 
     if cache_dataset:
-        if not (cache_name and cache_subpath):
-            raise ValueError(
-                "cache_name and cache_subpath must be passed as arguments if caching"
-            )
         _cache_dataset(
-            dataset_dir, name=cache_name, subpath=cache_subpath,
+            dataset_dir, dataset_name=dataset_name,
         )
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
@@ -183,8 +177,6 @@ def mnist(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
-        cache_name="mnist",
-        cache_subpath="3.0.0",
     )
 
 
@@ -208,8 +200,6 @@ def cifar10(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
-        cache_name="cifar10",
-        cache_subpath="3.0.0",
     )
 
 
@@ -234,8 +224,6 @@ def digit(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        cache_name="digit",
-        cache_subpath="1.0.8",
     )
 
 
@@ -266,8 +254,6 @@ def imagenet_adversarial(
         preprocessing_fn=preprocessing_fn,
         shuffle_files=False,
         cache_dataset=cache_dataset,
-        cache_name="imagenet_adversarial",
-        cache_subpath="1.0.0",
     )
 
 
@@ -293,8 +279,6 @@ def imagenette(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        cache_name="imagenette",
-        cache_subpath=os.path.join("full-size", "0.1.0"),
     )
 
 
@@ -318,8 +302,6 @@ def german_traffic_sign(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        cache_name="german_traffic_sign",
-        cache_subpath="3.0.0",
     )
 
 
@@ -346,7 +328,7 @@ def librispeech_dev_clean(
     )
 
     return _generator_from_tfds(
-        "librispeech_dev_clean_split:1.1.0",
+        "librispeech_dev_clean_split/plain_text:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -355,8 +337,6 @@ def librispeech_dev_clean(
         download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        cache_name="librispeech_dev_clean_split",
-        cache_subpath=os.path.join("plain_text", "1.1.0"),
     )
 
 
@@ -391,8 +371,6 @@ def resisc45(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
-        cache_name="resisc45_split",
-        cache_subpath="3.0.0",
     )
 
 
@@ -420,18 +398,38 @@ def ucf101(
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        cache_name="ucf101",
-        cache_subpath=os.path.join("ucf101_1", "2.0.0"),
     )
 
 
-def _cache_dataset(dataset_dir: str, name: str, subpath: str):
+def _cache_dataset(dataset_dir: str, dataset_name: str):
+    name, subpath = _parse_dataset_name(dataset_name)
+
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
             dataset_dir=dataset_dir,
             checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
             name=name,
         )
+
+
+def _parse_dataset_name(dataset_name):
+    if ":" not in dataset_name:
+        raise ValueError("Must have version specified to load dataset.")
+    name_config_version = dataset_name.split(":")
+    if len(name_config_version) != 2:
+        raise ValueError(f"Dataset name {dataset_name} not properly formatted.")
+    name_config, version = name_config_version
+    has_config = "/" in name_config
+    if has_config:
+        splits = name_config.split("/")
+        if len(splits) != 2:
+            raise ValueError(f"Dataset name {dataset_name} not properly formatted.")
+        name = splits[0]
+        subpath = os.path.join(splits[1], version)
+    else:
+        name = name_config
+        subpath = version
+    return name, subpath
 
 
 SUPPORTED_DATASETS = {
