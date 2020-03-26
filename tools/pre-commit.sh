@@ -11,7 +11,7 @@ then
     exit $need_format
 fi
 
-python -m tools.format_json --check
+python -m tools.format_json --check > /dev/null 2>&1
 need_format=$?
 if [ $need_format -ne 0 ]
 then
