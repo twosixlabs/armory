@@ -92,6 +92,16 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     cache_dir = os.path.join(dataset_dir, "cache")
     os.makedirs(cache_dir, exist_ok=True)
     tar_filepath = os.path.join(cache_dir, os.path.basename(s3_key))
+    if os.path.exists(tar_filepath):
+        # Check existing download to avoid falling back to processing data
+        logger.info(f"{tar_filepath} exists. Verifying...")
+        try:
+            verify_size(tar_filepath, int(file_length))
+            verify_sha256(tar_filepath, hash)
+        except ValueError as e:
+            logger.warning(f"Verification failed: {str(e)}")
+            os.remove(tar_filepath)
+
     if not os.path.exists(tar_filepath):
         logger.info(f"Downloading dataset: {name}...")
         try:
