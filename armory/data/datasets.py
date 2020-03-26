@@ -94,6 +94,9 @@ def _generator_from_tfds(
     download_and_prepare_kwargs=None,
     variable_length=False,
     shuffle_files=True,
+    cache_dataset: bool = True,
+    cache_name: str = None,
+    cache_subpath: str = None,
 ):
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -103,6 +106,15 @@ def _generator_from_tfds(
     """
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
+
+    if cache_dataset:
+        if not (cache_name and cache_subpath):
+            raise ValueError(
+                "cache_name and cache_subpath must be passed as arguments if caching"
+            )
+        _cache_dataset(
+            dataset_dir, name=cache_name, subpath=cache_subpath,
+        )
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
@@ -157,6 +169,7 @@ def mnist(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -169,6 +182,9 @@ def mnist(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        cache_name="mnist",
+        cache_subpath="3.0.0",
     )
 
 
@@ -178,6 +194,7 @@ def cifar10(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -190,6 +207,9 @@ def cifar10(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        cache_name="cifar10",
+        cache_subpath="3.0.0",
     )
 
 
@@ -199,6 +219,7 @@ def digit(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -212,6 +233,9 @@ def digit(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        cache_name="digit",
+        cache_subpath="1.0.8",
     )
 
 
@@ -221,6 +245,7 @@ def imagenet_adversarial(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -240,6 +265,9 @@ def imagenet_adversarial(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         shuffle_files=False,
+        cache_dataset=cache_dataset,
+        cache_name="imagenet_adversarial",
+        cache_subpath="1.0.0",
     )
 
 
@@ -249,6 +277,7 @@ def imagenette(
     batch_size: int,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -263,6 +292,9 @@ def imagenette(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        cache_name="imagenette",
+        cache_subpath=os.path.join("full-size", "0.1.0"),
     )
 
 
@@ -272,6 +304,7 @@ def german_traffic_sign(
     batch_size: int,
     preprocessing_fn: Callable = None,
     dataset_dir: str = None,
+    cache_dataset: bool = True,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -284,6 +317,9 @@ def german_traffic_sign(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        cache_name="german_traffic_sign",
+        cache_subpath="3.0.0",
     )
 
 
@@ -309,13 +345,6 @@ def librispeech_dev_clean(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
 
-    if cache_dataset:
-        _cache_dataset(
-            dataset_dir,
-            name="librispeech_dev_clean_split",
-            subpath=os.path.join("plain_text", "1.1.0"),
-        )
-
     return _generator_from_tfds(
         "librispeech_dev_clean_split:1.1.0",
         split_type=split_type,
@@ -325,6 +354,9 @@ def librispeech_dev_clean(
         preprocessing_fn=preprocessing_fn,
         download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        cache_name="librispeech_dev_clean_split",
+        cache_subpath=os.path.join("plain_text", "1.1.0"),
     )
 
 
@@ -351,11 +383,6 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
-    if cache_dataset:
-        _cache_dataset(
-            dataset_dir, name="resisc45_split", subpath="3.0.0",
-        )
-
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
         split_type=split_type,
@@ -363,6 +390,9 @@ def resisc45(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        cache_name="resisc45_split",
+        cache_subpath="3.0.0",
     )
 
 
@@ -379,11 +409,6 @@ def ucf101(
         https://www.crcv.ucf.edu/data/UCF101.php
     """
 
-    if cache_dataset:
-        _cache_dataset(
-            dataset_dir, name="ucf101", subpath=os.path.join("ucf101_1", "2.0.0"),
-        )
-
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
         split_type=split_type,
@@ -394,13 +419,13 @@ def ucf101(
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        cache_name="ucf101",
+        cache_subpath=os.path.join("ucf101_1", "2.0.0"),
     )
 
 
 def _cache_dataset(dataset_dir: str, name: str, subpath: str):
-    if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
-
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
             dataset_dir=dataset_dir,
