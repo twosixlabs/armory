@@ -16,7 +16,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.evals.densenet121_resisc45_scenario"
+        "eval_file": "armory.scenarios.resisc45"
     },
     "metric": null,
     "model": {
