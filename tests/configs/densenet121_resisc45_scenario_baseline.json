@@ -1,5 +1,5 @@
 {
-    "adhoc":{},
+    "adhoc": {},
     "attack": {
         "budget": null,
         "knowledge": "white",
@@ -21,9 +21,9 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-	    "pretrained": true,
-	    "model_file": "densenet121-resisc45-val_acc-0.93.hdf5"
-	},
+            "model_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+            "pretrained": true
+        },
         "module": "armory.baseline_models.keras.keras_densenet121_resisc45",
         "name": "get_art_model",
         "wrapper_kwargs": {}
