@@ -90,5 +90,5 @@ def get_art_model(model_kwargs, wrapper_kwargs):
     mean, std = mean_std()
     wrapped_model = KerasClassifier(
         model, clip_values=((0.0 - mean) / std, (1.0 - mean) / std), **wrapper_kwargs
-    )  # Should clip values be shifted by the mean? Scaled by the standard deviation? As this is Caffe preprocessing
+    )
     return wrapped_model
