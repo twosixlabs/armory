@@ -11,7 +11,6 @@ from armory import paths
 
 # from https://github.com/hkakitani/SincNet
 from SincNet import dnn_models
-
 logger = logging.getLogger(__name__)
 os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
@@ -96,32 +95,35 @@ def sincnet(**model_kwargs):
 
     sincNet = dnn_models.SincWrapper(DNN2_options, DNN1_options, CNN_options)
     sincNet.cuda()
-    sincNet.eval()
+    #sincNet.eval()
 
     if(pretrained):
         sincNet.load_state_dict(DNN2_params)
     return sincNet
 
-def preprocessing_fn(clip):
+def preprocessing_fn(batch):
     """
     Standardize, then normalize sound clips
     """
-    signal=clip.astype(np.float64)
-    # Signal normalization
-    signal=signal/np.max(np.abs(signal))
-    
-    
-    # get random chunk of fixed length (from SincNet's create_batches_rnd)
-    fs=8000
-    cw_len=375
-    wlen=int(fs*cw_len/1000.00) 
-    snt_len=signal.shape[1]
-    snt_beg=np.random.randint(snt_len-wlen-1)
-    snt_end=snt_beg+wlen
-    signal = signal[:, snt_beg:snt_end]
+    processed_batch = []
+    for clip in batch:
+        
+        signal=clip.astype(np.float64)
+        # Signal normalization
+        signal=signal/np.max(np.abs(signal))
 
-    return signal
+        # get random chunk of fixed length (from SincNet's create_batches_rnd)
+        fs=8000
+        cw_len=375
+        wlen=int(fs*cw_len/1000.00) 
+        snt_len=len(signal)
+        snt_beg=np.random.randint(snt_len-wlen-1)
+        snt_end=snt_beg+wlen
+        signal = signal[snt_beg:snt_end]
+        processed_batch.append(signal)
 
+    return np.array(processed_batch)
+    
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = sincnet(**model_kwargs)

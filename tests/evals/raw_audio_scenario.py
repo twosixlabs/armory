@@ -17,17 +17,27 @@ from collections import Counter
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
-DEMO = True
-
-LABEL_MAP = [84, 174, 251, 422, 652, 777, 1272, 1462, 1673, 1919, 1988, 1993, 2035, 2078, 2086, 2277, 2412, 2428, 2803, 2902, 3000, 3081, 3170, 3536, 3576, 3752, 3853, 5338, 5536, 5694, 5895, 6241, 6295, 6313, 6319, 6345, 7850, 7976, 8297, 8842]
-
 def evaluate_classifier(config_path: str) -> None:
     with open(config_path) as f:
         config = json.load(f)
 
     model_config = config["model"]    
     classifier, preprocessing_fn = load_model(model_config)
+    
+    if(not model_config["model_kwargs"]["pretrained"]):
+        logger.info(
+            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+        )
+        train_epochs = config["adhoc"]["epochs"]
+        
+        train_data_generator = load_dataset(
+            config["dataset"],
+            epochs=train_epochs,
+            split_type="train",
+            preprocessing_fn=preprocessing_fn,
+        )
+
+        classifier.fit_generator(train_data_generator, nb_epochs=train_epochs)
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
     
@@ -39,46 +49,49 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn
     )    
     
-    if(not model_config["model_kwargs"]["pretrained"]):
-        logger.info(
-            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
-        )
-        train_data_generator = load_dataset(
-            config["dataset"],
-            epochs=config["adhoc"]["epochs"],
-            split_type="train",
-            preprocessing_fn=preprocessing_fn,
-        )
-
-        if DEMO:
-            nb_epochs = 10
-        else:
-            nb_epochs = train_data_generator.total_iterations
-        # TODO [immediate] index out of bounds for fit. using label as an index for an array that has nb_classes elements 
-        #(determined by get_art_model, in PyTorchClassifier declaration in sincnet.py)
-        # generator needs to output label in range (0-39)
-        classifier.fit_generator(train_data_generator, nb_epochs=nb_epochs)
-
     # Evaluate the ART classifier on benign test examples
     logger.info("Running inference on benign examples...")
     benign_accuracy = 0
     cnt = 0
 
-    if DEMO:
-        iterations = 640
-    else:
-        iterations = test_data_generator.total_iterations // 2
-    for _ in range(iterations):
+    for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
         predictions = classifier.predict(x) 
-        benign_accuracy += np.sum([LABEL_MAP[i] for i in np.argmax(predictions, axis=1)] == y) / len(y)
+        #print("predict/y", np.argmax(predictions, axis=1),"/", y)
+        benign_accuracy += np.sum([np.argmax(predictions, axis=1)] == y) / len(y)
         cnt += 1
     logger.info(
         "Accuracy on benign test examples: {}%".format(benign_accuracy * 100 / cnt)
     )
-    
-    adversarial_accuracy = 0 # TEMP until adversarial dataset is created
 
+    # Generate adversarial test examples, should take 15 minutes
+    attack_config = config["attack"]
+    attack_module = import_module(attack_config["module"])
+    attack_fn = getattr(attack_module, attack_config["name"])
+
+    # Evaluate the ART classifier on adversarial test examples
+    logger.info("Generating / testing adversarial examples...")
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
+
+    attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
+    adversarial_accuracy = 0
+    cnt = 0
+    for _ in range(test_data_generator.batches_per_epoch):
+        x, y = test_data_generator.get_batch()
+        test_x_adv = attack.generate(x=x)
+        predictions = classifier.predict(test_x_adv)
+        adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+        cnt += 1
+    adversarial_accuracy = adversarial_accuracy / cnt
+    logger.info(
+        "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
+    )
+    
     logger.info("Saving json output...")
     filepath = os.path.join(paths.docker().output_dir, "evaluation-results.json")
     with open(filepath, "w") as f:

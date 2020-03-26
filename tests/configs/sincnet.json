@@ -1,6 +1,6 @@
 {
     "adhoc": {
-        "epochs": 10,
+        "epochs": 120,
         "num_attacked_pts": 100,
         "num_classes": 40,
         "seed": 123
@@ -13,15 +13,15 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "targeted": true
+            "targeted": false
         },
         "module": "art.attacks",
-        "name": "CarliniL2Method"
+        "name": "ProjectedGradientDescent"
     },
     "dataset": {
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean",
-        "batch_size": 1
+        "batch_size": 16
     },
     "defense": null,
     "evaluation": {
