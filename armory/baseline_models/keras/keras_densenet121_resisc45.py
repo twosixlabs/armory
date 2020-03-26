@@ -5,19 +5,9 @@ import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 
 # Load Keras dependencies:
-from tensorflow.keras.applications.densenet import (
-    DenseNet121,
-)  # Should this be tensorflow.keras.applications....? as in the resnet or inception resnet example
-
-from tensorflow.keras.preprocessing.image import (
-    ImageDataGenerator,
-    img_to_array,
-    load_img,
-)
+from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Flatten, Conv2D
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras import optimizers
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
 
 from armory import paths
 
