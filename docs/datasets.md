@@ -23,6 +23,7 @@ for a specified batch size.
 | imagenet_adversarial | ILSVRC12 adversarial dataset on ResNet50 | (N, 224, 224, 3) | uint8 | (N,) | int64 |
 
 <br>
+
 ### Audio Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
@@ -30,6 +31,7 @@ for a specified batch size.
 | librispeech_dev_clean | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 |
 
 <br>
+
 ### Video Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
