@@ -1,10 +1,9 @@
-from art.classifiers import KerasClassifier
 import os
+
+from art.classifiers import KerasClassifier
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
-
-# Load Keras dependencies:
 from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
