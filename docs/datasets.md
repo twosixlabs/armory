@@ -15,30 +15,29 @@ for a specified batch size.
 
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| cifar10 | CIFAR 10 classes image dataset | (N, 32, 32, 3) | uint8 | (N,) | int64 |
-| german_traffic_sign | German traffic sign dataset | (N, variable_height, variable_width, 3) | uint8 | (N,) | int64 |
-| imagenette | Smaller subset of 10 classes from Imagenet | (N, variable_height, variable_width, 3) | uint8  | (N,) | int64 |
-| mnist | MNIST hand written digit image dataset | (N, 28, 28, 1) | uint8 | (N,) | int64 |
-| resisc45 | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | uint8 | (N,) | int64 |
-| imagenet_adversarial | ILSVRC12 adversarial dataset on ResNet50 | (N, 224, 224, 3) | uint8 | (N,) | int64 |
+| [cifar10](https://www.cs.toronto.edu/~kriz/cifar.html) | CIFAR 10 classes image dataset | (N, 32, 32, 3) | uint8 | (N,) | int64 |
+| [german_traffic_sign](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset) | German traffic sign dataset | (N, variable_height, variable_width, 3) | uint8 | (N,) | int64 |
+| [imagenette](https://github.com/fastai/imagenette) | Smaller subset of 10 classes from Imagenet | (N, variable_height, variable_width, 3) | uint8  | (N,) | int64 |
+| [mnist](http://yann.lecun.com/exdb/mnist/) | MNIST hand written digit image dataset | (N, 28, 28, 1) | uint8 | (N,) | int64 |
+| [resisc45](https://arxiv.org/abs/1703.00121) | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | uint8 | (N,) | int64 |
+| imagenet_adversarial | ILSVRC12 adversarial dataset from ResNet50 | (N, 224, 224, 3) | uint8 | (N,) | int64 |
 
 <br>
 
 ### Audio Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| digit | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 |
-| librispeech_dev_clean | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 |
+| [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 |
+| [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 |
 
 <br>
 
 ### Video Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| ucf101 | UCF 101 Action Recognition | (N, variable_frames, 240, 320, 3) | uint8 | (N,) | int64 |
+| [ucf101](https://www.crcv.ucf.edu/data/UCF101.php) | UCF 101 Action Recognition | (N, variable_frames, 240, 320, 3) | uint8 | (N,) | int64 |
 
 <br>
-
 
 <style>
 table th:first-of-type {
