@@ -1,3 +1,4 @@
+import functools
 import os
 
 from art.classifiers import KerasClassifier
@@ -13,9 +14,8 @@ from armory import paths
 num_classes = 45
 
 
-def preprocess_input_densenet121_resisc(img):
-    # Model was trained with Caffe preprocessing on the images
-    # load the mean and std of the [0,1] normalized dataset
+@functools.lru_cache(maxsize=1)
+def mean_std():
     resisc_mean = np.load(
         os.path.join(
             paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_means.npy"
@@ -26,11 +26,18 @@ def preprocess_input_densenet121_resisc(img):
             paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_stdevs.npy"
         )
     )
+    return resisc_mean, resisc_std
+
+
+def preprocess_input_densenet121_resisc(img):
+    # Model was trained with Caffe preprocessing on the images
+    # load the mean and std of the [0,1] normalized dataset
     # Normalize images: divide by 255 for [0,1] range
+    mean, std = mean_std()
     img_norm = img / 255.0
     # Divide by normalized channel means from rgb_means.npy
     # divide each channel by normalized channel stdevs from rgb_stdevs.npy
-    output_img = np.divide(np.subtract(img_norm, resisc_mean), resisc_std)
+    output_img = (img_norm - mean) / std
     return output_img
 
 
@@ -80,7 +87,8 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
 
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = make_densenet121_resisc_model(**model_kwargs)
+    mean, std = mean_std()
     wrapped_model = KerasClassifier(
-        model, clip_values=(0, 1.0), **wrapper_kwargs
+        model, clip_values=((0.0 - mean) / std, (1.0 - mean) / std), **wrapper_kwargs
     )  # Should clip values be shifted by the mean? Scaled by the standard deviation? As this is Caffe preprocessing
     return wrapped_model
