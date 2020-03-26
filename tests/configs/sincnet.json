@@ -1,6 +1,6 @@
 {
     "adhoc": {
-        "epochs": 1,
+        "epochs": 10,
         "num_attacked_pts": 100,
         "num_classes": 40,
         "seed": 123
