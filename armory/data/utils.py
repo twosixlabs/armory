@@ -14,7 +14,7 @@ import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 
-from armory.data.percent_progress import ProgressPercentage
+from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def download_file_from_s3(
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
         if progress_bar:
-            Callback = ProgressPercentage(client, bucket_name, key, logger)
+            Callback = ProgressPercentage(client, bucket_name, key)
         else:
             Callback = None
         logger.info("Downloading S3 data file...")
