@@ -412,23 +412,21 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
         )
 
 
-def _parse_dataset_name(dataset_name):
-    if ":" not in dataset_name:
-        raise ValueError("Must have version specified to load dataset.")
-    name_config_version = dataset_name.split(":")
-    if len(name_config_version) != 2:
-        raise ValueError(f"Dataset name {dataset_name} not properly formatted.")
-    name_config, version = name_config_version
-    has_config = "/" in name_config
-    if has_config:
+def _parse_dataset_name(dataset_name: str):
+    try:
+        name_config, version = dataset_name.split(":")
         splits = name_config.split("/")
-        if len(splits) != 2:
-            raise ValueError(f"Dataset name {dataset_name} not properly formatted.")
+        if len(splits) > 2:
+            raise ValueError
         name = splits[0]
-        subpath = os.path.join(splits[1], version)
-    else:
-        name = name_config
-        subpath = version
+        config = splits[1:]
+        subpath = os.path.join(*config + [version])
+    except ValueError:
+        raise ValueError(
+            f'Dataset name "{dataset_name}" not properly formatted.\n'
+            'Should be formatted "<name>[/<config>]:<version>", '
+            'where "[]" indicates "/<config>" is optional.'
+        )
     return name, subpath
 
 
