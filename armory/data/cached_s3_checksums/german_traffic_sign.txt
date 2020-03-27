@@ -1,0 +1,1 @@
+armory-public-data german-traffic-sign/german_traffic_sign_cached.tar.gz 373406307 d468e70513b420cafb8bf21d8ab430c80ba97ad384b2148b4340df43b54e05ed
