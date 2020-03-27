@@ -124,7 +124,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         logger.info(f"Downloading dataset: {name}...")
         try:
             s3_url_region = "us-east-2"
-            url = f"https://{s3_bucket_name}.{s3_url_region}.amazonaws.com/{s3_key}"
+            url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
             curl(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
