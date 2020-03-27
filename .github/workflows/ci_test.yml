@@ -21,7 +21,7 @@ jobs:
         python-version: ['3.6']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
@@ -35,7 +35,7 @@ jobs:
     name: PyTest TF1
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -52,7 +52,7 @@ jobs:
     name: PyTest TF2
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -69,7 +69,7 @@ jobs:
     name: PyTest PyTorch
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -86,7 +86,7 @@ jobs:
     name: Flake8
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install flake8
         run: pip install flake8
@@ -96,7 +96,7 @@ jobs:
     name: Black code format
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install black
         run: pip install black
@@ -106,7 +106,7 @@ jobs:
     name: Yamllint
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install yamllint
         run: pip install yamllint
@@ -116,7 +116,7 @@ jobs:
     name: JSON file format
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: Ensure contributor used ("python -m tools.format_json") before commit
         run: python -m tools.format_json --check
