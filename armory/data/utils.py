@@ -31,12 +31,14 @@ def download_file_from_s3(
     """
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-        if progress_bar:
-            Callback = ProgressPercentage(client, bucket_name, key)
-        else:
-            Callback = None
+        download_args = (bucket_name, key, local_path)
         logger.info("Downloading S3 data file...")
-        client.download_file(bucket_name, key, local_path, Callback=Callback)
+        if progress_bar:
+            with ProgressPercentage(client, bucket_name, key) as Callback:
+                client.download_file(*download_args, Callback=Callback)
+        else:
+            client.download_file(*download_args)
+
     else:
         logger.info("Reusing cached file...")
 
