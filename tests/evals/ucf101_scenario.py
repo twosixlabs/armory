@@ -8,6 +8,7 @@ import sys
 import logging
 from importlib import import_module
 import numpy as np
+import time
 
 from torch.utils.data import DataLoader
 from armory.utils.config_loading import load_dataset, load_model
@@ -18,13 +19,8 @@ from MARS.opts import parse_opts
 from MARS.dataset.dataset import *
 from MARS.utils import AverageMeter
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-DEMO = True
-
 
 def evaluate_classifier(config_path: str) -> None:
     """
@@ -33,8 +29,11 @@ def evaluate_classifier(config_path: str) -> None:
     with open(config_path) as f:
         config = json.load(f)
     model_config = config["model"]
+    # Get model status: ucf101_trained -> fully trained; kinetics_pretrained -> needs training
+    model_status = model_config['model_kwargs']['model_status']
     classifier, preprocessing_fn = load_model(model_config)
 
+    '''
     #################################################
     # PLACEHOLDER.  REPLACE WITH ARMORY DATAGEN
     """
@@ -105,61 +104,96 @@ def evaluate_classifier(config_path: str) -> None:
                                      num_workers = opt.n_workers, pin_memory = True, drop_last=True)
         print("Length of validation datatloader = ",len(val_dataloader))
     #################################################
+    '''
+
+    #################################################
+    # Armory UCF101 Datagen
+    logger.info(f"Loading dataset {config['dataset']['name']}...")
+    train_epochs = config["adhoc"]["train_epochs"]
+    train_data_generator = load_dataset(
+        config["dataset"],
+        epochs=train_epochs,
+        split_type="train",
+        preprocessing_fn=preprocessing_fn,
+    )
 
     # Train ART classifier
     if model_status == 'kinetics_pretrained':
-        print('Train ART classifier')
+        logger.info(f"Fitting clean model of {model_config['module']}.{model_config['name']}...")
+        logger.info(f"Loading training dataset {config['dataset']['name']}...")
+        train_epochs = config["adhoc"]["train_epochs"]
+        batch_size = config['dataset']['batch_size']
+        train_data_generator = load_dataset(
+            config["dataset"],
+            epochs=train_epochs,
+            split_type="train",
+            preprocessing_fn=preprocessing_fn,
+        )
+
+        for e in range(train_epochs):
+            classifier.set_learning_phase(True)
+            st_time = time.time()
+            for b in range(train_data_generator.batches_per_epoch):
+                logger.info(f"Epoch: {e}/{train_epochs}, batch: {b}/{train_data_generator.batches_per_epoch}")
+                x_trains, y_trains = train_data_generator.get_batch()
+                # x_trains consists of one or more videos, each represented as a ndarray of shape
+                # (n_stacks, 3, 16, 112, 112).  To train, randomly sample a batch of stacks
+                x_train = np.zeros((min(batch_size, len(x_trains)), 3, 16, 112, 112), dtype=np.float32)
+                for i,xt in enumerate(x_trains):
+                    rand_stack = np.random.randint(0,xt.shape[0])
+                    x_train[i,...] = xt[rand_stack,...]
+                classifier.fit(x_train, y_trains, batch_size=batch_size, nb_epochs=1)
+            logger.info("Time per epoch: {}s".format(time.time()-st_time))
+
+            # evaluate on test examples
+            classifier.set_learning_phase(False)
+            test_data_generator = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+            )
+
+            accuracies = AverageMeter()
+            video_count = 0
+            for i in range(int(test_data_generator.batches_per_epoch/10)):
+                x_tests, y_tests = test_data_generator.get_batch()
+                for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
+                    y = classifier.predict(x_test)
+                    y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
+                    acc = float(y[0] == y_test)
+                    accuracies.update(acc, 1)
+            logger.info("Video accuracy = {}".format(accuracies.avg))
 
     # Evaluate ART classifier on test examples
+    logger.info("Running inference on benign test examples...")
+    logger.info(f"Loading testing dataset {config['dataset']['name']}...")
+    classifier.set_learning_phase(False)
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=1,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
+
     accuracies = AverageMeter()
-    for i, (clip, label) in enumerate(val_dataloader):
-        clip = torch.squeeze(clip)
-        x_test = np.zeros((int(clip.shape[1]/opt.sample_duration), 3, opt.sample_duration, opt.sample_size, opt.sample_size), dtype=np.float32)
-        for k in range(x_test.shape[0]):
-            x_test[k,:,:,:,:] = clip[:,k*opt.sample_duration:(k+1)*opt.sample_duration,:,:]
-        y = classifier.predict(x_test)
-        y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
+    video_count = 0
+    for i in range(test_data_generator.batches_per_epoch):
+        x_tests, y_tests = test_data_generator.get_batch()
+        for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
+            y = classifier.predict(x_test)
+            y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
+            acc = float(y[0] == y_test)
 
-        acc = float(y[0] == label[0])
+            accuracies.update(acc, 1)
 
-        accuracies.update(acc, 1)
-
-        line = "Video[" + str(i) + "] : \t top5 " + str(y) + "\t top1 = " + str(y[0]) +  "\t true = " +str(int(label[0])) + "\t video = " + str(accuracies.avg)
-        print(line)
+            line = "Video[" + str(video_count) + "] : \t top5 " + str(y) + "\t top1 = " + str(y[0]) +  "\t true = " +str(y_test) + "\t video_acc = " + str(accuracies.avg)
+            logger.info(line)
+            video_count += 1
 
     print("Video accuracy = ", accuracies.avg)
 
     '''
-    logger.info(
-        f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
-    )
-
-    if DEMO:
-        nb_epochs = 10
-    else:
-        nb_epochs = train_data_generator.total_iterations
-
-    classifier.fit_generator(train_data_generator, nb_epochs=nb_epochs)
-
-    # Evaluate the ART classifier on benign test examples
-    logger.info("Running inference on benign examples...")
-    benign_accuracy = 0
-    cnt = 0
-
-    if DEMO:
-        iterations = 3
-    else:
-        iterations = test_data_generator.total_iterations // 2
-
-    for _ in range(iterations):
-        x, y = test_data_generator.get_batch()
-        predictions = classifier.predict(x)
-        benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-        cnt += 1
-    logger.info(
-        "Accuracy on benign test examples: {}%".format(benign_accuracy * 100 / cnt)
-    )
-
     # Generate adversarial test examples
     attack_config = config["attack"]
     attack_module = import_module(attack_config["module"])

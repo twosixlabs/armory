@@ -4,6 +4,7 @@ import sys
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
+from PIL import Image
 import torch
 from torch import nn
 from torch import optim
@@ -14,6 +15,7 @@ from armory import paths
 # MARS specific imports
 from MARS.opts import parse_opts
 from MARS.models.model import generate_model
+from MARS.dataset import preprocess_data
 
 #logger = logging.getLogger(__name__)
 #os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
@@ -47,8 +49,6 @@ def make_model(**kwargs):
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
-    print(opt)
-
     print("Loading model... ", opt.model, opt.model_depth)
     model, parameters = generate_model(opt)
 
@@ -79,14 +79,48 @@ def make_model(**kwargs):
         weight_decay=opt.weight_decay,
         nesterov=opt.nesterov)
 
-    if model_status == 'ucf101_trained':
-        model.eval()
-
     return model, optimizer
 
-def preprocessing_fn(img):
-    return img
+def preprocessing_fn(inputs):
+    """
+    Inputs is comprised of one or more videos, where each video
+    is given as an ndarray with shape (1, time, height, width, 3).
+    Preprocessing resizes the height and width to 112 x 112 and reshapes
+    each video to (n_stack, 3, 16, height, width), where n_stack = int(time/16).
 
+    Outputs is a list of videos, each of shape (n_stack, 3, 16, 112, 112)
+    """
+    sample_duration = 16 # expected number of consecutive frames as input to the model
+    outputs = []
+    if inputs.dtype == np.uint8: # inputs is a single video, i.e., batch size == 1
+        inputs = [inputs]
+    # else, inputs is an ndarray (of type object) of ndarrays
+    for input in inputs: # each input is (1, time, height, width, 3) from the same video
+        input = np.squeeze(input)
+
+        # select a fixed number of consecutive frames
+        total_frames = input.shape[0]
+        if total_frames <= sample_duration: # cyclic pad if not enough frames
+            input_fixed = np.vstack((input, input[:sample_duration-total_frames,...]))
+            assert(input_fixed.shape[0] == sample_duration)
+        else: input_fixed = input
+
+        # apply MARS preprocessing: scaling, cropping, normalizing
+        opt = parse_opts()
+        opt.modality = 'RGB'
+        opt.sample_size = 112
+        input_Image = [] # convert each frame to PIL Image
+        for f in input_fixed:
+            input_Image.append(Image.fromarray(f))
+        input_mars_preprocessed = preprocess_data.scale_crop(input_Image, 0, opt)
+
+        # reshape
+        input_reshaped = []
+        for ns in range(int(total_frames/sample_duration)):
+            np_frames = input_mars_preprocessed[:,ns*sample_duration:(ns+1)*sample_duration,:,:].numpy()
+            input_reshaped.append(np_frames)
+        outputs.append(np.array(input_reshaped, dtype=np.float32))
+    return outputs
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs):
@@ -97,7 +131,7 @@ def get_art_model(model_kwargs, wrapper_kwargs):
 
     wrapped_model = PyTorchClassifier(
         model,
-        loss=torch.nn.CrossEntropyLoss(),
+        loss=torch.nn.CrossEntropyLoss().cuda(),
         optimizer=optimizer,
         input_shape=(3, 16, 112, 112),
         nb_classes = 101,
