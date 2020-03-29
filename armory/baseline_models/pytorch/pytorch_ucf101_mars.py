@@ -17,10 +17,6 @@ from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data
 
-#logger = logging.getLogger(__name__)
-#os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
-
-
 def make_model(**kwargs):
     sys.argv=[''];
     opt = parse_opts()
@@ -67,9 +63,9 @@ def make_model(**kwargs):
     if opt.nesterov: dampening = 0
     else: dampening = opt.dampening
 
-    print("lr = {} \t momentum = {} \t dampening = {} \t weight_decay = {}, \t nesterov = {}"
-                .format(opt.learning_rate, opt.momentum, dampening, opt. weight_decay, opt.nesterov))
-    print("LR patience = ", opt.lr_patience)
+    #print("lr = {} \t momentum = {} \t dampening = {} \t weight_decay = {}, \t nesterov = {}"
+    #            .format(opt.learning_rate, opt.momentum, dampening, opt. weight_decay, opt.nesterov))
+    #print("LR patience = ", opt.lr_patience)
 
     optimizer = optim.SGD(
         parameters,
@@ -126,9 +122,7 @@ def preprocessing_fn(inputs):
 def get_art_model(model_kwargs, wrapper_kwargs):
     model, optimizer = make_model(**model_kwargs)
 
-    UCF101_MEANS = [114.7748, 107.7354, 99.4750]
-    UCF101_STDEV = [1, 1, 1]
-
+    activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss().cuda(),
@@ -137,20 +131,8 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         nb_classes = 101,
         **wrapper_kwargs,
         clip_values=(
-            np.array(
-                [
-                    (0.0 - UCF101_MEANS[0]) / UCF101_STDEV[0],
-                    (0.0 - UCF101_MEANS[1]) / UCF101_STDEV[1],
-                    (0.0 - UCF101_MEANS[2]) / UCF101_STDEV[2],
-                ]
-            ),
-            np.array(
-                [
-                    (255.0 - UCF101_MEANS[0]) / UCF101_STDEV[0],
-                    (255.0 - UCF101_MEANS[1]) / UCF101_STDEV[1],
-                    (255.0 - UCF101_MEANS[2]) / UCF101_STDEV[2],
-                ]
-            ),
+            np.transpose(np.zeros((16,112,112,3))-activity_means, (3,0,1,2)),
+            np.transpose(255.*np.ones((16,112,112,3))-activity_means, (3,0,1,2))
         )
     )
     return wrapped_model
