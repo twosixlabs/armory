@@ -1,0 +1,1 @@
+armory-public-data imagenette/imagenette.tar.gz 1556067900 94e712c386a00bdaa282f584b2eba959ef4100dd585afd2b2c14a1fc47e94644

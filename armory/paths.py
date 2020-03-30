@@ -2,6 +2,7 @@
 Handles pathnames for armory
 """
 
+import functools
 import json
 import logging
 import os
@@ -10,25 +11,19 @@ logger = logging.getLogger(__name__)
 
 
 # Only initialize the host and docker paths once
-_MAP = {}
-
-
+@functools.lru_cache(maxsize=1)
 def default():
-    if "default" not in _MAP:
-        _MAP["default"] = HostDefault()
-    return _MAP["default"]
+    return HostDefault()
 
 
+@functools.lru_cache(maxsize=1)
 def host():
-    if "host" not in _MAP:
-        _MAP["host"] = HostPaths()
-    return _MAP["host"]
+    return HostPaths()
 
 
+@functools.lru_cache(maxsize=1)
 def docker():
-    if "docker" not in _MAP:
-        _MAP["docker"] = DockerPaths()
-    return _MAP["docker"]
+    return DockerPaths()
 
 
 def validate_config(config):
