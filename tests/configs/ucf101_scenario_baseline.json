@@ -23,7 +23,8 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-            "model_status":"ucf101_trained"},
+            "model_status": "ucf101_trained"
+        },
         "module": "armory.baseline_models.pytorch.pytorch_ucf101_mars",
         "name": "get_art_model",
         "wrapper_kwargs": {}
