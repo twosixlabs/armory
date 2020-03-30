@@ -19,9 +19,7 @@ from armory.data.progress_percentage import ProgressPercentage
 logger = logging.getLogger(__name__)
 
 
-def download_file_from_s3(
-    bucket_name: str, key: str, local_path: str, progress_bar=False
-):
+def download_file_from_s3(bucket_name: str, key: str, local_path: str):
     """
     Downloads file from S3 anonymously
     :param bucket_name: S3 Bucket name
@@ -31,13 +29,9 @@ def download_file_from_s3(
     """
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-        download_args = (bucket_name, key, local_path)
         logger.info("Downloading S3 data file...")
-        if progress_bar:
-            with ProgressPercentage(client, bucket_name, key) as Callback:
-                client.download_file(*download_args, Callback=Callback)
-        else:
-            client.download_file(*download_args)
+        with ProgressPercentage(client, bucket_name, key) as Callback:
+            client.download_file(bucket_name, key, local_path, Callback=Callback)
 
     else:
         logger.info("Reusing cached file...")
@@ -117,9 +111,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     if not os.path.exists(tar_filepath):
         logger.info(f"Downloading dataset: {name}...")
         try:
-            download_file_from_s3(
-                s3_bucket_name, s3_key, tar_filepath, progress_bar=True
-            )
+            download_file_from_s3(s3_bucket_name, s3_key, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):
