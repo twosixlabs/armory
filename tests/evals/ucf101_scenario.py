@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import logging
+import coloredlogs
 from importlib import import_module
 import numpy as np
 import time
@@ -21,6 +22,7 @@ from MARS.utils import AverageMeter
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+coloredlogs.install(logging.DEBUG)
 
 def evaluate_classifier(config_path: str) -> None:
     """
@@ -108,7 +110,7 @@ def evaluate_classifier(config_path: str) -> None:
     test_accuracies = AverageMeter()
     test_accuracies_top5 = AverageMeter()
     video_count = 0
-    for i in range(1): #test_data_generator.batches_per_epoch):
+    for i in range(test_data_generator.batches_per_epoch):
         x_tests, y_tests = test_data_generator.get_batch()
         for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
             y = classifier.predict(x_test)
@@ -145,7 +147,7 @@ def evaluate_classifier(config_path: str) -> None:
     adv_accuracies = AverageMeter()
     adv_accuracies_top5 = AverageMeter()
     video_count = 0
-    for i in range(1): #test_data_generator.batches_per_epoch/10):
+    for i in range(test_data_generator.batches_per_epoch/10):
         x_tests, y_tests = test_data_generator.get_batch()
         for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
             attack = attack_fn(classifier=classifier, **attack_config["kwargs"], batch_size=x_test.shape[0])

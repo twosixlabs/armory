@@ -125,7 +125,7 @@ def get_art_model(model_kwargs, wrapper_kwargs):
     activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(
         model,
-        loss=torch.nn.CrossEntropyLoss().cuda(),
+        loss=torch.nn.CrossEntropyLoss(),
         optimizer=optimizer,
         input_shape=(3, 16, 112, 112),
         nb_classes = 101,
