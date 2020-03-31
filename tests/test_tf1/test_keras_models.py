@@ -10,6 +10,7 @@ from armory import paths
 DATASET_DIR = paths.docker().dataset_dir
 
 
+@pytest.mark.usefixtures("ensure_armory_dirs")
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
         classifier_module = import_module("armory.baseline_models.keras.mnist")
@@ -75,7 +76,6 @@ class KerasTest(unittest.TestCase):
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.3)
 
-    @pytest.mark.usefixtures("ensure_armory_dirs")
     def test_keras_imagenet(self):
         classifier_module = import_module("armory.baseline_models.keras.resnet50")
         classifier_fn = getattr(classifier_module, "get_art_model")
@@ -116,7 +116,6 @@ class KerasTest(unittest.TestCase):
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertLess(accuracy / adv_dataset.batches_per_epoch, 0.02)
 
-    @pytest.mark.usefixtures("ensure_armory_dirs")
     def test_keras_imagenet_transfer(self):
         classifier_module = import_module(
             "armory.baseline_models.keras.inception_resnet_v2"
