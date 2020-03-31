@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
 FS = 8000
-CW_LEN = 375  # 2000 #!! changed from 375 (for model_sincnet.pkl)
+CW_LEN = 375
 WLEN = int(FS * CW_LEN / 1000)
 
 
