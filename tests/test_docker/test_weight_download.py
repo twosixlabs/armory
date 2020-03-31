@@ -9,7 +9,7 @@ class ModelWeightsTest(unittest.TestCase):
     def test_download(self):
         saved_model_dir = paths.docker().saved_model_dir
 
-        os.makedirs(saved_model_dir)  # CI doesn't mount volumes
+        os.makedirs(saved_model_dir, exist_ok=True)  # CI doesn't mount volumes
 
         weights_file = "resnet50_weights_tf_dim_ordering_tf_kernels.h5"
 
