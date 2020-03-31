@@ -8,6 +8,9 @@ from armory.data.utils import download_file_from_s3
 class ModelWeightsTest(unittest.TestCase):
     def test_download(self):
         saved_model_dir = paths.docker().saved_model_dir
+
+        os.makedirs(saved_model_dir)  # CI doesn't mount volumes
+
         weights_file = "resnet50_weights_tf_dim_ordering_tf_kernels.h5"
 
         filepath = os.path.join(saved_model_dir, weights_file)
