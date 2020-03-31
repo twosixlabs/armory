@@ -1,26 +1,25 @@
 import os
-import unittest
+
+import pytest
 
 from armory import paths
 from armory.data.utils import download_file_from_s3
 
 
-class ModelWeightsTest(unittest.TestCase):
-    def test_download(self):
-        saved_model_dir = paths.docker().saved_model_dir
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_download(self):
+    saved_model_dir = paths.docker().saved_model_dir
 
-        os.makedirs(saved_model_dir, exist_ok=True)  # CI doesn't mount volumes
+    weights_file = "resnet50_weights_tf_dim_ordering_tf_kernels.h5"
 
-        weights_file = "resnet50_weights_tf_dim_ordering_tf_kernels.h5"
+    filepath = os.path.join(saved_model_dir, weights_file)
 
-        filepath = os.path.join(saved_model_dir, weights_file)
+    if os.path.isfile(filepath):
+        os.remove(filepath)
 
-        if os.path.isfile(filepath):
-            os.remove(filepath)
-
-        download_file_from_s3(
-            "armory-public-data",
-            f"model-weights/{weights_file}",
-            f"{saved_model_dir}/{weights_file}",
-        )
-        assert os.path.isfile(os.path.join(saved_model_dir, weights_file))
+    download_file_from_s3(
+        "armory-public-data",
+        f"model-weights/{weights_file}",
+        f"{saved_model_dir}/{weights_file}",
+    )
+    assert os.path.isfile(os.path.join(saved_model_dir, weights_file))
