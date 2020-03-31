@@ -35,7 +35,7 @@ def preprocessing_fn(img):
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    model = models.resnet50(model_kwargs)
+    model = models.resnet50(**model_kwargs)
 
     if weights_file:
         saved_model_dir = paths.docker().saved_model_dir
