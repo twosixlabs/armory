@@ -1,9 +1,7 @@
 {
     "adhoc": {
-        "epochs": 120,
-        "num_attacked_pts": 100,
-        "num_classes": 40,
-        "seed": 123
+        "epochs": 20000,
+        "num_classes": 40
     },
     "attack": {
         "budget": {
@@ -13,15 +11,16 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "targeted": false
+            "attacker": "pgd",
+            "norm": 2
         },
         "module": "art.attacks",
-        "name": "ProjectedGradientDescent"
+        "name": "UniversalPerturbation"
     },
     "dataset": {
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean",
-        "batch_size": 16
+        "batch_size": 128
     },
     "defense": null,
     "evaluation": {

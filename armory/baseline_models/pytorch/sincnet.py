@@ -5,101 +5,112 @@ from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
 
-from torchvision import models
-
 from armory import paths
 
 # from https://github.com/hkakitani/SincNet
 from SincNet import dnn_models
+
 logger = logging.getLogger(__name__)
 os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
+FS = 8000
+CW_LEN = 375  # 2000 #!! changed from 375 (for model_sincnet.pkl)
+WLEN = int(FS * CW_LEN / 1000)
+
 
 def sincnet(**model_kwargs):
-    
+
     pretrained = model_kwargs["pretrained"]
     CNN_params = None
     DNN1_params = None
     DNN2_params = None
-    if (pretrained):
-        model_params = torch.load(os.path.join(paths.docker().saved_model_dir, "SincNet", model_kwargs["model_file"]))
+    if pretrained:
+        model_params = torch.load(
+            os.path.join(
+                paths.docker().saved_model_dir, "SincNet", model_kwargs["model_file"]
+            )
+        )
         CNN_params = model_params["CNN_model_par"]
         DNN1_params = model_params["DNN1_model_par"]
         DNN2_params = model_params["DNN2_model_par"]
     # from SincNet/cfg/SincNet_dev_LibriSpeech.cfg
-    fs=8000
-    cw_len=375
-    wlen=int(fs*cw_len/1000.00) 
-    cnn_N_filt = [80,60,60]
+    cnn_N_filt = [80, 60, 60]
     cnn_len_filt = [251, 5, 5]
-    cnn_max_pool_len = [3,3,3]
+    cnn_max_pool_len = [3, 3, 3]
     cnn_use_laynorm_inp = True
     cnn_use_batchnorm_inp = False
-    cnn_use_laynorm = [True,True,True]
-    cnn_use_batchnorm = [False,False,False]
+    cnn_use_laynorm = [True, True, True]
+    cnn_use_batchnorm = [False, False, False]
     cnn_act = ["relu", "relu", "relu"]
-    cnn_drop = [0.0,0.0,0.0]       
+    cnn_drop = [0.0, 0.0, 0.0]
 
-    fc_lay=[2048,2048,2048]
-    fc_drop=[0.0,0.0,0.0]
-    fc_use_laynorm_inp=True
-    fc_use_batchnorm_inp=False
-    fc_use_batchnorm=[True,True,True]
-    fc_use_laynorm=[False,False,False]
-    fc_act=["leaky_relu","linear","leaky_relu"]
+    fc_lay = [2048, 2048, 2048]
+    fc_drop = [0.0, 0.0, 0.0]
+    fc_use_laynorm_inp = True
+    fc_use_batchnorm_inp = False
+    fc_use_batchnorm = [True, True, True]
+    fc_use_laynorm = [False, False, False]
+    fc_act = ["leaky_relu", "linear", "leaky_relu"]
 
-    class_lay= [40]
-    class_drop=[0.0,0.0]
-    class_use_laynorm_inp=True
-    class_use_batchnorm_inp=False
-    class_use_batchnorm=[False]
-    class_use_laynorm=[False]
-    class_act=["softmax"]
+    class_lay = [40]
+    class_drop = [0.0, 0.0]
+    class_use_laynorm_inp = True
+    class_use_batchnorm_inp = False
+    class_use_batchnorm = [False]
+    class_use_laynorm = [False]
+    class_act = ["softmax"]
 
-    CNN_options = {'input_dim': wlen,
-            'fs': fs,
-            'cnn_N_filt': cnn_N_filt,
-            'cnn_len_filt': cnn_len_filt,
-            'cnn_max_pool_len':cnn_max_pool_len,
-            'cnn_use_laynorm_inp': cnn_use_laynorm_inp,
-            'cnn_use_batchnorm_inp': cnn_use_batchnorm_inp,
-            'cnn_use_laynorm':cnn_use_laynorm,
-            'cnn_use_batchnorm':cnn_use_batchnorm,
-            'cnn_act': cnn_act,
-            'cnn_drop':cnn_drop,         
-            'pretrained':pretrained,
-            'model_params':CNN_params 
-            }
+    CNN_options = {
+        "input_dim": WLEN,
+        "fs": FS,
+        "cnn_N_filt": cnn_N_filt,
+        "cnn_len_filt": cnn_len_filt,
+        "cnn_max_pool_len": cnn_max_pool_len,
+        "cnn_use_laynorm_inp": cnn_use_laynorm_inp,
+        "cnn_use_batchnorm_inp": cnn_use_batchnorm_inp,
+        "cnn_use_laynorm": cnn_use_laynorm,
+        "cnn_use_batchnorm": cnn_use_batchnorm,
+        "cnn_act": cnn_act,
+        "cnn_drop": cnn_drop,
+        "pretrained": pretrained,
+        "model_params": CNN_params,
+    }
 
     DNN1_options = {
-            'fc_lay': fc_lay,
-            'fc_drop': fc_drop, 
-            'fc_use_batchnorm': fc_use_batchnorm,
-            'fc_use_laynorm': fc_use_laynorm,
-            'fc_use_laynorm_inp': fc_use_laynorm_inp,
-            'fc_use_batchnorm_inp':fc_use_batchnorm_inp,
-            'fc_act': fc_act,
-            'pretrained':pretrained,
-            'model_params':DNN1_params
-            }
+        "fc_lay": fc_lay,
+        "fc_drop": fc_drop,
+        "fc_use_batchnorm": fc_use_batchnorm,
+        "fc_use_laynorm": fc_use_laynorm,
+        "fc_use_laynorm_inp": fc_use_laynorm_inp,
+        "fc_use_batchnorm_inp": fc_use_batchnorm_inp,
+        "fc_act": fc_act,
+        "pretrained": pretrained,
+        "model_params": DNN1_params,
+    }
 
-    DNN2_options = {'input_dim':fc_lay[-1] ,
-            'fc_lay': class_lay,
-            'fc_drop': class_drop, 
-            'fc_use_batchnorm': class_use_batchnorm,
-            'fc_use_laynorm': class_use_laynorm,
-            'fc_use_laynorm_inp': class_use_laynorm_inp,
-            'fc_use_batchnorm_inp':class_use_batchnorm_inp,
-            'fc_act': class_act,
-            }
+    DNN2_options = {
+        "input_dim": fc_lay[-1],
+        "fc_lay": class_lay,
+        "fc_drop": class_drop,
+        "fc_use_batchnorm": class_use_batchnorm,
+        "fc_use_laynorm": class_use_laynorm,
+        "fc_use_laynorm_inp": class_use_laynorm_inp,
+        "fc_use_batchnorm_inp": class_use_batchnorm_inp,
+        "fc_act": class_act,
+    }
 
     sincNet = dnn_models.SincWrapper(DNN2_options, DNN1_options, CNN_options)
     sincNet.cuda()
-    #sincNet.eval()
 
-    if(pretrained):
+    if pretrained:
+        sincNet.eval()
         sincNet.load_state_dict(DNN2_params)
+
+    else:
+        sincNet.train()
+
     return sincNet
+
 
 def preprocessing_fn(batch):
     """
@@ -107,30 +118,31 @@ def preprocessing_fn(batch):
     """
     processed_batch = []
     for clip in batch:
-        
-        signal=clip.astype(np.float64)
+
+        signal = clip.astype(np.float64)
         # Signal normalization
-        signal=signal/np.max(np.abs(signal))
+        signal = signal / np.max(np.abs(signal))
 
         # get random chunk of fixed length (from SincNet's create_batches_rnd)
-        fs=8000
-        cw_len=375
-        wlen=int(fs*cw_len/1000.00) 
-        snt_len=len(signal)
-        snt_beg=np.random.randint(snt_len-wlen-1)
-        snt_end=snt_beg+wlen
+        snt_len = len(signal)
+        snt_beg = np.random.randint(snt_len - WLEN - 1)
+        snt_end = snt_beg + WLEN
         signal = signal[snt_beg:snt_end]
         processed_batch.append(signal)
 
     return np.array(processed_batch)
-    
+
+
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs):
     model = sincnet(**model_kwargs)
-    fs=8000
-    cw_len=375
-    wlen=int(fs*cw_len/1000.00) 
-    wrapped_model = PyTorchClassifier(model, loss=torch.nn.NLLLoss(),
-        optimizer=torch.optim.RMSprop(model.parameters(), lr=0.001, alpha=0.95, eps=1e-8),
-        input_shape=(wlen,), nb_classes=40)
+    wrapped_model = PyTorchClassifier(
+        model,
+        loss=torch.nn.NLLLoss(),
+        optimizer=torch.optim.RMSprop(
+            model.parameters(), lr=0.001, alpha=0.95, eps=1e-8
+        ),
+        input_shape=(WLEN,),
+        nb_classes=40,
+    )
     return wrapped_model
