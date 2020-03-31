@@ -25,6 +25,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "sysconfig": {
