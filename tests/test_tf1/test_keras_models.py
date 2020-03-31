@@ -2,6 +2,7 @@ import unittest
 from importlib import import_module
 
 import numpy as np
+import pytest
 
 from armory.data import datasets
 from armory import paths
@@ -74,6 +75,7 @@ class KerasTest(unittest.TestCase):
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertGreater(accuracy / test_dataset.batches_per_epoch, 0.3)
 
+    @pytest.mark.usefixtures("ensure_armory_dirs")
     def test_keras_imagenet(self):
         classifier_module = import_module("armory.baseline_models.keras.resnet50")
         classifier_fn = getattr(classifier_module, "get_art_model")
@@ -114,6 +116,7 @@ class KerasTest(unittest.TestCase):
             accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         self.assertLess(accuracy / adv_dataset.batches_per_epoch, 0.02)
 
+    @pytest.mark.usefixtures("ensure_armory_dirs")
     def test_keras_imagenet_transfer(self):
         classifier_module = import_module(
             "armory.baseline_models.keras.inception_resnet_v2"
