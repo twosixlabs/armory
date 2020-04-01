@@ -231,3 +231,18 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(x_i.ndim, 1)
             self.assertTrue(1148 <= len(x_i) <= 18262)
         self.assertEqual(y.shape, (batch_size,))
+
+    def test_generator(self):
+        batch_size = 600
+        for split, size in [("train", 60000)]:
+            dataset = datasets.mnist(
+                split_type=split,
+                epochs=1,
+                batch_size=batch_size,
+                dataset_dir=DATASET_DIR,
+            )
+
+            for x, y in dataset:
+                self.assertEqual(x.shape, (batch_size, 28, 28, 1))
+                self.assertEqual(y.shape, (batch_size,))
+                break

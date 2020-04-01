@@ -7,14 +7,11 @@ import torch
 from torchvision import models
 
 from armory import paths
+from armory.data.utils import download_file_from_s3
 
 
 logger = logging.getLogger(__name__)
 os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
-
-
-def resnet50(pretrained=True):
-    return models.resnet50(pretrained=pretrained)
 
 
 IMAGENET_MEANS = [0.485, 0.456, 0.406]
@@ -37,8 +34,22 @@ def preprocessing_fn(img):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs):
-    model = resnet50(**model_kwargs)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+    model = models.resnet50(**model_kwargs)
+
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        model.load(filepath)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss(),
@@ -60,6 +71,6 @@ def get_art_model(model_kwargs, wrapper_kwargs):
                     1.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
                 ]
             ),
-        )
+        ),
     )
     return wrapped_model

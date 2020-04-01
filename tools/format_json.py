@@ -74,7 +74,10 @@ def _inner_loop(filepaths, check=False):
     else:
         print(f"{c} reformatted, {s} left unchanged, {e} failed to reformat.")
 
-    return bool(changed or errored)
+    if check:
+        return bool(changed or errored)
+    else:
+        return bool(errored)
 
 
 def json_tool_recursive(rootdir=".", ignore_hidden=True, check=False):

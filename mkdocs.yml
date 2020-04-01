@@ -2,8 +2,10 @@
 site_name: Armory
 nav:
   - Home: index.md
+  - Getting Started: getting_started.md
   - Datasets: datasets.md
   - Docker: docker.md
   - Configuration Files: configuration_files.md
   - Scenarios: scenarios.md
+  - Contributing: contributing.md
 theme: readthedocs

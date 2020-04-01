@@ -48,7 +48,7 @@ def make_cifar_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_cifar_model(**model_kwargs)
     wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs)
     return wrapped_model
