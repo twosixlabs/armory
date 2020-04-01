@@ -30,20 +30,21 @@ bash docker/build.sh <tf1|tf2|pytorch|all>
 
 ## Docker Volume Mounts
 When launching an ARMORY instance several host directories will be mounted within the 
-docker container:
+docker container. Note, the host directory path for datasets, saved_models, and 
+outputs are configurable. To modify those directories simply run `armory configure`.
+The defaults are shown below:
+
 
 | Host Path   | Docker Path   | 
 |:----------: | :-----------: | 
 | os.getcwd() | /workspace    |  
-| ~/armory/datasets | /armory/datasets |
-| ~/armory/saved_models | /armory/saved_models |
-| ~/armory/outputs | /armory/outputs |
+| ~/.armory/datasets | /armory/datasets |
+| ~/.armory/saved_models | /armory/saved_models |
+| ~/.armory/outputs | /armory/outputs |
 
 <br>
-The host directory path for datasets, saved_models, and outputs are configurable and 
-the defaults are shown above. To modify those directories simply run `armory configure`.
 
-When using these paths in code armory provides a programatic way to access these 
+When using these paths in code, armory provides a programatic way to access these 
 directories.
 
 #### Utilizing the paths
