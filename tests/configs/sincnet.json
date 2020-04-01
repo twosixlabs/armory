@@ -17,9 +17,9 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
+        "batch_size": 128,
         "module": "armory.data.datasets",
-        "name": "librispeech_dev_clean",
-        "batch_size": 128
+        "name": "librispeech_dev_clean"
     },
     "defense": null,
     "evaluation": {
@@ -28,8 +28,8 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-            "pretrained": true,
-            "model_file": "model_sincnet.pkl"
+            "model_file": "model_sincnet.pkl",
+            "pretrained": true
         },
         "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
