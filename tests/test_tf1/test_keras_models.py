@@ -2,6 +2,7 @@ import unittest
 from importlib import import_module
 
 import numpy as np
+import pytest
 
 from armory.data import datasets
 from armory import paths
@@ -9,6 +10,7 @@ from armory import paths
 DATASET_DIR = paths.docker().dataset_dir
 
 
+@pytest.mark.usefixtures("ensure_armory_dirs")
 class KerasTest(unittest.TestCase):
     def test_keras_mnist(self):
         classifier_module = import_module("armory.baseline_models.keras.mnist")
@@ -77,7 +79,11 @@ class KerasTest(unittest.TestCase):
     def test_keras_imagenet(self):
         classifier_module = import_module("armory.baseline_models.keras.resnet50")
         classifier_fn = getattr(classifier_module, "get_art_model")
-        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
+        classifier = classifier_fn(
+            model_kwargs={},
+            wrapper_kwargs={},
+            weights_file="resnet50_weights_tf_dim_ordering_tf_kernels.h5",
+        )
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_dataset = datasets.imagenet_adversarial(
@@ -115,7 +121,11 @@ class KerasTest(unittest.TestCase):
             "armory.baseline_models.keras.inception_resnet_v2"
         )
         classifier_fn = getattr(classifier_module, "get_art_model")
-        classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
+        classifier = classifier_fn(
+            model_kwargs={},
+            wrapper_kwargs={},
+            weights_file="inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5",
+        )
         preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
         clean_dataset = datasets.imagenet_adversarial(

@@ -39,7 +39,7 @@ def make_mnist_model(**kwargs):
     return Net()
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_mnist_model(**model_kwargs)
     wrapped_model = PyTorchClassifier(
         model,
