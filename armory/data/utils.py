@@ -6,6 +6,7 @@ import logging
 import hashlib
 import tarfile
 import os
+import subprocess
 import shutil
 import random
 import string
@@ -31,6 +32,21 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str):
         client.download_file(bucket_name, key, local_path)
     else:
         logger.info("Reusing cached file...")
+
+
+def curl(url: str, dirpath: str, filename: str) -> None:
+    """
+    Downloads a file with a specified output filename and directory
+    :param url: URL to file
+    :param dirpath: Output directory
+    :param filename: Output filename
+    """
+    try:
+        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
+    except subprocess.CalledProcessError:
+        raise subprocess.CalledProcessError
 
 
 def sha256(filepath: str, block_size=4096):
@@ -107,7 +123,9 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     if not os.path.exists(tar_filepath):
         logger.info(f"Downloading dataset: {name}...")
         try:
-            download_file_from_s3(s3_bucket_name, s3_key, tar_filepath)
+            s3_url_region = "us-east-2"
+            url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
+            curl(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):
