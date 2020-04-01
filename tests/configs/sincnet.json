@@ -11,11 +11,10 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "attacker": "pgd",
-            "norm": 2
+            "eps": 0.2
         },
         "module": "art.attacks",
-        "name": "UniversalPerturbation"
+        "name": "FastGradientMethod"
     },
     "dataset": {
         "module": "armory.data.datasets",

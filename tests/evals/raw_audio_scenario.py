@@ -24,6 +24,8 @@ def evaluate_classifier(config_path: str) -> None:
     model_config = config["model"]
     classifier, preprocessing_fn = load_model(model_config)
     classifier.set_learning_phase(True)
+
+    # Training can take a while
     if not model_config["model_kwargs"]["pretrained"]:
         logger.info(
             f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
@@ -61,7 +63,7 @@ def evaluate_classifier(config_path: str) -> None:
         "Accuracy on benign test examples: {}%".format(benign_accuracy * 100 / cnt)
     )
 
-    # Generate adversarial test examples, should take 15 minutes
+    # Generate adversarial test examples
     attack_config = config["attack"]
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
@@ -81,7 +83,7 @@ def evaluate_classifier(config_path: str) -> None:
 
     for _ in range(test_data_generator.batches_per_epoch):
         x, y = test_data_generator.get_batch()
-        test_x_adv = attack.generate(x=x, y=y)
+        test_x_adv = attack.generate(x=x)
         predictions = classifier.predict(test_x_adv)
         adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
         cnt += 1
