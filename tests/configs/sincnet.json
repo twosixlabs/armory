@@ -28,7 +28,7 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-            "model_file": "model_sincnet.pkl",
+            "model_file": "model_sincnet.pth",
             "pretrained": true
         },
         "module": "armory.baseline_models.pytorch.sincnet",
