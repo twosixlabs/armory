@@ -1,0 +1,34 @@
+{
+    "adhoc": {},
+    "attack": {
+        "budget": null,
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 16,
+        "module": "armory.data.datasets",
+        "name": "resisc45"
+    },
+    "defense": null,
+    "evaluation": {
+        "eval_file": "armory.scenarios.resisc45"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "name": "get_art_model",
+        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "external_github_repo": null,
+        "use_gpu": false
+    }
+}

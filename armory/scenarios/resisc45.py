@@ -28,22 +28,6 @@ def evaluate_classifier(config_path: str) -> None:
     classifier, preprocessing_fn = load_model(model_config)
 
     logger.info(f"Loading dataset {config['dataset']['name']}...")
-    train_epochs = config["adhoc"]["train_epochs"]
-    train_data_generator = load_dataset(
-        config["dataset"],
-        epochs=train_epochs,
-        split_type="train",
-        preprocessing_fn=preprocessing_fn,
-    )
-
-    logger.info(
-        f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
-    )
-
-    classifier.fit_generator(train_data_generator, nb_epochs=1)
-
-    # Evaluate the ART classifier on benign test examples
-    logger.info("Running inference on benign examples...")
     test_data_generator = load_dataset(
         config["dataset"],
         epochs=1,
@@ -51,6 +35,14 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
+    if not model_config["weights_file"]:
+        logger.info(
+            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+        )
+        # TODO train here
+
+    # Evaluate the ART classifier on benign test examples
+    logger.info("Running inference on benign examples...")
     benign_accuracy = 0
     cnt = 0
     for _ in range(test_data_generator.batches_per_epoch):
@@ -66,14 +58,14 @@ def evaluate_classifier(config_path: str) -> None:
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
 
-    # Evaluate the ART classifier on adversarial test examples
-    logger.info("Generating / testing adversarial examples...")
     test_data_generator = load_dataset(
         config["dataset"],
         epochs=1,
         split_type="test",
         preprocessing_fn=preprocessing_fn,
     )
+    # Evaluate the ART classifier on adversarial test examples
+    logger.info("Generating / testing adversarial examples...")
 
     attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
     adversarial_accuracy = 0
@@ -100,9 +92,7 @@ def evaluate_classifier(config_path: str) -> None:
             },
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    logger.info(
-        f"Evaluation Results written <output_dir>/basic-resisc-evaluation-results.json"
-    )
+    logger.info(f"Evaluation Results written <output_dir>/evaluation-results.json")
 
 
 if __name__ == "__main__":
