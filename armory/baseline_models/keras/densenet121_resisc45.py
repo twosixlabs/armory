@@ -1,4 +1,3 @@
-import functools
 import os
 
 from art.classifiers import KerasClassifier
@@ -10,11 +9,11 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
 
 from armory import paths
+from armory.data.utils import download_file_from_s3
 
 num_classes = 45
 
 
-@functools.lru_cache(maxsize=1)
 def mean_std():
     resisc_mean = np.array(
         [0.36386173189316956, 0.38118692953271804, 0.33867067558870334,]
@@ -23,16 +22,6 @@ def mean_std():
         [0.04141580824287572, 0.03434043817936333, 0.034124928477786254,]
     )
 
-    # resisc_mean = np.load(
-    #    os.path.join(
-    #        paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_means.npy"
-    #    )
-    # )
-    # resisc_std = np.load(
-    #    os.path.join(
-    #        paths.docker().dataset_dir, "resisc45_split/3.0.0/resisc-45_rgb_stdevs.npy"
-    #    )
-    # )
     return resisc_mean, resisc_std
 
 
@@ -81,18 +70,24 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
         optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
     )
 
-    pretrained = model_kwargs["pretrained"]
-    if pretrained:
-        # load weights into a model loaded from pre-trained
-        filepath = os.path.join(
-            paths.docker().saved_model_dir, "DenseNet121", model_kwargs["model_file"]
-        )
-        new_model.load_weights(filepath)
     return new_model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
     model = make_densenet121_resisc_model(**model_kwargs)
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        model.load_weights(filepath)
+
     mean, std = mean_std()
     wrapped_model = KerasClassifier(
         model, clip_values=((0.0 - mean) / std, (1.0 - mean) / std), **wrapper_kwargs
