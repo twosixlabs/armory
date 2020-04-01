@@ -35,7 +35,7 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
-    if not model_config["model_kwargs"]["pretrained"]:
+    if not model_config["weights_file"]:
         logger.info(
             f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
         )
