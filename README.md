@@ -3,7 +3,7 @@
 </div>
 
 -----------------
-[![GitHub CI](https://github.com/twosixlabs/armory/workflows/Nightly%20CI/badge.svg)](https://github.com/twosixlabs/armory/actions?query=workflow%3A%22GitHub+CI%22)
+[![GitHub CI](https://github.com/twosixlabs/armory/workflows/Nightly%20CI/badge.svg)](https://github.com/twosixlabs/armory/actions?query=workflow%3A%22Nightly+CI%22)
 [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/armory-testbed)](https://pypi.org/project/armory-testbed)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
