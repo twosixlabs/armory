@@ -23,7 +23,8 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-            "model_status":"trained"},
+            "model_status": "trained"
+        },
         "module": "armory.baseline_models.keras.keras_librispeech_spectrogram",
         "name": "get_art_model",
         "wrapper_kwargs": {}

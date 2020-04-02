@@ -175,7 +175,7 @@ def evaluate_classifier(config_path: str) -> None:
     adv_accuracies = AverageMeter()
     adv_accuracies_top5 = AverageMeter()
     video_count = 0
-    for i in range(test_data_generator.batches_per_epoch/10):
+    for i in range(test_data_generator.batches_per_epoch / 10):
         x_tests, y_tests = test_data_generator.get_batch()
         for x_test, y_test in zip(
             x_tests, y_tests
