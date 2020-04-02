@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-# Overview**
+# Overview
 
 ARMORY is a test bed for running scalable evaluations of adversarial defenses. 
 Configuration files are used to launch local or cloud instances of the ARMORY docker 
