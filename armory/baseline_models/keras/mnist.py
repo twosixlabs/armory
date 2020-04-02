@@ -1,11 +1,16 @@
 """
 
 """
+import os
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
+
+from armory import paths
+from armory.data.utils import download_file_from_s3
 
 
 def preprocessing_fn(img):
@@ -50,5 +55,17 @@ def make_mnist_model(**kwargs) -> tf.keras.Model:
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_mnist_model(**model_kwargs)
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        model.load_weights(filepath)
     wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs)
     return wrapped_model
