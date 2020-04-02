@@ -48,6 +48,22 @@ jobs:
           bash docker/build-dev.sh tf1
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+  armory-tf1:
+    name: Armory run tests TF1
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory TF1 docker tests
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build-dev.sh tf1
+          python -m armory run tests/configs/tf1/fgm_attack_test.json
   pytest-tf2:
     name: PyTest TF2
     runs-on: ubuntu-18.04
