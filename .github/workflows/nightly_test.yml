@@ -1,0 +1,116 @@
+---
+name: Nightly CI
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  pytest-host:
+    name: PyTest Host Nightly
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        python-version: ['3.6']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pytest -s ./tests/test_host/
+  pytest-tf1:
+    name: PyTest TF1 Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory TF1 docker tests
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build-dev.sh tf1
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+  pytest-tf2:
+    name: PyTest TF2 Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory TF2 docker tests
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build-dev.sh tf2
+          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_tf2
+  pytest-pytorch:
+    name: PyTest PyTorch Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory PyTorch docker tests
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build-dev.sh pytorch
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_pytorch
+  flake8-test:
+    name: Flake8 Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install flake8
+        run: pip install flake8
+      - name: Run flake8
+        run: flake8
+  black-test:
+    name: Black code format Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install black
+        run: pip install black
+      - name: Ensure contributor used ("black ./") before commit
+        run: black --check ./
+  yamllint-test:
+    name: Yamllint Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install yamllint
+        run: pip install yamllint
+      - name: Run yamllint
+        run: yamllint --no-warnings ./
+  json-format-test:
+    name: JSON file format Nightly
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: Ensure contributor used ("python -m tools.format_json") before commit
+        run: python -m tools.format_json --check
