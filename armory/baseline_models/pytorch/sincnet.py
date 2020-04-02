@@ -13,9 +13,9 @@ from SincNet import dnn_models
 logger = logging.getLogger(__name__)
 os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
-FS = 8000
-CW_LEN = 375
-WLEN = int(FS * CW_LEN / 1000)
+SAMPLE_RATE = 8000
+WINDOW_STEP_SIZE = 375
+WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 
 
 def sincnet(**model_kwargs):
@@ -61,8 +61,8 @@ def sincnet(**model_kwargs):
     class_act = ["softmax"]
 
     CNN_options = {
-        "input_dim": WLEN,
-        "fs": FS,
+        "input_dim": WINDOW_LENGTH,
+        "fs": SAMPLE_RATE,
         "cnn_N_filt": cnn_N_filt,
         "cnn_len_filt": cnn_len_filt,
         "cnn_max_pool_len": cnn_max_pool_len,
@@ -124,10 +124,10 @@ def preprocessing_fn(batch):
         signal = signal / np.max(np.abs(signal))
 
         # get random chunk of fixed length (from SincNet's create_batches_rnd)
-        snt_len = len(signal)
-        snt_beg = np.random.randint(snt_len - WLEN - 1)
-        snt_end = snt_beg + WLEN
-        signal = signal[snt_beg:snt_end]
+        signal_length = len(signal)
+        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
+        signal_stop = signal_start + WINDOW_LENGTH
+        signal = signal[signal_start:signal_stop]
         processed_batch.append(signal)
 
     return np.array(processed_batch)
@@ -142,7 +142,7 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         optimizer=torch.optim.RMSprop(
             model.parameters(), lr=0.001, alpha=0.95, eps=1e-8
         ),
-        input_shape=(WLEN,),
+        input_shape=(WINDOW_LENGTH,),
         nb_classes=40,
     )
     return wrapped_model
