@@ -1,6 +1,6 @@
 {
     "adhoc": {
-        "train_epochs": 20
+        "train_epochs": 1
     },
     "attack": {
         "budget": null,

@@ -62,7 +62,7 @@ def make_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights=None):
     model = make_model(**model_kwargs)
     wrapped_model = KerasClassifier(model, clip_values=(0.0, 255.0), **wrapper_kwargs)
     return wrapped_model
