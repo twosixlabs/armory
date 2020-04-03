@@ -1,0 +1,1 @@
+armory-public-data imagenet-adv/imagenet_adversarial.tar.gz 274541867 8876eeaf6904e6f4896191b87968378a3e8e5947e30871ae51cc6d01362f1c3b

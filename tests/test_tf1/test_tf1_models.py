@@ -1,6 +1,6 @@
-import unittest
+import pytest
 
 
-class TF1ModelsTest(unittest.TestCase):
-    def test_tf1_mnist(self):
-        pass
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_tf1_mnist():
+    pass

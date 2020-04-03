@@ -1,0 +1,1 @@
+armory-public-data ucf101/ucf101.tar.gz 7932715061 a16ad9dff646f5645a00a93d79026aeeb5e7ec64a58bf12eebadf7a75ba772be

@@ -15,6 +15,7 @@ import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 
+from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,14 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str):
     :param bucket_name: S3 Bucket name
     :param key: S3 File keyname
     :param local_path: Local file path to download as
+    :param progress_bar: Whether or not to display download progress
     """
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
         logger.info("Downloading S3 data file...")
-        client.download_file(bucket_name, key, local_path)
+        with ProgressPercentage(client, bucket_name, key) as Callback:
+            client.download_file(bucket_name, key, local_path, Callback=Callback)
+
     else:
         logger.info("Reusing cached file...")
 
@@ -102,14 +106,29 @@ def move_merge(source, dest):
 
 def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     with open(checksum_file, "r") as fh:
-        url, file_length, hash = fh.readline().strip().split()
+        s3_bucket_name, s3_key, file_length, hash = fh.readline().strip().split()
+
     # download
     cache_dir = os.path.join(dataset_dir, "cache")
     os.makedirs(cache_dir, exist_ok=True)
-    tar_filepath = os.path.join(cache_dir, os.path.basename(url))
+    tar_filepath = os.path.join(cache_dir, os.path.basename(s3_key))
+    already_verified = False
+    if os.path.exists(tar_filepath):
+        # Check existing download to avoid falling back to processing data
+        logger.info(f"{tar_filepath} exists. Verifying...")
+        try:
+            verify_size(tar_filepath, int(file_length))
+            verify_sha256(tar_filepath, hash)
+            already_verified = True
+        except ValueError as e:
+            logger.warning(f"Verification failed: {str(e)}")
+            os.remove(tar_filepath)
+
     if not os.path.exists(tar_filepath):
         logger.info(f"Downloading dataset: {name}...")
         try:
+            s3_url_region = "us-east-2"
+            url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
             curl(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
@@ -120,17 +139,18 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         logger.info("Dataset already downloaded.")
 
     # verification
-    try:
-        verify_size(tar_filepath, int(file_length))
-        logger.info("Verifying sha256 hash of download...")
-        verify_sha256(tar_filepath, hash)
-    except ValueError:
-        if os.path.exists(tar_filepath):
-            os.remove(tar_filepath)
-        logger.warning(
-            "Cached file download failed. Falling back to processing data..."
-        )
-        return
+    if not already_verified:
+        try:
+            verify_size(tar_filepath, int(file_length))
+            logger.info("Verifying sha256 hash of download...")
+            verify_sha256(tar_filepath, hash)
+        except ValueError:
+            if os.path.exists(tar_filepath):
+                os.remove(tar_filepath)
+            logger.warning(
+                "Cached file download failed. Falling back to processing data..."
+            )
+            return
 
     tmp_dir = os.path.join(
         cache_dir,

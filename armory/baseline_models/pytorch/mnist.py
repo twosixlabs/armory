@@ -1,8 +1,13 @@
+import os
+
 import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from art.classifiers import PyTorchClassifier
+
+from armory import paths
+from armory.data.utils import download_file_from_s3
 
 
 def preprocessing_fn(img):
@@ -39,8 +44,25 @@ def make_mnist_model(**kwargs):
     return Net()
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_mnist_model(**model_kwargs)
+
+    if torch.cuda.is_available():
+        model.cuda()
+
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        model.load(filepath)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=nn.CrossEntropyLoss(),
@@ -48,6 +70,6 @@ def get_art_model(model_kwargs, wrapper_kwargs):
         input_shape=(1, 28, 28),
         nb_classes=10,
         clip_values=(0.0, 1.0),
-        **wrapper_kwargs
+        **wrapper_kwargs,
     )
     return wrapped_model

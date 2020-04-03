@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords 1204414872 cb0a18f2cad6851dafe7427c472f376e111dbe469301a9d2bdf8d30bd8ba7ba2

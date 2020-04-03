@@ -11,6 +11,10 @@ on:
     branches:
       - master
       - r*
+
+env:
+  DOCKER_BUILDKIT: 1
+
 jobs:
   pytest-host:
     name: PyTest Host
@@ -21,7 +25,7 @@ jobs:
         python-version: ['3.6']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
@@ -35,7 +39,7 @@ jobs:
     name: PyTest TF1
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -46,11 +50,24 @@ jobs:
           bash docker/build-dev.sh tf1
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+  armory-tf1:
+    name: Armory run tests TF1
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory TF1 configs
+        run: |
+          pip install -r requirements.txt
+          bash docker/build-dev.sh tf1
+          python -m armory run tests/configs/tf1/fgm_attack_test.json
   pytest-tf2:
     name: PyTest TF2
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -65,7 +82,7 @@ jobs:
     name: PyTest PyTorch
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
@@ -76,11 +93,24 @@ jobs:
           bash docker/build-dev.sh pytorch
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_pytorch
+  armory-pytorch:
+    name: Armory run tests PyTorch
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory Pytorch configs
+        run: |
+          pip install -r requirements.txt
+          bash docker/build-dev.sh pytorch
+          python -m armory run tests/configs/pytorch/fgm_attack_test.json
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install flake8
         run: pip install flake8
@@ -90,7 +120,7 @@ jobs:
     name: Black code format
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install black
         run: pip install black
@@ -100,7 +130,7 @@ jobs:
     name: Yamllint
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: install yamllint
         run: pip install yamllint
@@ -110,7 +140,7 @@ jobs:
     name: JSON file format
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
       - name: Ensure contributor used ("python -m tools.format_json") before commit
         run: python -m tools.format_json --check
