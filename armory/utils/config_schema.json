@@ -1,0 +1,240 @@
+{
+    "$id": "https://twosixlabs.com/armory/config_schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "adhoc": {
+            "type": "object"
+        },
+        "attack": {
+            "properties": {
+                "budget": {
+                    "$comment": "What should this object look like?",
+                    "type": [
+                        "object",
+                        "null"
+                    ]
+                },
+                "knowledge": {
+                    "$comment": "What other values are valid?",
+                    "enum": [
+                        "white",
+                        "black"
+                    ],
+                    "type": "string"
+                },
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "module",
+                "name",
+                "kwargs",
+                "knowledge",
+                "budget"
+            ],
+            "type": "object"
+        },
+        "dataset": {
+            "properties": {
+                "batch_size": {
+                    "minimum": 1,
+                    "type": "integer"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "batch_size",
+                "module",
+                "name"
+            ],
+            "type": "object"
+        },
+        "defense": {
+            "properties": {
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "module",
+                "name",
+                "kwargs"
+            ],
+            "type": "object"
+        },
+        "evaluation": {
+            "properties": {
+                "eval_file": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "eval_file"
+            ],
+            "type": "object"
+        },
+        "metric": {
+            "properties": {
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "module",
+                "name",
+                "kwargs"
+            ],
+            "type": "object"
+        },
+        "model": {
+            "properties": {
+                "model_kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "weights_file": {
+                    "$comment": "Is this field optional?",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "wrapper_kwargs": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "module",
+                "name",
+                "model_kwargs",
+                "weights_file",
+                "wrapper_kwargs"
+            ],
+            "type": "object"
+        },
+        "python_module": {
+            "$comment": "Validate that it looks like a Python module path",
+            "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
+            "type": "string"
+        },
+        "sysconfig": {
+            "properties": {
+                "docker_image": {
+                    "type": "string"
+                },
+                "external_github_repo": {
+                    "$comment": "Can this be absent/null?",
+                    "type": "string"
+                },
+                "use_gpu": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "docker_image",
+                "external_github_repo",
+                "use_gpu"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "adhoc": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/adhoc"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "attack": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/attack"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "dataset": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/dataset"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "defense": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/defense"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "evaluation": {
+            "$ref": "#/definitions/evaluation"
+        },
+        "metric": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/metric"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "model": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/model"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "sysconfig": {
+            "$ref": "#/definitions/sysconfig"
+        }
+    },
+    "title": "Schema for Armory evaluation configuration JSON files",
+    "type": "object"
+}
