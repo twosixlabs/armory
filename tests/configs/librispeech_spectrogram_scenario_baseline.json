@@ -1,6 +1,6 @@
 {
     "adhoc": {
-        "train_epochs": 50
+        "train_epochs": 1
     },
     "attack": {
         "budget": null,
@@ -23,10 +23,11 @@
     "metric": null,
     "model": {
         "model_kwargs": {
-            "model_status": "untrained"
+            "model_status": "trained"
         },
         "module": "armory.baseline_models.keras.keras_librispeech_spectrogram",
         "name": "get_art_model",
+        "weights_file": "librispeech_spectral_model_weights.h5",
         "wrapper_kwargs": {}
     },
     "sysconfig": {

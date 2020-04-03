@@ -24,7 +24,6 @@ def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
-    logger.info(tensorflow.keras.__version__)
     with open(config_path) as f:
         config = json.load(f)
     model_config = config["model"]
@@ -33,19 +32,6 @@ def evaluate_classifier(config_path: str) -> None:
     classifier, preprocessing_fn = load_model(model_config)
 
     n_tbins = 100 # numbef of time bins in spectrogram input to model
-    """
-    Mapping origin Librispeech labels, which represent 9000+ speakers,
-    into 40 speakers that comprise the dev_clean dataset
-    """
-    class_map = {84: 0, 174: 1, 251: 2, 422: 3, 652: 4, 777: 5,
-             1272: 6, 1462: 7, 1673: 8, 1919: 9, 1988: 10,
-             1993: 11, 2035: 12, 2078: 13, 2086: 14, 2277: 15,
-             2412: 16, 2428: 17, 2803: 18, 2902: 19, 3000: 20,
-             3081: 21, 3170: 22, 3536: 23, 3576: 24, 3752: 25,
-             3853: 26, 5338: 27, 5536: 28, 5694: 29, 5895: 30,
-             6241: 31, 6295: 32, 6313: 33, 6319: 34, 6345: 35,
-             7850: 36, 7976: 37, 8297: 38, 8842: 39}
-
     # Train ART classifier
     if model_status == 'untrained':
         logger.info(f"Fitting clean model of {model_config['module']}.{model_config['name']}...")
@@ -63,7 +49,6 @@ def evaluate_classifier(config_path: str) -> None:
             logger.info("Epoch: {}/{}".format(e, train_epochs))
             for _ in range(train_data_generator.batches_per_epoch):
                 x_train, y_train = train_data_generator.get_batch()
-                y_train = np.array([class_map[y] for y in y_train])
                 """
                 x_train is of shape (N,241,T), representing N spectrograms,
                 each with 241 frequency bins and T time bins that's variable,
@@ -93,7 +78,6 @@ def evaluate_classifier(config_path: str) -> None:
             cnt = 0
             for _ in range(val_data_generator.batches_per_epoch):
                 x_val, y_val = val_data_generator.get_batch()
-                y_val = np.array([class_map[y] for y in y_val])
                 x_val_seg = []
                 y_val_seg = []
                 for xt, yt in zip(x_val, y_val):
@@ -126,7 +110,6 @@ def evaluate_classifier(config_path: str) -> None:
     cnt = 0
     for _ in range(test_data_generator.batches_per_epoch):
         x_test, y_test = test_data_generator.get_batch()
-        y_test = np.array([class_map[y] for y in y_test])
         x_test_seg = []
         y_test_seg = []
         for xt, yt in zip(x_test, y_test):
@@ -162,7 +145,6 @@ def evaluate_classifier(config_path: str) -> None:
     cnt = 0
     for _ in range(test_data_generator.batches_per_epoch):
         x_test, y_test = test_data_generator.get_batch()
-        y_test = np.array([class_map[y] for y in y_test])
         x_test_seg = []
         y_test_seg = []
         for xt, yt in zip(x_test, y_test):
@@ -174,8 +156,6 @@ def evaluate_classifier(config_path: str) -> None:
         x_test_seg = np.array(x_test_seg)
         x_test_seg = np.expand_dims(x_test_seg, -1)
         y_test_seg = np.array(y_test_seg)
-
-        logger.info(x_test_seg.shape[0])
 
         attack = attack_fn(classifier=classifier, **attack_config["kwargs"], batch_size=32)
         x_test_adv = attack.generate(x=x_test_seg)

@@ -80,9 +80,11 @@ def preprocessing_fn(audios):
 
 def make_model(**kwargs) -> tf.keras.Model:
     model = Sequential()
-    model.add(Conv2D(filters=64, kernel_size=(5, 5), strides=1, activation="relu", input_shape=(241, 100, 1)))
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), strides=1, activation="relu", input_shape=(241, 100, 1)))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(filters=32, kernel_size=(3, 3), strides=1, activation="relu"))
+    model.add(Conv2D(filters=256, kernel_size=(5, 5), strides=1, activation="relu"))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Conv2D(filters=128, kernel_size=(5, 5), strides=1, activation="relu"))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())
     model.add(Dense(256, activation="relu"))
@@ -90,16 +92,29 @@ def make_model(**kwargs) -> tf.keras.Model:
     model.add(Dense(40, activation="softmax"))
 
     model.compile(
-        loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(lr=0.0003), metrics=["accuracy"    ]
+        loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adam(lr=0.0002), metrics=["accuracy"]
      )
 
-    if kwargs["model_status"] == "trained":
-        model.load_weights(os.path.join(paths.docker().saved_model_dir, "librispeech_spectral_model_weights.h5"))
+    #if kwargs["model_status"] == "trained":
+    #    model.load_weights(os.path.join(paths.docker().saved_model_dir, "librispeech_spectral_model_weights.h5"))
 
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
     model = make_model(**model_kwargs)
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        model.load_weights(filepath)
+
     wrapped_model = KerasClassifier(model, clip_values=(-1.0, 1.0), **wrapper_kwargs)
     return wrapped_model
