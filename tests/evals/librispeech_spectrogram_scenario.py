@@ -9,16 +9,15 @@ import logging
 import coloredlogs
 from importlib import import_module
 import numpy as np
-import time
 
 from tensorflow.keras.utils import to_categorical
-import tensorflow.keras
 from armory.utils.config_loading import load_dataset, load_model
 from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 coloredlogs.install(logging.DEBUG)
+
 
 def evaluate_classifier(config_path: str) -> None:
     """
@@ -27,17 +26,19 @@ def evaluate_classifier(config_path: str) -> None:
     with open(config_path) as f:
         config = json.load(f)
     model_config = config["model"]
-    model_status = model_config['model_kwargs']['model_status'] # "trained"/"untrained"
+    model_status = model_config["model_kwargs"]["model_status"]  # "trained"/"untrained"
     logger.info(model_status)
     classifier, preprocessing_fn = load_model(model_config)
 
-    n_tbins = 100 # numbef of time bins in spectrogram input to model
+    n_tbins = 100  # numbef of time bins in spectrogram input to model
     # Train ART classifier
-    if model_status == 'untrained':
-        logger.info(f"Fitting clean model of {model_config['module']}.{model_config['name']}...")
+    if model_status == "untrained":
+        logger.info(
+            f"Fitting clean model of {model_config['module']}.{model_config['name']}..."
+        )
         logger.info(f"Loading training dataset {config['dataset']['name']}...")
         train_epochs = config["adhoc"]["train_epochs"]
-        batch_size = config['dataset']['batch_size']
+        batch_size = config["dataset"]["batch_size"]
         train_data_generator = load_dataset(
             config["dataset"],
             epochs=train_epochs,
@@ -58,13 +59,18 @@ def evaluate_classifier(config_path: str) -> None:
                 """
                 x_train_seg = []
                 for xt in x_train:
-                    rand_t = np.random.randint(xt.shape[1]-n_tbins)
-                    x_train_seg.append(xt[:,rand_t:rand_t+n_tbins])
+                    rand_t = np.random.randint(xt.shape[1] - n_tbins)
+                    x_train_seg.append(xt[:, rand_t : rand_t + n_tbins])
                 x_train_seg = np.array(x_train_seg)
                 x_train_seg = np.expand_dims(x_train_seg, -1)
                 y_train_onehot = to_categorical(y_train, num_classes=40)
-                classifier.fit(x_train_seg, y_train_onehot, batch_size=batch_size, nb_epochs=1,
-                               **{"verbose":True})
+                classifier.fit(
+                    x_train_seg,
+                    y_train_onehot,
+                    batch_size=batch_size,
+                    nb_epochs=1,
+                    **{"verbose": True},
+                )
 
             # evaluate on validation examples
             val_data_generator = load_dataset(
@@ -81,19 +87,19 @@ def evaluate_classifier(config_path: str) -> None:
                 x_val_seg = []
                 y_val_seg = []
                 for xt, yt in zip(x_val, y_val):
-                    n_seg = int(xt.shape[1]/n_tbins)
-                    xt = xt[:,:n_seg*n_tbins]
+                    n_seg = int(xt.shape[1] / n_tbins)
+                    xt = xt[:, : n_seg * n_tbins]
                     for ii in range(n_seg):
-                       x_val_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
-                       y_val_seg.append(yt)
+                        x_val_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
+                        y_val_seg.append(yt)
                 x_val_seg = np.array(x_val_seg)
                 x_val_seg = np.expand_dims(x_val_seg, -1)
                 y_val_seg = np.array(y_val_seg)
 
                 y = classifier.predict(x_val_seg)
-                correct += np.sum(np.argmax(y,1) == y_val_seg)
+                correct += np.sum(np.argmax(y, 1) == y_val_seg)
                 cnt += len(y_val_seg)
-            validation_acc = float(correct)/cnt
+            validation_acc = float(correct) / cnt
             logger.info("Validation accuracy: {}".format(validation_acc))
 
     # Evaluate ART classifier on test examples
@@ -113,22 +119,22 @@ def evaluate_classifier(config_path: str) -> None:
         x_test_seg = []
         y_test_seg = []
         for xt, yt in zip(x_test, y_test):
-            n_seg = int(xt.shape[1]/n_tbins)
-            xt = xt[:,:n_seg*n_tbins]
+            n_seg = int(xt.shape[1] / n_tbins)
+            xt = xt[:, : n_seg * n_tbins]
             for ii in range(n_seg):
-                x_test_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
+                x_test_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
                 y_test_seg.append(yt)
         x_test_seg = np.array(x_test_seg)
         x_test_seg = np.expand_dims(x_test_seg, -1)
         y_test_seg = np.array(y_test_seg)
 
         y = classifier.predict(x_test_seg)
-        correct += np.sum(np.argmax(y,1) == y_test_seg)
+        correct += np.sum(np.argmax(y, 1) == y_test_seg)
         cnt += len(y_test_seg)
-    test_acc = float(correct)/cnt
+    test_acc = float(correct) / cnt
     logger.info("Test accuracy: {}".format(test_acc))
 
-    ## Evaluate the ART classifier on adversarial test examples
+    # Evaluate the ART classifier on adversarial test examples
     logger.info("Generating / testing adversarial examples...")
     attack_config = config["attack"]
     attack_module = import_module(attack_config["module"])
@@ -148,26 +154,30 @@ def evaluate_classifier(config_path: str) -> None:
         x_test_seg = []
         y_test_seg = []
         for xt, yt in zip(x_test, y_test):
-            n_seg = int(xt.shape[1]/n_tbins)
-            xt = xt[:,:n_seg*n_tbins]
+            n_seg = int(xt.shape[1] / n_tbins)
+            xt = xt[:, : n_seg * n_tbins]
             for ii in range(n_seg):
-                x_test_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
+                x_test_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
                 y_test_seg.append(yt)
         x_test_seg = np.array(x_test_seg)
         x_test_seg = np.expand_dims(x_test_seg, -1)
         y_test_seg = np.array(y_test_seg)
 
-        attack = attack_fn(classifier=classifier, **attack_config["kwargs"], batch_size=32)
+        attack = attack_fn(
+            classifier=classifier, **attack_config["kwargs"], batch_size=32
+        )
         x_test_adv = attack.generate(x=x_test_seg)
 
         y = classifier.predict(x_test_adv)
-        correct += np.sum(np.argmax(y,1) == y_test_seg)
+        correct += np.sum(np.argmax(y, 1) == y_test_seg)
         cnt += len(y_test_seg)
-    adv_acc = float(correct)/cnt
+    adv_acc = float(correct) / cnt
     logger.info("Adversarial accuracy: {}".format(adv_acc))
 
     logger.info("Saving json output...")
-    filepath = os.path.join(paths.docker().output_dir, "librispeech_spectrogram_evaluation-results.json")
+    filepath = os.path.join(
+        paths.docker().output_dir, "librispeech_spectrogram_evaluation-results.json"
+    )
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,
@@ -177,7 +187,10 @@ def evaluate_classifier(config_path: str) -> None:
             },
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    logger.info(f"Evaluation Results written to {paths.docker().output_dir}/librispeech_spectrogram_evaluation-results.json")
+    logger.info(
+        f"Evaluation Results written to {paths.docker().output_dir}/librispeech_spectrogram_evaluation-results.json"
+    )
+
 
 if __name__ == "__main__":
     config_path = sys.argv[-1]

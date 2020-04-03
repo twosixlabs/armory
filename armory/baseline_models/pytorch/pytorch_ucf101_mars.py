@@ -7,6 +7,7 @@ from PIL import Image
 import torch
 from torch import optim
 from armory import paths
+from armory.data.utils import download_file_from_s3
 
 # MARS specific imports
 from MARS.opts import parse_opts
@@ -40,8 +41,9 @@ def make_model(**kwargs):
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
+        weights_file = "RGB_Kinetics_16f.pth"
         saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, "RGB_Kinetics_16f.pth")
+        filepath = os.path.join(saved_model_dir, weights_file)
 
         if not os.path.isfile(filepath):
             download_file_from_s3(
@@ -147,7 +149,6 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
         checkpoint = torch.load(filepath)
         model.load_state_dict(checkpoint["state_dict"])
 
-
     activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(
         model,
@@ -161,6 +162,6 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
             np.transpose(
                 255.0 * np.ones((16, 112, 112, 3)) - activity_means, (3, 0, 1, 2)
             ),
-        )
+        ),
     )
     return wrapped_model
