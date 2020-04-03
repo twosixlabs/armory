@@ -1,0 +1,1 @@
+armory-public-data digit/digit.tar.gz 8354724 8d3e1767e57f788469f3c8be82e4b3b3083d9d470bac3a9b87cc728cea5a9250

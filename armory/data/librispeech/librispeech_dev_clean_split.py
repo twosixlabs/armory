@@ -29,6 +29,49 @@ _DL_URLS = {
     "test": _DL_URL + "librispeech-dev-clean-test.tar.gz",
 }
 
+_LABELS = [
+    "84",
+    "174",
+    "251",
+    "422",
+    "652",
+    "777",
+    "1272",
+    "1462",
+    "1673",
+    "1919",
+    "1988",
+    "1993",
+    "2035",
+    "2078",
+    "2086",
+    "2277",
+    "2412",
+    "2428",
+    "2803",
+    "2902",
+    "3000",
+    "3081",
+    "3170",
+    "3536",
+    "3576",
+    "3752",
+    "3853",
+    "5338",
+    "5536",
+    "5694",
+    "5895",
+    "6241",
+    "6295",
+    "6313",
+    "6319",
+    "6345",
+    "7850",
+    "7976",
+    "8297",
+    "8842",
+]
+
 
 class LibrispeechConfig(tfds.core.BuilderConfig):
     """BuilderConfig for Librispeech."""
@@ -110,9 +153,10 @@ class LibrispeechDevCleanSplit(tfds.core.BeamBasedBuilder):
                     "speaker_id": tf.int64,
                     "chapter_id": tf.int64,
                     "id": tf.string,
+                    "label": tfds.features.ClassLabel(names=_LABELS),
                 }
             ),
-            supervised_keys=("speech", "speaker_id"),
+            supervised_keys=("speech", "label"),
             homepage=_URL,
             citation=_CITATION,
             metadata=tfds.core.MetadataDict(sample_rate=16000,),
@@ -207,5 +251,6 @@ def _generate_librispeech_examples(directory):
                     "chapter_id": chapter_id,
                     "speech": os.path.join(path, audio_file),
                     "text": transcript,
+                    "label": str(speaker_id),
                 }
                 yield key, example
