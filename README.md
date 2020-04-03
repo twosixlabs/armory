@@ -9,36 +9,60 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
+# Overview
+
 ARMORY is a test bed for running scalable evaluations of adversarial defenses. 
 Configuration files are used to launch local or cloud instances of the ARMORY docker 
-container. Models, datasets, and evaluation scripts can be pulled from external 
-repositories or from the baselines within this project.
+containers. Models, datasets, and evaluation scripts can be pulled from external 
+repositories or from the baselines within this project. 
 
-# Installation
+Our evaluations are created so that attacks and defenses may be 
+interchanged. To do this we standardize all attacks and defenses as subclasses of 
+their respective implementations in the [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
+
+
+# Installation & Configuration
 ``` 
 pip install armory-testbed
 ```
 
 Upon installing armory, a directory will be created at `~/.armory`. This user 
-specific folder is the default directory for downloaded datasets and evaluation 
-outputs. Defaults can be changed by editing `~/.armory/config.json`
+specific folder is the default directory for downloaded datasets, model weights, and 
+evaluation outputs. 
+
+To change these default directories simply run `armory configure` after installation.
 
 # Usage
 
-ARMORY works by running an evaluation configuration file within the armory docker 
-ecosystem. To do this, simply run `armory run <path_to_evaluation.json>`. 
+There are four ways to interact with the armory container system.
 
-The current working directory and armory installation directory will be mounted 
-inside the container and the `armory.eval.Evaluator` class will proceed to run the 
-evaluation script that is written in the `evaluation['eval_file']` field of the 
-config.
+1) `armory run <path/to/config.json>`. 
+This will run a [configuration file](docs/configuration_files.md) end to end. Stdout 
+and stderror logs will be displayed to the user, and the container will be removed 
+gracefully upon completion. Results from the evaluation can be found in your output 
+directory.
 
-For more detailed information on the evaluation config file please see the 
-[documentation in our example repo](https://github.com/twosixlabs/armory-example/tree/master/examples).
+2) `armory launch <tf1|tf2|pytorch> --interactive`. 
+This will launch a framework specific container, with appropriate mounted volumes, for 
+the user to attach to for debugging purposes. A command to attach to the container will
+be returned from this call, and it can be ran in a separate terminal. To later close 
+the interactive container simply run CTRL+C from the terminal where this command was 
+ran.
+
+3) `armory launch <tf1|tf2|pytorch> --jupyter`. 
+Similar to the interactive launch, this will spin up a container for a specific 
+framework, but will instead return the web address of a jupyter lab server where 
+debugging can be performed. To close the jupyter server simply run CTRL+C from the 
+terminal where this command was ran.
+
+4) `armory exec <tf1|tf2|pytorch> -- <cmd>`. 
+This will run a specific command within a framework specific container. A notable use
+case for this would be to run test cases using pytest. After completion of the command 
+the container will be removed.
 
 Note: Since ARMORY launches Docker containers, the python package must be ran on system host.
 
-As an example:
+### Example usage:
 ```
 pip install armory-testbed
 armory configure
@@ -47,68 +71,6 @@ cd armory-example
 armory run examples/fgm_attack.json
 ```
 
-### Interactive Debugging of Evaluations
-Debugging evaluations can be performed interactively by passing `--interactive` and 
-following the instructions to attach to the container in order to use pdb or other
-interactive tools. There is also support for `--jupyter` which will open a port on 
-the container and allow notebooks to be ran inside the armory environment.
-
-### Custom Attacks and Defenses
-Our evaluations are created so that attacks and defenses may be 
-interchanged. To do this we standardize all attacks and defenses as subclasses of 
-their respective implementations in [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
-
-# Docker
-Armory is intended to be a lightweight python package which standardizes all evaluations
-inside a docker container. Docker images will be pulled as needed when evaluations are 
-ran.
-
-However if there are issues downloading the images (e.g. proxy) they can be built 
-within the repo, after downloading from the latest [release](https://github.com/twosixlabs/armory/releases):
-```
-bash docker/build.sh
-```
-If only a specific target image is desired, run the relevant lines in `docker/build.sh`.
-NOTE: if the repo is pulled from master instead of pip installed, and is currently on a non-release branch,
-you will instead need to run:
-```
-bash docker/build-dev.sh
-```
-
-### Docker Mounts
-By default when launching an ARMORY instance the current working directory will be mounted
-as your default directory.This enables users to run modules from ARMORY baselines, 
-as well as modules from the user project.
-
-### Docker Setup
-Depending on the task, docker memory for an ARMORY container must be at least 8 GB to run properly (preferably 16+ GB).
-On Mac and Windows Desktop versions, this defaults to 2 GB. See the docs to change this:
-* [Mac](https://docs.docker.com/docker-for-mac/)
-* [Windows](https://docs.docker.com/docker-for-windows/)
-
-### Docker Cleanup
-Running `armory download-all-data` will download new Docker images, but will not clean up old images.
-
-To download new images and clean up old images:
-```
-armory clean
-```
-If containers are currently running that use the old images, this will fail.
-In that case, either stop them with first or run:
-```
-armory clean --force
-```
-
-To display the set of current images:
-```
-docker images
-```
-To manually delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
-
-In order to see the set of containers that are running:
-```
-docker ps
-```
-ARMORY will attempt to gracefully shut down all containers it launches;
-however, certain errors may prevent shutdown and leave running containers.
-To shut down these containers, please see the docs for [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) and [docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
+# Scenarios
+Armory will provide several scenarios for various data modalities and threat models. 
+More information will be added 
