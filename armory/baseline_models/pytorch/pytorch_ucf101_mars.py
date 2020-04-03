@@ -34,28 +34,26 @@ def make_model(**kwargs):
     model_status = kwargs.get("model_status", "kinetics_pretrained")
     if model_status == "ucf101_trained":
         opt.n_classes = 101
-        opt.resume_path1 = os.path.join(
-            paths.docker().saved_model_dir, "mars", "MARS_UCF101_16f.pth"
-        )
     else:
         opt.n_classes = 400
-        opt.pretrain_path = os.path.join(
-            paths.docker().saved_model_dir, "mars", "RGB_Kinetics_16f.pth"
-        )
         opt.n_finetune_classes = 101
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, "RGB_Kinetics_16f.pth")
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        opt.pretrain_path = filepath
+
     print("Loading model... ", opt.model, opt.model_depth)
     model, parameters = generate_model(opt)
-
-    # Loading trained model weights
-    # if opt.resume_path1:
-    #     print("loading checkpoint for UCF101 trained model {}".format(opt.resume_path1))
-    #     checkpoint = torch.load(opt.resume_path1)
-    #     assert opt.arch == checkpoint["arch"]
-    #     opt.begin_epoch = checkpoint["epoch"]
-    #     model.load_state_dict(checkpoint["state_dict"])
 
     # Initializing the optimizer
     if opt.pretrain_path:
@@ -132,8 +130,23 @@ def preprocessing_fn(inputs):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
     model, optimizer = make_model(**model_kwargs)
+
+    if weights_file:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+        checkpoint = torch.load(filepath)
+        model.load_state_dict(checkpoint["state_dict"])
+
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(
