@@ -4,7 +4,6 @@ CIFAR10 scenario evaluation
 
 import logging
 
-import coloredlogs
 import numpy as np
 
 from armory.utils.config_loading import load_dataset, load_model, load_attack
@@ -22,7 +21,6 @@ class Cifar10(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
-
 
         if not model_config["weights_file"]:
             logger.info(
@@ -63,12 +61,14 @@ class Cifar10(Scenario):
             predictions = classifier.predict(x)
             benign_accuracy += np.sum(np.argmax(predictions, axis=1) == y)
         benign_accuracy /= test_data_generator.size
-        logger.info("Accuracy on benign test examples: {}%".format(benign_accuracy * 100))
+        logger.info(
+            "Accuracy on benign test examples: {}%".format(benign_accuracy * 100)
+        )
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
 
-        attack = config_loading.load_attack(attack_config, classifier)
+        attack = load_attack(config["attack"], classifier)
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
@@ -82,7 +82,9 @@ class Cifar10(Scenario):
             adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y)
         adversarial_accuracy /= test_data_generator.size
         logger.info(
-            "Accuracy on adversarial test examples: {}%".format(adversarial_accuracy * 100)
+            "Accuracy on adversarial test examples: {}%".format(
+                adversarial_accuracy * 100
+            )
         )
 
         results = {

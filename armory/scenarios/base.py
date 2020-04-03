@@ -10,7 +10,7 @@ import coloredlogs
 
 import armory
 from armory import paths
-from armory.utils.config_loading import load_model, load_dataset, load_attack, load_defense, load_scenario
+from armory.utils.config_loading import load_scenario
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class Scenario(abc.ABC):
         """
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
-        
+
         filepath = os.path.join(
             paths.docker().output_dir, f"classifier_extended_{int(time.time())}.json"
         )

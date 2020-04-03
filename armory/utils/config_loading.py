@@ -9,7 +9,7 @@ from art.defences import Preprocessor, Postprocessor, Trainer, Transformer
 from art.classifiers import Classifier
 
 from armory.data.datasets import ArmoryDataGenerator
-from armory.scenarios import Scenario 
+from armory.scenarios import Scenario
 
 
 DEFENSES = (Preprocessor, Postprocessor, Trainer, Transformer)
@@ -31,7 +31,7 @@ def load_dataset(dataset_config, *args, **kwargs):
     dataset_fn = getattr(dataset_module, dataset_config["name"])
     batch_size = dataset_config["batch_size"]
     dataset = dataset_fn(batch_size=batch_size, *args, **kwargs)
-    if not isinstance(dataset, datasets.ArmoryDataGenerator):
+    if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     return dataset
 
@@ -76,4 +76,3 @@ def load_scenario(scenario_config):
     if not isinstance(scenario, Scenario):
         raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
     return scenario
-
