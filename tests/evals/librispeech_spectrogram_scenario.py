@@ -6,68 +6,48 @@ import json
 import os
 import sys
 import logging
+import coloredlogs
 from importlib import import_module
 import numpy as np
 import time
 
+from tensorflow.keras.utils import to_categorical
+import tensorflow.keras
 from armory.utils.config_loading import load_dataset, load_model
 from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+coloredlogs.install(logging.DEBUG)
 
 def evaluate_classifier(config_path: str) -> None:
     """
     Evaluate a config file for classiifcation robustness against attack.
     """
+    logger.info(tensorflow.keras.__version__)
     with open(config_path) as f:
         config = json.load(f)
     model_config = config["model"]
-    model_status = model_config['model_kwargs']['model_status']
+    model_status = model_config['model_kwargs']['model_status'] # "trained"/"untrained"
     logger.info(model_status)
     classifier, preprocessing_fn = load_model(model_config)
 
-    logger.info(f"Loading dataset {config['dataset']['name']}...")
-    train_epochs = config["adhoc"]["train_epochs"]
-    train_data_generator = load_dataset(
-        config["dataset"],
-        epochs=train_epochs,
-        split_type="train",
-        preprocessing_fn=preprocessing_fn,
-    )
+    n_tbins = 100 # numbef of time bins in spectrogram input to model
+    """
+    Mapping origin Librispeech labels, which represent 9000+ speakers,
+    into 40 speakers that comprise the dev_clean dataset
+    """
+    class_map = {84: 0, 174: 1, 251: 2, 422: 3, 652: 4, 777: 5,
+             1272: 6, 1462: 7, 1673: 8, 1919: 9, 1988: 10,
+             1993: 11, 2035: 12, 2078: 13, 2086: 14, 2277: 15,
+             2412: 16, 2428: 17, 2803: 18, 2902: 19, 3000: 20,
+             3081: 21, 3170: 22, 3536: 23, 3576: 24, 3752: 25,
+             3853: 26, 5338: 27, 5536: 28, 5694: 29, 5895: 30,
+             6241: 31, 6295: 32, 6313: 33, 6319: 34, 6345: 35,
+             7850: 36, 7976: 37, 8297: 38, 8842: 39}
 
-    aud_len = []
-    for i in range(train_data_generator.batches_per_epoch):
-        x_train, y_train = train_data_generator.get_batch()
-        print(x_train.dtype, y_train.dtype)
-        for xt in x_train:
-            print(xt.dtype)
-            print(np.max(xt), np.min(xt))
-            aud_len.append(xt.shape[1])
-            break
-        break
-    aud_len = np.array(aud_len)/16000
-    print(np.min(aud_len))
-    print(i)
-
-    '''
-    model_config = config["model"]
-    # Get model status: ucf101_trained -> fully trained; kinetics_pretrained -> needs training
-    model_status = model_config['model_kwargs']['model_status']
-    classifier, preprocessing_fn = load_model(model_config)
-
-    ## Train ART classifier
-    # Armory UCF101 Datagen
-    logger.info(f"Loading dataset {config['dataset']['name']}...")
-    train_epochs = config["adhoc"]["train_epochs"]
-    train_data_generator = load_dataset(
-        config["dataset"],
-        epochs=train_epochs,
-        split_type="train",
-        preprocessing_fn=preprocessing_fn,
-    )
-
-    if model_status == 'kinetics_pretrained':
+    # Train ART classifier
+    if model_status == 'untrained':
         logger.info(f"Fitting clean model of {model_config['module']}.{model_config['name']}...")
         logger.info(f"Loading training dataset {config['dataset']['name']}...")
         train_epochs = config["adhoc"]["train_epochs"]
@@ -80,47 +60,61 @@ def evaluate_classifier(config_path: str) -> None:
         )
 
         for e in range(train_epochs):
-            classifier.set_learning_phase(True)
-            st_time = time.time()
-            for b in range(train_data_generator.batches_per_epoch):
-                logger.info(f"Epoch: {e}/{train_epochs}, batch: {b}/{train_data_generator.batches_per_epoch}")
-                x_trains, y_trains = train_data_generator.get_batch()
-                # x_trains consists of one or more videos, each represented as a ndarray of shape
-                # (n_stacks, 3, 16, 112, 112).  To train, randomly sample a batch of stacks
-                x_train = np.zeros((min(batch_size, len(x_trains)), 3, 16, 112, 112), dtype=np.float32)
-                for i,xt in enumerate(x_trains):
-                    rand_stack = np.random.randint(0,xt.shape[0])
-                    x_train[i,...] = xt[rand_stack,...]
-                classifier.fit(x_train, y_trains, batch_size=batch_size, nb_epochs=1)
-            logger.info("Time per epoch: {}s".format(time.time()-st_time))
+            logger.info("Epoch: {}/{}".format(e, train_epochs))
+            for _ in range(train_data_generator.batches_per_epoch):
+                x_train, y_train = train_data_generator.get_batch()
+                y_train = np.array([class_map[y] for y in y_train])
+                """
+                x_train is of shape (N,241,T), representing N spectrograms,
+                each with 241 frequency bins and T time bins that's variable,
+                depending on the duration of the corresponding raw audio.
+                The model accepts a fixed size spectrogram, so x_trains need to
+                be sampled.
+                """
+                x_train_seg = []
+                for xt in x_train:
+                    rand_t = np.random.randint(xt.shape[1]-n_tbins)
+                    x_train_seg.append(xt[:,rand_t:rand_t+n_tbins])
+                x_train_seg = np.array(x_train_seg)
+                x_train_seg = np.expand_dims(x_train_seg, -1)
+                y_train_onehot = to_categorical(y_train, num_classes=40)
+                classifier.fit(x_train_seg, y_train_onehot, batch_size=batch_size, nb_epochs=1,
+                               **{"verbose":True})
 
-            # evaluate on test examples
-            classifier.set_learning_phase(False)
-            test_data_generator = load_dataset(
+            # evaluate on validation examples
+            val_data_generator = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type="validation",
                 preprocessing_fn=preprocessing_fn,
             )
 
-            accuracies = AverageMeter()
-            accuracies_top5 = AverageMeter()
-            video_count = 0
-            for i in range(int(test_data_generator.batches_per_epoch/10)):
-                x_tests, y_tests = test_data_generator.get_batch()
-                for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
-                    y = classifier.predict(x_test)
-                    y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-                    acc = float(y[0] == y_test)
-                    acc_top5 = float(y_test in y)
-                    accuracies.update(acc, 1)
-                    accuracies_top5.update(acc_top5, 1)
-            logger.info("Top-1 video accuracy = {}, top-5 video accuracy = {}".format(accuracies.avg, accuracies_top5.avg))
+            correct = 0
+            cnt = 0
+            for _ in range(val_data_generator.batches_per_epoch):
+                x_val, y_val = val_data_generator.get_batch()
+                y_val = np.array([class_map[y] for y in y_val])
+                x_val_seg = []
+                y_val_seg = []
+                for xt, yt in zip(x_val, y_val):
+                    n_seg = int(xt.shape[1]/n_tbins)
+                    xt = xt[:,:n_seg*n_tbins]
+                    for ii in range(n_seg):
+                       x_val_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
+                       y_val_seg.append(yt)
+                x_val_seg = np.array(x_val_seg)
+                x_val_seg = np.expand_dims(x_val_seg, -1)
+                y_val_seg = np.array(y_val_seg)
 
-    ## Evaluate ART classifier on test examples
+                y = classifier.predict(x_val_seg)
+                correct += np.sum(np.argmax(y,1) == y_val_seg)
+                cnt += len(y_val_seg)
+            validation_acc = float(correct)/cnt
+            logger.info("Validation accuracy: {}".format(validation_acc))
+
+    # Evaluate ART classifier on test examples
     logger.info("Running inference on benign test examples...")
     logger.info(f"Loading testing dataset {config['dataset']['name']}...")
-    classifier.set_learning_phase(False)
     test_data_generator = load_dataset(
         config["dataset"],
         epochs=1,
@@ -128,36 +122,35 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
-    test_accuracies = AverageMeter()
-    test_accuracies_top5 = AverageMeter()
-    video_count = 0
-    for i in range(1): #test_data_generator.batches_per_epoch):
-        x_tests, y_tests = test_data_generator.get_batch()
-        for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
-            y = classifier.predict(x_test)
-            y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-            acc = float(y[0] == y_test)
-            acc_top5 = float(y_test in y)
+    correct = 0
+    cnt = 0
+    for _ in range(test_data_generator.batches_per_epoch):
+        x_test, y_test = test_data_generator.get_batch()
+        y_test = np.array([class_map[y] for y in y_test])
+        x_test_seg = []
+        y_test_seg = []
+        for xt, yt in zip(x_test, y_test):
+            n_seg = int(xt.shape[1]/n_tbins)
+            xt = xt[:,:n_seg*n_tbins]
+            for ii in range(n_seg):
+                x_test_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
+                y_test_seg.append(yt)
+        x_test_seg = np.array(x_test_seg)
+        x_test_seg = np.expand_dims(x_test_seg, -1)
+        y_test_seg = np.array(y_test_seg)
 
-            test_accuracies.update(acc, 1)
-            test_accuracies_top5.update(acc_top5, 1)
-
-            line = "Video[" + str(video_count) + "] : \t top5 " + str(y) + "\t top1 = " + str(y[0]) +  "\t true = " + str(y_test)\
-                   + "\t top1_video_acc = " + str(test_accuracies.avg) + "\t top5_video_acc = " + str(test_accuracies_top5.avg)
-            logger.info(line)
-            video_count += 1
-
-    logger.info("Top-1 test video accuracy = {}, top-5 test video accuracy = {}".format(test_accuracies.avg, test_accuracies_top5.avg))
+        y = classifier.predict(x_test_seg)
+        correct += np.sum(np.argmax(y,1) == y_test_seg)
+        cnt += len(y_test_seg)
+    test_acc = float(correct)/cnt
+    logger.info("Test accuracy: {}".format(test_acc))
 
     ## Evaluate the ART classifier on adversarial test examples
     logger.info("Generating / testing adversarial examples...")
-
-    # Generate adversarial test examples
     attack_config = config["attack"]
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
 
-    classifier.set_learning_phase(False)
     test_data_generator = load_dataset(
         config["dataset"],
         epochs=1,
@@ -165,44 +158,46 @@ def evaluate_classifier(config_path: str) -> None:
         preprocessing_fn=preprocessing_fn,
     )
 
-    adv_accuracies = AverageMeter()
-    adv_accuracies_top5 = AverageMeter()
-    video_count = 0
-    for i in range(1): #test_data_generator.batches_per_epoch/10):
-        x_tests, y_tests = test_data_generator.get_batch()
-        for x_test, y_test in zip(x_tests, y_tests): # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
-            attack = attack_fn(classifier=classifier, **attack_config["kwargs"], batch_size=x_test.shape[0])
-            test_x_adv = attack.generate(x=x_test)
-            y = classifier.predict(test_x_adv)
-            y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-            acc = float(y[0] == y_test)
-            acc_top5 = float(y_test in y)
+    correct = 0
+    cnt = 0
+    for _ in range(test_data_generator.batches_per_epoch):
+        x_test, y_test = test_data_generator.get_batch()
+        y_test = np.array([class_map[y] for y in y_test])
+        x_test_seg = []
+        y_test_seg = []
+        for xt, yt in zip(x_test, y_test):
+            n_seg = int(xt.shape[1]/n_tbins)
+            xt = xt[:,:n_seg*n_tbins]
+            for ii in range(n_seg):
+                x_test_seg.append(xt[:,ii*n_tbins:(ii+1)*n_tbins])
+                y_test_seg.append(yt)
+        x_test_seg = np.array(x_test_seg)
+        x_test_seg = np.expand_dims(x_test_seg, -1)
+        y_test_seg = np.array(y_test_seg)
 
-            adv_accuracies.update(acc, 1)
-            adv_accuracies_top5.update(acc_top5, 1)
+        logger.info(x_test_seg.shape[0])
 
-            line = "Video[" + str(video_count) + "] : \t top5 " + str(y) + "\t top1 = " + str(y[0]) +  "\t true = " + str(y_test)\
-                   + "\t top1_video_acc = " + str(adv_accuracies.avg) + "\t top5_video_acc = " + str(adv_accuracies_top5.avg)
-            logger.info(line)
-            video_count += 1
+        attack = attack_fn(classifier=classifier, **attack_config["kwargs"], batch_size=32)
+        x_test_adv = attack.generate(x=x_test_seg)
 
-    logger.info("Top-1 adversarial video accuracy = {}, top-5 adversarial video accuracy = {}".format(adv_accuracies.avg, adv_accuracies_top5.avg))
+        y = classifier.predict(x_test_adv)
+        correct += np.sum(np.argmax(y,1) == y_test_seg)
+        cnt += len(y_test_seg)
+    adv_acc = float(correct)/cnt
+    logger.info("Adversarial accuracy: {}".format(adv_acc))
 
     logger.info("Saving json output...")
-    filepath = os.path.join(paths.docker().output_dir, "ucf101_evaluation-results.json")
+    filepath = os.path.join(paths.docker().output_dir, "librispeech_spectrogram_evaluation-results.json")
     with open(filepath, "w") as f:
         output_dict = {
             "config": config,
             "results": {
-                "baseline_top1_accuracy": str(test_accuracies.avg),
-                "baseline_top5_accuracy": str(test_accuracies_top5.avg),
-                "adversarial_top1_accuracy": str(adv_accuracies.avg),
-                "adversarial_top5_accuracy": str(adv_accuracies_top5.avg)
+                "baseline_accuracy": str(test_acc),
+                "adversarial_accuracy": str(adv_acc),
             },
         }
         json.dump(output_dict, f, sort_keys=True, indent=4)
-    logger.info(f"Evaluation Results written to {paths.docker().output_dir}/ucf101_evaluation-results.json")
-    '''
+    logger.info(f"Evaluation Results written to {paths.docker().output_dir}/librispeech_spectrogram_evaluation-results.json")
 
 if __name__ == "__main__":
     config_path = sys.argv[-1]
