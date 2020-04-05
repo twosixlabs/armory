@@ -11,7 +11,6 @@ datasets.
 import logging
 import os
 from typing import Callable
-import json
 
 import numpy as np
 import tensorflow as tf
@@ -19,7 +18,10 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import download_verify_dataset_cache
+from armory.data.utils import (
+    download_verify_dataset_cache,
+    _read_validate_scenario_config,
+)
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
@@ -182,9 +184,9 @@ def _generator_from_tfds(
 
 
 def mnist(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -205,9 +207,9 @@ def mnist(
 
 
 def cifar10(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -228,9 +230,9 @@ def cifar10(
 
 
 def digit(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -252,9 +254,9 @@ def digit(
 
 
 def imagenet_adversarial(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "clean",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -282,9 +284,9 @@ def imagenet_adversarial(
 
 
 def imagenette(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -307,9 +309,9 @@ def imagenette(
 
 
 def german_traffic_sign(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     preprocessing_fn: Callable = None,
     dataset_dir: str = None,
     cache_dataset: bool = True,
@@ -330,9 +332,9 @@ def german_traffic_sign(
 
 
 def librispeech_dev_clean(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -365,9 +367,9 @@ def librispeech_dev_clean(
 
 
 def resisc45(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -399,8 +401,8 @@ def resisc45(
 
 
 def ucf101(
-    split_type: str,
-    epochs: int,
+    split_type: str = "train",
+    epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
@@ -467,18 +469,33 @@ SUPPORTED_DATASETS = {
 }
 
 
-def download_all(dataset_names):
+def download_all(download_config, scenario):
     """
     Download all datasets for a scenario or requested datset to cache.
     """
-    if dataset_names.lower().endswith(".json"):
-        datasets_to_download = _read_validate_data_download_config(dataset_names)[
-            "datasets"
-        ]["names"]
-        for dataset_to_download in datasets_to_download:
-            _download_data(dataset_to_download)
+
+    def _print_scenario_names():
+        logger.info(
+            f"The following scenarios are available based upon config file {download_config}:"
+        )
+        for scenario in config["scenario"].keys():
+            logger.info(scenario)
+
+    config = _read_validate_scenario_config(download_config)
+    if scenario == "all":
+        for scenario in config["scenario"].keys():
+            for dataset in config["scenario"][scenario]["dataset_name"]:
+                _download_data(dataset)
+    elif scenario == "list":
+        _print_scenario_names()
     else:
-        _download_data(dataset_names)
+        if scenario not in config["scenario"].keys():
+            logger.info(f"The scenario name {scenario} is not valid.")
+            _print_scenario_names()
+            raise ValueError("Invalid scenario name.")
+
+        for dataset in config["scenario"][scenario]["dataset_name"]:
+            _download_data(dataset)
 
 
 def _download_data(dataset_name):
@@ -494,25 +511,8 @@ def _download_data(dataset_name):
 
     logger.info(f"Downloading (if necessary) dataset {dataset_name}...")
 
-    if dataset_name == "imagenet_adversarial":
-        kwargs = {"epochs": 1, "batch_size": 1}
-    else:
-        kwargs = {"split_type": "train", "epochs": 1, "batch_size": 1}
-
     try:
-        func(**kwargs)
+        func()
         logger.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         logger.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _read_validate_data_download_config(config_filepath):
-    with open(config_filepath) as f:
-        config = json.load(f)
-    if "datasets" not in config.keys():
-        raise ValueError(
-            "At least one dataset must be specified in download data config json"
-        )
-    if not isinstance(config["datasets"], dict):
-        raise ValueError("datasets must be dictionary")
-    return config

@@ -60,30 +60,24 @@ class DockerImage(argparse.Action):
             )
 
 
-SCENARIO_DATASETS = {
-    "resisc45",
-    "ucf101",
-    "german_traffic_sign",
-    "librispeech_dev_clean",
-}
+DEFAULT_SCENARIO = "scenarios-set1"
 
 
-class Scenario(argparse.Action):
+class DownloadConfig(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values.lower().endswith(".json"):
-            if os.path.isfile(values):
-                setattr(namespace, self.dest, values)
-            else:
-                raise argparse.ArgumentError(
-                    self, f"Config json file: {values} not found."
-                )
-        elif values.lower() in SCENARIO_DATASETS:
-            setattr(namespace, self.dest, values)
+            config_path = values
+        else:
+            config_path = os.path.join(
+                "armory", "scenarios", "download_configs", values + ".json"
+            )
+
+        if os.path.isfile(config_path):
+            setattr(namespace, self.dest, config_path)
         else:
             raise argparse.ArgumentError(
                 self,
-                f"{values} invalid.\n"
-                f"<scenario> must be one of {list(SCENARIO_DATASETS)} or a config json file.",
+                f"Config json file: {values} not found. Must be {DEFAULT_SCENARIO} or other valid config file path",
             )
 
 
@@ -152,7 +146,7 @@ def _pull_docker_images(docker_client=None):
             docker_api.pull_verbose(docker_client, image)
 
 
-def download_all_data(command_args, prog, description):
+def download(command_args, prog, description):
     """
     Script to download all datasets and model weights for offline usage.
     """
@@ -167,18 +161,29 @@ def download_all_data(command_args, prog, description):
         help="Debug output (logging=DEBUG)",
     )
     parser.add_argument(
+        metavar="<download data config file>",
+        dest="download_config",
+        type=str,
+        action=DownloadConfig,
+        help="Configuration for download of data",
+    )
+
+    parser.add_argument(
         metavar="<scenario>",
         dest="scenario",
         type=str,
-        action=Scenario,
-        help="scenario for which to download data or config json file",
+        default="all",
+        help="scenario for which to download data",
+        nargs="?",
     )
+
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
     paths.host()
 
-    print("Downloading all docker images....")
-    _pull_docker_images()
+    if not armory.is_dev():
+        print("Downloading all docker images....")
+        _pull_docker_images()
 
     print("Downloading requested datasets and model weights...")
     manager = ManagementInstance(image_name=images.TF1)
@@ -190,7 +195,9 @@ def download_all_data(command_args, prog, description):
             "import coloredlogs",
             "coloredlogs.install(logging.INFO)",
             "from armory.data import datasets",
-            f'datasets.download_all("{args.scenario}")',
+            "from armory.data import model_weights",
+            f'datasets.download_all("{args.download_config}", "{args.scenario}")',
+            f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
     )
     runner.exec_cmd(f"python -c '{cmd}'")
@@ -462,9 +469,9 @@ def exec(command_args, prog, description):
 PROGRAM = "armory"
 COMMANDS = {
     "run": (run, "run armory from config file"),
-    "download-all-data": (
-        download_all_data,
-        "download all datasets and model weights used for a given evaluation scenario",
+    "download": (
+        download,
+        "download datasets and model weights used for a given evaluation scenario",
     ),
     "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
