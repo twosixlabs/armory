@@ -82,11 +82,8 @@ class Cifar10(Scenario):
             adversarial_accuracy += np.sum(np.argmax(predictions, axis=1) == y)
         adversarial_accuracy /= test_data_generator.size
         logger.info(
-            "Accuracy on adversarial test examples: {}%".format(
-                adversarial_accuracy * 100
-            )
+            f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
         )
-
         results = {
             "baseline_accuracy": str(benign_accuracy),
             "adversarial_accuracy": str(adversarial_accuracy),
