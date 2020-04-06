@@ -17,18 +17,21 @@ SAMPLE_RATE = 8000
 WINDOW_STEP_SIZE = 375
 WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def sincnet(**model_kwargs):
-
     pretrained = model_kwargs["pretrained"]
     CNN_params = None
     DNN1_params = None
     DNN2_params = None
+
     if pretrained:
         model_params = torch.load(
             os.path.join(
                 paths.docker().saved_model_dir, "SincNet", model_kwargs["model_file"]
-            )
+            ),
+            map_location=device,
         )
         CNN_params = model_params["CNN_model_par"]
         DNN1_params = model_params["DNN1_model_par"]
@@ -100,7 +103,7 @@ def sincnet(**model_kwargs):
     }
 
     sincNet = dnn_models.SincWrapper(DNN2_options, DNN1_options, CNN_options)
-    sincNet.cuda()
+    sincNet.to(device)
 
     if pretrained:
         sincNet.eval()
@@ -134,7 +137,7 @@ def preprocessing_fn(batch):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs):
+def get_art_model(model_kwargs, wrapper_kwargs, model_weights=None):
     model = sincnet(**model_kwargs)
     wrapped_model = PyTorchClassifier(
         model,
