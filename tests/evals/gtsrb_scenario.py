@@ -114,14 +114,14 @@ def evaluate_classifier(config_path: str) -> None:
         if poison_type == "pattern":
             poison_fn = getattr(poison_module, "add_pattern_bd")
             return poison_fn(x, pixel_value=255)
-        elif poison_fn == "pixel":
+        elif poison_type == "pixel":
             poison_fn = getattr(poison_module, "add_single_bd")
             return poison_fn(x, pixel_value=255)
-        elif poison_fn == "image":
+        elif poison_type == "image":
             poison_fn = getattr(poison_module, "insert_image")
             return poison_fn(x, backdoor_path="PATH_TO_IMG", size=(10, 10))
         else:
-            raise ("Unknown backdoor type")
+            raise ValueError("Unknown backdoor type")
 
     attack = attack_fn(add_modification)
 
