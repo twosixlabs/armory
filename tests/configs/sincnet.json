@@ -23,7 +23,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.evals.raw_audio_scenario"
+        "eval_file": "armory.scenarios.raw_audio_scenario"
     },
     "metric": null,
     "model": {
