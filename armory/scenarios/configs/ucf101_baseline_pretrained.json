@@ -33,6 +33,6 @@
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": "yusong-tan/MARS",
-        "use_gpu": false
+        "use_gpu": true
     }
 }
