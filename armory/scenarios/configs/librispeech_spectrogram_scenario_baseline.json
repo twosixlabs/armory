@@ -18,14 +18,14 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.evals.librispeech_spectrogram_scenario"
+        "eval_file": "tests.evals.spectrogram_audio_scenario"
     },
     "metric": null,
     "model": {
         "model_kwargs": {
             "model_status": "trained"
         },
-        "module": "armory.baseline_models.keras.keras_librispeech_spectrogram",
+        "module": "armory.baseline_models.keras.librispeech_spectrogram",
         "name": "get_art_model",
         "weights_file": "librispeech_spectral_model_weights.h5",
         "wrapper_kwargs": {}
