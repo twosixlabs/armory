@@ -11,6 +11,10 @@ on:
     branches:
       - master
       - r*
+
+env:
+  DOCKER_BUILDKIT: 1
+
 jobs:
   pytest-host:
     name: PyTest Host
@@ -40,8 +44,6 @@ jobs:
         with:
           python-version: '3.6'
       - name: Run armory TF1 docker tests
-        env:
-          DOCKER_BUILDKIT: 1
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
@@ -56,12 +58,9 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
-      - name: Run armory TF1 docker tests
-        env:
-          DOCKER_BUILDKIT: 1
+      - name: Run armory TF1 configs
         run: |
           pip install -r requirements.txt
-          version=$(python -m armory --version)
           bash docker/build-dev.sh tf1
           python -m armory run tests/configs/tf1/fgm_attack_test.json
   pytest-tf2:
@@ -73,8 +72,6 @@ jobs:
         with:
           python-version: '3.6'
       - name: Run armory TF2 docker tests
-        env:
-          DOCKER_BUILDKIT: 1
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
@@ -90,14 +87,25 @@ jobs:
         with:
           python-version: '3.6'
       - name: Run armory PyTorch docker tests
-        env:
-          DOCKER_BUILDKIT: 1
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
           bash docker/build-dev.sh pytorch
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_pytorch
+  armory-pytorch:
+    name: Armory run tests PyTorch
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.6'
+      - name: Run armory Pytorch configs
+        run: |
+          pip install -r requirements.txt
+          bash docker/build-dev.sh pytorch
+          python -m armory run tests/configs/pytorch/fgm_attack_test.json
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04
