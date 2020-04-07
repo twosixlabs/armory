@@ -10,7 +10,6 @@ import coloredlogs
 from importlib import import_module
 
 import numpy as np
-from tensorflow.keras.utils import to_categorical
 
 from armory.utils.config_loading import load_dataset, load_model
 from armory import paths
@@ -37,39 +36,31 @@ def evaluate_classifier(config_path: str) -> None:
     Train on training data - could be clean or poisoned
     and validation on clean data
     """
+    train_data_generator = load_dataset(
+        config["dataset"],
+        epochs=train_epochs,
+        split_type="train",
+        preprocessing_fn=preprocessing_fn,
+    )
+    """
+    For poisoned dataset, change to validation_data_generator
+    using split_type="val"
+    """
+    test_data_generator = load_dataset(
+        config["dataset"],
+        epochs=train_epochs,
+        split_type="test",
+        preprocessing_fn=preprocessing_fn,
+    )
+
     logger.info(f"Fitting model of {model_config['module']}.{model_config['name']}...")
     for e in range(train_epochs):
         logger.info("Epoch: {}".format(e))
 
-        train_data_generator = load_dataset(
-            config["dataset"],
-            epochs=train_epochs,
-            split_type="train",
-            preprocessing_fn=preprocessing_fn,
-        )
-
-        """
-        For poisoned dataset, change to validation_data_generator
-        using split_type="val"
-        """
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-
         # train
-        for _ in range(train_data_generator.batches_per_epoch):
-            x_train, y_train = train_data_generator.get_batch()
-            y_train = to_categorical(y_train, 43)
-            classifier.fit(
-                x_train,
-                y_train,
-                batch_size=len(y_train),
-                nb_epochs=1,
-                **{"verbose": False},
-            )
+        classifier.fit_generator(
+            train_data_generator, nb_epochs=1, verbose=False,
+        )
 
         # validate on clean data
         correct = 0
