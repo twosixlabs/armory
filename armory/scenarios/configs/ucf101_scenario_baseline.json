@@ -25,7 +25,7 @@
         "model_kwargs": {
             "model_status": "ucf101_trained"
         },
-        "module": "armory.baseline_models.pytorch.pytorch_ucf101_mars",
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
         "name": "get_art_model",
         "weights_file": "MARS_UCF101_16f.pth",
         "wrapper_kwargs": {}
