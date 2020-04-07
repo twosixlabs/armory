@@ -59,7 +59,6 @@ class Scenario(abc.ABC):
                 "config": config,
                 "results": results,
             }
-            print(output_dict)
             f.write(json.dumps(output_dict, sort_keys=True, indent=4) + "\n")
 
 
@@ -76,8 +75,8 @@ def run_config(config_path):
         raise KeyError('"scenario" missing from evaluation config')
     scenario = config_loading.load(scenario_config)
     # TODO: fix this to work properly:
-    #    if not isinstance(scenario, Scenario):
-    #        raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
+    # if not isinstance(scenario, Scenario):
+    #     raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
     scenario.evaluate(config)
 
 
