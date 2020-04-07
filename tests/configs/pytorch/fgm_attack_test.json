@@ -1,0 +1,36 @@
+{
+    "adhoc": {
+        "train_epochs": 3
+    },
+    "attack": {
+        "budget": null,
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 64,
+        "module": "armory.data.datasets",
+        "name": "mnist"
+    },
+    "defense": null,
+    "evaluation": {
+        "eval_file": "tests.evals.fgm_attack"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.mnist",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "twosixlabs/armory-example",
+        "use_gpu": false
+    }
+}
