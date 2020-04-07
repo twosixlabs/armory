@@ -3,14 +3,13 @@ import argparse
 import json
 import logging
 import os
-import shutil
 import time
 
 import coloredlogs
 
 import armory
 from armory import paths
-from armory.utils.config_loading import load_scenario
+from armory.utils import config_loading
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +19,7 @@ class Scenario(abc.ABC):
     def __init__(self):
         pass
 
-    def validate_config(config):
+    def validate_config(self, config):
         """
         Validate the scenario config
         """
@@ -52,21 +51,16 @@ class Scenario(abc.ABC):
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
 
-        filepath = os.path.join(
-            paths.docker().output_dir, f"classifier_extended_{int(time.time())}.json"
-        )
-        logger.info("Saving json output...")
-        with open(filepath, "w") as f:
+        filename = f"classifier_extended_{int(time.time())}.json"
+        logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
+        with open(os.path.join(paths.docker().output_dir, filename), "w") as f:
             output_dict = {
                 "armory_version": armory.__version__,
                 "config": config,
                 "results": results,
             }
+            print(output_dict)
             f.write(json.dumps(output_dict, sort_keys=True, indent=4) + "\n")
-        logger.info(f"Evaluation Results written <output_dir>/evaluation-results.json")
-        shutil.copyfile(
-            filepath, os.path.join(paths.docker().output_dir, "latest.json")
-        )
 
 
 def parse_config(config_path):
@@ -80,7 +74,10 @@ def run_config(config_path):
     scenario_config = config.get("scenario")
     if scenario_config is None:
         raise KeyError('"scenario" missing from evaluation config')
-    scenario = load_scenario(config["scenario"])
+    scenario = config_loading.load(scenario_config)
+    # TODO: fix this to work properly:
+    #    if not isinstance(scenario, Scenario):
+    #        raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
     scenario.evaluate(config)
 
 

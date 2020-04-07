@@ -1,7 +1,11 @@
 {
-    "adhoc": {},
+    "adhoc": null,
     "attack": {
-        "budget": null,
+        "budget": {
+            "norm": [
+                "Linf"
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -14,9 +18,13 @@
         "module": "armory.data.datasets",
         "name": "cifar10"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {},
+        "module": "armory.art_experimental.defences.madry_trainer_generator",
+        "name": "AdversarialTrainerMadryPGD"
+    },
     "evaluation": {
-        "eval_file": "armory.scenarios.cifar10"
+        "eval_file": "armory.scenarios.base"
     },
     "metric": null,
     "model": {
@@ -28,6 +36,11 @@
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.cifar10",
+        "name": "Cifar10"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",

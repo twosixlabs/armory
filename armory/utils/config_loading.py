@@ -9,13 +9,12 @@ from art.defences import Preprocessor, Postprocessor, Trainer, Transformer
 from art.classifiers import Classifier
 
 from armory.data.datasets import ArmoryDataGenerator
-from armory.scenarios import Scenario
 
 
 DEFENSES = (Preprocessor, Postprocessor, Trainer, Transformer)
 
 
-def _load(sub_config):
+def load(sub_config):
     module = import_module(sub_config["module"])
     fn = getattr(module, sub_config["name"])
     args = sub_config.get("args", [])
@@ -65,14 +64,7 @@ def load_attack(attack_config, classifier):
 
 
 def load_defense(defense_config):
-    defense = _load(defense_config)
+    defense = load(defense_config)
     if not any(isinstance(defense, x) for x in DEFENSES):
         raise TypeError(f"defense {defense} is not a defense instance: {DEFENSES}")
     return defense
-
-
-def load_scenario(scenario_config):
-    scenario = _load(scenario_config)
-    if not isinstance(scenario, Scenario):
-        raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
-    return scenario
