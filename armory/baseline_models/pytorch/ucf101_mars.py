@@ -18,10 +18,28 @@ from armory.data.utils import download_file_from_s3
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def make_model(**kwargs):
+def make_model(model_status="ucf101_trained", weights_file=None):
+    statuses = ("ucf101_trained", "kinetics_pretrained")
+    if model_status not in statuses:
+        raise ValueError(f"model_status {model_status} not in {statuses}")
+    trained = (model_status == "ucf101_trained")
+    if not trained and weights_file is None:
+        raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
+
+    if weights_file is not None:
+        saved_model_dir = paths.docker().saved_model_dir
+        filepath = os.path.join(saved_model_dir, weights_file)
+        if not os.path.isfile(filepath):
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+
+    temp = sys.argv
     sys.argv = [""]
     opt = parse_opts()
-
+    sys.argv = temp
     # Default opts for UCF101 dataset
     opt.dataset = "UCF101"
     opt.modality = "RGB"
@@ -33,10 +51,10 @@ def make_model(**kwargs):
     opt.log = 0
     opt.batch_size = 1
     opt.input_channels = 3
-    opt.arch = "{}-{}".format(opt.model, opt.model_depth)
+    opt.arch = f"{opt.model}-{opt.model_depth}"
 
-    model_status = kwargs.get("model_status", "kinetics_pretrained")
-    if model_status == "ucf101_trained":
+
+    if trained:
         opt.n_classes = 101
     else:
         opt.n_classes = 400
@@ -44,21 +62,14 @@ def make_model(**kwargs):
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
-        weights_file = "RGB_Kinetics_16f.pth"
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
-
         opt.pretrain_path = filepath
 
     print("Loading model... ", opt.model, opt.model_depth)
     model, parameters = generate_model(opt)
+
+    if trained and weights_file is not None:
+        checkpoint = torch.load(filepath, map_location=DEVICE)
+        model.load_state_dict(checkpoint["state_dict"])
 
     # Initializing the optimizer
     if opt.pretrain_path:
@@ -68,10 +79,6 @@ def make_model(**kwargs):
         dampening = 0
     else:
         dampening = opt.dampening
-
-    # print("lr = {} \t momentum = {} \t dampening = {} \t weight_decay = {}, \t nesterov = {}"
-    #            .format(opt.learning_rate, opt.momentum, dampening, opt. weight_decay, opt.nesterov))
-    # print("LR patience = ", opt.lr_patience)
 
     optimizer = optim.SGD(
         parameters,
@@ -136,21 +143,7 @@ def preprocessing_fn(inputs):
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
-    model, optimizer = make_model(**model_kwargs)
-
-    if weights_file:
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
-
-        checkpoint = torch.load(filepath, map_location=DEVICE)
-        model.load_state_dict(checkpoint["state_dict"])
+    model, optimizer = make_model(weights_file=weights_file, **model_kwargs)
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(
