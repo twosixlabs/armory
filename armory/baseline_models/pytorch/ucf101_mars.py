@@ -22,7 +22,7 @@ def make_model(model_status="ucf101_trained", weights_file=None):
     statuses = ("ucf101_trained", "kinetics_pretrained")
     if model_status not in statuses:
         raise ValueError(f"model_status {model_status} not in {statuses}")
-    trained = (model_status == "ucf101_trained")
+    trained = model_status == "ucf101_trained"
     if not trained and weights_file is None:
         raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
 
@@ -52,7 +52,6 @@ def make_model(model_status="ucf101_trained", weights_file=None):
     opt.batch_size = 1
     opt.input_channels = 3
     opt.arch = f"{opt.model}-{opt.model_depth}"
-
 
     if trained:
         opt.n_classes = 101
