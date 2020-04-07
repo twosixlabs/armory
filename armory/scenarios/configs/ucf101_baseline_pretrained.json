@@ -18,7 +18,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.evals.ucf101_scenario"
+        "eval_file": "armory.scenarios.ucf101_scenario"
     },
     "metric": null,
     "model": {
@@ -33,6 +33,6 @@
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": "yusong-tan/MARS",
-        "use_gpu": true
+        "use_gpu": false
     }
 }

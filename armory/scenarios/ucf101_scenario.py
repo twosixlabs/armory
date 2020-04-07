@@ -8,17 +8,16 @@ import sys
 import logging
 import coloredlogs
 from importlib import import_module
-import numpy as np
 import time
 
-from armory.utils.config_loading import load_dataset, load_model
-from armory import paths
+import numpy as np
 
-# MARS specific imports
-from MARS.utils import AverageMeter
+from armory import paths
+from armory.utils.metrics import AverageMeter
+from armory.utils.config_loading import load_dataset, load_model
+
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 coloredlogs.install(logging.DEBUG)
 
 
@@ -54,6 +53,7 @@ def evaluate_classifier(config_path: str) -> None:
         train_data_generator = load_dataset(
             config["dataset"],
             epochs=train_epochs,
+            batch_size=batch_size,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
         )
@@ -133,21 +133,18 @@ def evaluate_classifier(config_path: str) -> None:
             test_accuracies.update(acc, 1)
             test_accuracies_top5.update(acc_top5, 1)
 
-            line = (
-                "Video["
-                + str(video_count)
-                + "] : \t top5 "
-                + str(y)
-                + "\t top1 = "
-                + str(y[0])
-                + "\t true = "
-                + str(y_test)
-                + "\t top1_video_acc = "
-                + str(test_accuracies.avg)
-                + "\t top5_video_acc = "
-                + str(test_accuracies_top5.avg)
+            logger.info(
+                "\t ".join(
+                    [
+                        f"Video[{video_count}] : ",
+                        f"top5 = {y}",
+                        f"top1 = {y[0]}",
+                        f"true = {y_test}",
+                        f"top1_video_acc = {test_accuracies.avg}",
+                        f"top5_video_acc = {test_accuracies_top5.avg}",
+                    ]
+                )
             )
-            logger.info(line)
             video_count += 1
 
     logger.info(
@@ -177,9 +174,8 @@ def evaluate_classifier(config_path: str) -> None:
     video_count = 0
     for i in range(test_data_generator.batches_per_epoch / 10):
         x_tests, y_tests = test_data_generator.get_batch()
-        for x_test, y_test in zip(
-            x_tests, y_tests
-        ):  # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
+        for x_test, y_test in zip(x_tests, y_tests):
+            # each x_test is of shape (n_stack, 3, 16, 112, 112) and represents a video
             attack = attack_fn(
                 classifier=classifier,
                 **attack_config["kwargs"],
@@ -194,21 +190,18 @@ def evaluate_classifier(config_path: str) -> None:
             adv_accuracies.update(acc, 1)
             adv_accuracies_top5.update(acc_top5, 1)
 
-            line = (
-                "Video["
-                + str(video_count)
-                + "] : \t top5 "
-                + str(y)
-                + "\t top1 = "
-                + str(y[0])
-                + "\t true = "
-                + str(y_test)
-                + "\t top1_video_acc = "
-                + str(adv_accuracies.avg)
-                + "\t top5_video_acc = "
-                + str(adv_accuracies_top5.avg)
+            logger.info(
+                "\t ".join(
+                    [
+                        f"Video[{video_count}] : ",
+                        f"top5 = {y}",
+                        f"top1 = {y[0]}",
+                        f"true = {y_test}",
+                        f"top1_video_acc = {adv_accuracies.avg}",
+                        f"top5_video_acc = {adv_accuracies_top5.avg}",
+                    ]
+                )
             )
-            logger.info(line)
             video_count += 1
 
     logger.info(

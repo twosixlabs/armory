@@ -6,13 +6,16 @@ import numpy as np
 from PIL import Image
 import torch
 from torch import optim
-from armory import paths
-from armory.data.utils import download_file_from_s3
 
 # MARS specific imports
 from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data
+
+from armory import paths
+from armory.data.utils import download_file_from_s3
+
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def make_model(**kwargs):
@@ -146,7 +149,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
                 f"{saved_model_dir}/{weights_file}",
             )
 
-        checkpoint = torch.load(filepath)
+        checkpoint = torch.load(filepath, map_location=DEVICE)
         model.load_state_dict(checkpoint["state_dict"])
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])
