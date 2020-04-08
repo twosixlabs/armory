@@ -36,10 +36,10 @@ def make_model(model_status="ucf101_trained", weights_file=None):
                 f"{saved_model_dir}/{weights_file}",
             )
 
-    temp = sys.argv
+    # temp = sys.argv
     sys.argv = [""]
     opt = parse_opts()
-    sys.argv = temp
+    # sys.argv = temp
     # Default opts for UCF101 dataset
     opt.dataset = "UCF101"
     opt.modality = "RGB"

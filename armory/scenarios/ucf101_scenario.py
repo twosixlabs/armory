@@ -53,7 +53,6 @@ def evaluate_classifier(config_path: str) -> None:
         train_data_generator = load_dataset(
             config["dataset"],
             epochs=train_epochs,
-            batch_size=batch_size,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
         )
