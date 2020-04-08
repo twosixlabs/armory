@@ -1,10 +1,13 @@
 {
     "adhoc": {
-        "train_epochs": 1
+        "poison_dataset": true,
+        "source_class": 5,
+        "target_class": 42,
+        "train_epochs": 2
     },
     "attack": {
         "budget": null,
-        "knowledge": "white",
+        "knowledge": "black",
         "kwargs": {
             "poison_module": "art.attacks.poisoning.perturbations",
             "poison_type": "pattern"
