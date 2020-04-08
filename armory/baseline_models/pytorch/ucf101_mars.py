@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -14,6 +15,10 @@ from MARS.dataset import preprocess_data
 
 from armory import paths
 from armory.data.utils import download_file_from_s3
+
+
+logger = logging.getLogger(__name__)
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -63,7 +68,7 @@ def make_model(model_status="ucf101_trained", weights_file=None):
 
         opt.pretrain_path = filepath
 
-    print("Loading model... ", opt.model, opt.model_depth)
+    logger.info(f"Loading model... {opt.model} {opt.model_depth}")
     model, parameters = generate_model(opt)
 
     if trained and weights_file is not None:
