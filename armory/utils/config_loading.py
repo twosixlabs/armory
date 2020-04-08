@@ -63,8 +63,10 @@ def load_attack(attack_config, classifier):
     return attack
 
 
-def load_defense(defense_config):
-    defense = load(defense_config)
+def load_defense(defense_config, classifier):
+    defense_module = import_module(defense_config["module"])
+    defense_fn = getattr(defense_module, defense_config["name"])
+    defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
     if not any(isinstance(defense, x) for x in DEFENSES):
         raise TypeError(f"defense {defense} is not a defense instance: {DEFENSES}")
     return defense
