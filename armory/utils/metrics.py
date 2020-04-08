@@ -28,3 +28,26 @@ def linf(x, x_adv):
     # uint8 inputs will return incorrect results, so cast to float
     diff = np.abs(x.astype(float) - x_adv.astype(float))
     return list(np.max(diff, tuple(range(1, diff.ndim))))
+
+
+class AverageMeter:
+    """
+    Computes and stores the average and current value
+
+    Taken from https://github.com/craston/MARS/blob/master/utils.py
+    """
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count

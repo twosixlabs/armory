@@ -60,6 +60,23 @@ from armory import paths
 paths.docker().dataset_dir
 ```
 
+## Using GPUs with Docker
+Armory uses the nvidia runtime to use GPUs inside of Docker containers.
+
+This can be specified in JSON config files with "sysconfig" as follows:
+```
+    ...
+    "sysconfig": {
+        ...
+        "gpus": "7",
+        "use_gpu": true
+    }
+    ...
+```
+The `use_gpu` flag takes a boolean true/false value, and specifies whether to use the gpu or default to cpu.
+The `gpus` flag is optional, and is ignored if `use_gpu` is false. If `use_gpu` is true, it defaults to using all GPUs.
+    If present, the value should be a `,`-separated list of numbers specifying the GPU index in `nvidia-smi`.
+    For instance, `"gpus": "2,4,7"` would enable three GPUs with indexes 2, 4, and 7.
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for 
