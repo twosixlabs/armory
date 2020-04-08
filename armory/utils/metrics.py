@@ -1,3 +1,11 @@
+"""
+Metrics for scenarios
+
+Outputs are lists of python variables amenable to JSON serialization:
+    e.g., bool, int, float
+    numpy data types and tensors generally fail to serialize
+"""
+
 import numpy as np
 
 
@@ -10,7 +18,7 @@ def categorical_accuracy(y, y_pred):
     elif y.ndim + 1 == y_pred.ndim:
         return [bool(x) for x in list(y == np.argmax(y_pred, axis=1))]
     else:
-        raise ValueError(f"{y} and {y_pred} accuracy cannot be computed")
+        raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
 
 
 def linf(x, x_adv):

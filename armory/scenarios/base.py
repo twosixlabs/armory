@@ -1,3 +1,22 @@
+"""
+Main script for running scenarios. Users will still call armory:
+    armory run <config_file.json>
+
+In the config file, users will need to point at this base file:
+    "evaluation": {
+        "eval_file": "armory.scenarios.base"
+    },
+
+There is an additional piece to the config with key "scenario":
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.cifar10",
+        "name": "Cifar10"
+    },
+
+    This is used to instantiate the subclass.
+"""
+
 import abc
 import argparse
 import json
@@ -16,19 +35,10 @@ logger = logging.getLogger(__name__)
 
 
 class Scenario(abc.ABC):
-    def __init__(self):
-        pass
-
-    def validate_config(self, config):
-        """
-        Validate the scenario config
-        """
-
     def evaluate(self, config: dict):
         """
         Evaluate a config for robustness against attack.
         """
-        self.validate_config(config)
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
@@ -74,9 +84,6 @@ def run_config(config_path):
     if scenario_config is None:
         raise KeyError('"scenario" missing from evaluation config')
     scenario = config_loading.load(scenario_config)
-    # TODO: fix this to work properly:
-    # if not isinstance(scenario, Scenario):
-    #     raise TypeError(f"scenario {scenario} is not an instance of {Scenario}")
     scenario.evaluate(config)
 
 
