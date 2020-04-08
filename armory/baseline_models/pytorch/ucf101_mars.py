@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
@@ -41,21 +40,11 @@ def make_model(model_status="ucf101_trained", weights_file=None):
                 f"{saved_model_dir}/{weights_file}",
             )
 
-    # temp = sys.argv
-    sys.argv = [""]
-    opt = parse_opts()
-    # sys.argv = temp
-    # Default opts for UCF101 dataset
+    opt = parse_opts(arguments=[])
     opt.dataset = "UCF101"
-    opt.modality = "RGB"
-    opt.split = 1
     opt.only_RGB = True
-    opt.model = "resnext"
-    opt.model_depth = 101
-    opt.sample_duration = 16
     opt.log = 0
     opt.batch_size = 1
-    opt.input_channels = 3
     opt.arch = f"{opt.model}-{opt.model_depth}"
 
     if trained:
@@ -126,7 +115,7 @@ def preprocessing_fn(inputs):
             input_fixed = input
 
         # apply MARS preprocessing: scaling, cropping, normalizing
-        opt = parse_opts()
+        opt = parse_opts(arguments=[])
         opt.modality = "RGB"
         opt.sample_size = 112
         input_Image = []  # convert each frame to PIL Image
