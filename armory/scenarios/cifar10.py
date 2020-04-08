@@ -22,7 +22,7 @@ class Cifar10(Scenario):
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
-        if model_config["weights_file"]:
+        if not model_config["weights_file"]:
             classifier.set_learning_phase(True)
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
