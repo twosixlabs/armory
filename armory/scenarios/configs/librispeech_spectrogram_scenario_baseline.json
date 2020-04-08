@@ -18,7 +18,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "tests.evals.spectrogram_audio_scenario"
+        "eval_file": "armory.scenarios.spectrogram_audio_scenario"
     },
     "metric": null,
     "model": {

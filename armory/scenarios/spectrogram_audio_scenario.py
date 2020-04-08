@@ -6,17 +6,15 @@ import json
 import os
 import sys
 import logging
-import coloredlogs
 from importlib import import_module
+
 import numpy as np
 
-from tensorflow.keras.utils import to_categorical
 from armory.utils.config_loading import load_dataset, load_model
 from armory import paths
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-coloredlogs.install(logging.DEBUG)
 
 
 def evaluate_classifier(config_path: str) -> None:
@@ -25,12 +23,14 @@ def evaluate_classifier(config_path: str) -> None:
     """
     with open(config_path) as f:
         config = json.load(f)
+
     model_config = config["model"]
-    model_status = model_config["model_kwargs"]["model_status"]  # "trained"/"untrained"
+    model_status = model_config["model_kwargs"]["model_status"]
     logger.info(model_status)
     classifier, preprocessing_fn = load_model(model_config)
 
-    n_tbins = 100  # numbef of time bins in spectrogram input to model
+    n_tbins = 100  # number of time bins in spectrogram input to model
+
     # Train ART classifier
     if model_status == "untrained":
         logger.info(
@@ -50,23 +50,22 @@ def evaluate_classifier(config_path: str) -> None:
             logger.info("Epoch: {}/{}".format(e, train_epochs))
             for _ in range(train_data_generator.batches_per_epoch):
                 x_train, y_train = train_data_generator.get_batch()
-                """
-                x_train is of shape (N,241,T), representing N spectrograms,
-                each with 241 frequency bins and T time bins that's variable,
-                depending on the duration of the corresponding raw audio.
-                The model accepts a fixed size spectrogram, so x_trains need to
-                be sampled.
-                """
+
+                # x_train is of shape (N,241,T), representing N spectrograms,
+                # each with 241 frequency bins and T time bins that's variable,
+                # depending on the duration of the corresponding raw audio.
+                # The model accepts a fixed size spectrogram, so x_trains need to
+                # be sampled.
+
                 x_train_seg = []
                 for xt in x_train:
                     rand_t = np.random.randint(xt.shape[1] - n_tbins)
                     x_train_seg.append(xt[:, rand_t : rand_t + n_tbins])
                 x_train_seg = np.array(x_train_seg)
                 x_train_seg = np.expand_dims(x_train_seg, -1)
-                y_train_onehot = to_categorical(y_train, num_classes=40)
                 classifier.fit(
                     x_train_seg,
-                    y_train_onehot,
+                    y_train,
                     batch_size=batch_size,
                     nb_epochs=1,
                     **{"verbose": True},

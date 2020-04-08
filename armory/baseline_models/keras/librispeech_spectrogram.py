@@ -91,7 +91,7 @@ def make_model(**kwargs) -> tf.keras.Model:
     model.add(Dense(40, activation="softmax"))
 
     model.compile(
-        loss=keras.losses.categorical_crossentropy,
+        loss=keras.losses.sparse_categorical_crossentropy,
         optimizer=keras.optimizers.Adam(lr=0.0002),
         metrics=["accuracy"],
     )
