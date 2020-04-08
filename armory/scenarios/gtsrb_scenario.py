@@ -141,7 +141,7 @@ def evaluate_classifier(config_path: str) -> None:
     for _ in range(test_data_generator.batches_per_epoch):
         x_test, y_test = test_data_generator.get_batch()
         if config["adhoc"]["poison_dataset"]:
-            x_test, y_test = poison_batch(x_test, y_test, src, tgt, len(y_test), attack)
+            x_test, _ = poison_batch(x_test, y_test, src, tgt, len(y_test), attack)
         y = classifier.predict(x_test)
         correct += np.sum(np.argmax(y, 1) == y_test)
         cnt += len(y_test)
