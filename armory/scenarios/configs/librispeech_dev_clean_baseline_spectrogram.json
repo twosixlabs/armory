@@ -8,8 +8,8 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.2,
-            "batch_size": 32
+            "batch_size": 32,
+            "eps": 0.2
         },
         "module": "art.attacks",
         "name": "FastGradientMethod"
