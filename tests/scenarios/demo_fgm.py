@@ -1,5 +1,5 @@
 """
-CIFAR10 scenario evaluation
+Classifier evaluation within ARMORY
 """
 
 import logging
@@ -18,12 +18,11 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-class Cifar10(Scenario):
+class DemoFGM(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
-        Evaluate the config and return a results dict
+        Evaluate a config file for classification robustness against attack.
         """
-
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
@@ -48,9 +47,9 @@ class Cifar10(Scenario):
             else:
                 classifier.fit_generator(train_data, **fit_kwargs)
 
-        classifier.set_learning_phase(False)
-
         # Evaluate the ART classifier on benign test examples
+        classifier.set_learning_phase(False)
+        logger.info("Running inference on benign examples...")
         logger.info(f"Loading test dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
@@ -61,7 +60,6 @@ class Cifar10(Scenario):
 
         logger.info("Running inference on benign examples...")
         task_metric = metrics.categorical_accuracy
-        perturbation_metric = metrics.linf
 
         benign_accuracies = []
         for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Benign"):
@@ -80,12 +78,12 @@ class Cifar10(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        adversarial_accuracies, perturbations = [], []
+
+        adversarial_accuracies = []
         for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             adversarial_accuracies.extend(task_metric(y, y_pred_adv))
-            perturbations.extend(perturbation_metric(x, x_adv))
         adversarial_accuracy = sum(adversarial_accuracies) / test_data_generator.size
         logger.info(
             f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
@@ -93,8 +91,5 @@ class Cifar10(Scenario):
         results = {
             "mean_benign_accuracy": benign_accuracy,
             "mean_adversarial_accuracy": adversarial_accuracy,
-            "benign_accuracies": benign_accuracies,
-            "adversarial_accuracies": adversarial_accuracies,
-            "linf_perturbations": perturbations,
         }
         return results
