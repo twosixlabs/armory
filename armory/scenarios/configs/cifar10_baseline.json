@@ -18,11 +18,7 @@
         "module": "armory.data.datasets",
         "name": "cifar10"
     },
-    "defense": {
-        "kwargs": {},
-        "module": "armory.art_experimental.defences.madry_trainer_generator",
-        "name": "AdversarialTrainerMadryPGD"
-    },
+    "defense": null,
     "evaluation": {
         "eval_file": "armory.scenarios.base"
     },
