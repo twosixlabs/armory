@@ -1,8 +1,5 @@
 {
-    "adhoc": {
-        "epochs": 20000,
-        "num_classes": 40
-    },
+    "adhoc": null,
     "attack": {
         "budget": {
             "norm": [
@@ -23,17 +20,23 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory.scenarios.raw_audio_scenario"
+        "eval_file": "armory.scenarios.base"
     },
     "metric": null,
     "model": {
-        "model_kwargs": {
-            "model_file": "model_sincnet.pth",
-            "pretrained": true
+        "fit_kwargs": {
+            "nb_epochs": 20000
         },
+        "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
+        "weights_file": "model_sincnet.pth",
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.librispeech_dev_clean",
+        "name": "LibrispeechDevClean"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",

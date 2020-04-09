@@ -6,6 +6,7 @@ import numpy as np
 import torch
 
 from armory import paths
+from armory.data.utils import download_file_from_s3
 
 # from https://github.com/hkakitani/SincNet
 from SincNet import dnn_models
@@ -20,22 +21,26 @@ WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def sincnet(**model_kwargs):
-    pretrained = model_kwargs["pretrained"]
-    CNN_params = None
-    DNN1_params = None
-    DNN2_params = None
-
+def sincnet(weights_file=None):
+    pretrained = weights_file is not None
     if pretrained:
-        model_params = torch.load(
-            os.path.join(
-                paths.docker().saved_model_dir, "SincNet", model_kwargs["model_file"]
-            ),
-            map_location=device,
-        )
-        CNN_params = model_params["CNN_model_par"]
-        DNN1_params = model_params["DNN1_model_par"]
-        DNN2_params = model_params["DNN2_model_par"]
+        saved_model_dir = paths.docker().saved_model_dir
+        subdir = os.path.join(saved_model_dir, "SincNet")
+        filepath = os.path.join(subdir, weights_file)
+
+        if not os.path.isfile(filepath):
+            os.makedirs(subdir, exist_ok=True)
+            download_file_from_s3(
+                "armory-public-data", f"model-weights/{weights_file}", filepath,
+            )
+
+        model_params = torch.load(filepath, map_location=device)
+    else:
+        model_params = {}
+    CNN_params = model_params.get("CNN_model_par")
+    DNN1_params = model_params.get("DNN1_model_par")
+    DNN2_params = model_params.get("DNN2_model_par")
+
     # from SincNet/cfg/SincNet_dev_LibriSpeech.cfg
     cnn_N_filt = [80, 60, 60]
     cnn_len_filt = [251, 5, 5]
@@ -137,8 +142,8 @@ def preprocessing_fn(batch):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs, model_weights=None):
-    model = sincnet(**model_kwargs)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+    model = sincnet(weights_file=weights_file, **model_kwargs)
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.NLLLoss(),
