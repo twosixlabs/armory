@@ -20,17 +20,15 @@ WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def sincnet(**model_kwargs):
-    pretrained = model_kwargs["pretrained"]
+def sincnet(model_file=None):
+    pretrained = model_file is None
     CNN_params = None
     DNN1_params = None
     DNN2_params = None
 
     if pretrained:
         model_params = torch.load(
-            os.path.join(
-                paths.docker().saved_model_dir, "SincNet", model_kwargs["model_file"]
-            ),
+            os.path.join(paths.docker().saved_model_dir, model_file),
             map_location=device,
         )
         CNN_params = model_params["CNN_model_par"]

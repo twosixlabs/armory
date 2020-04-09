@@ -1,8 +1,5 @@
 {
-    "adhoc": {
-        "epochs": 20000,
-        "num_classes": 40
-    },
+    "adhoc": null,
     "attack": {
         "budget": {
             "norm": [
@@ -27,12 +24,13 @@
     },
     "metric": null,
     "model": {
-        "model_kwargs": {
-            "model_file": "model_sincnet.pth",
-            "pretrained": true
+        "fit_kwargs": {
+            "nb_epochs": 20000
         },
+        "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
+        "weights_file": "SincNet/model_sincnet.pth",
         "wrapper_kwargs": {}
     },
     "sysconfig": {
