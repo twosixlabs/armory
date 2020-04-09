@@ -16,7 +16,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory.scenarios.resisc45"
+        "eval_file": "armory.scenarios.base"
     },
     "metric": null,
     "model": {
@@ -25,6 +25,11 @@
         "name": "get_art_model",
         "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.resisc45",
+        "name": "Resisc45"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
