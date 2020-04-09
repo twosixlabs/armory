@@ -60,7 +60,6 @@ class DemoFGM(Scenario):
 
         logger.info("Running inference on benign examples...")
         task_metric = metrics.categorical_accuracy
-        perturbation_metric = metrics.linf
 
         benign_accuracies = []
         for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Benign"):
@@ -80,12 +79,11 @@ class DemoFGM(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
 
-        adversarial_accuracies, perturbations = [], []
+        adversarial_accuracies = []
         for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             adversarial_accuracies.extend(task_metric(y, y_pred_adv))
-            perturbations.extend(perturbation_metric(x, x_adv))
         adversarial_accuracy = sum(adversarial_accuracies) / test_data_generator.size
         logger.info(
             f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
@@ -93,8 +91,5 @@ class DemoFGM(Scenario):
         results = {
             "mean_benign_accuracy": benign_accuracy,
             "mean_adversarial_accuracy": adversarial_accuracy,
-            "benign_accuracies": benign_accuracies,
-            "adversarial_accuracies": adversarial_accuracies,
-            "linf_perturbations": perturbations,
         }
         return results
