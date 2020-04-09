@@ -54,7 +54,7 @@ class LibrispeechDevClean(Scenario):
         task_metric = metrics.categorical_accuracy
 
         benign_accuracies = []
-        for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Benign"):
+        for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
             benign_accuracies.extend(task_metric(y, y_pred))
         benign_accuracy = sum(benign_accuracies) / test_data_generator.size
@@ -71,7 +71,7 @@ class LibrispeechDevClean(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
         adversarial_accuracies = []
-        for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Attack"):
+        for x, y in tqdm(test_data_generator, desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             adversarial_accuracies.extend(task_metric(y, y_pred_adv))
