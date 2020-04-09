@@ -58,6 +58,9 @@ class Evaluator(object):
         kwargs = dict(runtime="runc")
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
+            gpus = self.config["sysconfig"].get("gpus")
+            if gpus is not None:
+                self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
@@ -106,7 +109,7 @@ class Evaluator(object):
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
-            json.dump(self.config, f)
+            f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
     def _delete_tmp(self):
         if os.path.exists(self.external_repo_dir):
