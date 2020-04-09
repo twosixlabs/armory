@@ -39,7 +39,14 @@ class Evaluator(object):
 
         self.extra_env_vars = dict()
         if isinstance(config_path, str):
-            self.config = load_config(config_path)
+            try:
+                self.config = load_config(config_path)
+            except json.decoder.JSONDecodeError:
+                logger.error(f"Could not decode {config_path} as a json file.")
+                if not config_path.lower().endswith(".json"):
+                    logger.warning(f"{config_path} is not a '*.json' file")
+                    logger.warning("If using `armory run`, use a json config file.")
+                raise
         elif isinstance(config_path, dict):
             self.config = config_path
         else:
