@@ -61,7 +61,8 @@ class Scenario(abc.ABC):
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
 
-        filename = f"classifier_extended_{int(time.time())}.json"
+        scenario_name = config["scenario"]["name"]
+        filename = f"{scenario_name}_{int(time.time())}.json"
         logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
         with open(os.path.join(paths.docker().output_dir, filename), "w") as f:
             output_dict = {
