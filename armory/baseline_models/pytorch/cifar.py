@@ -46,6 +46,10 @@ def make_cifar_model(**kwargs):
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_cifar_model(**model_kwargs)
+
+    if torch.cuda.is_available():
+        model.cuda()
+
     if weights_file:
         saved_model_dir = paths.docker().saved_model_dir
         filepath = os.path.join(saved_model_dir, weights_file)
