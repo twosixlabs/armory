@@ -3,13 +3,15 @@ Classifier evaluation within ARMORY
 """
 
 import logging
-from importlib import import_module
 
 import numpy as np
+from tqdm import tqdm
 
-from armory.utils.config_loading import load_dataset, load_model
-from armory import paths
-
+from armory.utils.config_loading import (
+    load_dataset,
+    load_model,
+    load_attack,
+)
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
@@ -26,6 +28,8 @@ class LibrispeechDevCleanSpectrogram(Scenario):
 
         n_tbins = 100  # number of time bins in spectrogram input to model
 
+        task_metric = metrics.categorical_accuracy
+
         # Train ART classifier
         if not model_config["weights_file"]:
             classifier.set_learning_phase(True)
@@ -40,60 +44,58 @@ class LibrispeechDevCleanSpectrogram(Scenario):
                 preprocessing_fn=preprocessing_fn,
             )
 
-            val_data_generator = load_dataset(
-                config["dataset"],
-                epochs=fit_kwargs["nb_epochs"],
-                split_type="validation",
-                preprocessing_fn=preprocessing_fn,
-            )
+            for cnt, (x, y) in tqdm(enumerate(train_data_generator)):
+                # x is of shape (N,241,T), representing N spectrograms,
+                # each with 241 frequency bins and T time bins that's variable,
+                # depending on the duration of the corresponding raw audio.
+                # The model accepts a fixed size spectrogram, so x_trains need to
+                # be sampled.
 
-            for e in range(fit_kwargs["nb_epochs"]):
-                logger.info("Epoch: {}/{}".format(e, fit_kwargs["nb_epochs"]))
-                for _ in range(train_data_generator.batches_per_epoch):
-                    x_train, y_train = train_data_generator.get_batch()
+                x_seg = []
+                for xt in x:
+                    rand_t = np.random.randint(xt.shape[1] - n_tbins)
+                    x_seg.append(xt[:, rand_t : rand_t + n_tbins])
+                x_seg = np.array(x_seg)
+                x_seg = np.expand_dims(x_seg, -1)
 
-                    # x_train is of shape (N,241,T), representing N spectrograms,
-                    # each with 241 frequency bins and T time bins that's variable,
-                    # depending on the duration of the corresponding raw audio.
-                    # The model accepts a fixed size spectrogram, so x_trains need to
-                    # be sampled.
+                classifier.fit(
+                    x_seg,
+                    y,
+                    batch_size=config["dataset"]["batch_size"],
+                    nb_epochs=1,
+                    verbose=True,
+                )
 
-                    x_train_seg = []
-                    for xt in x_train:
-                        rand_t = np.random.randint(xt.shape[1] - n_tbins)
-                        x_train_seg.append(xt[:, rand_t : rand_t + n_tbins])
-                    x_train_seg = np.array(x_train_seg)
-                    x_train_seg = np.expand_dims(x_train_seg, -1)
-                    classifier.fit(
-                        x_train_seg,
-                        y_train,
-                        batch_size=config["dataset"]["batch_size"],
-                        nb_epochs=1,
-                        **{"verbose": True},  # TODO: Arg
+                if cnt % train_data_generator.batches_per_epoch == 0:
+                    # evaluate on validation examples
+                    val_data_generator = load_dataset(
+                        config["dataset"],
+                        epochs=1,
+                        split_type="validation",
+                        preprocessing_fn=preprocessing_fn,
                     )
 
-                # evaluate on validation examples
-                correct = 0
-                cnt = 0
-                for _ in range(val_data_generator.batches_per_epoch):
-                    x_val, y_val = val_data_generator.get_batch()
-                    x_val_seg = []
-                    y_val_seg = []
-                    for xt, yt in zip(x_val, y_val):
-                        n_seg = int(xt.shape[1] / n_tbins)
-                        xt = xt[:, : n_seg * n_tbins]
-                        for ii in range(n_seg):
-                            x_val_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
-                            y_val_seg.append(yt)
-                    x_val_seg = np.array(x_val_seg)
-                    x_val_seg = np.expand_dims(x_val_seg, -1)
-                    y_val_seg = np.array(y_val_seg)
+                    cnt = 0
+                    validation_accuracies = []
+                    for x_val, y_val in tqdm(val_data_generator):
+                        x_val_seg, y_val_seg = [], []
+                        for xt, yt in zip(x_val, y_val):
+                            n_seg = int(xt.shape[1] / n_tbins)
+                            xt = xt[:, : n_seg * n_tbins]
+                            for ii in range(n_seg):
+                                x_val_seg.append(
+                                    xt[:, ii * n_tbins : (ii + 1) * n_tbins]
+                                )
+                                y_val_seg.append(yt)
+                        x_val_seg = np.array(x_val_seg)
+                        x_val_seg = np.expand_dims(x_val_seg, -1)
+                        y_val_seg = np.array(y_val_seg)
 
-                    y = classifier.predict(x_val_seg)
-                    correct += np.sum(np.argmax(y, 1) == y_val_seg)
-                    cnt += len(y_val_seg)
-                validation_acc = float(correct) / cnt
-                logger.info("Validation accuracy: {}".format(validation_acc))
+                        y_pred = classifier.predict(x_val_seg)
+                        validation_accuracies.extend(task_metric(y_val_seg, y_pred))
+                        cnt += len(y_val_seg)
+                    validation_accuracy = sum(validation_accuracies) / cnt
+                    logger.info("Validation accuracy: {}".format(validation_accuracy))
 
         classifier.set_learning_phase(False)
         # Evaluate ART classifier on test examples
@@ -107,35 +109,30 @@ class LibrispeechDevCleanSpectrogram(Scenario):
 
         logger.info("Running inference on benign test examples...")
 
-        task_metric = metrics.categorical_accuracy
-
-        correct = 0
         cnt = 0
         benign_accuracies = []
-        for _ in range(test_data_generator.batches_per_epoch):
-            x_test, y_test = test_data_generator.get_batch()
-            x_test_seg = []
-            y_test_seg = []
-            for xt, yt in zip(x_test, y_test):
+        for x, y in tqdm(test_data_generator, desc="Benign"):
+            x_seg, y_seg = [], []
+            for xt, yt in zip(x, y):
                 n_seg = int(xt.shape[1] / n_tbins)
                 xt = xt[:, : n_seg * n_tbins]
                 for ii in range(n_seg):
-                    x_test_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
-                    y_test_seg.append(yt)
-            x_test_seg = np.array(x_test_seg)
-            x_test_seg = np.expand_dims(x_test_seg, -1)
-            y_test_seg = np.array(y_test_seg)
+                    x_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
+                    y_seg.append(yt)
+            x_seg = np.array(x_seg)
+            x_seg = np.expand_dims(x_seg, -1)
+            y_seg = np.array(y_seg)
 
-            y_pred = classifier.predict(x_test_seg)
-            benign_accuracies.extend(task_metric(y_test_seg, y_pred))
-        benign_accuracy = sum(benign_accuracies) / test_data_generator.size
+            y_pred = classifier.predict(x_seg)
+            benign_accuracies.extend(task_metric(y_seg, y_pred))
+            cnt += len(y_seg)
+
+        benign_accuracy = sum(benign_accuracies) / cnt
         logger.info(f"Accuracy on benign test examples: {benign_accuracy:.2%}")
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
-        attack_config = config["attack"]
-        attack_module = import_module(attack_config["module"])
-        attack_fn = getattr(attack_module, attack_config["name"])
+        attack = load_attack(config["attack"], classifier)
 
         test_data_generator = load_dataset(
             config["dataset"],
@@ -144,39 +141,31 @@ class LibrispeechDevCleanSpectrogram(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
 
-        correct = 0
         cnt = 0
-        for _ in range(test_data_generator.batches_per_epoch):
-            x_test, y_test = test_data_generator.get_batch()
-            x_test_seg = []
-            y_test_seg = []
-            for xt, yt in zip(x_test, y_test):
+        adversarial_accuracies = []
+        for x, y in tqdm(test_data_generator, desc="Attack"):
+            x_seg, y_seg = [], []
+            for xt, yt in zip(x, y):
                 n_seg = int(xt.shape[1] / n_tbins)
                 xt = xt[:, : n_seg * n_tbins]
                 for ii in range(n_seg):
-                    x_test_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
-                    y_test_seg.append(yt)
-            x_test_seg = np.array(x_test_seg)
-            x_test_seg = np.expand_dims(x_test_seg, -1)
-            y_test_seg = np.array(y_test_seg)
+                    x_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
+                    y_seg.append(yt)
+            x_seg = np.array(x_seg)
+            x_seg = np.expand_dims(x_seg, -1)
+            y_seg = np.array(y_seg)
 
-            attack = attack_fn(
-                classifier=classifier, **attack_config["kwargs"], batch_size=32
-            )
-            x_test_adv = attack.generate(x=x_test_seg)
-
-            y = classifier.predict(x_test_adv)
-            correct += np.sum(np.argmax(y, 1) == y_test_seg)
-            cnt += len(y_test_seg)
-        adv_acc = float(correct) / cnt
-        logger.info("Adversarial accuracy: {}".format(adv_acc))
-
-        logger.info("Saving json output...")
+            x_adv = attack.generate(x=x_seg)
+            y_pred = classifier.predict(x_adv)
+            adversarial_accuracies.extend(task_metric(y_seg, y_pred))
+            cnt += len(y_seg)
+        adversarial_accuracy = sum(adversarial_accuracies) / cnt
         logger.info(
-            f"Evaluation Results written to {paths.docker().output_dir}/librispeech_spectrogram_evaluation-results.json"
+            f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
         )
+
         results = {
-            "mean_benign_accuracy": str(benign_accuracy),
-            "mean_adversarial_accuracy": str(adv_acc),
+            "mean_benign_accuracy": benign_accuracy,
+            "mean_adversarial_accuracy": adversarial_accuracy,
         }
         return results
