@@ -87,6 +87,9 @@ class ArmoryDataGenerator(DataGenerator):
     def __next__(self):
         return self.get_batch()
 
+    def __len__(self):
+        return self.size
+
 
 def _generator_from_tfds(
     dataset_name: str,

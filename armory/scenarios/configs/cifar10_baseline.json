@@ -1,7 +1,11 @@
 {
-    "adhoc": {},
+    "adhoc": null,
     "attack": {
-        "budget": null,
+        "budget": {
+            "norm": [
+                "Linf"
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -12,7 +16,7 @@
     "dataset": {
         "batch_size": 16,
         "module": "armory.data.datasets",
-        "name": "resisc45"
+        "name": "cifar10"
     },
     "defense": null,
     "evaluation": {
@@ -20,16 +24,19 @@
     },
     "metric": null,
     "model": {
+        "fit_kwargs": {
+            "nb_epochs": 3
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "module": "armory.baseline_models.keras.cifar",
         "name": "get_art_model",
-        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.resisc45",
-        "name": "Resisc45"
+        "module": "armory.scenarios.cifar10",
+        "name": "Cifar10"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",

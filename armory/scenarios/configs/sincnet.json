@@ -1,0 +1,43 @@
+{
+    "adhoc": {
+        "epochs": 20000,
+        "num_classes": 40
+    },
+    "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 128,
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean"
+    },
+    "defense": null,
+    "evaluation": {
+        "eval_file": "armory.scenarios.raw_audio_scenario"
+    },
+    "metric": null,
+    "model": {
+        "model_kwargs": {
+            "model_file": "model_sincnet.pth",
+            "pretrained": true
+        },
+        "module": "armory.baseline_models.pytorch.sincnet",
+        "name": "get_art_model",
+        "wrapper_kwargs": {}
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "davidslater/SincNet",
+        "use_gpu": false
+    }
+}
