@@ -1,19 +1,23 @@
 """
-Classifier evaluation within ARMORY
+Librispeech Dev Clean scenario evaluation
 """
 
 import logging
 
 from tqdm import tqdm
 
-from armory.scenarios.base import Scenario
+from armory.utils.config_loading import (
+    load_dataset,
+    load_model,
+    load_attack,
+)
 from armory.utils import metrics
-from armory.utils.config_loading import load_dataset, load_model, load_attack
+from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
 
 
-class Resisc45(Scenario):
+class LibrispeechDevClean(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
         Evaluate the config and return a results dict
@@ -37,6 +41,7 @@ class Resisc45(Scenario):
             classifier.fit_generator(train_data, **fit_kwargs)
 
         classifier.set_learning_phase(False)
+        # Evaluate the ART classifier on benign test examples
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
@@ -44,9 +49,10 @@ class Resisc45(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
         logger.info("Running inference on benign examples...")
+
         task_metric = metrics.categorical_accuracy
+
         benign_accuracies = []
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
@@ -54,8 +60,9 @@ class Resisc45(Scenario):
         benign_accuracy = sum(benign_accuracies) / test_data_generator.size
         logger.info(f"Accuracy on benign test examples: {benign_accuracy:.2%}")
 
-        # Generate adversarial test examples
+        # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
+
         attack = load_attack(config["attack"], classifier)
         test_data_generator = load_dataset(
             config["dataset"],
@@ -63,8 +70,6 @@ class Resisc45(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        # Evaluate the ART classifier on adversarial test examples
-
         adversarial_accuracies = []
         for x, y in tqdm(test_data_generator, desc="Attack"):
             x_adv = attack.generate(x=x)
@@ -74,9 +79,8 @@ class Resisc45(Scenario):
         logger.info(
             f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
         )
-
         results = {
-            "baseline_accuracy": str(benign_accuracy),
-            "adversarial_accuracy": str(adversarial_accuracy),
+            "mean_benign_accuracy": benign_accuracy,
+            "mean_adversarial_accuracy": adversarial_accuracy,
         }
         return results
