@@ -10,6 +10,7 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
+    load_defense,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -38,7 +39,12 @@ class Cifar10(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            classifier.fit_generator(train_data, **fit_kwargs)
+            if config["defense"] is not None:
+                logger.info("loading defense")
+                defense = load_defense(config["defense"], classifier)
+                defense.fit_generator(train_data, **fit_kwargs)
+            else:
+                classifier.fit_generator(train_data, **fit_kwargs)
 
         classifier.set_learning_phase(False)
         # Evaluate the ART classifier on benign test examples
