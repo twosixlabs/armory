@@ -1,5 +1,5 @@
 """
-CIFAR10 scenario evaluation
+Classifier evaluation within ARMORY
 """
 
 import logging
@@ -10,6 +10,7 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
+    load_defense,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -17,12 +18,11 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-class Cifar10(Scenario):
+class DemoFGM(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
-        Evaluate the config and return a results dict
+        Evaluate a config file for classification robustness against attack.
         """
-
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
@@ -40,11 +40,16 @@ class Cifar10(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            classifier.fit_generator(train_data, **fit_kwargs)
-
-        classifier.set_learning_phase(False)
+            if config["defense"] is not None:
+                logger.info("loading defense")
+                defense = load_defense(config["defense"], classifier)
+                defense.fit_generator(train_data, **fit_kwargs)
+            else:
+                classifier.fit_generator(train_data, **fit_kwargs)
 
         # Evaluate the ART classifier on benign test examples
+        classifier.set_learning_phase(False)
+        logger.info("Running inference on benign examples...")
         logger.info(f"Loading test dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
@@ -74,6 +79,7 @@ class Cifar10(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
+
         adversarial_accuracies, perturbations = [], []
         for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Attack"):
             x_adv = attack.generate(x=x)
