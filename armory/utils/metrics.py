@@ -14,20 +14,58 @@ def categorical_accuracy(y, y_pred):
     Return the categorical accuracy of the predictions
     """
     if y.shape == y_pred.shape:
-        return [bool(x) for x in list(y == y_pred)]
+        return [int(x) for x in list(y == y_pred)]
     elif y.ndim + 1 == y_pred.ndim:
-        return [bool(x) for x in list(y == np.argmax(y_pred, axis=1))]
+        return [int(x) for x in list(y == np.argmax(y_pred, axis=1))]
     else:
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
 
 
+def norm(x, x_adv, ord):
+    """
+    Return the given norm over a batch, outputting a list of floats
+    """
+    # cast to float first to prevent overflow errors
+    diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
+    values = np.linalg.norm(diff, ord=ord, axis=1)
+    return list(float(x) for x in values)
+
+
 def linf(x, x_adv):
     """
-    Return the L infinity norm over a batch of inputs as a float
+    Return the L-infinity norm over a batch of inputs as a float
     """
-    # uint8 inputs will return incorrect results, so cast to float
-    diff = np.abs(x.astype(float) - x_adv.astype(float))
-    return list(np.max(diff, tuple(range(1, diff.ndim))))
+    return norm(x, x_adv, np.inf)
+
+
+def l2(x, x_adv):
+    """
+    Return the L2 norm over a batch of inputs as a float
+    """
+    return norm(x, x_adv, 2)
+
+
+def l1(x, x_adv):
+    """
+    Return the L1 norm over a batch of inputs as a float
+    """
+    return norm(x, x_adv, 1)
+
+
+def lp(x, x_adv, p):
+    """
+    Return the Lp norm over a batch of inputs as a float
+    """
+    if p <= 0:
+        raise ValueError(f"p must be positive, not {p}")
+    return norm(x, x_adv, p)
+
+
+def l0(x, x_adv):
+    """
+    Return the L0 'norm' over a batch of inputs as a float
+    """
+    return norm(x, x_adv, 0)
 
 
 class AverageMeter:
