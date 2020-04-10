@@ -18,6 +18,28 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
+def segment(x, y, n_time_bins):
+    """
+    Return segmented batch with dims.
+
+    x is of shape (N,241,T), representing N spectrograms, each with 241 frequency bins
+    and T time bins that's variable, depending on the duration of the corresponding
+    raw audio.
+    """
+
+    x_seg, y_seg = [], []
+    for xt, yt in zip(x, y):
+        n_seg = int(xt.shape[1] / n_time_bins)
+        xt = xt[:, : n_seg * n_time_bins]
+        for ii in range(n_seg):
+            x_seg.append(xt[:, ii * n_time_bins : (ii + 1) * n_time_bins])
+            y_seg.append(yt)
+    x_seg = np.array(x_seg)
+    x_seg = np.expand_dims(x_seg, -1)
+    y_seg = np.array(y_seg)
+    return x_seg, y_seg
+
+
 class LibrispeechDevCleanSpectrogram(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
@@ -66,7 +88,7 @@ class LibrispeechDevCleanSpectrogram(Scenario):
                     verbose=True,
                 )
 
-                if cnt % train_data_generator.batches_per_epoch == 0:
+                if (cnt + 1) % train_data_generator.batches_per_epoch == 0:
                     # evaluate on validation examples
                     val_data_generator = load_dataset(
                         config["dataset"],
@@ -78,19 +100,7 @@ class LibrispeechDevCleanSpectrogram(Scenario):
                     cnt = 0
                     validation_accuracies = []
                     for x_val, y_val in tqdm(val_data_generator):
-                        x_val_seg, y_val_seg = [], []
-                        for xt, yt in zip(x_val, y_val):
-                            n_seg = int(xt.shape[1] / n_tbins)
-                            xt = xt[:, : n_seg * n_tbins]
-                            for ii in range(n_seg):
-                                x_val_seg.append(
-                                    xt[:, ii * n_tbins : (ii + 1) * n_tbins]
-                                )
-                                y_val_seg.append(yt)
-                        x_val_seg = np.array(x_val_seg)
-                        x_val_seg = np.expand_dims(x_val_seg, -1)
-                        y_val_seg = np.array(y_val_seg)
-
+                        x_val_seg, y_val_seg = segment(x_val, y_val, n_tbins)
                         y_pred = classifier.predict(x_val_seg)
                         validation_accuracies.extend(task_metric(y_val_seg, y_pred))
                         cnt += len(y_val_seg)
@@ -112,17 +122,7 @@ class LibrispeechDevCleanSpectrogram(Scenario):
         cnt = 0
         benign_accuracies = []
         for x, y in tqdm(test_data_generator, desc="Benign"):
-            x_seg, y_seg = [], []
-            for xt, yt in zip(x, y):
-                n_seg = int(xt.shape[1] / n_tbins)
-                xt = xt[:, : n_seg * n_tbins]
-                for ii in range(n_seg):
-                    x_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
-                    y_seg.append(yt)
-            x_seg = np.array(x_seg)
-            x_seg = np.expand_dims(x_seg, -1)
-            y_seg = np.array(y_seg)
-
+            x_seg, y_seg = segment(x, y, n_tbins)
             y_pred = classifier.predict(x_seg)
             benign_accuracies.extend(task_metric(y_seg, y_pred))
             cnt += len(y_seg)
@@ -144,17 +144,7 @@ class LibrispeechDevCleanSpectrogram(Scenario):
         cnt = 0
         adversarial_accuracies = []
         for x, y in tqdm(test_data_generator, desc="Attack"):
-            x_seg, y_seg = [], []
-            for xt, yt in zip(x, y):
-                n_seg = int(xt.shape[1] / n_tbins)
-                xt = xt[:, : n_seg * n_tbins]
-                for ii in range(n_seg):
-                    x_seg.append(xt[:, ii * n_tbins : (ii + 1) * n_tbins])
-                    y_seg.append(yt)
-            x_seg = np.array(x_seg)
-            x_seg = np.expand_dims(x_seg, -1)
-            y_seg = np.array(y_seg)
-
+            x_seg, y_seg = segment(x, y, n_tbins)
             x_adv = attack.generate(x=x_seg)
             y_pred = classifier.predict(x_adv)
             adversarial_accuracies.extend(task_metric(y_seg, y_pred))
