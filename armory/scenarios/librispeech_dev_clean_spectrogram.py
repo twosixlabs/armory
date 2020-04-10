@@ -20,11 +20,14 @@ logger = logging.getLogger(__name__)
 
 def segment(x, y, n_time_bins):
     """
-    Return segmented batch with dims.
+    Return segmented batch of spectrograms and labels
 
     x is of shape (N,241,T), representing N spectrograms, each with 241 frequency bins
     and T time bins that's variable, depending on the duration of the corresponding
     raw audio.
+
+    The model accepts a fixed size spectrogram, so data needs to be segmented for a
+    fixed number of time_bins.
     """
 
     x_seg, y_seg = [], []
@@ -67,22 +70,10 @@ class LibrispeechDevCleanSpectrogram(Scenario):
             )
 
             for cnt, (x, y) in tqdm(enumerate(train_data_generator)):
-                # x is of shape (N,241,T), representing N spectrograms,
-                # each with 241 frequency bins and T time bins that's variable,
-                # depending on the duration of the corresponding raw audio.
-                # The model accepts a fixed size spectrogram, so x_trains need to
-                # be sampled.
-
-                x_seg = []
-                for xt in x:
-                    rand_t = np.random.randint(xt.shape[1] - n_tbins)
-                    x_seg.append(xt[:, rand_t : rand_t + n_tbins])
-                x_seg = np.array(x_seg)
-                x_seg = np.expand_dims(x_seg, -1)
-
+                x_seg, y_seg = segment(x, y, n_tbins)
                 classifier.fit(
                     x_seg,
-                    y,
+                    y_seg,
                     batch_size=config["dataset"]["batch_size"],
                     nb_epochs=1,
                     verbose=True,
