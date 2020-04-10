@@ -1,12 +1,15 @@
 {
-    "adhoc": {
-        "train_epochs": 1
-    },
+    "adhoc": null,
     "attack": {
-        "budget": null,
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.3
+            "batch_size": 32,
+            "eps": 0.2
         },
         "module": "art.attacks",
         "name": "FastGradientMethod"
@@ -18,17 +21,23 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory.scenarios.spectrogram_audio_scenario"
+        "eval_file": "armory.scenarios.base"
     },
     "metric": null,
     "model": {
-        "model_kwargs": {
-            "model_status": "trained"
+        "fit_kwargs": {
+            "nb_epochs": 1
         },
+        "model_kwargs": {},
         "module": "armory.baseline_models.keras.librispeech_spectrogram",
         "name": "get_art_model",
         "weights_file": "librispeech_spectral_model_weights.h5",
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.librispeech_dev_clean_spectrogram",
+        "name": "LibrispeechDevCleanSpectrogram"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
