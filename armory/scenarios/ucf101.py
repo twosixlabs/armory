@@ -1,21 +1,31 @@
 """
 Classifier evaluation within ARMORY
 
-Scenario Contributor: MITRE Corporation
+Scenario Contribuor: MITRE Corporation
 """
 
-import importlib
 import logging
-import time
 
 import numpy as np
 from tqdm import tqdm
 
 from armory.scenarios.base import Scenario
 from armory.utils.metrics import AverageMeter
-from armory.utils.config_loading import load_dataset, load_model
+from armory.utils.config_loading import load_dataset, load_model, load_attack
 
 logger = logging.getLogger(__name__)
+
+
+def update_accuracies(y_pred, y, accuracies, accuracies_top5):
+    """
+    Update top-1 and top-5 accuracies. Return top-5 examples, sorted.
+    """
+    y_pred_top5 = np.argsort(np.mean(y_pred, axis=0))[-5:][::-1]
+    acc = float(y_pred_top5[0] == y)
+    acc_top5 = float(y in y_pred_top5)
+    accuracies.update(acc, 1)
+    accuracies_top5.update(acc_top5, 1)
+    return y_pred_top5
 
 
 class Ucf101(Scenario):
@@ -42,7 +52,6 @@ class Ucf101(Scenario):
 
             for epoch in range(train_epochs):
                 classifier.set_learning_phase(True)
-                start = time.time()
 
                 for _ in tqdm(
                     range(train_data_generator.batches_per_epoch),
@@ -62,7 +71,6 @@ class Ucf101(Scenario):
                     classifier.fit(
                         x_train, y_trains, batch_size=batch_size, nb_epochs=1
                     )
-                logger.info(f"Epoch {epoch}/{train_epochs} took {time.time() - start}s")
 
                 # evaluate on test examples
                 classifier.set_learning_phase(False)
@@ -75,16 +83,11 @@ class Ucf101(Scenario):
 
                 accuracies = AverageMeter()
                 accuracies_top5 = AverageMeter()
-                video_count = 0
                 for _ in tqdm(range(len(test_data_generator) // 10), desc="Validation"):
                     x_tests, y_tests = test_data_generator.get_batch()
                     for x_test, y_test in zip(x_tests, y_tests):
-                        y = classifier.predict(x_test)
-                        y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-                        acc = float(y[0] == y_test)
-                        acc_top5 = float(y_test in y)
-                        accuracies.update(acc, 1)
-                        accuracies_top5.update(acc_top5, 1)
+                        y_pred = classifier.predict(x_test)
+                        update_accuracies(y_pred, y_test, accuracies, accuracies_top5)
                 logger.info(
                     f"Top-1 video accuracy = {accuracies.avg}, "
                     f"top-5 video accuracy = {accuracies_top5.avg}"
@@ -106,20 +109,17 @@ class Ucf101(Scenario):
         video_count = 0
         for x_tests, y_tests in tqdm(test_data_generator, desc="Benign"):
             for x_test, y_test in zip(x_tests, y_tests):
-                y = classifier.predict(x_test)
-                y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-                acc = float(y[0] == y_test)
-                acc_top5 = float(y_test in y)
-
-                test_accuracies.update(acc, 1)
-                test_accuracies_top5.update(acc_top5, 1)
+                y_pred = classifier.predict(x_test)
+                y_pred_top5 = update_accuracies(
+                    y_pred, y_test, accuracies, accuracies_top5
+                )
 
                 logger.info(
                     "\t ".join(
                         [
                             f"Video[{video_count}] : ",
-                            f"top5 = {y}",
-                            f"top1 = {y[0]}",
+                            f"top5 = {y_pred_top5}",
+                            f"top1 = {y_pred_top5[0]}",
                             f"true = {y_test}",
                             f"top1_video_acc = {test_accuracies.avg}",
                             f"top5_video_acc = {test_accuracies_top5.avg}",
@@ -129,20 +129,14 @@ class Ucf101(Scenario):
                 video_count += 1
 
         logger.info(
-            "Top-1 test video accuracy = {}, top-5 test video accuracy = {}".format(
-                test_accuracies.avg, test_accuracies_top5.avg
-            )
+            f"Top-1 test video accuracy = {test_accuracies.avg}, "
+            f"top-5 test video accuracy = {test_accuracies_top5.avg}"
         )
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
+        attack = load_attack(config["attack"], classifier)
 
-        # Generate adversarial test examples
-        attack_config = config["attack"]
-        attack_module = importlib.import_module(attack_config["module"])
-        attack_fn = getattr(attack_module, attack_config["name"])
-
-        classifier.set_learning_phase(False)
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
@@ -153,36 +147,31 @@ class Ucf101(Scenario):
         adv_accuracies = AverageMeter()
         adv_accuracies_top5 = AverageMeter()
         video_count = 0
-        for _ in tqdm(range(len(test_data_generator) // 10), desc="Attack"):
+        for _ in tqdm(range(len(test_data_generator)), desc="Attack"):
             x_tests, y_tests = test_data_generator.get_batch()
             for x_test, y_test in zip(x_tests, y_tests):
                 # each x_test is of shape (n_stack, 3, 16, 112, 112)
-                attack = attack_fn(
-                    classifier=classifier,
-                    **attack_config["kwargs"],
-                    batch_size=x_test.shape[0],
-                )
+                #    n_stack varies
+                attack.set_params(batch_size=x_test.shape[0])
                 test_x_adv = attack.generate(x=x_test)
-                y = classifier.predict(test_x_adv)
-                y = np.argsort(np.mean(y, axis=0))[-5:][::-1]
-                acc = float(y[0] == y_test)
-                acc_top5 = float(y_test in y)
-
-                adv_accuracies.update(acc, 1)
-                adv_accuracies_top5.update(acc_top5, 1)
+                y_pred = classifier.predict(test_x_adv)
+                y_pred_top5 = update_accuracies(
+                    y_pred, y_test, accuracies, accuracies_top5
+                )
 
                 logger.info(
                     "\t ".join(
                         [
                             f"Video[{video_count}] : ",
-                            f"top5 = {y}",
-                            f"top1 = {y[0]}",
+                            f"top5 = {y_pred_top5}",
+                            f"top1 = {y_pred_top5[0]}",
                             f"true = {y_test}",
-                            f"top1_video_acc = {adv_accuracies.avg}",
-                            f"top5_video_acc = {adv_accuracies_top5.avg}",
+                            f"top1_video_acc = {test_accuracies.avg}",
+                            f"top5_video_acc = {test_accuracies_top5.avg}",
                         ]
                     )
                 )
+
                 video_count += 1
 
         logger.info(
