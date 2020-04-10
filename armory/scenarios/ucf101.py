@@ -4,7 +4,7 @@ Classifier evaluation within ARMORY
 Contribuor: MITRE Corporation
 """
 
-import import_module
+import importlib
 import logging
 import time
 
@@ -139,7 +139,7 @@ class Ucf101(Scenario):
 
         # Generate adversarial test examples
         attack_config = config["attack"]
-        attack_module = import_module(attack_config["module"])
+        attack_module = importlib.import_module(attack_config["module"])
         attack_fn = getattr(attack_module, attack_config["name"])
 
         classifier.set_learning_phase(False)
