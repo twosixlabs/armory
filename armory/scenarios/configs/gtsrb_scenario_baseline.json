@@ -22,7 +22,7 @@
     },
     "defense": null,
     "evaluation": {
-        "eval_file": "armory.scenarios.gtsrb_scenario"
+        "eval_file": "armory.scenarios.base"
     },
     "metric": null,
     "model": {
@@ -30,6 +30,11 @@
         "module": "armory.baseline_models.keras.keras_gtsrb_micronnet",
         "name": "get_art_model",
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.gtsrb_scenario",
+        "name": "GTSRB"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
