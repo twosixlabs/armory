@@ -1,7 +1,7 @@
 """
 Classifier evaluation within ARMORY
 
-Contribuor: MITRE Corporation
+Scenario Contributor: MITRE Corporation
 """
 
 import importlib
