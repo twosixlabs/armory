@@ -8,7 +8,8 @@ import torch
 from armory import paths
 from armory.data.utils import download_file_from_s3
 
-# from https://github.com/hkakitani/SincNet
+# Load model from MITRE external repo: https://github.com/hkakitani/SincNet
+# Forked from: https://github.com/mravanelli/SincNet
 from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
