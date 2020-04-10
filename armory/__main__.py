@@ -165,7 +165,7 @@ def download(command_args, prog, description):
         dest="download_config",
         type=str,
         action=DownloadConfig,
-        help="Configuration for download of data",
+        help="Configuration for download of data, e.g. scenarios-set1",
     )
 
     parser.add_argument(
@@ -173,11 +173,16 @@ def download(command_args, prog, description):
         dest="scenario",
         type=str,
         default="all",
-        help="scenario for which to download data",
+        help="scenario for which to download data, 'list' for available scenarios, or blank to download all scenarios",
         nargs="?",
     )
 
-    args = parser.parse_args(command_args)
+    try:
+        args = parser.parse_args(command_args)
+    except SystemExit:
+        parser.print_help()
+        raise
+
     coloredlogs.install(level=args.log_level)
     paths.host()
 
