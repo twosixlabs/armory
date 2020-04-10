@@ -25,11 +25,9 @@ def sincnet(weights_file=None):
     pretrained = weights_file is not None
     if pretrained:
         saved_model_dir = paths.docker().saved_model_dir
-        subdir = os.path.join(saved_model_dir, "SincNet")
-        filepath = os.path.join(subdir, weights_file)
+        filepath = os.path.join(saved_model_dir, weights_file)
 
         if not os.path.isfile(filepath):
-            os.makedirs(subdir, exist_ok=True)
             download_file_from_s3(
                 "armory-public-data", f"model-weights/{weights_file}", filepath,
             )
