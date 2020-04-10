@@ -9,6 +9,8 @@ from art.classifiers import PyTorchClassifier
 from armory import paths
 from armory.data.utils import download_file_from_s3
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 def preprocessing_fn(img):
     # Model will trained with inputs normalized from 0 to 1
@@ -46,9 +48,7 @@ def make_mnist_model(**kwargs):
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = make_mnist_model(**model_kwargs)
-
-    if torch.cuda.is_available():
-        model.cuda()
+    model.to(DEVICE)
 
     if weights_file:
         saved_model_dir = paths.docker().saved_model_dir
@@ -61,7 +61,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
                 f"{saved_model_dir}/{weights_file}",
             )
 
-        model.load(filepath)
+        checkpoint = torch.load(filepath, map_location=DEVICE)
+        model.load_state_dict(checkpoint["state_dict"])
 
     wrapped_model = PyTorchClassifier(
         model,
