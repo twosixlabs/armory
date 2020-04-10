@@ -1,12 +1,5 @@
 {
-    "adhoc": null,
     "attack": {
-        "budget": {
-            "norm": [
-                "Linf"
-            ]
-        },
-        "knowledge": "white",
         "kwargs": {
             "eps": 0.2
         },
@@ -19,10 +12,12 @@
         "name": "cifar10"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
+    "metric": {
+        "perturbation": "linf",
+        "task": [
+            "categorical_accuracy"
+        ]
     },
-    "metric": null,
     "model": {
         "fit_kwargs": {
             "nb_epochs": 3

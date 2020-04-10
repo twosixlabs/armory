@@ -9,23 +9,21 @@
     "dataset": {
         "batch_size": 16,
         "module": "armory.data.datasets",
-        "name": "resisc45"
+        "name": "mnist"
     },
     "defense": null,
     "metric": {
         "perturbation": "linf",
-        "task": [
-            "categorical_accuracy",
-            "categorical_accuracy_top_5"
-        ]
+        "task": "categorical_accuracy"
     },
     "model": {
-        "fit": false,
-        "fit_kwargs": {},
+        "fit_kwargs": {
+            "nb_epochs": 3
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
-        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
