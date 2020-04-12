@@ -1,13 +1,8 @@
 """
-Main script for running scenarios. Users will still call armory:
+Main script for running scenarios. Users will run a scenario by calling:
     armory run <config_file.json>
 
-In the config file, users will need to point at this base file:
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
-    },
-
-There is an additional piece to the config with key "scenario":
+The particular scenario and configs will be picked up in the "scenario" field:
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.cifar10",

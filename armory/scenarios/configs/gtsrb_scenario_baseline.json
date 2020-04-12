@@ -21,9 +21,6 @@
         "name": "german_traffic_sign"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
-    },
     "metric": null,
     "model": {
         "model_kwargs": {},

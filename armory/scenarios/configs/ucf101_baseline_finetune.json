@@ -15,9 +15,6 @@
         "name": "ucf101"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
-    },
     "metric": null,
     "model": {
         "fit": true,
