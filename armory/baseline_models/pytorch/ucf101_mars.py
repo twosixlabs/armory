@@ -1,5 +1,4 @@
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
@@ -12,8 +11,7 @@ from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
 
 logger = logging.getLogger(__name__)
@@ -30,15 +28,8 @@ def make_model(model_status="ucf101_trained", weights_file=None):
     if not trained and weights_file is None:
         raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
 
-    if weights_file is not None:
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
+    if weights_file:
+        filepath = maybe_download_weights_from_s3(weights_file)
 
     opt = parse_opts(arguments=[])
     opt.dataset = "UCF101"

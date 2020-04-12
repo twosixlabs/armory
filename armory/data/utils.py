@@ -14,28 +14,56 @@ import string
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
+from botocore.exceptions import ClientError
 
+from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
 
 
-def download_file_from_s3(bucket_name: str, key: str, local_path: str):
+def maybe_download_weights_from_s3(weights_file: str) -> str:
+    """
+
+    :param weights_file:
+    :return:
+    """
+    saved_model_dir = paths.docker().saved_model_dir
+    filepath = os.path.join(saved_model_dir, weights_file)
+
+    if os.path.isfile(filepath):
+        logger.info(f"Using available {weights_file} in Armory `saved_model_dir`")
+    else:
+        logger.info(
+            f"{weights_file} not found in Armory `saved_model_dir`. Attempting to pull weights from S3"
+        )
+        download_file_from_s3(
+            "armory-public-data",
+            f"model-weights/{weights_file}",
+            f"{saved_model_dir}/{weights_file}",
+        )
+    return filepath
+
+
+def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     """
     Downloads file from S3 anonymously
     :param bucket_name: S3 Bucket name
-    :param key: S3 File keyname
+    :param key: S3 File key name
     :param local_path: Local file path to download as
-    :param progress_bar: Whether or not to display download progress
     """
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-        logger.info("Downloading S3 data file...")
-        with ProgressPercentage(client, bucket_name, key) as Callback:
-            client.download_file(bucket_name, key, local_path, Callback=Callback)
+
+        try:
+            logger.info("Downloading S3 data file...")
+            with ProgressPercentage(client, bucket_name, key) as Callback:
+                client.download_file(bucket_name, key, local_path, Callback=Callback)
+        except ClientError:
+            raise KeyError(f"File {key} not available in {bucket_name} bucket.")
 
     else:
-        logger.info("Reusing cached file...")
+        logger.info(f"Reusing cached file {local_path}...")
 
 
 def curl(url: str, dirpath: str, filename: str) -> None:
