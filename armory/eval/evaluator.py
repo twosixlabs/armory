@@ -188,13 +188,8 @@ class Evaluator(object):
         self._delete_tmp()
 
     def _run_config(self, runner) -> None:
-        if self.config.get("evaluation") is None:
-            logger.info(bold(red("No evaluation script to run")))
-            return
         logger.info(bold(red("Running evaluation script")))
-        runner.exec_cmd(
-            f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
-        )
+        runner.exec_cmd(f"python -m armory.scenarios.base {self.docker_config_path}")
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
@@ -218,7 +213,7 @@ class Evaluator(object):
                     bold("*** To run your script in the container:"),
                     bold(
                         red(
-                            f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
+                            f"    python -m armory.scenarios.base {self.docker_config_path}"
                         )
                     ),
                     bold("*** To gracefully shut down container, press: Ctrl-C"),

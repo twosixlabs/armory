@@ -62,7 +62,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           bash docker/build-dev.sh tf1
-          python -m armory run tests/configs/tf1/fgm_attack_test.json
+          python -m armory run tests/scenarios/tf1/image_classification.json
   pytest-tf2:
     name: PyTest TF2
     runs-on: ubuntu-18.04
@@ -101,11 +101,11 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: '3.6'
-      - name: Run armory Pytorch configs
+      - name: Run armory Pytorch scenarios
         run: |
           pip install -r requirements.txt
           bash docker/build-dev.sh pytorch
-          python -m armory run tests/configs/pytorch/fgm_attack_test.json
+          python -m armory run tests/scenarios/pytorch/image_classification.json
   flake8-test:
     name: Flake8
     runs-on: ubuntu-18.04

@@ -1,7 +1,6 @@
 {
-    "adhoc": {},
+    "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -15,11 +14,16 @@
         "name": "resisc45"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
+    "metric": {
+        "perturbation": "linf",
+        "task": [
+            "categorical_accuracy",
+            "categorical_accuracy_top_5"
+        ]
     },
-    "metric": null,
     "model": {
+        "fit": false,
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.densenet121_resisc45",
         "name": "get_art_model",
@@ -28,12 +32,12 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.resisc45",
-        "name": "Resisc45"
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
-        "use_gpu": false
+        "use_gpu": true
     }
 }
