@@ -31,9 +31,10 @@ os.environ["KMP_WARNINGS"] = "0"
 
 logger = logging.getLogger(__name__)
 
-CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
+CHECKSUMS_DIR = os.path.join(paths.docker().dataset_dir, "url_checksums")
+CACHED_CHECKSUMS_DIR = os.path.join(paths.docker().dataset_dir, "cached_s3_checksums")
+
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
-CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_s3_checksums")
 
 
 class ArmoryDataGenerator(DataGenerator):
