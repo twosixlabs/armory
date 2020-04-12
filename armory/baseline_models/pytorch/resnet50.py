@@ -1,17 +1,14 @@
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
 from torchvision import models
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -40,16 +37,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model.to(DEVICE)
 
     if weights_file:
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
-
+        filepath = maybe_download_weights_from_s3(weights_file)
         checkpoint = torch.load(filepath, map_location=DEVICE)
         model.load_state_dict(checkpoint["state_dict"])
 

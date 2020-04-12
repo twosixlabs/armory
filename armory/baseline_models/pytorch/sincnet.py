@@ -1,19 +1,16 @@
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
 # Load model from MITRE external repo: https://github.com/hkakitani/SincNet
 # Forked from: https://github.com/mravanelli/SincNet
 from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
 SAMPLE_RATE = 8000
 WINDOW_STEP_SIZE = 375
@@ -25,16 +22,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def sincnet(weights_file=None):
     pretrained = weights_file is not None
     if pretrained:
-        saved_model_dir = paths.docker().saved_model_dir
-        subdir = os.path.join(saved_model_dir, "SincNet")
-        filepath = os.path.join(subdir, weights_file)
-
-        if not os.path.isfile(filepath):
-            os.makedirs(subdir, exist_ok=True)
-            download_file_from_s3(
-                "armory-public-data", f"model-weights/{weights_file}", filepath,
-            )
-
+        filepath = maybe_download_weights_from_s3(weights_file)
         model_params = torch.load(filepath, map_location=DEVICE)
     else:
         model_params = {}
