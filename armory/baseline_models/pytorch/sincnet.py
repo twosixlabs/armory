@@ -8,7 +8,8 @@ import torch
 from armory import paths
 from armory.data.utils import download_file_from_s3
 
-# from https://github.com/hkakitani/SincNet
+# Load model from MITRE external repo: https://github.com/hkakitani/SincNet
+# Forked from: https://github.com/mravanelli/SincNet
 from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ SAMPLE_RATE = 8000
 WINDOW_STEP_SIZE = 375
 WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def sincnet(weights_file=None):
@@ -32,7 +33,7 @@ def sincnet(weights_file=None):
                 "armory-public-data", f"model-weights/{weights_file}", filepath,
             )
 
-        model_params = torch.load(filepath, map_location=device)
+        model_params = torch.load(filepath, map_location=DEVICE)
     else:
         model_params = {}
     CNN_params = model_params.get("CNN_model_par")
@@ -106,7 +107,6 @@ def sincnet(weights_file=None):
     }
 
     sincNet = dnn_models.SincWrapper(DNN2_options, DNN1_options, CNN_options)
-    sincNet.to(device)
 
     if pretrained:
         sincNet.eval()
@@ -142,6 +142,8 @@ def preprocessing_fn(batch):
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = sincnet(weights_file=weights_file, **model_kwargs)
+    model.to(DEVICE)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.NLLLoss(),
