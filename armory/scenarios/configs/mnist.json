@@ -1,5 +1,7 @@
 {
+    "adhoc": null,
     "attack": {
+        "knowledge": "white",
         "kwargs": {
             "eps": 0.2
         },
@@ -14,9 +16,12 @@
     "defense": null,
     "metric": {
         "perturbation": "linf",
-        "task": "categorical_accuracy"
+        "task": [
+            "categorical_accuracy"
+        ]
     },
     "model": {
+        "fit": true,
         "fit_kwargs": {
             "nb_epochs": 3
         },

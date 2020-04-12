@@ -1,5 +1,5 @@
 """
-General image classifiation scenario
+General image classification scenario
 """
 
 import logging

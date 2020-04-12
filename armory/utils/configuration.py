@@ -32,11 +32,6 @@ def _verify_attack(config: Optional[dict]):
         if config["knowledge"] is not None:
             assert isinstance(config["knowledge"], str)
 
-        if "budget" not in config.keys():
-            raise ValueError("`budget` field must contain a nested json")
-        if config["budget"] is not None:
-            assert isinstance(config["budget"], dict)
-
 
 def _verify_dataset(config: Optional[dict]):
     if config is None:
@@ -75,35 +70,11 @@ def _verify_defense(config: Optional[dict]):
             assert isinstance(config["kwargs"], dict)
 
 
-def _verify_evaluation(config: Optional[dict]):
-    if config is None:
-        raise ValueError("Evaluation field must contain a nested json")
-    else:
-        assert isinstance(config, dict)
-
-        if "eval_file" not in config.keys():
-            raise ValueError("An `eval_file` must be specified in evaluation json")
-        assert isinstance(config["eval_file"], str)
-
-
 def _verify_metric(config: Optional[dict]):
     if config is None:
         return
     else:
         assert isinstance(config, dict)
-
-        if "module" not in config.keys():
-            raise ValueError("A `module` must be specified in metric json")
-        assert isinstance(config["module"], str)
-
-        if "name" not in config.keys():
-            raise ValueError("A `name` must be specified in metric json")
-        assert isinstance(config["name"], str)
-
-        if "kwargs" not in config.keys():
-            raise ValueError("`kwargs` must be specified in metric json")
-        if config["kwargs"] is not None:
-            assert isinstance(config["kwargs"], dict)
 
 
 def _verify_model(config: Optional[dict]):
@@ -157,7 +128,6 @@ def verify_config(config: dict) -> dict:
         "attack",
         "dataset",
         "defense",
-        "evaluation",
         "metric",
         "model",
         "sysconfig",
@@ -169,7 +139,6 @@ def verify_config(config: dict) -> dict:
         _verify_attack(config["attack"])
         _verify_dataset(config["dataset"])
         _verify_defense(config["defense"])
-        _verify_evaluation(config["evaluation"])
         _verify_metric(config["metric"])
         _verify_model(config["model"])
         _verify_sysconfig(config["sysconfig"])
