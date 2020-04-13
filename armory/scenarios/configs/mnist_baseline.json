@@ -1,10 +1,7 @@
 {
-    "adhoc": {
-        "batch_size": 64,
-        "epochs": 3
-    },
+    "_description": "Baseline mnist image classification",
+    "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -18,17 +15,32 @@
         "name": "mnist"
     },
     "defense": null,
-    "evaluation": null,
-    "metric": null,
+    "metric": {
+        "perturbation": "linf",
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
     "model": {
+        "fit": true,
+        "fit_kwargs": {
+            "nb_epochs": 20
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.keras_mnist",
+        "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
+        "weights_file": null,
         "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }

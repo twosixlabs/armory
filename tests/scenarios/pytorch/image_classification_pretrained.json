@@ -1,11 +1,6 @@
 {
     "adhoc": null,
     "attack": {
-        "budget": {
-            "norm": [
-                "Linf"
-            ]
-        },
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -19,28 +14,30 @@
         "name": "mnist"
     },
     "defense": null,
-    "evaluation": {
-        "eval_file": "armory.scenarios.base"
+    "metric": {
+        "perturbation": "linf",
+        "task": [
+            "categorical_accuracy"
+        ]
     },
-    "metric": null,
     "model": {
-        "fit_kwargs": {
-            "nb_epochs": 3
-        },
+        "fit": false,
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.mnist",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "undefended_mnist_5epochs.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "tests.scenarios.demo_fgm",
-        "name": "DemoFGM"
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }

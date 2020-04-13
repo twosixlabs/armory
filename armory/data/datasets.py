@@ -1,11 +1,11 @@
 """
-Download and preprocess common datasets.
-Each standard dataset resides in its own subdirectory under <dataset_dir> based
+Download and load baseline datasets with optional pre-processing.
+
+Each baseline dataset resides in its own subdirectory under <dataset_dir> based
 upon the name of the function in the datasets file. For example, the cifar10
 data is found at '<dataset_dir>/cifar10'
-The 'download' subdirectory under <dataset_dir> is reserved for caching.
-The 'private' subdirectory under <dataset_dir> is reserved for private
-datasets.
+
+The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import logging

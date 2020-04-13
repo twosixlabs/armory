@@ -1,40 +1,57 @@
+"""
+CNN model for raw audio classification
+
+Model contributed by: MITRE Corporation
+Adapted from: https://github.com/mravanelli/SincNet
+"""
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
-# from https://github.com/hkakitani/SincNet
+# Load model from MITRE external repo: https://github.com/hkakitani/SincNet
+# This needs to be defined in your config's `external_github_repo` field to be
+# downloaded and placed on the PYTHONPATH
 from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
 SAMPLE_RATE = 8000
 WINDOW_STEP_SIZE = 375
 WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def preprocessing_fn(batch):
+    """
+    Standardize, then normalize sound clips
+    """
+    processed_batch = []
+    for clip in batch:
+
+        signal = clip.astype(np.float64)
+        # Signal normalization
+        signal = signal / np.max(np.abs(signal))
+
+        # get random chunk of fixed length (from SincNet's create_batches_rnd)
+        signal_length = len(signal)
+        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
+        signal_stop = signal_start + WINDOW_LENGTH
+        signal = signal[signal_start:signal_stop]
+        processed_batch.append(signal)
+
+    return np.array(processed_batch)
 
 
 def sincnet(weights_file=None):
     pretrained = weights_file is not None
     if pretrained:
-        saved_model_dir = paths.docker().saved_model_dir
-        subdir = os.path.join(saved_model_dir, "SincNet")
-        filepath = os.path.join(subdir, weights_file)
-
-        if not os.path.isfile(filepath):
-            os.makedirs(subdir, exist_ok=True)
-            download_file_from_s3(
-                "armory-public-data", f"model-weights/{weights_file}", filepath,
-            )
-
-        model_params = torch.load(filepath, map_location=device)
+        filepath = maybe_download_weights_from_s3(weights_file)
+        model_params = torch.load(filepath, map_location=DEVICE)
     else:
         model_params = {}
     CNN_params = model_params.get("CNN_model_par")
@@ -108,7 +125,6 @@ def sincnet(weights_file=None):
     }
 
     sincNet = dnn_models.SincWrapper(DNN2_options, DNN1_options, CNN_options)
-    sincNet.to(device)
 
     if pretrained:
         sincNet.eval()
@@ -120,30 +136,11 @@ def sincnet(weights_file=None):
     return sincNet
 
 
-def preprocessing_fn(batch):
-    """
-    Standardize, then normalize sound clips
-    """
-    processed_batch = []
-    for clip in batch:
-
-        signal = clip.astype(np.float64)
-        # Signal normalization
-        signal = signal / np.max(np.abs(signal))
-
-        # get random chunk of fixed length (from SincNet's create_batches_rnd)
-        signal_length = len(signal)
-        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
-        signal_stop = signal_start + WINDOW_LENGTH
-        signal = signal[signal_start:signal_stop]
-        processed_batch.append(signal)
-
-    return np.array(processed_batch)
-
-
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = sincnet(weights_file=weights_file, **model_kwargs)
+    model.to(DEVICE)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.NLLLoss(),

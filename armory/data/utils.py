@@ -6,7 +6,6 @@ import logging
 import hashlib
 import tarfile
 import os
-import subprocess
 import shutil
 import random
 import string
@@ -15,43 +14,72 @@ import json
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
+from botocore.exceptions import ClientError
+import requests
+from tqdm import tqdm
 
+from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
 
 
-def download_file_from_s3(bucket_name: str, key: str, local_path: str):
+def maybe_download_weights_from_s3(weights_file: str) -> str:
+    """
+
+    :param weights_file:
+    :return:
+    """
+    saved_model_dir = paths.docker().saved_model_dir
+    filepath = os.path.join(saved_model_dir, weights_file)
+
+    if os.path.isfile(filepath):
+        logger.info(f"Using available {weights_file} in Armory `saved_model_dir`")
+    else:
+        logger.info(
+            f"{weights_file} not found in Armory `saved_model_dir`. Attempting to pull weights from S3"
+        )
+        download_file_from_s3(
+            "armory-public-data",
+            f"model-weights/{weights_file}",
+            f"{saved_model_dir}/{weights_file}",
+        )
+    return filepath
+
+
+def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     """
     Downloads file from S3 anonymously
     :param bucket_name: S3 Bucket name
-    :param key: S3 File keyname
+    :param key: S3 File key name
     :param local_path: Local file path to download as
-    :param progress_bar: Whether or not to display download progress
     """
     if not os.path.isfile(local_path):
         client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
-        logger.info("Downloading S3 data file...")
-        with ProgressPercentage(client, bucket_name, key) as Callback:
-            client.download_file(bucket_name, key, local_path, Callback=Callback)
+
+        try:
+            logger.info("Downloading S3 data file...")
+            with ProgressPercentage(client, bucket_name, key) as Callback:
+                client.download_file(bucket_name, key, local_path, Callback=Callback)
+        except ClientError:
+            raise KeyError(f"File {key} not available in {bucket_name} bucket.")
 
     else:
-        logger.info("Reusing cached file...")
+        logger.info(f"Reusing cached file {local_path}...")
 
 
-def curl(url: str, dirpath: str, filename: str) -> None:
-    """
-    Downloads a file with a specified output filename and directory
-    :param url: URL to file
-    :param dirpath: Output directory
-    :param filename: Output filename
-    """
-    try:
-        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
-    except subprocess.CalledProcessError:
-        raise subprocess.CalledProcessError
+def download_requests(url: str, dirpath: str, filename: str):
+    filepath = os.path.join(dirpath, filename)
+    chunk_size = 4096
+    r = requests.get(url, stream=True, verify=False)
+    with open(filepath, "wb") as f:
+        progress_bar = tqdm(
+            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+        )
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            if chunk:  # filter keep-alive chunks
+                progress_bar.update(len(chunk))
+                f.write(chunk)
 
 
 def sha256(filepath: str, block_size=4096):
@@ -130,7 +158,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         try:
             s3_url_region = "us-east-2"
             url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
-            curl(url, dataset_dir, tar_filepath)
+            download_requests(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):

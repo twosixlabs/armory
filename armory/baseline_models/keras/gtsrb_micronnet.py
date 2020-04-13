@@ -1,5 +1,7 @@
 """
-Preprocessing and model architecture for German Traffic Sign Recognition Benchmark
+MicronNet CNN model for 48x48x3 image classification
+
+Model contributed by: MITRE Corporation
 """
 import numpy as np
 from PIL import Image
@@ -21,10 +23,11 @@ def preprocessing_fn(img):
 
 
 def make_model(**kwargs) -> tf.keras.Model:
-    # Model is based on MicronNet: https://arxiv.org/abs/1804.00497v3
-
+    """
+    Model is based on MicronNet: https://arxiv.org/abs/1804.00497v3
+    """
     img_size = 48
-    NUM_CLASSES = 43
+    num_classes = 43
     eps = 1e-6
 
     inputs = Input(shape=(img_size, img_size, 3))
@@ -48,7 +51,7 @@ def make_model(**kwargs) -> tf.keras.Model:
     x = Activation("relu")(x)
     x = BatchNormalization(epsilon=eps)(x)
     x = Dense(300, activation="relu")(x)
-    predictions = Dense(NUM_CLASSES, activation="softmax")(x)
+    predictions = Dense(num_classes, activation="softmax")(x)
 
     model = Model(inputs=inputs, outputs=predictions)
     model.compile(

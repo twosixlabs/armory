@@ -1,5 +1,10 @@
+"""
+CNN model for 241x100x1 audio spectrogram classification
+
+Model contributed by: MITRE Corporation
+Adapted from: https://github.com/craston/MARS
+"""
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
@@ -7,13 +12,14 @@ from PIL import Image
 import torch
 from torch import optim
 
-# MARS specific imports
+# Load model from MITRE external repo: https://github.com/yusong-tan/MARS
+# This needs to be defined in your config's `external_github_repo` field to be
+# downloaded and placed on the PYTHONPATH
 from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
 
 logger = logging.getLogger(__name__)
@@ -30,15 +36,8 @@ def make_model(model_status="ucf101_trained", weights_file=None):
     if not trained and weights_file is None:
         raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
 
-    if weights_file is not None:
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
+    if weights_file:
+        filepath = maybe_download_weights_from_s3(weights_file)
 
     opt = parse_opts(arguments=[])
     opt.dataset = "UCF101"
@@ -137,6 +136,7 @@ def preprocessing_fn(inputs):
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
     model, optimizer = make_model(weights_file=weights_file, **model_kwargs)
+    model.to(DEVICE)
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])
     wrapped_model = PyTorchClassifier(

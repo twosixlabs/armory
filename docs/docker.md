@@ -77,6 +77,7 @@ The `use_gpu` flag takes a boolean true/false value, and specifies whether to us
 The `gpus` flag is optional, and is ignored if `use_gpu` is false. If `use_gpu` is true, it defaults to using all GPUs.
     If present, the value should be a `,`-separated list of numbers specifying the GPU index in `nvidia-smi`.
     For instance, `"gpus": "2,4,7"` would enable three GPUs with indexes 2, 4, and 7.
+    Setting the field to be `all` will enable use of all available gpus, i.e. `"gpus": "all"` will enable all GPUs.
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for 
