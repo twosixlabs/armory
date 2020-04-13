@@ -110,7 +110,7 @@ class GTSRB(Scenario):
         # Clean test data to be poisoned
         test_data_generator = load_dataset(
             config["dataset"],
-            epochs=1,
+            epochs=3,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
@@ -124,14 +124,6 @@ class GTSRB(Scenario):
             cnt += len(y_test)
         validation_accuracy = float(correct) / cnt
         logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
-
-        # Evaluate on test examples
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=2,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
 
         correct = 0
         cnt = 0
