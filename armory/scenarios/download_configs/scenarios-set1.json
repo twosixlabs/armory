@@ -8,6 +8,14 @@
                 null
             ]
         },
+        "german-traffic-sign-poisoning": {
+            "dataset_name": [
+                "german_traffic_sign"
+            ],
+            "weights_file": [
+                null
+            ]
+        },
         "librispeech-speaker-identification": {
             "dataset_name": [
                 "librispeech_dev_clean"
@@ -23,14 +31,6 @@
             ],
             "weights_file": [
                 "densenet121-resisc45-val_acc-0.93.hdf5"
-            ]
-        },
-        "traffic-sign-backdoor-poisoning": {
-            "dataset_name": [
-                "german_traffic_sign"
-            ],
-            "weights_file": [
-                null
             ]
         },
         "ucf-action-recognition": {
