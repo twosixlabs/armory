@@ -24,6 +24,28 @@ def categorical_accuracy(y, y_pred):
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
 
 
+def top_5_categorical_accuracy(y, y_pred):
+    """
+    Return the top 5 categorical accuracy of the predictions
+    """
+    return top_n_categorical_accuracy(y, y_pred, 5)
+
+
+def top_n_categorical_accuracy(y, y_pred, n):
+    if n < 1:
+        raise ValueError(f"n must be a positive integer, not {n}")
+    n = int(n)
+    if len(y) != len(y_pred):
+        raise ValueError("y and y_pred are of different length")
+    if y.shape == y_pred.shape:
+        raise ValueError("Must supply multiple predictions for top 5 accuracy")
+    elif y.ndim + 1 == y_pred.ndim:
+        y_pred_top5 = np.argsort(y_pred, axis=1)[:, -n:]
+        return [int(y[i] in y_pred_top5[i]) for i in range(len(y))]
+    else:
+        raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
+
+
 def norm(x, x_adv, ord):
     """
     Return the given norm over a batch, outputting a list of floats
