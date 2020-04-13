@@ -1,15 +1,9 @@
 {
-    "_description": "Librispeech_dev_clean audio spectrogram classification, contributed by MITRE Corporation",
+    "_description": "Baseline mnist image classification",
     "adhoc": null,
     "attack": {
-        "budget": {
-            "norm": [
-                "L2"
-            ]
-        },
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 32,
             "eps": 0.2
         },
         "module": "art.attacks",
@@ -18,30 +12,35 @@
     "dataset": {
         "batch_size": 64,
         "module": "armory.data.datasets",
-        "name": "librispeech_dev_clean"
+        "name": "mnist"
     },
     "defense": null,
-    "metric": null,
+    "metric": {
+        "perturbation": "linf",
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
     "model": {
-        "fit": false,
+        "fit": true,
         "fit_kwargs": {
-            "nb_epochs": 1
+            "nb_epochs": 20
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.librispeech_spectrogram",
+        "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
-        "weights_file": "librispeech_spectral_model_weights.h5",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.librispeech_dev_clean_spectrogram",
-        "name": "LibrispeechDevCleanSpectrogram"
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
