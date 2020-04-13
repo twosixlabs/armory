@@ -46,7 +46,7 @@ def top_n_categorical_accuracy(y, y_pred, n):
     if y.shape == y_pred.shape:
         raise ValueError("Must supply multiple predictions for top 5 accuracy")
     elif y.ndim + 1 == y_pred.ndim:
-        y_pred_top5 = np.argsort(y_pred, axis=1)[:, -n:]
+        y_pred_top5 = np.argsort(y_pred, axis=-1)[:, -n:]
         return [int(y[i] in y_pred_top5[i]) for i in range(len(y))]
     else:
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
