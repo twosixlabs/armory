@@ -70,7 +70,7 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
 def download_requests(url: str, dirpath: str, filename: str):
     filepath = os.path.join(dirpath, filename)
     chunk_size = 4096
-    r = requests.get(url, stream=True)
+    r = requests.get(url, stream=True, verify=False)
     with open(filepath, "wb") as f:
         progress_bar = tqdm(
             unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
