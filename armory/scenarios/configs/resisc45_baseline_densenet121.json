@@ -1,4 +1,5 @@
 {
+    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",

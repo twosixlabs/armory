@@ -1,4 +1,5 @@
 {
+    "_description": "Baseline cifar10 image classification",
     "adhoc": null,
     "attack": {
         "knowledge": "white",

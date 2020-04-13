@@ -1,3 +1,9 @@
+"""
+CNN model for 241x100x1 audio spectrogram classification
+
+Model contributed by: MITRE Corporation
+Adapted from: https://github.com/craston/MARS
+"""
 import logging
 
 from art.classifiers import PyTorchClassifier
@@ -6,7 +12,9 @@ from PIL import Image
 import torch
 from torch import optim
 
-# MARS specific imports
+# Load model from MITRE external repo: https://github.com/yusong-tan/MARS
+# This needs to be defined in your config's `external_github_repo` field to be
+# downloaded and placed on the PYTHONPATH
 from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data

@@ -1,5 +1,5 @@
 """
-
+CNN model for 32x32x3 image classification
 """
 import numpy as np
 import tensorflow as tf
