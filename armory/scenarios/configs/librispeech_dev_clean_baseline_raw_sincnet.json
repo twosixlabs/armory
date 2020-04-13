@@ -22,6 +22,7 @@
     "defense": null,
     "metric": null,
     "model": {
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 20000
         },

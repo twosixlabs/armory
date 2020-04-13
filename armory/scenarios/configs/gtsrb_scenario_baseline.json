@@ -24,6 +24,8 @@
     "defense": null,
     "metric": null,
     "model": {
+        "fit": true,
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.keras_gtsrb_micronnet",
         "name": "get_art_model",
