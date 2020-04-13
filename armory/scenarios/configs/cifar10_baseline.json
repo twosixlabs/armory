@@ -16,9 +16,9 @@
     },
     "defense": null,
     "metric": {
-        "full": true,
         "means": true,
         "perturbation": "linf",
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]

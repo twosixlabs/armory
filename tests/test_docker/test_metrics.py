@@ -58,7 +58,7 @@ def test_metric_list():
 
 def test_metrics_logger():
     metrics_config = {
-        "full": True,
+        "record_metric_per_sample": True,
         "means": True,
         "perturbation": "l1",
         "task": ["categorical_accuracy"],
