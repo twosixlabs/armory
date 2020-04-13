@@ -85,7 +85,7 @@ def curl(url: str, dirpath: str, filename: str) -> None:
 
 def download_requests(url: str, dirpath: str, filename: str):
     filepath = os.path.join(dirpath, filename)
-    chunk_size = 1024
+    chunk_size = 4096
     r = requests.get(url, stream=True)
     with open(filepath, "wb") as f:
         progress_bar = tqdm(
