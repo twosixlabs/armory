@@ -10,7 +10,7 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 64,
         "module": "armory.data.datasets",
         "name": "cifar10"
     },
@@ -24,7 +24,7 @@
     "model": {
         "fit": true,
         "fit_kwargs": {
-            "nb_epochs": 3
+            "nb_epochs": 20
         },
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.cifar",
