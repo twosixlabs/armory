@@ -78,7 +78,7 @@ datasets, and scenarios can be utilized.
 
 Additionally, volumes (such as your current working directory) will be mounted from 
 your system host so that you can modify code to be ran, and retrieve outputs. 
-For more information on these mounts, please see our [Docker documentation](docs/docker.md#Docker Volume Mounts) 
+For more information on these mounts, please see our [Docker documentation](docs/docker.md#Docker%20Volume%20Mounts) 
 
 # Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities. 
