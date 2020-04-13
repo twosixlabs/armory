@@ -65,6 +65,7 @@ class ImageClassification(Scenario):
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
+            break
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -82,5 +83,6 @@ class ImageClassification(Scenario):
             y_pred_adv = classifier.predict(x_adv)
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
+            break
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

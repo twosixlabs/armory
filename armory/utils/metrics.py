@@ -142,6 +142,16 @@ class MetricsLogger:
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
         self.full = bool(full)
+        if not self.means and not self.full:
+            logger.warning(
+                "No metric results will be produced. "
+                "To change this, set 'means' or 'full' to True."
+            )
+        if not self.tasks and not self.perturbations:
+            logger.warning(
+                "No metric results will be produced. "
+                "To change this, set one or more 'task' or 'perturbation' metrics"
+            )
 
     def _generate_counters(self, names):
         if names is None:
@@ -185,39 +195,22 @@ class MetricsLogger:
                 f"{metric.mean():.2%}"
             )
 
-    def results(self, prefix=""):
+    def results(self):
         """
         Return dict of results
-
-        prefix - string to prefix metric name with, e.g., "benign" or "adversarial"
-            will insert a "_" character before prefix if present
         """
-        if not isinstance(prefix, str):
-            raise ValueError(f"prefix must be a string, not {prefix}")
-        if len(prefix) > 1:
-            prefix = prefix + "_"
-
         results = {}
-        results["task"] = task_results = {}
-        for metric in self.tasks:
-            prefix = "benign_"
-            if self.full:
-                task_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.means:
-                task_results[f"{prefix}mean_{metric.name}"] = metric.mean()
-        for metric in self.adversarial_tasks:
-            prefix = "adversarial_"
-            if self.full:
-                task_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.means:
-                task_results[f"{prefix}mean_{metric.name}"] = metric.mean()
-        results["perturbation"] = perturbation_results = {}
-        for metric in self.perturbations:
-            prefix = "perturbation_"
-            if self.full:
-                perturbation_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.means:
-                perturbation_results[f"{prefix}mean_{metric.name}"] = metric.mean()
+        for metrics, prefix in [
+            (self.tasks, "benign"),
+            (self.adversarial_tasks, "adversarial"),
+            (self.perturbations, "perturbation"),
+        ]:
+            for metric in metrics:
+                if self.full:
+                    results[f"{prefix}_{metric.name}"] = metric.values()
+                if self.means:
+                    results[f"{prefix}_mean_{metric.name}"] = metric.mean()
+
         return results
 
 
