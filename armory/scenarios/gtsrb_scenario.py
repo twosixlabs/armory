@@ -61,14 +61,6 @@ class GTSRB(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
 
-        # Clean test data to be poisoned
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=train_epochs,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-
         # Generate poison examples
         # Ignore this section if using existing poisoned dataset
 
@@ -115,21 +107,28 @@ class GTSRB(Scenario):
                     verbose=False,
                 )
 
-            # Validate on clean test data
-            correct = 0
-            cnt = 0
-            for _ in range(test_data_generator.batches_per_epoch):
-                x_test, y_test = test_data_generator.get_batch()
-                y = classifier.predict(x_test)
-                correct += np.sum(np.argmax(y, 1) == y_test)
-                cnt += len(y_test)
-            validation_accuracy = float(correct) / cnt
-            logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
+        # Clean test data to be poisoned
+        test_data_generator = load_dataset(
+            config["dataset"],
+            epochs=1,
+            split_type="test",
+            preprocessing_fn=preprocessing_fn,
+        )
+        # Validate on clean test data
+        correct = 0
+        cnt = 0
+        for _ in range(test_data_generator.batches_per_epoch):
+            x_test, y_test = test_data_generator.get_batch()
+            y = classifier.predict(x_test)
+            correct += np.sum(np.argmax(y, 1) == y_test)
+            cnt += len(y_test)
+        validation_accuracy = float(correct) / cnt
+        logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
 
         # Evaluate on test examples
         test_data_generator = load_dataset(
             config["dataset"],
-            epochs=1,
+            epochs=2,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
@@ -152,4 +151,23 @@ class GTSRB(Scenario):
             "validation_accuracy": str(validation_accuracy),
             "test_accuracy": str(test_accuracy),
         }
+        correct = 0
+        cnt = 0
+        if config["adhoc"]["poison_dataset"]:
+            for _ in range(test_data_generator.batches_per_epoch):
+                x_test, y_test = test_data_generator.get_batch()
+                x_test, _ = poison_batch(
+                    x_test, y_test, src_class, tgt_class, len(y_test), attack
+                )
+                x_test_targeted = x_test[y_test == src_class]
+                if len(x_test_targeted) == 0:
+                    continue
+                y = classifier.predict(x_test_targeted)
+                correct += np.sum(np.argmax(y, 1) == tgt_class)
+                cnt += len(y)
+            targeted_accuracy = float(correct) / cnt
+            logger.info(
+                f"Test targeted misclassification accuracy: {targeted_accuracy:.2%}"
+            )
+            results["targeted_misclassification_accuracy"] = str(targeted_accuracy)
         return results
