@@ -60,7 +60,8 @@ This will run a specific command within a framework specific container. A notabl
 case for this would be to run test cases using pytest. After completion of the command 
 the container will be removed.
 
-Note: Since ARMORY launches Docker containers, the python package must be ran on system host.
+Note: Since ARMORY launches Docker containers, the python package must be ran on 
+system host (i.e. not inside of a docker container).
 
 ### Example usage:
 ```
@@ -71,9 +72,19 @@ cd armory-example
 armory run examples/fgm_attack.json
 ```
 
+### What is available in the container:
+All containers have a pre-installed armory package installed so that baseline models, 
+datasets, and scenarios can be utilized.
+
+Additionally, volumes (such as your current working directory) will be mounted from 
+your system host so that you can modify code to be ran, and retrieve outputs. 
+For more information on these mounts, please see our [Docker documentation](docs/docker.md#Docker Volume Mounts) 
+
 # Scenarios
-Armory will provide several scenarios for various data modalities and threat models. 
-More information will be added 
+Armory provides several baseline threat-model scenarios for various data modalities. 
+When running an armory configuration file, the robustness of a defense will be 
+evaluated for against that given scenario. For more information please see our 
+[Scenario Documentation](docs/scenarios.md).
 
 # Contributing
 Armory is an open source project and as such we welcome contributions! Please refer to 
