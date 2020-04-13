@@ -61,15 +61,11 @@ class ImageClassification(Scenario):
 
         logger.info("Running inference on benign examples...")
 
-        task_metric = metrics.categorical_accuracy
-        perturbation_metric = metrics.linf
-
-        benign_accuracies = []
+        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
-            benign_accuracies.extend(task_metric(y, y_pred))
-        benign_accuracy = sum(benign_accuracies) / test_data_generator.size
-        logger.info(f"Accuracy on benign test examples: {benign_accuracy:.2%}")
+            metrics_logger.update_task(y, y_pred)
+        metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
@@ -81,21 +77,10 @@ class ImageClassification(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        adversarial_accuracies, perturbations = [], []
         for x, y in tqdm(test_data_generator, desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
-            adversarial_accuracies.extend(task_metric(y, y_pred_adv))
-            perturbations.extend(perturbation_metric(x, x_adv))
-        adversarial_accuracy = sum(adversarial_accuracies) / test_data_generator.size
-        logger.info(
-            f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
-        )
-        results = {
-            "mean_benign_accuracy": benign_accuracy,
-            "mean_adversarial_accuracy": adversarial_accuracy,
-            "benign_accuracies": benign_accuracies,
-            "adversarial_accuracies": adversarial_accuracies,
-            "linf_perturbations": perturbations,
-        }
-        return results
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
+        metrics_logger.log_task(adversarial=True)
+        return metrics_logger.results()
