@@ -61,11 +61,11 @@ class ImageClassification(Scenario):
 
         logger.info("Running inference on benign examples...")
 
-        metrics_counter = metrics.MetricsListCounter.from_config(config["metric"])
+        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
-            metrics_counter.update_task(y, y_pred)
-        metrics_counter.log_task()
+            metrics_logger.update_task(y, y_pred)
+        metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
@@ -80,7 +80,7 @@ class ImageClassification(Scenario):
         for x, y in tqdm(test_data_generator, desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
-            metrics_counter.update_task(y, y_pred_adv, adversarial=True)
-            metrics_counter.update_perturbation(x, x_adv)
-        metrics_counter.log_task(adversarial=True)
-        return metrics_counter.results()
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
+        metrics_logger.log_task(adversarial=True)
+        return metrics_logger.results()

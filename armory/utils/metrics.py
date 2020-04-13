@@ -93,34 +93,39 @@ def l0(x, x_adv):
     return norm(x, x_adv, 0)
 
 
-class MetricCounter:
+class MetricList:
     """
     Keeps track of all results from a single metric
     """
 
-    def __init__(self, name):
-        try:
-            self.function = globals()[name]
-        except KeyError:
-            raise KeyError(f"{name} is not part of armory.utils.metrics")
+    def __init__(self, name, function=None):
+        if function is None:
+            try:
+                self.function = globals()[name]
+            except KeyError:
+                raise KeyError(f"{name} is not part of armory.utils.metrics")
+        elif callable(function):
+            self.function = function
+        else:
+            raise ValueError(f"function must be callable or None, not {function}")
         self.name = name
-        self.clear()
-
-    def clear(self):
         self._values = []
 
-    def update(self, *args, **kwargs):
+    def clear(self):
+        self._values.clear()
+
+    def append(self, *args, **kwargs):
         value = self.function(*args, **kwargs)
         self._values.extend(value)
 
     def values(self):
-        return self._values
+        return list(self._values)
 
     def mean(self):
         return sum(float(x) for x in self._values) / len(self._values)
 
 
-class MetricsListCounter:
+class MetricsLogger:
     """
     Uses the set of task and perturbation metrics given to it.
     """
@@ -147,7 +152,7 @@ class MetricsListCounter:
             raise ValueError(
                 f"{names} must be one of (None, str, list), not {type(names)}"
             )
-        return [MetricCounter(x) for x in names]
+        return [MetricList(x) for x in names]
 
     @classmethod
     def from_config(cls, config):
