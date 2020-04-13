@@ -38,7 +38,7 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
-        "external_github_repo": "davidslater/SincNet",
+        "external_github_repo": "hkakitani/SincNet",
         "use_gpu": false
     }
 }
