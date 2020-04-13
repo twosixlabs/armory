@@ -16,6 +16,8 @@ def categorical_accuracy(y, y_pred):
     """
     Return the categorical accuracy of the predictions
     """
+    y = np.asarray(y)
+    y_pred = np.asarray(y_pred)
     if y.shape == y_pred.shape:
         return [int(x) for x in list(y == y_pred)]
     elif y.ndim + 1 == y_pred.ndim:
@@ -35,6 +37,10 @@ def top_n_categorical_accuracy(y, y_pred, n):
     if n < 1:
         raise ValueError(f"n must be a positive integer, not {n}")
     n = int(n)
+    if n == 1:
+        return categorical_accuracy(y, y_pred)
+    y = np.asarray(y)
+    y_pred = np.asarray(y_pred)
     if len(y) != len(y_pred):
         raise ValueError("y and y_pred are of different length")
     if y.shape == y_pred.shape:
@@ -50,6 +56,8 @@ def norm(x, x_adv, ord):
     """
     Return the given norm over a batch, outputting a list of floats
     """
+    x = np.asarray(x)
+    x_adv = np.asarray(x_adv)
     # cast to float first to prevent overflow errors
     diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
     values = np.linalg.norm(diff, ord=ord, axis=1)
