@@ -8,7 +8,7 @@
                 null
             ]
         },
-        "german-traffic-sign-poisoning": {
+        "german-traffic-sign-image-poisoning": {
             "dataset_name": [
                 "german_traffic_sign"
             ],
