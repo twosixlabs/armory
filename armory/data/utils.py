@@ -15,6 +15,8 @@ import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import ClientError
+import requests
+from tqdm import tqdm
 
 from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
@@ -79,6 +81,20 @@ def curl(url: str, dirpath: str, filename: str) -> None:
         raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
     except subprocess.CalledProcessError:
         raise subprocess.CalledProcessError
+
+
+def download_requests(url: str, dirpath: str, filename: str):
+    filepath = os.path.join(dirpath, filename)
+    chunk_size = 1024
+    r = requests.get(url, stream=True)
+    with open(filepath, "wb") as f:
+        progress_bar = tqdm(
+            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+        )
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            if chunk:  # filter keep-alive chunks
+                progress_bar.update(len(chunk))
+                f.write(chunk)
 
 
 def sha256(filepath: str, block_size=4096):
@@ -157,7 +173,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         try:
             s3_url_region = "us-east-2"
             url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
-            curl(url, dataset_dir, tar_filepath)
+            download_requests(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):
