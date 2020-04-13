@@ -75,6 +75,11 @@ armory run examples/fgm_attack.json
 Armory will provide several scenarios for various data modalities and threat models. 
 More information will be added 
 
+# FAQs
+Please see the [frequently asked questions](docs/faqs.md) documentation for more information on:
+* Datasets returning NumPy arrays
+* Access to underlying models from wrapped classifiers.
+
 # Contributing
 Armory is an open source project and as such we welcome contributions! Please refer to 
 our [contribution docs](docs/contributing.md) for how to get started.
