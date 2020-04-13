@@ -44,6 +44,31 @@ def test_keras_mnist():
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
+def test_keras_mnist_pretrained():
+    classifier_module = import_module("armory.baseline_models.keras.mnist")
+    classifier_fn = getattr(classifier_module, "get_art_model")
+    classifier = classifier_fn(
+        model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.h5"
+    )
+    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
+
+    test_dataset = datasets.mnist(
+        split_type="test",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=DATASET_DIR,
+        preprocessing_fn=preprocessing_fn,
+    )
+
+    accuracy = 0
+    for _ in range(test_dataset.batches_per_epoch):
+        x, y = test_dataset.get_batch()
+        predictions = classifier.predict(x)
+        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+    assert (accuracy / test_dataset.batches_per_epoch) > 0.98
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
 def test_keras_cifar():
     classifier_module = import_module("armory.baseline_models.keras.cifar")
     classifier_fn = getattr(classifier_module, "get_art_model")
