@@ -18,7 +18,7 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-class ImageClassification(Scenario):
+class ImageClassificationTask(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
         Evaluate the config and return a results dict

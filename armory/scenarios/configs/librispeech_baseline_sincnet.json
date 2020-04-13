@@ -34,8 +34,8 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.librispeech_dev_clean",
-        "name": "LibrispeechDevClean"
+        "module": "armory.scenarios.audio_classification",
+        "name": "AudioClassificationTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
