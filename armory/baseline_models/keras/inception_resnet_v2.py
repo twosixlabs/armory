@@ -1,5 +1,5 @@
 """
-
+Inception_ResNet_v2 CNN model for 299x299x3 image classification
 """
 from art.classifiers import KerasClassifier
 import numpy as np

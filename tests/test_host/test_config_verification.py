@@ -11,7 +11,7 @@ def test_no_config():
         load_config("not_a_file.json")
 
 
-def test_no_evaluation():
+def test_invalid_config():
     with pytest.raises(KeyError, match="sysconfig"):
         load_config(str(pathlib.Path("tests/scenarios/broken/missing_eval.json")))
 

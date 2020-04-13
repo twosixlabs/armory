@@ -1,3 +1,9 @@
+"""
+CNN model for raw audio classification
+
+Model contributed by: MITRE Corporation
+Adapted from: https://github.com/mravanelli/SincNet
+"""
 import logging
 
 from art.classifiers import PyTorchClassifier
@@ -7,7 +13,8 @@ import torch
 from armory.data.utils import maybe_download_weights_from_s3
 
 # Load model from MITRE external repo: https://github.com/hkakitani/SincNet
-# Forked from: https://github.com/mravanelli/SincNet
+# This needs to be defined in your config's `external_github_repo` field to be
+# downloaded and placed on the PYTHONPATH
 from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
@@ -17,6 +24,27 @@ WINDOW_STEP_SIZE = 375
 WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def preprocessing_fn(batch):
+    """
+    Standardize, then normalize sound clips
+    """
+    processed_batch = []
+    for clip in batch:
+
+        signal = clip.astype(np.float64)
+        # Signal normalization
+        signal = signal / np.max(np.abs(signal))
+
+        # get random chunk of fixed length (from SincNet's create_batches_rnd)
+        signal_length = len(signal)
+        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
+        signal_stop = signal_start + WINDOW_LENGTH
+        signal = signal[signal_start:signal_stop]
+        processed_batch.append(signal)
+
+    return np.array(processed_batch)
 
 
 def sincnet(weights_file=None):
@@ -106,27 +134,6 @@ def sincnet(weights_file=None):
         sincNet.train()
 
     return sincNet
-
-
-def preprocessing_fn(batch):
-    """
-    Standardize, then normalize sound clips
-    """
-    processed_batch = []
-    for clip in batch:
-
-        signal = clip.astype(np.float64)
-        # Signal normalization
-        signal = signal / np.max(np.abs(signal))
-
-        # get random chunk of fixed length (from SincNet's create_batches_rnd)
-        signal_length = len(signal)
-        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
-        signal_stop = signal_start + WINDOW_LENGTH
-        signal = signal[signal_start:signal_stop]
-        processed_batch.append(signal)
-
-    return np.array(processed_batch)
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input

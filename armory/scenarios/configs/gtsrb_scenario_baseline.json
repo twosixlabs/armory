@@ -1,4 +1,5 @@
 {
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "poison_dataset": true,
         "source_class": 5,

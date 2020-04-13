@@ -1,5 +1,7 @@
 """
+DenseNet121 CNN model for 244x244x3 image classification
 
+Model contributed by: MITRE Corporation
 """
 from art.classifiers import KerasClassifier
 import numpy as np
