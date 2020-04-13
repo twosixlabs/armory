@@ -21,7 +21,7 @@ def categorical_accuracy(y, y_pred):
     if y.shape == y_pred.shape:
         return [int(x) for x in list(y == y_pred)]
     elif y.ndim + 1 == y_pred.ndim:
-        return [int(x) for x in list(y == np.argmax(y_pred, axis=1))]
+        return [int(x) for x in list(y == np.argmax(y_pred, axis=-1))]
     else:
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
 
