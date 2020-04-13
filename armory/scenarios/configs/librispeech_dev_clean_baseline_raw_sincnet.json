@@ -1,4 +1,5 @@
 {
+    "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "budget": {

@@ -1,5 +1,7 @@
 """
-Preprocessing and model architecture for audio scenario with spectrogram input
+CNN model for 241x100x1 audio spectrogram classification
+
+Model contributed by: MITRE Corporation
 """
 import numpy as np
 from scipy import signal

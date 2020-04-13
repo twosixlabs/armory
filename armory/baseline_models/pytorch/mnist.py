@@ -1,5 +1,5 @@
 """
-
+CNN model for 28x28x1 image classification
 """
 import torch
 import numpy as np
