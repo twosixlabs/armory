@@ -24,7 +24,7 @@
         ]
     },
     "model": {
-        "fit": true,
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 3
         },
@@ -42,6 +42,6 @@
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
-        "use_gpu": true
+        "use_gpu": false
     }
 }

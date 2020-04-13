@@ -61,7 +61,7 @@ class ImageClassification(Scenario):
 
         logger.info("Running inference on benign examples...")
 
-        metrics_counter = metrics.MetricsListCounter(config["metric"])
+        metrics_counter = metrics.MetricsListCounter.from_config(config["metric"])
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
             metrics_counter.update_task(y, y_pred)

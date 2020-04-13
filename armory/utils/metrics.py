@@ -88,8 +88,8 @@ class MetricCounter:
         self._values = []
 
     def update(self, *args, **kwargs):
-        value = self.metric(*args, **kwargs)
-        self._values.append(value)
+        value = self.function(*args, **kwargs)
+        self._values.extend(value)
 
     def values(self):
         return self._values
@@ -110,22 +110,20 @@ class MetricsListCounter:
         means - whether to return the mean values for each metric
         full - whether to return the full values for each metric
         """
-        self.tasks = self._generate_counters(self, "tasks", task)
-        self.adversarial_tasks = self._generate_counters(self, "tasks", task)
-        self.perturbations = self._generate_counters(
-            self, "perturbations", perturbation
-        )
+        self.tasks = self._generate_counters(task)
+        self.adversarial_tasks = self._generate_counters(task)
+        self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
         self.full = bool(full)
 
-    def _generate_counters(self, metric_type, names):
+    def _generate_counters(self, names):
         if names is None:
             names = []
         elif isinstance(names, str):
             names = [names]
         elif not isinstance(names, list):
             raise ValueError(
-                f"{metric_type} must be one of (None, str, list), not {type(metric_type)}"
+                f"{names} must be one of (None, str, list), not {type(names)}"
             )
         return [MetricCounter(x) for x in names]
 
@@ -178,20 +176,20 @@ class MetricsListCounter:
             prefix = "benign_"
             if self.full:
                 task_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.mean:
+            if self.means:
                 task_results[f"{prefix}mean_{metric.name}"] = metric.mean()
         for metric in self.adversarial_tasks:
             prefix = "adversarial_"
             if self.full:
                 task_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.mean:
+            if self.means:
                 task_results[f"{prefix}mean_{metric.name}"] = metric.mean()
         results["perturbation"] = perturbation_results = {}
         for metric in self.perturbations:
             prefix = "perturbation_"
             if self.full:
                 perturbation_results[f"{prefix}{metric.name}"] = metric.values()
-            if self.mean:
+            if self.means:
                 perturbation_results[f"{prefix}mean_{metric.name}"] = metric.mean()
         return results
 
