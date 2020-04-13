@@ -37,7 +37,7 @@
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
-        "gpus": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }
