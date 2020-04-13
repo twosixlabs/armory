@@ -83,7 +83,7 @@ For more information on these mounts, please see our [Docker documentation](docs
 # Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities. 
 When running an armory configuration file, the robustness of a defense will be 
-evaluated for against that given scenario. For more information please see our 
+evaluated against that given scenario. For more information please see our 
 [Scenario Documentation](docs/scenarios.md).
 
 # Contributing
