@@ -164,12 +164,12 @@ class MetricsLogger:
 
     def update_task(self, y, y_pred, adversarial=False):
         tasks = self.adversarial_tasks if adversarial else self.tasks
-        for task in tasks:
-            task.update(y, y_pred)
+        for metric in tasks:
+            metric.append(y, y_pred)
 
     def update_perturbation(self, x, x_adv):
-        for perturbation in self.perturbations:
-            perturbation.update(x, x_adv)
+        for metric in self.perturbations:
+            metric.append(x, x_adv)
 
     def log_task(self, adversarial=False):
         if adversarial:
