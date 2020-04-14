@@ -45,7 +45,7 @@
         "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0-rc0",
         "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
         "use_gpu": false
