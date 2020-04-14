@@ -31,12 +31,12 @@ class Ucf101(Scenario):
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
-        defense = config.get("defense") or {}
-        defense_type = defense.get("type")
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
 
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to classifier")
-            classifier = load_defense_internal(defense, classifier)
+            classifier = load_defense_internal(config["defense"], classifier)
 
         if model_config["fit"]:
             classifier.set_learning_phase(True)
@@ -74,6 +74,12 @@ class Ucf101(Scenario):
                         defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
                     else:
                         classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
+
+        if defense_type == "Transform":
+            # NOTE: Transform currently not supported
+            logger.info(f"Transforming classifier with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], classifier)
+            classifier = defense()
 
         classifier.set_learning_phase(False)
 
