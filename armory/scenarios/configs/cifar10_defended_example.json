@@ -20,7 +20,8 @@
             "ratio": 0.45
         },
         "module": "armory.art_experimental.defences.madry_trainer_generator",
-        "name": "AdversarialTrainerMadryPGD"
+        "name": "AdversarialTrainerMadryPGD",
+        "type": "Trainer"
     },
     "metric": {
         "perturbation": "linf",

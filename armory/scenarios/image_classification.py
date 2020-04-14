@@ -11,6 +11,7 @@ from armory.utils.config_loading import (
     load_model,
     load_attack,
     load_defense,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -26,6 +27,12 @@ class ImageClassificationTask(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
+        defense = config.get("defense")
+        if defense:
+            defense_type = defense["type"]
+            if defense["type"] in ["Preprocessor", "Postprocessor"]:
+                logger.info(f"Applying {defense_type} defense to classifier")
+                classifier = load_defense_internal(defense, classifier)
 
         if model_config["fit"]:
             classifier.set_learning_phase(True)
@@ -41,10 +48,11 @@ class ImageClassificationTask(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            if config["defense"] is not None:
-                logger.info("loading defense")
-                defense = load_defense(config["defense"], classifier)
-                defense.fit_generator(train_data, **fit_kwargs)
+            if defense:
+                if defense_type in ["Trainer", "Transformer"]:
+                    logger.info(f"Training with {defense_type} defense...")
+                    defense = load_defense(config["defense"], classifier)
+                    defense.fit_generator(train_data, **fit_kwargs)
             else:
                 classifier.fit_generator(train_data, **fit_kwargs)
 
