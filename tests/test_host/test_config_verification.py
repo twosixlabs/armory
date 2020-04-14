@@ -1,4 +1,5 @@
 import pathlib
+from glob import glob
 
 import jsonschema
 import pytest
@@ -8,15 +9,14 @@ from armory.utils.configuration import load_config
 
 def test_no_config():
     with pytest.raises(FileNotFoundError):
-        load_config("not_a_file.txt")
+        load_config("not_a_file.json")
 
 
-def test_no_evaluation():
+def test_no_scenario():
     with pytest.raises(
-        jsonschema.ValidationError,
-        match=r"Failed validating 'type' in schema\['properties'\]\['evaluation'\]",
+        jsonschema.ValidationError, match=r"'scenario' is a required property",
     ):
-        load_config(str(pathlib.Path("tests/configs/broken/missing_eval.json")))
+        load_config(str(pathlib.Path("tests/scenarios/broken/missing_scenario.json")))
 
 
 def test_invalid_module():
@@ -24,11 +24,14 @@ def test_invalid_module():
         jsonschema.ValidationError,
         match=r"Failed validating 'pattern' in schema\[0\]\['properties'\]\['module'\]",
     ):
-        load_config(str(pathlib.Path("tests/configs/broken/invalid_module.json")))
+        load_config(str(pathlib.Path("tests/scenarios/broken/invalid_module.json")))
 
 
 def test_all_examples():
-    example_dir = pathlib.Path("tests/configs/")
-
-    for json_path in example_dir.glob("*.json"):
+    test_jsons = (
+        glob("tests/scenarios/tf1/*.json")
+        + glob("tests/scenarios/tf2/*.json")
+        + glob("tests/scenarios/pytorch/*.json")
+    )
+    for json_path in test_jsons:
         load_config(str(json_path))

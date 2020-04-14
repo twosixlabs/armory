@@ -39,7 +39,14 @@ class Evaluator(object):
 
         self.extra_env_vars = dict()
         if isinstance(config_path, str):
-            self.config = load_config(config_path)
+            try:
+                self.config = load_config(config_path)
+            except json.decoder.JSONDecodeError:
+                logger.error(f"Could not decode {config_path} as a json file.")
+                if not config_path.lower().endswith(".json"):
+                    logger.warning(f"{config_path} is not a '*.json' file")
+                    logger.warning("If using `armory run`, use a json config file.")
+                raise
         elif isinstance(config_path, dict):
             self.config = config_path
         else:
@@ -58,6 +65,9 @@ class Evaluator(object):
         kwargs = dict(runtime="runc")
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
+            gpus = self.config["sysconfig"].get("gpus")
+            if gpus is not None:
+                self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
@@ -106,7 +116,7 @@ class Evaluator(object):
         if os.path.exists(self.tmp_config):
             logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
         with open(self.tmp_config, "w") as f:
-            json.dump(self.config, f)
+            f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
     def _delete_tmp(self):
         if os.path.exists(self.external_repo_dir):
@@ -178,13 +188,8 @@ class Evaluator(object):
         self._delete_tmp()
 
     def _run_config(self, runner) -> None:
-        if self.config.get("evaluation") is None:
-            logger.info(bold(red("No evaluation script to run")))
-            return
         logger.info(bold(red("Running evaluation script")))
-        runner.exec_cmd(
-            f"python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
-        )
+        runner.exec_cmd(f"python -m armory.scenarios.base {self.docker_config_path}")
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
@@ -202,13 +207,13 @@ class Evaluator(object):
                 )
             ),
         ]
-        if self.config.get("evaluation"):
+        if self.config.get("scenario"):
             lines.extend(
                 [
-                    bold("*** To run your script in the container:"),
+                    bold("*** To run your scenario in the container:"),
                     bold(
                         red(
-                            f"    python -m {self.config['evaluation']['eval_file']} {self.docker_config_path}"
+                            f"    python -m armory.scenarios.base {self.docker_config_path}"
                         )
                     ),
                     bold("*** To gracefully shut down container, press: Ctrl-C"),

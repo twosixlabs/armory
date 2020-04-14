@@ -96,7 +96,7 @@
                     "items": {
                         "$ref": "#/definitions/supported_metric"
                     },
-                    "type": "array",
+                    "type": "array"
                 }
             },
             "required": [
@@ -150,21 +150,6 @@
             "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
             "type": "string"
         },
-        "supported_metric": {
-            "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
-            "enum": [
-                "categorical_accuracy",
-                "top_n_categorical_accuracy",
-                "top_5_categorical_accuracy",
-                "norm",
-                "l0",
-                "l1",
-                "l2",
-                "lp",
-                "linf"
-            ],
-            "type": "string"
-        },
         "scenario": {
             "properties": {
                 "kwargs": {
@@ -182,6 +167,21 @@
                 "module",
                 "name"
             ]
+        },
+        "supported_metric": {
+            "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
+            "enum": [
+                "categorical_accuracy",
+                "top_n_categorical_accuracy",
+                "top_5_categorical_accuracy",
+                "norm",
+                "l0",
+                "l1",
+                "l2",
+                "lp",
+                "linf"
+            ],
+            "type": "string"
         },
         "sysconfig": {
             "properties": {
@@ -267,6 +267,17 @@
             "$ref": "#/definitions/sysconfig"
         }
     },
+    "required": [
+        "_description",
+        "adhoc",
+        "attack",
+        "dataset",
+        "defense",
+        "metric",
+        "model",
+        "scenario",
+        "sysconfig"
+    ],
     "title": "Schema for Armory evaluation configuration JSON files",
     "type": "object"
 }

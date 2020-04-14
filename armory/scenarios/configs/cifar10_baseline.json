@@ -1,5 +1,5 @@
 {
-    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
+    "_description": "Baseline cifar10 image classification",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
@@ -10,9 +10,9 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 64,
         "module": "armory.data.datasets",
-        "name": "resisc45"
+        "name": "cifar10"
     },
     "defense": null,
     "metric": {
@@ -24,12 +24,14 @@
         ]
     },
     "model": {
-        "fit": false,
-        "fit_kwargs": {},
+        "fit": true,
+        "fit_kwargs": {
+            "nb_epochs": 20
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
-        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -38,9 +40,9 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }

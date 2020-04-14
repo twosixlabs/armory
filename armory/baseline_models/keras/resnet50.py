@@ -1,3 +1,6 @@
+"""
+ResNet50 CNN model for 244x244x3 image classification
+"""
 import os
 
 import numpy as np
