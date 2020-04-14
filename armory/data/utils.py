@@ -25,7 +25,7 @@ from armory.data.progress_percentage import ProgressPercentage
 logger = logging.getLogger(__name__)
 
 requests.packages.urllib3.disable_warnings(
-    requests.packages.urllib3.InsecureRequestWarning
+    requests.packages.urllib3.exceptions.InsecureRequestWarning
 )
 boto_urllib3.disable_warnings(boto_urllib3.exceptions.InsecureRequestWarning)
 
