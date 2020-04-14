@@ -106,7 +106,7 @@ All configuration files are verified against the jsonschema definition at runeti
         "name": "ImageClassification"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0",
         "external_github_repo": "twosixlabs/armory-example@master",
         "gpus": "all",
         "use_gpu": false
