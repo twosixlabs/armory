@@ -18,9 +18,15 @@ def categorical_accuracy(y, y_pred):
     """
     y = np.asarray(y)
     y_pred = np.asarray(y_pred)
+    if y.ndim == 0:
+        y = np.array([y])
+        y_pred = np.array([y_pred])
+
     if y.shape == y_pred.shape:
         return [int(x) for x in list(y == y_pred)]
     elif y.ndim + 1 == y_pred.ndim:
+        if y.ndim == 0:
+            return [int(y == np.argmax(y_pred, axis=-1))]
         return [int(x) for x in list(y == np.argmax(y_pred, axis=-1))]
     else:
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
@@ -41,12 +47,18 @@ def top_n_categorical_accuracy(y, y_pred, n):
         return categorical_accuracy(y, y_pred)
     y = np.asarray(y)
     y_pred = np.asarray(y_pred)
+    if y.ndim == 0:
+        y = np.array([y])
+        y_pred = np.array([y_pred])
+
     if len(y) != len(y_pred):
         raise ValueError("y and y_pred are of different length")
     if y.shape == y_pred.shape:
         raise ValueError("Must supply multiple predictions for top 5 accuracy")
     elif y.ndim + 1 == y_pred.ndim:
         y_pred_top5 = np.argsort(y_pred, axis=-1)[:, -n:]
+        if y.ndim == 0:
+            return [int(y in y_pred_top5)]
         return [int(y[i] in y_pred_top5[i]) for i in range(len(y))]
     else:
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
@@ -235,29 +247,11 @@ class MetricsLogger:
                 if self.full:
                     results[f"{prefix}_{metric.name}"] = metric.values()
                 if self.means:
-                    results[f"{prefix}_mean_{metric.name}"] = metric.mean()
+                    try:
+                        results[f"{prefix}_mean_{metric.name}"] = metric.mean()
+                    except ZeroDivisionError:
+                        raise ZeroDivisionError(
+                            f"No values to calculate mean in {prefix}_{metric.name}"
+                        )
 
         return results
-
-
-class AverageMeter:
-    """
-    Computes and stores the average and current value
-
-    Taken from https://github.com/craston/MARS/blob/master/utils.py
-    """
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count

@@ -16,7 +16,15 @@
         "name": "ucf101"
     },
     "defense": null,
-    "metric": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
     "model": {
         "fit": false,
         "fit_kwargs": {
