@@ -13,7 +13,6 @@ from tqdm import tqdm
 
 from armory.utils.config_loading import (
     load_dataset,
-    load_defense_internal,
     load_model,
     load_attack,
     load_fn,
