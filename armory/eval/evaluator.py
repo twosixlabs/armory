@@ -207,10 +207,10 @@ class Evaluator(object):
                 )
             ),
         ]
-        if self.config.get("evaluation"):
+        if self.config.get("scenario"):
             lines.extend(
                 [
-                    bold("*** To run your script in the container:"),
+                    bold("*** To run your scenario in the container:"),
                     bold(
                         red(
                             f"    python -m armory.scenarios.base {self.docker_config_path}"
