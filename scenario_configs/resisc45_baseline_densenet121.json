@@ -29,7 +29,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.densenet121_resisc45",
         "name": "get_art_model",
-        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "weights_file": "densenet121_resisc45_v1.h5",
         "wrapper_kwargs": {}
     },
     "scenario": {
