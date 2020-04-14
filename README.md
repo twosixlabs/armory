@@ -69,6 +69,7 @@ pip install armory-testbed
 armory configure
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
+git checkout tags/v0.5.0 -b v0.5
 armory run examples/fgm_attack.json
 ```
 
