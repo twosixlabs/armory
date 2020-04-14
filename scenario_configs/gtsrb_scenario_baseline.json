@@ -28,6 +28,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.micronnet_gtsrb",
         "name": "get_art_model",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {

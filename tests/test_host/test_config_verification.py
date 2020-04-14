@@ -27,6 +27,13 @@ def test_invalid_module():
         load_config(str(pathlib.Path("tests/scenarios/broken/invalid_module.json")))
 
 
+def test_scenario_configs():
+    scenario_jsons = glob("scenario_configs/*.json")
+
+    for json_path in scenario_jsons:
+        load_config(str(json_path))
+
+
 def test_all_examples():
     test_jsons = (
         glob("tests/scenarios/tf1/*.json")
