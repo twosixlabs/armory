@@ -20,7 +20,14 @@
         "name": "librispeech_dev_clean"
     },
     "defense": null,
-    "metric": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
     "model": {
         "fit": false,
         "fit_kwargs": {
