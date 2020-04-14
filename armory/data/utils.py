@@ -9,6 +9,7 @@ import os
 import shutil
 import random
 import string
+import json
 
 import boto3
 from botocore import UNSIGNED
@@ -214,3 +215,13 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     except OSError as e:
         if not isinstance(e, FileNotFoundError):
             logger.exception(f"Error removing temporary directory {tmp_dir}")
+
+
+def _read_validate_scenario_config(config_filepath):
+    with open(config_filepath) as f:
+        config = json.load(f)
+    if "scenario" not in config.keys():
+        raise ValueError("Does not match config schema")
+    if not isinstance(config["scenario"], dict):
+        raise ValueError('config["scenario"] must be dictionary')
+    return config
