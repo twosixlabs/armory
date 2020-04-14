@@ -14,7 +14,7 @@ from tqdm import tqdm
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
-    load_attack,
+    load,
     load_fn,
 )
 from armory.scenarios.base import Scenario
@@ -77,7 +77,7 @@ class GTSRB(Scenario):
 
         logger.info("Building in-memory dataset for poisoning detection and training")
         attack_config = config["attack"]
-        attack = load_attack(attack_config)
+        attack = load(attack_config)
         fraction_poisoned = config["adhoc"]["fraction_poisoned"]
         poison_dataset_flag = config["adhoc"]["poison_dataset"]
         # detect_poison does not currently support data generators
