@@ -10,22 +10,10 @@ import numpy as np
 from tqdm import tqdm
 
 from armory.scenarios.base import Scenario
-from armory.utils.metrics import AverageMeter
+from armory.utils import metrics
 from armory.utils.config_loading import load_dataset, load_model, load_attack
 
 logger = logging.getLogger(__name__)
-
-
-def update_accuracies(y_pred, y, accuracies, accuracies_top5):
-    """
-    Update top-1 and top-5 accuracies. Return top-5 examples, sorted.
-    """
-    y_pred_top5 = np.argsort(np.mean(y_pred, axis=0))[-5:][::-1]
-    acc = float(y_pred_top5[0] == y)
-    acc_top5 = float(y in y_pred_top5)
-    accuracies.update(acc, 1)
-    accuracies_top5.update(acc_top5, 1)
-    return y_pred_top5
 
 
 class Ucf101(Scenario):
@@ -72,31 +60,10 @@ class Ucf101(Scenario):
                         x_train, y_trains, batch_size=batch_size, nb_epochs=1
                     )
 
-                # evaluate on test examples
-                classifier.set_learning_phase(False)
-                test_data_generator = load_dataset(
-                    config["dataset"],
-                    epochs=1,
-                    split_type="test",
-                    preprocessing_fn=preprocessing_fn,
-                )
-
-                accuracies = AverageMeter()
-                accuracies_top5 = AverageMeter()
-                for _ in tqdm(range(len(test_data_generator) // 10), desc="Validation"):
-                    x_tests, y_tests = test_data_generator.get_batch()
-                    for x_test, y_test in zip(x_tests, y_tests):
-                        y_pred = classifier.predict(x_test)
-                        update_accuracies(y_pred, y_test, accuracies, accuracies_top5)
-                logger.info(
-                    f"Top-1 video accuracy = {accuracies.avg}, "
-                    f"top-5 video accuracy = {accuracies_top5.avg}"
-                )
+        classifier.set_learning_phase(False)
 
         # Evaluate ART classifier on test examples
-        logger.info("Running inference on benign test examples...")
         logger.info(f"Loading testing dataset {config['dataset']['name']}...")
-        classifier.set_learning_phase(False)
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
@@ -104,83 +71,33 @@ class Ucf101(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
 
-        test_accuracies = AverageMeter()
-        test_accuracies_top5 = AverageMeter()
-        video_count = 0
-        for x_tests, y_tests in tqdm(test_data_generator, desc="Benign"):
-            for x_test, y_test in zip(x_tests, y_tests):
-                y_pred = classifier.predict(x_test)
-                y_pred_top5 = update_accuracies(
-                    y_pred, y_test, accuracies, accuracies_top5
-                )
+        logger.info("Running inference on benign test examples...")
 
-                logger.info(
-                    "\t ".join(
-                        [
-                            f"Video[{video_count}] : ",
-                            f"top5 = {y_pred_top5}",
-                            f"top1 = {y_pred_top5[0]}",
-                            f"true = {y_test}",
-                            f"top1_video_acc = {test_accuracies.avg}",
-                            f"top5_video_acc = {test_accuracies_top5.avg}",
-                        ]
-                    )
-                )
-                video_count += 1
-
-        logger.info(
-            f"Top-1 test video accuracy = {test_accuracies.avg}, "
-            f"top-5 test video accuracy = {test_accuracies_top5.avg}"
-        )
+        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
+        for x_batch, y_batch in tqdm(test_data_generator, desc="Benign"):
+            for x, y in zip(x_batch, y_batch):
+                y_pred = np.mean(classifier.predict(x), axis=0)
+                metrics_logger.update_task(y, y_pred)
+        metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
-        attack = load_attack(config["attack"], classifier)
 
+        attack = load_attack(config["attack"], classifier)
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
-        adv_accuracies = AverageMeter()
-        adv_accuracies_top5 = AverageMeter()
-        video_count = 0
-        for _ in tqdm(range(len(test_data_generator)), desc="Attack"):
-            x_tests, y_tests = test_data_generator.get_batch()
-            for x_test, y_test in zip(x_tests, y_tests):
-                # each x_test is of shape (n_stack, 3, 16, 112, 112)
+        for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
+            for x, y in zip(x_batch, y_batch):
+                # each x is of shape (n_stack, 3, 16, 112, 112)
                 #    n_stack varies
-                attack.set_params(batch_size=x_test.shape[0])
-                test_x_adv = attack.generate(x=x_test)
-                y_pred = classifier.predict(test_x_adv)
-                y_pred_top5 = update_accuracies(
-                    y_pred, y_test, accuracies, accuracies_top5
-                )
-
-                logger.info(
-                    "\t ".join(
-                        [
-                            f"Video[{video_count}] : ",
-                            f"top5 = {y_pred_top5}",
-                            f"top1 = {y_pred_top5[0]}",
-                            f"true = {y_test}",
-                            f"top1_video_acc = {test_accuracies.avg}",
-                            f"top5_video_acc = {test_accuracies_top5.avg}",
-                        ]
-                    )
-                )
-
-                video_count += 1
-
-        logger.info(
-            f"Top-1 adversarial video accuracy = {adv_accuracies.avg}, "
-            f"top-5 adversarial video accuracy = {adv_accuracies_top5.avg}"
-        )
-        return {
-            "baseline_top1_accuracy": str(test_accuracies.avg),
-            "baseline_top5_accuracy": str(test_accuracies_top5.avg),
-            "adversarial_top1_accuracy": str(adv_accuracies.avg),
-            "adversarial_top5_accuracy": str(adv_accuracies_top5.avg),
-        }
+                attack.set_params(batch_size=x.shape[0])
+                x_adv = attack.generate(x=x)
+                y_pred = np.mean(classifier.predict(x), axis=0)
+                metrics_logger.update_task(y, y_pred, adversarial=True)
+                metrics_logger.update_perturbation([x], [x_adv])
+        metrics_logger.log_task(adversarial=True)
+        return metrics_logger.results()

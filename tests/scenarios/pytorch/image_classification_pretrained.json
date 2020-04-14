@@ -9,7 +9,7 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 64,
         "module": "armory.data.datasets",
         "name": "mnist"
     },
@@ -21,14 +21,12 @@
         ]
     },
     "model": {
-        "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 3
-        },
+        "fit": false,
+        "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.mnist",
+        "module": "armory.baseline_models.pytorch.mnist",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "undefended_mnist_5epochs.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -37,8 +35,9 @@
         "name": "ImageClassification"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }

@@ -1,4 +1,5 @@
 {
+    "_description": "UCF101 video classification with finetuning, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "budget": null,
@@ -15,7 +16,15 @@
         "name": "ucf101"
     },
     "defense": null,
-    "metric": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
     "model": {
         "fit": true,
         "fit_kwargs": {
@@ -36,7 +45,8 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
-        "external_github_repo": "davidslater/MARS",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
         "use_gpu": false
     }
 }

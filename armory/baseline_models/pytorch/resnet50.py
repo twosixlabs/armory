@@ -1,3 +1,6 @@
+"""
+ResNet50 CNN model for 244x244x3 image classification
+"""
 import logging
 
 from art.classifiers import PyTorchClassifier
@@ -39,7 +42,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     if weights_file:
         filepath = maybe_download_weights_from_s3(weights_file)
         checkpoint = torch.load(filepath, map_location=DEVICE)
-        model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchClassifier(
         model,

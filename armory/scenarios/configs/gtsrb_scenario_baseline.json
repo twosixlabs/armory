@@ -1,4 +1,5 @@
 {
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "poison_dataset": true,
         "source_class": 5,
@@ -22,6 +23,8 @@
     "defense": null,
     "metric": null,
     "model": {
+        "fit": true,
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.micronnet_gtsrb",
         "name": "get_art_model",
@@ -35,6 +38,7 @@
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
-        "use_gpu": true
+        "gpus": "all",
+        "use_gpu": false
     }
 }
