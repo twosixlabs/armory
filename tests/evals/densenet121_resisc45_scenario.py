@@ -33,11 +33,11 @@ def evaluate_classifier(config_path: str) -> None:
         epochs=1,
         split_type="test",
         preprocessing_fn=preprocessing_fn,
-    )
+vv    )
 
     if not model_config["model_kwargs"]["pretrained"]:
         logger.info(
-            f"Fitting clean unpoisoned model of {model_config['module']}.{model_config['name']}..."
+            f"Fitting Imagenet pre-trained model of {model_config['module']}.{model_config['name']}..."
         )
         # TODO train here
 
