@@ -17,6 +17,7 @@ from armory.utils.config_loading import (
     load,
     load_fn,
 )
+from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
@@ -139,62 +140,40 @@ class GTSRB(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        correct = 0
-        cnt = 0
-        for x_test, y_test in tqdm(test_data, desc="Testing"):
-            y = np.argmax(classifier.predict(x_test), axis=1)
-            correct += np.sum(y == y_test)
-            cnt += len(y_test)
-        validation_accuracy = float(correct) / cnt
-        logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
+        validation_metric = metrics.MetricList("categorical_accuracy")
+        for x, y in tqdm(test_data, desc="Testing"):
+            y_pred = classifier.predict(x)
+            validation_metric.append(y, y_pred)
+        logger.info(f"Unpoisoned validation accuracy: {validation_metric.mean():.2%}")
+        results = {"validation_accuracy": validation_metric.mean()}
 
-        logger.info(f"Testing on poisoned test data")
-        test_data = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-        correct = 0
-        cnt = 0
-        for x_test, y_test in tqdm(test_data, desc="Testing"):
-            if poison_dataset_flag:
-                x_test, _ = poison_batch(
-                    x_test, y_test, src_class, tgt_class, len(y_test), attack
-                )
-            y = np.argmax(classifier.predict(x_test), axis=1)
-            correct += np.sum(y == y_test)
-            cnt += len(y_test)
-        test_accuracy = float(correct) / cnt
-        logger.info(f"Test accuracy: {test_accuracy:.2%}")
-
-        results = {
-            "validation_accuracy": str(validation_accuracy),
-            "test_accuracy": str(test_accuracy),
-        }
         if poison_dataset_flag:
-            logger.info(f"Measuring targeted attack test accuracy")
+            logger.info(f"Testing on poisoned test data")
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
             )
-            correct = 0
-            cnt = 0
+            test_metric = metrics.MetricList("categorical_accuracy")
+            targeted_test_metric = metrics.MetricList("categorical_accuracy")
             for x_test, y_test in tqdm(test_data, desc="Testing"):
                 x_test, _ = poison_batch(
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
                 )
-                x_test_targeted = x_test[y_test == src_class]
-                if len(x_test_targeted) == 0:
+                y_pred = classifier.predict(x_test)
+                test_metric.append(y, y_pred)
+
+                y_pred_targeted = y_pred[y_test == src_class]
+                if not len(y_pred_targeted):
                     continue
-                y_pred = np.argmax(classifier.predict(x_test_targeted), axis=1)
-                correct += np.sum(y_pred == tgt_class)
-                cnt += len(y_pred)
-            targeted_accuracy = float(correct) / cnt
+                targeted_test_metric.append(
+                    [tgt_class] * len(y_pred_targeted), y_pred_targeted
+                )
+            results["test_accuracy"] = test_metric.mean()
+            results["targeted_misclassification_accuracy"] = targeted_test_metric.mean()
+            logger.info(f"Test accuracy: {test_metric.mean():.2%}")
             logger.info(
-                f"Test targeted misclassification accuracy: {targeted_accuracy:.2%}"
+                f"Test targeted misclassification accuracy: {targeted_test_metric.mean():.2%}"
             )
-            results["targeted_misclassification_accuracy"] = str(targeted_accuracy)
         return results
