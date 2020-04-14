@@ -36,7 +36,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
-        "weights_file": "model_sincnet.pth",
+        "weights_file": "sincnet_librispeech_v1.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {
