@@ -45,20 +45,12 @@ class Ucf101(Scenario):
                     range(train_data_generator.batches_per_epoch),
                     desc=f"Epoch: {epoch}/{train_epochs}",
                 ):
-                    x_trains, y_trains = train_data_generator.get_batch()
+                    x, y = train_data_generator.get_batch()
                     # x_trains consists of one or more videos, each represented as an
                     # ndarray of shape (n_stacks, 3, 16, 112, 112).
                     # To train, randomly sample a batch of stacks
-                    x_train = np.zeros(
-                        (min(batch_size, len(x_trains)), 3, 16, 112, 112),
-                        dtype=np.float32,
-                    )
-                    for i, xt in enumerate(x_trains):
-                        rand_stack = np.random.randint(0, xt.shape[0])
-                        x_train[i, ...] = xt[rand_stack, ...]
-                    classifier.fit(
-                        x_train, y_trains, batch_size=batch_size, nb_epochs=1
-                    )
+                    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
+                    classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         classifier.set_learning_phase(False)
 
@@ -76,6 +68,7 @@ class Ucf101(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
         for x_batch, y_batch in tqdm(test_data_generator, desc="Benign"):
             for x, y in zip(x_batch, y_batch):
+                # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x), axis=0)
                 metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
@@ -96,6 +89,7 @@ class Ucf101(Scenario):
                 #    n_stack varies
                 attack.set_params(batch_size=x.shape[0])
                 x_adv = attack.generate(x=x)
+                # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
