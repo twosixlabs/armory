@@ -1,11 +1,11 @@
 """
-Download and preprocess common datasets.
-Each standard dataset resides in its own subdirectory under <dataset_dir> based
+Download and load baseline datasets with optional pre-processing.
+
+Each baseline dataset resides in its own subdirectory under <dataset_dir> based
 upon the name of the function in the datasets file. For example, the cifar10
 data is found at '<dataset_dir>/cifar10'
-The 'download' subdirectory under <dataset_dir> is reserved for caching.
-The 'private' subdirectory under <dataset_dir> is reserved for private
-datasets.
+
+The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import logging
@@ -18,7 +18,10 @@ import tensorflow_datasets as tfds
 import apache_beam as beam
 
 from art.data_generators import DataGenerator
-from armory.data.utils import download_verify_dataset_cache
+from armory.data.utils import (
+    download_verify_dataset_cache,
+    _read_validate_scenario_config,
+)
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
@@ -44,13 +47,26 @@ class ArmoryDataGenerator(DataGenerator):
     """
 
     def __init__(
-        self, generator, size, batch_size, preprocessing_fn=None, variable_length=False,
+        self,
+        generator,
+        size,
+        epochs,
+        batch_size,
+        preprocessing_fn=None,
+        variable_length=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
         self.generator = generator
+
+        self.epochs = epochs
+        self.samples_per_epoch = size
+
         # drop_remainder is False
-        self.batches_per_epoch = size // batch_size + bool(size % batch_size)
+        self.batches_per_epoch = self.samples_per_epoch // batch_size + bool(
+            self.samples_per_epoch % batch_size
+        )
+
         self.variable_length = variable_length
         if self.variable_length:
             self.current = 0
@@ -65,7 +81,7 @@ class ArmoryDataGenerator(DataGenerator):
                 y_list.append(y_i)
                 self.current += 1
                 # handle end of epoch partial batches
-                if self.current == self.size:
+                if self.current == self.samples_per_epoch:
                     self.current = 0
                     break
             x = np.empty((len(x_list),), dtype=object)
@@ -88,7 +104,7 @@ class ArmoryDataGenerator(DataGenerator):
         return self.get_batch()
 
     def __len__(self):
-        return self.size
+        return self.batches_per_epoch * self.epochs
 
 
 def _generator_from_tfds(
@@ -159,6 +175,7 @@ def _generator_from_tfds(
         ds,
         size=ds_info.splits[split_type].num_examples,
         batch_size=batch_size,
+        epochs=epochs,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(variable_length and batch_size > 1),
     )
@@ -167,9 +184,9 @@ def _generator_from_tfds(
 
 
 def mnist(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -190,9 +207,9 @@ def mnist(
 
 
 def cifar10(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -213,9 +230,9 @@ def cifar10(
 
 
 def digit(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -237,9 +254,9 @@ def digit(
 
 
 def imagenet_adversarial(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "clean",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -267,9 +284,9 @@ def imagenet_adversarial(
 
 
 def imagenette(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -292,9 +309,9 @@ def imagenette(
 
 
 def german_traffic_sign(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     preprocessing_fn: Callable = None,
     dataset_dir: str = None,
     cache_dataset: bool = True,
@@ -315,9 +332,9 @@ def german_traffic_sign(
 
 
 def librispeech_dev_clean(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -350,9 +367,9 @@ def librispeech_dev_clean(
 
 
 def resisc45(
-    split_type: str,
-    epochs: int,
-    batch_size: int,
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -384,8 +401,8 @@ def resisc45(
 
 
 def ucf101(
-    split_type: str,
-    epochs: int,
+    split_type: str = "train",
+    epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
@@ -452,19 +469,50 @@ SUPPORTED_DATASETS = {
 }
 
 
-def download_all():
+def download_all(download_config, scenario):
     """
-    Download all datasets to cache.
+    Download all datasets for a scenario or requested datset to cache.
     """
-    errors = []
-    for name, func in SUPPORTED_DATASETS.items():
-        logger.info(f"Downloading (if necessary) dataset {name}")
-        try:
-            func()
-        except Exception:
-            errors.append(name)
-            logger.exception(f"Loading dataset {name} failed.")
-    if errors:
-        logger.info("All datasets downloaded successfully")
+
+    def _print_scenario_names():
+        logger.info(
+            f"The following scenarios are available based upon config file {download_config}:"
+        )
+        for scenario in config["scenario"].keys():
+            logger.info(scenario)
+
+    config = _read_validate_scenario_config(download_config)
+    if scenario == "all":
+        for scenario in config["scenario"].keys():
+            for dataset in config["scenario"][scenario]["dataset_name"]:
+                _download_data(dataset)
+    elif scenario == "list":
+        _print_scenario_names()
     else:
-        logger.error(f"The following datasets failed to download: {errors}")
+        if scenario not in config["scenario"].keys():
+            logger.info(f"The scenario name {scenario} is not valid.")
+            _print_scenario_names()
+            raise ValueError("Invalid scenario name.")
+
+        for dataset in config["scenario"][scenario]["dataset_name"]:
+            _download_data(dataset)
+
+
+def _download_data(dataset_name):
+    """
+    Download a single dataset to cache.
+    """
+    if dataset_name not in SUPPORTED_DATASETS.keys():
+        raise ValueError(
+            f"dataset {dataset_name} not supported. Must be one of {list(SUPPORTED_DATASETS.keys())}"
+        )
+
+    func = SUPPORTED_DATASETS[dataset_name]
+
+    logger.info(f"Downloading (if necessary) dataset {dataset_name}...")
+
+    try:
+        func()
+        logger.info(f"Successfully downloaded dataset {dataset_name}.")
+    except Exception:
+        logger.exception(f"Loading dataset {dataset_name} failed.")

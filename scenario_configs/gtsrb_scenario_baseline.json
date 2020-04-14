@@ -1,0 +1,45 @@
+{
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "adhoc": {
+        "poison_dataset": true,
+        "source_class": 5,
+        "target_class": 42,
+        "train_epochs": 2
+    },
+    "attack": {
+        "knowledge": "black",
+        "kwargs": {
+            "poison_module": "art.attacks.poisoning.perturbations",
+            "poison_type": "pattern"
+        },
+        "module": "art.attacks",
+        "name": "PoisoningAttackBackdoor"
+    },
+    "dataset": {
+        "batch_size": 512,
+        "module": "armory.data.datasets",
+        "name": "german_traffic_sign"
+    },
+    "defense": null,
+    "metric": null,
+    "model": {
+        "fit": true,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.gtsrb_scenario",
+        "name": "GTSRB"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "use_gpu": false
+    }
+}

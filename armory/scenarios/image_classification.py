@@ -1,5 +1,5 @@
 """
-Classifier evaluation within ARMORY
+General image classification scenario
 """
 
 import logging
@@ -10,7 +10,8 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
-    load_defense,
+    load_defense_wrapper,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -18,15 +19,23 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-class DemoFGM(Scenario):
+class ImageClassificationTask(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
-        Evaluate a config file for classification robustness against attack.
+        Evaluate the config and return a results dict
         """
+
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
-        if not model_config["weights_file"]:
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to classifier")
+            classifier = load_defense_internal(config["defense"], classifier)
+
+        if model_config["fit"]:
             classifier.set_learning_phase(True)
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
@@ -40,16 +49,22 @@ class DemoFGM(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            if config["defense"] is not None:
-                logger.info("loading defense")
-                defense = load_defense(config["defense"], classifier)
+            if defense_type == "Trainer":
+                logger.info(f"Training with {defense_type} defense...")
+                defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
             else:
                 classifier.fit_generator(train_data, **fit_kwargs)
 
-        # Evaluate the ART classifier on benign test examples
+        if defense_type == "Transform":
+            # NOTE: Transform currently not supported
+            logger.info(f"Transforming classifier with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], classifier)
+            classifier = defense()
+
         classifier.set_learning_phase(False)
-        logger.info("Running inference on benign examples...")
+
+        # Evaluate the ART classifier on benign test examples
         logger.info(f"Loading test dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
@@ -57,16 +72,13 @@ class DemoFGM(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
         logger.info("Running inference on benign examples...")
-        task_metric = metrics.categorical_accuracy
+        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        benign_accuracies = []
-        for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Benign"):
+        for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
-            benign_accuracies.extend(task_metric(y, y_pred))
-        benign_accuracy = sum(benign_accuracies) / test_data_generator.size
-        logger.info(f"Accuracy on benign test examples: {benign_accuracy:.2%}")
+            metrics_logger.update_task(y, y_pred)
+        metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
@@ -78,18 +90,10 @@ class DemoFGM(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
-        adversarial_accuracies = []
-        for cnt, (x, y) in tqdm(enumerate(test_data_generator), desc="Attack"):
+        for x, y in tqdm(test_data_generator, desc="Attack"):
             x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
-            adversarial_accuracies.extend(task_metric(y, y_pred_adv))
-        adversarial_accuracy = sum(adversarial_accuracies) / test_data_generator.size
-        logger.info(
-            f"Accuracy on adversarial test examples: {adversarial_accuracy:.2%}"
-        )
-        results = {
-            "mean_benign_accuracy": benign_accuracy,
-            "mean_adversarial_accuracy": adversarial_accuracy,
-        }
-        return results
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
+        metrics_logger.log_task(adversarial=True)
+        return metrics_logger.results()

@@ -1,0 +1,53 @@
+{
+    "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 128,
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 20000
+        },
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.sincnet",
+        "name": "get_art_model",
+        "weights_file": "sincnet_librispeech_v1.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.audio_classification",
+        "name": "AudioClassificationTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "hkakitani/SincNet",
+        "gpus": "all",
+        "use_gpu": false
+    }
+}
