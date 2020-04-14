@@ -45,16 +45,12 @@ class Ucf101(Scenario):
                     range(train_data_generator.batches_per_epoch),
                     desc=f"Epoch: {epoch}/{train_epochs}",
                 ):
-                    x_trains, y_trains = train_data_generator.get_batch()
+                    x, y = train_data_generator.get_batch()
                     # x_trains consists of one or more videos, each represented as an
                     # ndarray of shape (n_stacks, 3, 16, 112, 112).
                     # To train, randomly sample a batch of stacks
-                    x_trains = np.stack(
-                        [x[np.random.randint(x.shape[0])] for x in x_trains]
-                    )
-                    classifier.fit(
-                        x_trains, y_trains, batch_size=batch_size, nb_epochs=1
-                    )
+                    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
+                    classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         classifier.set_learning_phase(False)
 
