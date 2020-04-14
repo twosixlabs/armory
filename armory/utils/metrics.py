@@ -18,6 +18,10 @@ def categorical_accuracy(y, y_pred):
     """
     y = np.asarray(y)
     y_pred = np.asarray(y_pred)
+    if y.ndim == 0:
+        y = np.array([y])
+        y_pred = np.array([y_pred])
+
     if y.shape == y_pred.shape:
         return [int(x) for x in list(y == y_pred)]
     elif y.ndim + 1 == y_pred.ndim:
@@ -43,6 +47,10 @@ def top_n_categorical_accuracy(y, y_pred, n):
         return categorical_accuracy(y, y_pred)
     y = np.asarray(y)
     y_pred = np.asarray(y_pred)
+    if y.ndim == 0:
+        y = np.array([y])
+        y_pred = np.array([y_pred])
+
     if len(y) != len(y_pred):
         raise ValueError("y and y_pred are of different length")
     if y.shape == y_pred.shape:
@@ -239,6 +247,11 @@ class MetricsLogger:
                 if self.full:
                     results[f"{prefix}_{metric.name}"] = metric.values()
                 if self.means:
-                    results[f"{prefix}_mean_{metric.name}"] = metric.mean()
+                    try:
+                        results[f"{prefix}_mean_{metric.name}"] = metric.mean()
+                    except ZeroDivisionError:
+                        raise ZeroDivisionError(
+                            f"No values to calculate mean in {prefix}_{metric.name}"
+                        )
 
         return results
