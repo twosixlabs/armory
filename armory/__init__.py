@@ -27,7 +27,7 @@ except ImportError as e:
 
 
 # Semantic Version
-__version__ = "0.6.0-rc0"
+__version__ = "0.6.0-rc1"
 DEV = "-dev"
 
 

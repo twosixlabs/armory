@@ -61,7 +61,7 @@ jobs:
           bash docker/build.sh tf2
           docker push twosixarmory/tf2:${version}
   release-pytorch-docker:
-    name: Build and release tf2 docker image
+    name: Build and release pytorch docker image
     needs: [release-wheel]
     runs-on: ubuntu-18.04
     steps:
