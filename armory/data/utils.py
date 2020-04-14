@@ -54,7 +54,9 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param local_path: Local file path to download as
     """
     if not os.path.isfile(local_path):
-        client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        client = boto3.client(
+            "s3", config=Config(signature_version=UNSIGNED), verify=False
+        )
 
         try:
             logger.info("Downloading S3 data file...")
