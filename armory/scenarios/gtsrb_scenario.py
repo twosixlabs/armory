@@ -162,7 +162,7 @@ class GTSRB(Scenario):
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
                 )
                 y_pred = classifier.predict(x_test)
-                test_metric.append(y, y_pred)
+                test_metric.append(y_test, y_pred)
 
                 y_pred_targeted = y_pred[y_test == src_class]
                 if not len(y_pred_targeted):
