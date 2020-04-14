@@ -7,15 +7,7 @@
         },
         "attack": {
             "properties": {
-                "budget": {
-                    "$comment": "What should this object look like?",
-                    "type": [
-                        "object",
-                        "null"
-                    ]
-                },
                 "knowledge": {
-                    "$comment": "What other values are valid?",
                     "enum": [
                         "white",
                         "black"
@@ -33,11 +25,10 @@
                 }
             },
             "required": [
-                "module",
-                "name",
-                "kwargs",
                 "knowledge",
-                "budget"
+                "kwargs",
+                "module",
+                "name"
             ],
             "type": "object"
         },
@@ -71,27 +62,110 @@
                 },
                 "name": {
                     "type": "string"
-                }
-            },
-            "required": [
-                "module",
-                "name",
-                "kwargs"
-            ],
-            "type": "object"
-        },
-        "evaluation": {
-            "properties": {
-                "eval_file": {
+                },
+                "type": {
+                    "enum": [
+                        "Postprocessor",
+                        "Preprocessor",
+                        "Trainer",
+                        "Transformer"
+                    ],
                     "type": "string"
                 }
             },
             "required": [
-                "eval_file"
+                "kwargs",
+                "module",
+                "name",
+                "type"
             ],
             "type": "object"
         },
         "metric": {
+            "properties": {
+                "means": {
+                    "type": "boolean"
+                },
+                "perturbation": {
+                    "$ref": "#/definitions/supported_metric"
+                },
+                "record_metric_per_sample": {
+                    "type": "boolean"
+                },
+                "task": {
+                    "items": {
+                        "$ref": "#/definitions/supported_metric"
+                    },
+                    "type": "array",
+                }
+            },
+            "required": [
+                "means",
+                "perturbation",
+                "record_metric_per_sample",
+                "task"
+            ],
+            "type": "object"
+        },
+        "model": {
+            "properties": {
+                "fit": {
+                    "type": "boolean"
+                },
+                "fit_kwargs": {
+                    "type": "object"
+                },
+                "model_kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "weights_file": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "wrapper_kwargs": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "fit",
+                "fit_kwargs",
+                "model_kwargs",
+                "module",
+                "name",
+                "weights_file",
+                "wrapper_kwargs"
+            ],
+            "type": "object"
+        },
+        "python_module": {
+            "$comment": "Validate that it looks like a Python module path",
+            "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
+            "type": "string"
+        },
+        "supported_metric": {
+            "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
+            "enum": [
+                "categorical_accuracy",
+                "top_n_categorical_accuracy",
+                "top_5_categorical_accuracy",
+                "norm",
+                "l0",
+                "l1",
+                "l2",
+                "lp",
+                "linf"
+            ],
+            "type": "string"
+        },
+        "scenario": {
             "properties": {
                 "kwargs": {
                     "type": "object"
@@ -104,47 +178,10 @@
                 }
             },
             "required": [
+                "kwargs",
                 "module",
-                "name",
-                "kwargs"
-            ],
-            "type": "object"
-        },
-        "model": {
-            "properties": {
-                "model_kwargs": {
-                    "type": "object"
-                },
-                "module": {
-                    "$ref": "#/definitions/python_module"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "weights_file": {
-                    "$comment": "Is this field optional?",
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                },
-                "wrapper_kwargs": {
-                    "type": "object"
-                }
-            },
-            "required": [
-                "module",
-                "name",
-                "model_kwargs",
-                "weights_file",
-                "wrapper_kwargs"
-            ],
-            "type": "object"
-        },
-        "python_module": {
-            "$comment": "Validate that it looks like a Python module path",
-            "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
-            "type": "string"
+                "name"
+            ]
         },
         "sysconfig": {
             "properties": {
@@ -152,7 +189,12 @@
                     "type": "string"
                 },
                 "external_github_repo": {
-                    "$comment": "Can this be absent/null?",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "gpus": {
                     "type": "string"
                 },
                 "use_gpu": {
@@ -162,12 +204,16 @@
             "required": [
                 "docker_image",
                 "external_github_repo",
+                "gpus",
                 "use_gpu"
             ],
             "type": "object"
         }
     },
     "properties": {
+        "_description": {
+            "type": "string"
+        },
         "adhoc": {
             "anyOf": [
                 {
@@ -189,14 +235,7 @@
             ]
         },
         "dataset": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/dataset"
-                },
-                {
-                    "type": "null"
-                }
-            ]
+            "$ref": "#/definitions/dataset"
         },
         "defense": {
             "anyOf": [
@@ -207,9 +246,6 @@
                     "type": "null"
                 }
             ]
-        },
-        "evaluation": {
-            "$ref": "#/definitions/evaluation"
         },
         "metric": {
             "anyOf": [
@@ -222,14 +258,10 @@
             ]
         },
         "model": {
-            "anyOf": [
-                {
-                    "$ref": "#/definitions/model"
-                },
-                {
-                    "type": "null"
-                }
-            ]
+            "$ref": "#/definitions/model"
+        },
+        "scenario": {
+            "$ref": "#/definitions/scenario"
         },
         "sysconfig": {
             "$ref": "#/definitions/sysconfig"
