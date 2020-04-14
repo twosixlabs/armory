@@ -7,7 +7,6 @@
         "train_epochs": 2
     },
     "attack": {
-        "budget": null,
         "knowledge": "black",
         "kwargs": {
             "poison_module": "art.attacks.poisoning.perturbations",
@@ -27,7 +26,7 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.gtsrb_micronnet",
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
         "name": "get_art_model",
         "wrapper_kwargs": {}
     },

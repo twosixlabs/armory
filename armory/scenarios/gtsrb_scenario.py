@@ -3,17 +3,15 @@ Classifier evaluation within ARMORY
 """
 
 import logging
-import coloredlogs
 from importlib import import_module
 
 import numpy as np
+from tqdm import tqdm
 
 from armory.scenarios.base import Scenario
 from armory.utils.config_loading import load_dataset, load_model
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-coloredlogs.install(logging.INFO)
 
 
 def poison_batch(src_imgs, src_lbls, src, tgt, batch_size, attack):
@@ -43,33 +41,24 @@ def poison_batch(src_imgs, src_lbls, src, tgt, batch_size, attack):
 
 
 class GTSRB(Scenario):
-    """
-    Evaluate a config file for classifcation robustness against attack.
-    """
-
     def _evaluate(self, config: dict) -> dict:
+        """
+        Evaluate a config file for classification robustness against attack.
+        """
+
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         train_epochs = config["adhoc"]["train_epochs"]
-        src = config["adhoc"]["source_class"]
-        tgt = config["adhoc"]["target_class"]
+        src_class = config["adhoc"]["source_class"]
+        tgt_class = config["adhoc"]["target_class"]
 
-        # Train on training data - could be clean or poisoned
-        # and validation on clean data
+        # Clean training data
         train_data_generator = load_dataset(
             config["dataset"],
             epochs=train_epochs,
             split_type="train",
-            preprocessing_fn=preprocessing_fn,
-        )
-        # For poisoned dataset, change to validation_data_generator
-        # using split_type="val"
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=train_epochs,
-            split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
 
@@ -100,50 +89,47 @@ class GTSRB(Scenario):
         logger.info(
             f"Fitting model of {model_config['module']}.{model_config['name']}..."
         )
-        for e in range(train_epochs):
-            logger.info("Epoch: {}".format(e))
-
-            # train
-            for _ in range(train_data_generator.batches_per_epoch):
-                x_train, y_train = train_data_generator.get_batch()
-                if config["adhoc"]["poison_dataset"]:
-                    x_train, y_train = poison_batch(
-                        x_train, y_train, src, tgt, len(y_train), attack
-                    )
-
-                classifier.fit(
-                    x_train,
-                    y_train,
-                    batch_size=len(y_train),
-                    nb_epochs=1,
-                    verbose=False,
+        # train
+        for x_train, y_train in tqdm(train_data_generator, desc="Training"):
+            if config["adhoc"]["poison_dataset"]:
+                x_train, y_train = poison_batch(
+                    x_train, y_train, src_class, tgt_class, len(y_train), attack
                 )
 
-            # validate on clean data
-            correct = 0
-            cnt = 0
-            for _ in range(test_data_generator.batches_per_epoch):
-                x_test, y_test = test_data_generator.get_batch()
-                y = classifier.predict(x_test)
-                correct += np.sum(np.argmax(y, 1) == y_test)
-                cnt += len(y_test)
-            validation_accuracy = float(correct) / cnt
-            logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
+            classifier.fit(
+                x_train, y_train, batch_size=len(y_train), nb_epochs=1, verbose=False,
+            )
 
-        # Evaluate on test examples - clean or poisoned
+        # Clean test data to be poisoned
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
+        # Validate on clean test data
         correct = 0
         cnt = 0
-        for _ in range(test_data_generator.batches_per_epoch):
-            x_test, y_test = test_data_generator.get_batch()
+        for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
+            y = classifier.predict(x_test)
+            correct += np.sum(np.argmax(y, 1) == y_test)
+            cnt += len(y_test)
+        validation_accuracy = float(correct) / cnt
+        logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
+
+        test_data_generator = load_dataset(
+            config["dataset"],
+            epochs=1,
+            split_type="test",
+            preprocessing_fn=preprocessing_fn,
+        )
+        correct = 0
+        cnt = 0
+        for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
             if config["adhoc"]["poison_dataset"]:
-                x_test, _ = poison_batch(x_test, y_test, src, tgt, len(y_test), attack)
+                x_test, _ = poison_batch(
+                    x_test, y_test, src_class, tgt_class, len(y_test), attack
+                )
             y = classifier.predict(x_test)
             correct += np.sum(np.argmax(y, 1) == y_test)
             cnt += len(y_test)
@@ -154,4 +140,28 @@ class GTSRB(Scenario):
             "validation_accuracy": str(validation_accuracy),
             "test_accuracy": str(test_accuracy),
         }
+        if config["adhoc"]["poison_dataset"]:
+            test_data_generator = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+            )
+            correct = 0
+            cnt = 0
+            for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
+                x_test, _ = poison_batch(
+                    x_test, y_test, src_class, tgt_class, len(y_test), attack
+                )
+                x_test_targeted = x_test[y_test == src_class]
+                if len(x_test_targeted) == 0:
+                    continue
+                y = classifier.predict(x_test_targeted)
+                correct += np.sum(np.argmax(y, 1) == tgt_class)
+                cnt += len(y)
+            targeted_accuracy = float(correct) / cnt
+            logger.info(
+                f"Test targeted misclassification accuracy: {targeted_accuracy:.2%}"
+            )
+            results["targeted_misclassification_accuracy"] = str(targeted_accuracy)
         return results
