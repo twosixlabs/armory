@@ -60,29 +60,6 @@ class Ucf101(Scenario):
                         x_train, y_trains, batch_size=batch_size, nb_epochs=1
                     )
 
-        #                # evaluate on test examples
-        #                classifier.set_learning_phase(False)
-        #                test_data_generator = load_dataset(
-        #                    config["dataset"],
-        #                    epochs=1,
-        #                    split_type="test",
-        #                    preprocessing_fn=preprocessing_fn,
-        #                )
-        #
-        #                accuracies = AverageMeter()
-        #                accuracies_top5 = AverageMeter()
-        #                for _ in tqdm(range(len(test_data_generator) // 10), desc="Validation"):
-        #                    x_tests, y_tests = test_data_generator.get_batch()
-        #                    for x_test, y_test in zip(x_tests, y_tests):
-        #                        y_pred_split = classifier.predict(x_test)
-        #                        y_pred = np.mean(y_pred_split, axis=0)
-        #
-        #                        update_accuracies(y_pred, y_test, accuracies, accuracies_top5)
-        #                logger.info(
-        #                    f"Top-1 video accuracy = {accuracies.avg}, "
-        #                    f"top-5 video accuracy = {accuracies_top5.avg}"
-        #                )
-
         classifier.set_learning_phase(False)
 
         # Evaluate ART classifier on test examples
