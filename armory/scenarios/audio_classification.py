@@ -28,7 +28,7 @@ class AudioClassificationTask(Scenario):
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
-        defense = config.get("defense", {})
+        defense = config.get("defense") or {}
         defense_type = defense.get("type")
 
         if defense_type in ["Preprocessor", "Postprocessor"]:
@@ -49,8 +49,8 @@ class AudioClassificationTask(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            if config["defense"] is not None:
-                logger.info("loading defense")
+            if defense_type == "Trainer":
+                logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
             else:
@@ -59,7 +59,7 @@ class AudioClassificationTask(Scenario):
         classifier.set_learning_phase(False)
 
         # Evaluate the ART classifier on benign test examples
-        logger.info(f"Loading dataset {config['dataset']['name']}...")
+        logger.info(f"Loading test dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
