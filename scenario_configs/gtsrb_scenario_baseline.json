@@ -15,8 +15,8 @@
             "poison_module": "art.attacks.poisoning.perturbations",
             "poison_type": "pattern"
         },
-        "module": "art.attacks",
-        "name": "PoisoningAttackBackdoor"
+        "module": "armory.art_experimental.poison_loader",
+        "name": "poison_loader_GTSRB"
     },
     "dataset": {
         "batch_size": 512,

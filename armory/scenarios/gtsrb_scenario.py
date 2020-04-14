@@ -5,7 +5,6 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
-from importlib import import_module
 
 import numpy as np
 from tqdm import tqdm
@@ -13,7 +12,13 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow import set_random_seed
 
 from armory.scenarios.base import Scenario
-from armory.utils.config_loading import load_dataset, load_model, load_defense_internal
+from armory.utils.config_loading import (
+    load_attack,
+    load_dataset,
+    load_defense_internal,
+    load_model,
+    load_fn,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -52,88 +57,59 @@ class GTSRB(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
-        classifier_defense, _ = load_model(model_config)
+        classifier_for_defense, _ = load_model(model_config)
 
-        defense = config.get("defense", {})
-        defense_type = defense.get("type")
-
-        if defense_type in ["Preprocessor", "Postprocessor"]:
-            logger.info(f"Applying internal {defense_type} defense to classifier")
-            classifier = load_defense_internal(defense, classifier)
-
-        logger.info(f"Loading dataset {config['dataset']['name']}...")
         train_epochs = config["adhoc"]["train_epochs"]
         src_class = config["adhoc"]["source_class"]
         tgt_class = config["adhoc"]["target_class"]
-        np_seed = config["adhoc"]["np_seed"]
-        tf_seed = config["adhoc"]["tf_seed"]
-        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
-        poison_dataset_flag = config["adhoc"]["poison_dataset"]
+
+        # Set random seed due to large variance in attack and defense success
+        np.random.seed(config["adhoc"]["np_seed"])
+        set_random_seed(config["adhoc"]["tf_seed"])
+
+        logger.info(f"Loading dataset {config['dataset']['name']}...")
         batch_size = config["dataset"]["batch_size"]
-
-        np.random.seed(np_seed)
-        set_random_seed(tf_seed)
-
-        train_data_generator = load_dataset(
+        train_data = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
         )
 
+        logger.info("Building in-memory dataset for poisoning detection and training")
         attack_config = config["attack"]
-        attack_module = import_module(attack_config["module"])
-        attack_fn = getattr(attack_module, attack_config["name"])
-        poison_module = import_module(attack_config["kwargs"]["poison_module"])
-        poison_type = attack_config["kwargs"]["poison_type"]
-
-        def add_modification(x):
-            if poison_type == "pattern":
-                poison_fn = getattr(poison_module, "add_pattern_bd")
-                return poison_fn(x, pixel_value=255)
-            elif poison_type == "pixel":
-                poison_fn = getattr(poison_module, "add_single_bd")
-                return poison_fn(x, pixel_value=255)
-            elif poison_type == "image":
-                poison_fn = getattr(poison_module, "insert_image")
-                return poison_fn(x, backdoor_path="PATH_TO_IMG", size=(10, 10))
-            else:
-                raise ValueError("Unknown backdoor type")
-
-        attack = attack_fn(add_modification)
-
+        attack = load_attack(attack_config)
+        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        poison_dataset_flag = config["adhoc"]["poison_dataset"]
+        # detect_poison does not currently support data generators
+        #     therefore, make in memory dataset
         x_train_all, y_train_all = [], []
-        for x_train, y_train in train_data_generator:
-
-            if poison_dataset_flag:
-                poison_batch_flag = np.random.rand() < fraction_poisoned
-                if poison_batch_flag:
-                    x_train, y_train = poison_batch(
-                        x_train, y_train, src_class, tgt_class, len(y_train), attack
-                    )
+        for x_train, y_train in train_data:
+            if poison_dataset_flag and np.random.rand() < fraction_poisoned:
+                x_train, y_train = poison_batch(
+                    x_train, y_train, src_class, tgt_class, len(y_train), attack
+                )
             x_train_all.append(x_train)
             y_train_all.append(y_train)
-
         x_train_all = np.concatenate(x_train_all, axis=0)
         y_train_all = np.concatenate(y_train_all, axis=0)
         y_train_all_categorical = to_categorical(y_train_all)
 
         defense_config = config["defense"]
-        defense_module = import_module(defense_config["module"])
-        defense_fn = getattr(defense_module, defense_config["name"])
-
         logger.info(
             f"Fitting model of {model_config['module']}.{model_config['name']} for defense {defense_config['name']}..."
         )
-
-        classifier_defense.fit(
+        classifier_for_defense.fit(
             x_train_all,
             y_train_all_categorical,
             batch_size=batch_size,
             nb_epochs=train_epochs,
             verbose=False,
         )
-        defense = defense_fn(classifier_defense, x_train_all, y_train_all_categorical)
+        defense_fn = load_fn(defense_config)
+        defense = defense_fn(
+            classifier_for_defense, x_train_all, y_train_all_categorical
+        )
         _, is_clean_lst = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
 
         is_clean = np.array(is_clean_lst)
@@ -210,9 +186,9 @@ class GTSRB(Scenario):
                 x_test_targeted = x_test[y_test == src_class]
                 if len(x_test_targeted) == 0:
                     continue
-                y = np.argmax(classifier.predict(x_test_targeted), axis=1)
-                correct += np.sum(y == tgt_class)
-                cnt += len(y)
+                y_pred = np.argmax(classifier.predict(x_test_targeted), axis=1)
+                correct += np.sum(y_pred == tgt_class)
+                cnt += len(y_pred)
             targeted_accuracy = float(correct) / cnt
             logger.info(
                 f"Test targeted misclassification accuracy: {targeted_accuracy:.2%}"
