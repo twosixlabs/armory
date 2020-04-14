@@ -16,10 +16,11 @@
     },
     "defense": null,
     "metric": {
+        "means": true,
         "perturbation": "linf",
+        "record_metric_per_sample": true,
         "task": [
-            "categorical_accuracy",
-            "categorical_accuracy_top_5"
+            "categorical_accuracy"
         ]
     },
     "model": {
