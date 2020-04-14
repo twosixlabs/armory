@@ -7,18 +7,18 @@ Scenario Contributor: MITRE Corporation
 import logging
 
 import numpy as np
-from tqdm import tqdm
-from tensorflow.keras.utils import to_categorical
 from tensorflow import set_random_seed
+from tensorflow.keras.utils import to_categorical
+from tqdm import tqdm
 
-from armory.scenarios.base import Scenario
 from armory.utils.config_loading import (
-    load_attack,
     load_dataset,
     load_defense_internal,
     load_model,
+    load_attack,
     load_fn,
 )
+from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +97,8 @@ class GTSRB(Scenario):
 
         defense_config = config["defense"]
         logger.info(
-            f"Fitting model of {model_config['module']}.{model_config['name']} for defense {defense_config['name']}..."
+            f"Fitting model {model_config['module']}.{model_config['name']} "
+            f"for defense {defense_config['name']}..."
         )
         classifier_for_defense.fit(
             x_train_all,
@@ -110,44 +111,46 @@ class GTSRB(Scenario):
         defense = defense_fn(
             classifier_for_defense, x_train_all, y_train_all_categorical
         )
-        _, is_clean_lst = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
-
-        is_clean = np.array(is_clean_lst)
+        _, is_clean = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
+        is_clean = np.array(is_clean)
         logger.info(f"Total clean data points: {np.sum(is_clean)}")
 
+        logger.info("Filtering out detected poisoned samples")
         indices_to_keep = is_clean == 1
         x_train_filter = x_train_all[indices_to_keep]
         y_train_filter = y_train_all_categorical[indices_to_keep]
+        if len(x_train_filter):
+            logger.info(
+                f"Fitting model of {model_config['module']}.{model_config['name']}..."
+            )
+            classifier.fit(
+                x_train_filter,
+                y_train_filter,
+                batch_size=batch_size,
+                nb_epochs=train_epochs,
+                verbose=False,
+            )
+        else:
+            logger.warning("All data points filtered by defense. Skipping training")
 
-        logger.info(
-            f"Fitting model of {model_config['module']}.{model_config['name']}..."
-        )
-        classifier.fit(
-            x_train_filter,
-            y_train_filter,
-            batch_size=batch_size,
-            nb_epochs=train_epochs,
-            verbose=False,
-        )
-
-        # Clean test data to be poisoned
-        test_data_generator = load_dataset(
+        logger.info(f"Validating on clean test data")
+        test_data = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        # Validate on clean test data
         correct = 0
         cnt = 0
-        for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
+        for x_test, y_test in tqdm(test_data, desc="Testing"):
             y = np.argmax(classifier.predict(x_test), axis=1)
             correct += np.sum(y == y_test)
             cnt += len(y_test)
         validation_accuracy = float(correct) / cnt
         logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
 
-        test_data_generator = load_dataset(
+        logger.info(f"Testing on poisoned test data")
+        test_data = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
@@ -155,7 +158,7 @@ class GTSRB(Scenario):
         )
         correct = 0
         cnt = 0
-        for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
+        for x_test, y_test in tqdm(test_data, desc="Testing"):
             if poison_dataset_flag:
                 x_test, _ = poison_batch(
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
@@ -171,7 +174,8 @@ class GTSRB(Scenario):
             "test_accuracy": str(test_accuracy),
         }
         if poison_dataset_flag:
-            test_data_generator = load_dataset(
+            logger.info(f"Measuring targeted attack test accuracy")
+            test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
@@ -179,7 +183,7 @@ class GTSRB(Scenario):
             )
             correct = 0
             cnt = 0
-            for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
+            for x_test, y_test in tqdm(test_data, desc="Testing"):
                 x_test, _ = poison_batch(
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
                 )
