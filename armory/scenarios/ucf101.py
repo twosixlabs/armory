@@ -121,6 +121,6 @@ class Ucf101(Scenario):
                 x_adv = attack.generate(x=x)
                 y_pred = np.mean(classifier.predict(x), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
-                metrics_logger.update_perturbation(x, x_adv)
+                metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
