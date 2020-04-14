@@ -9,6 +9,7 @@ import os
 import shutil
 import random
 import string
+import json
 
 import boto3
 from botocore import UNSIGNED
@@ -54,7 +55,9 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param local_path: Local file path to download as
     """
     if not os.path.isfile(local_path):
-        client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        client = boto3.client(
+            "s3", config=Config(signature_version=UNSIGNED), verify=False
+        )
 
         try:
             logger.info("Downloading S3 data file...")
@@ -212,3 +215,13 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     except OSError as e:
         if not isinstance(e, FileNotFoundError):
             logger.exception(f"Error removing temporary directory {tmp_dir}")
+
+
+def _read_validate_scenario_config(config_filepath):
+    with open(config_filepath) as f:
+        config = json.load(f)
+    if "scenario" not in config.keys():
+        raise ValueError("Does not match config schema")
+    if not isinstance(config["scenario"], dict):
+        raise ValueError('config["scenario"] must be dictionary')
+    return config
