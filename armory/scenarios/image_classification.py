@@ -28,7 +28,7 @@ class ImageClassificationTask(Scenario):
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
-        defense = config.get("defense", {})
+        defense = config.get("defense") or {}
         defense_type = defense.get("type")
 
         if defense_type in ["Preprocessor", "Postprocessor"]:
@@ -49,7 +49,7 @@ class ImageClassificationTask(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            if defense_type in ["Trainer", "Transformer"]:
+            if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
@@ -66,10 +66,9 @@ class ImageClassificationTask(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-
         logger.info("Running inference on benign examples...")
-
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
+
         for x, y in tqdm(test_data_generator, desc="Benign"):
             y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
