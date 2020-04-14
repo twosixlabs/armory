@@ -64,9 +64,28 @@ def load_attack(attack_config, classifier):
 
 
 def load_defense(defense_config, classifier):
+    # TODO: Ensure Trainer or Transformer
+
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
     defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
     if not any(isinstance(defense, x) for x in DEFENSES):
         raise TypeError(f"defense {defense} is not a defense instance: {DEFENSES}")
     return defense
+
+
+def load_defense_internal(defense_config, classifier):
+    # TODO: Ensure preprocessor or postprocessor
+
+    defense_module = import_module(defense_config["module"])
+    defense_fn = getattr(defense_module, defense_config["name"])
+    defense = defense_fn(**defense_config["kwargs"])
+
+    if defense_config["type"] == "Preprocessor":
+        classifier.preprocessing_defences = [defense]
+    if defense_config["type"] == "Postprocessor":
+        classifier.postprocessing_defences = [defense]
+
+    if not any(isinstance(defense, x) for x in DEFENSES):
+        raise TypeError(f"defense {defense} is not a defense instance: {DEFENSES}")
+    return classifier
