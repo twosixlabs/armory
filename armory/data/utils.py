@@ -17,11 +17,17 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 import requests
 from tqdm import tqdm
+import botocore.vendored.requests.packages.urllib3 as boto_urllib3
 
 from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
+
+requests.packages.urllib3.disable_warnings(
+    requests.packages.urllib3.InsecureRequestWarning
+)
+boto_urllib3.disable_warnings(boto_urllib3.exceptions.InsecureRequestWarning)
 
 
 def maybe_download_weights_from_s3(weights_file: str) -> str:
