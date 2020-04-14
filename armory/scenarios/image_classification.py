@@ -30,7 +30,7 @@ class ImageClassificationTask(Scenario):
         defense = config.get("defense")
         if defense:
             defense_type = defense["type"]
-            if defense["type"] in ["Preprocessor", "Postprocessor"]:
+            if defense_type in ["Preprocessor", "Postprocessor"]:
                 logger.info(f"Applying {defense_type} defense to classifier")
                 classifier = load_defense_internal(defense, classifier)
 
