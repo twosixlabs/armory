@@ -1,6 +1,7 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
+        "fraction_poisoned": 0.7,
         "poison_dataset": true,
         "source_class": 5,
         "target_class": 42,
@@ -20,7 +21,11 @@
         "module": "armory.data.datasets",
         "name": "german_traffic_sign"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {},
+        "module": "art.poison_detection.activation_defence",
+        "name": "ActivationDefence"
+    },
     "metric": null,
     "model": {
         "fit": true,

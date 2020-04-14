@@ -9,6 +9,7 @@ from importlib import import_module
 
 import numpy as np
 from tqdm import tqdm
+from tensorflow.keras.utils import to_categorical
 
 from armory.scenarios.base import Scenario
 from armory.utils.config_loading import load_dataset, load_model, load_defense_internal
@@ -62,17 +63,16 @@ class GTSRB(Scenario):
         train_epochs = config["adhoc"]["train_epochs"]
         src_class = config["adhoc"]["source_class"]
         tgt_class = config["adhoc"]["target_class"]
+        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        poison_dataset_flag = config["adhoc"]["poison_dataset"]
+        batch_size = config["dataset"]["batch_size"]
 
-        # Clean training data
         train_data_generator = load_dataset(
             config["dataset"],
-            epochs=train_epochs,
+            epochs=1,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
         )
-
-        # Generate poison examples
-        # Ignore this section if using existing poisoned dataset
 
         attack_config = config["attack"]
         attack_module = import_module(attack_config["module"])
@@ -95,20 +95,47 @@ class GTSRB(Scenario):
 
         attack = attack_fn(add_modification)
 
+        x_train_all, y_train_all = [], []
+        for x_train, y_train in train_data_generator:
+
+            if poison_dataset_flag:
+                poison_batch_flag = np.random.rand() < fraction_poisoned
+                if poison_batch_flag:
+                    x_train, y_train = poison_batch(
+                        x_train, y_train, src_class, tgt_class, len(y_train), attack
+                    )
+            x_train_all.append(x_train)
+            y_train_all.append(y_train)
+
+        x_train_all = np.concatenate(x_train_all, axis=0)
+        y_train_all = np.concatenate(y_train_all, axis=0)
+        y_train_all_categorical = to_categorical(y_train_all)
+
+        defense_config = config["defense"]
+        defense_module = import_module(defense_config["module"])
+        defense_fn = getattr(defense_module, defense_config["name"])
+
+        defense = defense_fn(classifier, x_train_all, y_train_all_categorical)
+        _, is_clean_lst = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
+
+        is_clean = np.array(is_clean_lst)
+        logger.info(f"Total clean data points: {np.sum(is_clean)}")
+
+        indices_to_keep = is_clean == 1
+        x_train_filter = x_train_all[indices_to_keep]
+        y_train_filter = y_train_all[indices_to_keep]
+
+        classifier.fit(
+            x_train_filter,
+            y_train_filter,
+            batch_size=batch_size,
+            nb_epochs=train_epochs,
+            verbose=False,
+        )
+
         logger.info(
             f"Fitting model of {model_config['module']}.{model_config['name']}..."
         )
-        # train
-        for x_train, y_train in tqdm(train_data_generator, desc="Training"):
-            if config["adhoc"]["poison_dataset"]:
-                x_train, y_train = poison_batch(
-                    x_train, y_train, src_class, tgt_class, len(y_train), attack
-                )
-
-            classifier.fit(
-                x_train, y_train, batch_size=len(y_train), nb_epochs=1, verbose=False,
-            )
-
         # Clean test data to be poisoned
         test_data_generator = load_dataset(
             config["dataset"],
@@ -135,7 +162,7 @@ class GTSRB(Scenario):
         correct = 0
         cnt = 0
         for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
-            if config["adhoc"]["poison_dataset"]:
+            if poison_dataset_flag:
                 x_test, _ = poison_batch(
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
                 )
@@ -149,7 +176,7 @@ class GTSRB(Scenario):
             "validation_accuracy": str(validation_accuracy),
             "test_accuracy": str(test_accuracy),
         }
-        if config["adhoc"]["poison_dataset"]:
+        if poison_dataset_flag:
             test_data_generator = load_dataset(
                 config["dataset"],
                 epochs=1,
