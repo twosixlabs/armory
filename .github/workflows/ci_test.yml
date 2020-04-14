@@ -5,12 +5,10 @@ on:
   push:
     branches:
       - master
-      - r*
 
   pull_request:
     branches:
       - master
-      - r*
 
 env:
   DOCKER_BUILDKIT: 1
