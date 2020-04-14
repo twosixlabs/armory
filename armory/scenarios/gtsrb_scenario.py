@@ -118,6 +118,9 @@ class GTSRB(Scenario):
         x_train_filter = x_train_all[indices_to_keep]
         y_train_filter = y_train_all[indices_to_keep]
 
+        logger.info(
+            f"Fitting model of {model_config['module']}.{model_config['name']}..."
+        )
         classifier.fit(
             x_train_filter,
             y_train_filter,
@@ -126,9 +129,6 @@ class GTSRB(Scenario):
             verbose=False,
         )
 
-        logger.info(
-            f"Fitting model of {model_config['module']}.{model_config['name']}..."
-        )
         # Clean test data to be poisoned
         test_data_generator = load_dataset(
             config["dataset"],
