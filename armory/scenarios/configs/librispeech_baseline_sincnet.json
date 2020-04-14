@@ -1,7 +1,12 @@
 {
-    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
+    "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2
@@ -10,9 +15,9 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 128,
         "module": "armory.data.datasets",
-        "name": "resisc45"
+        "name": "librispeech_dev_clean"
     },
     "defense": null,
     "metric": {
@@ -25,22 +30,24 @@
     },
     "model": {
         "fit": false,
-        "fit_kwargs": {},
+        "fit_kwargs": {
+            "nb_epochs": 20000
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
-        "weights_file": "densenet121-resisc45-val_acc-0.93.hdf5",
+        "weights_file": "model_sincnet.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "module": "armory.scenarios.audio_classification",
+        "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.6.0-dev",
-        "external_github_repo": null,
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }

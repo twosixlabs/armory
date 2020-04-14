@@ -1,18 +1,19 @@
+"""
+ResNet50 CNN model for 244x244x3 image classification
+"""
 import logging
-import os
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
 from torchvision import models
 
-from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import maybe_download_weights_from_s3
 
 
 logger = logging.getLogger(__name__)
-os.environ["TORCH_HOME"] = os.path.join(paths.docker().dataset_dir, "pytorch", "models")
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 IMAGENET_MEANS = [0.485, 0.456, 0.406]
 IMAGENET_STDEV = [0.229, 0.224, 0.225]
@@ -36,19 +37,12 @@ def preprocessing_fn(img):
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = models.resnet50(**model_kwargs)
+    model.to(DEVICE)
 
     if weights_file:
-        saved_model_dir = paths.docker().saved_model_dir
-        filepath = os.path.join(saved_model_dir, weights_file)
-
-        if not os.path.isfile(filepath):
-            download_file_from_s3(
-                "armory-public-data",
-                f"model-weights/{weights_file}",
-                f"{saved_model_dir}/{weights_file}",
-            )
-
-        model.load(filepath)
+        filepath = maybe_download_weights_from_s3(weights_file)
+        checkpoint = torch.load(filepath, map_location=DEVICE)
+        model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchClassifier(
         model,

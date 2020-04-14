@@ -1,0 +1,52 @@
+{
+    "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "budget": null,
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 51.0
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 16,
+        "module": "armory.data.datasets",
+        "name": "ucf101"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 10
+        },
+        "model_kwargs": {
+            "model_status": "ucf101_trained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
+        "name": "get_art_model",
+        "weights_file": "MARS_UCF101_16f.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.ucf101",
+        "name": "Ucf101"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
+        "use_gpu": false
+    }
+}

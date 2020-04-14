@@ -1,11 +1,11 @@
 """
-Download and preprocess common datasets.
-Each standard dataset resides in its own subdirectory under <dataset_dir> based
+Download and load baseline datasets with optional pre-processing.
+
+Each baseline dataset resides in its own subdirectory under <dataset_dir> based
 upon the name of the function in the datasets file. For example, the cifar10
 data is found at '<dataset_dir>/cifar10'
-The 'download' subdirectory under <dataset_dir> is reserved for caching.
-The 'private' subdirectory under <dataset_dir> is reserved for private
-datasets.
+
+The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import logging
@@ -44,13 +44,26 @@ class ArmoryDataGenerator(DataGenerator):
     """
 
     def __init__(
-        self, generator, size, batch_size, preprocessing_fn=None, variable_length=False,
+        self,
+        generator,
+        size,
+        epochs,
+        batch_size,
+        preprocessing_fn=None,
+        variable_length=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
         self.generator = generator
+
+        self.epochs = epochs
+        self.samples_per_epoch = size
+
         # drop_remainder is False
-        self.batches_per_epoch = size // batch_size + bool(size % batch_size)
+        self.batches_per_epoch = self.samples_per_epoch // batch_size + bool(
+            self.samples_per_epoch % batch_size
+        )
+
         self.variable_length = variable_length
         if self.variable_length:
             self.current = 0
@@ -65,7 +78,7 @@ class ArmoryDataGenerator(DataGenerator):
                 y_list.append(y_i)
                 self.current += 1
                 # handle end of epoch partial batches
-                if self.current == self.size:
+                if self.current == self.samples_per_epoch:
                     self.current = 0
                     break
             x = np.empty((len(x_list),), dtype=object)
@@ -86,6 +99,9 @@ class ArmoryDataGenerator(DataGenerator):
 
     def __next__(self):
         return self.get_batch()
+
+    def __len__(self):
+        return self.batches_per_epoch * self.epochs
 
 
 def _generator_from_tfds(
@@ -156,6 +172,7 @@ def _generator_from_tfds(
         ds,
         size=ds_info.splits[split_type].num_examples,
         batch_size=batch_size,
+        epochs=epochs,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(variable_length and batch_size > 1),
     )
