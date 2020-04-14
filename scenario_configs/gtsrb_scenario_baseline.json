@@ -41,13 +41,13 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.gtsrb_scenario",
+        "module": "armory.scenarios.poisoning_gtsrb_scenario",
         "name": "GTSRB"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": false
+        "use_gpu": true
     }
 }
