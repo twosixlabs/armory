@@ -1,6 +1,7 @@
 import pathlib
 from glob import glob
 
+import jsonschema
 import pytest
 
 from armory.utils.configuration import load_config
@@ -11,9 +12,19 @@ def test_no_config():
         load_config("not_a_file.json")
 
 
-def test_invalid_config():
-    with pytest.raises(KeyError, match="sysconfig"):
-        load_config(str(pathlib.Path("tests/scenarios/broken/missing_eval.json")))
+def test_no_scenario():
+    with pytest.raises(
+        jsonschema.ValidationError, match=r"'scenario' is a required property",
+    ):
+        load_config(str(pathlib.Path("tests/scenarios/broken/missing_scenario.json")))
+
+
+def test_invalid_module():
+    with pytest.raises(
+        jsonschema.ValidationError,
+        match=r"Failed validating 'pattern' in schema\[0\]\['properties'\]\['module'\]",
+    ):
+        load_config(str(pathlib.Path("tests/scenarios/broken/invalid_module.json")))
 
 
 def test_all_examples():
