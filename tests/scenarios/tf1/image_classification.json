@@ -36,7 +36,7 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.image_classification",
-        "name": "ImageClassification"
+        "name": "ImageClassificationTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",

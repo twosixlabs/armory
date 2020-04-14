@@ -20,7 +20,14 @@
         "name": "librispeech_dev_clean"
     },
     "defense": null,
-    "metric": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
     "model": {
         "fit": false,
         "fit_kwargs": {
@@ -34,8 +41,8 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.librispeech_dev_clean",
-        "name": "LibrispeechDevClean"
+        "module": "armory.scenarios.audio_classification",
+        "name": "AudioClassificationTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
