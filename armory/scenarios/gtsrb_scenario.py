@@ -10,6 +10,7 @@ from importlib import import_module
 import numpy as np
 from tqdm import tqdm
 from tensorflow.keras.utils import to_categorical
+from tensorflow import set_random_seed
 
 from armory.scenarios.base import Scenario
 from armory.utils.config_loading import load_dataset, load_model, load_defense_internal
@@ -51,6 +52,7 @@ class GTSRB(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
+        classifier_defense, _ = load_model(model_config)
 
         defense = config.get("defense", {})
         defense_type = defense.get("type")
@@ -63,9 +65,14 @@ class GTSRB(Scenario):
         train_epochs = config["adhoc"]["train_epochs"]
         src_class = config["adhoc"]["source_class"]
         tgt_class = config["adhoc"]["target_class"]
+        np_seed = config["adhoc"]["np_seed"]
+        tf_seed = config["adhoc"]["tf_seed"]
         fraction_poisoned = config["adhoc"]["fraction_poisoned"]
         poison_dataset_flag = config["adhoc"]["poison_dataset"]
         batch_size = config["dataset"]["batch_size"]
+
+        np.random.seed(np_seed)
+        set_random_seed(tf_seed)
 
         train_data_generator = load_dataset(
             config["dataset"],
@@ -115,7 +122,18 @@ class GTSRB(Scenario):
         defense_module = import_module(defense_config["module"])
         defense_fn = getattr(defense_module, defense_config["name"])
 
-        defense = defense_fn(classifier, x_train_all, y_train_all_categorical)
+        logger.info(
+            f"Fitting model of {model_config['module']}.{model_config['name']} for defense {defense_config['name']}..."
+        )
+
+        classifier_defense.fit(
+            x_train_all,
+            y_train_all_categorical,
+            batch_size=batch_size,
+            nb_epochs=train_epochs,
+            verbose=False,
+        )
+        defense = defense_fn(classifier_defense, x_train_all, y_train_all_categorical)
         _, is_clean_lst = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
 
         is_clean = np.array(is_clean_lst)
@@ -123,7 +141,7 @@ class GTSRB(Scenario):
 
         indices_to_keep = is_clean == 1
         x_train_filter = x_train_all[indices_to_keep]
-        y_train_filter = y_train_all[indices_to_keep]
+        y_train_filter = y_train_all_categorical[indices_to_keep]
 
         logger.info(
             f"Fitting model of {model_config['module']}.{model_config['name']}..."
@@ -147,8 +165,8 @@ class GTSRB(Scenario):
         correct = 0
         cnt = 0
         for x_test, y_test in tqdm(test_data_generator, desc="Testing"):
-            y = classifier.predict(x_test)
-            correct += np.sum(np.argmax(y, 1) == y_test)
+            y = np.argmax(classifier.predict(x_test), axis=1)
+            correct += np.sum(y == y_test)
             cnt += len(y_test)
         validation_accuracy = float(correct) / cnt
         logger.info(f"Unpoisoned validation accuracy: {validation_accuracy:.2%}")
@@ -166,8 +184,8 @@ class GTSRB(Scenario):
                 x_test, _ = poison_batch(
                     x_test, y_test, src_class, tgt_class, len(y_test), attack
                 )
-            y = classifier.predict(x_test)
-            correct += np.sum(np.argmax(y, 1) == y_test)
+            y = np.argmax(classifier.predict(x_test), axis=1)
+            correct += np.sum(y == y_test)
             cnt += len(y_test)
         test_accuracy = float(correct) / cnt
         logger.info(f"Test accuracy: {test_accuracy:.2%}")
@@ -192,8 +210,8 @@ class GTSRB(Scenario):
                 x_test_targeted = x_test[y_test == src_class]
                 if len(x_test_targeted) == 0:
                     continue
-                y = classifier.predict(x_test_targeted)
-                correct += np.sum(np.argmax(y, 1) == tgt_class)
+                y = np.argmax(classifier.predict(x_test_targeted), axis=1)
+                correct += np.sum(y == tgt_class)
                 cnt += len(y)
             targeted_accuracy = float(correct) / cnt
             logger.info(
