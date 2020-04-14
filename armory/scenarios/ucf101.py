@@ -11,7 +11,12 @@ from tqdm import tqdm
 
 from armory.scenarios.base import Scenario
 from armory.utils import metrics
-from armory.utils.config_loading import load_dataset, load_model, load_attack
+from armory.utils.config_loading import (
+    load_dataset,
+    load_model,
+    load_attack,
+    load_defense_internal,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +28,13 @@ class Ucf101(Scenario):
         """
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
+
+        defense = config.get("defense", {})
+        defense_type = defense.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to classifier")
+            classifier = load_defense_internal(defense, classifier)
 
         if model_config.get("fit"):
             logger.info(

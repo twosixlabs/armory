@@ -10,7 +10,8 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
-    load_defense,
+    load_defense_wrapper,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -26,6 +27,13 @@ class AudioClassificationTask(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
+
+        defense = config.get("defense", {})
+        defense_type = defense.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to classifier")
+            classifier = load_defense_internal(defense, classifier)
 
         if model_config["fit"]:
             classifier.set_learning_phase(True)
@@ -43,7 +51,7 @@ class AudioClassificationTask(Scenario):
             )
             if config["defense"] is not None:
                 logger.info("loading defense")
-                defense = load_defense(config["defense"], classifier)
+                defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
             else:
                 classifier.fit_generator(train_data, **fit_kwargs)
