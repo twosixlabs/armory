@@ -10,15 +10,15 @@
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 64,
         "module": "armory.data.datasets",
         "name": "cifar10"
     },
     "defense": null,
     "metric": {
-        "full": true,
         "means": true,
         "perturbation": "linf",
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]
@@ -26,7 +26,7 @@
     "model": {
         "fit": true,
         "fit_kwargs": {
-            "nb_epochs": 3
+            "nb_epochs": 20
         },
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.cifar",
@@ -42,6 +42,7 @@
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }

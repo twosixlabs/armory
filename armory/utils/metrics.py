@@ -105,6 +105,19 @@ def l0(x, x_adv):
     return norm(x, x_adv, 0)
 
 
+SUPPORTED_METRICS = {
+    "categorical_accuracy": categorical_accuracy,
+    "top_n_categorical_accuracy": top_n_categorical_accuracy,
+    "top_5_categorical_accuracy": top_5_categorical_accuracy,
+    "norm": norm,
+    "l0": l0,
+    "l1": l1,
+    "l2": l2,
+    "lp": lp,
+    "linf": linf,
+}
+
+
 class MetricList:
     """
     Keeps track of all results from a single metric
@@ -113,7 +126,7 @@ class MetricList:
     def __init__(self, name, function=None):
         if function is None:
             try:
-                self.function = globals()[name]
+                self.function = SUPPORTED_METRICS[name]
             except KeyError:
                 raise KeyError(f"{name} is not part of armory.utils.metrics")
         elif callable(function):
@@ -130,6 +143,9 @@ class MetricList:
         value = self.function(*args, **kwargs)
         self._values.extend(value)
 
+    def __iter__(self):
+        return self._values.__iter__()
+
     def values(self):
         return list(self._values)
 
@@ -142,22 +158,24 @@ class MetricsLogger:
     Uses the set of task and perturbation metrics given to it.
     """
 
-    def __init__(self, task=None, perturbation=None, means=True, full=False):
+    def __init__(
+        self, task=None, perturbation=None, means=True, record_metric_per_sample=False
+    ):
         """
         task - single metric or list of metrics
         perturbation - single metric or list of metrics
-        means - whether to return the mean values for each metric
-        full - whether to return the full values for each metric
+        means - whether to return the mean value for each metric
+        record_metric_per_sample - whether to return metric values for each sample
         """
         self.tasks = self._generate_counters(task)
         self.adversarial_tasks = self._generate_counters(task)
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
-        self.full = bool(full)
+        self.full = bool(record_metric_per_sample)
         if not self.means and not self.full:
             logger.warning(
                 "No metric results will be produced. "
-                "To change this, set 'means' or 'full' to True."
+                "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
         if not self.tasks and not self.perturbations:
             logger.warning(

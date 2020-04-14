@@ -22,6 +22,7 @@
     "defense": null,
     "metric": null,
     "model": {
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 20000
         },
@@ -38,7 +39,8 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
-        "external_github_repo": "davidslater/SincNet",
+        "external_github_repo": "hkakitani/SincNet",
+        "gpus": "all",
         "use_gpu": false
     }
 }
