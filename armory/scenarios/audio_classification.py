@@ -10,7 +10,8 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
-    load_defense,
+    load_defense_wrapper,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -27,6 +28,13 @@ class AudioClassificationTask(Scenario):
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
 
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to classifier")
+            classifier = load_defense_internal(config["defense"], classifier)
+
         if model_config["fit"]:
             classifier.set_learning_phase(True)
             logger.info(
@@ -41,17 +49,23 @@ class AudioClassificationTask(Scenario):
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
-            if config["defense"] is not None:
-                logger.info("loading defense")
-                defense = load_defense(config["defense"], classifier)
+            if defense_type == "Trainer":
+                logger.info(f"Training with {defense_type} defense...")
+                defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
             else:
                 classifier.fit_generator(train_data, **fit_kwargs)
 
+        if defense_type == "Transform":
+            # NOTE: Transform currently not supported
+            logger.info(f"Transforming classifier with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], classifier)
+            classifier = defense()
+
         classifier.set_learning_phase(False)
 
         # Evaluate the ART classifier on benign test examples
-        logger.info(f"Loading dataset {config['dataset']['name']}...")
+        logger.info(f"Loading test dataset {config['dataset']['name']}...")
         test_data_generator = load_dataset(
             config["dataset"],
             epochs=1,
