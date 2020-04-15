@@ -1,7 +1,7 @@
 # Configuration Files
 
-All configuration files are verified against the jsonschema definition at runetime:
-[Link]
+All configuration files are verified against the jsonschema definition at run time:
+[armory/utils/config_schema.json](https://github.com/twosixlabs/armory/blob/master/armory/utils/config_schema.json)
 
 ### Schema
 ```
