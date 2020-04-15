@@ -57,6 +57,8 @@ class Ucf101(Scenario):
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
+            else:
+                logger.info(f"Fitting classifier on clean train dataset...")
 
             for epoch in range(train_epochs):
                 classifier.set_learning_phase(True)
@@ -73,7 +75,6 @@ class Ucf101(Scenario):
                     if defense_type == "Trainer":
                         defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
                     else:
-                        logger.info(f"Fitting classifier on clean train dataset...")
                         classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         if defense_type == "Transform":
