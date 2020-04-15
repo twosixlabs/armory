@@ -18,7 +18,7 @@ repositories or from the baselines within this project.
 
 Our evaluations are created so that attacks and defenses may be 
 interchanged. To do this we standardize all attacks and defenses as subclasses of 
-their respective implementations in the [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
+their respective implementations in IBM's [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
 
 
 # Installation & Configuration
@@ -67,10 +67,10 @@ system host (i.e. not inside of a docker container).
 ```
 pip install armory-testbed
 armory configure
+
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
-git checkout tags/v0.5.0 -b v0.5
-armory run examples/fgm_attack.json
+armory run official_scenario_configs/cifar10_baseline.json
 ```
 
 ### What is available in the container:
