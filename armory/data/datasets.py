@@ -25,6 +25,7 @@ from armory.data.utils import (
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.adversarial import resisc45_patch_adversarial 
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
@@ -383,7 +384,7 @@ def resisc45(
     Uses TFDS:
         https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
 
-    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
+    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory 
         Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (31500,) of int, with values in range(45)
 
@@ -391,6 +392,45 @@ def resisc45(
     """
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+    )
+
+def resisc45_patch_adversarial(
+    split_type: str = "clean",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    REmote Sensing Image Scene Classification (RESISC) dataset
+        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
+
+    Contains 225 images covering 45 scene classes with 5 images per class
+
+    Uses TFDS:
+        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
+
+    Dimensions of X: (225, 224, 224, 3) of uint8, ~ _ GB in memory ! > Not the same dimensions as the train/val/test original dataset above in resisc45 < !
+        Each sample is a 224 x 224 3-color (RGB) image
+    Dimensions of y: (224,) of int, with values in range(45)
+
+    split_type - one of ("clean", "adv")
+
+    AdversarialPatch
+        max_iter 1000
+        scale_min, scale_max 0.4
+        learning_rate 2.0
+
+    """
+    return _generator_from_tfds(
+        "resisc45_patch_adversarial:1.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
