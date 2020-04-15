@@ -63,21 +63,18 @@ class DockerImage(argparse.Action):
 DEFAULT_SCENARIO = "./official_scenario_configs/scenarios-set1.json"
 
 
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
+
+
 class DownloadConfig(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values.lower().endswith(".json"):
-            config_path = values
-        else:
-            raise argparse.ArgumentError(
-                self, f"Please provide a json config file, e.g. {DEFAULT_SCENARIO}"
-            )
-
-        if os.path.isfile(config_path):
-            setattr(namespace, self.dest, config_path)
+        if values.lower().endswith(".json") and os.path.isfile(values):
+            setattr(namespace, self.dest, values)
         else:
             raise argparse.ArgumentError(
                 self,
-                f"Config json file: {values} not found. Must be {DEFAULT_SCENARIO} or other valid config file path",
+                f"Please provide a json config file. See the armory-example repo: "
+                f"{DEFAULT_SCENARIO}",
             )
 
 
@@ -165,7 +162,7 @@ def download(command_args, prog, description):
         dest="download_config",
         type=str,
         action=DownloadConfig,
-        help=f"Configuration for download of data as relative path, e.g. {DEFAULT_SCENARIO}",
+        help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
 
     parser.add_argument(
