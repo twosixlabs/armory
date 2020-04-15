@@ -10,8 +10,13 @@ acheived by specifying the name in the `weights_file` field of a model's config.
 When the model is loaded it will first try to load the file from the armory 
 `saved_model_dir`. This enables you to place your own custom weights in that directory 
 for loading. If the weights file is not found it'll then try to download the file from 
-our S3 bucket. Files that are available in the S3 bucket are listed in the table 
+our S3 bucket. Files that are available in the armory S3 bucket are listed in the table 
 below. 
+
+If the `weights_file` is not found locally or in the S3 bucket and S3 error will be 
+returned this is [on the roadmap](https://github.com/twosixlabs/armory/issues/440) 
+to return a more informative error.
+
 
 ### Keras
 The model files can be found in [armory/baseline_models/keras](../armory/baseline_models/keras). 
