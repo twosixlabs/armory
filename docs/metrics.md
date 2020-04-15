@@ -15,7 +15,7 @@ is a JSON-able dict.
 ### Metrics
 
 | Name | Type | Description |
-|:-------: |:-------:| |:-------: |
+|:-------: |:-------: |:-------: |
 | categorical_accuracy | Task | Categorical Accuracy |
 | top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
 | linf | Perturbation | L-infinity norm |
