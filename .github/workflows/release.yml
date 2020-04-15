@@ -40,7 +40,7 @@ jobs:
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          bash docket/build.sh tf1
+          bash docker/build.sh tf1
           docker push twosixarmory/tf1:${version}
   release-tf2-docker:
     name: Build and release tf2 docker image
@@ -58,7 +58,7 @@ jobs:
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          bash docket/build.sh tf2
+          bash docker/build.sh tf2
           docker push twosixarmory/tf2:${version}
   release-pytorch-docker:
     name: Build and release tf2 docker image
@@ -76,5 +76,5 @@ jobs:
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          bash docket/build.sh pytorch
+          bash docker/build.sh pytorch
           docker push twosixarmory/pytorch:${version}
