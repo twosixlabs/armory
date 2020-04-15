@@ -29,7 +29,8 @@
                 "resisc45"
             ],
             "weights_file": [
-                "densenet121_resisc45_v1.h5"
+                "densenet121_resisc45_v1.h5",
+                "densenet121_imagenet_v1.h5"
             ]
         },
         "ucf-action-recognition": {
