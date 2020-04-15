@@ -1,0 +1,1 @@
+RESISC45_DenseNet121_AdvPatch_adversarial_dataset_v0.1.tfrecords 169372575 aea06fe20609b1a1ebb19a375537d80bc4e74e11ebd54d3be4fca91fbbf343f9

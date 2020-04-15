@@ -83,7 +83,7 @@ class ImageClassificationTask(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating / testing adversarial examples...")
 
-###################################################         
+        ###################################################
         # test_data_generator = load_dataset(
         #     config["dataset"],
         #     epochs=1,
@@ -96,32 +96,32 @@ class ImageClassificationTask(Scenario):
         #     y_pred_adv = classifier.predict(x_adv)
         #     metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         #     metrics_logger.update_perturbation(x, x_adv)
-####################################################
+        ####################################################
         attack = load_attack(config["attack"], classifier)
 
-        attack_type = config["attack"]["type"]                                           
-        if attack_type == "transfer":                                                    
+        attack_type = config["attack"]["type"]
+        if attack_type == "transfer":
             # test_data_generator = attack     # suggested by DSlater but load_attack loads an ART attack function, not the attack dataset, right now. Plus, the dataset in the config json file is the adversarial dataset anyways, so load_dataset makes sense
             test_data_generator = load_dataset(
-                config["dataset"],                                                       
+                config["dataset"],
                 epochs=1,
                 split_type="adv",
                 preprocessing_fn=preprocessing_fn,
-            )                                                                 
-        else:                                                                            
-            test_data_generator = load_dataset(                                          
-                config["dataset"],                                                       
-                epochs=1,                                                                
-                split_type="test",                                                       
-                preprocessing_fn=preprocessing_fn,                                       
-            )                                                                            
-        for x, y in tqdm(test_data_generator, desc="Attack"):                            
-            if attack_type == "transfer":                                                
-                x_adv = x                                                                
-            else:                                                                        
-                x_adv = attack.generate(x=x)                                             
-            y_pred_adv = classifier.predict(x_adv)                                       
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)                  
-            metrics_logger.update_perturbation(x, x_adv)                                 
-        metrics_logger.log_task(adversarial=True)                                        
+            )
+        else:
+            test_data_generator = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+            )
+        for x, y in tqdm(test_data_generator, desc="Attack"):
+            if attack_type == "transfer":
+                x_adv = x
+            else:
+                x_adv = attack.generate(x=x)
+            y_pred_adv = classifier.predict(x_adv)
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
+        metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

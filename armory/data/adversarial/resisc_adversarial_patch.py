@@ -17,8 +17,9 @@ AdversarialPatch
     (By definition targeted)
 """
 
-_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"
-_PATH = "test_final.tfrecords"
+_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/imagenet-adv/ILSVRC12_ResNet50_PGD_adversarial_dataset_v1.0.tfrecords"  # to be updated
+_PATH = "armory/data/data/adversarial/RESISC45_DenseNet121_AdvPatch_adversarial_dataset_v0.1.tfrecords"
+
 
 class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
     """ RESISC45_DenseNet121_AdvPatch_adversarial_dataset_v0.1.tfrecords """
@@ -40,7 +41,7 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """Returns SplitGenerators."""
-        path = _PATH#dl_manager.download_and_extract(_URL)
+        path = _PATH  # dl_manager.download_and_extract(_URL)
         splits = [
             tfds.core.SplitGenerator(name=x, gen_kwargs={"path": path, "split": x})
             for x in ("adversarial", "clean")
@@ -79,4 +80,3 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
         ds = tfds.as_numpy(ds, graph=default_graph)
         for i, (img, label) in enumerate(ds):
             yield str(i), {"image": img[0], "label": label[0]}
-

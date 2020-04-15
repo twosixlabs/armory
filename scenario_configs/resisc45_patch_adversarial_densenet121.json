@@ -2,7 +2,11 @@
     "_description": "Resisc45 image classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-	"type": "transfer", 
+	"type": "transfer",
+	"knowledge": "black",
+	"kwargs": null,
+	"module": "art.attacks",
+	"name": null
     },
     "dataset": {
         "batch_size": 16,

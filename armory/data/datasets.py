@@ -25,7 +25,7 @@ from armory.data.utils import (
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
-from armory.data.adversarial import resisc45_patch_adversarial 
+from armory.data.adversarial import resisc45_patch_adversarial
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
@@ -399,6 +399,7 @@ def resisc45(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
     )
+
 
 def resisc45_patch_adversarial(
     split_type: str = "clean",
