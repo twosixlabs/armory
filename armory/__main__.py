@@ -69,7 +69,10 @@ class DownloadConfig(argparse.Action):
             config_path = values
         else:
             config_path = os.path.join(
-                "armory", "scenarios", "download_configs", values + ".json"
+                os.path.dirname(__file__),
+                "scenarios",
+                "download_configs",
+                values + ".json",
             )
 
         if os.path.isfile(config_path):
