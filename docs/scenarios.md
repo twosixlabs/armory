@@ -21,7 +21,7 @@ Additionally, we've provided some academic standard scenarios:
 
 
 ### Creating a new scenario
-User's may want to create their own scenario, because the baseline scenarios do 
+Users may want to create their own scenario, because the baseline scenarios do 
 not fit the requirements of some defense/threat-model, or because it may be easier 
 to debug in code that you have access to as opposed to what is pre-installed by the 
 armory package.
