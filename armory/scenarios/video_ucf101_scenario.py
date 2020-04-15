@@ -73,6 +73,7 @@ class Ucf101(Scenario):
                     if defense_type == "Trainer":
                         defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
                     else:
+                        logger.info(f"Fitting classifier on clean train dataset...")
                         classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         if defense_type == "Transform":
