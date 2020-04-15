@@ -1,0 +1,284 @@
+{
+    "$id": "https://twosixlabs.com/armory/config_schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "adhoc": {
+            "type": "object"
+        },
+        "attack": {
+            "properties": {
+                "knowledge": {
+                    "enum": [
+                        "white",
+                        "black"
+                    ],
+                    "type": "string"
+                },
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "knowledge",
+                "kwargs",
+                "module",
+                "name"
+            ],
+            "type": "object"
+        },
+        "dataset": {
+            "properties": {
+                "batch_size": {
+                    "minimum": 1,
+                    "type": "integer"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "batch_size",
+                "module",
+                "name"
+            ],
+            "type": "object"
+        },
+        "defense": {
+            "properties": {
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "enum": [
+                        "Postprocessor",
+                        "PoisonFilteringDefence",
+                        "Preprocessor",
+                        "Trainer",
+                        "Transformer"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "kwargs",
+                "module",
+                "name",
+                "type"
+            ],
+            "type": "object"
+        },
+        "metric": {
+            "properties": {
+                "means": {
+                    "type": "boolean"
+                },
+                "perturbation": {
+                    "$ref": "#/definitions/supported_metric"
+                },
+                "record_metric_per_sample": {
+                    "type": "boolean"
+                },
+                "task": {
+                    "items": {
+                        "$ref": "#/definitions/supported_metric"
+                    },
+                    "type": "array"
+                }
+            },
+            "required": [
+                "means",
+                "perturbation",
+                "record_metric_per_sample",
+                "task"
+            ],
+            "type": "object"
+        },
+        "model": {
+            "properties": {
+                "fit": {
+                    "type": "boolean"
+                },
+                "fit_kwargs": {
+                    "type": "object"
+                },
+                "model_kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "weights_file": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "wrapper_kwargs": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "fit",
+                "fit_kwargs",
+                "model_kwargs",
+                "module",
+                "name",
+                "weights_file",
+                "wrapper_kwargs"
+            ],
+            "type": "object"
+        },
+        "python_module": {
+            "$comment": "Validate that it looks like a Python module path",
+            "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
+            "type": "string"
+        },
+        "scenario": {
+            "properties": {
+                "kwargs": {
+                    "type": "object"
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "kwargs",
+                "module",
+                "name"
+            ]
+        },
+        "supported_metric": {
+            "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
+            "enum": [
+                "categorical_accuracy",
+                "top_n_categorical_accuracy",
+                "top_5_categorical_accuracy",
+                "norm",
+                "l0",
+                "l1",
+                "l2",
+                "lp",
+                "linf"
+            ],
+            "type": "string"
+        },
+        "sysconfig": {
+            "properties": {
+                "docker_image": {
+                    "type": "string"
+                },
+                "external_github_repo": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "gpus": {
+                    "type": "string"
+                },
+                "use_gpu": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "docker_image",
+                "external_github_repo",
+                "gpus",
+                "use_gpu"
+            ],
+            "type": "object"
+        }
+    },
+    "properties": {
+        "_description": {
+            "type": "string"
+        },
+        "adhoc": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/adhoc"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "attack": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/attack"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "dataset": {
+            "$ref": "#/definitions/dataset"
+        },
+        "defense": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/defense"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "metric": {
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/metric"
+                },
+                {
+                    "type": "null"
+                }
+            ]
+        },
+        "model": {
+            "$ref": "#/definitions/model"
+        },
+        "scenario": {
+            "$ref": "#/definitions/scenario"
+        },
+        "sysconfig": {
+            "$ref": "#/definitions/sysconfig"
+        }
+    },
+    "required": [
+        "_description",
+        "adhoc",
+        "attack",
+        "dataset",
+        "defense",
+        "metric",
+        "model",
+        "scenario",
+        "sysconfig"
+    ],
+    "title": "Schema for Armory evaluation configuration JSON files",
+    "type": "object"
+}

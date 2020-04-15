@@ -6,20 +6,26 @@ import logging
 import hashlib
 import tarfile
 import os
-import subprocess
 import shutil
 import random
 import string
+import json
 
 import boto3
 from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import ClientError
+import requests
+from tqdm import tqdm
 
 from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
 
 logger = logging.getLogger(__name__)
+
+requests.packages.urllib3.disable_warnings(
+    requests.packages.urllib3.exceptions.InsecureRequestWarning
+)
 
 
 def maybe_download_weights_from_s3(weights_file: str) -> str:
@@ -53,7 +59,9 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param local_path: Local file path to download as
     """
     if not os.path.isfile(local_path):
-        client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        client = boto3.client(
+            "s3", config=Config(signature_version=UNSIGNED), verify=False
+        )
 
         try:
             logger.info("Downloading S3 data file...")
@@ -66,19 +74,18 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         logger.info(f"Reusing cached file {local_path}...")
 
 
-def curl(url: str, dirpath: str, filename: str) -> None:
-    """
-    Downloads a file with a specified output filename and directory
-    :param url: URL to file
-    :param dirpath: Output directory
-    :param filename: Output filename
-    """
-    try:
-        subprocess.check_call(["curl", "-L", url, "--output", filename], cwd=dirpath)
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"curl command not found. Is curl installed? {e}")
-    except subprocess.CalledProcessError:
-        raise subprocess.CalledProcessError
+def download_requests(url: str, dirpath: str, filename: str):
+    filepath = os.path.join(dirpath, filename)
+    chunk_size = 4096
+    r = requests.get(url, stream=True, verify=False)
+    with open(filepath, "wb") as f:
+        progress_bar = tqdm(
+            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+        )
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            if chunk:  # filter keep-alive chunks
+                progress_bar.update(len(chunk))
+                f.write(chunk)
 
 
 def sha256(filepath: str, block_size=4096):
@@ -157,7 +164,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         try:
             s3_url_region = "us-east-2"
             url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
-            curl(url, dataset_dir, tar_filepath)
+            download_requests(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
             logger.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):
@@ -212,3 +219,13 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     except OSError as e:
         if not isinstance(e, FileNotFoundError):
             logger.exception(f"Error removing temporary directory {tmp_dir}")
+
+
+def _read_validate_scenario_config(config_filepath):
+    with open(config_filepath) as f:
+        config = json.load(f)
+    if "scenario" not in config.keys():
+        raise ValueError("Does not match config schema")
+    if not isinstance(config["scenario"], dict):
+        raise ValueError('config["scenario"] must be dictionary')
+    return config

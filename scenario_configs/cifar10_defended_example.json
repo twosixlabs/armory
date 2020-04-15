@@ -1,5 +1,5 @@
 {
-    "_description": "Baseline mnist image classification",
+    "_description": "Baseline adversarial defended cifar10 image classification",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
@@ -12,11 +12,22 @@
     "dataset": {
         "batch_size": 16,
         "module": "armory.data.datasets",
-        "name": "mnist"
+        "name": "cifar10"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "eps": 0.03,
+            "eps_step": 0.008,
+            "ratio": 0.45
+        },
+        "module": "armory.art_experimental.defences.madry_trainer_generator",
+        "name": "AdversarialTrainerMadryPGD",
+        "type": "Trainer"
+    },
     "metric": {
+        "means": true,
         "perturbation": "linf",
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]
@@ -27,7 +38,7 @@
             "nb_epochs": 3
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.mnist",
+        "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
@@ -35,11 +46,12 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.image_classification",
-        "name": "ImageClassification"
+        "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
-        "use_gpu": false
+        "gpus": "all",
+        "use_gpu": true
     }
 }

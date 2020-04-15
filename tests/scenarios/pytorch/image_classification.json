@@ -1,4 +1,5 @@
 {
+    "_description": "",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
@@ -15,7 +16,9 @@
     },
     "defense": null,
     "metric": {
+        "means": true,
         "perturbation": "linf",
+        "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
         ]
@@ -34,11 +37,12 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.image_classification",
-        "name": "ImageClassification"
+        "name": "ImageClassificationTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
+        "gpus": "all",
         "use_gpu": false
     }
 }

@@ -1,7 +1,5 @@
 """
-MicronNet CNN model for 48x48x3 image classification
-
-Model contributed by: MITRE Corporation
+Preprocessing and model architecture for German Traffic Sign Recognition Benchmark
 """
 import numpy as np
 from PIL import Image
@@ -23,11 +21,10 @@ def preprocessing_fn(img):
 
 
 def make_model(**kwargs) -> tf.keras.Model:
-    """
-    Model is based on MicronNet: https://arxiv.org/abs/1804.00497v3
-    """
+    # Model is based on MicronNet: https://arxiv.org/abs/1804.00497v3
+
     img_size = 48
-    num_classes = 43
+    NUM_CLASSES = 43
     eps = 1e-6
 
     inputs = Input(shape=(img_size, img_size, 3))
@@ -51,14 +48,14 @@ def make_model(**kwargs) -> tf.keras.Model:
     x = Activation("relu")(x)
     x = BatchNormalization(epsilon=eps)(x)
     x = Dense(300, activation="relu")(x)
-    predictions = Dense(num_classes, activation="softmax")(x)
+    predictions = Dense(NUM_CLASSES, activation="softmax")(x)
 
     model = Model(inputs=inputs, outputs=predictions)
     model.compile(
         optimizer=tf.keras.optimizers.SGD(
             lr=0.01, decay=1e-6, momentum=0.9, nesterov=True
         ),
-        loss=tf.keras.losses.categorical_crossentropy,
+        loss=tf.keras.losses.sparse_categorical_crossentropy,
         metrics=["accuracy"],
     )
 

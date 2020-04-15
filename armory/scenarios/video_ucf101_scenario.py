@@ -1,9 +1,12 @@
 """
-General image classification scenario
+Classifier evaluation within ARMORY
+
+Scenario Contributor: MITRE Corporation
 """
 
 import logging
 
+import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -19,7 +22,7 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-class ImageClassificationTask(Scenario):
+class Ucf101(Scenario):
     def _evaluate(self, config: dict) -> dict:
         """
         Evaluate the config and return a results dict
@@ -40,21 +43,37 @@ class ImageClassificationTask(Scenario):
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
-            fit_kwargs = model_config["fit_kwargs"]
+            train_epochs = config["model"]["fit_kwargs"]["nb_epochs"]
+            batch_size = config["dataset"]["batch_size"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             train_data = load_dataset(
                 config["dataset"],
-                epochs=fit_kwargs["nb_epochs"],
+                epochs=train_epochs,
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
+
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
-                defense.fit_generator(train_data, **fit_kwargs)
-            else:
-                classifier.fit_generator(train_data, **fit_kwargs)
+
+            for epoch in range(train_epochs):
+                classifier.set_learning_phase(True)
+
+                for _ in tqdm(
+                    range(train_data.batches_per_epoch),
+                    desc=f"Epoch: {epoch}/{train_epochs}",
+                ):
+                    x, y = train_data.get_batch()
+                    # x_trains consists of one or more videos, each represented as an
+                    # ndarray of shape (n_stacks, 3, 16, 112, 112).
+                    # To train, randomly sample a batch of stacks
+                    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
+                    if defense_type == "Trainer":
+                        defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
+                    else:
+                        classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported
@@ -72,12 +91,15 @@ class ImageClassificationTask(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
+
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        for x, y in tqdm(test_data_generator, desc="Benign"):
-            y_pred = classifier.predict(x)
-            metrics_logger.update_task(y, y_pred)
+        for x_batch, y_batch in tqdm(test_data_generator, desc="Benign"):
+            for x, y in zip(x_batch, y_batch):
+                # combine predictions across all stacks
+                y_pred = np.mean(classifier.predict(x), axis=0)
+                metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -90,10 +112,15 @@ class ImageClassificationTask(Scenario):
             split_type="test",
             preprocessing_fn=preprocessing_fn,
         )
-        for x, y in tqdm(test_data_generator, desc="Attack"):
-            x_adv = attack.generate(x=x)
-            y_pred_adv = classifier.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-            metrics_logger.update_perturbation(x, x_adv)
+        for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
+            for x, y in zip(x_batch, y_batch):
+                # each x is of shape (n_stack, 3, 16, 112, 112)
+                #    n_stack varies
+                attack.set_params(batch_size=x.shape[0])
+                x_adv = attack.generate(x=x)
+                # combine predictions across all stacks
+                y_pred = np.mean(classifier.predict(x), axis=0)
+                metrics_logger.update_task(y, y_pred, adversarial=True)
+                metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

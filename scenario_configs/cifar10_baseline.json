@@ -1,5 +1,5 @@
 {
-    "_description": "",
+    "_description": "Baseline cifar10 image classification",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
@@ -12,13 +12,13 @@
     "dataset": {
         "batch_size": 64,
         "module": "armory.data.datasets",
-        "name": "mnist"
+        "name": "cifar10"
     },
     "defense": null,
     "metric": {
         "means": true,
         "perturbation": "linf",
-        "record_metric_per_sample": false,
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]
@@ -26,10 +26,10 @@
     "model": {
         "fit": true,
         "fit_kwargs": {
-            "nb_epochs": 3
+            "nb_epochs": 20
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.mnist",
+        "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
@@ -40,7 +40,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
         "external_github_repo": null,
         "gpus": "all",
         "use_gpu": false

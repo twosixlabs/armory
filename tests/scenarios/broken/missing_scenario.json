@@ -34,11 +34,6 @@
         "weights_file": null,
         "wrapper_kwargs": {}
     },
-    "scenario": {
-        "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
-    },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.6.0-dev",
         "external_github_repo": null,
