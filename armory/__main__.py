@@ -60,9 +60,6 @@ class DockerImage(argparse.Action):
             )
 
 
-DEFAULT_SCENARIO = "./official_scenario_configs/scenarios-set1.json"
-
-
 DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
 
 
