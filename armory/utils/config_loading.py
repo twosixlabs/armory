@@ -19,6 +19,11 @@ def load(sub_config):
     return fn(*args, **kwargs)
 
 
+def load_fn(sub_config):
+    module = import_module(sub_config["module"])
+    return getattr(module, sub_config["name"])
+
+
 def load_dataset(dataset_config, *args, **kwargs):
     """
     Loads a dataset from configuration file

@@ -154,6 +154,9 @@ class MetricList:
     def __iter__(self):
         return self._values.__iter__()
 
+    def __len__(self):
+        return len(self._values)
+
     def values(self):
         return list(self._values)
 
