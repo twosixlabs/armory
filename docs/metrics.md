@@ -23,5 +23,7 @@ is a JSON-able dict.
 | l1 | Perturbation | L1 norm |
 | l0 | Perturbation | L0 "norm" |
 
+<br>
+
 We have implemented the metrics in numpy, instead of using framework-specific 
 metrics, to prevent expanding the required set of dependencies
