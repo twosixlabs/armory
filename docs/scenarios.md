@@ -10,18 +10,15 @@ which are saved into the armory `output_dir` upon  completion.
  
 ### Baseline Scenarios
 Currently the following Scenarios are available within the armory package:
-* [Image classification](armory/scenarios/image_classification.py)
-* Audio classification
-* Video classification
-* Poisoned image classification
+* RESISC image classification
+* Librispeech speaker audio classification
+* UCF101 video classification
+* German traffic sign poisoned image classification
 
-### Downloading Weights and Datasets for a scenario
-As a convience we provide methods to download the datasets and model weights for 
-baseline scenarios in armory ahead of running them.
+Additionally, we've provided some academic standard scenarios:
+* Cifar10 image classification
+* MNIST image classification
 
-```
-
-``` 
 
 ### Creating a new scenario
 User's may want to create their own scenario, because the baseline scenarios do 
@@ -29,5 +26,4 @@ not fit the requirements of some defense/threat-model, or because it may be easi
 to debug in code that you have access to as opposed to what is pre-installed by the 
 armory package.
 
-An example of doing this can be found in our armory-examples repo:
-[Add link]
+An [example of doing this](https://github.com/twosixlabs/armory-example/blob/master/example_scenarios/audio_spectrogram_classification.py) can be found in our armory-examples repo:
