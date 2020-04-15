@@ -60,7 +60,7 @@ class DockerImage(argparse.Action):
             )
 
 
-DEFAULT_SCENARIO = "scenarios-set1"
+DEFAULT_SCENARIO = "./official_scenario_configs/scenarios-set1.json"
 
 
 class DownloadConfig(argparse.Action):
@@ -68,11 +68,8 @@ class DownloadConfig(argparse.Action):
         if values.lower().endswith(".json"):
             config_path = values
         else:
-            config_path = os.path.join(
-                os.path.dirname(__file__),
-                "scenarios",
-                "download_configs",
-                values + ".json",
+            raise argparse.ArgumentError(
+                self, f"Please provide a json config file, e.g. {DEFAULT_SCENARIO}"
             )
 
         if os.path.isfile(config_path):
@@ -168,7 +165,7 @@ def download(command_args, prog, description):
         dest="download_config",
         type=str,
         action=DownloadConfig,
-        help="Configuration for download of data as relative path, e.g. ./official_scenario_configs/scenarios-set1.json",
+        help=f"Configuration for download of data as relative path, e.g. {DEFAULT_SCENARIO}",
     )
 
     parser.add_argument(
