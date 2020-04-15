@@ -2,7 +2,7 @@
 Armory is intended to evaluate threat-model scenarios.  
 
 ### Base Scenario Class
-All scenarios inherit from the [Base Armory Scenario](armory/scenarios/base.py). The 
+All scenarios inherit from the [Base Armory Scenario](../armory/scenarios/base.py). The 
 base class parses an armory configuration file and calls a particular scenario's 
 private `_evaluate` to perform all of the computation for a given threat-models 
 robustness to attack. All `_evaluate` methods return a  dictionary of recorded metrics 
