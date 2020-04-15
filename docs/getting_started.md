@@ -11,7 +11,9 @@ model weights will be pulled as needed. We do have convenience functions to down
 all images, datasets and model weights for a scenario set release. This can take a 
 while so you may want to run it overnight:
 ```
-armory download scenarios-set1
+git clone https://github.com/twosixlabs/armory-example.git
+cd armory-example
+armory download official_scenario_configs/scenarios-set1.json
 ```  
 
 ## Baseline models
