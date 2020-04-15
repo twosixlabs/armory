@@ -18,7 +18,7 @@
     "metric": {
         "means": true,
         "perturbation": "linf",
-        "record_metric_per_sample": true,
+        "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
         ]
@@ -41,6 +41,6 @@
         "docker_image": "twosixarmory/tf1:0.6.0-rc2",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }

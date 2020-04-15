@@ -19,7 +19,7 @@
     "metric": {
         "means": true,
         "perturbation": "linf",
-        "record_metric_per_sample": true,
+        "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy",
             "top_5_categorical_accuracy"
