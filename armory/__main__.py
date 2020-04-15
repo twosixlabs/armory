@@ -168,7 +168,7 @@ def download(command_args, prog, description):
         dest="download_config",
         type=str,
         action=DownloadConfig,
-        help="Configuration for download of data, e.g. scenarios-set1",
+        help="Configuration for download of data as relative path, e.g. ./official_scenario_configs/scenarios-set1.json",
     )
 
     parser.add_argument(
