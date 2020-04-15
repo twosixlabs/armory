@@ -13,8 +13,8 @@ for loading. If the weights file is not found it'll then try to download the fil
 our S3 bucket. Files that are available in the armory S3 bucket are listed in the table 
 below. 
 
-If the `weights_file` is not found locally or in the S3 bucket and S3 error will be 
-returned this is [on the roadmap](https://github.com/twosixlabs/armory/issues/440) 
+If the `weights_file` is not found locally or in the S3 bucket an S3 error will be 
+returned. It is [on the roadmap](https://github.com/twosixlabs/armory/issues/440) 
 to return a more informative error.
 
 
