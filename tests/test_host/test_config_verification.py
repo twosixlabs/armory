@@ -45,4 +45,8 @@ def test_all_examples():
         + glob("tests/scenarios/pytorch/*.json")
     )
     for json_path in test_jsons:
-        load_config(str(json_path))
+        config = load_config(str(json_path))
+        assert (
+                __version__ in config["sysconfig"]["docker_image"]
+        ), "Docker image does not match version in repository"
+
