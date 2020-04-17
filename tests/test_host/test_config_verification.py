@@ -47,6 +47,5 @@ def test_all_examples():
     for json_path in test_jsons:
         config = load_config(str(json_path))
         assert (
-                __version__ in config["sysconfig"]["docker_image"]
+            __version__ in config["sysconfig"]["docker_image"]
         ), "Docker image does not match version in repository"
-
