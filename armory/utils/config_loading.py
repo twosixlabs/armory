@@ -5,13 +5,10 @@ Helper utilies to load things from armory configuration files.
 from importlib import import_module
 
 from art.attacks import Attack
-from art.defences import Preprocessor, Postprocessor, Trainer, Transformer
+from art import defences
 from art.classifiers import Classifier
 
 from armory.data.datasets import ArmoryDataGenerator
-
-
-DEFENSES = (Preprocessor, Postprocessor, Trainer, Transformer)
 
 
 def load(sub_config):
@@ -20,6 +17,11 @@ def load(sub_config):
     args = sub_config.get("args", [])
     kwargs = sub_config.get("kwargs", {})
     return fn(*args, **kwargs)
+
+
+def load_fn(sub_config):
+    module = import_module(sub_config["module"])
+    return getattr(module, sub_config["name"])
 
 
 def load_dataset(dataset_config, *args, **kwargs):
@@ -63,10 +65,49 @@ def load_attack(attack_config, classifier):
     return attack
 
 
-def load_defense(defense_config, classifier):
+def _check_defense_api(defense, defense_baseclass):
+    if not isinstance(defense, defense_baseclass):
+        raise ValueError(
+            f"defense {defense} does not extend type {type(defense_baseclass)}"
+        )
+
+
+def load_defense_wrapper(defense_config, classifier):
+    defense_type = defense_config["type"]
+    if defense_type == "Transformer":
+        raise NotImplementedError("Transformer API not yet implemented into scenarios")
+    elif defense_type != "Trainer":
+        raise ValueError(
+            f"Wrapped defenses must be of type Trainer, found {defense_type}"
+        )
+
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
     defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
-    if not any(isinstance(defense, x) for x in DEFENSES):
-        raise TypeError(f"defense {defense} is not a defense instance: {DEFENSES}")
+    _check_defense_api(defense, defences.Trainer)
+
     return defense
+
+
+def load_defense_internal(defense_config, classifier):
+    defense = load(defense_config)
+
+    defense_type = defense_config["type"]
+    if defense_type == "Preprocessor":
+        _check_defense_api(defense, defences.Preprocessor)
+        if classifier.preprocessing_defences:
+            classifier.preprocessing_defences.append(defense)
+        else:
+            classifier.preprocessing_defences = [defense]
+    elif defense_type == "Postprocessor":
+        _check_defense_api(defense, defences.Postprocessor)
+        if classifier.postprocessing_defences:
+            classifier.postprocessing_defences.append(defense)
+        else:
+            classifier.postprocessing_defences = [defense]
+    else:
+        raise ValueError(
+            f"Internal defenses must be of either type [Preprocessor, Postprocessor], found {defense_type}"
+        )
+
+    return classifier

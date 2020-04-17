@@ -1,0 +1,46 @@
+{
+    "scenario": {
+        "cifar10-image-classification": {
+            "dataset_name": [
+                "cifar10"
+            ],
+            "weights_file": [
+                null
+            ]
+        },
+        "german-traffic-sign-image-poisoning": {
+            "dataset_name": [
+                "german_traffic_sign"
+            ],
+            "weights_file": [
+                null
+            ]
+        },
+        "librispeech-speaker-identification": {
+            "dataset_name": [
+                "librispeech_dev_clean"
+            ],
+            "weights_file": [
+                "sincnet_librispeech_v1.pth"
+            ]
+        },
+        "resisc45-image-classification": {
+            "dataset_name": [
+                "resisc45"
+            ],
+            "weights_file": [
+                "densenet121_resisc45_v1.h5",
+                "densenet121_imagenet_v1.h5"
+            ]
+        },
+        "ucf-action-recognition": {
+            "dataset_name": [
+                "ucf101"
+            ],
+            "weights_file": [
+                "mars_ucf101_v1.pth",
+                "mars_kinetics_v1.pth"
+            ]
+        }
+    }
+}
