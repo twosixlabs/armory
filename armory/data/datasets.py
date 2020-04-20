@@ -27,6 +27,7 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
+from armory.data.adversarial import librispeech_adversarial as LA
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -330,6 +331,39 @@ def german_traffic_sign(
         cache_dataset=cache_dataset,
     )
 
+def librispeech_adversarial(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+):
+    """
+    Adversarial dataset based on Librispeech-dev-clean using Unviseral
+    Perturbation with PGD.
+
+    split_type - one of ("adversarial")
+
+    returns:
+        Generator
+    """
+    flags = []
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+
+    return _generator_from_tfds(
+        "librispeech_adversarial:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
+        variable_length=bool(batch_size > 1),
+        cache_dataset=False # used to be cache_dataset
+    )
 
 def librispeech_dev_clean(
     split_type: str = "train",
@@ -425,6 +459,8 @@ def ucf101(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
     )
+
+
 
 
 def _cache_dataset(dataset_dir: str, dataset_name: str):

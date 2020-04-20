@@ -1,0 +1,53 @@
+{
+    "_description": "Scenario to test adversarial dataset TFDS",
+    "adhoc": null,
+    "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 1,
+        "module": "armory.data.datasets",
+        "name": "librispeech_adversarial"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 20000
+        },
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.sincnet",
+        "name": "get_art_model",
+        "weights_file": "model_sincnet.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.audio_test",
+        "name": "AudioTest"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "external_github_repo": "hkakitani/SincNet",
+        "gpus": "all",
+        "use_gpu": true
+    }
+}
