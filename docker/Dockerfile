@@ -27,7 +27,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.18.0 \
     pytest==5.3.5
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2
-RUN /opt/conda/bin/conda clean --packages --tarballs --tempfiles
+RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2 && \
+    /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace

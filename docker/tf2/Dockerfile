@@ -2,8 +2,8 @@
 
 ARG armory_version
 FROM twosixarmory/armory:${armory_version} AS armory-tf2-base
-RUN /opt/conda/bin/conda install tensorflow-gpu==2.1.0
-RUN /opt/conda/bin/conda clean --packages --tarballs --tempfiles
+RUN /opt/conda/bin/conda install tensorflow-gpu==2.1.0 && \
+    /opt/conda/bin/conda clean --all
 
 ########## TF 2.1 Release #################
 
