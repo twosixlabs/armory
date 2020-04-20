@@ -3,10 +3,11 @@
 ARG armory_version
 FROM twosixarmory/armory:${armory_version} AS armory-tf2-base
 RUN /opt/conda/bin/conda install tensorflow-gpu==2.1.0
+RUN /opt/conda/bin/conda clean --packages --tarballs --tempfiles
 
 ########## TF 2.1 Release #################
 
 FROM armory-tf2-base AS armory-tf2
 ARG armory_version
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version}
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
 CMD tail -f /dev/null

@@ -17,7 +17,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 ENV PATH=/opt/conda/bin:$PATH
 
-RUN /opt/conda/bin/pip install \
+RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==2.0.0 \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
@@ -28,5 +28,6 @@ RUN /opt/conda/bin/pip install \
     pytest==5.3.5
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2
+RUN /opt/conda/bin/conda clean --packages --tarballs --tempfiles
 
 WORKDIR /workspace
