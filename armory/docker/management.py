@@ -77,10 +77,6 @@ class ArmoryInstance(object):
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str, user=""):
-        # created, restarting, running, removing, paused, exited, or dead
-        status = self.docker_container
-        print(f"STATUS = {status}")
-
         log = self.docker_container.exec_run(
             cmd, stdout=True, stderr=True, stream=True, user=user
         )
