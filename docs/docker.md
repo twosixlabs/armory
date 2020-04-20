@@ -19,6 +19,16 @@ specified in the `docker_image` field. This enables users to extend our base ima
 and run evaluations on an image that has all additional requirements for their defense.
 
 
+### Custom Images
+If you wish to utilize custom images for armory, these can be directly specified in
+either the `docker_image` field of the config file of `armory run <path/to/config.json>`
+or in the docker image field specified in `armory launch` or `armory exec`.
+
+Since Armory uses `exec_cmd` to run scenarios with already running images,
+it overrides the `CMD` of the Docker image with `tail -f /dev/null` to ensure that 
+images do not exit prematurely.
+
+
 ## Building Images from Source
 When using a released version of armory, docker images will be pulled as needed when 
 evaluations are ran. However if there are issues downloading the images (e.g. proxy) 
