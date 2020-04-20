@@ -58,7 +58,7 @@ def make_model(**kwargs) -> tf.keras.Model:
         optimizer=tf.keras.optimizers.SGD(
             lr=0.01, decay=1e-6, momentum=0.9, nesterov=True
         ),
-        loss=tf.keras.losses.sparse_categorical_crossentropy,
+        loss=tf.keras.losses.categorical_crossentropy,
         metrics=["accuracy"],
     )
 

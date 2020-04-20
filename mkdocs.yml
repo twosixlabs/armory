@@ -3,9 +3,12 @@ site_name: Armory
 nav:
   - Home: index.md
   - Getting Started: getting_started.md
+  - Configuration Files: configuration_files.md
+  - Baseline Models: baseline_models.md
   - Datasets: datasets.md
   - Docker: docker.md
-  - Configuration Files: configuration_files.md
+  - Metrics: metrics.md
   - Scenarios: scenarios.md
+  - FAQs: faqs.md
   - Contributing: contributing.md
 theme: readthedocs

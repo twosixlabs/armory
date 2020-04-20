@@ -5,6 +5,7 @@ import jsonschema
 import pytest
 
 from armory.utils.configuration import load_config
+from armory import __version__
 
 
 def test_no_config():
@@ -31,7 +32,10 @@ def test_scenario_configs():
     scenario_jsons = glob("scenario_configs/*.json")
 
     for json_path in scenario_jsons:
-        load_config(str(json_path))
+        config = load_config(str(json_path))
+        assert (
+            __version__ in config["sysconfig"]["docker_image"]
+        ), "Docker image does not match version in repository"
 
 
 def test_all_examples():
@@ -41,4 +45,7 @@ def test_all_examples():
         + glob("tests/scenarios/pytorch/*.json")
     )
     for json_path in test_jsons:
-        load_config(str(json_path))
+        config = load_config(str(json_path))
+        assert (
+            __version__ in config["sysconfig"]["docker_image"]
+        ), "Docker image does not match version in repository"

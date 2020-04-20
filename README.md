@@ -7,6 +7,7 @@
 [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/armory-testbed)](https://pypi.org/project/armory-testbed)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docs](https://readthedocs.org/projects/armory/badge/)](https://armory.readthedocs.io/en/latest/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 # Overview
@@ -18,7 +19,7 @@ repositories or from the baselines within this project.
 
 Our evaluations are created so that attacks and defenses may be 
 interchanged. To do this we standardize all attacks and defenses as subclasses of 
-their respective implementations in the [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
+their respective implementations in IBM's [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
 
 
 # Installation & Configuration
@@ -67,10 +68,10 @@ system host (i.e. not inside of a docker container).
 ```
 pip install armory-testbed
 armory configure
+
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
-git checkout tags/v0.5.0 -b v0.5
-armory run examples/fgm_attack.json
+armory run official_scenario_configs/cifar10_baseline.json
 ```
 
 ### What is available in the container:

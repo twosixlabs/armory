@@ -99,4 +99,4 @@ def test_keras_cifar():
         x, y = test_dataset.get_batch()
         predictions = classifier.predict(x)
         accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / test_dataset.batches_per_epoch) > 0.3
+    assert (accuracy / test_dataset.batches_per_epoch) > 0.25
