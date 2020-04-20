@@ -409,7 +409,12 @@ def launch(command_args, prog, description):
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
     }
     rig = Evaluator(config)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    rig.run(
+        interactive=args.interactive,
+        jupyter=args.jupyter,
+        host_port=args.port,
+        command="true # No-op",
+    )
 
 
 def exec(command_args, prog, description):
