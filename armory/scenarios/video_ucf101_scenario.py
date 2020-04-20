@@ -121,7 +121,7 @@ class Ucf101(Scenario):
                 attack.set_params(batch_size=x.shape[0])
                 x_adv = attack.generate(x=x)
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x), axis=0)
+                y_pred = np.mean(classifier.predict(x_adv), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True)
