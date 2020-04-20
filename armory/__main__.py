@@ -59,11 +59,6 @@ class DockerImage(argparse.Action):
                 "Attempting to load custom Docker image."
             )
             setattr(namespace, self.dest, values)
-            # raise argparse.ArgumentError(
-            #     self,
-            #     f"{values} invalid.\n"
-            #     f" must be one of {DOCKER_IMAGES} or {images.ALL}",
-            # )
 
 
 DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
