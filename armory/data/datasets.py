@@ -27,6 +27,7 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
+from armory.data.adversarial import ucf101_mars_perturbation_adversarial_112x112 as UCF101_112x112 # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -415,6 +416,32 @@ def ucf101(
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("video", "label"),
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+    )
+
+def ucf101_112x112(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    UCF 101 Adversarial Dataset of size (112, 112, 3),
+    generated using non-patch perturbation algorithm
+    """
+
+    return _generator_from_tfds(
+        "ucf101_mars_perturbation_adversarial_112x112:2.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
