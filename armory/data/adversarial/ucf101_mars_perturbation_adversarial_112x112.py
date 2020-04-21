@@ -142,7 +142,7 @@ _LABELS = [
 ]
 
 _URL = "https://www.crcv.ucf.edu/data/UCF101.php"
-_DL_URL = "/nfs/gard/ytan/ucf101_adv/data_deliverables/ucf101_mars_perturbation_adversarial_112x112.tar.gz" #TODO: Update to S3 bucket
+_DL_URL = "/armory/datasets/ucf101_mars_perturbation_adversarial_112x112.tar.gz" #TODO: Update to S3 bucket
 
 class Ucf101MarsPerturbationAdversarial112x112(tfds.core.GeneratorBasedBuilder):
     """ Ucf101 action recognition adversarial dataset"""
@@ -169,9 +169,9 @@ class Ucf101MarsPerturbationAdversarial112x112(tfds.core.GeneratorBasedBuilder):
         dl_path = dl_manager.download_and_extract(_DL_URL)
         return [
             tfds.core.SplitGenerator(
-                name="adversarial", #tfds.Split.TEST,
+                name="adversarial",
                 gen_kwargs={
-                    "data_dir_path": dl_path, #os.path.join(dl_path),
+                    "data_dir_path": dl_path,
                 },
             ),
         ]

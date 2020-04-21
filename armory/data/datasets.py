@@ -441,7 +441,7 @@ def ucf101_112x112(
     """
 
     return _generator_from_tfds(
-        "ucf101_mars_perturbation_adversarial_112x112:2.0.0",
+        "ucf101_mars_perturbation_adversarial112x112:1.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
