@@ -15,6 +15,8 @@ Currently the following Scenarios are available within the armory package.
 ### RESISC image classification
 
 * **Description:** 
+* **Threat Scenario:**
+* **Metrics of Interest:**
 * **Baseline Model Performance:**
 * **Baseline Defense Performance:**
 
@@ -22,12 +24,16 @@ Currently the following Scenarios are available within the armory package.
 ### Librispeech speaker audio classification
 
 * **Description:** 
+* **Threat Scenario:**
+* **Metrics of Interest:**
 * **Baseline Model Performance:**
 * **Baseline Defense Performance:**:
 
 ### UCF101 video classification
 
 * **Description:** 
+* **Threat Scenario:**
+* **Metrics of Interest:**
 * **Baseline Model Performance:**
 * **Baseline Defense Performance:**
 
@@ -35,6 +41,8 @@ Currently the following Scenarios are available within the armory package.
 
 
 * **Description:** 
+* **Threat Scenario:**
+* **Metrics of Interest:**
 * **Baseline Model Performance:**
 * **Baseline Defense Performance:**
 
@@ -43,12 +51,16 @@ Currently the following Scenarios are available within the armory package.
 ### Cifar10 image classification
 
 * **Description:** This is a standard white-box attack scneario. 
+* **Threat Scenario:** White-box attack
+* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial purturbation
 * **Baseline Model Performance:** 
 * **Baseline Defense Performance:** See academic literature for the most up to date results
 
 ### MNIST image classification
 
-* **Description:** 
+* **Description:**
+* **Threat Scenario:** White-box attack 
+* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial purturbation
 * **Baseline Model Performance:** 
 * **Baseline Defense Performance:** See academic literature for the most up to date results
 
