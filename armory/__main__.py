@@ -117,12 +117,23 @@ def run(command_args, prog, description):
         default=8888,
         help="Port number {0, ..., 65535} to connect to Jupyter on",
     )
+    parser.add_argument(
+        "--no-docker",
+        dest="no_docker",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use Docker or a local environment with armory run",
+    )
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
-    rig = Evaluator(args.filepath)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    if not args.no_docker:
+        paths.host()
+        rig = Evaluator(args.filepath)
+        rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    else:
+        paths.host()
 
 
 def _pull_docker_images(docker_client=None):
