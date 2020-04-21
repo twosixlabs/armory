@@ -4,16 +4,16 @@ TensorFlow Dataset for adversarial librispeech
 
 import tensorflow.compat.v2 as tf
 import tensorflow_datasets.public_api as tfds
-from armory import paths
-import os
+
 _DESCRIPTION = """\
 LibriSpeech-dev-clean adversarial audio dataset for SincNet
 
 TODO: <Attack hyper-parameters here>
 """
 
-#_URL = os.path.join(paths.docker().dataset_dir, "LibriSpeech_SincNet_UniversalPerturbation.tfrecords")
-_URL ="/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+_URL = "/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+
+
 class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
     """LibriSpeech_SincNet_UniversalPerturbation.tfrecords"""
 
@@ -25,7 +25,7 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=tfds.features.FeaturesDict(
                 {
-                    # TODO might need to specify shape? 
+                    # TODO might need to specify shape?
                     "sound": tfds.features.Tensor(shape=(), dtype=tf.float64),
                     "label": tfds.features.Tensor(shape=(), dtype=tf.int64),
                 }
