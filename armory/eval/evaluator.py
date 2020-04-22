@@ -77,7 +77,7 @@ class Evaluator(object):
                 self._download_external()
                 self.extra_env_vars.update(
                     {
-                        "PYTHONPATH": os.environ["PATH"]
+                        "PYTHONPATH": os.environ["PYTHONPATH"]
                         + os.pathsep
                         + self.external_repo_dir
                     }
