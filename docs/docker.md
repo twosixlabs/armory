@@ -30,6 +30,49 @@ Note: since Armory executes commands on detached containers, the `CMD` of the Do
 will be *ignored* and replaced with `tail -f /dev/null` to ensure that the container does not
 exit while those commands are being executed.
 
+### Interactive Use
+
+As detailed [here](docs/index.md), it is possible to run the armory docker container in an
+interactive mode using the `--interactive` CLI argument on `launch` or `run` commands.
+We recommend this for debugging purposes, primarily.
+
+When run, armory will output instructions for attaching to the container, similar to the following:
+```
+*** In a new terminal, run the following to attach to the container:
+    docker exec -it -u 1001:1001 c10db6c70a bash
+*** To gracefully shut down container, press: Ctrl-C
+```
+Note that `c10db6c70a` in this example is the container ID, which will change each time the
+command is run. The `1001:1001` represents a mapping of users into the container, and will change
+between systems and users. As stated, pressing `Ctrl-C` in that bash terminal will shut
+down the container. To attach to the container, run the given command in a different bash terminal.
+
+This will bring you into the docker container, and bring up a bash prompt there:
+```
+$ docker exec -it -u 1001:1001 c10db6c70a bash
+groups: cannot find name for group ID 1001
+I have no name!@c10db6c70a81:/workspace$
+```
+The groups error and the user name `I have no name!` may show up, depending on the host system, and
+can be safely ignored. This is only due to host user not having a corresponding group ID inside
+the container.
+
+Once inside the container, you should be able to run or import armory as required:
+```
+I have no name!@c10db6c70a81:/workspace$ armory version
+0.7.0-dev
+I have no name!@c10db6c70a81:/workspace$ python
+Python 3.7.6 (default, Jan  8 2020, 19:59:22) 
+[GCC 7.3.0] :: Anaconda, Inc. on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import armory
+>>> 
+```
+
+Note: We do not recommend using `--interactive` mode for installing custom requirements. You may 
+run into permissions issues, as everything is installed as root, but the armory user is not run
+as root, to prevent potential security issues. Instead, we recommend creating a custom Docker image,
+as described above.
 
 ## Building Images from Source
 When using a released version of armory, docker images will be pulled as needed when 
