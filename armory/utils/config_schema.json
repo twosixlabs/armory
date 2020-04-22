@@ -38,12 +38,6 @@
                     "minimum": 1,
                     "type": "integer"
                 },
-                "module": {
-                    "$ref": "#/definitions/python_module"
-                },
-                "name": {
-                    "type": "string"
-                },
                 "framework": {
                     "enum": [
                         "tf",
@@ -51,7 +45,13 @@
                         "numpy"
                     ],
                     "type": "string"
-                    }
+                },
+                "module": {
+                    "$ref": "#/definitions/python_module"
+                },
+                "name": {
+                    "type": "string"
+                }
             },
             "required": [
                 "batch_size",

@@ -12,9 +12,9 @@
     },
     "dataset": {
         "batch_size": 16,
+        "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "ucf101",
-        "framework": "numpy"
+        "name": "ucf101"
     },
     "defense": null,
     "metric": {

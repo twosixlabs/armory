@@ -11,9 +11,9 @@
     },
     "dataset": {
         "batch_size": 16,
+        "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "resisc45",
-        "framework": "numpy"
+        "name": "resisc45"
     },
     "defense": null,
     "metric": {

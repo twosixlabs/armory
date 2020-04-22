@@ -11,9 +11,9 @@
     },
     "dataset": {
         "batch_size": 64,
+        "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "mnist",
-        "framework": "numpy"
+        "name": "mnist"
     },
     "defense": null,
     "metric": {

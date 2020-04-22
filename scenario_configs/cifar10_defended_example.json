@@ -11,9 +11,9 @@
     },
     "dataset": {
         "batch_size": 16,
+        "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "cifar10",
-        "framework": "numpy"
+        "name": "cifar10"
     },
     "defense": {
         "kwargs": {
