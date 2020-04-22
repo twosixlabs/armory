@@ -3,7 +3,7 @@
 All configuration files are verified against the jsonschema definition at run time:
 [armory/utils/config_schema.json](https://github.com/twosixlabs/armory/blob/master/armory/utils/config_schema.json)
 
-### Schema
+## Schema
 ```
 `_description`: [String] Any description that describes the scenario evaluation
 `adhoc`: [Object or null]
@@ -114,3 +114,8 @@ All configuration files are verified against the jsonschema definition at run ti
     }
 }
 ```
+
+### Use with Custom Docker Image
+
+To run with a custom Docker image, replace the `["sys_config"]["docker_image"]` field
+to your custom docker image name `<your_image/name:your_tag>`.

@@ -25,6 +25,7 @@ class ArmoryInstance(object):
         envs: dict = None,
         ports: dict = None,
         container_subdir: str = None,
+        command: str = "tail -f /dev/null",
     ):
         self.docker_client = docker.from_env(version="auto")
 
@@ -56,6 +57,8 @@ class ArmoryInstance(object):
         }
         if ports is not None:
             container_args["ports"] = ports
+        if command is not None:
+            container_args["command"] = command
 
         # Windows docker does not require syncronizing file and
         # directoriy permissions via uid and gid.
