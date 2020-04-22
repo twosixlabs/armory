@@ -100,6 +100,15 @@ if __name__ == "__main__":
         default=logging.INFO,
         help="Debug output (logging=DEBUG)",
     )
+    parser.add_argument(
+        "--no-docker",
+        dest="no_docker",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use Docker or a local environment with armory run",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
+    paths.no_docker = args.no_docker
     run_config(args.config_path)

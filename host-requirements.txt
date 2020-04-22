@@ -1,3 +1,7 @@
+coloredlogs
+docker #To prevent import errors
+jsonschema
+requests
 tensorflow-datasets==2.0.0
 jupyterlab==1.2.6
 boto3==1.11.13

@@ -9,6 +9,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
+no_docker = False
 
 # Only initialize the host and docker paths once
 @functools.lru_cache(maxsize=1)
@@ -21,9 +22,11 @@ def host():
     return HostPaths()
 
 
-@functools.lru_cache(maxsize=1)
 def docker():
-    return DockerPaths()
+    if no_docker:
+        return HostPaths()
+    else:
+        return DockerPaths()
 
 
 def validate_config(config):

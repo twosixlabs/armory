@@ -128,12 +128,8 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    if not args.no_docker:
-        paths.host()
-        rig = Evaluator(args.filepath)
-        rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
-    else:
-        paths.host()
+    rig = Evaluator(args.filepath, no_docker=args.no_docker)
+    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
 def _pull_docker_images(docker_client=None):
