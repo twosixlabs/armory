@@ -124,7 +124,7 @@ docker, either set the `docker_image` field to be null in the scenario
 configuration json file, or call `armory run` with the --no-docker option.
 
 ### Environment setup
-To set up the appropriate dependencies run the following command. Note that
+To set up the appropriate dependencies run the following commands. Note that
 [conda](https://docs.conda.io/en/latest/) is required for the last step.
 ```
 git clone https://github.com/twosixlabs/armory.git
