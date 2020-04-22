@@ -20,6 +20,15 @@ def test_no_scenario():
         load_config(str(pathlib.Path("tests/scenarios/broken/missing_scenario.json")))
 
 
+def test_invalid_dataset_framework():
+    with pytest.raises(
+        jsonschema.ValidationError, match=r"is not one of \['tf', 'pytorch', 'numpy'\]",
+    ):
+        load_config(
+            str(pathlib.Path("tests/scenarios/broken/invalid_dataset_framework.json"))
+        )
+
+
 def test_invalid_module():
     with pytest.raises(
         jsonschema.ValidationError,

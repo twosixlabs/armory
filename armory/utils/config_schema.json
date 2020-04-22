@@ -43,7 +43,15 @@
                 },
                 "name": {
                     "type": "string"
-                }
+                },
+                "framework": {
+                    "enum": [
+                        "tf",
+                        "pytorch",
+                        "numpy"
+                    ],
+                    "type": "string"
+                    }
             },
             "required": [
                 "batch_size",

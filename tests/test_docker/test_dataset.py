@@ -5,6 +5,7 @@ Test cases for ARMORY datasets.
 import os
 
 import pytest
+import numpy as np
 
 from armory.data import datasets
 from armory import paths
@@ -233,3 +234,15 @@ def test_generator():
             assert x.shape == (batch_size, 28, 28, 1)
             assert y.shape == (batch_size,)
             break
+
+
+def test_numpy_generator():
+    dataset = datasets.mnist(
+        split_type="train",
+        epochs=1,
+        batch_size=16,
+        dataset_dir=DATASET_DIR,
+        framework="numpy",
+    )
+    x, y = dataset.get_batch()
+    assert isinstance(x, np.ndarray)
