@@ -75,13 +75,14 @@ class Evaluator(object):
 
             if self.config["sysconfig"].get("external_github_repo", None):
                 self._download_external()
-                self.extra_env_vars.update(
-                    {
-                        "PYTHONPATH": os.environ["PYTHONPATH"]
-                        + os.pathsep
-                        + self.external_repo_dir
-                    }
-                )
+                current_pythonpath = os.getenv("PYTHONPATH")
+                if current_pythonpath:
+                    new_pythonpath = (
+                        current_pythonpath + os.pathsep + self.external_repo_dir
+                    )
+                else:
+                    new_pythonpath = self.external_repo_dir
+                self.extra_env_vars.update({"PYTHONPATH": new_pythonpath})
 
             self.manager = HostManagementInstance()
             return
