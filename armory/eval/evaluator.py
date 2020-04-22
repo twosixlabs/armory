@@ -75,6 +75,13 @@ class Evaluator(object):
 
             if self.config["sysconfig"].get("external_github_repo", None):
                 self._download_external()
+                self.extra_env_vars.update(
+                    {
+                        "PYTHONPATH": os.environ["PATH"]
+                        + os.pathsep
+                        + self.external_repo_dir
+                    }
+                )
 
             self.manager = HostManagementInstance()
             return
@@ -169,8 +176,9 @@ class Evaluator(object):
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance()
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
             self._run_config(runner)
+            return
 
         container_port = 8888
         ports = {container_port: host_port} if jupyter else None
