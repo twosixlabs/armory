@@ -115,3 +115,20 @@ however, certain errors may prevent shutdown and leave running containers.
 To shut down these containers, please see the docs for 
 [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) 
 and [docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
+
+## Running without docker
+
+Armory has partial support for users wishing to run without docker. Currently, the
+`armory run` command has support for running without docker. To run without
+docker, either set the `docker_image` field to be null in the scenario
+configuration json file, or call `armory run` with the --no-docker option.
+
+### Environment setup
+To set up the appropriate dependencies run the following command. Note that
+[conda](https://docs.conda.io/en/latest/) is required for the last step.
+```
+git clone https://github.com/twosixlabs/armory.git
+cd armory
+pip install -r host_requirements.txt
+bash host-requirements-conda.sh
+``` 
