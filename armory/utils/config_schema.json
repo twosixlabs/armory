@@ -187,7 +187,10 @@
         "sysconfig": {
             "properties": {
                 "docker_image": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 },
                 "external_github_repo": {
                     "type": [
