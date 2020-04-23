@@ -33,7 +33,3 @@ DEV = "-dev"
 
 def is_dev():
     return __version__.endswith(DEV)
-
-
-# For Docker layer reuse
-__previous_docker_version__ = "0.6.0"
