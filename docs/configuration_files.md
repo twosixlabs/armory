@@ -22,7 +22,7 @@ All configuration files are verified against the jsonschema definition at run ti
     batch_size [Int]: Number of samples to include in each batch
     module: [String] Python module to load dataset from 
     name: [String] Name of the dataset function
-    framework: [String] Framework to return Tensors in. <`tf`|`pytorch`|`numpy`>. NumPy by default.
+    framework: [String] Framework to return Tensors in. <`tf`|`pytorch`|`numpy`>. `numpy` by default.
   }
 `defense`: [Object or null]
   {
