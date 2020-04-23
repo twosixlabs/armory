@@ -118,7 +118,7 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build-dev.sh tf1
           docker run -w /armory_dev twosixarmory/tf1:${version} python -m armory \
-          run --no-docker tests/scenarios/tf1/image_classification.jso
+          run --no-docker tests/scenarios/tf1/image_classification.json
           bash docker/build-dev.sh pytorch
           docker run -w /armory_dev twosixarmory/pytorch:${version} python -m armory \
           run --no-docker tests/scenarios/pytorch/image_classification.json
