@@ -315,6 +315,7 @@ def configure(command_args, prog, description):
         "saved_model_dir": _get_path("saved_model_dir", default.saved_model_dir),
         "tmp_dir": _get_path("tmp_dir", default.tmp_dir),
         "output_dir": _get_path("output_dir", default.output_dir),
+        "verify_ssl": True,
     }
     resolved = "\n".join(
         [

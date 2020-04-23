@@ -29,14 +29,20 @@ def docker():
 def validate_config(config):
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
-    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir")
+    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir", "verify_ssl")
     for key in keys:
         if key not in config:
-            raise KeyError(f"config is missing key {key}")
+            raise KeyError(
+                f"config is missing key {key}. config may be out of date. Please run 'armory configure'"
+            )
     for key, value in config.items():
         if key not in keys:
             raise KeyError(f"config has additional key {key}")
-        if not isinstance(value, str):
+
+        if key in ("verify_ssl") and not isinstance(value, bool):
+            raise ValueError(f"{key} value {value} is not a bool")
+
+        if key not in ("verify_ssl") and not isinstance(value, str):
             raise ValueError(f"{key} value {value} is not a string")
 
 
@@ -81,7 +87,13 @@ class HostPaths:
         if os.path.isfile(self.armory_config):
             # Parse paths from config
             config = load_config()
-            for k in "dataset_dir", "saved_model_dir", "output_dir", "tmp_dir":
+            for k in (
+                "dataset_dir",
+                "saved_model_dir",
+                "output_dir",
+                "tmp_dir",
+                "verify_ssl",
+            ):
                 setattr(self, k, config[k])
             self.external_repo_dir = os.path.join(self.tmp_dir, "external")
         else:

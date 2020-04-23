@@ -63,6 +63,10 @@ class Evaluator(object):
         ).as_posix()
 
         kwargs = dict(runtime="runc")
+
+        if not self.host_paths.verify_ssl:
+            self.extra_env_vars["VERIFY_SSL"] = False
+
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
             gpus = self.config["sysconfig"].get("gpus")
