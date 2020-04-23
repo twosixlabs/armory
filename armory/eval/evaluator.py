@@ -178,7 +178,14 @@ class Evaluator(object):
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
-            self._run_config(runner)
+            logger.warning(f"Outputs will be written to {self.output_dir}")
+            try:
+                self._run_config(runner)
+            except KeyboardInterrupt:
+                logger.warning("Keyboard interrupt caught")
+            finally:
+                logger.warning("Cleaning up...")
+            self._delete_tmp()
             return
 
         container_port = 8888
