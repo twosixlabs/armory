@@ -24,20 +24,20 @@ It comprises 45 classes and 700 images for each class.  Images 1-500 of each cla
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model is an Imagenet-pretrained DenseNet-121 that is fine-tuned on RESISC-45.
+The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45.
 * **Threat Scenario:**
   * Adversary objectives:
     * Untargeted - an adversary may simply wish to evade detection
     * Targeted - an adversary may wish to divert attention or resources to scenes that are otherwise uninteresting
   * Adversary Operating Environment:
-    * Non real-time, digital evasion attack - attack is not "per-example" bur rather "universal." The goal is to 
-    mimic conditions under which physical evasion attack could be carried out.
+    * Non real-time, digital evasion attack - attack is not "per-example" bur "universal," which could be created
+    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
     * Black-box, white-box, and adaptive attacks will be performed on defenses - for black-box attack, a held-back
     model or dataset will be used as surrogate.
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
     a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while remaining "non-overtly perceptible under quick glance."
+    budget allowed while meeting the perceptability requirement.
     * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted attack) and 
     universal patch (targeted attack)
       * For universal patch attack, assume the total area of the patch is at most 25% of the total image area.  The 
@@ -72,15 +72,15 @@ raw audio-baed model is [SincNet](https://arxiv.org/abs/1808.00158), trained fro
     * Untargeted - an adversary may simply wish to evade detection
     * Targeted - an adversary may wish to impersonate someone else
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" bur rather "universal." The goal is to
-    mimic conditions under which physical evasion attack could be carried out.
+    * Non-real time, digital evasion attack - attack is not "per-example" bur rather "universal," which could be created
+    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
     * Assuming perfect acoustic channel
     * Black-box, white-box, and adaptive attacks will be performed on defenses - for black-box attack, spectrogram-based
     model will be the surrogate for the raw audio-based model, and vice versa.
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation
-    budget allowed while remaining "non-overtly perceptible under passive listening."
+    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget 
+    allowed while meeting the perceptability requirement.
     * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted and targeted attacks)
 * **Metrics of Interest:**
   * Primary metrics:
@@ -106,8 +106,7 @@ we use the official Split 01.
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model uses the [MARS architecture] 
-(http://openaccess.thecvf.com/content_CVPR_2019/papers/Crasto_MARS_Motion-Augmented_RGB_Stream_for_Action_Recognition_CVPR_2019_paper.pdf),
+The model uses the [MARS architecture](http://openaccess.thecvf.com/content_CVPR_2019/papers/Crasto_MARS_Motion-Augmented_RGB_Stream_for_Action_Recognition_CVPR_2019_paper.pdf),
 which is a single-stream (RGB) 3D convolution architecture that simultaneously mimics the optical flow stream. 
 The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF101.
 * **Threat Scenario:**
@@ -147,8 +146,8 @@ and may contain backdoor triggers, where some images and labels are intentionall
 making specific test-time decisions.
 * **Dataset:**
 The dataset is the [German Traffic Sign Recognition Benchmark](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
-It comprises 43 classes and more than 50,000 total images. For the training/testing split, we the official Final_Training and
-Final_Test data.
+It comprises 43 classes and more than 50,000 total images. The official Final_Training and Final_Test data are used
+for the train/test split.
 * **Baseline Model:**
 To maximize time spent on defense research, an untrained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
