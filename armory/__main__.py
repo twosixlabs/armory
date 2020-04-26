@@ -53,11 +53,12 @@ class DockerImage(argparse.Action):
         elif values.lower() in DOCKER_IMAGES:
             setattr(namespace, self.dest, DOCKER_IMAGES[values])
         else:
-            raise argparse.ArgumentError(
-                self,
-                f"{values} invalid.\n"
-                f" must be one of {DOCKER_IMAGES} or {images.ALL}",
+            print(
+                f"WARNING: {values} not in "
+                f"{list(DOCKER_IMAGES.keys()) + list(DOCKER_IMAGES.values())}. "
+                "Attempting to load custom Docker image."
             )
+            setattr(namespace, self.dest, values)
 
 
 DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
