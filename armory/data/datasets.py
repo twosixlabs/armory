@@ -94,7 +94,13 @@ class ArmoryDataGenerator(DataGenerator):
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
-            x = self.preprocessing_fn(x)
+            if isinstance(x, dict):
+                x_new = {}
+                for k in x.keys():
+                    x_new[k] = self.preprocessing_fn(x[k])
+                x = x_new
+            else:
+                x = self.preprocessing_fn(x)
 
         return x, y
 
@@ -433,7 +439,7 @@ def ucf101_112x112(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
+    cache_dataset: bool = False,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
@@ -448,7 +454,7 @@ def ucf101_112x112(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("video", "label"),
+        supervised_xy_keys=("videos", "label"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
     )
