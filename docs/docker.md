@@ -170,3 +170,14 @@ however, certain errors may prevent shutdown and leave running containers.
 To shut down these containers, please see the docs for 
 [docker stop](https://docs.docker.com/engine/reference/commandline/stop/) 
 and [docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
+
+## Running without docker
+
+Armory has partial support for users wishing to run without docker. Currently, the
+`armory run` command can be run without Docker in Linux environments. To run without
+docker, either set the `docker_image` field to be null in the scenario
+configuration json file, or call `armory run` with the --no-docker option.
+
+### Environment setup
+The listing of libraries needed for Armory when run on host is available at
+`host-requirements.txt`. 
