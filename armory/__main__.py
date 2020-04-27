@@ -281,6 +281,20 @@ def _get_path(name, default_path, absolute_required=True):
     return answer
 
 
+def _get_verify_ssl():
+    verify_ssl = None
+    while verify_ssl is None:
+        answer = input("Verify SSL during downloads? [Y/n] ")
+        if answer in ("Y", "y", ""):
+            verify_ssl = True
+        elif answer in ("N", "n"):
+            verify_ssl = False
+        else:
+            print(f"Invalid selection: {answer}")
+        print()
+        return verify_ssl
+
+
 def configure(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -315,7 +329,7 @@ def configure(command_args, prog, description):
         "saved_model_dir": _get_path("saved_model_dir", default.saved_model_dir),
         "tmp_dir": _get_path("tmp_dir", default.tmp_dir),
         "output_dir": _get_path("output_dir", default.output_dir),
-        "verify_ssl": True,
+        "verify_ssl": _get_verify_ssl(),
     }
     resolved = "\n".join(
         [
@@ -324,6 +338,8 @@ def configure(command_args, prog, description):
             f"    saved_model_dir: {config['saved_model_dir']}",
             f"    tmp_dir:         {config['tmp_dir']}",
             f"    output_dir:      {config['output_dir']}",
+            "Download options:",
+            f"    verify_ssl:      {config['verify_ssl']}",
             "",
         ]
     )
