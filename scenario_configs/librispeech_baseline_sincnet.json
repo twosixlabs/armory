@@ -16,6 +16,7 @@
     },
     "dataset": {
         "batch_size": 128,
+        "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean"
     },

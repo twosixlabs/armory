@@ -38,6 +38,14 @@
                     "minimum": 1,
                     "type": "integer"
                 },
+                "framework": {
+                    "enum": [
+                        "tf",
+                        "pytorch",
+                        "numpy"
+                    ],
+                    "type": "string"
+                },
                 "module": {
                     "$ref": "#/definitions/python_module"
                 },
