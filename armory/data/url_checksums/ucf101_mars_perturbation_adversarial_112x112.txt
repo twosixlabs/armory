@@ -1,1 +1,0 @@
-/armory/datasets/ucf101_test.tar.gz 16605883 0d7d473a302e2d7b545d353aada5ac214bd387a8563a3b9e739d7f7f798aebf0

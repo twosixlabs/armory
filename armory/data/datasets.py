@@ -27,7 +27,7 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
-from armory.data.adversarial import ucf101_mars_perturbation_adversarial_112x112 as UCF101_112x112 # noqa: F401
+from armory.data.adversarial import ucf101_mars_perturbation_and_patch_adversarial_112x112 as UCF101_112x112 # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -433,7 +433,7 @@ def ucf101(
         cache_dataset=cache_dataset,
     )
 
-def ucf101_112x112(
+def ucf101_adversarial_112x112(
     split_type: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
@@ -443,11 +443,12 @@ def ucf101_112x112(
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
-    generated using non-patch perturbation algorithm
+    including clean, adversarial perturbed, and
+    adversarial patched
     """
 
     return _generator_from_tfds(
-        "ucf101_mars_perturbation_adversarial112x112:1.0.0",
+        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -455,7 +456,7 @@ def ucf101_112x112(
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("videos", "label"),
-        variable_length=bool(batch_size > 1),
+        variable_length=False,
         cache_dataset=cache_dataset,
     )
 
