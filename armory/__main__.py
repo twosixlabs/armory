@@ -21,7 +21,6 @@ from docker.errors import ImageNotFound
 import armory
 from armory import paths
 from armory.eval import Evaluator
-from armory.docker.management import ManagementInstance
 from armory.docker import images
 from armory.utils import docker_api
 
@@ -193,9 +192,8 @@ def download(command_args, prog, description):
         _pull_docker_images()
 
     print("Downloading requested datasets and model weights...")
-    manager = ManagementInstance(image_name=images.TF1)
-    runner = manager.start_armory_instance()
-
+    config = {"sysconfig": {"docker_image": images.TF1}}
+    rig = Evaluator(config)
     cmd = "; ".join(
         [
             "import logging",
@@ -207,8 +205,7 @@ def download(command_args, prog, description):
             f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
     )
-    runner.exec_cmd(f"python -c '{cmd}'")
-    manager.stop_armory_instance(runner)
+    rig.run(command=f"python -c '{cmd}'")
 
 
 def clean(command_args, prog, description):
