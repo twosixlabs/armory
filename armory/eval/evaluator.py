@@ -15,6 +15,7 @@ import requests
 from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
+from armory.docker.host_management import HostManagementInstance
 from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils import external_repo
@@ -27,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self, config_path: Union[str, dict], container_config_name="eval-config.json"
+        self,
+        config_path: Union[str, dict],
+        container_config_name="eval-config.json",
+        no_docker: bool = False,
     ):
-        self.host_paths = paths.host()
-        self.docker_paths = paths.docker()
-
         if os.name != "nt":
             self.user_id, self.group_id = os.getuid(), os.getgid()
         else:
@@ -56,13 +57,42 @@ class Evaluator(object):
             self.tmp_dir,
             self.output_dir,
         ) = volumes_util.tmp_output_subdir()
+
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
         self.external_repo_dir = paths.get_external(self.tmp_dir)
+
+        kwargs = dict(runtime="runc")
+        image_name = self.config["sysconfig"].get("docker_image")
+        kwargs["image_name"] = image_name
+        self.no_docker = not image_name or no_docker
+
+        if self.no_docker:
+            self.docker_paths = paths.host()
+
+            self.docker_config_path = str(
+                Path(os.path.join(self.docker_paths.tmp_dir, container_config_name))
+            )
+
+            if self.config["sysconfig"].get("external_github_repo", None):
+                self._download_external()
+                current_pythonpath = os.getenv("PYTHONPATH")
+                if current_pythonpath:
+                    new_pythonpath = (
+                        current_pythonpath + os.pathsep + self.external_repo_dir
+                    )
+                else:
+                    new_pythonpath = self.external_repo_dir
+                self.extra_env_vars.update({"PYTHONPATH": new_pythonpath})
+
+            self.manager = HostManagementInstance()
+            return
+
+        self.docker_paths = paths.docker()
+
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
 
-        kwargs = dict(runtime="runc")
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
             gpus = self.config["sysconfig"].get("gpus")
@@ -77,9 +107,6 @@ class Evaluator(object):
 
         if self.config["sysconfig"].get("use_armory_private", None):
             self._download_private()
-
-        image_name = self.config["sysconfig"].get("docker_image")
-        kwargs["image_name"] = image_name
 
         # Download docker image on host
         docker_client = docker.from_env()
@@ -144,8 +171,24 @@ class Evaluator(object):
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
     ) -> None:
-        container_port = 8888
         self._write_tmp()
+        if self.no_docker:
+            if jupyter or interactive or command:
+                raise ValueError(
+                    "jupyter, interactive, or bash commands only supported when running Docker containers."
+                )
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
+            logger.warning(f"Outputs will be written to {self.output_dir}")
+            try:
+                self._run_config(runner)
+            except KeyboardInterrupt:
+                logger.warning("Keyboard interrupt caught")
+            finally:
+                logger.warning("Cleaning up...")
+            self._delete_tmp()
+            return
+
+        container_port = 8888
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
@@ -189,7 +232,14 @@ class Evaluator(object):
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
-        runner.exec_cmd(f"python -m armory.scenarios.base {self.docker_config_path}")
+
+        if self.no_docker:
+            config_path = self.tmp_config
+            docker_option = " --no-docker"
+        else:
+            config_path = self.docker_config_path
+            docker_option = ""
+        runner.exec_cmd(f"python -m armory.scenarios.base {config_path}{docker_option}")
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))

@@ -20,6 +20,7 @@
     },
     "dataset": {
         "batch_size": 512,
+        "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "german_traffic_sign"
     },

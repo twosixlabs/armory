@@ -22,6 +22,7 @@ All configuration files are verified against the jsonschema definition at run ti
     batch_size [Int]: Number of samples to include in each batch
     module: [String] Python module to load dataset from 
     name: [String] Name of the dataset function
+    framework: [String] Framework to return Tensors in. <`tf`|`pytorch`|`numpy`>. `numpy` by default.
   }
 `defense`: [Object or null]
   {
@@ -55,7 +56,7 @@ All configuration files are verified against the jsonschema definition at run ti
   }
 `sysconfig` [Object]
   {
-    docker_image: [String] Docker image name and tag to run scenario in
+    docker_image: [String or null] Docker image name and tag to run scenario in
     external_github_repo: [String or null] External github repository to download and place on PYTHONPATH within container
     gpus: [String]: Which GPUs should the docker container have access to. "all" or comma sperated list (e.g. "1,3")
     use_gpu: [Boolean]: Boolean to run container as nvidia-docker with GPU access
@@ -79,7 +80,8 @@ All configuration files are verified against the jsonschema definition at run ti
     "dataset": {
         "batch_size": 64,
         "module": "armory.data.datasets",
-        "name": "cifar10"
+        "name": "cifar10",
+        "framework": "numpy"
     },
     "defense": null,
     "metric": {
