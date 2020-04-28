@@ -104,6 +104,7 @@ class HostPaths:
             self.tmp_dir = default().tmp_dir
             self.output_dir = default().output_dir
             self.external_repo_dir = default().external_repo_dir
+            self.verify_ssl = default().verify_ssl
 
         logger.info("Creating armory directories if they do not exist")
         os.makedirs(self.dataset_dir, exist_ok=True)
@@ -128,6 +129,7 @@ class HostDefault:
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
         self.external_repo_dir = get_external(self.tmp_dir)
+        self.verify_ssl = True
 
 
 class DockerPaths:
