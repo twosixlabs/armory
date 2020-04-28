@@ -2,19 +2,19 @@
     "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "preloaded": {
-            "attack_type": "adversarial_patch",
-            "module": "armory.data.datasets",
-            "name": "ucf101_adversarial_112x112",
-            "batch_size": 1
-        },
         "budget": null,
         "knowledge": "white",
         "kwargs": {
             "eps": 0.0
         },
         "module": "none",
-        "name": "none"
+        "name": "none",
+        "preloaded": {
+            "attack_type": "adversarial_perturbation",
+            "batch_size": 1,
+            "module": "armory.data.datasets",
+            "name": "ucf101_adversarial_112x112"
+        }
     },
     "dataset": {
         "batch_size": 16,

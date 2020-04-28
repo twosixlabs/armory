@@ -144,25 +144,33 @@ _LABELS = [
 ]
 
 _URL = "https://www.crcv.ucf.edu/data/UCF101.php"
-_DL_URL = "/armory/datasets/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz" #TODO: Update to S3 bucket
+_DL_URL = "/armory/datasets/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz"  # TODO: Update to S3 bucket
+
 
 class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedBuilder):
     """ Ucf101 action recognition adversarial dataset"""
 
-    VERSION = tfds.core.Version('1.0.0')
+    VERSION = tfds.core.Version("1.0.0")
+
     def _info(self):
         return tfds.core.DatasetInfo(
             builder=self,
             description=_DESCRIPTION,
-            features=tfds.features.FeaturesDict({
-                "videos": {
-                    "clean": tfds.features.Video(shape=(None, 112, 112, 3)),
-                    "adversarial_perturbation": tfds.features.Video(shape=(None, 112, 112, 3)),
-                    "adversarial_patch": tfds.features.Video(shape=(None, 112, 112, 3))
-                },
-                "label": tfds.features.ClassLabel(names=_LABELS),
-                "videoname": tfds.features.Text(),
-            }),
+            features=tfds.features.FeaturesDict(
+                {
+                    "videos": {
+                        "clean": tfds.features.Video(shape=(None, 112, 112, 3)),
+                        "adversarial_perturbation": tfds.features.Video(
+                            shape=(None, 112, 112, 3)
+                        ),
+                        "adversarial_patch": tfds.features.Video(
+                            shape=(None, 112, 112, 3)
+                        ),
+                    },
+                    "label": tfds.features.ClassLabel(names=_LABELS),
+                    "videoname": tfds.features.Text(),
+                }
+            ),
             supervised_keys=("videos", "label"),
             homepage=_URL,
             citation=_CITATION,
@@ -174,37 +182,65 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
         dl_path = dl_manager.download_and_extract(_DL_URL)
         return [
             tfds.core.SplitGenerator(
-                name="adversarial",
-                gen_kwargs={
-                    "data_dir_path": dl_path,
-                },
+                name="adversarial", gen_kwargs={"data_dir_path": dl_path,},
             ),
         ]
 
     def _generate_examples(self, data_dir_path):
         """Yields examples."""
-        root_dir = 'data'
+        root_dir = "data"
         split_dirs = ["clean", "adversarial_perturbation", "adversarial_patch"]
-        labels = tf.io.gfile.listdir(os.path.join(data_dir_path, root_dir, split_dirs[0]))
+        labels = tf.io.gfile.listdir(
+            os.path.join(data_dir_path, root_dir, split_dirs[0])
+        )
         labels.sort()
         for label in labels:
-            videonames = tf.io.gfile.listdir(os.path.join(data_dir_path, root_dir, split_dirs[0], label))
+            videonames = tf.io.gfile.listdir(
+                os.path.join(data_dir_path, root_dir, split_dirs[0], label)
+            )
             videonames.sort()
             for videoname in videonames:
                 # prepare clean data
-                video_clean = tf.io.gfile.glob(os.path.join(data_dir_path, root_dir, split_dirs[0], label, videoname, "*.jpg"))
+                video_clean = tf.io.gfile.glob(
+                    os.path.join(
+                        data_dir_path,
+                        root_dir,
+                        split_dirs[0],
+                        label,
+                        videoname,
+                        "*.jpg",
+                    )
+                )
                 video_clean.sort()
                 # prepare adversarial perturbation data
-                adv_pert = tf.io.gfile.glob(os.path.join(data_dir_path, root_dir, split_dirs[1], label, videoname, "*.png"))
+                adv_pert = tf.io.gfile.glob(
+                    os.path.join(
+                        data_dir_path,
+                        root_dir,
+                        split_dirs[1],
+                        label,
+                        videoname,
+                        "*.png",
+                    )
+                )
                 adv_pert.sort()
                 # prepare adversarial patch data
-                adv_patch = tf.io.gfile.glob(os.path.join(data_dir_path, root_dir, split_dirs[2], label, videoname, "*.png"))
+                adv_patch = tf.io.gfile.glob(
+                    os.path.join(
+                        data_dir_path,
+                        root_dir,
+                        split_dirs[2],
+                        label,
+                        videoname,
+                        "*.png",
+                    )
+                )
                 adv_patch.sort()
                 example = {
                     "videos": {
                         "clean": video_clean,
                         "adversarial_perturbation": adv_pert,
-                        "adversarial_patch":  adv_patch
+                        "adversarial_patch": adv_patch,
                     },
                     "label": label,
                     "videoname": videoname,

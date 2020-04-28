@@ -108,14 +108,14 @@ class Ucf101(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Loading / testing adversarial examples...")
 
-        if config["attack"]["preloaded"]: # load existing adversarial dataset
+        if config["attack"]["preloaded"]:  # load existing adversarial dataset
             test_data_generator = load_dataset(
                 config["attack"]["preloaded"],
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
             )
-        else: # generate attack using ART
+        else:  # generate attack using ART
             attack = load_attack(config["attack"], classifier)
             test_data_generator = load_dataset(
                 config["dataset"],
@@ -143,3 +143,21 @@ class Ucf101(Scenario):
 
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
+
+        # Template for calculating various distance measures
+        # TODO: add distance functions (e.g., L-p norm, SNR, Wasserstein)
+        """
+        if config["attack"]["preloaded"]:  # load existing adversarial dataset
+            test_data_generator = load_dataset(
+                config["attack"]["preloaded"],
+                epochs=1,
+                split_type="adversarial",
+                preprocessing_fn=preprocessing_fn,
+
+            for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
+                attack_type = config["attack"]["preloaded"]["attack_type"]
+                x_adv_batch = x_batch[attack_type]
+                x_clean_batch = x_batch["clean"]
+                for x_adv, x_clean in zip(x_adv_batch, x_clean_batch):
+                    distance = distance_fn(x_adv, x_clean)
+        """

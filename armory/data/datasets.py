@@ -27,7 +27,9 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
-from armory.data.adversarial import ucf101_mars_perturbation_and_patch_adversarial_112x112 as UCF101_112x112 # noqa: F401
+from armory.data.adversarial import (  # noqa: F401
+    ucf101_mars_perturbation_and_patch_adversarial_112x112,  # noqa: F401
+)  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -432,6 +434,7 @@ def ucf101(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
     )
+
 
 def ucf101_adversarial_112x112(
     split_type: str = "adversarial",
