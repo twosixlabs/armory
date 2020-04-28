@@ -27,6 +27,9 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
+from armory.data.adversarial import (  # noqa: F401
+    ucf101_mars_perturbation_and_patch_adversarial_112x112,  # noqa: F401
+)  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -93,7 +96,13 @@ class ArmoryDataGenerator(DataGenerator):
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
-            x = self.preprocessing_fn(x)
+            if isinstance(x, dict):
+                x_new = {}
+                for k in x.keys():
+                    x_new[k] = self.preprocessing_fn(x[k])
+                x = x_new
+            else:
+                x = self.preprocessing_fn(x)
 
         return x, y
 
@@ -456,6 +465,36 @@ def ucf101(
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+    )
+
+
+def ucf101_adversarial_112x112(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = False,
+    framework: str = "numpy",
+) -> ArmoryDataGenerator:
+    """
+    UCF 101 Adversarial Dataset of size (112, 112, 3),
+    including clean, adversarial perturbed, and
+    adversarial patched
+    """
+
+    return _generator_from_tfds(
+        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("videos", "label"),
+        variable_length=False,
         cache_dataset=cache_dataset,
         framework=framework,
     )
