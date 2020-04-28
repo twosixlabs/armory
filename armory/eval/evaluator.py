@@ -101,12 +101,20 @@ class Evaluator(object):
 
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
-            self.extra_env_vars.update(
-                {"PYTHONPATH": self.docker_paths.external_repo_dir}
-            )
 
-        if self.config["sysconfig"].get("use_armory_private", None):
-            self._download_private()
+            # Add external repo to PYTHONPATH inside container.
+            # Gather any armory private env vars if available
+            self.extra_env_vars.update(
+                {
+                    "PYTHONPATH": self.docker_paths.external_repo_dir,
+                    "ARMORY_PRIVATE_S3_ID": os.getenv(
+                        "ARMORY_PRIVATE_S3_ID", default=""
+                    ),
+                    "ARMORY_PRIVATE_S3_KEY": os.getenv(
+                        "ARMORY_PRIVATE_S3_KEY", default=""
+                    ),
+                }
+            )
 
         # Download docker image on host
         docker_client = docker.from_env()
@@ -125,17 +133,6 @@ class Evaluator(object):
         external_repo.download_and_extract_repo(
             self.config["sysconfig"]["external_github_repo"],
             external_repo_dir=self.external_repo_dir,
-        )
-
-    def _download_private(self):
-        external_repo.download_and_extract_repo(
-            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
-        )
-        self.extra_env_vars.update(
-            {
-                "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
-                "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
-            }
         )
 
     def _write_tmp(self):
