@@ -40,6 +40,10 @@ This will run a specific command within a framework specific container. A notabl
 case for this would be to run test cases using pytest. After completion of the command 
 the container will be removed.
 
+To use custom docker images with `launch` or `exec`, replace `<tf1|tf2|pytorch>` with its
+full name: `<your_image/name:your_tag>`. For use with `run`, you will need to modify the
+[configuration file](docs/configuration_files.md).
+
 Note: Since ARMORY launches Docker containers, the python package must be ran on 
 system host (i.e. not inside of a docker container).
 

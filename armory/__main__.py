@@ -53,11 +53,12 @@ class DockerImage(argparse.Action):
         elif values.lower() in DOCKER_IMAGES:
             setattr(namespace, self.dest, DOCKER_IMAGES[values])
         else:
-            raise argparse.ArgumentError(
-                self,
-                f"{values} invalid.\n"
-                f" must be one of {DOCKER_IMAGES} or {images.ALL}",
+            print(
+                f"WARNING: {values} not in "
+                f"{list(DOCKER_IMAGES.keys()) + list(DOCKER_IMAGES.values())}. "
+                "Attempting to load custom Docker image."
             )
+            setattr(namespace, self.dest, values)
 
 
 DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
@@ -117,11 +118,18 @@ def run(command_args, prog, description):
         default=8888,
         help="Port number {0, ..., 65535} to connect to Jupyter on",
     )
+    parser.add_argument(
+        "--no-docker",
+        dest="no_docker",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use Docker or a local environment with armory run",
+    )
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
-    rig = Evaluator(args.filepath)
+    rig = Evaluator(args.filepath, no_docker=args.no_docker)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
@@ -409,7 +417,12 @@ def launch(command_args, prog, description):
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
     }
     rig = Evaluator(config)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    rig.run(
+        interactive=args.interactive,
+        jupyter=args.jupyter,
+        host_port=args.port,
+        command="true # No-op",
+    )
 
 
 def exec(command_args, prog, description):

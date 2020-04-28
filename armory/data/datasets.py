@@ -10,7 +10,7 @@ The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 
 import logging
 import os
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 import tensorflow as tf
@@ -121,13 +121,25 @@ def _generator_from_tfds(
     variable_length=False,
     shuffle_files=True,
     cache_dataset: bool = True,
-):
+    framework: str = "numpy",
+) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
     if variable_length=True and batch_size > 1:
         output batches are 1D np.arrays of objects
     """
+    supported_frameworks = ["tf", "pytorch", "numpy"]
+    if framework not in supported_frameworks:
+        raise ValueError(
+            f"Dataset framework field {framework} must be one of {supported_frameworks}"
+        )
+
+    if framework == "pytorch":
+        raise NotImplementedError(
+            "PyTorch native dataloaders are not yet supported. See issue https://github.com/twosixlabs/armory/issues/455"
+        )
+
     if not dataset_dir:
         dataset_dir = paths.docker().dataset_dir
 
@@ -170,16 +182,20 @@ def _generator_from_tfds(
     else:
         ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-    ds = tfds.as_numpy(ds, graph=default_graph)
 
-    generator = ArmoryDataGenerator(
-        ds,
-        size=ds_info.splits[split_type].num_examples,
-        batch_size=batch_size,
-        epochs=epochs,
-        preprocessing_fn=preprocessing_fn,
-        variable_length=bool(variable_length and batch_size > 1),
-    )
+    if framework == "numpy":
+        ds = tfds.as_numpy(ds, graph=default_graph)
+        generator = ArmoryDataGenerator(
+            ds,
+            size=ds_info.splits[split_type].num_examples,
+            batch_size=batch_size,
+            epochs=epochs,
+            preprocessing_fn=preprocessing_fn,
+            variable_length=bool(variable_length and batch_size > 1),
+        )
+
+    else:
+        generator = ds
 
     return generator
 
@@ -191,6 +207,7 @@ def mnist(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -204,6 +221,7 @@ def mnist(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -214,6 +232,7 @@ def cifar10(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -227,6 +246,7 @@ def cifar10(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -237,6 +257,7 @@ def digit(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -251,6 +272,7 @@ def digit(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -261,6 +283,7 @@ def imagenet_adversarial(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -281,6 +304,7 @@ def imagenet_adversarial(
         preprocessing_fn=preprocessing_fn,
         shuffle_files=False,
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -291,6 +315,7 @@ def imagenette(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -306,6 +331,7 @@ def imagenette(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -316,6 +342,7 @@ def german_traffic_sign(
     preprocessing_fn: Callable = None,
     dataset_dir: str = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -329,6 +356,7 @@ def german_traffic_sign(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -374,6 +402,7 @@ def librispeech_dev_clean(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -399,6 +428,7 @@ def librispeech_dev_clean(
         download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -409,6 +439,7 @@ def resisc45(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -433,6 +464,7 @@ def resisc45(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 
@@ -443,6 +475,7 @@ def ucf101(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
@@ -460,6 +493,7 @@ def ucf101(
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
+        framework=framework,
     )
 
 

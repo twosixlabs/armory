@@ -12,6 +12,7 @@
     },
     "dataset": {
         "batch_size": 16,
+        "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "ucf101"
     },

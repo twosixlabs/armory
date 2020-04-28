@@ -38,6 +38,14 @@
                     "minimum": 1,
                     "type": "integer"
                 },
+                "framework": {
+                    "enum": [
+                        "tf",
+                        "pytorch",
+                        "numpy"
+                    ],
+                    "type": "string"
+                },
                 "module": {
                     "$ref": "#/definitions/python_module"
                 },
@@ -187,7 +195,10 @@
         "sysconfig": {
             "properties": {
                 "docker_image": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 },
                 "external_github_repo": {
                     "type": [

@@ -11,7 +11,7 @@
     },
     "dataset": {
         "batch_size": 64,
-        "framework": "numpy",
+        "framework": "chainer",
         "module": "armory.data.datasets",
         "name": "mnist"
     },
@@ -25,12 +25,14 @@
         ]
     },
     "model": {
-        "fit": false,
-        "fit_kwargs": {},
+        "fit": true,
+        "fit_kwargs": {
+            "nb_epochs": 3
+        },
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.mnist",
+        "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
-        "weights_file": "undefended_mnist_5epochs.pth",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -39,7 +41,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.7.0-dev",
+        "docker_image": "twosixarmory/tf1:0.7.0-dev",
         "external_github_repo": null,
         "gpus": "all",
         "use_gpu": false
