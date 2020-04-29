@@ -145,4 +145,3 @@ class Ucf101(Scenario):
 
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
-
