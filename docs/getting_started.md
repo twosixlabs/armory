@@ -46,7 +46,7 @@ to pull in a private repository, you'll need to set a user token as an environme
 variable before running `armory run`.
 
 ```
-export GITHUB_TOKEN="5555e8b..."
+export ARMORY_GITHUB_TOKEN="5555e8b..."
 armory run <path/to/config.json>
 ```
 

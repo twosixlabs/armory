@@ -113,6 +113,9 @@ class Evaluator(object):
                     "ARMORY_PRIVATE_S3_KEY": os.getenv(
                         "ARMORY_PRIVATE_S3_KEY", default=""
                     ),
+                    "ARMORY_GITHUB_TOKEN": os.getenv(
+                        "ARMORY_GITHUB_TOKEN", default=""
+                    ),
                 }
             )
 
