@@ -66,7 +66,7 @@ each with 4/2/2 minutes of audio in the train/validation/test splits, respective
 To maximize time spent on defense research, two trained baseline models will be provided - one based on spectrogram (not 
 mel-cepstrum or MFCC) and one based on raw audio - but performers are not required to use them, if their defense 
 requires a different architecture. The spectrogram-based model is developed and trained from scratch, and the 
-raw audio-baed model is [SincNet](https://arxiv.org/abs/1808.00158), trained from scratch.
+raw audio-based model is [SincNet](https://arxiv.org/abs/1808.00158), trained from scratch.
 * **Threat Scenario:**
   * Adversary objectives:
     * Untargeted - an adversary may simply wish to evade detection
