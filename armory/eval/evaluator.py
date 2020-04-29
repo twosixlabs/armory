@@ -103,7 +103,7 @@ class Evaluator(object):
             self._download_external()
 
             # Add external repo to PYTHONPATH inside container.
-            # Gather any armory private env vars if available
+            # Gather any armory env vars if available
             self.extra_env_vars.update(
                 {
                     "PYTHONPATH": self.docker_paths.external_repo_dir,
