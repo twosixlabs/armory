@@ -1,6 +1,6 @@
 """
-UFC101 actiona recognition adversarial dataset generated using non-universal,
-non-patch perturbation attack
+UFC101 action recognition adversarial dataset generated using
+perturbation and patch attacks
 """
 
 from __future__ import absolute_import
@@ -31,7 +31,7 @@ _CITATION = """
 }
 """
 _DESCRIPTION = """
-Dataset contains five randomly chosen videos from each class,
+Dataset contains five randomly chosen videos from each class, taken from test split,
 totaling 505 videos. Each video is broken into its component frames.  Therefore,
 the dataset comprises sum_i(N_i) images, where N_i is the number of frames in video
 i.  All frames are of the size (112, 112, 3). For each video, a clean version,

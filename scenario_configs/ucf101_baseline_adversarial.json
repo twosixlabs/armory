@@ -10,6 +10,7 @@
         "module": "none",
         "name": "none",
         "preloaded": {
+            "description": "'attack_type' can be {'adversarial_perturbation', 'adversarial_patch'}",
             "attack_type": "adversarial_perturbation",
             "batch_size": 1,
             "module": "armory.data.datasets",

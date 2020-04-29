@@ -125,38 +125,24 @@ class Ucf101(Scenario):
         for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
             if config["attack"]["preloaded"]:
                 attack_type = config["attack"]["preloaded"]["attack_type"]
+                x_clean_batch = x_batch["clean"]
                 x_batch = x_batch[attack_type]
-            for x, y in zip(x_batch, y_batch):
+            for i, (x, y) in enumerate(zip(x_batch, y_batch)):
                 if config["attack"]["preloaded"]:
                     x_adv = x
+                    x_clean = x_clean_batch[i]
                 else:
                     # each x is of shape (n_stack, 3, 16, 112, 112)
-                    #    n_stack varies
+                    # n_stack varies
                     attack.set_params(batch_size=x.shape[0])
                     x_adv = attack.generate(x=x)
+                    x_clean = x
 
                 # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x_adv), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
-                metrics_logger.update_perturbation([x], [x_adv])
+                metrics_logger.update_perturbation([x_clean], [x_adv])
 
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
 
-        # Template for calculating various distance measures
-        # TODO: add distance functions (e.g., L-p norm, SNR, Wasserstein)
-        """
-        if config["attack"]["preloaded"]:  # load existing adversarial dataset
-            test_data_generator = load_dataset(
-                config["attack"]["preloaded"],
-                epochs=1,
-                split_type="adversarial",
-                preprocessing_fn=preprocessing_fn,
-
-            for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
-                attack_type = config["attack"]["preloaded"]["attack_type"]
-                x_adv_batch = x_batch[attack_type]
-                x_clean_batch = x_batch["clean"]
-                for x_adv, x_clean in zip(x_adv_batch, x_clean_batch):
-                    distance = distance_fn(x_adv, x_clean)
-        """
