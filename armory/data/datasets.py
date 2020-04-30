@@ -28,8 +28,8 @@ from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.adversarial import (  # noqa: F401
-    ucf101_mars_perturbation_and_patch_adversarial_112x112,  # noqa: F401
-)  # noqa: F401
+    ucf101_mars_perturbation_and_patch_adversarial_112x112,
+)
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -80,16 +80,27 @@ class ArmoryDataGenerator(DataGenerator):
             x_list, y_list = [], []
             for i in range(self.batch_size):
                 x_i, y_i = next(self.generator)
-                x_list.append(x_i[0])
+                x_list.append(x_i)
                 y_list.append(y_i)
                 self.current += 1
                 # handle end of epoch partial batches
                 if self.current == self.samples_per_epoch:
                     self.current = 0
                     break
-            x = np.empty((len(x_list),), dtype=object)
-            for i in range(len(x_list)):
-                x[i] = x_list[i]
+            if isinstance(x_list[0], dict):
+                x_dict = {}
+                for k in x_list[0].keys():
+                    x_k_list = [x_i[k][0] for x_i in x_list]
+                    x = np.empty((len(x_k_list),), dtype=object)
+                    for i in range(len(x_k_list)):
+                        x[i] = x_k_list[i]
+                    x_dict[k] = x
+                x = x_dict
+            else:
+                x_list = [x_i[0] for x_i in x_list]
+                x = np.empty((len(x_list),), dtype=object)
+                for i in range(len(x_list)):
+                    x[i] = x_list[i]
             # only handles variable-length x, currently
             y = np.hstack(y_list)
         else:
@@ -97,10 +108,7 @@ class ArmoryDataGenerator(DataGenerator):
 
         if self.preprocessing_fn:
             if isinstance(x, dict):
-                x_new = {}
-                for k in x.keys():
-                    x_new[k] = self.preprocessing_fn(x[k])
-                x = x_new
+                x = {k: self.preprocessing_fn(v) for (k, v) in x.items()}
             else:
                 x = self.preprocessing_fn(x)
 
@@ -494,7 +502,7 @@ def ucf101_adversarial_112x112(
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("videos", "label"),
-        variable_length=False,
+        variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
     )
