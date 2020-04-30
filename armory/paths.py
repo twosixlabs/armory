@@ -32,14 +32,20 @@ def docker():
 def validate_config(config):
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
-    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir")
+    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir", "verify_ssl")
     for key in keys:
         if key not in config:
-            raise KeyError(f"config is missing key {key}")
+            raise KeyError(
+                f"config is missing key {key}. config may be out of date. Please run 'armory configure'"
+            )
     for key, value in config.items():
         if key not in keys:
             raise KeyError(f"config has additional key {key}")
-        if not isinstance(value, str):
+
+        if key in ("verify_ssl") and not isinstance(value, bool):
+            raise ValueError(f"{key} value {value} is not a bool")
+
+        if key not in ("verify_ssl") and not isinstance(value, str):
             raise ValueError(f"{key} value {value} is not a string")
 
 
@@ -84,7 +90,13 @@ class HostPaths:
         if os.path.isfile(self.armory_config):
             # Parse paths from config
             config = load_config()
-            for k in "dataset_dir", "saved_model_dir", "output_dir", "tmp_dir":
+            for k in (
+                "dataset_dir",
+                "saved_model_dir",
+                "output_dir",
+                "tmp_dir",
+                "verify_ssl",
+            ):
                 setattr(self, k, config[k])
             self.external_repo_dir = os.path.join(self.tmp_dir, "external")
         else:
@@ -95,6 +107,7 @@ class HostPaths:
             self.tmp_dir = default().tmp_dir
             self.output_dir = default().output_dir
             self.external_repo_dir = default().external_repo_dir
+            self.verify_ssl = default().verify_ssl
 
         logger.info("Creating armory directories if they do not exist")
         os.makedirs(self.dataset_dir, exist_ok=True)
@@ -119,6 +132,7 @@ class HostDefault:
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
         self.external_repo_dir = get_external(self.tmp_dir)
+        self.verify_ssl = True
 
 
 class DockerPaths:

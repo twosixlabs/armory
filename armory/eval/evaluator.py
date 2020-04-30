@@ -87,11 +87,15 @@ class Evaluator(object):
             self.manager = HostManagementInstance()
             return
 
+        self.host_paths = paths.host()
         self.docker_paths = paths.docker()
 
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
+
+        if not self.host_paths.verify_ssl:
+            self.extra_env_vars["VERIFY_SSL"] = "false"
 
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs["runtime"] = "nvidia"
