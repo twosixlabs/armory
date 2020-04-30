@@ -136,10 +136,18 @@ class Evaluator(object):
             external_repo_dir=self.external_repo_dir,
         )
 
-    def _write_tmp(self):
-        os.makedirs(self.tmp_dir, exist_ok=True)
-        if os.path.exists(self.tmp_config):
-            logger.warning(f"Overwriting previous temp config: {self.tmp_config}...")
+    def _download_private(self):
+        external_repo.download_and_extract_repo(
+            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
+        )
+        self.extra_env_vars.update(
+            {
+                "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
+                "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
+            }
+        )
+
+    def _copy_config_file(self):
         with open(self.tmp_config, "w") as f:
             f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
@@ -169,7 +177,7 @@ class Evaluator(object):
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
     ) -> None:
-        self._write_tmp()
+        self._copy_config_file()
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
