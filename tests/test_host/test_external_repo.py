@@ -18,7 +18,7 @@ def set_github_token():
     """
     b64_key = b"Njc5MjhkMDA0N2Q5ZTBkNTc4MWNmODgxOGE5ZTVlY2JiOWIzMDg2NQ=="
     public_token = base64.b64decode(b64_key).decode()
-    os.environ["GITHUB_TOKEN"] = public_token
+    os.environ["ARMORY_GITHUB_TOKEN"] = public_token
 
 
 def test_download():

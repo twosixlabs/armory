@@ -101,12 +101,21 @@ class Evaluator(object):
 
         if self.config["sysconfig"].get("external_github_repo", None):
             self._download_external()
-            self.extra_env_vars.update(
-                {"PYTHONPATH": self.docker_paths.external_repo_dir}
-            )
 
-        if self.config["sysconfig"].get("use_armory_private", None):
-            self._download_private()
+            # Add external repo to PYTHONPATH inside container.
+            # Gather any armory env vars if available
+            self.extra_env_vars.update(
+                {
+                    "PYTHONPATH": self.docker_paths.external_repo_dir,
+                    "ARMORY_PRIVATE_S3_ID": os.getenv(
+                        "ARMORY_PRIVATE_S3_ID", default=""
+                    ),
+                    "ARMORY_PRIVATE_S3_KEY": os.getenv(
+                        "ARMORY_PRIVATE_S3_KEY", default=""
+                    ),
+                    "ARMORY_GITHUB_TOKEN": os.getenv("ARMORY_GITHUB_TOKEN", default=""),
+                }
+            )
 
         # Download docker image on host
         docker_client = docker.from_env()
