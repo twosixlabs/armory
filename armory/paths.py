@@ -116,10 +116,6 @@ class HostPaths:
         os.makedirs(self.output_dir, exist_ok=True)
 
 
-def get_external(tmp_dir):
-    return os.path.join(tmp_dir, "external")
-
-
 class HostDefault:
     def __init__(self):
         self.cwd = os.getcwd()
@@ -131,7 +127,7 @@ class HostDefault:
         self.saved_model_dir = os.path.join(self.armory_dir, "saved_models")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
-        self.external_repo_dir = get_external(self.tmp_dir)
+        self.external_repo_dir = os.path.join(self.tmp_dir, "external")
         self.verify_ssl = True
 
 

@@ -24,6 +24,7 @@ import coloredlogs
 import armory
 from armory import paths
 from armory.utils import config_loading
+from armory.utils import external_repo
 
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,22 @@ class Scenario(abc.ABC):
         """
         Evaluate a config for robustness against attack.
         """
+        self.setup(config)
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         self.save(config, results)
+
+    def setup(self, config: dict):
+        """
+        Performs scenario setup on the evaluating system.
+        """
+        if config["sysconfig"].get("external_github_repo", None):
+            external_repo_dir = paths.docker().external_repo_dir
+            external_repo.download_and_extract_repo(
+                config["sysconfig"]["external_github_repo"],
+                external_repo_dir=external_repo_dir,
+            )
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:

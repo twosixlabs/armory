@@ -18,7 +18,6 @@ from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.docker import volumes_util
 from armory.utils.configuration import load_config
-from armory.utils import external_repo
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
@@ -59,7 +58,6 @@ class Evaluator(object):
         ) = volumes_util.tmp_output_subdir()
 
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
-        self.external_repo_dir = paths.get_external(self.tmp_dir)
 
         kwargs = dict(runtime="runc")
         image_name = self.config["sysconfig"].get("docker_image")
@@ -73,16 +71,16 @@ class Evaluator(object):
                 Path(os.path.join(self.docker_paths.tmp_dir, container_config_name))
             )
 
-            if self.config["sysconfig"].get("external_github_repo", None):
-                self._download_external()
-                current_pythonpath = os.getenv("PYTHONPATH")
-                if current_pythonpath:
-                    new_pythonpath = (
-                        current_pythonpath + os.pathsep + self.external_repo_dir
-                    )
-                else:
-                    new_pythonpath = self.external_repo_dir
-                self.extra_env_vars.update({"PYTHONPATH": new_pythonpath})
+            # if self.config["sysconfig"].get("external_github_repo", None):
+            #     self._download_external()
+            #     current_pythonpath = os.getenv("PYTHONPATH")
+            #     if current_pythonpath:
+            #         new_pythonpath = (
+            #             current_pythonpath + os.pathsep + self.external_repo_dir
+            #         )
+            #     else:
+            #         new_pythonpath = self.external_repo_dir
+            #     self.extra_env_vars.update({"PYTHONPATH": new_pythonpath})
 
             self.manager = HostManagementInstance()
             return
@@ -133,23 +131,6 @@ class Evaluator(object):
             raise
 
         self.manager = ManagementInstance(**kwargs)
-
-    def _download_external(self):
-        external_repo.download_and_extract_repo(
-            self.config["sysconfig"]["external_github_repo"],
-            external_repo_dir=self.external_repo_dir,
-        )
-
-    def _download_private(self):
-        external_repo.download_and_extract_repo(
-            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
-        )
-        self.extra_env_vars.update(
-            {
-                "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
-                "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
-            }
-        )
 
     def _copy_config_file(self):
         with open(self.tmp_config, "w") as f:
