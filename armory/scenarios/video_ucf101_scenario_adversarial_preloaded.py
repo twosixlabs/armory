@@ -102,6 +102,7 @@ class Ucf101(Scenario):
                 # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x), axis=0)
                 metrics_logger.update_task(y, y_pred)
+            break
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples

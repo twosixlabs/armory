@@ -144,7 +144,7 @@ _LABELS = [
 ]
 
 _URL = "https://www.crcv.ucf.edu/data/UCF101.php"
-_DL_URL = "/armory/datasets/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz"  # TODO: Update to S3 bucket
+_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/ucf101-adv/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz"
 
 
 class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedBuilder):

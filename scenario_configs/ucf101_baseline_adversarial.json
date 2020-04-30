@@ -55,6 +55,6 @@
         "docker_image": "twosixarmory/pytorch:0.7.0-dev",
         "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
