@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import time
+import sys
 
 import coloredlogs
 
@@ -51,6 +52,8 @@ class Scenario(abc.ABC):
                 config["sysconfig"]["external_github_repo"],
                 external_repo_dir=external_repo_dir,
             )
+
+            sys.path.insert(0, external_repo_dir)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
