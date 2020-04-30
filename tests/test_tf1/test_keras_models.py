@@ -109,7 +109,7 @@ def test_keras_imagenet():
     classifier = classifier_fn(
         model_kwargs={},
         wrapper_kwargs={},
-        weights_file="resnet50_weights_tf_dim_ordering_tf_kernels.h5",
+        weights_file="resnet50_imagenet_v1.h5",
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
@@ -153,7 +153,7 @@ def test_keras_imagenet_transfer():
     classifier = classifier_fn(
         model_kwargs={},
         wrapper_kwargs={},
-        weights_file="inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5",
+        weights_file="inceptionresnetv2_imagenet_v1.h5",
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
