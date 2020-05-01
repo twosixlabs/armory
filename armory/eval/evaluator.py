@@ -46,15 +46,16 @@ class Evaluator(object):
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
-        # Retrieve environment variables that should be used in evaluation
-        self.extra_env_vars = dict()
-        self._gather_env_variables()
-
         (
             self.container_subdir,
             self.tmp_dir,
             self.output_dir,
         ) = volumes_util.tmp_output_subdir()
+        self.host_paths = paths.host()
+
+        # Retrieve environment variables that should be used in evaluation
+        self.extra_env_vars = dict()
+        self._gather_env_variables()
 
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
 
@@ -71,7 +72,6 @@ class Evaluator(object):
             self.manager = HostManagementInstance()
             return
 
-        self.host_paths = paths.host()
         self.docker_paths = paths.docker()
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
