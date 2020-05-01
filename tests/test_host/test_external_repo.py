@@ -23,36 +23,36 @@ def set_github_token():
 
 def test_download():
     set_github_token()
-    tmp_subdir = pathlib.Path(paths.host().tmp_dir, "test-external-repo-subdir")
-    external_repo_dir = pathlib.Path(paths.get_external(tmp_subdir))
+    test_external_repo_dir = pathlib.Path(
+        paths.host().tmp_dir, "test-external-repo-subdir"
+    )
     repo = "twosixlabs/armory-example"
     repo_name = repo.split("/")[-1]
 
-    download_and_extract_repo(repo, external_repo_dir=external_repo_dir)
-    basedir = external_repo_dir / repo_name
+    download_and_extract_repo(repo, external_repo_dir=test_external_repo_dir)
+    basedir = test_external_repo_dir / repo_name
 
     assert os.path.exists(basedir)
     assert os.path.isfile(basedir / "README.md")
     shutil.rmtree(basedir)
-    os.remove(external_repo_dir / (repo_name + ".tar.gz"))
-    os.rmdir(external_repo_dir)
-    os.rmdir(tmp_subdir)
+    os.remove(test_external_repo_dir / (repo_name + ".tar.gz"))
+    os.rmdir(test_external_repo_dir)
 
 
 def test_download_branch():
     set_github_token()
-    tmp_subdir = pathlib.Path(paths.host().tmp_dir, "test-external-repo-subdir")
-    external_repo_dir = pathlib.Path(paths.get_external(tmp_subdir))
-    repo = "twosixlabs/armory-example@armory-0.6"
+    test_external_repo_dir = pathlib.Path(
+        paths.host().tmp_dir, "test-external-repo-subdir"
+    )
+    repo = "twosixlabs/armory-example@master"
     org_repo_name = repo.split("@")[0]
     repo_name = org_repo_name.split("/")[-1]
 
-    download_and_extract_repo(repo, external_repo_dir=external_repo_dir)
-    basedir = external_repo_dir / repo_name
+    download_and_extract_repo(repo, external_repo_dir=test_external_repo_dir)
+    basedir = test_external_repo_dir / repo_name
 
     assert os.path.exists(basedir)
     assert os.path.isfile(basedir / "README.md")
     shutil.rmtree(basedir)
-    os.remove(external_repo_dir / (repo_name + ".tar.gz"))
-    os.rmdir(external_repo_dir)
-    os.rmdir(tmp_subdir)
+    os.remove(test_external_repo_dir / (repo_name + ".tar.gz"))
+    os.rmdir(test_external_repo_dir)

@@ -18,7 +18,6 @@ from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.docker import volumes_util
 from armory.utils.configuration import load_config
-from armory.utils import external_repo
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
@@ -33,12 +32,6 @@ class Evaluator(object):
         container_config_name="eval-config.json",
         no_docker: bool = False,
     ):
-        if os.name != "nt":
-            self.user_id, self.group_id = os.getuid(), os.getgid()
-        else:
-            self.user_id, self.group_id = 0, 0
-
-        self.extra_env_vars = dict()
         if isinstance(config_path, str):
             try:
                 self.config = load_config(config_path)
@@ -52,14 +45,19 @@ class Evaluator(object):
             self.config = config_path
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
+
         (
             self.container_subdir,
             self.tmp_dir,
             self.output_dir,
         ) = volumes_util.tmp_output_subdir()
+        self.host_paths = paths.host()
+
+        # Retrieve environment variables that should be used in evaluation
+        self.extra_env_vars = dict()
+        self._gather_env_variables()
 
         self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
-        self.external_repo_dir = paths.get_external(self.tmp_dir)
 
         kwargs = dict(runtime="runc")
         image_name = self.config["sysconfig"].get("docker_image")
@@ -68,58 +66,16 @@ class Evaluator(object):
 
         if self.no_docker:
             self.docker_paths = paths.host()
-
             self.docker_config_path = str(
                 Path(os.path.join(self.docker_paths.tmp_dir, container_config_name))
             )
-
-            if self.config["sysconfig"].get("external_github_repo", None):
-                self._download_external()
-                current_pythonpath = os.getenv("PYTHONPATH")
-                if current_pythonpath:
-                    new_pythonpath = (
-                        current_pythonpath + os.pathsep + self.external_repo_dir
-                    )
-                else:
-                    new_pythonpath = self.external_repo_dir
-                self.extra_env_vars.update({"PYTHONPATH": new_pythonpath})
-
             self.manager = HostManagementInstance()
             return
 
-        self.host_paths = paths.host()
         self.docker_paths = paths.docker()
-
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
-
-        if not self.host_paths.verify_ssl:
-            self.extra_env_vars["VERIFY_SSL"] = "false"
-
-        if self.config["sysconfig"].get("use_gpu", None):
-            kwargs["runtime"] = "nvidia"
-            gpus = self.config["sysconfig"].get("gpus")
-            if gpus is not None:
-                self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
-
-        if self.config["sysconfig"].get("external_github_repo", None):
-            self._download_external()
-
-            # Add external repo to PYTHONPATH inside container.
-            # Gather any armory env vars if available
-            self.extra_env_vars.update(
-                {
-                    "PYTHONPATH": self.docker_paths.external_repo_dir,
-                    "ARMORY_PRIVATE_S3_ID": os.getenv(
-                        "ARMORY_PRIVATE_S3_ID", default=""
-                    ),
-                    "ARMORY_PRIVATE_S3_KEY": os.getenv(
-                        "ARMORY_PRIVATE_S3_KEY", default=""
-                    ),
-                    "ARMORY_GITHUB_TOKEN": os.getenv("ARMORY_GITHUB_TOKEN", default=""),
-                }
-            )
 
         # Download docker image on host
         docker_client = docker.from_env()
@@ -134,37 +90,36 @@ class Evaluator(object):
 
         self.manager = ManagementInstance(**kwargs)
 
-    def _download_external(self):
-        external_repo.download_and_extract_repo(
-            self.config["sysconfig"]["external_github_repo"],
-            external_repo_dir=self.external_repo_dir,
-        )
-
-    def _download_private(self):
-        external_repo.download_and_extract_repo(
-            "twosixlabs/armory-private", external_repo_dir=self.external_repo_dir
-        )
-        self.extra_env_vars.update(
-            {
-                "ARMORY_PRIVATE_S3_ID": os.getenv("ARMORY_PRIVATE_S3_ID"),
-                "ARMORY_PRIVATE_S3_KEY": os.getenv("ARMORY_PRIVATE_S3_KEY"),
-            }
-        )
-
     def _copy_config_file(self):
+        """
+        Copy configuration file into container for interactive usage
+        """
         with open(self.tmp_config, "w") as f:
             f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
-    def _delete_tmp(self):
-        if os.path.exists(self.external_repo_dir):
-            try:
-                shutil.rmtree(self.external_repo_dir)
-            except OSError as e:
-                if not isinstance(e, FileNotFoundError):
-                    logger.exception(
-                        f"Error removing external repo {self.external_repo_dir}"
-                    )
+    def _gather_env_variables(self):
+        """
+        Update the extra env variable dictionary to pass into container or run on host
+        """
+        self.extra_env_vars["ARMORY_GITHUB_TOKEN"] = os.getenv(
+            "ARMORY_GITHUB_TOKEN", default=""
+        )
+        self.extra_env_vars["ARMORY_PRIVATE_S3_ID"] = os.getenv(
+            "ARMORY_PRIVATE_S3_ID", default=""
+        )
+        self.extra_env_vars["ARMORY_PRIVATE_S3_KEY"] = os.getenv(
+            "ARMORY_PRIVATE_S3_KEY", default=""
+        )
 
+        if not self.host_paths.verify_ssl:
+            self.extra_env_vars["VERIFY_SSL"] = "false"
+
+        if self.config["sysconfig"].get("use_gpu", None):
+            gpus = self.config["sysconfig"].get("gpus")
+            if gpus is not None:
+                self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+
+    def _delete_tmp(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
             shutil.rmtree(self.tmp_dir)
@@ -256,6 +211,8 @@ class Evaluator(object):
         runner.exec_cmd(command)
 
     def _run_interactive_bash(self, runner) -> None:
+        user_id = os.getuid() if os.name != "nt" else 0
+        group_id = os.getgid() if os.name != "nt" else 0
         lines = [
             "Container ready for interactive use.",
             bold(
@@ -263,7 +220,7 @@ class Evaluator(object):
             ),
             bold(
                 red(
-                    f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
+                    f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
                 )
             ),
         ]
@@ -285,13 +242,15 @@ class Evaluator(object):
             time.sleep(1)
 
     def _run_jupyter(self, runner, host_port=8888) -> None:
+        user_id = os.getuid() if os.name != "nt" else 0
+        group_id = os.getgid() if os.name != "nt" else 0
         lines = [
             "About to launch jupyter.",
             bold("*** To connect to jupyter, please open the following in a browser:"),
             bold(red(f"    http://127.0.0.1:{host_port}")),
             bold("*** To connect on the command line as well, in a new terminal, run:"),
             bold(
-                f"    docker exec -it -u {self.user_id}:{self.group_id} {runner.docker_container.short_id} bash"
+                f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",
