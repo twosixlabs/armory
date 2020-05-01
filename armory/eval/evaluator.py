@@ -45,6 +45,11 @@ class Evaluator(object):
             self.config = config_path
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
+
+        # Retrieve environment variables that should be used in evaluation
+        self.extra_env_vars = dict()
+        self._gather_env_variables()
+
         (
             self.container_subdir,
             self.tmp_dir,
@@ -71,10 +76,6 @@ class Evaluator(object):
         self.docker_config_path = Path(
             os.path.join(self.docker_paths.tmp_dir, container_config_name)
         ).as_posix()
-
-        # Retrieve environment variables that should be passed into container
-        self.extra_env_vars = dict()
-        self._gather_env_variables()
 
         # Download docker image on host
         docker_client = docker.from_env()
