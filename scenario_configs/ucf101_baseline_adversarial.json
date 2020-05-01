@@ -5,17 +5,15 @@
         "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.0
+            "attack_type": "adversarial_perturbation",
+            "batch_size": 1,
+            "description": "'attack_type' can be 'adversarial_perturbation' or 'adversarial_patch'",
+            "module": "armory.data.datasets",
+            "name": "ucf101_adversarial_112x112"
         },
         "module": "none",
         "name": "none",
-        "preloaded": {
-            "attack_type": "adversarial_perturbation",
-            "batch_size": 1,
-            "description": "'attack_type' can be {'adversarial_perturbation', 'adversarial_patch'}",
-            "module": "armory.data.datasets",
-            "name": "ucf101_adversarial_112x112"
-        }
+        "type": "preloaded"
     },
     "dataset": {
         "batch_size": 16,
