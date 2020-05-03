@@ -46,6 +46,15 @@ class Scenario(abc.ABC):
         """
         Performs scenario setup on the evaluating system.
         """
+
+        # TODO: Make temp
+        # TODO: Save config in temp
+        # with open(self.tmp_config, "w") as f:
+        #     f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
+
+        # TODO: Make output dir
+        # logger.warning(f"Outputs will be written to {self.output_dir}")
+
         if config["sysconfig"].get("external_github_repo", None):
             external_repo_dir = paths.docker().external_repo_dir
             external_repo.download_and_extract_repo(
@@ -54,6 +63,9 @@ class Scenario(abc.ABC):
             )
 
             sys.path.insert(0, external_repo_dir)
+
+    def teardown(self):
+        pass
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:

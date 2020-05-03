@@ -5,7 +5,6 @@ Evaluators control launching of ARMORY evaluations.
 import os
 import json
 import logging
-import shutil
 import time
 from pathlib import Path
 from typing import Union
@@ -16,7 +15,6 @@ from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
-from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
@@ -46,18 +44,18 @@ class Evaluator(object):
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
-        (
-            self.container_subdir,
-            self.tmp_dir,
-            self.output_dir,
-        ) = volumes_util.tmp_output_subdir()
+        # (
+        #     self.container_subdir,
+        #     self.tmp_dir,
+        #     self.output_dir,
+        # ) = volumes_util.tmp_output_subdir()
         self.host_paths = paths.host()
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
-        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
+        # self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
 
         kwargs = dict(runtime="runc")
         image_name = self.config["sysconfig"].get("docker_image")
@@ -90,13 +88,6 @@ class Evaluator(object):
 
         self.manager = ManagementInstance(**kwargs)
 
-    def _copy_config_file(self):
-        """
-        Copy configuration file into container for interactive usage
-        """
-        with open(self.tmp_config, "w") as f:
-            f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
-
     def _gather_env_variables(self):
         """
         Update the extra env variable dictionary to pass into container or run on host
@@ -119,49 +110,44 @@ class Evaluator(object):
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
-    def _delete_tmp(self):
-        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
-        try:
-            shutil.rmtree(self.tmp_dir)
-        except OSError as e:
-            if not isinstance(e, FileNotFoundError):
-                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
-
-        logger.info(f"Removing output_dir {self.output_dir} if empty")
-        try:
-            os.rmdir(self.output_dir)
-        except OSError:
-            pass
+    # def _delete_tmp(self):
+    #     logger.info(f"Deleting tmp_dir {self.tmp_dir}")
+    #     try:
+    #         shutil.rmtree(self.tmp_dir)
+    #     except OSError as e:
+    #         if not isinstance(e, FileNotFoundError):
+    #             logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
+    #
+    #     logger.info(f"Removing output_dir {self.output_dir} if empty")
+    #     try:
+    #         os.rmdir(self.output_dir)
+    #     except OSError:
+    #         pass
 
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
     ) -> None:
-        self._copy_config_file()
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
-            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 self._run_config(runner)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
                 logger.warning("Cleaning up...")
-            self._delete_tmp()
             return
 
         container_port = 8888
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars,
-                ports=ports,
-                container_subdir=self.container_subdir,
+                envs=self.extra_env_vars, ports=ports
             )
-            logger.warning(f"Outputs will be written to {self.output_dir}")
+            # logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 if jupyter:
                     self._run_jupyter(runner, host_port=host_port)
@@ -193,7 +179,7 @@ class Evaluator(object):
                 )
             else:
                 logger.error("Is Docker Daemon running?")
-        self._delete_tmp()
+        # self._delete_tmp()
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
