@@ -6,7 +6,6 @@ import os
 import json
 import logging
 import time
-from pathlib import Path
 from typing import Union
 
 import docker
@@ -25,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self,
-        config_path: Union[str, dict],
-        no_docker: bool = False,
+        self, config_path: Union[str, dict], no_docker: bool = False,
     ):
         if isinstance(config_path, str):
             try:
@@ -158,8 +155,12 @@ class Evaluator(object):
             self._delete_tmp_config()
 
     def _escape_config_string(self):
-        escaped_config = str(self.config).replace(" ", "").replace("\'", "\\\"")
-        return escaped_config.replace("None", "null").replace("True", "true").replace("False", "false")
+        escaped_config = str(self.config).replace(" ", "").replace("'", '\\"')
+        return (
+            escaped_config.replace("None", "null")
+            .replace("True", "true")
+            .replace("False", "false")
+        )
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
@@ -169,7 +170,9 @@ class Evaluator(object):
         else:
             docker_option = ""
         escaped_config = self._escape_config_string()
-        runner.exec_cmd(f"python -m armory.scenarios.base {escaped_config}{docker_option}")
+        runner.exec_cmd(
+            f"python -m armory.scenarios.base {escaped_config}{docker_option}"
+        )
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
@@ -190,8 +193,12 @@ class Evaluator(object):
             ),
         ]
         if self.config.get("scenario"):
-            self.tmp_config = os.path.join(paths.host().tmp_dir, "interactive-config.json")
-            docker_config_path = os.path.join(paths.docker().tmp_dir, "interactive-config.json")
+            self.tmp_config = os.path.join(
+                paths.host().tmp_dir, "interactive-config.json"
+            )
+            docker_config_path = os.path.join(
+                paths.docker().tmp_dir, "interactive-config.json"
+            )
             with open(self.tmp_config, "w") as f:
                 f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
