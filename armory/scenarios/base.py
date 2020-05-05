@@ -49,13 +49,13 @@ class Scenario(abc.ABC):
         Performs scenario setup on the evaluating system.
         """
 
+        runtime_paths = paths.runtime_paths()
+
         self.scenario_output_dir = os.path.join(
-            paths.runtime_paths().output_dir, config["eval_id"]
+            runtime_paths.output_dir, config["eval_id"]
         )
 
-        self.scenario_tmp_dir = os.path.join(
-            paths.runtime_paths().tmp_dir, config["eval_id"]
-        )
+        self.scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
         os.makedirs(self.scenario_output_dir, exist_ok=True)
         os.makedirs(self.scenario_tmp_dir, exist_ok=True)
         logger.warning(f"Outputs will be written to {self.scenario_output_dir}")
