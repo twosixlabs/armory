@@ -183,9 +183,9 @@ class Evaluator(object):
             docker_option = " --no-docker"
         else:
             docker_option = ""
-        escaped_config = self._b64_encode_config()
+        b64_config = self._b64_encode_config()
         runner.exec_cmd(
-            f"python -m armory.scenarios.base {escaped_config}{docker_option}"
+            f"python -m armory.scenarios.base {b64_config}{docker_option}"
         )
 
     def _run_command(self, runner, command) -> None:
