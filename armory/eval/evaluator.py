@@ -1,13 +1,13 @@
 """
 Evaluators control launching of ARMORY evaluations.
 """
-
+import base64
 import os
 import json
 import logging
 import shutil
 import time
-from pathlib import Path
+import uuid
 from typing import Union
 
 import docker
@@ -16,7 +16,6 @@ from docker.errors import ImageNotFound
 
 from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
-from armory.docker import volumes_util
 from armory.utils.configuration import load_config
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
@@ -27,10 +26,7 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self,
-        config_path: Union[str, dict],
-        container_config_name="eval-config.json",
-        no_docker: bool = False,
+        self, config_path: Union[str, dict], no_docker: bool = False,
     ):
         if isinstance(config_path, str):
             try:
@@ -46,18 +42,16 @@ class Evaluator(object):
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
-        (
-            self.container_subdir,
-            self.tmp_dir,
-            self.output_dir,
-        ) = volumes_util.tmp_output_subdir()
         self.host_paths = paths.host()
+
+        eval_id = str(uuid.uuid4())
+        self.config["eval_id"] = eval_id
+        self.output_dir = os.path.join(paths.host().output_dir, eval_id)
+        self.tmp_dir = os.path.join(paths.host().tmp_dir, eval_id)
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
         self._gather_env_variables()
-
-        self.tmp_config = os.path.join(self.tmp_dir, container_config_name)
 
         kwargs = dict(runtime="runc")
         image_name = self.config["sysconfig"].get("docker_image")
@@ -66,16 +60,10 @@ class Evaluator(object):
 
         if self.no_docker:
             self.docker_paths = paths.host()
-            self.docker_config_path = str(
-                Path(os.path.join(self.docker_paths.tmp_dir, container_config_name))
-            )
             self.manager = HostManagementInstance()
             return
 
         self.docker_paths = paths.docker()
-        self.docker_config_path = Path(
-            os.path.join(self.docker_paths.tmp_dir, container_config_name)
-        ).as_posix()
 
         # Download docker image on host
         docker_client = docker.from_env()
@@ -89,13 +77,6 @@ class Evaluator(object):
             raise
 
         self.manager = ManagementInstance(**kwargs)
-
-    def _copy_config_file(self):
-        """
-        Copy configuration file into container for interactive usage
-        """
-        with open(self.tmp_config, "w") as f:
-            f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
 
     def _gather_env_variables(self):
         """
@@ -119,7 +100,7 @@ class Evaluator(object):
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
-    def _delete_tmp(self):
+    def _cleanup(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
             shutil.rmtree(self.tmp_dir)
@@ -136,32 +117,27 @@ class Evaluator(object):
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
     ) -> None:
-        self._copy_config_file()
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
-            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 self._run_config(runner)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
                 logger.warning("Cleaning up...")
-            self._delete_tmp()
+            self._cleanup()
             return
 
         container_port = 8888
         ports = {container_port: host_port} if jupyter else None
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars,
-                ports=ports,
-                container_subdir=self.container_subdir,
+                envs=self.extra_env_vars, ports=ports
             )
-            logger.warning(f"Outputs will be written to {self.output_dir}")
             try:
                 if jupyter:
                     self._run_jupyter(runner, host_port=host_port)
@@ -193,18 +169,22 @@ class Evaluator(object):
                 )
             else:
                 logger.error("Is Docker Daemon running?")
-        self._delete_tmp()
+        self._cleanup()
+
+    def _b64_encode_config(self):
+        bytes_config = json.dumps(self.config).encode("utf-8")
+        base64_bytes = base64.b64encode(bytes_config)
+        return base64_bytes.decode("utf-8")
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
 
         if self.no_docker:
-            config_path = self.tmp_config
             docker_option = " --no-docker"
         else:
-            config_path = self.docker_config_path
             docker_option = ""
-        runner.exec_cmd(f"python -m armory.scenarios.base {config_path}{docker_option}")
+        b64_config = self._b64_encode_config()
+        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{docker_option}")
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
@@ -225,12 +205,23 @@ class Evaluator(object):
             ),
         ]
         if self.config.get("scenario"):
+            tmp_dir = os.path.join(paths.host().tmp_dir, self.config["eval_id"])
+            os.makedirs(tmp_dir)
+            self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
+            docker_config_path = os.path.join(
+                paths.docker().tmp_dir,
+                self.config["eval_id"],
+                "interactive-config.json",
+            )
+            with open(self.tmp_config, "w") as f:
+                f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
+
             lines.extend(
                 [
                     bold("*** To run your scenario in the container:"),
                     bold(
                         red(
-                            f"    python -m armory.scenarios.base {self.docker_config_path}"
+                            f"    python -m armory.scenarios.base {docker_config_path} --load-config-from-file"
                         )
                     ),
                     bold("*** To gracefully shut down container, press: Ctrl-C"),
