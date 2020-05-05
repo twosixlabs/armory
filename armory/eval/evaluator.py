@@ -184,9 +184,7 @@ class Evaluator(object):
         else:
             docker_option = ""
         b64_config = self._b64_encode_config()
-        runner.exec_cmd(
-            f"python -m armory.scenarios.base {b64_config}{docker_option}"
-        )
+        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{docker_option}")
 
     def _run_command(self, runner, command) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
