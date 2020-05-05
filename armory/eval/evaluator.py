@@ -172,9 +172,9 @@ class Evaluator(object):
         self._cleanup()
 
     def _b64_encode_config(self):
-        bytes_config = json.dumps(self.config).encode("ascii")
+        bytes_config = json.dumps(self.config).encode("utf-8")
         base64_bytes = base64.b64encode(bytes_config)
-        return base64_bytes.decode("ascii")
+        return base64_bytes.decode("utf-8")
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))

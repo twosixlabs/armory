@@ -106,9 +106,9 @@ def run_config(config_json, from_file=False):
     if from_file:
         config = load_config(config_json)
     else:
-        config_base64_bytes = config_json.encode("ascii")
+        config_base64_bytes = config_json.encode("utf-8")
         config_b64_bytes = base64.b64decode(config_base64_bytes)
-        config_string = config_b64_bytes.decode("ascii")
+        config_string = config_b64_bytes.decode("utf-8")
         config = json.loads(config_string)
     scenario_config = config.get("scenario")
     if scenario_config is None:
