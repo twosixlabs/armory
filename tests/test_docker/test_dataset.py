@@ -10,7 +10,7 @@ import numpy as np
 from armory.data import datasets
 from armory import paths
 
-DATASET_DIR = paths.docker().dataset_dir
+DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
 def test_mnist():

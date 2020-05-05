@@ -50,10 +50,12 @@ class Scenario(abc.ABC):
         """
 
         self.scenario_output_dir = os.path.join(
-            paths.docker().output_dir, config["eval_id"]
+            paths.runtime_paths().output_dir, config["eval_id"]
         )
 
-        self.scenario_tmp_dir = os.path.join(paths.docker().tmp_dir, config["eval_id"])
+        self.scenario_tmp_dir = os.path.join(
+            paths.runtime_paths().tmp_dir, config["eval_id"]
+        )
         os.makedirs(self.scenario_output_dir, exist_ok=True)
         os.makedirs(self.scenario_tmp_dir, exist_ok=True)
         logger.warning(f"Outputs will be written to {self.scenario_output_dir}")
@@ -149,5 +151,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
-    paths.no_docker = args.no_docker
+    paths.NO_DOCKER = args.no_docker
     run_config(args.config, args.from_file)
