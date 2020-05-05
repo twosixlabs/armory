@@ -13,13 +13,13 @@ The particular scenario and configs will be picked up in the "scenario" field:
 """
 
 import abc
+import base64
 import argparse
 import json
 import logging
 import os
 import time
 import sys
-import uuid
 
 import coloredlogs
 
@@ -43,33 +43,29 @@ class Scenario(abc.ABC):
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         self.save(config, results)
-        self.teardown()
 
     def setup(self, config: dict):
         """
         Performs scenario setup on the evaluating system.
         """
 
-        id = uuid.uuid4()
-        self.scenario_output_dir = os.path.join(paths.docker().output_dir, str(id))
-        os.mkdir(self.scenario_output_dir)
+        self.scenario_output_dir = os.path.join(
+            paths.docker().output_dir, config["eval_id"]
+        )
+
+        self.scenario_tmp_dir = os.path.join(paths.docker().tmp_dir, config["eval_id"])
+        os.makedirs(self.scenario_output_dir, exist_ok=True)
+        os.makedirs(self.scenario_tmp_dir, exist_ok=True)
         logger.warning(f"Outputs will be written to {self.scenario_output_dir}")
 
         if config["sysconfig"].get("external_github_repo", None):
-            external_repo_dir = paths.docker().external_repo_dir
+            external_repo_dir = os.path.join(self.scenario_tmp_dir, "external")
             external_repo.download_and_extract_repo(
                 config["sysconfig"]["external_github_repo"],
                 external_repo_dir=external_repo_dir,
             )
 
             sys.path.insert(0, external_repo_dir)
-
-    def teardown(self):
-        logger.info(f"Removing output_dir {self.scenario_output_dir} if empty")
-        try:
-            os.rmdir(self.scenario_output_dir)
-        except OSError:
-            pass
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -110,7 +106,10 @@ def run_config(config_json, from_file=False):
     if from_file:
         config = load_config(config_json)
     else:
-        config = json.loads(config_json)
+        config_base64_bytes = config_json.encode("ascii")
+        config_b64_bytes = base64.b64decode(config_base64_bytes)
+        config_string = config_b64_bytes.decode("ascii")
+        config = json.loads(config_string)
     scenario_config = config.get("scenario")
     if scenario_config is None:
         raise KeyError('"scenario" missing from evaluation config')

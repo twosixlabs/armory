@@ -1,11 +1,13 @@
 """
 Evaluators control launching of ARMORY evaluations.
 """
-
+import base64
 import os
 import json
 import logging
+import shutil
 import time
+import uuid
 from typing import Union
 
 import docker
@@ -41,6 +43,11 @@ class Evaluator(object):
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
         self.host_paths = paths.host()
+
+        eval_id = str(uuid.uuid4())
+        self.config["eval_id"] = eval_id
+        self.output_dir = os.path.join(paths.host().output_dir, eval_id)
+        self.tmp_dir = os.path.join(paths.host().tmp_dir, eval_id)
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
@@ -93,9 +100,19 @@ class Evaluator(object):
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
-    def _delete_tmp_config(self):
-        if os.path.exists(self.tmp_config):
-            os.remove(self.tmp_config)
+    def _cleanup(self):
+        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
+        try:
+            shutil.rmtree(self.tmp_dir)
+        except OSError as e:
+            if not isinstance(e, FileNotFoundError):
+                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
+
+        logger.info(f"Removing output_dir {self.output_dir} if empty")
+        try:
+            os.rmdir(self.output_dir)
+        except OSError:
+            pass
 
     def run(
         self, interactive=False, jupyter=False, host_port=8888, command=None
@@ -112,6 +129,7 @@ class Evaluator(object):
                 logger.warning("Keyboard interrupt caught")
             finally:
                 logger.warning("Cleaning up...")
+            self._cleanup()
             return
 
         container_port = 8888
@@ -151,16 +169,12 @@ class Evaluator(object):
                 )
             else:
                 logger.error("Is Docker Daemon running?")
-        if interactive:
-            self._delete_tmp_config()
+        self._cleanup()
 
-    def _escape_config_string(self):
-        escaped_config = str(self.config).replace(" ", "").replace("'", '\\"')
-        return (
-            escaped_config.replace("None", "null")
-            .replace("True", "true")
-            .replace("False", "false")
-        )
+    def _b64_encode_config(self):
+        bytes_config = json.dumps(self.config).encode("ascii")
+        base64_bytes = base64.b64encode(bytes_config)
+        return base64_bytes.decode("ascii")
 
     def _run_config(self, runner) -> None:
         logger.info(bold(red("Running evaluation script")))
@@ -169,7 +183,7 @@ class Evaluator(object):
             docker_option = " --no-docker"
         else:
             docker_option = ""
-        escaped_config = self._escape_config_string()
+        escaped_config = self._b64_encode_config()
         runner.exec_cmd(
             f"python -m armory.scenarios.base {escaped_config}{docker_option}"
         )
@@ -193,11 +207,13 @@ class Evaluator(object):
             ),
         ]
         if self.config.get("scenario"):
-            self.tmp_config = os.path.join(
-                paths.host().tmp_dir, "interactive-config.json"
-            )
+            tmp_dir = os.path.join(paths.host().tmp_dir, self.config["eval_id"])
+            os.makedirs(tmp_dir)
+            self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
             docker_config_path = os.path.join(
-                paths.docker().tmp_dir, "interactive-config.json"
+                paths.docker().tmp_dir,
+                self.config["eval_id"],
+                "interactive-config.json",
             )
             with open(self.tmp_config, "w") as f:
                 f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
