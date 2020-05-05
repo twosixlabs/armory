@@ -44,7 +44,12 @@ class Evaluator(object):
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
         self.host_paths = paths.HostPaths()
-        self.armory_global_config = load_global_config(self.host_paths.armory_config)
+        if os.path.exists(self.host_paths.armory_config):
+            self.armory_global_config = load_global_config(
+                self.host_paths.armory_config
+            )
+        else:
+            self.armory_global_config = {"verify_ssl": True}
 
         eval_id = str(uuid.uuid4())
         self.config["eval_id"] = eval_id
