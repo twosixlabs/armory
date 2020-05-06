@@ -9,7 +9,7 @@
             "batch_size": 1,
             "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
         },
-        "module": "armory.data.datasets",
+        "module": "armory.data.adversarial_datasets",
         "name": "ucf101_adversarial_112x112",
         "type": "preloaded"
     },
