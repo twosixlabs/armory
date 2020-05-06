@@ -4,6 +4,7 @@
         "fraction_poisoned": 0.7,
         "np_seed": 123,
         "poison_dataset": true,
+        "poison_filtering_flag": true,
         "source_class": 5,
         "target_class": 42,
         "tf_seed": 123,
