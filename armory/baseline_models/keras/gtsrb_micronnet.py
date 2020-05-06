@@ -4,7 +4,7 @@ MicronNet CNN model for 48x48x3 image classification
 Model contributed by: MITRE Corporation
 """
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Conv2D, Activation
@@ -15,12 +15,23 @@ from art.classifiers import KerasClassifier
 def preprocessing_fn(img):
     img_size = 48
     img_out = []
-    for im in img:
-        im = Image.fromarray(im)
-        im = np.array(im.resize((img_size, img_size)))
-        img_out.append(im)
-    return np.array(img_out, dtype=np.float32)
+    from im in img:
+        img_eq = ImageOps.equalize(im)
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width//2, height//2
 
+        left = center[0] - min_side//2
+        top = center[1] - min_side//2
+        right = center[0] + min_side//2
+        bottom = center[1] + min_side//2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = img_eq.resize([img_size,img_size])
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
 
 def make_model(**kwargs) -> tf.keras.Model:
     """
