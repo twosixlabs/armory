@@ -74,6 +74,18 @@ class ArmoryDataGenerator(DataGenerator):
         if self.variable_length:
             self.current = 0
 
+    @staticmethod
+    def np_1D_object_array(x_list):
+        """
+        Take a list of single-element batches and return as a numpy 1D object array
+
+        Similar to np.stack, but designed to handle variable-length elements
+        """
+        x = np.empty((len(x_list),), dtype=object)
+        for i in range(len(x_list)):
+            x[i] = x_list[i][0]
+        return x
+
     def get_batch(self) -> (np.ndarray, np.ndarray):
         if self.variable_length:
             # build the batch
@@ -87,28 +99,28 @@ class ArmoryDataGenerator(DataGenerator):
                 if self.current == self.samples_per_epoch:
                     self.current = 0
                     break
+
             if isinstance(x_list[0], dict):
-                x_dict = {}
+                # Translate a list of dicts into a dict of arrays
+                x = {}
                 for k in x_list[0].keys():
-                    x_k_list = [x_i[k][0] for x_i in x_list]
-                    x = np.empty((len(x_k_list),), dtype=object)
-                    for i in range(len(x_k_list)):
-                        x[i] = x_k_list[i]
-                    x_dict[k] = x
-                x = x_dict
+                    x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
+            elif isinstance(x_list[0], tuple):
+                # Translate a list of tuples into a tuple of arrays
+                x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
             else:
-                x_list = [x_i[0] for x_i in x_list]
-                x = np.empty((len(x_list),), dtype=object)
-                for i in range(len(x_list)):
-                    x[i] = x_list[i]
-            # only handles variable-length x, currently
+                x = self.np_1D_object_array(x_list)
+            # Does not currently handle variable-length y
             y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
+            # Apply preprocessing to multiple inputs as needed
             if isinstance(x, dict):
                 x = {k: self.preprocessing_fn(v) for (k, v) in x.items()}
+            elif isinstance(x, tuple):
+                x = tuple(self.preprocessing_fn(i) for i in x)
             else:
                 x = self.preprocessing_fn(x)
 

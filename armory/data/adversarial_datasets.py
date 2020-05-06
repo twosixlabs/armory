@@ -47,6 +47,4 @@ def ucf101_adversarial_112x112(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda z: ((z[0][clean_key], z[0][adversarial_key]), z[1]),
-        # x_subset_keys=(clean_key, adversarial_key),
-        # ds = ds.map(lambda z: ({k:v for (k,v) in z[0] if k in x_subset_keys}, z[1]))
     )
