@@ -85,13 +85,15 @@ class Scenario(abc.ABC):
             raise NotImplementedError("saving adversarial examples")
 
         scenario_name = config["scenario"]["name"]
-        filename = f"{scenario_name}_{int(time.time())}.json"
+        timestamp = int(time.time())
+        filename = f"{scenario_name}_{timestamp}.json"
         logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
             output_dict = {
                 "armory_version": armory.__version__,
                 "config": config,
                 "results": results,
+                "timestamp": timestamp,
             }
             f.write(json.dumps(output_dict, sort_keys=True, indent=4) + "\n")
 
