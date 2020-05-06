@@ -13,6 +13,7 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
+    load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
 )
@@ -98,10 +99,12 @@ class Ucf101(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
         for x_batch, y_batch in tqdm(test_data, desc="Benign"):
+            break
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x), axis=0)
+                y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
+            break
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -109,16 +112,15 @@ class Ucf101(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
-        attack = load_attack(attack_config, classifier)
         if attack_type == "preloaded":
-            test_data = attack
-            # test_data = load_dataset(
-            #     config["attack"]["preloaded"],
-            #     epochs=1,
-            #     split_type="adversarial",
-            #     preprocessing_fn=preprocessing_fn,
-            # )
+            test_data = load_adversarial_dataset(
+                attack_config,
+                epochs=1,
+                split_type="adversarial",
+                preprocessing_fn=preprocessing_fn,
+            )
         else:
+            attack = load_attack(attack_config, classifier)
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -136,9 +138,11 @@ class Ucf101(Scenario):
                     #    n_stack varies
                     attack.set_params(batch_size=x.shape[0])
                     x_adv = attack.generate(x=x)
+                break
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x_adv), axis=0)
+                y_pred = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
+            break
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

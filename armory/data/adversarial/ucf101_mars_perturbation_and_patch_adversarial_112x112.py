@@ -30,6 +30,7 @@ _CITATION = """
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 """
+
 _DESCRIPTION = """
 Dataset contains five randomly chosen videos from each class, taken from test split,
 totaling 505 videos. Each video is broken into its component frames.  Therefore,
@@ -144,11 +145,14 @@ _LABELS = [
 ]
 
 _URL = "https://www.crcv.ucf.edu/data/UCF101.php"
-_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/ucf101-adv/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz"
+_DL_URL = (
+    "https://armory-public-data.s3.us-east-2.amazonaws.com"
+    "/ucf101-adv/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz"
+)
 
 
 class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedBuilder):
-    """ Ucf101 action recognition adversarial dataset"""
+    """Ucf101 action recognition adversarial dataset"""
 
     VERSION = tfds.core.Version("1.0.0")
 
@@ -177,8 +181,11 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
         )
 
     def _split_generators(self, dl_manager):
-        """Returns SplitGenerators."""
-        """Adversarial dataset only has TEST split"""
+        """
+        Returns SplitGenerators.
+
+        Adversarial dataset only has TEST split
+        """
         dl_path = dl_manager.download_and_extract(_DL_URL)
         return [
             tfds.core.SplitGenerator(

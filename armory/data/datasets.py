@@ -138,12 +138,14 @@ def _generator_from_tfds(
     shuffle_files=True,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    lambda_map: Callable = None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
     if variable_length=True and batch_size > 1:
         output batches are 1D np.arrays of objects
+    lambda_map - if not None, mapping function to apply to dataset elements
     """
     supported_frameworks = ["tf", "pytorch", "numpy"]
     if framework not in supported_frameworks:
@@ -189,6 +191,8 @@ def _generator_from_tfds(
                 f" not {type(x_key), type(y_key)}"
             )
         ds = ds.map(lambda x: (x[x_key], x[y_key]))
+    if lambda_map is not None:
+        ds = ds.map(lambda_map)
 
     ds = ds.repeat(epochs)
     if shuffle_files:

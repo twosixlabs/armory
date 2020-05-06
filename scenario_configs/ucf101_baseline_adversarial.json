@@ -5,18 +5,16 @@
         "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "attack_type": "adversarial_perturbation",
+            "adversarial_key": "adversarial_perturbation",
             "batch_size": 1,
-            "description": "'attack_type' can be 'adversarial_perturbation' or 'adversarial_patch'",
-            "module": "armory.data.datasets",
-            "name": "ucf101_adversarial_112x112"
+            "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
         },
-        "module": "none",
-        "name": "none",
+        "module": "armory.data.datasets",
+        "name": "ucf101_adversarial_112x112",
         "type": "preloaded"
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 2,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "ucf101"
@@ -46,7 +44,7 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.video_ucf101_scenario_adversarial_preloaded",
+        "module": "armory.scenarios.video_ucf101_scenario",
         "name": "Ucf101"
     },
     "sysconfig": {
