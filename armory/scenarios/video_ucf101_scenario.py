@@ -99,12 +99,10 @@ class Ucf101(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
         for x_batch, y_batch in tqdm(test_data, desc="Benign"):
-            break
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
-            break
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -138,11 +136,9 @@ class Ucf101(Scenario):
                     #    n_stack varies
                     attack.set_params(batch_size=x.shape[0])
                     x_adv = attack.generate(x=x)
-                break
                 # combine predictions across all stacks
                 y_pred = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
-            break
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

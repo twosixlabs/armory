@@ -25,6 +25,8 @@ def ucf101_adversarial_112x112(
     UCF 101 Adversarial Dataset of size (112, 112, 3),
     including clean, adversarial perturbed, and
     adversarial patched
+
+    DataGenerator returns batches of ((x_clean, x_adversarial), y)
     """
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")

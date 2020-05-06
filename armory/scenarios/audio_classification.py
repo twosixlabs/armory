@@ -10,6 +10,7 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
+    load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
 )
@@ -67,7 +68,7 @@ class AudioClassificationTask(Scenario):
 
         # Evaluate the ART classifier on benign test examples
         logger.info(f"Loading test dataset {config['dataset']['name']}...")
-        test_data_generator = load_dataset(
+        test_data = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
@@ -76,23 +77,36 @@ class AudioClassificationTask(Scenario):
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        for x, y in tqdm(test_data_generator, desc="Benign"):
+        for x, y in tqdm(test_data, desc="Benign"):
             y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
-        logger.info("Generating / testing adversarial examples...")
+        logger.info("Generating or loading / testing adversarial examples...")
 
-        attack = load_attack(config["attack"], classifier)
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-        for x, y in tqdm(test_data_generator, desc="Attack"):
-            x_adv = attack.generate(x=x)
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+        if attack_type == "preloaded":
+            test_data = load_adversarial_dataset(
+                attack_config,
+                epochs=1,
+                split_type="adversarial",
+                preprocessing_fn=preprocessing_fn,
+            )
+        else:
+            attack = load_attack(attack_config, classifier)
+            test_data = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+            )
+        for x, y in tqdm(test_data, desc="Attack"):
+            if attack_type == "preloaded":
+                x, x_adv = x
+            else:
+                x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
