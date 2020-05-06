@@ -124,6 +124,9 @@ class GTSRB(Scenario):
             x_train_filter = x_train_all[indices_to_keep]
             y_train_filter = y_train_all_categorical[indices_to_keep]
         else:
+            logger.info(
+                "Defense does not require filtering. Model fitting will use all data."
+            )
             x_train_filter = x_train_all
             y_train_filter = y_train_all
         if len(x_train_filter):
