@@ -13,6 +13,13 @@ import os
 from typing import Callable, Union
 
 import numpy as np
+
+# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
+#     all CPU resources when num_workers > 1
+try:
+    import torch  # noqa: F401
+except ImportError:
+    pass
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import apache_beam as beam
