@@ -79,5 +79,5 @@ def ucf101_adversarial_112x112(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda z: ((z[0][clean_key], z[0][adversarial_key]), z[1]),
+        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
