@@ -53,7 +53,10 @@ class Evaluator(object):
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
-        kwargs = dict(runtime="runc")
+        if self.config["sysconfig"].get("use_gpu", None):
+            kwargs = dict(runtime="nvidia")
+        else:
+            kwargs = dict(runtime="runc")
         image_name = self.config["sysconfig"].get("docker_image")
         kwargs["image_name"] = image_name
         self.no_docker = not image_name or no_docker
