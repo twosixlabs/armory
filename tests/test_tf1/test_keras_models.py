@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.data import adversarial_datasets
 from armory import paths
 
 DATASET_DIR = paths.docker().dataset_dir
@@ -111,7 +112,7 @@ def test_keras_imagenet():
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = datasets.imagenet_adversarial(
+    clean_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="clean",
         epochs=1,
         batch_size=100,
@@ -119,7 +120,7 @@ def test_keras_imagenet():
         preprocessing_fn=preprocessing_fn,
     )
 
-    adv_dataset = datasets.imagenet_adversarial(
+    adv_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,
@@ -155,7 +156,7 @@ def test_keras_imagenet_transfer():
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = datasets.imagenet_adversarial(
+    clean_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="clean",
         epochs=1,
         batch_size=100,
@@ -163,7 +164,7 @@ def test_keras_imagenet_transfer():
         preprocessing_fn=preprocessing_fn,
     )
 
-    adv_dataset = datasets.imagenet_adversarial(
+    adv_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,

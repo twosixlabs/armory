@@ -26,7 +26,6 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
-from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -164,7 +163,8 @@ def _generator_from_tfds(
 
     if framework == "pytorch":
         raise NotImplementedError(
-            "PyTorch native dataloaders are not yet supported. See issue https://github.com/twosixlabs/armory/issues/455"
+            "PyTorch native dataloaders are not yet supported. "
+            "See issue https://github.com/twosixlabs/armory/issues/455"
         )
 
     if not dataset_dir:
@@ -300,38 +300,6 @@ def digit(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-    )
-
-
-def imagenet_adversarial(
-    split_type: str = "clean",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-) -> ArmoryDataGenerator:
-    """
-    ILSVRC12 adversarial image dataset for ResNet50
-
-    ProjectedGradientDescent
-        Iterations = 10
-        Max perturbation epsilon = 8
-        Attack step size = 2
-        Targeted = True
-    """
-
-    return _generator_from_tfds(
-        "imagenet_adversarial:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
     )
@@ -491,36 +459,6 @@ def ucf101(
     )
 
 
-def ucf101_adversarial_112x112(
-    split_type: str = "adversarial",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
-    cache_dataset: bool = False,
-    framework: str = "numpy",
-) -> ArmoryDataGenerator:
-    """
-    UCF 101 Adversarial Dataset of size (112, 112, 3),
-    including clean, adversarial perturbed, and
-    adversarial patched
-    """
-
-    return _generator_from_tfds(
-        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        as_supervised=False,
-        supervised_xy_keys=("videos", "label"),
-        variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-    )
-
-
 def _cache_dataset(dataset_dir: str, dataset_name: str):
     name, subpath = _parse_dataset_name(dataset_name)
 
@@ -554,7 +492,6 @@ SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
-    "imagenet_adversarial": imagenet_adversarial,
     "imagenette": imagenette,
     "german_traffic_sign": german_traffic_sign,
     "ucf101": ucf101,

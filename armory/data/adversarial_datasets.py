@@ -5,9 +5,42 @@ Adversarial datasets
 from typing import Callable
 
 from armory.data import datasets
+from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.adversarial import (  # noqa: F401
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
 )
+
+
+def imagenet_adversarial(
+    split_type: str = "clean",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+) -> datasets.ArmoryDataGenerator:
+    """
+    ILSVRC12 adversarial image dataset for ResNet50
+
+    ProjectedGradientDescent
+        Iterations = 10
+        Max perturbation epsilon = 8
+        Attack step size = 2
+        Targeted = True
+    """
+
+    return datasets._generator_from_tfds(
+        "imagenet_adversarial:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        shuffle_files=False,
+        cache_dataset=cache_dataset,
+        framework=framework,
+    )
 
 
 def ucf101_adversarial_112x112(
@@ -43,7 +76,7 @@ def ucf101_adversarial_112x112(
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("videos", "label"),
-        variable_length=False,
+        variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda z: ((z[0][clean_key], z[0][adversarial_key]), z[1]),
