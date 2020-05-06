@@ -4,19 +4,73 @@ TensorFlow Dataset for adversarial librispeech
 
 import tensorflow.compat.v2 as tf
 import tensorflow_datasets.public_api as tfds
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 _DESCRIPTION = """\
 LibriSpeech-dev-clean adversarial audio dataset for SincNet
 
-TODO: <Attack hyper-parameters here>
+UniversalPerturbation
+    Max iterations = 100
+    Epsilon = 0.3
+    Attacker = Projected Gradient Descent
+
+Projected Gradient Descent
+    Max iterations = 100
+    Epsilon = 0.3
+    Attack step size = 0.1
+    Targeted = false
 """
+
+_LABELS = [
+    "84",
+    "174",
+    "251",
+    "422",
+    "652",
+    "777",
+    "1272",
+    "1462",
+    "1673",
+    "1919",
+    "1988",
+    "1993",
+    "2035",
+    "2078",
+    "2086",
+    "2277",
+    "2412",
+    "2428",
+    "2803",
+    "2902",
+    "3000",
+    "3081",
+    "3170",
+    "3536",
+    "3576",
+    "3752",
+    "3853",
+    "5338",
+    "5536",
+    "5694",
+    "5895",
+    "6241",
+    "6295",
+    "6313",
+    "6319",
+    "6345",
+    "7850",
+    "7976",
+    "8297",
+    "8842",
+]
 
 _URL = "/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
 
 
 class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
-    """LibriSpeech_SincNet_UniversalPerturbation.tfrecords"""
-
     VERSION = tfds.core.Version("1.0.0")
 
     def _info(self):
@@ -25,44 +79,59 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=tfds.features.FeaturesDict(
                 {
-                    # TODO might need to specify shape?
-                    "sound": tfds.features.Tensor(shape=(), dtype=tf.float64),
-                    "label": tfds.features.Tensor(shape=(), dtype=tf.int64),
+                    "audio": {
+                        "clean": tfds.features.Audio(),
+                        "adversarial": tfds.features.Audio(),
+                    },
+                    "label": tfds.features.ClassLabel(names=_LABELS),
                 }
             ),
-            supervised_keys=("sound", "label"),
+            supervised_keys=("audio", "label"),
         )
 
     def _split_generators(self, dl_manager):
-        """Returns SplitGenerators."""
-        path = dl_manager.download_and_extract(_URL)
+        """Returns SplitGenerators"""
+        path = os.path.join(
+            dl_manager.download_and_extract(_URL),
+            "LibriSpeech_SincNet_UniversalPerturbation",
+        )
         splits = [
-            tfds.core.SplitGenerator(name=x, gen_kwargs={"path": path, "split": x})
-            for x in ("adversarial", "clean")
+            tfds.core.SplitGenerator(
+                name="adversarial", gen_kwargs={"data_dir_path": path}
+            )
         ]
         return splits
 
-    def _generate_examples(self, path, split):
+    def _generate_examples(self, data_dir_path):
         """Yields examples."""
-        if split == "adversarial":
-            key = "adv-sound"
-        else:
-            raise ValueError(f"split {split} not in ('adversarial')")
+        split_dirs = ["clean", "adversarial"]
+        labels = tf.io.gfile.listdir(os.path.join(data_dir_path, split_dirs[0]))
+        labels.sort()
+        for label in labels:
+            chapters = tf.io.gfile.listdir(
+                os.path.join(data_dir_path, split_dirs[0], label)
+            )
+            chapters.sort()
 
-        def _parse(serialized_example, key):
-            ds_features = {
-                "label": tf.io.FixedLenFeature([], tf.int64),
-                "adv-sound": tf.io.VarLenFeature(tf.string),
-            }
-            example = tf.io.parse_single_example(serialized_example, ds_features)
+            for chapter in chapters:
+                unfiltered_files = tf.io.gfile.listdir(
+                    os.path.join(data_dir_path, split_dirs[0], label, chapter)
+                )
+                clips = [
+                    filename for filename in unfiltered_files if ".wav" in filename
+                ]
+                clips.sort()
 
-            sound = tf.io.decode_raw(example[key], tf.float64)
-            return sound, example["label"]
-
-        ds = tf.data.TFRecordDataset(filenames=[path])
-        ds = ds.map(lambda x: _parse(x, key))
-        ds = ds.batch(1)
-        default_graph = tf.compat.v1.keras.backend.get_session().graph
-        ds = tfds.as_numpy(ds, graph=default_graph)
-        for i, (sound, label) in enumerate(ds):
-            yield str(i), {"sound": sound[0], "label": label[0]}
+                for clip in clips:
+                    example = {
+                        "audio": {
+                            "clean": os.path.join(
+                                data_dir_path, split_dirs[0], label, chapter, clip
+                            ),
+                            "adversarial": os.path.join(
+                                data_dir_path, split_dirs[1], label, chapter, clip
+                            ),
+                        },
+                        "label": label,
+                    }
+                    yield clip, example

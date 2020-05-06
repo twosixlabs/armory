@@ -94,7 +94,13 @@ class ArmoryDataGenerator(DataGenerator):
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
-            x = self.preprocessing_fn(x)
+            if isinstance(x, dict):
+                x_new = {}
+                for k in x.keys():
+                    x_new[k] = self.preprocessing_fn(x[k])
+                x = x_new
+            else:
+                x = self.preprocessing_fn(x)
 
         return x, y
 
@@ -367,6 +373,7 @@ def librispeech_adversarial(
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
+    framework: str = "numpy",
 ):
     """
     Adversarial dataset based on Librispeech-dev-clean using Unviseral
@@ -377,10 +384,6 @@ def librispeech_adversarial(
     returns:
         Generator
     """
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
 
     return _generator_from_tfds(
         "librispeech_adversarial:1.0.0",
@@ -389,7 +392,6 @@ def librispeech_adversarial(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
         cache_dataset=False,  # used to be cache_dataset
     )
