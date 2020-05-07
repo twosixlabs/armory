@@ -75,7 +75,7 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     dataset_kwargs.update(kwargs)
     if "description" in dataset_kwargs:
         dataset_kwargs.pop("description")
-    dataset = dataset_fn(**dataset_kwargs)
+    dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     return dataset
