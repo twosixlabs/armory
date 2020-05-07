@@ -23,8 +23,8 @@ except ImportError:
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import apache_beam as beam
-
 from art.data_generators import DataGenerator
+
 from armory.data.utils import (
     download_verify_dataset_cache,
     _read_validate_scenario_config,
