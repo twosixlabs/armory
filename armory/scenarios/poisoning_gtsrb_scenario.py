@@ -57,7 +57,6 @@ class GTSRB(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
-        classifier_for_defense, _ = load_model(model_config)
 
         config_adhoc = config.get("adhoc") or {}
         train_epochs = config_adhoc["train_epochs"]
@@ -70,6 +69,9 @@ class GTSRB(Scenario):
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
         )
+
+        if use_poison_filtering_defense:
+            classifier_for_defense, _ = load_model(model_config)
 
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         batch_size = config["dataset"]["batch_size"]
@@ -99,12 +101,12 @@ class GTSRB(Scenario):
         y_train_all = np.concatenate(y_train_all, axis=0)
         y_train_all_categorical = to_categorical(y_train_all)
 
-        defense_config = config["defense"]
-        logger.info(
-            f"Fitting model {model_config['module']}.{model_config['name']} "
-            f"for defense {defense_config['name']}..."
-        )
         if use_poison_filtering_defense:
+            defense_config = config["defense"]
+            logger.info(
+                f"Fitting model {model_config['module']}.{model_config['name']} "
+                f"for defense {defense_config['name']}..."
+            )
             classifier_for_defense.fit(
                 x_train_all,
                 y_train_all_categorical,
@@ -112,8 +114,6 @@ class GTSRB(Scenario):
                 nb_epochs=train_epochs,
                 verbose=False,
             )
-
-        if use_poison_filtering_defense:
             defense_fn = load_fn(defense_config)
             defense = defense_fn(
                 classifier_for_defense, x_train_all, y_train_all_categorical
