@@ -4,6 +4,12 @@ Helper utilies to load things from armory configuration files.
 
 from importlib import import_module
 
+# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
+#     all CPU resources when num_workers > 1
+try:
+    import torch  # noqa: F401
+except ImportError:
+    pass
 from art.attacks import Attack
 from art import defences
 from art.classifiers import Classifier
