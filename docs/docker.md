@@ -103,17 +103,13 @@ When using these paths in code, armory provides a programatic way to access thes
 directories.
 
 #### Utilizing the paths
-Code that runs on host (e.g debugging outside of container):
 ```
 from armory import paths
-paths.host().dataset_dir
+runtime_paths= paths.runtime_paths()
+runtime_paths.dataset_dir
+runtime_paths.saved_model_dir
 ```
 
-Code that runs in container (e.g within an evaluation):
-```
-from armory import paths
-paths.docker().dataset_dir
-```
 
 ## Using GPUs with Docker
 Armory uses the nvidia runtime to use GPUs inside of Docker containers.

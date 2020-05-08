@@ -175,7 +175,7 @@ def _generator_from_tfds(
         )
 
     if not dataset_dir:
-        dataset_dir = paths.docker().dataset_dir
+        dataset_dir = paths.runtime_paths().dataset_dir
 
     if cache_dataset:
         _cache_dataset(

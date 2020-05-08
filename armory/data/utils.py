@@ -34,7 +34,7 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
     :param weights_file:
     :return:
     """
-    saved_model_dir = paths.docker().saved_model_dir
+    saved_model_dir = paths.runtime_paths().saved_model_dir
     filepath = os.path.join(saved_model_dir, weights_file)
 
     if os.path.isfile(filepath):

@@ -14,6 +14,7 @@ import docker
 import requests
 from docker.errors import ImageNotFound
 
+from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.configuration import load_config
@@ -42,12 +43,18 @@ class Evaluator(object):
         else:
             raise ValueError(f"config_path {config_path} must be a str or dict")
 
-        self.host_paths = paths.host()
+        self.host_paths = paths.HostPaths()
+        if os.path.exists(self.host_paths.armory_config):
+            self.armory_global_config = load_global_config(
+                self.host_paths.armory_config
+            )
+        else:
+            self.armory_global_config = {"verify_ssl": True}
 
         eval_id = str(uuid.uuid4())
         self.config["eval_id"] = eval_id
-        self.output_dir = os.path.join(paths.host().output_dir, eval_id)
-        self.tmp_dir = os.path.join(paths.host().tmp_dir, eval_id)
+        self.output_dir = os.path.join(self.host_paths.output_dir, eval_id)
+        self.tmp_dir = os.path.join(self.host_paths.tmp_dir, eval_id)
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
@@ -62,11 +69,8 @@ class Evaluator(object):
         self.no_docker = not image_name or no_docker
 
         if self.no_docker:
-            self.docker_paths = paths.host()
             self.manager = HostManagementInstance()
             return
-
-        self.docker_paths = paths.docker()
 
         # Download docker image on host
         docker_client = docker.from_env()
@@ -95,7 +99,7 @@ class Evaluator(object):
             "ARMORY_PRIVATE_S3_KEY", default=""
         )
 
-        if not self.host_paths.verify_ssl:
+        if not self.armory_global_config["verify_ssl"]:
             self.extra_env_vars["VERIFY_SSL"] = "false"
 
         if self.config["sysconfig"].get("use_gpu", None):
@@ -208,11 +212,11 @@ class Evaluator(object):
             ),
         ]
         if self.config.get("scenario"):
-            tmp_dir = os.path.join(paths.host().tmp_dir, self.config["eval_id"])
+            tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
             os.makedirs(tmp_dir)
             self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
             docker_config_path = os.path.join(
-                paths.docker().tmp_dir,
+                paths.runtime_paths().tmp_dir,
                 self.config["eval_id"],
                 "interactive-config.json",
             )

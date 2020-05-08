@@ -20,6 +20,7 @@ from docker.errors import ImageNotFound
 
 import armory
 from armory import paths
+from armory.configuration import save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
@@ -185,7 +186,7 @@ def download(command_args, prog, description):
         raise
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
+    paths.HostPaths()  # Ensures host directories have been created
 
     if not armory.is_dev():
         print("Downloading all docker images....")
@@ -313,12 +314,12 @@ def configure(command_args, prog, description):
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
-    default = paths.default()
+    default_host_paths = paths.HostDefaultPaths()
 
     instructions = "\n".join(
         [
             "Configuring paths for armory usage",
-            f'    This configuration will be stored at "{default.armory_config}"',
+            f'    This configuration will be stored at "{default_host_paths.armory_config}"',
             "",
             "Please enter desired target directory for the following paths.",
             "    If left empty, the default path will be used.",
@@ -329,10 +330,12 @@ def configure(command_args, prog, description):
     print(instructions)
 
     config = {
-        "dataset_dir": _get_path("dataset_dir", default.dataset_dir),
-        "saved_model_dir": _get_path("saved_model_dir", default.saved_model_dir),
-        "tmp_dir": _get_path("tmp_dir", default.tmp_dir),
-        "output_dir": _get_path("output_dir", default.output_dir),
+        "dataset_dir": _get_path("dataset_dir", default_host_paths.dataset_dir),
+        "saved_model_dir": _get_path(
+            "saved_model_dir", default_host_paths.saved_model_dir
+        ),
+        "tmp_dir": _get_path("tmp_dir", default_host_paths.tmp_dir),
+        "output_dir": _get_path("output_dir", default_host_paths.output_dir),
         "verify_ssl": _get_verify_ssl(),
     }
     resolved = "\n".join(
@@ -350,13 +353,13 @@ def configure(command_args, prog, description):
     print(resolved)
     save = None
     while save is None:
-        if os.path.isfile(default.armory_config):
+        if os.path.isfile(default_host_paths.armory_config):
             print("WARNING: this will overwrite existing configuration.")
             print("    Press Ctrl-C to abort.")
         answer = input("Save this configuration? [Y/n] ")
         if answer in ("Y", "y", ""):
             print("Saving configuration...")
-            paths.save_config(config)
+            save_config(config, default_host_paths.armory_dir)
             print("Configure successful")
             save = True
         elif answer in ("N", "n"):
@@ -425,7 +428,7 @@ def launch(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
+    paths.HostPaths()  # Ensures host directories have been created
 
     config = {
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
@@ -482,7 +485,7 @@ def exec(command_args, prog, description):
     args = parser.parse_args(armory_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
+    paths.HostPaths()  # Ensures host directories have been created
 
     config = {
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}

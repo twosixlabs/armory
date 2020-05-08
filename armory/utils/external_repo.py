@@ -24,7 +24,7 @@ def download_and_extract_repo(
     :param external_repo_name: String name of "organization/repo-name"
     """
     if external_repo_dir is None:
-        external_repo_dir = paths.host().external_repo_dir
+        external_repo_dir = paths.HostPaths().external_repo_dir
 
     os.makedirs(external_repo_dir, exist_ok=True)
     headers = {}
