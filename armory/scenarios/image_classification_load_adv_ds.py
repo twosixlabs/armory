@@ -1,5 +1,5 @@
 """
-General image classification scenario
+Adv dataset image classification scenario
 """
 
 import logging
@@ -34,27 +34,28 @@ class ImageClassificationTask(Scenario):
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to classifier")
             classifier = load_defense_internal(config["defense"], classifier)
+        ###################################
+        # No `dataset` with train/test split
+        # if model_config["fit"]:
+        #     classifier.set_learning_phase(True)
+        #     logger.info(
+        #         f"Fitting model {model_config['module']}.{model_config['name']}..."
+        #     )
+        #     fit_kwargs = model_config["fit_kwargs"]
 
-        if model_config["fit"]:
-            classifier.set_learning_phase(True)
-            logger.info(
-                f"Fitting model {model_config['module']}.{model_config['name']}..."
-            )
-            fit_kwargs = model_config["fit_kwargs"]
-
-            logger.info(f"Loading train dataset {config['dataset']['name']}...")
-            train_data = load_dataset(
-                config["dataset"],
-                epochs=fit_kwargs["nb_epochs"],
-                split_type="train",
-                preprocessing_fn=preprocessing_fn,
-            )
-            if defense_type == "Trainer":
-                logger.info(f"Training with {defense_type} defense...")
-                defense = load_defense_wrapper(config["defense"], classifier)
-                defense.fit_generator(train_data, **fit_kwargs)
-            else:
-                classifier.fit_generator(train_data, **fit_kwargs)
+        #     logger.info(f"Loading train dataset {config['dataset']['name']}...")
+        #     train_data = load_dataset(
+        #         config["dataset"],
+        #         epochs=fit_kwargs["nb_epochs"],
+        #         split_type="train",
+        #         preprocessing_fn=preprocessing_fn,
+        #     )
+        #     if defense_type == "Trainer":
+        #         logger.info(f"Training with {defense_type} defense...")
+        #         defense = load_defense_wrapper(config["defense"], classifier)
+        #         defense.fit_generator(train_data, **fit_kwargs)
+        #     else:
+        #         classifier.fit_generator(train_data, **fit_kwargs)
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported
@@ -64,24 +65,24 @@ class ImageClassificationTask(Scenario):
 
         classifier.set_learning_phase(False)
 
-        # Evaluate the ART classifier on benign test examples
-        logger.info(f"Loading test dataset {config['dataset']['name']}...")
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-        logger.info("Running inference on benign examples...")
+        # # Evaluate the ART classifier on benign test examples
+        # logger.info(f"Loading test dataset {config['dataset']['name']}...")
+        # test_data_generator = load_dataset(
+        #     config["dataset"],
+        #     epochs=1,
+        #     split_type="test",
+        #     preprocessing_fn=preprocessing_fn,
+        # )
+        # logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        for x, y in tqdm(test_data_generator, desc="Benign"):
-            y_pred = classifier.predict(x)
-            metrics_logger.update_task(y, y_pred)
-        metrics_logger.log_task()
+        # for x, y in tqdm(test_data_generator, desc="Benign"):
+        #     y_pred = classifier.predict(x)
+        #     metrics_logger.update_task(y, y_pred)
+        # metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
-        logger.info("Generating / testing adversarial examples...")
+        logger.info("Testing adversarial examples...")
 
         ###################################################
         # test_data_generator = load_dataset(
@@ -100,26 +101,26 @@ class ImageClassificationTask(Scenario):
         attack = load_attack(config["attack"], classifier)
 
         attack_type = config["attack"]["type"]
-        if attack_type == "transfer":
+        if attack_type == "preloaded":
             # test_data_generator = attack     # suggested by DSlater but load_attack loads an ART attack function, not the attack dataset, right now. Plus, the dataset in the config json file is the adversarial dataset anyways, so load_dataset makes sense
             test_data_generator = load_dataset(
-                config["dataset"],
+                config["attack"]["adversarialds"],
                 epochs=1,
-                split_type="adv",
+                split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
             )
-        else:
-            test_data_generator = load_dataset(
-                config["dataset"],
-                epochs=1,
-                split_type="test",
-                preprocessing_fn=preprocessing_fn,
-            )
+        # else:
+        # test_data_generator = load_dataset(
+        #     config["dataset"],
+        #     epochs=1,
+        #     split_type="test",
+        #     preprocessing_fn=preprocessing_fn,
+        # )
         for x, y in tqdm(test_data_generator, desc="Attack"):
-            if attack_type == "transfer":
-                x_adv = x
-            else:
-                x_adv = attack.generate(x=x)
+            if attack_type == "preloaded":
+                x_adv = x["adversarial_patch"]
+            # else:
+            #     x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)

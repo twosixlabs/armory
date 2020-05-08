@@ -2,16 +2,23 @@
     "_description": "Resisc45 image classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-	"type": "transfer",
-	"knowledge": "black",
-	"kwargs": null,
-	"module": "art.attacks",
-	"name": null
+        "adversarialds": {
+            "batch_size": 1,
+            "module": "armory.data.datasets",
+            "name": "resisc45_adversarial_224x224"
+        },
+        "knowledge": "black",
+        "kwargs": {
+            "learning_rate": 0.2
+        },
+        "module": "art.attacks",
+        "name": "AdversarialPatch",
+        "type": "preloaded"
     },
     "dataset": {
         "batch_size": 16,
         "module": "armory.data.datasets",
-        "name": "resisc45_patch_adversarial"
+        "name": "resisc45"
     },
     "defense": null,
     "metric": {
@@ -33,7 +40,7 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.image_classification",
+        "module": "armory.scenarios.image_classification_load_adv_ds",
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
