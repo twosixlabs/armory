@@ -5,8 +5,10 @@ Test cases for ARMORY datasets.
 import os
 
 import pytest
+import numpy as np
 
 from armory.data import datasets
+from armory.data import adversarial_datasets
 from armory import paths
 
 DATASET_DIR = paths.docker().dataset_dir
@@ -75,7 +77,7 @@ def test_digit():
 def test_imagenet_adv():
     batch_size = 100
     total_size = 1000
-    test_dataset = datasets.imagenet_adversarial(
+    test_dataset = adversarial_datasets.imagenet_adversarial(
         dataset_dir=DATASET_DIR, split_type="clean", batch_size=batch_size, epochs=1,
     )
     assert test_dataset.size == total_size
@@ -233,3 +235,15 @@ def test_generator():
             assert x.shape == (batch_size, 28, 28, 1)
             assert y.shape == (batch_size,)
             break
+
+
+def test_numpy_generator():
+    dataset = datasets.mnist(
+        split_type="train",
+        epochs=1,
+        batch_size=16,
+        dataset_dir=DATASET_DIR,
+        framework="numpy",
+    )
+    x, y = dataset.get_batch()
+    assert isinstance(x, np.ndarray)

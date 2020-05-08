@@ -24,7 +24,7 @@ class ArmoryInstance(object):
         runtime: str = "runc",
         envs: dict = None,
         ports: dict = None,
-        container_subdir: str = None,
+        command: str = "tail -f /dev/null",
     ):
         self.docker_client = docker.from_env(version="auto")
 
@@ -32,9 +32,6 @@ class ArmoryInstance(object):
         docker_paths = paths.docker()
         host_tmp_dir = host_paths.tmp_dir
         host_output_dir = host_paths.output_dir
-        if container_subdir:
-            host_tmp_dir = os.path.join(host_tmp_dir, container_subdir)
-            host_output_dir = os.path.join(host_output_dir, container_subdir)
 
         container_args = {
             "runtime": runtime,
@@ -56,6 +53,8 @@ class ArmoryInstance(object):
         }
         if ports is not None:
             container_args["ports"] = ports
+        if command is not None:
+            container_args["command"] = command
 
         # Windows docker does not require syncronizing file and
         # directoriy permissions via uid and gid.
@@ -98,14 +97,10 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None, container_subdir: str = None,
+        self, envs: dict = None, ports: dict = None
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name,
-            runtime=self.runtime,
-            envs=envs,
-            ports=ports,
-            container_subdir=container_subdir,
+            self.name, runtime=self.runtime, envs=envs, ports=ports,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

@@ -1,15 +1,17 @@
 # Datasets
 
-The `armory.data.datasets` module implements functionality to return NumPy data 
-generators of various data modalities. Currently our datasets are loaded using 
-TensorFlow Datasets from cached tfrecord files served from the armory S3 buckets.
+The `armory.data.datasets` module implements functionality to return datasets of 
+various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which 
+implements the methods needed  by the ART framework. Specifically `get_batch` will 
+return a tuple of `(data, labels)` for a specified batch size in numpy format.
 
+We have experimental support for returning `tf.data.Dataset` and 
+`torch.utils.data.Dataset`. These can be specified with the `framework` argument to 
+the dataset function. Options are `<numpy|tf|pytorch`.
 
-### ArmoryDataSet Generator
-All datasets return an `ArmoryDataGenerator` which implements the methods needed 
-by the ART framework. Specifically `get_batch` will return a tuple of `(data, labels)` 
-for a specified batch size.
-
+Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
+These tfrecord files will be pulled from S3 if not available on your 
+`dataset_dir` directory.
 
 ### Image Datasets
 

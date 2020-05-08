@@ -16,6 +16,7 @@
     },
     "dataset": {
         "batch_size": 128,
+        "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean"
     },
@@ -45,7 +46,7 @@
         "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.6.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.7.0-dev",
         "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
         "use_gpu": false

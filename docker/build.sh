@@ -2,13 +2,14 @@
 # Build a docker image for specific framework. Optionally `all` frameworks can be built.
 # Ex: `bash docker/build.sh pytorch`
 if [ "$#" -ne 1 ]; then
-    echo "Please pass a single argument to specify which framework to build. Must be either \`tf1\`, \`tf2\` or \`pytorch\` or \`all\`"
+    echo "Usage: bash docker/build.sh <framework>"
+    echo "    <framework> be \`armory\`, \`tf1\`, \`tf2\`, \`pytorch\`, or \`all\`"
     exit 1
 fi
 
 # Parse framework argument
-if [[ "$1" != "pytorch" && "$1" != "tf1" && "$1" != "tf2" && "$1" != "all" ]]; then
-    echo "Framework argument must be either \`tf1\`, \`tf2\` or \`pytorch\` or \`all\`"
+if [[ "$1" != "armory" && "$1" != "pytorch" && "$1" != "tf1" && "$1" != "tf2" && "$1" != "all" ]]; then
+    echo "ERROR: <framework> argument must be \`armory\`, \`tf1\`, \`tf2\`, \`pytorch\`, or \`all\`, not \`$1\`"
     exit 1
 fi
 
@@ -21,16 +22,12 @@ if [[ $version == *"-dev" ]]; then
 fi
 
 # Build images
-if [[ "$1" == "all" ]]; then
-  echo "Building docker images for all frameworks..."
-  for framework in "tf1" "tf2" "pytorch"; do
-    docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
-    docker build --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-base -t twosixarmory/${framework}-base:${version} .
-    docker build --force-rm --file docker/${framework}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-dev -t twosixarmory/${framework}:${version} .
-  done
-else
-    docker build --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
-    docker build --force-rm --file docker/${1}/Dockerfile --build-arg armory_version=${version} --target armory-${1}-base -t twosixarmory/${1}-base:${version} .
-    docker build --force-rm --file docker/${1}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${1}-dev -t twosixarmory/${1}:${version} .
-fi
-
+echo "Building base docker image: armory"
+docker build --cache-from twosixarmory/armory:latest --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
+for framework in "tf1" "tf2" "pytorch"; do
+    if [[ "$1" == "$framework" || "$1" == "all" ]]; then
+        echo "Building docker images for framework: $framework"
+        docker build --cache-from twosixarmory/armory:${version} --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-base -t twosixarmory/${framework}-base:${version} .
+        docker build --cache-from twosixarmory/armory:${version} --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} .
+    fi
+done

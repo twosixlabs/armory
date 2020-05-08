@@ -1,14 +1,17 @@
 {
-    "_description": "UCF101 video classification with finetuning, contributed by MITRE Corporation",
+    "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "eps": 51.0
+            "adversarial_key": "adversarial_perturbation",
+            "batch_size": 1,
+            "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
         },
-        "module": "art.attacks",
-        "name": "FastGradientMethod"
+        "module": "armory.data.adversarial_datasets",
+        "name": "ucf101_adversarial_112x112",
+        "type": "preloaded"
     },
     "dataset": {
         "batch_size": 16,
@@ -27,16 +30,16 @@
         ]
     },
     "model": {
-        "fit": true,
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 10
         },
         "model_kwargs": {
-            "model_status": "kinetics_pretrained"
+            "model_status": "ucf101_trained"
         },
         "module": "armory.baseline_models.pytorch.ucf101_mars",
         "name": "get_art_model",
-        "weights_file": "mars_kinetics_v1.pth",
+        "weights_file": "mars_ucf101_v1.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {

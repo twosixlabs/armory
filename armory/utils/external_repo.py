@@ -36,8 +36,8 @@ def download_and_extract_repo(
         branch = "master"
     repo_name = org_repo_name.split("/")[-1]
 
-    if "GITHUB_TOKEN" in os.environ:
-        headers = {"Authorization": f'token {os.getenv("GITHUB_TOKEN")}'}
+    if "ARMORY_GITHUB_TOKEN" in os.environ and os.getenv("ARMORY_GITHUB_TOKEN") != "":
+        headers = {"Authorization": f'token {os.getenv("ARMORY_GITHUB_TOKEN")}'}
 
     response = requests.get(
         f"https://api.github.com/repos/{org_repo_name}/tarball/{branch}",
@@ -67,7 +67,7 @@ def download_and_extract_repo(
     else:
         raise ConnectionError(
             "Unable to download repository. If it's private make sure "
-            "`GITHUB_TOKEN` environment variable is set\n"
+            "`ARMORY_GITHUB_TOKEN` environment variable is set\n"
             f"status_code is {response.status_code}\n"
             f"full response is {response.text}"
         )

@@ -21,7 +21,6 @@ from docker.errors import ImageNotFound
 import armory
 from armory import paths
 from armory.eval import Evaluator
-from armory.docker.management import ManagementInstance
 from armory.docker import images
 from armory.utils import docker_api
 
@@ -53,31 +52,26 @@ class DockerImage(argparse.Action):
         elif values.lower() in DOCKER_IMAGES:
             setattr(namespace, self.dest, DOCKER_IMAGES[values])
         else:
-            raise argparse.ArgumentError(
-                self,
-                f"{values} invalid.\n"
-                f" must be one of {DOCKER_IMAGES} or {images.ALL}",
+            print(
+                f"WARNING: {values} not in "
+                f"{list(DOCKER_IMAGES.keys()) + list(DOCKER_IMAGES.values())}. "
+                "Attempting to load custom Docker image."
             )
+            setattr(namespace, self.dest, values)
 
 
-DEFAULT_SCENARIO = "scenarios-set1"
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
 
 
 class DownloadConfig(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values.lower().endswith(".json"):
-            config_path = values
-        else:
-            config_path = os.path.join(
-                "armory", "scenarios", "download_configs", values + ".json"
-            )
-
-        if os.path.isfile(config_path):
-            setattr(namespace, self.dest, config_path)
+        if values.lower().endswith(".json") and os.path.isfile(values):
+            setattr(namespace, self.dest, values)
         else:
             raise argparse.ArgumentError(
                 self,
-                f"Config json file: {values} not found. Must be {DEFAULT_SCENARIO} or other valid config file path",
+                f"Please provide a json config file. See the armory-example repo: "
+                f"{DEFAULT_SCENARIO}",
             )
 
 
@@ -123,11 +117,18 @@ def run(command_args, prog, description):
         default=8888,
         help="Port number {0, ..., 65535} to connect to Jupyter on",
     )
+    parser.add_argument(
+        "--no-docker",
+        dest="no_docker",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to use Docker or a local environment with armory run",
+    )
     args = parser.parse_args(command_args)
 
     coloredlogs.install(level=args.log_level)
-    paths.host()
-    rig = Evaluator(args.filepath)
+    rig = Evaluator(args.filepath, no_docker=args.no_docker)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
@@ -165,7 +166,7 @@ def download(command_args, prog, description):
         dest="download_config",
         type=str,
         action=DownloadConfig,
-        help="Configuration for download of data, e.g. scenarios-set1",
+        help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
 
     parser.add_argument(
@@ -191,9 +192,8 @@ def download(command_args, prog, description):
         _pull_docker_images()
 
     print("Downloading requested datasets and model weights...")
-    manager = ManagementInstance(image_name=images.TF1)
-    runner = manager.start_armory_instance()
-
+    config = {"sysconfig": {"docker_image": images.TF1}}
+    rig = Evaluator(config)
     cmd = "; ".join(
         [
             "import logging",
@@ -205,8 +205,7 @@ def download(command_args, prog, description):
             f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
     )
-    runner.exec_cmd(f"python -c '{cmd}'")
-    manager.stop_armory_instance(runner)
+    rig.run(command=f"python -c '{cmd}'")
 
 
 def clean(command_args, prog, description):
@@ -286,6 +285,20 @@ def _get_path(name, default_path, absolute_required=True):
     return answer
 
 
+def _get_verify_ssl():
+    verify_ssl = None
+    while verify_ssl is None:
+        answer = input("Verify SSL during downloads? [Y/n] ")
+        if answer in ("Y", "y", ""):
+            verify_ssl = True
+        elif answer in ("N", "n"):
+            verify_ssl = False
+        else:
+            print(f"Invalid selection: {answer}")
+        print()
+        return verify_ssl
+
+
 def configure(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
@@ -320,6 +333,7 @@ def configure(command_args, prog, description):
         "saved_model_dir": _get_path("saved_model_dir", default.saved_model_dir),
         "tmp_dir": _get_path("tmp_dir", default.tmp_dir),
         "output_dir": _get_path("output_dir", default.output_dir),
+        "verify_ssl": _get_verify_ssl(),
     }
     resolved = "\n".join(
         [
@@ -328,6 +342,8 @@ def configure(command_args, prog, description):
             f"    saved_model_dir: {config['saved_model_dir']}",
             f"    tmp_dir:         {config['tmp_dir']}",
             f"    output_dir:      {config['output_dir']}",
+            "Download options:",
+            f"    verify_ssl:      {config['verify_ssl']}",
             "",
         ]
     )
@@ -415,7 +431,12 @@ def launch(command_args, prog, description):
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
     }
     rig = Evaluator(config)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    rig.run(
+        interactive=args.interactive,
+        jupyter=args.jupyter,
+        host_port=args.port,
+        command="true # No-op",
+    )
 
 
 def exec(command_args, prog, description):
