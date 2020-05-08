@@ -13,6 +13,7 @@ from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
+    load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
 )
@@ -87,7 +88,7 @@ class Ucf101(Scenario):
 
         # Evaluate the ART classifier on benign test examples
         logger.info(f"Loading test dataset {config['dataset']['name']}...")
-        test_data_generator = load_dataset(
+        test_data = load_dataset(
             config["dataset"],
             epochs=1,
             split_type="test",
@@ -97,31 +98,46 @@ class Ucf101(Scenario):
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        for x_batch, y_batch in tqdm(test_data_generator, desc="Benign"):
+        for x_batch, y_batch in tqdm(test_data, desc="Benign"):
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x), axis=0)
+                y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
-        logger.info("Generating / testing adversarial examples...")
+        logger.info("Generating or loading / testing adversarial examples...")
 
-        attack = load_attack(config["attack"], classifier)
-        test_data_generator = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-        )
-        for x_batch, y_batch in tqdm(test_data_generator, desc="Attack"):
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+        if attack_type == "preloaded":
+            test_data = load_adversarial_dataset(
+                attack_config,
+                epochs=1,
+                split_type="adversarial",
+                preprocessing_fn=preprocessing_fn,
+            )
+        else:
+            attack = load_attack(attack_config, classifier)
+            test_data = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+            )
+        for x_batch, y_batch in tqdm(test_data, desc="Attack"):
+            if attack_type == "preloaded":
+                x_batch = list(zip(*x_batch))
             for x, y in zip(x_batch, y_batch):
-                # each x is of shape (n_stack, 3, 16, 112, 112)
-                #    n_stack varies
-                attack.set_params(batch_size=x.shape[0])
-                x_adv = attack.generate(x=x)
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                else:
+                    # each x is of shape (n_stack, 3, 16, 112, 112)
+                    #    n_stack varies
+                    attack.set_params(batch_size=x.shape[0])
+                    x_adv = attack.generate(x=x)
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x_adv), axis=0)
+                y_pred = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True)

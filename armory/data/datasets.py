@@ -33,7 +33,6 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
-from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
 
@@ -78,29 +77,55 @@ class ArmoryDataGenerator(DataGenerator):
         if self.variable_length:
             self.current = 0
 
+    @staticmethod
+    def np_1D_object_array(x_list):
+        """
+        Take a list of single-element batches and return as a numpy 1D object array
+
+        Similar to np.stack, but designed to handle variable-length elements
+        """
+        x = np.empty((len(x_list),), dtype=object)
+        for i in range(len(x_list)):
+            x[i] = x_list[i][0]
+        return x
+
     def get_batch(self) -> (np.ndarray, np.ndarray):
         if self.variable_length:
             # build the batch
             x_list, y_list = [], []
             for i in range(self.batch_size):
                 x_i, y_i = next(self.generator)
-                x_list.append(x_i[0])
+                x_list.append(x_i)
                 y_list.append(y_i)
                 self.current += 1
                 # handle end of epoch partial batches
                 if self.current == self.samples_per_epoch:
                     self.current = 0
                     break
-            x = np.empty((len(x_list),), dtype=object)
-            for i in range(len(x_list)):
-                x[i] = x_list[i]
-            # only handles variable-length x, currently
+
+            if isinstance(x_list[0], dict):
+                # Translate a list of dicts into a dict of arrays
+                x = {}
+                for k in x_list[0].keys():
+                    x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
+            elif isinstance(x_list[0], tuple):
+                # Translate a list of tuples into a tuple of arrays
+                x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
+            else:
+                x = self.np_1D_object_array(x_list)
+            # Does not currently handle variable-length y
             y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
-            x = self.preprocessing_fn(x)
+            # Apply preprocessing to multiple inputs as needed
+            if isinstance(x, dict):
+                x = {k: self.preprocessing_fn(v) for (k, v) in x.items()}
+            elif isinstance(x, tuple):
+                x = tuple(self.preprocessing_fn(i) for i in x)
+            else:
+                x = self.preprocessing_fn(x)
 
         return x, y
 
@@ -128,12 +153,14 @@ def _generator_from_tfds(
     shuffle_files=True,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    lambda_map: Callable = None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
     if variable_length=True and batch_size > 1:
         output batches are 1D np.arrays of objects
+    lambda_map - if not None, mapping function to apply to dataset elements
     """
     supported_frameworks = ["tf", "pytorch", "numpy"]
     if framework not in supported_frameworks:
@@ -143,7 +170,8 @@ def _generator_from_tfds(
 
     if framework == "pytorch":
         raise NotImplementedError(
-            "PyTorch native dataloaders are not yet supported. See issue https://github.com/twosixlabs/armory/issues/455"
+            "PyTorch native dataloaders are not yet supported. "
+            "See issue https://github.com/twosixlabs/armory/issues/455"
         )
 
     if not dataset_dir:
@@ -179,6 +207,8 @@ def _generator_from_tfds(
                 f" not {type(x_key), type(y_key)}"
             )
         ds = ds.map(lambda x: (x[x_key], x[y_key]))
+    if lambda_map is not None:
+        ds = ds.map(lambda_map)
 
     ds = ds.repeat(epochs)
     if shuffle_files:
@@ -277,38 +307,6 @@ def digit(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-    )
-
-
-def imagenet_adversarial(
-    split_type: str = "clean",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-) -> ArmoryDataGenerator:
-    """
-    ILSVRC12 adversarial image dataset for ResNet50
-
-    ProjectedGradientDescent
-        Iterations = 10
-        Max perturbation epsilon = 8
-        Attack step size = 2
-        Targeted = True
-    """
-
-    return _generator_from_tfds(
-        "imagenet_adversarial:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
     )
@@ -501,7 +499,6 @@ SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
     "digit": digit,
-    "imagenet_adversarial": imagenet_adversarial,
     "imagenette": imagenette,
     "german_traffic_sign": german_traffic_sign,
     "ucf101": ucf101,

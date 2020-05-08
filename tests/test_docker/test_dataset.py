@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 
 from armory.data import datasets
+from armory.data import adversarial_datasets
 from armory import paths
 
 DATASET_DIR = paths.docker().dataset_dir
@@ -76,7 +77,7 @@ def test_digit():
 def test_imagenet_adv():
     batch_size = 100
     total_size = 1000
-    test_dataset = datasets.imagenet_adversarial(
+    test_dataset = adversarial_datasets.imagenet_adversarial(
         dataset_dir=DATASET_DIR, split_type="clean", batch_size=batch_size, epochs=1,
     )
     assert test_dataset.size == total_size

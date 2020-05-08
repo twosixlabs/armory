@@ -72,6 +72,21 @@ def load_attack(attack_config, classifier):
     return attack
 
 
+def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
+    if config.get("type") != "preloaded":
+        raise ValueError(f"attack type must be 'preloaded'")
+    dataset_module = import_module(config["module"])
+    dataset_fn = getattr(dataset_module, config["name"])
+    dataset_kwargs = config["kwargs"]
+    dataset_kwargs.update(kwargs)
+    if "description" in dataset_kwargs:
+        dataset_kwargs.pop("description")
+    dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
+    if not isinstance(dataset, ArmoryDataGenerator):
+        raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    return dataset
+
+
 def _check_defense_api(defense, defense_baseclass):
     if not isinstance(defense, defense_baseclass):
         raise ValueError(
