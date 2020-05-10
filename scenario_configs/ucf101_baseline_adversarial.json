@@ -19,7 +19,31 @@
         "module": "armory.data.datasets",
         "name": "ucf101"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                255.0
+            ],
+            "means": [
+                114.7748,
+                107.7354,
+                99.475
+            ],
+            "quality": 50,
+            "transpose": [
+                1,
+                2,
+                3,
+                0
+            ]
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_5d",
+        "name": "JpegCompression5D",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "linf",
@@ -51,6 +75,6 @@
         "docker_image": "twosixarmory/pytorch:0.7.0-dev",
         "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
-        "use_gpu": false
+        "use_gpu": true
     }
 }
