@@ -5,7 +5,7 @@
         "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial_perturbation",
+            "adversarial_key": "adversarial_patch",
             "batch_size": 1,
             "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
         },
@@ -75,6 +75,6 @@
         "docker_image": "twosixarmory/pytorch:0.7.0-dev",
         "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
