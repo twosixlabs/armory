@@ -80,7 +80,7 @@ class Evaluator(object):
             logger.info(f"Image {image_name} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image_name)
         except requests.exceptions.ConnectionError:
-            logger.error(f"Docker connection refused. Is Docker Daemon running?")
+            logger.error("Docker connection refused. Is Docker Daemon running?")
             raise
 
         self.manager = ManagementInstance(**kwargs)
