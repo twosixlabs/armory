@@ -20,14 +20,13 @@ class JpegCompression5D(JpegCompression):
             apply_fit=apply_fit,
             apply_predict=apply_predict,
         )
-        # transpose = (1, 2, 3, 0),
+
         if transpose is None:
             transpose = (0, 1, 2, 3)  # identify operation
         if len(transpose) != 4:
             raise ValueError("transpose must have 4 dimensions specified")
         self.transpose = transpose
 
-        # means = (114.7748, 107.7354, 99.4750),
         if means is None:
             means = (0.0, 0.0, 0.0)  # identity operation
         if len(means) != 3:
