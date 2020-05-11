@@ -5,7 +5,7 @@
         "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial_perturbation",
+            "adversarial_key": "adversarial_patch",
             "batch_size": 1,
             "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
         },
@@ -19,7 +19,31 @@
         "module": "armory.data.datasets",
         "name": "ucf101"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                255.0
+            ],
+            "means": [
+                114.7748,
+                107.7354,
+                99.475
+            ],
+            "quality": 50,
+            "transpose": [
+                1,
+                2,
+                3,
+                0
+            ]
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_5d",
+        "name": "JpegCompression5D",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "linf",
