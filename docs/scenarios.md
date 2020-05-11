@@ -133,9 +133,21 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Model Performance:**
-To be added
+  * Baseline Clean Top-1 Accuracy: 93%
+  * Baseline Clean Top-5 Accuracy: 99%
+  * Baseline Attacked (Perturbation) Top-1 Accuracy: 4%
+  * Baseline Attacked (Perturbation) Top-5 Accuracy: 35%
+  * Baseline Attacked (Patch) Top-1 Accuracy: 24%
+  * Baseline Attacked (Patch) Top-5 Accuracy: 97%
 * **Baseline Defense Performance:**
-To be added
+Baseline defense is art.defences.preprocessor.JpegCompression(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False, apply_predict=True).
+Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
+  * Baseline Clean Top-1 Accuracy: 88%
+  * Baseline Clean Top-5 Accuracy: 98%
+  * Baseline Attacked (Perturbation) Top-1 Accuracy: 65%
+  * Baseline Attacked (Perturbation) Top-5 Accuracy: 96%
+  * Baseline Attacked (Patch) Top-1 Accuracy: 86%
+  * Baseline Attacked (Patch) Top-5 Accuracy: 97%
 
 ### German traffic sign poisoned image classification
 
