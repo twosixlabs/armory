@@ -144,7 +144,8 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     if not args.use_gpu and args.gpus:
-        raise ValueError("Cannot override gpus without overriding use_gpu")
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
 
     coloredlogs.install(level=args.log_level)
     rig = Evaluator(
@@ -458,7 +459,8 @@ def launch(command_args, prog, description):
     args = parser.parse_args(command_args)
 
     if not args.use_gpu and args.gpus:
-        raise ValueError("Cannot override gpus without overriding use_gpu")
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
 
     coloredlogs.install(level=args.log_level)
     paths.HostPaths()  # Ensures host directories have been created
@@ -524,7 +526,8 @@ def exec(command_args, prog, description):
     args = parser.parse_args(armory_args)
 
     if not args.use_gpu and args.gpus:
-        raise ValueError("Cannot override gpus without overriding use_gpu")
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
 
     coloredlogs.install(level=args.log_level)
     paths.HostPaths()  # Ensures host directories have been created
