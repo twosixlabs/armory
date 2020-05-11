@@ -74,7 +74,7 @@ def load_attack(attack_config, classifier):
 
 def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     if config.get("type") != "preloaded":
-        raise ValueError(f"attack type must be 'preloaded'")
+        raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
     dataset_module = import_module(config["module"])
     dataset_fn = getattr(dataset_module, config["name"])
     dataset_kwargs = config["kwargs"]

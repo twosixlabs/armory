@@ -22,7 +22,7 @@ try:
 except ImportError as e:
     module = e.name
     print(f"ERROR: cannot import '{module}' module")
-    print(f"    Please run: $ pip install -r requirements.txt")
+    print("    Please run: $ pip install -r requirements.txt")
     raise
 
 

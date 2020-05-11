@@ -133,7 +133,7 @@ class GTSRB(Scenario):
         else:
             logger.warning("All data points filtered by defense. Skipping training")
 
-        logger.info(f"Validating on clean test data")
+        logger.info("Validating on clean test data")
         test_data = load_dataset(
             config["dataset"],
             epochs=1,
@@ -148,7 +148,7 @@ class GTSRB(Scenario):
         results = {"validation_accuracy": validation_metric.mean()}
 
         if poison_dataset_flag:
-            logger.info(f"Testing on poisoned test data")
+            logger.info("Testing on poisoned test data")
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
