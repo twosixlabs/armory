@@ -70,9 +70,6 @@ class GTSRB(Scenario):
             "use_poison_filtering_defense", True
         )
 
-        if use_poison_filtering_defense:
-            classifier_for_defense, _ = load_model(model_config)
-
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         batch_size = config["dataset"]["batch_size"]
         train_data = load_dataset(
@@ -107,6 +104,7 @@ class GTSRB(Scenario):
                 f"Fitting model {model_config['module']}.{model_config['name']} "
                 f"for defense {defense_config['name']}..."
             )
+            classifier_for_defense, _ = load_model(model_config)
             classifier_for_defense.fit(
                 x_train_all,
                 y_train_all_categorical,
