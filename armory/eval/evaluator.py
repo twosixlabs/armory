@@ -118,9 +118,6 @@ class Evaluator(object):
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
-        if self.no_docker and not self.config["sysconfig"].get("use_gpu", None):
-            self.extra_env_vars["CUDA_VISIBLE_DEVICES"] = ""
-
     def _cleanup(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
