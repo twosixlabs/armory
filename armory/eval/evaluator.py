@@ -27,7 +27,11 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self, config_path: Union[str, dict], no_docker: bool = False,
+        self,
+        config_path: Union[str, dict],
+        no_docker: bool = False,
+        gpu_override: bool = False,
+        gpus_override: str = "",
     ):
         if isinstance(config_path, str):
             try:
@@ -56,9 +60,8 @@ class Evaluator(object):
         self.output_dir = os.path.join(self.host_paths.output_dir, eval_id)
         self.tmp_dir = os.path.join(self.host_paths.tmp_dir, eval_id)
 
-        # Retrieve environment variables that should be used in evaluation
-        self.extra_env_vars = dict()
-        self._gather_env_variables()
+        if gpu_override:
+            self.config["sysconfig"]["use_gpu"] = True
 
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs = dict(runtime="nvidia")
@@ -67,6 +70,11 @@ class Evaluator(object):
         image_name = self.config["sysconfig"].get("docker_image")
         kwargs["image_name"] = image_name
         self.no_docker = not image_name or no_docker
+
+        self.gpus_override = gpus_override
+        # Retrieve environment variables that should be used in evaluation
+        self.extra_env_vars = dict()
+        self._gather_env_variables()
 
         if self.no_docker:
             self.manager = HostManagementInstance()
@@ -103,6 +111,9 @@ class Evaluator(object):
             self.extra_env_vars["VERIFY_SSL"] = "false"
 
         if self.config["sysconfig"].get("use_gpu", None):
+            if self.gpus_override:
+                self.config["sysconfig"]["gpus"] = self.gpus_override
+
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus

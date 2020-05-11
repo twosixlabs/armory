@@ -126,10 +126,34 @@ def run(command_args, prog, description):
         default=False,
         help="Whether to use Docker or a local environment with armory run",
     )
+    parser.add_argument(
+        "--use-gpu",
+        dest="use_gpu",
+        action="store_const",
+        const=True,
+        default=False,
+        help="Whether to force use of the GPU, overriding the gpu field in the config",
+    )
+    parser.add_argument(
+        "--gpus",
+        dest="gpus",
+        type=str,
+        help="Whether to force use of specific GPUs, overriding the gpus field in the config",
+    )
+
     args = parser.parse_args(command_args)
 
+    if not args.use_gpu and args.gpus:
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
+
     coloredlogs.install(level=args.log_level)
-    rig = Evaluator(args.filepath, no_docker=args.no_docker)
+    rig = Evaluator(
+        args.filepath,
+        no_docker=args.no_docker,
+        gpu_override=args.use_gpu,
+        gpus_override=args.gpus,
+    )
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
@@ -425,14 +449,27 @@ def launch(command_args, prog, description):
         default=False,
         help="Whether to use GPU when launching",
     )
+    parser.add_argument(
+        "--gpus",
+        dest="gpus",
+        type=str,
+        help="Whether to use specific GPUs when launching",
+    )
+
     args = parser.parse_args(command_args)
+
+    if not args.use_gpu and args.gpus:
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
 
     coloredlogs.install(level=args.log_level)
     paths.HostPaths()  # Ensures host directories have been created
 
-    config = {
-        "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
-    }
+    config = {"sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image}}
+
+    if args.use_gpu and args.gpus:
+        config["sysconfig"]["gpus"] = args.gpus
+
     rig = Evaluator(config)
     rig.run(
         interactive=args.interactive,
@@ -468,8 +505,12 @@ def exec(command_args, prog, description):
         action="store_const",
         const=True,
         default=False,
-        help="Whether to use GPU when launching",
+        help="Whether to use GPU with exec",
     )
+    parser.add_argument(
+        "--gpus", dest="gpus", type=str, help="Whether to use specific GPUs with exec",
+    )
+
     try:
         index = command_args.index(delimiter)
     except ValueError:
@@ -484,12 +525,20 @@ def exec(command_args, prog, description):
         sys.exit(1)
     args = parser.parse_args(armory_args)
 
+    if not args.use_gpu and args.gpus:
+        print("gpus field overriden. Also overriding use_gpu")
+        args.use_gpu = True
+
     coloredlogs.install(level=args.log_level)
     paths.HostPaths()  # Ensures host directories have been created
 
     config = {
         "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
     }
+
+    if args.use_gpu and args.gpus:
+        config["sysconfig"]["gpus"] = args.gpus
+
     rig = Evaluator(config)
     rig.run(command=" ".join(exec_args))
 
