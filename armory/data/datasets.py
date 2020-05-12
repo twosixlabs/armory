@@ -119,6 +119,7 @@ class ArmoryDataGenerator(DataGenerator):
             x, y = next(self.generator)
 
         if self.preprocessing_fn:
+            # Apply preprocessing to multiple inputs as needed
             if isinstance(x, dict):
                 x = {k: self.preprocessing_fn(v) for (k, v) in x.items()}
             elif isinstance(x, tuple):
