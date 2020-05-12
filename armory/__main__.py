@@ -99,10 +99,7 @@ def _interactive(parser):
     parser.add_argument(
         "-i",
         "--interactive",
-        dest="interactive",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to allow interactive access to container",
     )
 
@@ -111,10 +108,7 @@ def _jupyter(parser):
     parser.add_argument(
         "-j",
         "--jupyter",
-        dest="jupyter",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to set up Jupyter notebook from container",
     )
 
@@ -123,7 +117,6 @@ def _port(parser):
     parser.add_argument(
         "-p",
         "--port",
-        dest="port",
         type=int,
         action=PortNumber,
         metavar="",
@@ -134,19 +127,13 @@ def _port(parser):
 
 def _use_gpu(parser):
     parser.add_argument(
-        "--use-gpu",
-        dest="use_gpu",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to use GPU(s)",
+        "--use-gpu", action="store_true", help="Whether to use GPU(s)",
     )
 
 
 def _gpus(parser):
     parser.add_argument(
         "--gpus",
-        dest="gpus",
         type=str,
         help="Which specific GPU(s) to use, such as '3', '1,5', or 'all'",
     )
@@ -193,10 +180,7 @@ def run(command_args, prog, description):
     _gpus(parser)
     parser.add_argument(
         "--no-docker",
-        dest="no_docker",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to use Docker or a local environment with armory run",
     )
 
@@ -285,18 +269,13 @@ def clean(command_args, prog, description):
     parser.add_argument(
         "-f",
         "--force",
-        dest="force",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to remove images of running containers",
     )
     parser.add_argument(
         "--no-download",
         dest="download",
-        action="store_const",
-        const=False,
-        default=True,
+        action="store_false",
         help="If set, will not attempt to pull images before removing existing",
     )
 
