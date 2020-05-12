@@ -114,6 +114,8 @@ runtime_paths.saved_model_dir
 ## Using GPUs with Docker
 Armory uses the nvidia runtime to use GPUs inside of Docker containers.
 
+### Config GPU usage
+
 This can be specified in JSON config files with "sysconfig" as follows:
 ```
     ...
@@ -129,6 +131,47 @@ The `gpus` flag is optional, and is ignored if `use_gpu` is false. If `use_gpu` 
     If present, the value should be a `,`-separated list of numbers specifying the GPU index in `nvidia-smi`.
     For instance, `"gpus": "2,4,7"` would enable three GPUs with indexes 2, 4, and 7.
     Setting the field to be `all` will enable use of all available gpus, i.e. `"gpus": "all"` will enable all GPUs.
+
+### Command line GPU usage
+
+When using the `armory` commands `run`, `launch`, or `exec`, you can specify or override the above
+`use_gpu` and `gpus` fields in the config with the following command line arguments:
+1) `--use_gpu`
+This will enable gpu usage (it is False by default).
+Using the `--gpus` argument will override this field and set it to True.
+
+2) `--gpus`
+This will enable the specified GPUs, similar to the docker `--gpus` argument.
+The argument of this must be one of the following:
+  a) `--gpus all` - use all GPUs
+  b) `--gpus #` - use the GPU with the specified number. Example: `--gpus 2`
+  c) `--gpus #,#,...,#` - use the GPUs from the comma-separated list. Example: `--gpus 1,3`
+If `--gpus` is not specified, it will default to the config file if present for `run`,
+and will default to `all` if not present in `run` or when using `launch` and `exec`.
+
+Examples:
+```
+armory run scenario_configs/mnist_baseline.json --use_gpus
+armory launch tf1 --gpus=1,4 --interactive
+armory exec pytorch --gpus=0 -- nvidia-smi
+```
+
+### CUDA 
+
+The TensorFlow versions we support require CUDA 10+.
+
+While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
+due to an inability to upgrade your local server, and we do not have it baked in to our docker
+containers. To use CUDA 9 in our docker container, you will need to replace the line
+```
+ cudatoolkit=10.1 -c pytorch && \
+```
+with
+```
+ cudatoolkit=9.2 -c pytorch && \
+```
+in `docker/pytorch/Dockerfile` and build the pytorch container locally.
+
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for 

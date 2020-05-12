@@ -1,6 +1,7 @@
 """
 Utilities for handling the global armory configuration file
 """
+
 import logging
 import json
 import os

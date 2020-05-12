@@ -10,6 +10,7 @@ This runs an arbitrary config file. Results are output to the `outputs/` directo
 """
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -24,6 +25,9 @@ from armory.configuration import save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
+from armory.utils.configuration import load_config
+
+logger = logging.getLogger(__name__)
 
 
 class PortNumber(argparse.Action):
@@ -76,11 +80,10 @@ class DownloadConfig(argparse.Action):
             )
 
 
-def run(command_args, prog, description):
-    parser = argparse.ArgumentParser(prog=prog, description=description)
-    parser.add_argument(
-        "filepath", metavar="<json_config>", type=str, help="json config file"
-    )
+# Helper functions for parsers
+
+
+def _debug(parser):
     parser.add_argument(
         "-d",
         "--debug",
@@ -90,70 +93,110 @@ def run(command_args, prog, description):
         default=logging.INFO,
         help="Debug output (logging=DEBUG)",
     )
+
+
+def _interactive(parser):
     parser.add_argument(
         "-i",
         "--interactive",
-        dest="interactive",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to allow interactive access to container",
     )
+
+
+def _jupyter(parser):
     parser.add_argument(
         "-j",
         "--jupyter",
-        dest="jupyter",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to set up Jupyter notebook from container",
     )
+
+
+def _port(parser):
     parser.add_argument(
         "-p",
         "--port",
-        dest="port",
         type=int,
         action=PortNumber,
         metavar="",
         default=8888,
         help="Port number {0, ..., 65535} to connect to Jupyter on",
     )
+
+
+def _use_gpu(parser):
     parser.add_argument(
-        "--no-docker",
-        dest="no_docker",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to use Docker or a local environment with armory run",
+        "--use-gpu", action="store_true", help="Whether to use GPU(s)",
     )
-    parser.add_argument(
-        "--use-gpu",
-        dest="use_gpu",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to force use of the GPU, overriding the gpu field in the config",
-    )
+
+
+def _gpus(parser):
     parser.add_argument(
         "--gpus",
-        dest="gpus",
         type=str,
-        help="Whether to force use of specific GPUs, overriding the gpus field in the config",
+        help="Which specific GPU(s) to use, such as '3', '1,5', or 'all'",
+    )
+
+
+def _docker_image(parser):
+    parser.add_argument(
+        "docker_image",
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+
+
+# Config
+
+
+def _set_gpus(config, use_gpu, gpus):
+    """
+    Set gpu values from parser in config
+    """
+    if gpus:
+        if not use_gpu:
+            logger.info("--gpus field specified. Setting --use-gpu to True")
+            use_gpu = True
+        config["sysconfig"]["gpus"] = gpus
+    config["sysconfig"]["use_gpu"] = use_gpu
+
+
+# Commands
+
+
+def run(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser.add_argument(
+        "filepath", metavar="<json_config>", type=str, help="json config file"
+    )
+    _debug(parser)
+    _interactive(parser)
+    _jupyter(parser)
+    _port(parser)
+    _use_gpu(parser)
+    _gpus(parser)
+    parser.add_argument(
+        "--no-docker",
+        action="store_true",
+        help="Whether to use Docker or a local environment with armory run",
     )
 
     args = parser.parse_args(command_args)
-
-    if not args.use_gpu and args.gpus:
-        print("gpus field overriden. Also overriding use_gpu")
-        args.use_gpu = True
-
     coloredlogs.install(level=args.log_level)
-    rig = Evaluator(
-        args.filepath,
-        no_docker=args.no_docker,
-        gpu_override=args.use_gpu,
-        gpus_override=args.gpus,
-    )
+
+    try:
+        config = load_config(args.filepath)
+    except json.decoder.JSONDecodeError:
+        logger.exception(f"Could not decode {args.filepath} as a json file.")
+        if not args.filepath.lower().endswith(".json"):
+            logger.warning(f"{args.filepath} is not a '*.json' file")
+        sys.exit(1)
+    _set_gpus(config, args.use_gpu, args.gpus)
+
+    rig = Evaluator(config, no_docker=args.no_docker)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
 
 
@@ -168,7 +211,7 @@ def _pull_docker_images(docker_client=None):
                 raise ValueError(
                     "For '-dev', please run 'docker/build-dev.sh' locally before running armory"
                 )
-            print(f"Image {image} was not found. Downloading...")
+            logger.info(f"Image {image} was not found. Downloading...")
             docker_api.pull_verbose(docker_client, image)
 
 
@@ -177,15 +220,7 @@ def download(command_args, prog, description):
     Script to download all datasets and model weights for offline usage.
     """
     parser = argparse.ArgumentParser(prog=prog, description=description)
-    parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
+    _debug(parser)
     parser.add_argument(
         metavar="<download data config file>",
         dest="download_config",
@@ -203,21 +238,16 @@ def download(command_args, prog, description):
         nargs="?",
     )
 
-    try:
-        args = parser.parse_args(command_args)
-    except SystemExit:
-        parser.print_help()
-        raise
-
+    args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
-    paths.HostPaths()  # Ensures host directories have been created
 
     if not armory.is_dev():
-        print("Downloading all docker images....")
+        logger.info("Downloading all docker images....")
         _pull_docker_images()
 
-    print("Downloading requested datasets and model weights...")
+    logger.info("Downloading requested datasets and model weights...")
     config = {"sysconfig": {"docker_image": images.TF1}}
+
     rig = Evaluator(config)
     cmd = "; ".join(
         [
@@ -235,42 +265,29 @@ def download(command_args, prog, description):
 
 def clean(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
-    parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
+    _debug(parser)
     parser.add_argument(
         "-f",
         "--force",
-        dest="force",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to remove images of running containers",
     )
     parser.add_argument(
         "--no-download",
         dest="download",
-        action="store_const",
-        const=False,
-        default=True,
+        action="store_false",
         help="If set, will not attempt to pull images before removing existing",
     )
-    args = parser.parse_args(command_args)
 
+    args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
     docker_client = docker.from_env(version="auto")
     if args.download:
-        print("Pulling the latest docker images")
+        logger.info("Pulling the latest docker images")
         _pull_docker_images(docker_client)
 
-    print("Deleting old docker images")
+    logger.info("Deleting old docker images")
     tags = set()
     for image in docker_client.images.list():
         tags.update(image.tags)
@@ -278,14 +295,13 @@ def clean(command_args, prog, description):
     # If dev version, only remove old dev-tagged containers
     for tag in sorted(tags):
         if images.is_old(tag):
-            print(f"Attempting to remove tag {tag}")
+            logger.info(f"Attempting to remove tag {tag}")
             try:
                 docker_client.images.remove(tag, force=args.force)
-                print(f"* Tag {tag} removed")
+                logger.info(f"* Tag {tag} removed")
             except docker.errors.APIError as e:
                 if not args.force and "(must force)" in str(e):
-                    print(e)
-                    print(f"Cannot delete tag {tag}. Must use `--force`")
+                    logger.exception(f"Cannot delete tag {tag}. Must use `--force`")
                 else:
                     raise
 
@@ -326,15 +342,8 @@ def _get_verify_ssl():
 
 def configure(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
-    parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
+    _debug(parser)
+
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
@@ -397,78 +406,19 @@ def configure(command_args, prog, description):
 
 def launch(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
-    parser.add_argument(
-        "docker_image",
-        metavar="<docker image>",
-        type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
-        action=DockerImage,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
-    parser.add_argument(
-        "-i",
-        "--interactive",
-        dest="interactive",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to allow interactive access to container",
-    )
-    parser.add_argument(
-        "-j",
-        "--jupyter",
-        dest="jupyter",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to set up Jupyter notebook from container",
-    )
-    parser.add_argument(
-        "-p",
-        "--port",
-        dest="port",
-        type=int,
-        action=PortNumber,
-        metavar="",
-        default=8888,
-        help="Port number {0, ..., 65535} to connect to Jupyter on",
-    )
-    parser.add_argument(
-        "--use-gpu",
-        dest="use_gpu",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to use GPU when launching",
-    )
-    parser.add_argument(
-        "--gpus",
-        dest="gpus",
-        type=str,
-        help="Whether to use specific GPUs when launching",
-    )
+    _docker_image(parser)
+    _debug(parser)
+    _interactive(parser)
+    _jupyter(parser)
+    _port(parser)
+    _use_gpu(parser)
+    _gpus(parser)
 
     args = parser.parse_args(command_args)
-
-    if not args.use_gpu and args.gpus:
-        print("gpus field overriden. Also overriding use_gpu")
-        args.use_gpu = True
-
     coloredlogs.install(level=args.log_level)
-    paths.HostPaths()  # Ensures host directories have been created
 
-    config = {"sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image}}
-
-    if args.use_gpu and args.gpus:
-        config["sysconfig"]["gpus"] = args.gpus
+    config = {"sysconfig": {"docker_image": args.docker_image}}
+    _set_gpus(config, args.use_gpu, args.gpus)
 
     rig = Evaluator(config)
     rig.run(
@@ -481,35 +431,12 @@ def launch(command_args, prog, description):
 
 def exec(command_args, prog, description):
     delimiter = "--"
-    usage = "armory exec <docker image> [-d] [--use-gpu] -- <exec command>"
+    usage = f"armory exec <docker image> [-d] [--use-gpu] {delimiter} <exec command>"
     parser = argparse.ArgumentParser(prog=prog, description=description, usage=usage)
-    parser.add_argument(
-        "docker_image",
-        metavar="<docker image>",
-        type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
-        action=DockerImage,
-    )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
-    )
-    parser.add_argument(
-        "--use-gpu",
-        dest="use_gpu",
-        action="store_const",
-        const=True,
-        default=False,
-        help="Whether to use GPU with exec",
-    )
-    parser.add_argument(
-        "--gpus", dest="gpus", type=str, help="Whether to use specific GPUs with exec",
-    )
+    _docker_image(parser)
+    _debug(parser)
+    _use_gpu(parser)
+    _gpus(parser)
 
     try:
         index = command_args.index(delimiter)
@@ -519,28 +446,21 @@ def exec(command_args, prog, description):
         sys.exit(1)
     exec_args = command_args[index + 1 :]
     armory_args = command_args[:index]
-    if not exec_args:
+    if exec_args:
+        command = " ".join(exec_args)
+    else:
         print("ERROR: exec command required")
         parser.print_help()
         sys.exit(1)
+
     args = parser.parse_args(armory_args)
-
-    if not args.use_gpu and args.gpus:
-        print("gpus field overriden. Also overriding use_gpu")
-        args.use_gpu = True
-
     coloredlogs.install(level=args.log_level)
-    paths.HostPaths()  # Ensures host directories have been created
 
-    config = {
-        "sysconfig": {"use_gpu": args.use_gpu, "docker_image": args.docker_image,}
-    }
-
-    if args.use_gpu and args.gpus:
-        config["sysconfig"]["gpus"] = args.gpus
+    config = {"sysconfig": {"docker_image": args.docker_image}}
+    _set_gpus(config, args.use_gpu, args.gpus)
 
     rig = Evaluator(config)
-    rig.run(command=" ".join(exec_args))
+    rig.run(command=command)
 
 
 # command, (function, description)
