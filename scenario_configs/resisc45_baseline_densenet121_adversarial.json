@@ -1,0 +1,51 @@
+{
+    "_description": "Resisc45 image classification, contributed by MITRE Corporation, with preloaded adversarial attack",
+    "adhoc": null,
+    "attack": {
+        "budget": null,
+        "knowledge": "white",
+        "kwargs": {
+            "adversarial_key": "adversarial_univpatch",
+            "batch_size": 1,
+            "description": "'adversarial_key' can be 'adversarial_univperturbation' or 'adversarial_univpatch'"
+        },
+        "module": "armory.data.adversarial_datasets",
+        "name": "resisc45_adversarial_224x224",
+        "type": "preloaded"
+    },
+    "dataset": {
+        "batch_size": 16,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "resisc45"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "name": "get_art_model",
+        "weights_file": "densenet121_resisc45_v1.h5",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassificationTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.7.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "use_gpu": false
+    }
+}
