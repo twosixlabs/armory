@@ -55,7 +55,7 @@ class AudioClassificationTask(Scenario):
                 defense = load_defense_wrapper(config["defense"], classifier)
                 defense.fit_generator(train_data, **fit_kwargs)
             else:
-                logger.info(f"Fitting classifier on clean train dataset...")
+                logger.info("Fitting classifier on clean train dataset...")
                 classifier.fit_generator(train_data, **fit_kwargs)
 
         if defense_type == "Transform":

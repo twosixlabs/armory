@@ -6,6 +6,8 @@ import shutil
 from armory import paths
 from armory.utils.external_repo import download_and_extract_repo
 
+HOST_PATHS = paths.HostPaths()
+
 
 def set_github_token():
     """
@@ -24,7 +26,7 @@ def set_github_token():
 def test_download():
     set_github_token()
     test_external_repo_dir = pathlib.Path(
-        paths.host().tmp_dir, "test-external-repo-subdir"
+        HOST_PATHS.tmp_dir, "test-external-repo-subdir"
     )
     repo = "twosixlabs/armory-example"
     repo_name = repo.split("/")[-1]
@@ -42,7 +44,7 @@ def test_download():
 def test_download_branch():
     set_github_token()
     test_external_repo_dir = pathlib.Path(
-        paths.host().tmp_dir, "test-external-repo-subdir"
+        HOST_PATHS.tmp_dir, "test-external-repo-subdir"
     )
     repo = "twosixlabs/armory-example@master"
     org_repo_name = repo.split("@")[0]

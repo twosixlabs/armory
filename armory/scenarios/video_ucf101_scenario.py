@@ -59,7 +59,7 @@ class Ucf101(Scenario):
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
             else:
-                logger.info(f"Fitting classifier on clean train dataset...")
+                logger.info("Fitting classifier on clean train dataset...")
 
             for epoch in range(train_epochs):
                 classifier.set_learning_phase(True)

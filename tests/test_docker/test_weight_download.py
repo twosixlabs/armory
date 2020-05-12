@@ -8,7 +8,7 @@ from armory.data.utils import download_file_from_s3
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_download():
-    saved_model_dir = paths.docker().saved_model_dir
+    saved_model_dir = paths.DockerPaths().saved_model_dir
 
     weights_file = "resnet50_imagenet_v1.h5"
 

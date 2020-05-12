@@ -28,7 +28,7 @@ def _download_weights(weights_file, force_download=False):
     if not weights_file:
         return
 
-    saved_model_dir = paths.docker().saved_model_dir
+    saved_model_dir = paths.runtime_paths().saved_model_dir
     filepath = os.path.join(saved_model_dir, weights_file)
 
     if not os.path.isfile(filepath) and not force_download:

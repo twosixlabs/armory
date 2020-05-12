@@ -7,7 +7,8 @@
         "source_class": 5,
         "target_class": 42,
         "tf_seed": 123,
-        "train_epochs": 2
+        "train_epochs": 2,
+        "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",

@@ -28,8 +28,8 @@ class ArmoryInstance(object):
     ):
         self.docker_client = docker.from_env(version="auto")
 
-        host_paths = paths.host()
-        docker_paths = paths.docker()
+        host_paths = paths.HostPaths()
+        docker_paths = paths.DockerPaths()
         host_tmp_dir = host_paths.tmp_dir
         host_output_dir = host_paths.output_dir
 

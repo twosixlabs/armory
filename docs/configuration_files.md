@@ -29,7 +29,7 @@ All configuration files are verified against the jsonschema definition at run ti
     kwargs: [Object] Keyword arguments to pass to defense instatiation    
     module: [String] Python module to load defense from 
     name: [String] Name of the defense class to be utilized
-    type: [String] Type of defense which flags how it should be used. One of <Preprocessor, Postprocessor, Trainer, Transformer>
+    type: [String] Type of defense which flags how it should be used. One of <Preprocessor, Postprocessor, Trainer, Transformer, PoisonFilteringDefence>
   }
 `metric`: [Object or null]
   {
