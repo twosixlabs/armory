@@ -56,7 +56,7 @@ def librispeech_adversarial(
     adversarial_key: str = "adversarial",
 ) -> datasets.ArmoryDataGenerator:
     """
-    Adversarial dataset based on Librispeech-dev-clean using Unviseral
+    Adversarial dataset based on Librispeech-dev-clean using Universal
     Perturbation with PGD.
 
     split_type - one of ("adversarial")
@@ -69,7 +69,7 @@ def librispeech_adversarial(
     if adversarial_key != "adversarial":
         raise ValueError(f"{adversarial_key} != 'adversarial'")
 
-    return _generator_from_tfds(
+    return datasets._generator_from_tfds(
         "librispeech_adversarial:1.0.0",
         split_type=split_type,
         batch_size=batch_size,

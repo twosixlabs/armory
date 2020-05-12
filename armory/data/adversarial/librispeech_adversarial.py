@@ -67,7 +67,10 @@ _LABELS = [
     "8842",
 ]
 
-_URL = "/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+_URL = (
+    "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/"
+    "LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+)
 
 
 class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
