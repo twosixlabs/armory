@@ -57,15 +57,18 @@ class GTSRB(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
-        classifier_for_defense, _ = load_model(model_config)
 
-        train_epochs = config["adhoc"]["train_epochs"]
-        src_class = config["adhoc"]["source_class"]
-        tgt_class = config["adhoc"]["target_class"]
+        config_adhoc = config.get("adhoc") or {}
+        train_epochs = config_adhoc["train_epochs"]
+        src_class = config_adhoc["source_class"]
+        tgt_class = config_adhoc["target_class"]
 
         # Set random seed due to large variance in attack and defense success
-        np.random.seed(config["adhoc"]["np_seed"])
-        set_random_seed(config["adhoc"]["tf_seed"])
+        np.random.seed(config_adhoc["np_seed"])
+        set_random_seed(config_adhoc["tf_seed"])
+        use_poison_filtering_defense = config_adhoc.get(
+            "use_poison_filtering_defense", True
+        )
 
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         batch_size = config["dataset"]["batch_size"]
@@ -95,37 +98,46 @@ class GTSRB(Scenario):
         y_train_all = np.concatenate(y_train_all, axis=0)
         y_train_all_categorical = to_categorical(y_train_all)
 
-        defense_config = config["defense"]
-        logger.info(
-            f"Fitting model {model_config['module']}.{model_config['name']} "
-            f"for defense {defense_config['name']}..."
-        )
-        classifier_for_defense.fit(
-            x_train_all,
-            y_train_all_categorical,
-            batch_size=batch_size,
-            nb_epochs=train_epochs,
-            verbose=False,
-        )
-        defense_fn = load_fn(defense_config)
-        defense = defense_fn(
-            classifier_for_defense, x_train_all, y_train_all_categorical
-        )
-        _, is_clean = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
-        is_clean = np.array(is_clean)
-        logger.info(f"Total clean data points: {np.sum(is_clean)}")
+        if use_poison_filtering_defense:
+            defense_config = config["defense"]
+            logger.info(
+                f"Fitting model {model_config['module']}.{model_config['name']} "
+                f"for defense {defense_config['name']}..."
+            )
+            classifier_for_defense, _ = load_model(model_config)
+            classifier_for_defense.fit(
+                x_train_all,
+                y_train_all_categorical,
+                batch_size=batch_size,
+                nb_epochs=train_epochs,
+                verbose=False,
+            )
+            defense_fn = load_fn(defense_config)
+            defense = defense_fn(
+                classifier_for_defense, x_train_all, y_train_all_categorical
+            )
 
-        logger.info("Filtering out detected poisoned samples")
-        indices_to_keep = is_clean == 1
-        x_train_filter = x_train_all[indices_to_keep]
-        y_train_filter = y_train_all_categorical[indices_to_keep]
-        if len(x_train_filter):
+            _, is_clean = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
+            is_clean = np.array(is_clean)
+            logger.info(f"Total clean data points: {np.sum(is_clean)}")
+
+            logger.info("Filtering out detected poisoned samples")
+            indices_to_keep = is_clean == 1
+            x_train_final = x_train_all[indices_to_keep]
+            y_train_final = y_train_all_categorical[indices_to_keep]
+        else:
+            logger.info(
+                "Defense does not require filtering. Model fitting will use all data."
+            )
+            x_train_final = x_train_all
+            y_train_final = y_train_all
+        if len(x_train_final):
             logger.info(
                 f"Fitting model of {model_config['module']}.{model_config['name']}..."
             )
             classifier.fit(
-                x_train_filter,
-                y_train_filter,
+                x_train_final,
+                y_train_final,
                 batch_size=batch_size,
                 nb_epochs=train_epochs,
                 verbose=False,
