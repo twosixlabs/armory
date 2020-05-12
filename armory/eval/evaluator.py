@@ -8,7 +8,6 @@ import logging
 import shutil
 import time
 import uuid
-from typing import Union
 
 import docker
 import requests
@@ -17,7 +16,6 @@ from docker.errors import ImageNotFound
 from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance
 from armory.docker.host_management import HostManagementInstance
-from armory.utils.configuration import load_config
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
@@ -27,25 +25,11 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self,
-        config_path: Union[str, dict],
-        no_docker: bool = False,
-        gpu_override: bool = False,
-        gpus_override: str = "",
+        self, config: dict, no_docker: bool = False,
     ):
-        if isinstance(config_path, str):
-            try:
-                self.config = load_config(config_path)
-            except json.decoder.JSONDecodeError:
-                logger.error(f"Could not decode {config_path} as a json file.")
-                if not config_path.lower().endswith(".json"):
-                    logger.warning(f"{config_path} is not a '*.json' file")
-                    logger.warning("If using `armory run`, use a json config file.")
-                raise
-        elif isinstance(config_path, dict):
-            self.config = config_path
-        else:
-            raise ValueError(f"config_path {config_path} must be a str or dict")
+        if not isinstance(config, dict):
+            raise ValueError(f"config {config} must be a dict")
+        self.config = config
 
         self.host_paths = paths.HostPaths()
         if os.path.exists(self.host_paths.armory_config):
@@ -60,9 +44,6 @@ class Evaluator(object):
         self.output_dir = os.path.join(self.host_paths.output_dir, eval_id)
         self.tmp_dir = os.path.join(self.host_paths.tmp_dir, eval_id)
 
-        if gpu_override:
-            self.config["sysconfig"]["use_gpu"] = True
-
         if self.config["sysconfig"].get("use_gpu", None):
             kwargs = dict(runtime="nvidia")
         else:
@@ -71,7 +52,6 @@ class Evaluator(object):
         kwargs["image_name"] = image_name
         self.no_docker = not image_name or no_docker
 
-        self.gpus_override = gpus_override
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
         self._gather_env_variables()
@@ -111,9 +91,6 @@ class Evaluator(object):
             self.extra_env_vars["VERIFY_SSL"] = "false"
 
         if self.config["sysconfig"].get("use_gpu", None):
-            if self.gpus_override:
-                self.config["sysconfig"]["gpus"] = self.gpus_override
-
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
