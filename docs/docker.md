@@ -170,7 +170,7 @@ with
 ```
  cudatoolkit=9.2 -c pytorch && \
 ```
-in `docker/pytorch/Dockerfile` and build them the pytorch container locally.
+in `docker/pytorch/Dockerfile` and build the pytorch container locally.
 
 
 ## Docker Setup
