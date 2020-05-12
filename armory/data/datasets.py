@@ -365,37 +365,6 @@ def german_traffic_sign(
     )
 
 
-def librispeech_adversarial(
-    split_type: str = "adversarial",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-):
-    """
-    Adversarial dataset based on Librispeech-dev-clean using Unviseral
-    Perturbation with PGD.
-
-    split_type - one of ("adversarial")
-
-    returns:
-        Generator
-    """
-
-    return _generator_from_tfds(
-        "librispeech_adversarial:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        variable_length=bool(batch_size > 1),
-        cache_dataset=False,  # used to be cache_dataset
-    )
-
-
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
