@@ -24,18 +24,14 @@ class ArmoryInstance(object):
         runtime: str = "runc",
         envs: dict = None,
         ports: dict = None,
-        container_subdir: str = None,
         command: str = "tail -f /dev/null",
     ):
         self.docker_client = docker.from_env(version="auto")
 
-        host_paths = paths.host()
-        docker_paths = paths.docker()
+        host_paths = paths.HostPaths()
+        docker_paths = paths.DockerPaths()
         host_tmp_dir = host_paths.tmp_dir
         host_output_dir = host_paths.output_dir
-        if container_subdir:
-            host_tmp_dir = os.path.join(host_tmp_dir, container_subdir)
-            host_output_dir = os.path.join(host_output_dir, container_subdir)
 
         container_args = {
             "runtime": runtime,
@@ -101,14 +97,10 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None, container_subdir: str = None,
+        self, envs: dict = None, ports: dict = None
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name,
-            runtime=self.runtime,
-            envs=envs,
-            ports=ports,
-            container_subdir=container_subdir,
+            self.name, runtime=self.runtime, envs=envs, ports=ports,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

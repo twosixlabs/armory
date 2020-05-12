@@ -4,6 +4,12 @@ Helper utilies to load things from armory configuration files.
 
 from importlib import import_module
 
+# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
+#     all CPU resources when num_workers > 1
+try:
+    import torch  # noqa: F401
+except ImportError:
+    pass
 from art.attacks import Attack
 from art import defences
 from art.classifiers import Classifier
@@ -64,6 +70,21 @@ def load_attack(attack_config, classifier):
     if not isinstance(attack, Attack):
         raise TypeError(f"attack {attack} is not an instance of {Attack}")
     return attack
+
+
+def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
+    if config.get("type") != "preloaded":
+        raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
+    dataset_module = import_module(config["module"])
+    dataset_fn = getattr(dataset_module, config["name"])
+    dataset_kwargs = config["kwargs"]
+    dataset_kwargs.update(kwargs)
+    if "description" in dataset_kwargs:
+        dataset_kwargs.pop("description")
+    dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
+    if not isinstance(dataset, ArmoryDataGenerator):
+        raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    return dataset
 
 
 def _check_defense_api(defense, defense_baseclass):

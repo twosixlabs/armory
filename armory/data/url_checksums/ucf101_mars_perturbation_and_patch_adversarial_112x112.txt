@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/ucf101-adv/ucf101_mars_perturbation_and_patch_adversarial_112x112.tar.gz 4059732832 f8518692b0cd9c9f1d9e4bb2895a38fc956d3d19ebbc0cfc4ed3f167a16b91f2

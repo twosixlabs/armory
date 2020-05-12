@@ -34,7 +34,7 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
     :param weights_file:
     :return:
     """
-    saved_model_dir = paths.docker().saved_model_dir
+    saved_model_dir = paths.runtime_paths().saved_model_dir
     filepath = os.path.join(saved_model_dir, weights_file)
 
     if os.path.isfile(filepath):
@@ -58,9 +58,10 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param key: S3 File key name
     :param local_path: Local file path to download as
     """
+    verify_ssl = _get_verify_ssl()
     if not os.path.isfile(local_path):
         client = boto3.client(
-            "s3", config=Config(signature_version=UNSIGNED), verify=False
+            "s3", config=Config(signature_version=UNSIGNED), verify=verify_ssl
         )
 
         try:
@@ -74,10 +75,16 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         logger.info(f"Reusing cached file {local_path}...")
 
 
+def _get_verify_ssl():
+    return os.getenv("VERIFY_SSL") == "true" or os.getenv("VERIFY_SSL") is None
+
+
 def download_requests(url: str, dirpath: str, filename: str):
+    verify_ssl = _get_verify_ssl()
+
     filepath = os.path.join(dirpath, filename)
     chunk_size = 4096
-    r = requests.get(url, stream=True, verify=False)
+    r = requests.get(url, stream=True, verify=verify_ssl)
     with open(filepath, "wb") as f:
         progress_bar = tqdm(
             unit="B", total=int(r.headers["Content-Length"]), unit_scale=True

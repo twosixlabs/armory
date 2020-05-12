@@ -64,7 +64,7 @@ LABELS = [
 def split_data(rootdir=None, full="NWPU-RESISC45"):
     if rootdir is None:
         rootdir = os.path.join(
-            paths.host().dataset_dir, "downloads", "manual", "resisc45"
+            paths.HostPaths().dataset_dir, "downloads", "manual", "resisc45"
         )
     train = "train"
     validation = "validation"

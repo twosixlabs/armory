@@ -13,17 +13,21 @@ The particular scenario and configs will be picked up in the "scenario" field:
 """
 
 import abc
+import base64
 import argparse
 import json
 import logging
 import os
 import time
+import sys
 
 import coloredlogs
 
 import armory
 from armory import paths
 from armory.utils import config_loading
+from armory.utils import external_repo
+from armory.utils.configuration import load_config
 
 
 logger = logging.getLogger(__name__)
@@ -34,10 +38,36 @@ class Scenario(abc.ABC):
         """
         Evaluate a config for robustness against attack.
         """
+        self.setup(config)
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         self.save(config, results)
+
+    def setup(self, config: dict):
+        """
+        Performs scenario setup on the evaluating system.
+        """
+
+        runtime_paths = paths.runtime_paths()
+
+        self.scenario_output_dir = os.path.join(
+            runtime_paths.output_dir, config["eval_id"]
+        )
+
+        self.scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
+        os.makedirs(self.scenario_output_dir, exist_ok=True)
+        os.makedirs(self.scenario_tmp_dir, exist_ok=True)
+        logger.warning(f"Outputs will be written to {self.scenario_output_dir}")
+
+        if config["sysconfig"].get("external_github_repo", None):
+            external_repo_dir = os.path.join(self.scenario_tmp_dir, "external")
+            external_repo.download_and_extract_repo(
+                config["sysconfig"]["external_github_repo"],
+                external_repo_dir=external_repo_dir,
+            )
+
+            sys.path.insert(0, external_repo_dir)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -57,13 +87,15 @@ class Scenario(abc.ABC):
             raise NotImplementedError("saving adversarial examples")
 
         scenario_name = config["scenario"]["name"]
-        filename = f"{scenario_name}_{int(time.time())}.json"
+        timestamp = int(time.time())
+        filename = f"{scenario_name}_{timestamp}.json"
         logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
-        with open(os.path.join(paths.docker().output_dir, filename), "w") as f:
+        with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
             output_dict = {
                 "armory_version": armory.__version__,
                 "config": config,
                 "results": results,
+                "timestamp": timestamp,
             }
             f.write(json.dumps(output_dict, sort_keys=True, indent=4) + "\n")
 
@@ -74,8 +106,14 @@ def parse_config(config_path):
     return config
 
 
-def run_config(config_path):
-    config = parse_config(config_path)
+def run_config(config_json, from_file=False):
+    if from_file:
+        config = load_config(config_json)
+    else:
+        config_base64_bytes = config_json.encode("utf-8")
+        config_b64_bytes = base64.b64decode(config_base64_bytes)
+        config_string = config_b64_bytes.decode("utf-8")
+        config = json.loads(config_string)
     scenario_config = config.get("scenario")
     if scenario_config is None:
         raise KeyError('"scenario" missing from evaluation config')
@@ -86,10 +124,7 @@ def run_config(config_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="scenario", description="run armory scenario")
     parser.add_argument(
-        "config_path",
-        metavar="<config path>",
-        type=str,
-        help="system filepath to scenario config JSON",
+        "config", metavar="<config json>", type=str, help="scenario config JSON",
     )
     parser.add_argument(
         "-d",
@@ -108,7 +143,15 @@ if __name__ == "__main__":
         default=False,
         help="Whether to use Docker or a local environment with armory run",
     )
+    parser.add_argument(
+        "--load-config-from-file",
+        dest="from_file",
+        action="store_const",
+        const=True,
+        default=False,
+        help="If the config argument is a path instead of serialized JSON",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
-    paths.no_docker = args.no_docker
-    run_config(args.config_path)
+    paths.NO_DOCKER = args.no_docker
+    run_config(args.config, args.from_file)

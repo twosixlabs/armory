@@ -4,9 +4,10 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.data import adversarial_datasets
 from armory import paths
 
-DATASET_DIR = paths.docker().dataset_dir
+DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
@@ -107,13 +108,11 @@ def test_keras_imagenet():
     classifier_module = import_module("armory.baseline_models.keras.resnet50")
     classifier_fn = getattr(classifier_module, "get_art_model")
     classifier = classifier_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_file="resnet50_weights_tf_dim_ordering_tf_kernels.h5",
+        model_kwargs={}, wrapper_kwargs={}, weights_file="resnet50_imagenet_v1.h5",
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = datasets.imagenet_adversarial(
+    clean_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="clean",
         epochs=1,
         batch_size=100,
@@ -121,7 +120,7 @@ def test_keras_imagenet():
         preprocessing_fn=preprocessing_fn,
     )
 
-    adv_dataset = datasets.imagenet_adversarial(
+    adv_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,
@@ -153,11 +152,11 @@ def test_keras_imagenet_transfer():
     classifier = classifier_fn(
         model_kwargs={},
         wrapper_kwargs={},
-        weights_file="inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5",
+        weights_file="inceptionresnetv2_imagenet_v1.h5",
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = datasets.imagenet_adversarial(
+    clean_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="clean",
         epochs=1,
         batch_size=100,
@@ -165,7 +164,7 @@ def test_keras_imagenet_transfer():
         preprocessing_fn=preprocessing_fn,
     )
 
-    adv_dataset = datasets.imagenet_adversarial(
+    adv_dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,
