@@ -32,9 +32,6 @@ from armory.data.utils import (
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
-from armory.data.adversarial import (  # noqa: F401
-    resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224 as RA,  # noqa: F401
-)  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
@@ -435,36 +432,6 @@ def resisc45(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-    )
-
-
-def resisc45_adversarial_224x224(
-    split_type: str = "adversarial",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
-    cache_dataset: bool = False,
-    framework: str = "numpy",
-) -> ArmoryDataGenerator:
-    """
-    resisc45 Adversarial Dataset of size (224, 224, 3),
-    including clean, adversarial universal perturbation, and
-    adversarial patched
-    """
-
-    return _generator_from_tfds(
-        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        as_supervised=False,
-        supervised_xy_keys=("images", "label"),
-        variable_length=False,
         cache_dataset=cache_dataset,
         framework=framework,
     )
