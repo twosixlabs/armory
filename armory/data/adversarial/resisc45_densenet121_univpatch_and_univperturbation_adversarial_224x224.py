@@ -30,7 +30,10 @@ _CITATION = """
 }
 """
 _URL = ""
-_DL_URL = "/armory/datasets/resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224.tar.gz"
+_DL_URL = (
+    "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/"
+    "resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224.tar.gz"
+)
 _LABELS = [
     "airplane",
     "airport",
