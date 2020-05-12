@@ -5,9 +5,10 @@
         "budget": null,
         "knowledge": "white",
         "kwargs": {
+            "adversarial_goal": "targeted",
             "adversarial_key": "adversarial_patch",
             "batch_size": 1,
-            "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
+            "description": "'adversarial_key':'adversarial_goal' can be 'adversarial_perturbation':'untargeted' or 'adversarial_patch':'targeted'"
         },
         "module": "armory.data.adversarial_datasets",
         "name": "ucf101_adversarial_112x112",
