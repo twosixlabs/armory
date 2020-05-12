@@ -120,10 +120,9 @@ class ArmoryDataGenerator(DataGenerator):
 
         if self.preprocessing_fn:
             if isinstance(x, dict):
-                x_new = {}
-                for k in x.keys():
-                    x_new[k] = self.preprocessing_fn(x[k])
-                x = x_new
+                x = {k: self.preprocessing_fn(v) for (k, v) in x.items()}
+            elif isinstance(x, tuple):
+                x = tuple(self.preprocessing_fn(i) for i in x)
             else:
                 x = self.preprocessing_fn(x)
 
