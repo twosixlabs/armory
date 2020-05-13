@@ -1,0 +1,1 @@
+armory-public-data adversarial-datasets/cached/resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224_cached.tar.gz 8770675 4dd6a6c69d6ce4f72db2ab9d8f4c3acf605e5f7a6ffe371617645112d9495737
