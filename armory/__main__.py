@@ -152,7 +152,7 @@ def _docker_image(parser):
 # Config
 
 
-def _set_gpus(config, use_gpu, gpus):
+def _set_gpus(config, use_gpu, gpus, existing_config_flag=False):
     """
     Set gpu values from parser in config
     """
@@ -161,9 +161,9 @@ def _set_gpus(config, use_gpu, gpus):
             logger.info("--gpus field specified. Setting --use-gpu to True")
             use_gpu = True
         config["sysconfig"]["gpus"] = gpus
-    if use_gpu:
-        # Override if use_gpu, otherwise leave config setting in place
-        config["sysconfig"]["use_gpu"] = True
+    if use_gpu or not existing_config_flag:
+        # Override if use_gpu, otherwise if config exists, leave config setting in place
+        config["sysconfig"]["use_gpu"] = use_gpu
 
 
 # Commands
@@ -196,7 +196,7 @@ def run(command_args, prog, description):
         if not args.filepath.lower().endswith(".json"):
             logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
-    _set_gpus(config, args.use_gpu, args.gpus)
+    _set_gpus(config, args.use_gpu, args.gpus, existing_config_flag=True)
 
     rig = Evaluator(config, no_docker=args.no_docker)
     rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
