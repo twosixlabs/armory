@@ -1,0 +1,1 @@
+armory-public-data adversarial-datasets/cached/librispeech_adversarial_cached.tar.gz 2000622984 8293aadd2705a3b1ce992eec467f7c88895349f30df007eb439efec2f908aed5
