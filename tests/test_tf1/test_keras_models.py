@@ -7,7 +7,7 @@ from armory.data import datasets
 from armory.data import adversarial_datasets
 from armory import paths
 
-DATASET_DIR = paths.DockerPaths().dataset_dir
+DATASET_DIR = paths.runtime_paths().dataset_dir
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
