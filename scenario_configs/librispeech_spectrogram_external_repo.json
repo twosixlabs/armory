@@ -40,8 +40,8 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.7.0-dev",
-        "external_github_repo": "armory-example@master",
+        "external_github_repo": "twosixlabs/armory-example@master",
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
