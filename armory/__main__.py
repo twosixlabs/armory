@@ -65,7 +65,7 @@ class DockerImage(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
 
 
 class DownloadConfig(argparse.Action):
