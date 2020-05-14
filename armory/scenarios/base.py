@@ -19,7 +19,6 @@ import json
 import logging
 import os
 import time
-import sys
 
 import coloredlogs
 
@@ -60,14 +59,13 @@ class Scenario(abc.ABC):
         os.makedirs(self.scenario_tmp_dir, exist_ok=True)
         logger.warning(f"Outputs will be written to {self.scenario_output_dir}")
 
+        # Download any external repositories and add them to the sys path for use
         if config["sysconfig"].get("external_github_repo", None):
             external_repo_dir = os.path.join(self.scenario_tmp_dir, "external")
             external_repo.download_and_extract_repo(
                 config["sysconfig"]["external_github_repo"],
                 external_repo_dir=external_repo_dir,
             )
-
-            sys.path.insert(0, external_repo_dir)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
