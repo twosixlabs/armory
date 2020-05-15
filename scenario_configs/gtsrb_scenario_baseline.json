@@ -1,13 +1,13 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
-        "fraction_poisoned": 0.7,
+        "fraction_poisoned": 0.1,
         "np_seed": 123,
         "poison_dataset": true,
         "source_class": 5,
         "target_class": 42,
         "tf_seed": 123,
-        "train_epochs": 2,
+        "train_epochs": 10,
         "use_poison_filtering_defense": true
     },
     "attack": {
