@@ -1,0 +1,47 @@
+{
+    "_description": "Librispeech_dev_clean audio spectrogram classification, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "budget": {
+            "norm": [
+                "L2"
+            ]
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 32,
+            "eps": 0.2
+        },
+        "module": "art.attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 64,
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean"
+    },
+    "defense": null,
+    "metric": null,
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 1
+        },
+        "model_kwargs": {},
+        "module": "example_models.keras.librispeech_spectrogram",
+        "name": "get_art_model",
+        "weights_file": "cnnspectrogram_librispeech_v1.h5",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "example_scenarios.audio_spectrogram_classification",
+        "name": "AudioSpectrogramClassificationTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.7.0-dev",
+        "external_github_repo": "twosixlabs/armory-example@master",
+        "gpus": "all",
+        "use_gpu": false
+    }
+}

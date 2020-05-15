@@ -37,17 +37,5 @@ armory run official_scenario_configs/cifar10_baseline.json
 
 ## External Repos
 You may want to include code from an external repository that is outside of your 
-current working directory project. This is supported through the `external_github_repo`
-field in the configuration file. At launch, the repository will be pulled into the 
-container and placed on the PYTHONPATH so it can be utilized.
-
-This functionality supports public and private GITHUB repositories. If you would like 
-to pull in a private repository, you'll need to set a user token as an environment 
-variable before running `armory run`.
-
-```
-export ARMORY_GITHUB_TOKEN="5555e8b..."
-armory run <path/to/config.json>
-```
-
-Tokens can be created here: [https://github.com/settings/tokens](https://github.com/settings/tokens)
+current working directory project. This is fully supported by Armory and more 
+information can be found in the [external repo documentation](external_repos.md).
