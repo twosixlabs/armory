@@ -135,7 +135,7 @@ class Evaluator(object):
             )
             try:
                 if jupyter:
-                    self._run_jupyter(runner, host_port=host_port)
+                    self._run_jupyter(runner)
                 elif interactive:
                     self._run_interactive_bash(runner)
                 elif command:
@@ -227,13 +227,11 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    def _run_jupyter(self, runner, host_port=8888) -> None:
+    def _run_jupyter(self, runner) -> None:
         user_id = os.getuid() if os.name != "nt" else 0
         group_id = os.getgid() if os.name != "nt" else 0
         lines = [
             "About to launch jupyter.",
-            bold("*** To connect to jupyter, please open the following in a browser:"),
-            bold(red(f"    http://127.0.0.1:{host_port}")),
             bold("*** To connect on the command line as well, in a new terminal, run:"),
             bold(
                 f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
@@ -244,6 +242,5 @@ class Evaluator(object):
         ]
         logger.info("\n".join(lines))
         runner.exec_cmd(
-            "jupyter lab --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''",
-            user="root",
+            "jupyter lab --ip=0.0.0.0 --no-browser --allow-root", user="root",
         )
