@@ -47,7 +47,7 @@ jobs:
           docker push twosixarmory/armory:latest
   release-tf1-docker:
     name: Build and release tf1 docker image
-    needs: [release-wheel]
+    needs: [release-wheel, release-armory-docker]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -69,7 +69,7 @@ jobs:
           docker push twosixarmory/tf1:latest
   release-tf2-docker:
     name: Build and release tf2 docker image
-    needs: [release-wheel]
+    needs: [release-wheel, release-armory-docker]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -91,7 +91,7 @@ jobs:
           docker push twosixarmory/tf2:latest
   release-pytorch-docker:
     name: Build and release pytorch docker image
-    needs: [release-wheel]
+    needs: [release-wheel, release-armory-docker]
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
