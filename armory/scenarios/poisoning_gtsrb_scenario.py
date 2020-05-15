@@ -169,10 +169,12 @@ class GTSRB(Scenario):
             )
             test_metric = metrics.MetricList("categorical_accuracy")
             targeted_test_metric = metrics.MetricList("categorical_accuracy")
+            fraction_poisoned_test = config["adhoc"].get("fraction_poisoned_test", 1)
             for x_test, y_test in tqdm(test_data, desc="Testing"):
-                x_test, _ = poison_batch(
-                    x_test, y_test, src_class, tgt_class, len(y_test), attack
-                )
+                if np.random.rand() < fraction_poisoned_test:
+                    x_test, _ = poison_batch(
+                        x_test, y_test, src_class, tgt_class, len(y_test), attack
+                    )
                 y_pred = classifier.predict(x_test)
                 test_metric.append(y_test, y_pred)
 
