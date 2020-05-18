@@ -12,6 +12,20 @@ logger = logging.getLogger(__name__)
 NO_DOCKER = False
 
 
+def set_mode(mode):
+    """
+    Set path mode to "docker" or "host"
+    """
+    MODES = ("docker", "host")
+    global NO_DOCKER
+    if mode == "docker":
+        NO_DOCKER = False
+    elif mode == "host":
+        NO_DOCKER = True
+    else:
+        raise ValueError(f"mode {mode} is not in {MODES}")
+
+
 def runtime_paths():
     """
     Delegates armory evaluation paths to be either Host or Docker paths.
