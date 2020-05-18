@@ -66,6 +66,20 @@ class Evaluator(object):
             docker_client.images.get(kwargs["image_name"])
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
+            if "twosixarmory" in image_name and "-dev" in image_name:
+                raise ValueError(
+                    (
+                        "You are attempting to pull an armory developer "
+                        "docker image; however, these are not published. This "
+                        "is likely because you're running armory from its "
+                        "master branch. If you want a stable release with "
+                        "published docker images try pip installing 'armory-testbed' "
+                        "or checking out one of the stable branches on the git repository. "
+                        "If you'd like to continue working on the developer image please "
+                        "build it from source on your machine as described here: "
+                        "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers"
+                    )
+                )
             docker_api.pull_verbose(docker_client, image_name)
         except requests.exceptions.ConnectionError:
             logger.error("Docker connection refused. Is Docker Daemon running?")
