@@ -3,7 +3,7 @@ import os
 import pytest
 
 from armory import paths
-from armory.data.utils import download_file_from_s3
+from armory.data.utils import download_file_from_s3, maybe_download_weights_from_s3
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
@@ -23,3 +23,10 @@ def test_download():
         f"{saved_model_dir}/{weights_file}",
     )
     assert os.path.isfile(os.path.join(saved_model_dir, weights_file))
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_invalid_weights():
+    weights_file = "does_not_exist.h5"
+    with pytest.raises(ValueError, match="attempting to load a custom set of weights"):
+        maybe_download_weights_from_s3(weights_file)
