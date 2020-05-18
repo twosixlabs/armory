@@ -65,7 +65,7 @@ class DockerImage(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/official_scenario_configs/scenarios-set1.json"
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
 
 
 class DownloadConfig(argparse.Action):
@@ -161,7 +161,9 @@ def _set_gpus(config, use_gpu, gpus):
             logger.info("--gpus field specified. Setting --use-gpu to True")
             use_gpu = True
         config["sysconfig"]["gpus"] = gpus
-    config["sysconfig"]["use_gpu"] = use_gpu
+    if use_gpu or "use_gpu" not in config["sysconfig"]:
+        # Override if use_gpu, otherwise if config exists, leave config setting in place
+        config["sysconfig"]["use_gpu"] = use_gpu
 
 
 # Commands

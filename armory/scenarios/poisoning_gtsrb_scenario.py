@@ -153,11 +153,23 @@ class GTSRB(Scenario):
             preprocessing_fn=preprocessing_fn,
         )
         validation_metric = metrics.MetricList("categorical_accuracy")
+        target_class_benign_metric = metrics.MetricList("categorical_accuracy")
         for x, y in tqdm(test_data, desc="Testing"):
             y_pred = classifier.predict(x)
             validation_metric.append(y, y_pred)
+            y_pred_tgt_class = y_pred[y == src_class]
+            if len(y_pred_tgt_class):
+                target_class_benign_metric.append(
+                    [src_class] * len(y_pred_tgt_class), y_pred_tgt_class
+                )
         logger.info(f"Unpoisoned validation accuracy: {validation_metric.mean():.2%}")
-        results = {"validation_accuracy": validation_metric.mean()}
+        logger.info(
+            f"Unpoisoned validation accuracy on targeted class: {target_class_benign_metric.mean():.2%}"
+        )
+        results = {
+            "validation_accuracy": validation_metric.mean(),
+            "validation_accuracy_targeted_class": target_class_benign_metric.mean(),
+        }
 
         if poison_dataset_flag:
             logger.info("Testing on poisoned test data")

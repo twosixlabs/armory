@@ -1,5 +1,5 @@
 {
-    "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
+    "_description": "Librispeech_dev_clean audio spectrogram classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "budget": {
@@ -9,45 +9,38 @@
         },
         "knowledge": "white",
         "kwargs": {
+            "batch_size": 32,
             "eps": 0.2
         },
         "module": "art.attacks",
         "name": "FastGradientMethod"
     },
     "dataset": {
-        "batch_size": 128,
-        "framework": "numpy",
+        "batch_size": 64,
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean"
     },
     "defense": null,
-    "metric": {
-        "means": true,
-        "perturbation": "linf",
-        "record_metric_per_sample": false,
-        "task": [
-            "categorical_accuracy"
-        ]
-    },
+    "metric": null,
     "model": {
         "fit": false,
         "fit_kwargs": {
-            "nb_epochs": 20000
+            "nb_epochs": 1
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.sincnet",
+        "module": "example_models.keras.librispeech_spectrogram",
         "name": "get_art_model",
-        "weights_file": "sincnet_librispeech_v1.pth",
+        "weights_file": "cnnspectrogram_librispeech_v1.h5",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.audio_classification",
-        "name": "AudioClassificationTask"
+        "module": "example_scenarios.audio_spectrogram_classification",
+        "name": "AudioSpectrogramClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.8.0-dev",
-        "external_github_repo": "hkakitani/SincNet",
+        "docker_image": "twosixarmory/tf1:0.8.0-dev",
+        "external_github_repo": "twosixlabs/armory-example@master",
         "gpus": "all",
         "use_gpu": false
     }

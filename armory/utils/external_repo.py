@@ -5,6 +5,7 @@ import os
 import logging
 import tarfile
 import shutil
+import sys
 
 import requests
 
@@ -18,9 +19,10 @@ def download_and_extract_repo(
     external_repo_name: str, external_repo_dir: str = None
 ) -> None:
     """
-    Downloads and extracts an external repository for use within ARMORY.
+    Downloads and extracts an external repository for use within ARMORY. The external
+    repositories project root will be added to the sys path.
 
-    Private repositories require a `GITHUB_TOKEN` environment variable.
+    Private repositories require an `ARMORY_GITHUB_TOKEN` environment variable.
     :param external_repo_name: String name of "organization/repo-name"
     """
     if external_repo_dir is None:
@@ -62,7 +64,8 @@ def download_and_extract_repo(
         os.rename(
             os.path.join(external_repo_dir, dl_directory_name), final_dir_name,
         )
-        # os.remove(tar_filename)
+        sys.path.insert(0, external_repo_dir)
+        sys.path.insert(0, final_dir_name)
 
     else:
         raise ConnectionError(

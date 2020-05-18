@@ -1,0 +1,1 @@
+armory-public-data adversarial-datasets/cached/ucf101_mars_perturbation_and_patch_adversarial112x112_cached.tar.gz 4051267426 812e5ec522e5ca3241f6af50775a4a138c3f6f5d2a9d96faa2e1332f933dedc5
