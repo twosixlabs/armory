@@ -9,6 +9,10 @@ import os
 logger = logging.getLogger(__name__)
 
 
+def get_verify_ssl():
+    return os.getenv("VERIFY_SSL") == "true" or os.getenv("VERIFY_SSL") is None
+
+
 # TODO: Validate with JSON schema
 def validate_config(config: dict) -> None:
     if not isinstance(config, dict):
