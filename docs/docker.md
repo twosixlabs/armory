@@ -229,14 +229,12 @@ the pathing mode to host in python:
 ```python
 from armory import paths
 paths.set_mode("host")
-from armory import datasets
+from armory.data import datasets
 ds = datasets.mnist()
 x, y = next(ds)
 ```
 
-NOTE: when running Armory without docker, you will need to manually install the 
-requirements in `host-requirements.txt` that match your framework (TF1, TF2, PyTorch).
-
 ### Environment setup
-The listing of libraries needed for Armory when run on host is available at
-`host-requirements.txt`. 
+NOTE: The listing of libraries needed for Armory when run on host is available at
+`host-requirements.txt`. You will need to manually install the requirements in
+that file that match your framework (TF1, TF2, PyTorch).
