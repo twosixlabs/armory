@@ -249,6 +249,7 @@ def download(command_args, prog, description):
 
     if args.no_docker:
         logger.info("Downloading requested datasets and model weights in host mode...")
+        paths.set_mode("host")
         from armory.data import datasets
         from armory.data import model_weights
 
