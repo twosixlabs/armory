@@ -139,18 +139,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--no-docker",
-        dest="no_docker",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to use Docker or a local environment with armory run",
     )
     parser.add_argument(
         "--load-config-from-file",
         dest="from_file",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="If the config argument is a path instead of serialized JSON",
     )
     args = parser.parse_args()
