@@ -19,7 +19,7 @@ def imagenet_adversarial(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
-    cache_dataset: bool = False,
+    cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial",
