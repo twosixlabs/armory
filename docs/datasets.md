@@ -27,10 +27,10 @@ These tfrecord files will be pulled from S3 if not available on your
 <br>
 
 ### Audio Datasets
-| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
-|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 |
-| [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 |
+| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | sampling_rate |
+|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:-------: |
+| [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 | 8 kHz |
+| [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 | 16 kHz |
 
 <br>
 
