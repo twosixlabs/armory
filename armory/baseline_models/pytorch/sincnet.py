@@ -37,9 +37,14 @@ def preprocessing_fn(batch):
         # Signal normalization
         signal = signal / np.max(np.abs(signal))
 
-        # get random chunk of fixed length (from SincNet's create_batches_rnd)
+        # get chunk of fixed length (from SincNet's create_batches_rnd)
         signal_length = len(signal)
-        signal_start = np.random.randint(signal_length - WINDOW_LENGTH - 1)
+        np.random.seed(signal_length)
+        signal_start = (
+            np.random.randint(signal_length / WINDOW_LENGTH - 1)
+            * WINDOW_LENGTH
+            % signal_length
+        )
         signal_stop = signal_start + WINDOW_LENGTH
         signal = signal[signal_start:signal_stop]
         processed_batch.append(signal)
