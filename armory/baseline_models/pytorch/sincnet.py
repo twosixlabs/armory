@@ -19,6 +19,8 @@ from SincNet import dnn_models
 
 logger = logging.getLogger(__name__)
 
+# NOTE: Underlying dataset sample rate is 16 kHz. SincNet uses this SAMPLE_RATE to
+# determine internal filter high cutoff frequency.
 SAMPLE_RATE = 8000
 WINDOW_STEP_SIZE = 375
 WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
@@ -37,7 +39,7 @@ def preprocessing_fn(batch):
         # Signal normalization
         signal = signal / np.max(np.abs(signal))
 
-        # get chunk of fixed length (from SincNet's create_batches_rnd)
+        # get pseudorandom chunk of fixed length (from SincNet's create_batches_rnd)
         signal_length = len(signal)
         np.random.seed(signal_length)
         signal_start = (
