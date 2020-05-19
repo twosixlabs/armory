@@ -129,8 +129,8 @@ def snr(x, x_adv):
     """
     Return the SNR of a batch of samples with raw audio input
     """
-    if x.shape != x_adv.shape:
-        raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
+    if len(x) != len(x_adv):
+        raise ValueError(f"len(x) {len(x)} != len(x_adv) {len(x_adv)}")
     return [float(_snr(x_i, x_adv_i)) for (x_i, x_adv_i) in zip(x, x_adv)]
 
 
@@ -146,7 +146,7 @@ def _snr_spectrogram(x_i, x_adv_i):
     x_adv_i = np.asarray(x_adv_i, dtype=float)
     if x_i.shape != x_adv_i.shape:
         raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    signal_power = x_i.mean()
+    signal_power = np.abs(x_i).mean()
     noise_power = np.abs(x_i - x_adv_i).mean()
     return signal_power / noise_power
 
