@@ -112,15 +112,7 @@ def test_keras_imagenet():
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = adversarial_datasets.imagenet_adversarial(
-        split_type="clean",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
-    )
-
-    adv_dataset = adversarial_datasets.imagenet_adversarial(
+    dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,
@@ -128,19 +120,16 @@ def test_keras_imagenet():
         preprocessing_fn=preprocessing_fn,
     )
 
-    accuracy = 0
-    for _ in range(clean_dataset.batches_per_epoch):
-        x, y = clean_dataset.get_batch()
-        predictions = classifier.predict(x)
-        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / clean_dataset.batches_per_epoch) > 0.65
-
-    accuracy = 0
-    for _ in range(adv_dataset.batches_per_epoch):
-        x, y = adv_dataset.get_batch()
-        predictions = classifier.predict(x)
-        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / adv_dataset.batches_per_epoch) < 0.02
+    accuracy_clean = 0
+    accuracy_adv = 0
+    for _ in range(dataset.batches_per_epoch):
+        (x_clean, x_adv), y = dataset.get_batch()
+        predictions_clean = classifier.predict(x_clean)
+        accuracy_clean += np.sum(np.argmax(predictions_clean, axis=1) == y) / len(y)
+        predictions_adv = classifier.predict(x_adv)
+        accuracy_adv += np.sum(np.argmax(predictions_adv, axis=1) == y) / len(y)
+    assert (accuracy_clean / dataset.batches_per_epoch) > 0.65
+    assert (accuracy_adv / dataset.batches_per_epoch) < 0.02
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
@@ -156,32 +145,21 @@ def test_keras_imagenet_transfer():
     )
     preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
-    clean_dataset = adversarial_datasets.imagenet_adversarial(
-        split_type="clean",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
-    )
-
-    adv_dataset = adversarial_datasets.imagenet_adversarial(
+    dataset = adversarial_datasets.imagenet_adversarial(
         split_type="adversarial",
         epochs=1,
         batch_size=100,
         dataset_dir=DATASET_DIR,
         preprocessing_fn=preprocessing_fn,
     )
+    accuracy_clean = 0
+    accuracy_adv = 0
+    for _ in range(dataset.batches_per_epoch):
+        (x_clean, x_adv), y = dataset.get_batch()
+        predictions_clean = classifier.predict(x_clean)
+        accuracy_clean += np.sum(np.argmax(predictions_clean, axis=1) == y) / len(y)
+        predictions_adv = classifier.predict(x_adv)
+        accuracy_adv += np.sum(np.argmax(predictions_adv, axis=1) == y) / len(y)
 
-    accuracy = 0
-    for _ in range(clean_dataset.batches_per_epoch):
-        x, y = clean_dataset.get_batch()
-        predictions = classifier.predict(x)
-        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / clean_dataset.batches_per_epoch) > 0.75
-
-    accuracy = 0
-    for _ in range(adv_dataset.batches_per_epoch):
-        x, y = adv_dataset.get_batch()
-        predictions = classifier.predict(x)
-        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / adv_dataset.batches_per_epoch) < 0.73
+    assert (accuracy_clean / dataset.batches_per_epoch) > 0.75
+    assert (accuracy_adv / dataset.batches_per_epoch) < 0.73
