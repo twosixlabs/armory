@@ -10,6 +10,7 @@ import sys
 import requests
 
 from armory import paths
+from armory.configuration import get_verify_ssl
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ def download_and_extract_repo(
     Private repositories require an `ARMORY_GITHUB_TOKEN` environment variable.
     :param external_repo_name: String name of "organization/repo-name"
     """
+    verify_ssl = get_verify_ssl()
+
     if external_repo_dir is None:
         external_repo_dir = paths.HostPaths().external_repo_dir
 
@@ -45,6 +48,7 @@ def download_and_extract_repo(
         f"https://api.github.com/repos/{org_repo_name}/tarball/{branch}",
         headers=headers,
         stream=True,
+        verify=verify_ssl,
     )
 
     if response.status_code == 200:

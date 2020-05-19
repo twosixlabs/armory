@@ -20,12 +20,9 @@ from tqdm import tqdm
 
 from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
+from armory.configuration import get_verify_ssl
 
 logger = logging.getLogger(__name__)
-
-requests.packages.urllib3.disable_warnings(
-    requests.packages.urllib3.exceptions.InsecureRequestWarning
-)
 
 
 def maybe_download_weights_from_s3(weights_file: str) -> str:
@@ -68,7 +65,7 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param key: S3 File key name
     :param local_path: Local file path to download as
     """
-    verify_ssl = _get_verify_ssl()
+    verify_ssl = get_verify_ssl()
     if not os.path.isfile(local_path):
         client = boto3.client(
             "s3", config=Config(signature_version=UNSIGNED), verify=verify_ssl
@@ -85,12 +82,8 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         logger.info(f"Reusing cached file {local_path}...")
 
 
-def _get_verify_ssl():
-    return os.getenv("VERIFY_SSL") == "true" or os.getenv("VERIFY_SSL") is None
-
-
 def download_requests(url: str, dirpath: str, filename: str):
-    verify_ssl = _get_verify_ssl()
+    verify_ssl = get_verify_ssl()
 
     filepath = os.path.join(dirpath, filename)
     chunk_size = 4096
