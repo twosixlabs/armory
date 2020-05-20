@@ -31,7 +31,13 @@ def _download_weights(weights_file, force_download=False):
     saved_model_dir = paths.runtime_paths().saved_model_dir
     filepath = os.path.join(saved_model_dir, weights_file)
 
-    if not os.path.isfile(filepath) and not force_download:
+    if os.path.isfile(filepath) and not force_download:
+        logger.info(f"Model weights file {filepath} found, skipping.")
+    else:
+        if os.path.isfile(filepath):
+            logger.info("Forcing overwrite of old file.")
+            os.remove(filepath)
+
         logger.info(f"Downloading weights file {weights_file} from s3...")
 
         download_file_from_s3(

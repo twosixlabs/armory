@@ -217,6 +217,24 @@ Armory has partial support for users wishing to run without docker. Currently, t
 docker, either set the `docker_image` field to be null in the scenario
 configuration json file, or call `armory run` with the --no-docker option.
 
+Armory can also download and use datasets without docker. To use the download command,
+simply add the `--no-docker` option, which will skip downloading the images and
+run it in host mode:
+```
+armory download <path/to/scenario-set1.json> --no-docker
+```
+
+After datasets have been downloaded, they can be used outside of docker by setting
+the pathing mode to host in python:
+```python
+from armory import paths
+paths.set_mode("host")
+from armory.data import datasets
+ds = datasets.mnist()
+x, y = next(ds)
+```
+
 ### Environment setup
-The listing of libraries needed for Armory when run on host is available at
-`host-requirements.txt`. 
+NOTE: The listing of libraries needed for Armory when run on host is available at
+`host-requirements.txt`. You will need to manually install the requirements in
+that file that match your framework (TF1, TF2, PyTorch).

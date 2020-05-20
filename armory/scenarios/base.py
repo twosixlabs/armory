@@ -155,5 +155,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
-    paths.NO_DOCKER = args.no_docker
+    if args.no_docker:
+        paths.set_mode("host")
     run_config(args.config, args.from_file)

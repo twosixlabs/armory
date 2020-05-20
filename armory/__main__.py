@@ -149,6 +149,14 @@ def _docker_image(parser):
     )
 
 
+def _no_docker(parser):
+    parser.add_argument(
+        "--no-docker",
+        action="store_true",
+        help="Whether to use Docker or the local host environment",
+    )
+
+
 # Config
 
 
@@ -180,11 +188,7 @@ def run(command_args, prog, description):
     _port(parser)
     _use_gpu(parser)
     _gpus(parser)
-    parser.add_argument(
-        "--no-docker",
-        action="store_true",
-        help="Whether to use Docker or a local environment with armory run",
-    )
+    _no_docker(parser)
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -230,7 +234,6 @@ def download(command_args, prog, description):
         action=DownloadConfig,
         help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
-
     parser.add_argument(
         metavar="<scenario>",
         dest="scenario",
@@ -239,9 +242,20 @@ def download(command_args, prog, description):
         help="scenario for which to download data, 'list' for available scenarios, or blank to download all scenarios",
         nargs="?",
     )
+    _no_docker(parser)
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
+
+    if args.no_docker:
+        logger.info("Downloading requested datasets and model weights in host mode...")
+        paths.set_mode("host")
+        from armory.data import datasets
+        from armory.data import model_weights
+
+        datasets.download_all(args.download_config, args.scenario)
+        model_weights.download_all(args.download_config, args.scenario)
+        return
 
     if not armory.is_dev():
         logger.info("Downloading all docker images....")
@@ -255,7 +269,7 @@ def download(command_args, prog, description):
         [
             "import logging",
             "import coloredlogs",
-            "coloredlogs.install(logging.INFO)",
+            f"coloredlogs.install({args.log_level})",
             "from armory.data import datasets",
             "from armory.data import model_weights",
             f'datasets.download_all("{args.download_config}", "{args.scenario}")',
