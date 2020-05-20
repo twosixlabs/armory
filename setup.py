@@ -36,7 +36,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Two Six Labs",
     author_email="armory@twosixlabs.com",
-    url="https://https://github.com/twosixlabs/armory",
+    url="https://github.com/twosixlabs/armory",
     license="MIT",
     install_requires=required_pkgs,
     tests_require=tests_require,
