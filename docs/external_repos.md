@@ -23,7 +23,8 @@ no branch is specified then master branch will be pulled. For example:
 
 #### Accessing External Modules
 As mentioned, when repositories are cloned into a scenario's temporary directory, the 
-cloned repository will automatically be added to the sys path. This enables the user
+cloned repository will automatically be added to the sys path, as well as the parent
+directory of all cloned repositories. This enables the user 
 to specify attacks, defense, scenarios from the external repo, directly in the 
 evaluation config file. For example the following config snippet:
 ```
@@ -40,6 +41,22 @@ evaluation config file. For example the following config snippet:
 ```
 
 Would load the keras model found within that `armory-example` external repository.
+
+#### Custom Python Paths
+
+While the above works for standard python module and script usage, there may be cases
+where a user needs to add a different directory to the python path to enable
+correct absolute imports within their repository. To do this, you will need to modify
+the model module, before any module-specific imports, in the following manner:
+
+```python
+import os
+import sys
+module_path = globals()["__file__"]
+relative_path_to_root_from_module = ".."  # this will depend on your use case
+absolute_root_path = os.path.abspath(os.path.join(module_path, relative_path_to_root))
+sys.path.insert(0, absolute_root_path)
+```
 
 
 #### Private Repos
