@@ -2,7 +2,6 @@
     "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "adversarial_key": "adversarial_patch",
