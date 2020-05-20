@@ -2,7 +2,6 @@
     "_description": "Resisc45 image classification, contributed by MITRE Corporation, with preloaded adversarial attack",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "adversarial_key": "adversarial_univpatch",

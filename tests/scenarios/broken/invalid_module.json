@@ -5,7 +5,6 @@
         "epochs": 3
     },
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "eps": 0.2

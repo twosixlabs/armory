@@ -2,7 +2,6 @@
     "_description": "UCF101 video classification with finetuning, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "eps": 51.0

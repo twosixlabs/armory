@@ -2,11 +2,6 @@
     "_description": "Librispeech_dev_clean audio spectrogram classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": {
-            "norm": [
-                "L2"
-            ]
-        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 32,
