@@ -2,6 +2,7 @@
     "_description": "Resisc45 image classification, contributed by MITRE Corporation, with preloaded adversarial attack",
     "adhoc": null,
     "attack": {
+        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "adversarial_key": "adversarial_univpatch",
@@ -18,7 +19,30 @@
         "module": "armory.data.datasets",
         "name": "resisc45"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "means": [
+                0.364,
+                0.381,
+                0.339
+            ],
+            "quality": 50,
+            "stds": [
+                0.204,
+                0.185,
+                0.185
+            ]
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_normalized",
+        "name": "JpegCompressionNormalized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "linf",
@@ -45,6 +69,6 @@
         "docker_image": "twosixarmory/tf1:0.8.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": false
+        "use_gpu": true
     }
 }
