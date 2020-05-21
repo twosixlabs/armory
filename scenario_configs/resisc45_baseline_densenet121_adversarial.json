@@ -18,7 +18,30 @@
         "module": "armory.data.datasets",
         "name": "resisc45"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "means": [
+                0.36386173189316956,
+                0.38118692953271804,
+                0.33867067558870334
+            ],
+            "quality": 50,
+            "stds": [
+                0.20350874,
+                0.18531173,
+                0.18472934
+            ]
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_normalized",
+        "name": "JpegCompressionNormalized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "linf",
