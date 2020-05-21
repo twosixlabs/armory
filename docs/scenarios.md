@@ -49,9 +49,15 @@ The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Model Performance:**
-To be added
+  * Baseline Clean Top-1 Accuracy: 93%
+  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 6%
+  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 23%
 * **Baseline Defense Performance:**
-To be added
+Baseline defense is art.defences.preprocessor.JpegCompression(clip_values=(0.0, 1.0), quality=50, channel_index=3, apply_fit=False, apply_predict=True).
+Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
+  * Baseline Clean Top-1 Accuracy: 92%
+  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 40%
+  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 21%
 
 ### Librispeech speaker audio classification
 
