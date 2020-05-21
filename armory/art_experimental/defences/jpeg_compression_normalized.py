@@ -5,7 +5,7 @@ import numpy as np
 class JpegCompressionNormalized(JpegCompression):
     """
     Unnormalize inputs that were normalized during preprocessing,
-    proecess use ART JpegCompression, and renormalize
+    process use ART JpegCompression, and renormalize
     """
 
     def __init__(
