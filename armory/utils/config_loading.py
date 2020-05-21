@@ -14,7 +14,7 @@ from art.attacks import Attack
 from art import defences
 from art.classifiers import Classifier
 
-from armory.data.datasets import ArmoryDataGenerator
+from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
 
 
 def load(sub_config):
@@ -30,7 +30,7 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
-def load_dataset(dataset_config, *args, **kwargs):
+def load_dataset(dataset_config, *args, check=False, **kwargs):
     """
     Loads a dataset from configuration file
     """
@@ -41,6 +41,8 @@ def load_dataset(dataset_config, *args, **kwargs):
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if check:
+        return CheckGenerator(dataset)
     return dataset
 
 
@@ -72,7 +74,7 @@ def load_attack(attack_config, classifier):
     return attack
 
 
-def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
+def load_adversarial_dataset(config, preprocessing_fn=None, check=False, **kwargs):
     if config.get("type") != "preloaded":
         raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
     dataset_module = import_module(config["module"])
@@ -84,6 +86,8 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if check:
+        return CheckGenerator(dataset)
     return dataset
 
 

@@ -45,6 +45,8 @@ class Ucf101(Scenario):
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
             train_epochs = config["model"]["fit_kwargs"]["nb_epochs"]
+            if self.check:
+                train_epochs = 1
             batch_size = config["dataset"]["batch_size"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
@@ -53,6 +55,7 @@ class Ucf101(Scenario):
                 epochs=train_epochs,
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
 
             if defense_type == "Trainer":
@@ -93,6 +96,7 @@ class Ucf101(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            check=self.check,
         )
 
         logger.info("Running inference on benign examples...")
@@ -116,6 +120,7 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -124,6 +129,7 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":

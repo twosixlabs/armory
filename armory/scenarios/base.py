@@ -33,6 +33,9 @@ logger = logging.getLogger(__name__)
 
 
 class Scenario(abc.ABC):
+    def __init__(self):
+        self.check = False
+
     def evaluate(self, config: dict):
         """
         Evaluate a config for robustness against attack.
@@ -41,6 +44,12 @@ class Scenario(abc.ABC):
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         self.save(config, results)
+
+    def set_check(self, check):
+        """
+        Set whether to check if the code runs (instead of a full evaluation)
+        """
+        self.check = bool(check)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -107,7 +116,7 @@ def _scenario_setup(config: dict):
         )
 
 
-def run_config(config_json, from_file=False):
+def run_config(config_json, from_file=False, check=False):
     if from_file:
         config = load_config(config_json)
     else:
@@ -120,6 +129,7 @@ def run_config(config_json, from_file=False):
         raise KeyError('"scenario" missing from evaluation config')
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
+    scenario.set_check(check)
     scenario.evaluate(config)
 
 
@@ -139,22 +149,21 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--no-docker",
-        dest="no_docker",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to use Docker or a local environment with armory run",
     )
     parser.add_argument(
         "--load-config-from-file",
-        dest="from_file",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="If the config argument is a path instead of serialized JSON",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Whether to quickly check to see if scenario code runs",
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     if args.no_docker:
         paths.set_mode("host")
-    run_config(args.config, args.from_file)
+    run_config(args.config, args.load_config_from_file, args.check)

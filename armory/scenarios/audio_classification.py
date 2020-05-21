@@ -42,6 +42,8 @@ class AudioClassificationTask(Scenario):
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
             fit_kwargs = model_config["fit_kwargs"]
+            if self.check:
+                fit_kwargs["nb_epochs"] = 1
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             train_data = load_dataset(
@@ -49,6 +51,7 @@ class AudioClassificationTask(Scenario):
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
@@ -73,6 +76,7 @@ class AudioClassificationTask(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            check=self.check,
         )
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
@@ -93,6 +97,7 @@ class AudioClassificationTask(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -101,6 +106,7 @@ class AudioClassificationTask(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                check=self.check,
             )
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
