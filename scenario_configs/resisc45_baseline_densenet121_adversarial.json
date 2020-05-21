@@ -2,7 +2,6 @@
     "_description": "Resisc45 image classification, contributed by MITRE Corporation, with preloaded adversarial attack",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
             "adversarial_key": "adversarial_univpatch",
@@ -69,6 +68,6 @@
         "docker_image": "twosixarmory/tf1:0.8.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
