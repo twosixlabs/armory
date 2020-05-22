@@ -19,8 +19,11 @@ import json
 import logging
 import os
 import time
+from typing import Optional
 
 import coloredlogs
+import pymongo
+import pymongo.errors
 
 import armory
 from armory import paths
@@ -32,15 +35,23 @@ from armory.utils.configuration import load_config
 logger = logging.getLogger(__name__)
 
 
+MONGO_PORT = 27017
+MONGO_DATABASE = "armory"
+MONGO_COLLECTION = "scenario_results"
+
+
 class Scenario(abc.ABC):
-    def evaluate(self, config: dict):
+    def evaluate(self, config: dict, mongo_host: Optional[str]):
         """
         Evaluate a config for robustness against attack.
         """
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
-        self.save(config, results)
+        output = self._prepare_results(config, results)
+        self._save(output)
+        if mongo_host is not None:
+            self._send_to_mongo(mongo_host, output)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -49,31 +60,55 @@ class Scenario(abc.ABC):
         """
         raise NotImplementedError
 
-    def save(self, config: dict, results: dict, adv_examples=None):
+    def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
-        Saves a results json-formattable output to file
+        Build the JSON results blob for _save() and _send_to_mongo()
 
         adv_examples are (optional) instances of the actual examples used.
-            It will be saved in a binary format.
+            They will be saved in a binary format.
         """
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
 
-        runtime_paths = paths.runtime_paths()
-        scenario_output_dir = os.path.join(runtime_paths.output_dir, config["eval_id"])
-
-        scenario_name = config["scenario"]["name"]
         timestamp = int(time.time())
-        filename = f"{scenario_name}_{timestamp}.json"
+        output = {
+            "armory_version": armory.__version__,
+            "config": config,
+            "results": results,
+            "timestamp": timestamp,
+        }
+        return output
+
+    def _save(self, output: dict):
+        """
+        Save json-formattable output to a file
+        """
+
+        runtime_paths = paths.runtime_paths()
+        scenario_output_dir = os.path.join(
+            runtime_paths.output_dir, output["config"]["eval_id"]
+        )
+
+        scenario_name = output["config"]["scenario"]["name"]
+        filename = f"{scenario_name}_{output['timestamp']}.json"
         logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
         with open(os.path.join(scenario_output_dir, filename), "w") as f:
-            output_dict = {
-                "armory_version": armory.__version__,
-                "config": config,
-                "results": results,
-                "timestamp": timestamp,
-            }
-            f.write(json.dumps(output_dict, sort_keys=True, indent=4) + "\n")
+            f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+
+    def _send_to_mongo(self, mongo_host: str, output: dict):
+        """
+        Send results to a Mongo database at mongo_host
+        """
+        client = pymongo.MongoClient(mongo_host, MONGO_PORT)
+        db = client[MONGO_DATABASE]
+        col = db[MONGO_COLLECTION]
+        logger.info(
+            f"Sending evaluation results to MongoDB instance {mongo_host}:{MONGO_PORT}"
+        )
+        try:
+            col.insert_one(output)
+        except pymongo.errors.PyMongoError as e:
+            logger.error(f"Encountered error {e} sending evaluation results to MongoDB")
 
 
 def parse_config(config_path):
@@ -107,7 +142,7 @@ def _scenario_setup(config: dict):
         )
 
 
-def run_config(config_json, from_file=False):
+def run_config(config_json, from_file=False, mongo_host=None):
     if from_file:
         config = load_config(config_json)
     else:
@@ -120,7 +155,7 @@ def run_config(config_json, from_file=False):
         raise KeyError('"scenario" missing from evaluation config')
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
-    scenario.evaluate(config)
+    scenario.evaluate(config, mongo_host)
 
 
 if __name__ == "__main__":
@@ -139,22 +174,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--no-docker",
-        dest="no_docker",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="Whether to use Docker or a local environment with armory run",
     )
     parser.add_argument(
         "--load-config-from-file",
         dest="from_file",
-        action="store_const",
-        const=True,
-        default=False,
+        action="store_true",
         help="If the config argument is a path instead of serialized JSON",
+    )
+    parser.add_argument(
+        "--mongo",
+        dest="mongo_host",
+        default=None,
+        help="Send scenario results to a MongoDB instance at the given host (eg 'localhost', '1.2.3.4', 'mongodb://USER:PASS@5.6.7.8')",
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     if args.no_docker:
         paths.set_mode("host")
-    run_config(args.config, args.from_file)
+
+    run_config(args.config, args.from_file, args.mongo_host)
