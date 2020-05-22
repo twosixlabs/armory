@@ -23,7 +23,7 @@ from armory.scenarios.base import Scenario
 logger = logging.getLogger(__name__)
 
 
-def poison_batch(src_imgs, src_lbls, src, tgt, batch_size, attack):
+def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
     # In this example, all images of "src" class have a trigger
     # added and re-labeled as "tgt" class
     # NOTE: currently art.attacks.PoisonAttackBackdoor only supports
@@ -34,8 +34,8 @@ def poison_batch(src_imgs, src_lbls, src, tgt, batch_size, attack):
     #   and each channel would have a backdoor trigger added
     poison_x = []
     poison_y = []
-    for idx in range(batch_size):
-        if src_lbls[idx] == src:
+    for idx in range(ds_size):
+        if src_lbls[idx] == src and idx in poisoned_indices:
             src_img = np.transpose(src_imgs[idx], (2, 0, 1))
             p_img, p_label = attack.poison(src_img, [tgt])
             poison_x.append(np.transpose(p_img, (1, 2, 0)))
@@ -56,6 +56,7 @@ class GTSRB(Scenario):
         """
 
         model_config = config["model"]
+        # Scenario assumes preprocessing_fn makes images all same size
         classifier, preprocessing_fn = load_model(model_config)
 
         config_adhoc = config.get("adhoc") or {}
@@ -88,14 +89,32 @@ class GTSRB(Scenario):
         #     therefore, make in memory dataset
         x_train_all, y_train_all = [], []
         for x_train, y_train in train_data:
-            if poison_dataset_flag and np.random.rand() < fraction_poisoned:
-                x_train, y_train = poison_batch(
-                    x_train, y_train, src_class, tgt_class, len(y_train), attack
-                )
             x_train_all.append(x_train)
             y_train_all.append(y_train)
         x_train_all = np.concatenate(x_train_all, axis=0)
         y_train_all = np.concatenate(y_train_all, axis=0)
+
+        if poison_dataset_flag:
+            total_count = np.bincount(y_train_all)[src_class]
+            poison_count = int(fraction_poisoned * total_count)
+            if poison_count == 0:
+                logger.warning(
+                    f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
+                )
+            src_indices = np.where(y_train_all == src_class)[0]
+            poisoned_indices = np.random.choice(
+                src_indices, size=poison_count, replace=False
+            )
+            x_train_all, y_train_all = poison_dataset(
+                x_train_all,
+                y_train_all,
+                src_class,
+                tgt_class,
+                y_train_all.shape[0],
+                attack,
+                poisoned_indices,
+            )
+
         y_train_all_categorical = to_categorical(y_train_all)
 
         if use_poison_filtering_defense:
@@ -182,8 +201,16 @@ class GTSRB(Scenario):
             test_metric = metrics.MetricList("categorical_accuracy")
             targeted_test_metric = metrics.MetricList("categorical_accuracy")
             for x_test, y_test in tqdm(test_data, desc="Testing"):
-                x_test, _ = poison_batch(
-                    x_test, y_test, src_class, tgt_class, len(y_test), attack
+                src_indices = np.where(y_test == src_class)[0]
+                poisoned_indices = src_indices  # Poison entire class
+                x_test, _ = poison_dataset(
+                    x_test,
+                    y_test,
+                    src_class,
+                    tgt_class,
+                    len(y_test),
+                    attack,
+                    poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
                 test_metric.append(y_test, y_pred)
