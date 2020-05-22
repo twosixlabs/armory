@@ -187,7 +187,7 @@ if __name__ == "__main__":
         "--mongo",
         dest="mongo_host",
         default=None,
-        help="Send scenario results to a MongoDB instance at the given host",
+        help="Send scenario results to a MongoDB instance at the given host (eg 'localhost', '1.2.3.4')",
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
