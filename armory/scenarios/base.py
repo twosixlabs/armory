@@ -34,22 +34,30 @@ logger = logging.getLogger(__name__)
 
 class Scenario(abc.ABC):
     def __init__(self):
-        self.check = False
+        self.check_run = False
 
     def evaluate(self, config: dict):
         """
         Evaluate a config for robustness against attack.
         """
+        if self.check_run:
+            # Modify dataset entries
+            config["dataset"]["check_run"] = True
+            if config["model"]["fit"]:
+                config["model"]["fit_kwargs"]["nb_epochs"] = 1
+            if config.get("attack", {}).get("type") == "preloaded":
+                config["attack"]["check_run"] = True
+
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         self.save(config, results)
 
-    def set_check(self, check):
+    def set_check_run(self, check_run):
         """
-        Set whether to check if the code runs (instead of a full evaluation)
+        Set whether to check_run if the code runs (instead of a full evaluation)
         """
-        self.check = bool(check)
+        self.check_run = bool(check_run)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -129,7 +137,7 @@ def run_config(config_json, from_file=False, check=False):
         raise KeyError('"scenario" missing from evaluation config')
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
-    scenario.set_check(check)
+    scenario.set_check_run(check)
     scenario.evaluate(config)
 
 

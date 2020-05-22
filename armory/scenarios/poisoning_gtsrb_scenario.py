@@ -69,8 +69,7 @@ class GTSRB(Scenario):
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
         )
-        if self.check:
-            train_epochs = 1
+        if self.check_run:
             # filtering defense requires more than a single batch to run properly
             use_poison_filtering_defense = False
 
@@ -81,7 +80,6 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
-            check=self.check,
         )
 
         logger.info("Building in-memory dataset for poisoning detection and training")
@@ -156,7 +154,6 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
-            check=self.check,
         )
         validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -184,7 +181,6 @@ class GTSRB(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
-                check=self.check,
             )
             test_metric = metrics.MetricList("categorical_accuracy")
             targeted_test_metric = metrics.MetricList("categorical_accuracy")
