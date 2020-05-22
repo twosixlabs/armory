@@ -97,6 +97,10 @@ class GTSRB(Scenario):
         if poison_dataset_flag:
             total_count = np.bincount(y_train_all)[src_class]
             poison_count = int(fraction_poisoned * total_count)
+            if poison_count == 0:
+                logger.warning(
+                    f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
+                )
             src_indices = np.where(y_train_all == src_class)[0]
             poisoned_indices = np.random.choice(
                 src_indices, size=poison_count, replace=False
