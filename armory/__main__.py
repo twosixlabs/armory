@@ -212,7 +212,7 @@ def run(command_args, prog, description):
         interactive=args.interactive,
         jupyter=args.jupyter,
         host_port=args.port,
-        check=args.check,
+        check_run=args.check,
     )
 
 

@@ -129,7 +129,7 @@ class Evaluator(object):
         jupyter=False,
         host_port=8888,
         command=None,
-        check=False,
+        check_run=False,
     ) -> None:
         if self.no_docker:
             if jupyter or interactive or command:
@@ -138,7 +138,7 @@ class Evaluator(object):
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
             try:
-                self._run_config(runner, check=check)
+                self._run_config(runner, check_run=check_run)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -146,8 +146,10 @@ class Evaluator(object):
             self._cleanup()
             return
 
-        if check and (jupyter or interactive or command):
-            raise ValueError("check incompatible with interactive, jupyter, or command")
+        if check_run and (jupyter or interactive or command):
+            raise ValueError(
+                "check_run incompatible with interactive, jupyter, or command"
+            )
 
         container_port = 8888
         ports = {container_port: host_port} if jupyter else None
@@ -163,7 +165,7 @@ class Evaluator(object):
                 elif command:
                     self._run_command(runner, command)
                 else:
-                    self._run_config(runner, check=check)
+                    self._run_config(runner, check_run=check_run)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -193,14 +195,14 @@ class Evaluator(object):
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
 
-    def _run_config(self, runner, check=False) -> None:
+    def _run_config(self, runner, check_run=False) -> None:
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
         options = ""
         if self.no_docker:
             options += " --no-docker"
-        if check:
+        if check_run:
             options += " --check"
         if logger.level == logging.DEBUG:
             options += " --debug"
