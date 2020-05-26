@@ -78,7 +78,11 @@ def test_imagenet_adv():
     batch_size = 100
     total_size = 1000
     test_dataset = adversarial_datasets.imagenet_adversarial(
-        dataset_dir=DATASET_DIR, split_type="clean", batch_size=batch_size, epochs=1,
+        dataset_dir=DATASET_DIR,
+        split_type="adversarial",
+        batch_size=batch_size,
+        epochs=1,
+        adversarial_key="adversarial",
     )
     assert test_dataset.size == total_size
     assert test_dataset.batch_size == batch_size
@@ -87,7 +91,8 @@ def test_imagenet_adv():
     )
 
     x, y = test_dataset.get_batch()
-    assert x.shape == (batch_size, 224, 224, 3)
+    for i in range(2):
+        assert x[i].shape == (batch_size, 224, 224, 3)
     assert y.shape == (batch_size,)
 
 

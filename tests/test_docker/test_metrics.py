@@ -48,6 +48,66 @@ def test_norms():
         metrics.lp(x, x_adv, -1)
 
 
+def test_snr():
+    # variable length numpy arrays
+    x = np.array([np.array([0, 1, 0, -1]), np.array([0, 1, 2, 3, 4]),])
+
+    for multiplier, snr_value in [
+        (0, 1),
+        (0.5, 4),
+        (1, np.inf),
+        (2, 1),
+        (3, 0.25),
+        (11, 0.01),
+    ]:
+        assert metrics.snr(x, x * multiplier) == [snr_value] * len(x)
+        assert metrics.snr_db(x, x * multiplier) == [10 * np.log10(snr_value)] * len(x)
+
+    for addition, snr_value in [
+        (0, np.inf),
+        (np.inf, 0.0),
+    ]:
+        assert metrics.snr(x, x + addition) == [snr_value] * len(x)
+        assert metrics.snr_db(x, x + addition) == [10 * np.log10(snr_value)] * len(x)
+
+    with pytest.raises(ValueError):
+        metrics.snr(x[:1], x[1:])
+    with pytest.raises(ValueError):
+        metrics.snr(x, np.array([1]))
+
+
+def test_snr_spectrogram():
+    # variable length numpy arrays
+    x = np.array([np.array([0, 1, 0, -1]), np.array([0, 1, 2, 3, 4]),])
+
+    for multiplier, snr_value in [
+        (0, 1),
+        (0.5, 2),
+        (1, np.inf),
+        (2, 1),
+        (3, 0.5),
+        (11, 0.1),
+    ]:
+        assert metrics.snr_spectrogram(x, x * multiplier) == [snr_value] * len(x)
+        assert metrics.snr_spectrogram_db(x, x * multiplier) == [
+            10 * np.log10(snr_value)
+        ] * len(x)
+
+    for addition, snr_value in [
+        (0, np.inf),
+        (np.inf, 0.0),
+    ]:
+        assert metrics.snr_spectrogram(x, x + addition) == [snr_value] * len(x)
+        assert metrics.snr_spectrogram_db(x, x + addition) == [
+            10 * np.log10(snr_value)
+        ] * len(x)
+
+    with pytest.raises(ValueError):
+        metrics.snr(x[:1], x[1:])
+    with pytest.raises(ValueError):
+        metrics.snr(x, np.array([1]))
+
+
 def test_metric_list():
     metric_list = metrics.MetricList("categorical_accuracy")
     metric_list.append([1], [1])

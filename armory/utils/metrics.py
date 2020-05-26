@@ -113,6 +113,67 @@ def l0(x, x_adv):
     return norm(x, x_adv, 0)
 
 
+def _snr(x_i, x_adv_i):
+    x_i = np.asarray(x_i, dtype=float)
+    x_adv_i = np.asarray(x_adv_i, dtype=float)
+    if x_i.shape != x_adv_i.shape:
+        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
+    elif x_i.ndim != 1:
+        raise ValueError("_snr input must be single dimensional (not multichannel)")
+    signal_power = (x_i ** 2).mean()
+    noise_power = ((x_i - x_adv_i) ** 2).mean()
+    return signal_power / noise_power
+
+
+def snr(x, x_adv):
+    """
+    Return the SNR of a batch of samples with raw audio input
+    """
+    if len(x) != len(x_adv):
+        raise ValueError(f"len(x) {len(x)} != len(x_adv) {len(x_adv)}")
+    return [float(_snr(x_i, x_adv_i)) for (x_i, x_adv_i) in zip(x, x_adv)]
+
+
+def snr_db(x, x_adv):
+    """
+    Return the SNR of a batch of samples with raw audio input in Decibels (DB)
+    """
+    return [float(i) for i in 10 * np.log10(snr(x, x_adv))]
+
+
+def _snr_spectrogram(x_i, x_adv_i):
+    x_i = np.asarray(x_i, dtype=float)
+    x_adv_i = np.asarray(x_adv_i, dtype=float)
+    if x_i.shape != x_adv_i.shape:
+        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
+    signal_power = np.abs(x_i).mean()
+    noise_power = np.abs(x_i - x_adv_i).mean()
+    return signal_power / noise_power
+
+
+def snr_spectrogram(x, x_adv):
+    """
+    Return the SNR of a batch of samples with spectrogram input
+
+    NOTE: Due to phase effects, this is only an estimate of the SNR.
+        For instance, if x[0] = sin(t) and x_adv[0] = sin(t + 2*pi/3),
+        Then the SNR will be calculated as infinity, when it should be 1.
+        However, the spectrograms will look identical, so as long as the
+        model uses spectrograms and not the underlying raw signal,
+        this should not have a significant effect on the results.
+    """
+    if x.shape != x_adv.shape:
+        raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
+    return [float(_snr_spectrogram(x_i, x_adv_i)) for (x_i, x_adv_i) in zip(x, x_adv)]
+
+
+def snr_spectrogram_db(x, x_adv):
+    """
+    Return the SNR of a batch of samples with spectrogram input in Decibels (DB)
+    """
+    return [float(i) for i in 10 * np.log10(snr_spectrogram(x, x_adv))]
+
+
 SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
@@ -123,6 +184,10 @@ SUPPORTED_METRICS = {
     "l2": l2,
     "lp": lp,
     "linf": linf,
+    "snr": snr,
+    "snr_db": snr_db,
+    "snr_spectrogram": snr_spectrogram,
+    "snr_spectrogram_db": snr_spectrogram_db,
 }
 
 

@@ -14,13 +14,15 @@ from armory.data.adversarial import (  # noqa: F401
 
 
 def imagenet_adversarial(
-    split_type: str = "clean",
+    split_type: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    clean_key: str = "clean",
+    adversarial_key: str = "adversarial",
 ) -> datasets.ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -31,9 +33,13 @@ def imagenet_adversarial(
         Attack step size = 2
         Targeted = True
     """
+    if clean_key != "clean":
+        raise ValueError(f"{clean_key} != 'clean'")
+    if adversarial_key != "adversarial":
+        raise ValueError(f"{adversarial_key} != 'adversarial'")
 
     return datasets._generator_from_tfds(
-        "imagenet_adversarial:1.0.0",
+        "imagenet_adversarial:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -42,6 +48,7 @@ def imagenet_adversarial(
         shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
+        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
 
 
