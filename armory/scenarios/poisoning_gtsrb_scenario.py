@@ -70,6 +70,9 @@ class GTSRB(Scenario):
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
         )
+        if self.check_run:
+            # filtering defense requires more than a single batch to run properly
+            use_poison_filtering_defense = False
 
         logger.info(f"Loading dataset {config['dataset']['name']}...")
         batch_size = config["dataset"]["batch_size"]

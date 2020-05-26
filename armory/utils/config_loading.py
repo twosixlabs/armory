@@ -14,7 +14,7 @@ from art.attacks import Attack
 from art import defences
 from art.classifiers import Classifier
 
-from armory.data.datasets import ArmoryDataGenerator
+from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
 
 
 def load(sub_config):
@@ -41,6 +41,8 @@ def load_dataset(dataset_config, *args, **kwargs):
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if dataset_config.get("check_run"):
+        return CheckGenerator(dataset)
     return dataset
 
 
@@ -84,6 +86,8 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if config.get("check_run"):
+        return CheckGenerator(dataset)
     return dataset
 
 

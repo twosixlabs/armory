@@ -189,6 +189,11 @@ def run(command_args, prog, description):
     _use_gpu(parser)
     _gpus(parser)
     _no_docker(parser)
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Whether to quickly check to see if scenario code runs",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -203,7 +208,12 @@ def run(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.gpus)
 
     rig = Evaluator(config, no_docker=args.no_docker)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    rig.run(
+        interactive=args.interactive,
+        jupyter=args.jupyter,
+        host_port=args.port,
+        check_run=args.check,
+    )
 
 
 def _pull_docker_images(docker_client=None):

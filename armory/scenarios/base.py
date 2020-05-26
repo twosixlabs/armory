@@ -41,10 +41,21 @@ MONGO_COLLECTION = "scenario_results"
 
 
 class Scenario(abc.ABC):
+    def __init__(self):
+        self.check_run = False
+
     def evaluate(self, config: dict, mongo_host: Optional[str]):
         """
         Evaluate a config for robustness against attack.
         """
+        if self.check_run:
+            # Modify dataset entries
+            config["dataset"]["check_run"] = True
+            if config["model"]["fit"]:
+                config["model"]["fit_kwargs"]["nb_epochs"] = 1
+            if config.get("attack", {}).get("type") == "preloaded":
+                config["attack"]["check_run"] = True
+
         results = self._evaluate(config)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
@@ -52,6 +63,12 @@ class Scenario(abc.ABC):
         self._save(output)
         if mongo_host is not None:
             self._send_to_mongo(mongo_host, output)
+
+    def set_check_run(self, check_run):
+        """
+        Set whether to check_run if the code runs (instead of a full evaluation)
+        """
+        self.check_run = bool(check_run)
 
     @abc.abstractmethod
     def _evaluate(self, config: dict) -> dict:
@@ -142,7 +159,7 @@ def _scenario_setup(config: dict):
         )
 
 
-def run_config(config_json, from_file=False, mongo_host=None):
+def run_config(config_json, from_file=False, check=False, mongo_host=None):
     if from_file:
         config = load_config(config_json)
     else:
@@ -155,6 +172,7 @@ def run_config(config_json, from_file=False, mongo_host=None):
         raise KeyError('"scenario" missing from evaluation config')
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
+    scenario.set_check_run(check)
     scenario.evaluate(config, mongo_host)
 
 
@@ -189,9 +207,14 @@ if __name__ == "__main__":
         default=None,
         help="Send scenario results to a MongoDB instance at the given host (eg 'localhost', '1.2.3.4', 'mongodb://USER:PASS@5.6.7.8')",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Whether to quickly check to see if scenario code runs",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     if args.no_docker:
         paths.set_mode("host")
 
-    run_config(args.config, args.from_file, args.mongo_host)
+    run_config(args.config, args.from_file, args.check, args.mongo_host)
