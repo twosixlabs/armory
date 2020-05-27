@@ -14,7 +14,7 @@ import requests
 from docker.errors import ImageNotFound
 
 from armory.configuration import load_global_config
-from armory.docker.management import ManagementInstance
+from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
@@ -127,7 +127,7 @@ class Evaluator(object):
         self,
         interactive=False,
         jupyter=False,
-        host_port=8888,
+        host_port=None,
         command=None,
         check_run=False,
     ) -> None:
@@ -151,15 +151,22 @@ class Evaluator(object):
                 "check_run incompatible with interactive, jupyter, or command"
             )
 
-        container_port = 8888
-        ports = {container_port: host_port} if jupyter else None
+        # Handle docker and jupyter ports
+        if jupyter or host_port:
+            if host_port:
+                ports = {host_port: host_port}
+            else:
+                ports = {8888: 8888}
+        else:
+            ports = None
+
         try:
             runner = self.manager.start_armory_instance(
                 envs=self.extra_env_vars, ports=ports
             )
             try:
                 if jupyter:
-                    self._run_jupyter(runner)
+                    self._run_jupyter(runner, ports)
                 elif interactive:
                     self._run_interactive_bash(runner)
                 elif command:
@@ -195,7 +202,7 @@ class Evaluator(object):
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
 
-    def _run_config(self, runner, check_run=False) -> None:
+    def _run_config(self, runner: ArmoryInstance, check_run=False) -> None:
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
@@ -209,11 +216,11 @@ class Evaluator(object):
 
         runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{options}")
 
-    def _run_command(self, runner, command) -> None:
+    def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
         runner.exec_cmd(command)
 
-    def _run_interactive_bash(self, runner) -> None:
+    def _run_interactive_bash(self, runner: ArmoryInstance) -> None:
         user_id = os.getuid() if os.name != "nt" else 0
         group_id = os.getgid() if os.name != "nt" else 0
         lines = [
@@ -255,9 +262,10 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    def _run_jupyter(self, runner) -> None:
+    def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
         user_id = os.getuid() if os.name != "nt" else 0
         group_id = os.getgid() if os.name != "nt" else 0
+        port = list(ports.keys())[0]
         lines = [
             "About to launch jupyter.",
             bold("*** To connect on the command line as well, in a new terminal, run:"),
@@ -270,5 +278,6 @@ class Evaluator(object):
         ]
         logger.info("\n".join(lines))
         runner.exec_cmd(
-            "jupyter lab --ip=0.0.0.0 --no-browser --allow-root", user="root",
+            f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
+            user="root",
         )

@@ -120,8 +120,11 @@ def _port(parser):
         type=int,
         action=PortNumber,
         metavar="",
-        default=8888,
-        help="Port number {0, ..., 65535} to connect to Jupyter on",
+        default=None,
+        help=(
+            "Port number {0, ..., 65535} to expose from docker container. If --jupyter "
+            "flag is set then this port will be used for the jupyter server."
+        ),
     )
 
 
