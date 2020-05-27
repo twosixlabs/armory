@@ -5,8 +5,8 @@ Adversarial datasets
 from typing import Callable
 
 from armory.data import datasets
-from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.adversarial import (  # noqa: F401
+    imagenet_adversarial as IA,
     librispeech_adversarial as LA,
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
