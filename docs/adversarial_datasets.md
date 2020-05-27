@@ -3,9 +3,9 @@
 The `armory.data.adversarial_datasets` module implements functionality to return adversarial datasets of 
 various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which 
 implements the methods needed  by the ART framework. Specifically `get_batch` will 
-return a tuple of `((data_clean, data_adversarial), (label_clean, label_adversarial))` for a specified batch size in numpy format,
-where 'data_clean' and 'label_clean' represent a clean example and its true label, and 'data_adversarial' and 'label_adversarial'
-represent the corresponding adversarially attacked example and its target label (valid only for targeted attacks).
+return a tuple of `((data_clean, data_adversarial), label_clean)` for a specified batch size in numpy format,
+where 'data_clean' and 'label_clean' represent a clean example and its true label, and 'data_adversarial'
+represents the corresponding adversarially attacked example.
 Each adversarial dataset contains adversarial examples generated using one or more attacks.
 
 Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
