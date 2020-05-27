@@ -41,6 +41,9 @@ These tfrecord files will be pulled from S3 if not available on your
 
 <br>
 
+### Adversarial Datasets
+See [adversarial_datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
+
 <style>
 table th:first-of-type {
     width: 10%;

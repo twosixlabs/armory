@@ -12,6 +12,9 @@ Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord fi
 These tfrecord files will be pulled from S3 if not available on your 
 `dataset_dir` directory.
 
+Refer to [datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/datasets.md) for the original datasets from which
+the adversarial datasets are created.
+
 ### Usage
 To use an adversarial dataset for evaluation, specify the desired values for the `name` and `adversarial_key` keywords
 in the `attack` module of a scenario configuration. Valid values for each keyword are given in the table below.
@@ -42,7 +45,7 @@ Example attack module for image classification scenario:
 ### Audio Datasets
 |           `name`          | `adversarial_key` |                     Description                    |               Attack               | Source Split |  x_shape  | x_type | y_shape | y_type | sampling_rate |      Size      |
 |:-------------------------:|:-----------------:|:--------------------------------------------------:|:----------------------------------:|:------------:|:---------:|:------:|:-------:|:------:|:-------------:|:--------------:|
-| "librispeech_adversarial" |   "adversarial"   | Librispeech dev dataset for speaker identification | Untargeted, universal perturbation |     test     | (N, 3000) |  int64 |   (N,)  |  int64 |     8 kHz     | ~5 sec/speaker |
+| "librispeech_adversarial" |   "adversarial"   | Librispeech dev dataset for speaker identification | Untargeted, universal perturbation |     test     | (N, 3000) |  int64 |   (N,)  |  int64 |    16 kHz     | ~5 sec/speaker |
 
 
 ### Video Datasets
