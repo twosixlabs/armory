@@ -46,10 +46,10 @@ Example attack module for image classification scenario:
 
 
 ### Video Datasets
-|            `name`            |      `adversarial_key`     |         Description        |               Attack               | Source Split |        x_shape       | x_type | y_shape | y_type |      Size      |
-|:----------------------------:|:--------------------------:|:--------------------------:|:----------------------------------:|:------------:|:--------------------:|:------:|:-------:|:------:|:--------------:|
-| "ucf101_adversarial_112x112" |     "adversarial_patch"    | UCF 101 Action Recognition | Untargeted, universal perturbation |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
-| "ucf101_adversarial_112x112" | "adversarial_perturbation" | UCF 101 Action Recognition |           Targeted, patch          |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
+|            `name`            |      `adversarial_key`     |         Description        |               Attack               | Source Split |              x_shape              | x_type | y_shape | y_type |      Size      |
+|:----------------------------:|:--------------------------:|:--------------------------:|:----------------------------------:|:------------:|:---------------------------------:|:------:|:-------:|:------:|:--------------:|
+| "ucf101_adversarial_112x112" |     "adversarial_patch"    | UCF 101 Action Recognition | Untargeted, universal perturbation |     test     | (N, variable_frames, 112, 112, 3) |  uint8 |   (N,)  |  int64 | 5 videos/class |
+| "ucf101_adversarial_112x112" | "adversarial_perturbation" | UCF 101 Action Recognition |           Targeted, patch          |     test     | (N, variable_frames, 112, 112, 3) |  uint8 |   (N,)  |  int64 | 5 videos/class |
 
 ### Poison Datasets
 To be added
