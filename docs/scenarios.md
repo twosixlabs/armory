@@ -49,9 +49,17 @@ The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Model Performance:**
-To be added
+  * Baseline Clean Top-1 Accuracy: 93%
+  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 6%
+  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 23%
 * **Baseline Defense Performance:**
-To be added
+Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=50, channel_index=3, apply_fit=False,
+apply_predict=True, means=[0.36386173189316956, 0.38118692953271804, 0.33867067558870334], stds=[0.20350874, 0.18531173, 0.18472934]) - see
+resisc45_baseline_densenet121_adversarial.json for example usage.
+Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
+  * Baseline Clean Top-1 Accuracy: 92%
+  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 40%
+  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 21%
 
 ### Librispeech speaker audio classification
 
@@ -140,7 +148,8 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Baseline Attacked (Patch) Top-1 Accuracy: 24%
   * Baseline Attacked (Patch) Top-5 Accuracy: 97%
 * **Baseline Defense Performance:**
-Baseline defense is art.defences.preprocessor.JpegCompression(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False, apply_predict=True).
+Baseline defense is art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
+apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0]) - see ucf101_baseline_adversarial.json for example usage.
 Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
   * Baseline Clean Top-1 Accuracy: 88%
   * Baseline Clean Top-5 Accuracy: 98%
