@@ -11,7 +11,7 @@
         },
         "module": "art.attacks",
         "name": "ProjectedGradientDescent",
-        "use_label": false
+        "use_label": true
     },
     "dataset": {
         "batch_size": 16,
