@@ -33,20 +33,20 @@ Example attack module for image classification scenario:
 ```
 
 ### Image Datasets
-|             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type | y_shape | y_type |      size      |
+|             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type | y_shape | y_type |      Size      |
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 
 
 ### Audio Datasets
-|           `name`          | `adversarial_key` |                     Description                    |               Attack               | Source Split |  x_shape  | x_type | y_shape | y_type | sampling_rate |      size      |
+|           `name`          | `adversarial_key` |                     Description                    |               Attack               | Source Split |  x_shape  | x_type | y_shape | y_type | sampling_rate |      Size      |
 |:-------------------------:|:-----------------:|:--------------------------------------------------:|:----------------------------------:|:------------:|:---------:|:------:|:-------:|:------:|:-------------:|:--------------:|
 | "librispeech_adversarial" |   "adversarial"   | Librispeech dev dataset for speaker identification | Untargeted, universal perturbation |     test     | (N, 3000) |  int64 |   (N,)  |  int64 |     8 kHz     | ~5 sec/speaker |
 
 
 ### Video Datasets
-|            `name`            |      `adversarial_key`     |         Description        |               Attack               | Source Split |        x_shape       | x_type | y_shape | y_type |      size      |
+|            `name`            |      `adversarial_key`     |         Description        |               Attack               | Source Split |        x_shape       | x_type | y_shape | y_type |      Size      |
 |:----------------------------:|:--------------------------:|:--------------------------:|:----------------------------------:|:------------:|:--------------------:|:------:|:-------:|:------:|:--------------:|
 | "ucf101_adversarial_112x112" |     "adversarial_patch"    | UCF 101 Action Recognition | Untargeted, universal perturbation |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
 | "ucf101_adversarial_112x112" | "adversarial_perturbation" | UCF 101 Action Recognition |           Targeted, patch          |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
