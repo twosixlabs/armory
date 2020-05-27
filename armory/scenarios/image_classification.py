@@ -80,7 +80,6 @@ class ImageClassificationTask(Scenario):
         for x, y in tqdm(test_data, desc="Benign"):
             y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
-            break
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -103,20 +102,15 @@ class ImageClassificationTask(Scenario):
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
             )
-        batches = 10
-        for i, (x, y) in enumerate(tqdm(test_data, desc="Attack")):
+        for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
+            elif attack_config.get("use_label"):
+                x_adv = attack.generate(x=x, y=y)
             else:
-                if attack_config.get("use_label"):
-                    x_adv = attack.generate(x=x, y=y)
-                else:
-                    x_adv = attack.generate(x=x)
+                x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
-            logger.info(f"attack batch {i+1}/{batches}")
-            if i == batches:
-                break
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()

@@ -4,10 +4,14 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.2
+            "eps": 0.031,
+            "eps_step": 0.007,
+            "max_iter": 20,
+            "num_random_init": 1
         },
         "module": "art.attacks",
-        "name": "FastGradientMethod"
+        "name": "ProjectedGradientDescent",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 64,
