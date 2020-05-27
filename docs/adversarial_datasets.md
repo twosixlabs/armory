@@ -3,68 +3,53 @@
 The `armory.data.adversarial_datasets` module implements functionality to return adversarial datasets of 
 various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which 
 implements the methods needed  by the ART framework. Specifically `get_batch` will 
-return a tuple of `((data_clean, data_adversarial), labels)` for a specified batch size in numpy format,
-where 'data_clean' is a clean example and 'data_adversarial' is the corresponding adversarially attacked example.
-Each adversarial dataset contains adversarial examples generated using one or more attacks. To select examples
-from a particular attack, specify the desired value for 'adversarial_key' keyword in the scenario configuration -
-see table below for valid values for each dataset.
+return a tuple of `((data_clean, data_adversarial), (label_clean, label_adversarial))` for a specified batch size in numpy format,
+where 'data_clean' and 'label_clean' represent a clean example and its true label, and 'data_adversarial' and 'label_adversarial'
+represent the corresponding adversarially attacked example and its target label (valid only for targeted attacks).
+Each adversarial dataset contains adversarial examples generated using one or more attacks.
 
 Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
 These tfrecord files will be pulled from S3 if not available on your 
 `dataset_dir` directory.
 
 ### Usage
-To use an adversarial dataset for evaluation, the following keywords in the 'attack' module
-of a scenario configuration must be specified. Valid values for each keyword is given in the table below.
+To use an adversarial dataset for evaluation, specify the desired values for the `name` and `adversarial_key` keywords
+in the `attack` module of a scenario configuration. Valid values for each keyword are given in the table below.
 
-Example configuration:
+Example attack module for image classification scenario:
 
-"kwargs": {
-    "adversarial_key": "adversarial_univperturbation",
-    "batch_size": 1,
-    "description": "'adversarial_key' can be 'adversarial_univperturbation' or 'adversarial_univpatch'"
-},
-"module": "armory.data.adversarial_datasets",
-"name": "resisc45_adversarial_224x224",
-"type": "preloaded"
+```json
+"attack": {
+    "knowledge": "white",
+    "kwargs": {
+        "adversarial_key": "adversarial_univpatch",
+        "batch_size": 1,
+        "description": "'adversarial_key' can be 'adversarial_univperturbation' or 'adversarial_univpatch'"
+    },
+    "module": "armory.data.adversarial_datasets",
+    "name": "resisc45_adversarial_224x224",
+    "type": "preloaded"
+}
+```
 
-### Datasets
+### Image Datasets
+|             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type | y_shape | y_type |      size      |
+|:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
+| "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
+| "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 
-| Modality | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | adversarial_key |
-|:--------: |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| Image | resisc45_adversarial_224x224 | 
-REmote Sensing Image Scene Classification. Contains five images, taken from the test set, of each of the 45 classes, attacked
-with targeted universal patch | 
-| (N, 224, 224, 3) | uint8 | (N,) | int64 | 'adversarial_univpatch' | 
-
-<br>
 
 ### Audio Datasets
-| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | sampling_rate |
-|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:-------: |
-| [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 | 8 kHz |
-| [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | int64 | (N,)  | int64 | 16 kHz |
+|           `name`          | `adversarial_key` |                     Description                    |               Attack               | Source Split |  x_shape  | x_type | y_shape | y_type | sampling_rate |      size      |
+|:-------------------------:|:-----------------:|:--------------------------------------------------:|:----------------------------------:|:------------:|:---------:|:------:|:-------:|:------:|:-------------:|:--------------:|
+| "librispeech_adversarial" |   "adversarial"   | Librispeech dev dataset for speaker identification | Untargeted, universal perturbation |     test     | (N, 3000) |  int64 |   (N,)  |  int64 |     8 kHz     | ~5 sec/speaker |
 
-<br>
 
 ### Video Datasets
-| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype |
-|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |
-| [ucf101](https://www.crcv.ucf.edu/data/UCF101.php) | UCF 101 Action Recognition | (N, variable_frames, 240, 320, 3) | uint8 | (N,) | int64 |
+|            `name`            |      `adversarial_key`     |         Description        |               Attack               | Source Split |        x_shape       | x_type | y_shape | y_type |      size      |
+|:----------------------------:|:--------------------------:|:--------------------------:|:----------------------------------:|:------------:|:--------------------:|:------:|:-------:|:------:|:--------------:|
+| "ucf101_adversarial_112x112" |     "adversarial_patch"    | UCF 101 Action Recognition | Untargeted, universal perturbation |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
+| "ucf101_adversarial_112x112" | "adversarial_perturbation" | UCF 101 Action Recognition |           Targeted, patch          |     test     | (N, 3, 16, 112, 112) |  uint8 |   (N,)  |  int64 | 5 videos/class |
 
-<br>
-
-<style>
-table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 50%;
-}
-table th:nth-of-type(3) {
-    width: 30%;
-}
-table th:nth-of-type(4) {
-    width: 10%;
-}
-</style>
+### Poison Datasets
+To be added
