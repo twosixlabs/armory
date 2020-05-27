@@ -5,8 +5,8 @@ Adversarial datasets
 from typing import Callable
 
 from armory.data import datasets
-from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.adversarial import (  # noqa: F401
+    imagenet_adversarial as IA,
     librispeech_adversarial as LA,
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
@@ -116,7 +116,7 @@ def resisc45_adversarial_224x224(
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
 
     return datasets._generator_from_tfds(
-        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.0",
+        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,

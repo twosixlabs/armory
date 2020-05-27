@@ -33,7 +33,7 @@ _CITATION = """
 _URL = ""
 _DL_URL = (
     "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/"
-    "resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224.tar.gz"
+    "resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224_1.0.1.tar.gz"
 )
 _LABELS = [
     "airplane",
@@ -88,7 +88,7 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
     tfds.core.GeneratorBasedBuilder
 ):
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -98,13 +98,13 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
                 {
                     "images": {
                         "clean": tfds.features.Image(
-                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="jpeg"
+                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="png"
                         ),
                         "adversarial_univperturbation": tfds.features.Image(
-                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="jpeg"
+                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="png"
                         ),
                         "adversarial_univpatch": tfds.features.Image(
-                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="jpeg"
+                            shape=[224, 224, 3], dtype=tf.uint8, encoding_format="png"
                         ),
                     },
                     "label": tfds.features.ClassLabel(names=_LABELS),
@@ -136,15 +136,15 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
         labels.sort()
         for label in labels:
             image_clean = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[0], label, "*.jpg",)
+                os.path.join(data_dir_path, root_dir, split_dirs[0], label, "*.png",)
             )
             image_clean.sort()
             adv_univpatch = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[1], label, "*.jpg",)
+                os.path.join(data_dir_path, root_dir, split_dirs[1], label, "*.png",)
             )
             adv_univpatch.sort()
             adv_univperturbation = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[2], label, "*.jpg",)
+                os.path.join(data_dir_path, root_dir, split_dirs[2], label, "*.png",)
             )
             adv_univperturbation.sort()
 
