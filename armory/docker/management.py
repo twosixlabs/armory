@@ -50,6 +50,7 @@ class ArmoryInstance(object):
                 host_output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
                 host_tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
+            "shm_size": "16G",
         }
         if ports is not None:
             container_args["ports"] = ports

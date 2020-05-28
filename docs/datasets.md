@@ -65,6 +65,8 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 | librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
 |                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
 |                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
+### Adversarial Datasets
+See [adversarial_datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
 
 <style>
     table th:first-of-type {
