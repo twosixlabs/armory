@@ -9,7 +9,7 @@
         },
         "module": "art.attacks",
         "name": "FastGradientMethod",
-        "use_label": true
+        "use_label": false
     },
     "dataset": {
         "batch_size": 64,
