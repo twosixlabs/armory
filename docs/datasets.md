@@ -59,12 +59,15 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 
 |        Dataset        |    Split   |               Description              |                   Split logic details                  |
 |:---------------------:|:----------:|:--------------------------------------:|:------------------------------------------------------:|
-|       resisc_45       |    train   |             5/7 of dataset             | See armory/data/resisc45/resisc45_dataset_partition.py |
-|                       | validation |             1/7 of dataset             |                                                        |
-|                       |    test    |             1/7 of dataset             |                                                        |
+|       resisc_45       |    train   |         First 5/7 of dataset           | See armory/data/resisc45/resisc45_dataset_partition.py |
+|                       | validation |          Next 1/7 of dataset           |                                                        |
+|                       |    test    |         Final 1/7 of dataset           |                                                        |
 | librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
 |                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
 |                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
+
+<br>
+
 ### Adversarial Datasets
 See [adversarial_datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
 
