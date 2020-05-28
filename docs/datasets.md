@@ -66,8 +66,8 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 |                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
 |                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
 
-<br>
 
+<br>
 ### Adversarial Datasets
 See [adversarial_datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
 
