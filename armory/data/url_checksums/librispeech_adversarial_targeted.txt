@@ -1,0 +1,1 @@
+/armory/datasets/LibriSpeech_SincNet_Targeted_PGD.tar.gz 101238733 b5b089c92767db7a39ab0c3ec62e40aa75bd6341389186e495d88078444f3b01

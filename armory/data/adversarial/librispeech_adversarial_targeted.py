@@ -10,18 +10,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 _DESCRIPTION = """\
-LibriSpeech-dev-clean adversarial audio dataset for SincNet
-
-UniversalPerturbation
-    Max iterations = 100
-    Epsilon = 0.3
-    Attacker = Projected Gradient Descent
+LibriSpeech-dev-clean targeted adversarial audio dataset for SincNet
 
 Projected Gradient Descent
     Max iterations = 100
     Epsilon = 0.3
     Attack step size = 0.1
-    Targeted = false
+    Targeted = true
 """
 
 _LABELS = [
@@ -66,17 +61,11 @@ _LABELS = [
     "8297",
     "8842",
 ]
-"""
-_URL = (
-    "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/"
-    "LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
-)
-"""
-_URL = "/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+_URL = "/armory/datasets/LibriSpeech_SincNet_Targeted_PGD.tar.gz"
 
 
-class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
-    VERSION = tfds.core.Version("1.1.0")
+class LibrispeechAdversarialTargeted(tfds.core.GeneratorBasedBuilder):
+    VERSION = tfds.core.Version("1.0.0")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -96,7 +85,7 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """Returns SplitGenerators"""
-        path = os.path.join(dl_manager.download_and_extract(_URL), "data",)
+        path = os.path.join(dl_manager.download_and_extract(_URL), "data")
         splits = [
             tfds.core.SplitGenerator(
                 name="adversarial", gen_kwargs={"data_dir_path": path}
@@ -107,6 +96,7 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, data_dir_path):
         """Yields examples."""
         split_dirs = ["clean", "adversarial"]
+        print(os.path.join(data_dir_path))
         labels = tf.io.gfile.listdir(os.path.join(data_dir_path, split_dirs[0]))
         labels.sort()
         for label in labels:
