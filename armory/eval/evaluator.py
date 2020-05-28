@@ -7,7 +7,7 @@ import json
 import logging
 import shutil
 import time
-import uuid
+import datetime
 
 import docker
 import requests
@@ -39,7 +39,10 @@ class Evaluator(object):
         else:
             self.armory_global_config = {"verify_ssl": True}
 
-        eval_id = str(uuid.uuid4())
+        date_time = datetime.datetime.utcnow().isoformat()
+        output_dir = self.config["sysconfig"].get("output_dir", None)
+        eval_id = f"{output_dir}_{date_time}" if output_dir else date_time
+
         self.config["eval_id"] = eval_id
         self.output_dir = os.path.join(self.host_paths.output_dir, eval_id)
         self.tmp_dir = os.path.join(self.host_paths.tmp_dir, eval_id)

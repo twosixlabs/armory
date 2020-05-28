@@ -106,7 +106,10 @@ class Scenario(abc.ABC):
             runtime_paths.output_dir, output["config"]["eval_id"]
         )
 
-        scenario_name = output["config"]["scenario"]["name"]
+        override_name = output["config"]["sysconfig"].get("output_filename", None)
+        scenario_name = (
+            override_name if override_name else output["config"]["scenario"]["name"]
+        )
         filename = f"{scenario_name}_{output['timestamp']}.json"
         logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
         with open(os.path.join(scenario_output_dir, filename), "w") as f:

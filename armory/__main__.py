@@ -177,6 +177,13 @@ def _set_gpus(config, use_gpu, gpus):
         config["sysconfig"]["use_gpu"] = use_gpu
 
 
+def _set_outputs(config, output_dir, output_filename):
+    if output_dir:
+        config["sysconfig"]["output_dir"] = output_dir
+    if output_filename:
+        config["sysconfig"]["output_filename"] = output_filename
+
+
 # Commands
 
 
@@ -192,6 +199,14 @@ def run(command_args, prog, description):
     _use_gpu(parser)
     _gpus(parser)
     _no_docker(parser)
+    parser.add_argument(
+        "--output-dir", type=str, help="Override of default output directory prefix",
+    )
+    parser.add_argument(
+        "--output-filename",
+        type=str,
+        help="Override of default output filename prefix",
+    )
     parser.add_argument(
         "--check",
         action="store_true",
@@ -209,6 +224,7 @@ def run(command_args, prog, description):
             logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.gpus)
+    _set_outputs(config, args.output_dir, args.output_filename)
 
     rig = Evaluator(config, no_docker=args.no_docker)
     rig.run(

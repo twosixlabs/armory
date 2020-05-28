@@ -212,6 +212,18 @@
                 "gpus": {
                     "type": "string"
                 },
+                "output_dir": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "output_filename": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
                 "use_gpu": {
                     "type": "boolean"
                 }
