@@ -10,7 +10,8 @@
         },
         "module": "armory.data.adversarial_datasets",
         "name": "resisc45_adversarial_224x224",
-        "type": "preloaded"
+        "type": "preloaded",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 16,

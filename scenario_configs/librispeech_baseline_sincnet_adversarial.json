@@ -10,7 +10,8 @@
         },
         "module": "armory.data.adversarial_datasets",
         "name": "librispeech_adversarial",
-        "type": "preloaded"
+        "type": "preloaded",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 128,

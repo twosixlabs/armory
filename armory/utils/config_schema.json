@@ -22,6 +22,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "use_label": {
+                    "type": "boolean"
                 }
             },
             "required": [

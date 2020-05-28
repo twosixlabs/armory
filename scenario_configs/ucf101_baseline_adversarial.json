@@ -10,7 +10,8 @@
         },
         "module": "armory.data.adversarial_datasets",
         "name": "ucf101_adversarial_112x112",
-        "type": "preloaded"
+        "type": "preloaded",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 16,

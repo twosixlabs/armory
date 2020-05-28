@@ -105,6 +105,8 @@ class AudioClassificationTask(Scenario):
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
+            elif attack_config.get("use_label"):
+                x_adv = attack.generate(x=x, y=y)
             else:
                 x_adv = attack.generate(x=x)
             y_pred_adv = classifier.predict(x_adv)

@@ -8,7 +8,8 @@
             "eps": 0.2
         },
         "module": "art.attacks",
-        "name": "FastGradientMethod"
+        "name": "FastGradientMethod",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 64,
