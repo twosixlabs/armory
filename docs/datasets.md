@@ -51,9 +51,11 @@ representation of inputs, e.g. running pydub on flac audio files.
 
 Datasets that are imported directly from TFDS have splits that are defined according to the
 Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overview). The
-`german-traffic-sign` dataset split follows the description on the originally hosted
-[dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).  The following
-table describes datasets with custom splits in Armory.
+`german-traffic-sign` dataset split follows the description of the original source of the
+[dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset). The `digits`
+ dataset split follows the description of the original source of the 
+ [dataset](https://github.com/Jakobovski/free-spoken-digit-dataset#usage). The following
+ table describes datasets with custom splits in Armory.
 
 |        Dataset        |    Split   |               Description              |                   Split logic details                  |
 |:---------------------:|:----------:|:--------------------------------------:|:------------------------------------------------------:|
@@ -61,8 +63,8 @@ table describes datasets with custom splits in Armory.
 |                       | validation |             1/7 of dataset             |                                                        |
 |                       |    test    |             1/7 of dataset             |                                                        |
 | librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
-|                       | validation |  692 recordings from dev_clean_dataset |       is in train, at least 25% is in validation,      |
-|                       |    test    |  640 recordings from dev_clean_dataset |              and the remainder are in test             |
+|                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
+|                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
 
 <style>
     table th:first-of-type {
