@@ -5,7 +5,7 @@ task and perturbation metrics.
 
 ### MetricsLogger
 
-The `MetricsLogger` class pairs with scenarios to account for task peformance
+The `MetricsLogger` class pairs with scenarios to account for task performance
 against benign and adversarial data as well as measure the perturbations of
 adversarial samples. Since our datasets are presented as generators, this has
 `update_task` and `update_perturbation` methods that can update metrics for
@@ -26,4 +26,4 @@ is a JSON-able dict.
 <br>
 
 We have implemented the metrics in numpy, instead of using framework-specific 
-metrics, to prevent expanding the required set of dependencies
+metrics, to prevent expanding the required set of dependencies.

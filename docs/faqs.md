@@ -12,7 +12,7 @@ will switch to having PyTorch or TensorFlow data generators.
 #### Accessing underlying wrapped model
 There are many times when creating a scenario you may want to access the underlying 
 framework model that has been wrapped as an ART classifier. In the future we'll have 
-a convience method to access the models through an ART api, but in the short term they 
+a convenience method to access the models through an ART api, but in the short term they
 can be accessed as follows:
 
 KerasWrapper:
