@@ -16,7 +16,7 @@ All configuration files are verified against the jsonschema definition at run ti
     kwargs: [Object] Keyword arguments to pass to attack instatiation    
     module: [String] Python module to load attack from 
     name: [String] Name of the attack class to be instatiated
-    use_label: [Bool] Default: False. Wheather attack should use the true label when 
+    use_label: [Bool] Default: False. Whether attack should use the true label when 
           attacking the model. Without this, it is not possible to drive the accuracy 
           down to 0% when the model has misclassifications.
   }
