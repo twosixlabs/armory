@@ -37,7 +37,7 @@ The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
     a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while meeting the perceptability requirement.
+    budget allowed while meeting the perceptibility requirement.
     * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted attack) and 
     universal patch (targeted attack)
       * For universal patch attack, assume the total area of the patch is at most 25% of the total image area.  The 
@@ -88,7 +88,7 @@ raw audio-based model is [SincNet](https://arxiv.org/abs/1808.00158), trained fr
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
     a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget 
-    allowed while meeting the perceptability requirement.
+    allowed while meeting the perceptibility requirement.
     * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted and targeted attacks)
 * **Metrics of Interest:**
   * Primary metrics:
@@ -105,7 +105,7 @@ To be added
 ### UCF101 video classification
 
 * **Description:**
-In this scenario, the system under evalution is a video action recognition system that a human operator is either
+In this scenario, the system under evaluation is a video action recognition system that a human operator is either
 passively monitoring or not monitoring at all.
 * **Dataset:**
 The dataset is the [UCF101 dataset](https://www.crcv.ucf.edu/data/UCF101.php).
@@ -129,7 +129,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under quick glance are allowed, as are attacks that create perceptible
     but non-suspicious patches - we assume in this scenario that a human may at most passively monitor the classifier system.
-    Use own judgement on the maximum perturbation budget allowed while meeting the perceptability requirement.
+    Use own judgement on the maximum perturbation budget allowed while meeting the perceptibility requirement.
     * Type of attacks that will be implemented during evaluation: perturbation (untargeted attack) and
     patch (targeted attack)
       * For patch attack, assume the total area of the patch is at most 25% of the total image area.  The 
@@ -161,7 +161,7 @@ Baseline defense performance is evaluated for a grey-box attack: adversarial exa
 ### German traffic sign poisoned image classification
 
 * **Description:**
-In this scenario, the system under evalution is a traffic sign recognition system that requires continuous
+In this scenario, the system under evaluation is a traffic sign recognition system that requires continuous
 training, and the training data is procured through less trustworthy external sources (e.g., third-party, Internet, etc.)
 and may contain backdoor triggers, where some images and labels are intentionally altered to mislead the system into 
 making specific test-time decisions.
@@ -200,9 +200,9 @@ To be added
 
 ### Cifar10 image classification
 
-* **Description:** This is a standard white-box attack scneario. 
+* **Description:** This is a standard white-box attack scenario.
 * **Threat Scenario:** White-box attack
-* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial purturbation
+* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial perturbation
 * **Baseline Model Performance:** 
 * **Baseline Defense Performance:** See academic literature for the most up to date results
 
@@ -211,7 +211,7 @@ To be added
 
 * **Description:**
 * **Threat Scenario:** White-box attack 
-* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial purturbation
+* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial perturbation
 * **Baseline Model Performance:** 
 * **Baseline Defense Performance:** See academic literature for the most up to date results
 

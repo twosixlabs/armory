@@ -17,6 +17,7 @@ their respective implementations in IBM's [adversarial-robustness-toolbox](https
 There are three ways to interact with the armory container system.
 
 1) `armory run`
+
 * `armory run <path/to/config.json>`. 
 This will run a [configuration file](docs/configuration_files.md) end to end. Stdout 
 and stderror logs will be displayed to the user, and the container will be removed 
@@ -33,6 +34,7 @@ directory. To later close the interactive container simply run CTRL+C from the
 terminal where this command was ran.
 
 2) `armory launch`
+
 * `armory launch <tf1|tf2|pytorch> --interactive`. 
 This will launch a framework specific container, with appropriate mounted volumes, for 
 the user to attach to for debugging purposes. A command to attach to the container will
@@ -47,6 +49,7 @@ debugging can be performed. To close the jupyter server simply run CTRL+C from t
 terminal where this command was ran.
 
 3) `armory exec` 
+
 * `armory exec <tf1|tf2|pytorch> -- <cmd>`. 
 This will run a specific command within a framework specific container. A notable use
 case for this would be to run test cases using pytest. After completion of the command 
