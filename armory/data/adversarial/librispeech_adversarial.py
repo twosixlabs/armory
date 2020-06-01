@@ -12,16 +12,20 @@ logger = logging.getLogger(__name__)
 _DESCRIPTION = """\
 LibriSpeech-dev-clean adversarial audio dataset for SincNet
 
-UniversalPerturbation
+Universal Perturbation
     Max iterations = 100
     Epsilon = 0.3
     Attacker = Projected Gradient Descent
+        Max iterations = 100
+        Epsilon = 0.3
+        Attack step size = 0.1
+        Targeted = false
 
 Projected Gradient Descent
-    Max iterations = 100
-    Epsilon = 0.3
-    Attack step size = 0.1
-    Targeted = false
+        Max iterations = 100
+        Epsilon = 0.3
+        Attack step size = 0.1
+        Targeted = True
 """
 
 _LABELS = [
@@ -72,7 +76,7 @@ _URL = (
     "LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
 )
 """
-_URL = "/armory/datasets/LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+_URL = "/armory/datasets/LibriSpeech_SincNet_UnivPerturbation_and_PGD.tar.gz"
 
 
 class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
@@ -86,7 +90,8 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
                 {
                     "audio": {
                         "clean": tfds.features.Audio(),
-                        "adversarial": tfds.features.Audio(),
+                        "adversarial_univperturbation": tfds.features.Audio(),
+                        "adversarial_perturbation": tfds.features.Audio(),
                     },
                     "label": tfds.features.ClassLabel(names=_LABELS),
                 }
@@ -106,7 +111,11 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _generate_examples(self, data_dir_path):
         """Yields examples."""
-        split_dirs = ["clean", "adversarial"]
+        split_dirs = [
+            "clean",
+            "adversarial_univperturbation",
+            "adversarial_perturbation",
+        ]
         labels = tf.io.gfile.listdir(os.path.join(data_dir_path, split_dirs[0]))
         labels.sort()
         for label in labels:
@@ -130,8 +139,11 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
                             "clean": os.path.join(
                                 data_dir_path, split_dirs[0], label, chapter, clip
                             ),
-                            "adversarial": os.path.join(
+                            "adversarial_univperturbation": os.path.join(
                                 data_dir_path, split_dirs[1], label, chapter, clip
+                            ),
+                            "adversarial_perturbation": os.path.join(
+                                data_dir_path, split_dirs[2], label, chapter, clip
                             ),
                         },
                         "label": label,

@@ -4,12 +4,12 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial",
+            "adversarial_key": "adversarial_perturbation",
             "batch_size": 16,
             "description": "'adversarial_key' must be 'adversarial'"
         },
         "module": "armory.data.adversarial_datasets",
-        "name": "librispeech_adversarial_targeted",
+        "name": "librispeech_adversarial",
         "type": "preloaded",
         "use_label": false
     },
@@ -50,6 +50,6 @@
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
-        "use_gpu": true
+        "use_gpu": false
     }
 }
