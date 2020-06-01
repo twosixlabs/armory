@@ -9,7 +9,7 @@
             "description": "'adversarial_key' must be 'adversarial'"
         },
         "module": "armory.data.adversarial_datasets",
-        "name": "librispeech_adversarial",
+        "name": "librispeech_adversarial_targeted",
         "type": "preloaded",
         "use_label": false
     },
@@ -50,6 +50,6 @@
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
-        "use_gpu": false
+        "use_gpu": true
     }
 }

@@ -99,6 +99,7 @@ class AudioClassificationTask(Scenario):
                 # combine predictions across all segments of a clip
                 y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
+
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -134,6 +135,6 @@ class AudioClassificationTask(Scenario):
                 # combine predictions across all segments of a clip
                 y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-        #                metrics_logger.update_perturbation(x, x_adv)
+                metrics_logger.update_perturbation(x, x_adv)
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
