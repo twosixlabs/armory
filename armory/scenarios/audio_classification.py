@@ -5,6 +5,7 @@ General audio classification scenario
 import logging
 
 from tqdm import tqdm
+import numpy as np
 
 from armory.utils.config_loading import (
     load_dataset,
@@ -41,22 +42,38 @@ class AudioClassificationTask(Scenario):
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
-            fit_kwargs = model_config["fit_kwargs"]
+            train_epochs = config["model"]["fit_kwargs"]["nb_epochs"]
+            batch_size = config["dataset"]["batch_size"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             train_data = load_dataset(
                 config["dataset"],
-                epochs=fit_kwargs["nb_epochs"],
+                epochs=train_epochs,
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
             )
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
-                defense.fit_generator(train_data, **fit_kwargs)
             else:
                 logger.info("Fitting classifier on clean train dataset...")
-                classifier.fit_generator(train_data, **fit_kwargs)
+
+            for epoch in range(train_epochs):
+                classifier.set_learning_phase(True)
+
+                for _ in tqdm(
+                    range(train_data.batches_per_epoch),
+                    desc=f"Epoch: {epoch}/{train_epochs}",
+                ):
+                    x, y = train_data.get_batch()
+                    # x_trains consists of one or more clips, each represented as an
+                    # ndarray of shape (n_segs, 3000).
+                    # To train, randomly sample a batch of segments
+                    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
+                    if defense_type == "Trainer":
+                        defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
+                    else:
+                        classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported
@@ -77,9 +94,11 @@ class AudioClassificationTask(Scenario):
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
-        for x, y in tqdm(test_data, desc="Benign"):
-            y_pred = classifier.predict(x)
-            metrics_logger.update_task(y, y_pred)
+        for x_batch, y_batch in tqdm(test_data, desc="Benign"):
+            for x, y in zip(x_batch, y_batch):
+                # combine predictions across all segments of a clip
+                y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
+                metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -102,15 +121,19 @@ class AudioClassificationTask(Scenario):
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
             )
-        for x, y in tqdm(test_data, desc="Attack"):
+        for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
-                x, x_adv = x
-            elif attack_config.get("use_label"):
-                x_adv = attack.generate(x=x, y=y)
-            else:
-                x_adv = attack.generate(x=x)
-            y_pred_adv = classifier.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-            metrics_logger.update_perturbation(x, x_adv)
+                x_batch = list(zip(*x_batch))
+            for x, y in zip(x_batch, y_batch):
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                elif attack_config.get("use_label"):
+                    x_adv = attack.generate(x=x, y=y)
+                else:
+                    x_adv = attack.generate(x=x)
+                # combine predictions across all segments of a clip
+                y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
+                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+        #                metrics_logger.update_perturbation(x, x_adv)
         metrics_logger.log_task(adversarial=True)
         return metrics_logger.results()
