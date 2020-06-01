@@ -37,7 +37,7 @@ jobs:
           python-version: '3.6'
       - name: Build and release docker images
         run: |
-          bash .github/workflows/clear_space.sh
+          rm -rf /usr/share/dotnet &
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
@@ -59,7 +59,7 @@ jobs:
           python-version: '3.6'
       - name: Build and release docker images
         run: |
-          bash .github/workflows/clear_space.sh
+          rm -rf /usr/share/dotnet &
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
@@ -82,7 +82,7 @@ jobs:
           python-version: '3.6'
       - name: Build and release docker images
         run: |
-          bash .github/workflows/clear_space.sh
+          rm -rf /usr/share/dotnet &
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
@@ -105,7 +105,7 @@ jobs:
           python-version: '3.6'
       - name: Build and release docker images
         run: |
-          bash .github/workflows/clear_space.sh
+          rm -rf /usr/share/dotnet &
           python -m pip install -r requirements.txt
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
