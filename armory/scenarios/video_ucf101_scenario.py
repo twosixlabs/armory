@@ -6,6 +6,7 @@ Scenario Contributor: MITRE Corporation
 
 import logging
 
+import torch
 import numpy as np
 from tqdm import tqdm
 
@@ -101,7 +102,8 @@ class Ucf101(Scenario):
         for x_batch, y_batch in tqdm(test_data, desc="Benign"):
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
+                with torch.no_grad():
+                    y_pred = np.mean(classifier.predict(x, batch_size=len(x)), axis=0)
                 metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
