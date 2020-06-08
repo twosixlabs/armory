@@ -15,6 +15,7 @@ images are resampled to 48x48
 _DL_URL = "/armory/datasets/Poisoned_images_entire_class.npy"
 _TEST_URL = "/armory/datasets/Poisoned_test_images.npy"
 
+
 class GtsrbBhPoisonMicronnet(tfds.core.GeneratorBasedBuilder):
     """GTSRB_bh_poison_micronnet"""
 
@@ -27,7 +28,7 @@ class GtsrbBhPoisonMicronnet(tfds.core.GeneratorBasedBuilder):
             features=tfds.features.FeaturesDict(
                 {
                     "image": tfds.features.Tensor(shape=(48, 48, 3), dtype=tf.float32),
-                    "label": tfds.features.ClassLabel(num_classes=43)
+                    "label": tfds.features.ClassLabel(num_classes=43),
                 }
             ),
             supervised_keys=("image", "label"),
@@ -38,15 +39,19 @@ class GtsrbBhPoisonMicronnet(tfds.core.GeneratorBasedBuilder):
         dl_path = dl_manager.download(_DL_URL)
         test_path = dl_manager.download(_TEST_URL)
         return [
-            tfds.core.SplitGenerator(name="poison", gen_kwargs={"data_dir_path": dl_path,},),
-            tfds.core.SplitGenerator(name="poison_test", gen_kwargs={"data_dir_path": test_path,},),
+            tfds.core.SplitGenerator(
+                name="poison", gen_kwargs={"data_dir_path": dl_path,},
+            ),
+            tfds.core.SplitGenerator(
+                name="poison_test", gen_kwargs={"data_dir_path": test_path,},
+            ),
         ]
 
     def _generate_examples(self, data_dir_path):
         """Yields examples."""
 
         with tf.io.gfile.GFile(data_dir_path, "rb") as fp:
-           images = np.load(fp)
-        labels = np.full(images.shape[0],2)
+            images = np.load(fp)
+        labels = np.full(images.shape[0], 2)
         for i, img in enumerate(images):
             yield i, {"image": img, "label": labels[i]}

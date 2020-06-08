@@ -171,6 +171,7 @@ def ucf101_adversarial_112x112(
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
 
+
 def gtsrb_poison(
     split_type: str = "poison",
     epochs: int = 1,

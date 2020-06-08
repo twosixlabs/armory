@@ -9,12 +9,10 @@ import logging
 import numpy as np
 from tensorflow import set_random_seed
 from tensorflow.keras.utils import to_categorical
-from tqdm import tqdm
 
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
-    load,
     load_fn,
 )
 from armory.utils import metrics
@@ -34,8 +32,6 @@ class GTSRB(Scenario):
 
         config_adhoc = config.get("adhoc") or {}
         train_epochs = config_adhoc["train_epochs"]
-        src_class = config_adhoc["source_class"]
-        tgt_class = config_adhoc["target_class"]
 
         # Set random seed due to large variance in attack and defense success
         np.random.seed(config_adhoc["np_seed"])
@@ -45,7 +41,6 @@ class GTSRB(Scenario):
         )
 
         logger.info(f"Loading dataset {config['dataset']['name']}...")
-        batch_size = config["dataset"]["batch_size"]
         clean_data = load_dataset(
             config["dataset"],
             epochs=1,
@@ -54,7 +49,11 @@ class GTSRB(Scenario):
         )
 
         logger.info(f"Loading poison dataset {config['poison_samples']['name']}...")
-        batch_size = config["poison_samples"]["batch_size"]
+        # batch size depends on percentage poisoned and number of samples in class
+        num_images_tgt_class = 2220
+        config["poison_samples"]["batch_size"] = int(
+            config["adhoc"]["fraction_poisoned_train"] * num_images_tgt_class
+        )
         poison_data = load_dataset(
             config["poison_samples"],
             epochs=1,
@@ -63,19 +62,16 @@ class GTSRB(Scenario):
         )
 
         logger.info("Building in-memory dataset for poisoning detection and training")
-        attack_config = config["attack"]
-        attack = load(attack_config)
-        poison_dataset_flag = config["adhoc"]["poison_dataset"]
-	# Concatenate the clean and poisoned samples
+        # Concatenate the clean and poisoned samples
         x_train_all, y_train_all = [], []
         for x_clean, y_clean in clean_data:
             x_poison, y_poison = poison_data.get_batch()
-            x_poison = np.array([xp for xp in x_poison], dtype = np.float)
+            x_poison = np.array([xp for xp in x_poison], dtype=np.float)
             x_train_all.append(x_clean)
             y_train_all.append(y_clean)
             x_train_all.append(x_poison)
             y_train_all.append(y_poison)
-        
+
         x_train_all = np.concatenate(x_train_all, axis=0)
         y_train_all = np.concatenate(y_train_all, axis=0)
 
@@ -137,21 +133,19 @@ class GTSRB(Scenario):
         )
         validation_metric = metrics.MetricList("categorical_accuracy")
         x_test_all, y_test_all = [], []
-        for x_test, y_test in test_data:
-            x_poison_test, y_poison_test = test_data.get_batch()
-            x_poison_test = np.array([xp for xp in x_poison_test], dtype = np.float)
+        for x_poison_test, y_poison_test in test_data:
+            x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float)
             x_test_all.append(x_poison_test)
             y_test_all.append(y_poison_test)
 
         x_test_all = np.concatenate(x_test_all, axis=0)
         y_test_all = np.concatenate(y_test_all, axis=0)
 
-        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        fraction_poisoned = config["adhoc"]["fraction_poisoned_test"]
         num_test_all = x_test_all.shape[0]
         num_test = round(fraction_poisoned * num_test_all)
-        x_test = x_test_all[0:num_test,:,:,:]
+        x_test = x_test_all[0:num_test, :, :, :]
         y_test = y_test_all[0:num_test]
-        y_test_all_categorical = to_categorical(y_test)
         y_pred = np.argmax(classifier.predict(x_test), axis=1)
         validation_metric.append(y_test, y_pred)
         logger.info(f"poisoned validation accuracy: {validation_metric.mean():.2%}")
