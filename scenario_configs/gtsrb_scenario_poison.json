@@ -1,0 +1,61 @@
+{
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "adhoc": {
+        "fraction_poisoned": 0.7,
+        "np_seed": 123,
+        "poison_dataset": false,
+        "source_class": 1,
+        "target_class": 2,
+        "tf_seed": 123,
+        "train_epochs": 30,
+        "use_poison_filtering_defense": false
+    },
+    "attack": {
+        "knowledge": "black",
+        "kwargs": {
+            "poison_module": "art.attacks.poisoning.perturbations",
+            "poison_type": "pattern"
+        },
+        "module": "armory.art_experimental.attacks.poison_loader",
+        "name": "poison_loader_GTSRB"
+    },
+    "dataset": {
+        "batch_size": 39209,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "german_traffic_sign"
+    },
+    "poison_samples": {
+        "batch_size": 220,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "gtsrb_poison"
+    },
+    "defense": {
+        "kwargs": {},
+        "module": "art.poison_detection.activation_defence",
+        "name": "ActivationDefence",
+        "type": "PoisonFilteringDefence"
+    },
+    "metric": null,
+    "model": {
+        "fit": true,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.poisoning_gtsrb_scenario",
+        "name": "GTSRB"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.9.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "use_gpu": true
+    }
+}
