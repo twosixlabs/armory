@@ -12,8 +12,8 @@ images are resampled to 48x48
 
 """
 
-_DL_URL = "/armory/datasets/Poisoned_images_entire_class.npy"
-_TEST_URL = "/armory/datasets/Poisoned_test_images.npy"
+_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/gtsrb_poisoned_images_entire_class.npy"
+_TEST_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/gtsrb_poisoned_test_images.npy"
 
 
 class GtsrbBhPoisonMicronnet(tfds.core.GeneratorBasedBuilder):
