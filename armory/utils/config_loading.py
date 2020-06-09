@@ -3,6 +3,7 @@ Helper utilies to load things from armory configuration files.
 """
 
 from importlib import import_module
+import logging
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
@@ -15,6 +16,8 @@ from art import defences
 from art.classifiers import Classifier
 
 from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
+
+logger = logging.getLogger(__name__)
 
 
 def load(sub_config):
@@ -58,6 +61,11 @@ def load_model(model_config):
     )
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
+    if not weights_file and not model_config["fit"]:
+        logger.warning(
+            "You're attempting to evaluate an unfitted model with no "
+            "pre-trained weights!"
+        )
 
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
     if preprocessing_fn is not None and not callable(preprocessing_fn):
