@@ -42,6 +42,7 @@ def download_and_extract_repo(
     repositories project root will be added to the sys path.
 
     Private repositories require an `ARMORY_GITHUB_TOKEN` environment variable.
+    :param external_repo_name: String name of "organization/repo-name" or "organization/repo-name@branch"
     """
     verify_ssl = get_verify_ssl()
 
