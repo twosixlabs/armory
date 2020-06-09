@@ -34,6 +34,7 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
+from armory.data.pytorch_loaders import ImageTFRecordDataSet
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -47,7 +48,7 @@ CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_s3_checks
 
 class ArmoryDataGenerator(DataGenerator):
     """
-    Returns batches of data.
+    Returns batches of numpy data.
 
     variable_length - if True, returns a 1D object array of arrays for x.
     """
@@ -198,12 +199,6 @@ def _generator_from_tfds(
             f"Dataset framework field {framework} must be one of {supported_frameworks}"
         )
 
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch native dataloaders are not yet supported. "
-            "See issue https://github.com/twosixlabs/armory/issues/455"
-        )
-
     if not dataset_dir:
         dataset_dir = paths.runtime_paths().dataset_dir
 
@@ -212,58 +207,71 @@ def _generator_from_tfds(
             dataset_dir, dataset_name=dataset_name,
         )
 
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
+    if framework == "pytorch":
+        if not shuffle_files:
+            raise ValueError("PyTorch DataLoaders from Armory are shuffled by default")
+        ds_name, ds_version = dataset_name.split(":")
 
-    ds, ds_info = tfds.load(
-        dataset_name,
-        split=split_type,
-        as_supervised=as_supervised,
-        data_dir=dataset_dir,
-        with_info=True,
-        download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=shuffle_files,
-    )
-    if not as_supervised:
-        try:
-            x_key, y_key = supervised_xy_keys
-        except (TypeError, ValueError):
-            raise ValueError(
-                f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
-                f" tuple, not {supervised_xy_keys}"
-            )
-        if not isinstance(x_key, str) or not isinstance(y_key, str):
-            raise ValueError(
-                f"supervised_xy_keys be a tuple of strings,"
-                f" not {type(x_key), type(y_key)}"
-            )
-        ds = ds.map(lambda x: (x[x_key], x[y_key]))
-    if lambda_map is not None:
-        ds = ds.map(lambda_map)
+        # TODO: Make this configurable. Possibly a mapping from dataset_name???
+        ds = ImageTFRecordDataSet(ds_name, ds_version, split_type)
 
-    ds = ds.repeat(epochs)
-    if shuffle_files:
-        ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
-    if variable_length and batch_size > 1:
-        ds = ds.batch(1, drop_remainder=False)
-    else:
-        ds = ds.batch(batch_size, drop_remainder=False)
-    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-
-    if framework == "numpy":
-        ds = tfds.as_numpy(ds, graph=default_graph)
-        generator = ArmoryDataGenerator(
-            ds,
-            size=ds_info.splits[split_type].num_examples,
-            batch_size=batch_size,
-            epochs=epochs,
-            preprocessing_fn=preprocessing_fn,
-            variable_length=bool(variable_length and batch_size > 1),
+        generator = torch.utils.data.DataLoader(
+            ds, batch_size=batch_size, num_workers=2
         )
-
+        return generator
     else:
-        generator = ds
+        default_graph = tf.compat.v1.keras.backend.get_session().graph
 
-    return generator
+        ds, ds_info = tfds.load(
+            dataset_name,
+            split=split_type,
+            as_supervised=as_supervised,
+            data_dir=dataset_dir,
+            with_info=True,
+            download_and_prepare_kwargs=download_and_prepare_kwargs,
+            shuffle_files=shuffle_files,
+        )
+        if not as_supervised:
+            try:
+                x_key, y_key = supervised_xy_keys
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
+                    f" tuple, not {supervised_xy_keys}"
+                )
+            if not isinstance(x_key, str) or not isinstance(y_key, str):
+                raise ValueError(
+                    f"supervised_xy_keys be a tuple of strings,"
+                    f" not {type(x_key), type(y_key)}"
+                )
+            ds = ds.map(lambda x: (x[x_key], x[y_key]))
+        if lambda_map is not None:
+            ds = ds.map(lambda_map)
+
+        ds = ds.repeat(epochs)
+        if shuffle_files:
+            ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+        if variable_length and batch_size > 1:
+            ds = ds.batch(1, drop_remainder=False)
+        else:
+            ds = ds.batch(batch_size, drop_remainder=False)
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+
+        if framework == "numpy":
+            ds = tfds.as_numpy(ds, graph=default_graph)
+            generator = ArmoryDataGenerator(
+                ds,
+                size=ds_info.splits[split_type].num_examples,
+                batch_size=batch_size,
+                epochs=epochs,
+                preprocessing_fn=preprocessing_fn,
+                variable_length=bool(variable_length and batch_size > 1),
+            )
+
+        else:
+            generator = ds
+
+        return generator
 
 
 def mnist(
@@ -329,6 +337,8 @@ def digit(
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
+    if framework == "pytorch":
+        raise NotImplementedError("PyTorch DataLoader for `digit` not yet available.")
     return _generator_from_tfds(
         "digit:1.0.8",
         split_type=split_type,
@@ -355,6 +365,10 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
+    if framework == "pytorch":
+        raise NotImplementedError(
+            "PyTorch DataLoader for `imagenette` not yet available."
+        )
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
@@ -381,6 +395,11 @@ def german_traffic_sign(
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
     """
+    if framework == "pytorch":
+        raise NotImplementedError(
+            "PyTorch DataLoader for `german_traffic_sign` not yet available."
+        )
+
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
         split_type=split_type,
@@ -412,6 +431,11 @@ def librispeech_dev_clean(
     returns:
         Generator
     """
+    if framework == "pytorch":
+        raise NotImplementedError(
+            "PyTorch DataLoader for `librispeech_dev_clean` not yet available."
+        )
+
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -455,6 +479,11 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
+    if framework == "pytorch":
+        raise NotImplementedError(
+            "PyTorch DataLoader for `resisc45` not yet available."
+        )
+
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
         split_type=split_type,
@@ -480,6 +509,8 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+    if framework == "pytorch":
+        raise NotImplementedError("PyTorch DataLoader for `ucf101` not yet available.")
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
