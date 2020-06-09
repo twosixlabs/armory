@@ -61,7 +61,7 @@ def load_model(model_config):
     )
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
-    if weights_file is None and not model_config["fit"]:
+    if not weights_file and not model_config["fit"]:
         logger.warning(
             "You're attempting to evaluate an unfitted model with no "
             "pre-trained weights!"
