@@ -156,7 +156,7 @@ def _scenario_setup(config: dict):
     # Download any external repositories and add them to the sys path for use
     if config["sysconfig"].get("external_github_repo", None):
         external_repo_dir = os.path.join(scenario_tmp_dir, "external")
-        external_repo.download_and_extract_repo(
+        external_repo.download_and_extract_repos(
             config["sysconfig"]["external_github_repo"],
             external_repo_dir=external_repo_dir,
         )
