@@ -34,7 +34,6 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
-from armory.data.pytorch_loaders import ImageTFRecordDataSet
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -208,6 +207,8 @@ def _generator_from_tfds(
         )
 
     if framework == "pytorch":
+        from armory.data.pytorch_loaders import ImageTFRecordDataSet
+
         if not shuffle_files:
             raise ValueError("PyTorch DataLoaders from Armory are shuffled by default")
         ds_name, ds_version = dataset_name.split(":")
