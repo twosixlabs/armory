@@ -192,12 +192,6 @@ def _generator_from_tfds(
         output batches are 1D np.arrays of objects
     lambda_map - if not None, mapping function to apply to dataset elements
     """
-    supported_frameworks = ["tf", "pytorch", "numpy"]
-    if framework not in supported_frameworks:
-        raise ValueError(
-            f"Dataset framework field {framework} must be one of {supported_frameworks}"
-        )
-
     if not dataset_dir:
         dataset_dir = paths.runtime_paths().dataset_dir
 
@@ -276,7 +270,7 @@ def _generator_from_tfds(
 
         else:
             raise ValueError(
-                f"framework must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"
+                f"`framework` must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"
             )
 
     return generator
@@ -601,6 +595,6 @@ def _download_data(dataset_name):
 
 
 def _get_pytorch_dataset_map():
-    from armory.data.pytorch_loaders import ImageTFRecordDataSet
+    import armory.data.pytorch_loaders as ptl
 
-    return {"cifar10": ImageTFRecordDataSet, "mnist": ImageTFRecordDataSet}
+    return {"cifar10": ptl.ImageTFRecordDataSet, "mnist": ptl.ImageTFRecordDataSet}
