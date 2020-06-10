@@ -118,9 +118,9 @@ class ArmoryDataGenerator(DataGenerator):
             if isinstance(y_list[0], dict):
                 y = {}
                 for k in y_list[0].keys():
-                    y[k] = np.array([y_i[k] for y_i in y_list])
+                    y[k] = np.hstack([y_i[k] for y_i in y_list])
             elif isinstance(y_list[0], tuple):
-                y = tuple(np.array(i) for i in zip(*y_list))
+                y = tuple(np.hstack(i) for i in zip(*y_list))
             else:
                 y = np.hstack(y_list)
         else:

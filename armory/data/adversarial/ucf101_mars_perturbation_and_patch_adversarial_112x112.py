@@ -154,7 +154,7 @@ _DL_URL = (
 class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedBuilder):
     """Ucf101 action recognition adversarial dataset"""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.1.0")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -206,7 +206,8 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
         labels = tf.io.gfile.listdir(
             os.path.join(data_dir_path, root_dir, split_dirs[0])
         )
-        labels.sort()
+        labels.sort(key=str.casefold)  # _LABELS is sorted case insensitive
+        assert labels == _LABELS
         for i, label in enumerate(labels):
             videonames = tf.io.gfile.listdir(
                 os.path.join(data_dir_path, root_dir, split_dirs[0], label)

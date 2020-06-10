@@ -87,6 +87,9 @@ class AudioClassificationTask(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
+        if targeted and attack_config.get("use_label"):
+            raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
@@ -105,12 +108,22 @@ class AudioClassificationTask(Scenario):
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
+                if targeted:
+                    y, y_target = y
             elif attack_config.get("use_label"):
                 x_adv = attack.generate(x=x, y=y)
+            elif targeted:
+                raise NotImplementedError("Requires generation of target labels")
+                # x_adv = attack.generate(x=x, y=y_target)
             else:
                 x_adv = attack.generate(x=x)
+
             y_pred_adv = classifier.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            if targeted:
+                # NOTE: does not remove data points where y == y_target
+                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+            else:
+                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True)
+        metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()
