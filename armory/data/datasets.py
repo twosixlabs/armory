@@ -113,8 +113,16 @@ class ArmoryDataGenerator(DataGenerator):
                 x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
             else:
                 x = self.np_1D_object_array(x_list)
+
             # Does not currently handle variable-length y
-            y = np.hstack(y_list)
+            if isinstance(y_list[0], dict):
+                y = {}
+                for k in y_list[0].keys():
+                    y[k] = np.array([y_i[k] for y_i in y_list])
+            elif isinstance(y_list[0], tuple):
+                y = tuple(np.array(i) for i in zip(*y_list))
+            else:
+                y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 

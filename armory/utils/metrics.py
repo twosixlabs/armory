@@ -287,13 +287,18 @@ class MetricsLogger:
         for metric in self.perturbations:
             metric.append(x, x_adv)
 
-    def log_task(self, adversarial=False):
+    def log_task(self, adversarial=False, targeted=False):
         if adversarial:
             metrics = self.adversarial_tasks
             task_type = "adversarial"
         else:
             metrics = self.tasks
             task_type = "benign"
+        if targeted:
+            if adversarial:
+                task_type = "targeted " + task_type
+            else:
+                raise ValueError("benign task cannot be targeted")
 
         for metric in metrics:
             logger.info(
