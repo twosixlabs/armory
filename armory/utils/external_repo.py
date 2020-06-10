@@ -6,6 +6,7 @@ import logging
 import tarfile
 import shutil
 import sys
+from typing import Union, List
 
 import requests
 
@@ -16,6 +17,23 @@ from armory.configuration import get_verify_ssl
 logger = logging.getLogger(__name__)
 
 
+def download_and_extract_repos(
+    external_repos: Union[str, List[str]], external_repo_dir: str = None
+):
+    """
+    Conditionally download and extract a single repo or a list of repos
+    """
+    if isinstance(external_repos, str):
+        download_and_extract_repo(external_repos, external_repo_dir)
+    elif isinstance(external_repos, list):
+        for repo in external_repos:
+            download_and_extract_repo(repo, external_repo_dir)
+    else:
+        raise ValueError(
+            "`external_repos` must be of a repo string or list of repo strings"
+        )
+
+
 def download_and_extract_repo(
     external_repo_name: str, external_repo_dir: str = None
 ) -> None:
@@ -24,7 +42,7 @@ def download_and_extract_repo(
     repositories project root will be added to the sys path.
 
     Private repositories require an `ARMORY_GITHUB_TOKEN` environment variable.
-    :param external_repo_name: String name of "organization/repo-name"
+    :param external_repo_name: String name of "organization/repo-name" or "organization/repo-name@branch"
     """
     verify_ssl = get_verify_ssl()
 
