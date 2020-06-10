@@ -48,10 +48,10 @@ directory.
 This will launch the framework-specific container specified in the 
 configuration file, copy the configuration file into the container, and provide 
 the commands to attach to the container in a separate terminal and run the 
-configuration file end to end while attached to the container. Similar to 
-non-interactive mode, results from the evaluation can be found in the output 
-directory. To later close the interactive container simply run CTRL+C from the 
-terminal where this command was ran.
+configuration file end to end while attached to the container. A notable use
+case for this would be to debug using pdb. Similar to non-interactive mode, results 
+from the evaluation can be found in the output directory. To later close the 
+interactive container simply run CTRL+C from the terminal where this command was ran.
 
 2) `armory launch`
 * `armory launch <tf1|tf2|pytorch> --interactive`. 
