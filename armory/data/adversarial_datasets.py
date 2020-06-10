@@ -33,11 +33,6 @@ def imagenet_adversarial(
         Attack step size = 2
         Targeted = True
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `imagenet_adversarial` not yet available."
-        )
-
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
     if adversarial_key != "adversarial":
@@ -77,11 +72,6 @@ def librispeech_adversarial(
     returns:
         Generator
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `librispeech_adversarial` not yet available."
-        )
-
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
     if adversarial_key != "adversarial":
@@ -119,11 +109,6 @@ def resisc45_adversarial_224x224(
     including clean, adversarial universal perturbation, and
     adversarial patched
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `resisc45_adversarial_224x224` not yet available."
-        )
-
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
     adversarial_keys = ("adversarial_univpatch", "adversarial_univperturbation")
@@ -164,11 +149,6 @@ def ucf101_adversarial_112x112(
 
     DataGenerator returns batches of ((x_clean, x_adversarial), y)
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `ucf101_adversarial_112x112` not yet available."
-        )
-
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
     adversarial_keys = ("adversarial_patch", "adversarial_perturbation")

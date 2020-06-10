@@ -207,19 +207,21 @@ def _generator_from_tfds(
         )
 
     if framework == "pytorch":
-        from armory.data.pytorch_loaders import ImageTFRecordDataSet
 
         if not shuffle_files:
             raise ValueError("PyTorch DataLoaders from Armory are shuffled by default")
+
         ds_name, ds_version = dataset_name.split(":")
+        dataset_map = _get_pytorch_dataset_map()
+        if ds_name not in dataset_map.keys():
+            raise NotImplementedError(
+                f"PyTorch DataLoader for `{ds_name}` not yet available."
+            )
 
-        # TODO: Make this configurable. Possibly a mapping from dataset_name???
-        ds = ImageTFRecordDataSet(ds_name, ds_version, split_type)
-
+        ds = dataset_map[ds_name](ds_name, ds_version, split_type)
         generator = torch.utils.data.DataLoader(
             ds, batch_size=batch_size, num_workers=2
         )
-        return generator
     else:
         default_graph = tf.compat.v1.keras.backend.get_session().graph
 
@@ -269,10 +271,15 @@ def _generator_from_tfds(
                 variable_length=bool(variable_length and batch_size > 1),
             )
 
-        else:
+        elif framework == "tf":
             generator = ds
 
-        return generator
+        else:
+            raise ValueError(
+                f"framework must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"
+            )
+
+    return generator
 
 
 def mnist(
@@ -338,8 +345,6 @@ def digit(
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
-    if framework == "pytorch":
-        raise NotImplementedError("PyTorch DataLoader for `digit` not yet available.")
     return _generator_from_tfds(
         "digit:1.0.8",
         split_type=split_type,
@@ -366,11 +371,6 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `imagenette` not yet available."
-        )
-
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
         split_type=split_type,
@@ -396,11 +396,6 @@ def german_traffic_sign(
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `german_traffic_sign` not yet available."
-        )
-
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
         split_type=split_type,
@@ -432,11 +427,6 @@ def librispeech_dev_clean(
     returns:
         Generator
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `librispeech_dev_clean` not yet available."
-        )
-
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -480,11 +470,6 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
-    if framework == "pytorch":
-        raise NotImplementedError(
-            "PyTorch DataLoader for `resisc45` not yet available."
-        )
-
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
         split_type=split_type,
@@ -510,9 +495,6 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
-    if framework == "pytorch":
-        raise NotImplementedError("PyTorch DataLoader for `ucf101` not yet available.")
-
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
         split_type=split_type,
@@ -616,3 +598,9 @@ def _download_data(dataset_name):
         logger.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         logger.exception(f"Loading dataset {dataset_name} failed.")
+
+
+def _get_pytorch_dataset_map():
+    from armory.data.pytorch_loaders import ImageTFRecordDataSet
+
+    return {"cifar10": ImageTFRecordDataSet, "mnist": ImageTFRecordDataSet}
