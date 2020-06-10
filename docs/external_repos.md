@@ -1,9 +1,24 @@
 # External Repos
-You may want to include code from an external repository that is outside of your 
+You may want to include code from one or more external repositories that are outside of your 
 current working directory project. This is supported through the `external_github_repo`
-field in the configuration file. After launch, the repository will be pulled into the 
-evaluations tmp folder and placed on the SYS PATH so that modules can be easily 
+field in the configuration file. After launch, the repositories will be pulled into the 
+evaluation's tmp folder and placed on the SYS PATH so that modules can be easily 
 utilized.
+
+#### Multiple Repositories
+The `external_github_repo` field can be either a string for a single repo, or a JSON 
+array of repositories. For example:
+
+```
+"sysconfig": {
+    "external_github_repo": "hkakitani/SincNet",
+}
+```
+```
+"sysconfig": {
+    "external_github_repo": ["hkakitani/SincNet, "twosixlabs/armory-example"],
+}
+```
 
 #### Specifying Branches
 The `external_github_repo` field in the configuration file supports specifying specific
