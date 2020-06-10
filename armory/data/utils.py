@@ -41,7 +41,7 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
             f"{weights_file} not found in Armory `saved_model_dir`. Attempting to pull weights from S3"
         )
         try:
-            download_private_file_from_s3(
+            download_file_from_s3(
                 "armory-public-data",
                 f"model-weights/{weights_file}",
                 f"{saved_model_dir}/{weights_file}",
@@ -52,7 +52,7 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
                 and os.getenv("ARMORY_INCLUDE_SUBMISSION_BUCKETS") != ""
             ):
                 try:
-                    download_file_from_s3(
+                    download_private_file_from_s3(
                         "armory-submission-data",
                         f"model-weights/{weights_file}",
                         f"{saved_model_dir}/{weights_file}",
