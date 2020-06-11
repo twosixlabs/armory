@@ -201,6 +201,9 @@ def _generator_from_tfds(
         )
 
     if framework == "pytorch":
+        logger.warning(
+            "PyTorch Dataset loaders are experimental!! Support for multi-worker loading is still to come."
+        )
 
         if not shuffle_files:
             raise ValueError(
@@ -599,4 +602,8 @@ def _download_data(dataset_name):
 def _get_pytorch_dataset_map():
     import armory.data.pytorch_loaders as ptl
 
-    return {"cifar10": ptl.ImageTFRecordDataSet, "mnist": ptl.ImageTFRecordDataSet}
+    return {
+        "cifar10": ptl.ImageTFRecordDataSet,
+        "mnist": ptl.ImageTFRecordDataSet,
+        "resisc45_split": ptl.ImageTFRecordDataSet,
+    }

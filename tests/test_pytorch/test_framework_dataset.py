@@ -48,6 +48,25 @@ def test_pytorch_generator_mnist():
     assert images.shape == (batch_size, 28, 28, 1)
 
 
+def test_pytorch_generator_resisc():
+    batch_size = 16
+    dataset = datasets.resisc45(
+        split_type="train",
+        epochs=1,
+        batch_size=batch_size,
+        dataset_dir=DATASET_DIR,
+        framework="pytorch",
+    )
+
+    assert isinstance(dataset, torch.utils.data.DataLoader)
+    labels, images = next(iter(dataset))
+    assert labels.dtype == torch.int64
+    assert labels.shape == (batch_size, 1)
+
+    assert images.dtype == torch.uint8
+    assert images.shape == (batch_size, 256, 256, 3)
+
+
 def test_pytorch_generator_epochs():
     batch_size = 10
     dataset = datasets.mnist(
