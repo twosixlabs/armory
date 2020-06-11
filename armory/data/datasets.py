@@ -377,6 +377,7 @@ def german_traffic_sign(
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files=True,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -391,6 +392,7 @@ def german_traffic_sign(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
