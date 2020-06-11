@@ -1,5 +1,6 @@
 import glob
 import os
+from itertools import chain
 
 import torch
 import dareblopy as db
@@ -18,17 +19,14 @@ def locate_data(dataset_name, dataset_ver, split):
 
 
 class ImageTFRecordDataSet(torch.utils.data.IterableDataset):
-    def __init__(self, dataset_name, dataset_ver, split):
+    def __init__(self, dataset_name, dataset_ver, split, epochs):
         self.data_files = locate_data(dataset_name, dataset_ver, split)
         self.features = {
             "label": db.FixedLenFeature([], db.int64),
             "image": db.FixedLenFeature([], db.string),
         }
 
-        # Note this is shuffled by default
-        self.loader = db.ParsedTFRecordsDatasetIterator(
-            self.data_files, self.features, batch_size=1, buffer_size=32,
-        )
+        self.epochs = epochs
 
     @staticmethod
     def decode_image(bytes_img):
@@ -41,10 +39,17 @@ class ImageTFRecordDataSet(torch.utils.data.IterableDataset):
         if image.ndim == 2:
             image = np.expand_dims(image, axis=-1)
 
-        # TODO: permute the shape to channels first as is typical for PyTorch???
-
         return label, image
 
     def __iter__(self):
-        decoded_iter = map(self.preprocess, self.loader)
-        return decoded_iter
+        iters = []
+        for _ in range(self.epochs):
+
+            # Note this is shuffled by default
+            loader = db.ParsedTFRecordsDatasetIterator(
+                self.data_files, self.features, batch_size=1, buffer_size=32,
+            )
+            decoded_iter = map(self.preprocess, loader)
+            iters.append(decoded_iter)
+
+        return chain(*iters)

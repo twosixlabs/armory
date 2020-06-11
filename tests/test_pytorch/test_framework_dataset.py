@@ -46,3 +46,20 @@ def test_pytorch_generator_mnist():
 
     assert images.dtype == torch.uint8
     assert images.shape == (batch_size, 28, 28, 1)
+
+
+def test_pytorch_generator_epochs():
+    batch_size = 10
+    dataset = datasets.mnist(
+        split_type="test",
+        epochs=2,
+        batch_size=batch_size,
+        dataset_dir=DATASET_DIR,
+        framework="pytorch",
+    )
+
+    cnt = 0
+    for images, labels in dataset:
+        cnt += 1
+
+    assert cnt == 2000

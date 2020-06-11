@@ -212,9 +212,9 @@ def _generator_from_tfds(
                 f"PyTorch DataLoader for `{ds_name}` not yet available."
             )
 
-        ds = dataset_map[ds_name](ds_name, ds_version, split_type)
+        ds = dataset_map[ds_name](ds_name, ds_version, split_type, epochs)
         generator = torch.utils.data.DataLoader(
-            ds, batch_size=batch_size, num_workers=2
+            ds, batch_size=batch_size, num_workers=0
         )
     else:
         default_graph = tf.compat.v1.keras.backend.get_session().graph
