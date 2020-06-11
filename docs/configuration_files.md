@@ -131,7 +131,7 @@ to your custom docker image name `<your_image/name:your_tag>`.
 ### Additional configuration settings for poisoning scenario
 
 Some settings specific to the poisoning scenario are not applicable to the other 
-scenarios and are thus found in "ad-hoc" subfield of the configuration file.
+scenarios and are thus found in "adhoc" subfield of the configuration file.
 
 For a poison filtering defense, Armory supports using a model for filtering that 
 differs from the model used at training time. The model used at training time should 
