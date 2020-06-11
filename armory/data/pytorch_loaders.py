@@ -1,6 +1,7 @@
 import glob
 import os
 from itertools import chain
+from random import randint
 
 import torch
 import dareblopy as db
@@ -47,7 +48,11 @@ class ImageTFRecordDataSet(torch.utils.data.IterableDataset):
 
             # Note this is shuffled by default
             loader = db.ParsedTFRecordsDatasetIterator(
-                self.data_files, self.features, batch_size=1, buffer_size=32,
+                self.data_files,
+                self.features,
+                batch_size=1,
+                buffer_size=32,
+                seed=randint(0, 10000),
             )
             decoded_iter = map(self.preprocess, loader)
             iters.append(decoded_iter)

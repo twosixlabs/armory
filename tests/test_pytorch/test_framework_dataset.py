@@ -60,6 +60,12 @@ def test_pytorch_generator_epochs():
 
     cnt = 0
     for images, labels in dataset:
+        if cnt == 0:
+            first_batch = labels
+
+        if cnt == 1000:
+            second_batch = labels
         cnt += 1
 
     assert cnt == 2000
+    assert not torch.all(torch.eq(first_batch, second_batch))
