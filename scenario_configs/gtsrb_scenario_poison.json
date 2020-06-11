@@ -1,10 +1,17 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
-        "fraction_poisoned_test": 0.7,
-        "fraction_poisoned_train": 0.1,
+        "fit_batch_size": 512,
+        "fraction_poisoned": 0.1,
         "np_seed": 123,
+        "num_images_target_class": 2220,
         "poison_dataset": false,
+        "poison_samples": {
+            "batch_size": 220,
+            "framework": "numpy",
+            "module": "armory.data.adversarial_datasets",
+            "name": "gtsrb_poison"
+        },
         "source_class": 1,
         "target_class": 2,
         "tf_seed": 123,
@@ -13,12 +20,10 @@
     },
     "attack": {
         "knowledge": "black",
-        "kwargs": {
-            "poison_module": "art.attacks.poisoning.perturbations",
-            "poison_type": "pattern"
-        },
-        "module": "armory.art_experimental.attacks.poison_loader",
-        "name": "poison_loader_GTSRB"
+        "kwargs": {},
+        "module": "na",
+        "name": "poison_loader_GTSRB",
+        "type": "preloaded"
     },
     "dataset": {
         "batch_size": 39209,
@@ -42,12 +47,6 @@
         "weights_file": null,
         "wrapper_kwargs": {}
     },
-    "poison_samples": {
-        "batch_size": 220,
-        "framework": "numpy",
-        "module": "armory.data.adversarial_datasets",
-        "name": "gtsrb_poison"
-    },
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.poisoning_gtsrb_scenario",
@@ -57,6 +56,6 @@
         "docker_image": "twosixarmory/tf1:0.9.0-dev",
         "external_github_repo": null,
         "gpus": "all",
-        "use_gpu": true
+        "use_gpu": false
     }
 }
