@@ -1,6 +1,8 @@
 {
     "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
-    "adhoc": null,
+    "adhoc": {
+        "fit_batch_size": 16
+    },
     "attack": {
         "knowledge": "white",
         "kwargs": {
@@ -16,7 +18,7 @@
         "use_label": false
     },
     "dataset": {
-        "batch_size": 128,
+        "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean"
@@ -36,7 +38,7 @@
             "nb_epochs": 20000
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.sincnet",
+        "module": "armory.baseline_models.pytorch.sincnet_full",
         "name": "get_art_model",
         "weights_file": "sincnet_librispeech_v1.pth",
         "wrapper_kwargs": {}
