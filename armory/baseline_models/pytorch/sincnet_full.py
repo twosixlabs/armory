@@ -182,56 +182,12 @@ class SincNetWrapperWrapper(nn.Module):
 
     def forward(self, x):
         if self.training:
-            return self.sincnet_model(x)
+            output = self.sincnet_model(x)
+            return output
+
         else:
-            return torch.mean(self.sincnet_model(x), dim=0)
-
-
-class PyTorchClassifierExtension(PyTorchClassifier):
-    def loss_gradient(self, x, y, **kwargs):
-        """
-        This overrides the ART loss_gradient so that we use a differentiable
-        approximation to compute the gradient during inference mode.
-        Majority of the code is repurposed from PyTorchClassifier
-        """
-
-        # Apply preprocessing
-        x_preprocessed, y_preprocessed = self._apply_preprocessing(x, y, fit=False)
-
-        # Check label shape
-        if self._reduce_labels:
-            y_preprocessed = np.argmax(y_preprocessed, axis=1)
-
-        # Convert the inputs to Tensors
-        inputs_t = torch.from_numpy(x_preprocessed).to(self._device)
-        inputs_t.requires_grad = True
-
-        # Convert the labels to Tensors
-        labels_t = torch.from_numpy(y_preprocessed).to(self._device)
-
-        # Compute the gradient
-        model_outputs = self._model(inputs_t)
-        # print(model_outputs)
-        # print(len(model_outputs))
-        if self._learning_phase:
-            loss = self._loss(model_outputs[-1], labels_t)
-        else:
-            # TODO
-            print(model_outputs[-1])
-            print(labels_t)
-            # loss = self._loss(model_outputs[-1], labels_t)
-            loss = self._loss(model_outputs, labels_t)
-
-        # Clean gradients
-        self._model.zero_grad()
-
-        # Compute gradients
-        loss.backward()
-        grads = inputs_t.grad.cpu().numpy().copy()
-        grads = self._apply_preprocessing_gradient(x, grads)
-        assert grads.shape == x.shape
-
-        return grads
+            output = torch.mean(self.sincnet_model(x), dim=0).unsqueeze(0)
+            return output
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
@@ -241,7 +197,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     wrapper = SincNetWrapperWrapper(model)
     wrapper.to(DEVICE)
 
-    wrapped_model = PyTorchClassifierExtension(
+    wrapped_model = PyTorchClassifier(
         wrapper,
         loss=torch.nn.NLLLoss(),
         optimizer=torch.optim.RMSprop(
