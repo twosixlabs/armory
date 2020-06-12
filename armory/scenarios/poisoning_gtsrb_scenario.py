@@ -89,6 +89,7 @@ class GTSRB(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+
         if attack_type == "preloaded":
             num_images_tgt_class = config_adhoc["num_images_target_class"]
             logger.info(
@@ -107,6 +108,8 @@ class GTSRB(Scenario):
             attack = load(attack_config)
         logger.info("Building in-memory dataset for poisoning detection and training")
         fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        poison_dataset_flag = config["adhoc"]["poison_dataset"]
+
         # detect_poison does not currently support data generators
         #     therefore, make in memory dataset
         x_train_all, y_train_all = [], []
@@ -126,25 +129,26 @@ class GTSRB(Scenario):
                 y_train_all.append(y_train)
             x_train_all = np.concatenate(x_train_all, axis=0)
             y_train_all = np.concatenate(y_train_all, axis=0)
-            total_count = np.bincount(y_train_all)[src_class]
-            poison_count = int(fraction_poisoned * total_count)
-            if poison_count == 0:
-                logger.warning(
-                    f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
+            if poison_dataset_flag:
+                total_count = np.bincount(y_train_all)[src_class]
+                poison_count = int(fraction_poisoned * total_count)
+                if poison_count == 0:
+                    logger.warning(
+                        f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
+                    )
+                src_indices = np.where(y_train_all == src_class)[0]
+                poisoned_indices = np.random.choice(
+                    src_indices, size=poison_count, replace=False
                 )
-            src_indices = np.where(y_train_all == src_class)[0]
-            poisoned_indices = np.random.choice(
-                src_indices, size=poison_count, replace=False
-            )
-            x_train_all, y_train_all = poison_dataset(
-                x_train_all,
-                y_train_all,
-                src_class,
-                tgt_class,
-                y_train_all.shape[0],
-                attack,
-                poisoned_indices,
-            )
+                x_train_all, y_train_all = poison_dataset(
+                    x_train_all,
+                    y_train_all,
+                    src_class,
+                    tgt_class,
+                    y_train_all.shape[0],
+                    attack,
+                    poisoned_indices,
+                )
 
         y_train_all_categorical = to_categorical(y_train_all)
 
@@ -248,7 +252,7 @@ class GTSRB(Scenario):
             y_test_all = np.concatenate(y_test_all, axis=0)
             y_pred = classifier.predict(x_test_all)
             targeted_test_metric.append(y_test_all, y_pred)
-        else:
+        elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
             test_data = load_dataset(
                 config["dataset"],
