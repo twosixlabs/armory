@@ -5,7 +5,10 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 32,
-            "eps": 0.2
+            "eps": 0.2,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
         },
         "module": "art.attacks",
         "name": "FastGradientMethod",
