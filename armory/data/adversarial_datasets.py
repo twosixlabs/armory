@@ -177,17 +177,17 @@ def ucf101_adversarial_112x112(
     else:
 
         def lambda_map(x, y):
-            return (x[clean_key], x[adversarial_key]), y
+            return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
+        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("videos", "label"),
+        supervised_xy_keys=("videos", "labels"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,

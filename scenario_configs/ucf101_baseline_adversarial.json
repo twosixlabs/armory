@@ -6,7 +6,8 @@
         "kwargs": {
             "adversarial_key": "adversarial_patch",
             "batch_size": 1,
-            "description": "'adversarial_key' can be 'adversarial_perturbation' or 'adversarial_patch'"
+            "description": "'adversarial_key':'targeted' can have values 'adversarial_perturbation':false or 'adversarial_patch':true",
+            "targeted": true
         },
         "module": "armory.data.adversarial_datasets",
         "name": "ucf101_adversarial_112x112",
