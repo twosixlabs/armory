@@ -123,16 +123,21 @@ class GTSRB(Scenario):
 
         if use_poison_filtering_defense:
             defense_config = config["defense"]
+
+            defense_model_config = config_adhoc.get("defense_model", model_config)
+            defense_train_epochs = config_adhoc.get(
+                "defense_train_epochs", train_epochs
+            )
+            classifier_for_defense, _ = load_model(defense_model_config)
             logger.info(
-                f"Fitting model {model_config['module']}.{model_config['name']} "
+                f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
                 f"for defense {defense_config['name']}..."
             )
-            classifier_for_defense, _ = load_model(model_config)
             classifier_for_defense.fit(
                 x_train_all,
                 y_train_all_categorical,
                 batch_size=batch_size,
-                nb_epochs=train_epochs,
+                nb_epochs=defense_train_epochs,
                 verbose=False,
             )
             defense_fn = load_fn(defense_config)
