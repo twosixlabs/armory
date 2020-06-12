@@ -84,6 +84,7 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
+            shuffle_files=False,
         )
 
         attack_config = config["attack"]
@@ -206,6 +207,7 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            shuffle_files=False,
         )
         validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -253,6 +255,7 @@ class GTSRB(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                shuffle_files=False,
             )
             for x_test, y_test in tqdm(test_data, desc="Testing"):
                 src_indices = np.where(y_test == src_class)[0]

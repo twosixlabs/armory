@@ -4,7 +4,12 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "eps": 51.0
+            "batch_size": 1,
+            "eps": 51.0,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
         },
         "module": "art.attacks",
         "name": "FastGradientMethod",

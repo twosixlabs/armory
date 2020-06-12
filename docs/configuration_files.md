@@ -127,3 +127,17 @@ All configuration files are verified against the jsonschema definition at run ti
 
 To run with a custom Docker image, replace the `["sys_config"]["docker_image"]` field
 to your custom docker image name `<your_image/name:your_tag>`.
+
+### Additional configuration settings for poisoning scenario
+
+Some settings specific to the poisoning scenario are not applicable to the other 
+scenarios and are thus found in "adhoc" subfield of the configuration file.
+
+For a poison filtering defense, Armory supports using a model for filtering that 
+differs from the model used at training time. The model used at training time should 
+still be stored in the field "model" as described in the config schema. However, if a 
+different model is used for the filtering defense, it should be entered in the "ad-hoc" 
+field of the configuration file under the subfield "defense_model," with the number of
+epochs of training under the subfield "defense_model_train_epochs." A concrete example
+of a configuration with this field is available in the armory-example
+[repo](https://github.com/twosixlabs/armory-example/tree/master/example_scenario_configs).

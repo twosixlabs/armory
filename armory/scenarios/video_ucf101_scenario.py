@@ -110,6 +110,9 @@ class Ucf101(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
+        if targeted and attack_config.get("use_label"):
+            raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
@@ -128,20 +131,33 @@ class Ucf101(Scenario):
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x_batch = list(zip(*x_batch))
+                if targeted:
+                    y_batch = list(zip(*y_batch))
             for x, y in zip(x_batch, y_batch):
                 if attack_type == "preloaded":
                     x, x_adv = x
+                    if targeted:
+                        y, y_target = y
                 else:
                     # each x is of shape (n_stack, 3, 16, 112, 112)
                     #    n_stack varies
                     attack.set_params(batch_size=x.shape[0])
                     if attack_config.get("use_label"):
                         x_adv = attack.generate(x=x, y=y)
+                    elif targeted:
+                        raise NotImplementedError(
+                            "Requires generation of target labels"
+                        )
+                        # x_adv = attack.generate(x=x, y=y_target)
                     else:
                         x_adv = attack.generate(x=x)
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
-                metrics_logger.update_task(y, y_pred, adversarial=True)
+                y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
+                if targeted:
+                    # NOTE: assumes y != y_target
+                    metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+                else:
+                    metrics_logger.update_task(y, y_pred_adv, adversarial=True)
                 metrics_logger.update_perturbation([x], [x_adv])
-        metrics_logger.log_task(adversarial=True)
+        metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()

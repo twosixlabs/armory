@@ -24,6 +24,7 @@ def imagenet_adversarial(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -38,6 +39,8 @@ def imagenet_adversarial(
         raise ValueError(f"{clean_key} != 'clean'")
     if adversarial_key != "adversarial":
         raise ValueError(f"{adversarial_key} != 'adversarial'")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
         "imagenet_adversarial:1.1.0",
@@ -63,6 +66,7 @@ def librispeech_adversarial(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     Adversarial dataset based on Librispeech-dev-clean using Universal
@@ -77,6 +81,8 @@ def librispeech_adversarial(
         raise ValueError(f"{clean_key} != 'clean'")
     if adversarial_key != "adversarial":
         raise ValueError(f"{adversarial_key} != 'adversarial'")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
         "librispeech_adversarial:1.0.0",
@@ -104,6 +110,7 @@ def resisc45_adversarial_224x224(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_univpatch",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     resisc45 Adversarial Dataset of size (224, 224, 3),
@@ -115,6 +122,8 @@ def resisc45_adversarial_224x224(
     adversarial_keys = ("adversarial_univpatch", "adversarial_univperturbation")
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
         "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
@@ -142,6 +151,7 @@ def ucf101_adversarial_112x112(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_perturbation",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
@@ -155,20 +165,34 @@ def ucf101_adversarial_112x112(
     adversarial_keys = ("adversarial_patch", "adversarial_perturbation")
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
+    if targeted:
+        if adversarial_key == "adversarial_perturbation":
+            raise ValueError("adversarial_perturbation is not a targeted attack")
+
+        def lambda_map(x, y):
+            return (
+                (x[clean_key], x[adversarial_key]),
+                (y[clean_key], y[adversarial_key]),
+            )
+
+    else:
+
+        def lambda_map(x, y):
+            return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
+        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("videos", "label"),
+        supervised_xy_keys=("videos", "labels"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        lambda_map=lambda_map,
     )
 
 

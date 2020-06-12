@@ -206,7 +206,8 @@
                 "external_github_repo": {
                     "type": [
                         "string",
-                        "null"
+                        "null",
+                        "array"
                     ]
                 },
                 "gpus": {

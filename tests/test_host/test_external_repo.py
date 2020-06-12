@@ -4,7 +4,7 @@ import pathlib
 import shutil
 
 from armory import paths
-from armory.utils.external_repo import download_and_extract_repo
+from armory.utils.external_repo import download_and_extract_repos
 
 HOST_PATHS = paths.HostPaths()
 
@@ -31,13 +31,32 @@ def test_download():
     repo = "twosixlabs/armory-example"
     repo_name = repo.split("/")[-1]
 
-    download_and_extract_repo(repo, external_repo_dir=test_external_repo_dir)
+    download_and_extract_repos(repo, external_repo_dir=test_external_repo_dir)
     basedir = test_external_repo_dir / repo_name
 
     assert os.path.exists(basedir)
     assert os.path.isfile(basedir / "README.md")
     shutil.rmtree(basedir)
     os.remove(test_external_repo_dir / (repo_name + ".tar.gz"))
+    os.rmdir(test_external_repo_dir)
+
+
+def test_download_multiple():
+    set_github_token()
+    test_external_repo_dir = pathlib.Path(
+        HOST_PATHS.tmp_dir, "test-external-repo-subdir"
+    )
+    repos = ["twosixlabs/armory-example", "twosixlabs/armory"]
+    repo_names = [x.split("/")[-1] for x in repos]
+
+    download_and_extract_repos(repos, external_repo_dir=test_external_repo_dir)
+
+    for repo_name in repo_names:
+        basedir = test_external_repo_dir / repo_name
+        assert os.path.exists(basedir)
+        assert os.path.isfile(basedir / "README.md")
+        shutil.rmtree(basedir)
+        os.remove(test_external_repo_dir / (repo_name + ".tar.gz"))
     os.rmdir(test_external_repo_dir)
 
 
@@ -50,7 +69,7 @@ def test_download_branch():
     org_repo_name = repo.split("@")[0]
     repo_name = org_repo_name.split("/")[-1]
 
-    download_and_extract_repo(repo, external_repo_dir=test_external_repo_dir)
+    download_and_extract_repos(repo, external_repo_dir=test_external_repo_dir)
     basedir = test_external_repo_dir / repo_name
 
     assert os.path.exists(basedir)
