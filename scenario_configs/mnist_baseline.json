@@ -26,14 +26,14 @@
         ]
     },
     "model": {
-        "fit": true,
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 20
         },
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "undefended_mnist_5epochs_submission.h5",
         "wrapper_kwargs": {}
     },
     "scenario": {

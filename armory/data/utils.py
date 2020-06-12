@@ -64,15 +64,15 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
                             f"{weights_file} was not found in the armory public & submission S3 buckets."
                         )
                     )
-
-            raise ValueError(
-                (
-                    f"{weights_file} was not found in the armory S3 bucket. If "
-                    "you're attempting to load a custom set of weights for "
-                    "your model be sure that they are available in the armory "
-                    "`saved_model_dir` directory on your host environment."
+            else:
+                raise ValueError(
+                    (
+                        f"{weights_file} was not found in the armory S3 bucket. If "
+                        "you're attempting to load a custom set of weights for "
+                        "your model be sure that they are available in the armory "
+                        "`saved_model_dir` directory on your host environment."
+                    )
                 )
-            )
     return filepath
 
 
