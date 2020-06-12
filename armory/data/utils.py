@@ -47,14 +47,32 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
                 f"{saved_model_dir}/{weights_file}",
             )
         except KeyError:
-            raise ValueError(
-                (
-                    f"{weights_file} was not found in the armory S3 bucket. If "
-                    "you're attempting to load a custom set of weights for "
-                    "your model be sure that they are available in the armory "
-                    "`saved_model_dir` directory on your host environment."
+            if (
+                "ARMORY_INCLUDE_SUBMISSION_BUCKETS" in os.environ
+                and os.getenv("ARMORY_INCLUDE_SUBMISSION_BUCKETS") != ""
+            ):
+                try:
+                    download_private_file_from_s3(
+                        "armory-submission-data",
+                        f"model-weights/{weights_file}",
+                        f"{saved_model_dir}/{weights_file}",
+                    )
+
+                except KeyError:
+                    raise ValueError(
+                        (
+                            f"{weights_file} was not found in the armory public & submission S3 buckets."
+                        )
+                    )
+            else:
+                raise ValueError(
+                    (
+                        f"{weights_file} was not found in the armory S3 bucket. If "
+                        "you're attempting to load a custom set of weights for "
+                        "your model be sure that they are available in the armory "
+                        "`saved_model_dir` directory on your host environment."
+                    )
                 )
-            )
     return filepath
 
 
@@ -81,6 +99,32 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
 
     else:
         logger.info(f"Reusing cached file {local_path}...")
+
+
+def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
+    """
+    Downloads file from S3 using credentials stored in ENV variables.
+    :param bucket_name: S3 Bucket name
+    :param key: S3 File keyname
+    :param local_path: Local file path to download as
+    """
+    verify_ssl = get_verify_ssl()
+    if not os.path.isfile(local_path):
+        client = boto3.client(
+            "s3",
+            aws_access_key_id=os.getenv("ARMORY_PRIVATE_S3_ID"),
+            aws_secret_access_key=os.getenv("ARMORY_PRIVATE_S3_KEY"),
+            verify=verify_ssl,
+        )
+        try:
+            logger.info("Downloading S3 data file...")
+            total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
+            with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                client.download_file(bucket_name, key, local_path, Callback=Callback)
+        except ClientError:
+            raise KeyError(f"File {key} not available in {bucket_name} bucket.")
+    else:
+        logger.info("Reusing cached S3 data file...")
 
 
 def download_requests(url: str, dirpath: str, filename: str):

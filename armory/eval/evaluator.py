@@ -103,6 +103,9 @@ class Evaluator(object):
         self.extra_env_vars["ARMORY_PRIVATE_S3_KEY"] = os.getenv(
             "ARMORY_PRIVATE_S3_KEY", default=""
         )
+        self.extra_env_vars["ARMORY_INCLUDE_SUBMISSION_BUCKETS"] = os.getenv(
+            "ARMORY_INCLUDE_SUBMISSION_BUCKETS", default=""
+        )
 
         if not self.armory_global_config["verify_ssl"]:
             self.extra_env_vars["VERIFY_SSL"] = "false"
