@@ -207,7 +207,7 @@ def _generator_from_tfds(
 
         if not shuffle_files:
             raise ValueError(
-                "Armory PyTorch DataLoaders use darblopy which shuffles reads from TFRecord files by default"
+                "Armory PyTorch DataLoaders use dareblopy which shuffles reads from TFRecord files by default"
             )
 
         ds_name, ds_version = dataset_name.split(":")
