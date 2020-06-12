@@ -81,6 +81,7 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="train",
             preprocessing_fn=preprocessing_fn,
+            shuffle_files=False,
         )
 
         logger.info("Building in-memory dataset for poisoning detection and training")
@@ -173,6 +174,7 @@ class GTSRB(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            shuffle_files=False,
         )
         validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -200,6 +202,7 @@ class GTSRB(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                shuffle_files=False,
             )
             test_metric = metrics.MetricList("categorical_accuracy")
             targeted_test_metric = metrics.MetricList("categorical_accuracy")

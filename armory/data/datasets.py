@@ -113,8 +113,16 @@ class ArmoryDataGenerator(DataGenerator):
                 x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
             else:
                 x = self.np_1D_object_array(x_list)
+
             # Does not currently handle variable-length y
-            y = np.hstack(y_list)
+            if isinstance(y_list[0], dict):
+                y = {}
+                for k in y_list[0].keys():
+                    y[k] = np.hstack([y_i[k] for y_i in y_list])
+            elif isinstance(y_list[0], tuple):
+                y = tuple(np.hstack(i) for i in zip(*y_list))
+            else:
+                y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 
@@ -377,6 +385,7 @@ def german_traffic_sign(
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files=True,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -391,6 +400,7 @@ def german_traffic_sign(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
