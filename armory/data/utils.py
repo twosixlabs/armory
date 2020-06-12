@@ -73,7 +73,8 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
 
         try:
             logger.info("Downloading S3 data file...")
-            with ProgressPercentage(client, bucket_name, key) as Callback:
+            total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
+            with ProgressPercentage(client, bucket_name, key, total) as Callback:
                 client.download_file(bucket_name, key, local_path, Callback=Callback)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
