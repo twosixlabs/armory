@@ -28,7 +28,7 @@
         ]
     },
     "model": {
-        "fit": true,
+        "fit": false,
         "fit_kwargs": {
             "nb_epochs": 20000
         },
