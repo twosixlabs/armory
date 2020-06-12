@@ -107,14 +107,20 @@ def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
     :param key: S3 File keyname
     :param local_path: Local file path to download as
     """
+    verify_ssl = get_verify_ssl()
     if not os.path.isfile(local_path):
         client = boto3.client(
             "s3",
             aws_access_key_id=os.getenv("ARMORY_PRIVATE_S3_ID"),
             aws_secret_access_key=os.getenv("ARMORY_PRIVATE_S3_KEY"),
+            verify=verify_ssl,
         )
-        logger.info("Downloading S3 data file...")
-        client.download_file(bucket_name, key, local_path)
+        try:
+            logger.info("Downloading S3 data file...")
+            with ProgressPercentage(client, bucket_name, key) as Callback:
+                client.download_file(bucket_name, key, local_path, Callback=Callback)
+        except ClientError:
+            raise KeyError(f"File {key} not available in {bucket_name} bucket.")
     else:
         logger.info("Reusing cached S3 data file...")
 
