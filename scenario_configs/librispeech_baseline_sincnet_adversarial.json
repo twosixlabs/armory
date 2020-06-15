@@ -4,9 +4,9 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial_perturbation",
+            "adversarial_key": "adversarial",
             "batch_size": 16,
-            "description": "'adversarial_key' must be 'adversarial_perturbation' or 'adversarial_univperturbation'"
+            "description": "'adversarial_key' must be 'adversarial'"
         },
         "module": "armory.data.adversarial_datasets",
         "name": "librispeech_adversarial",

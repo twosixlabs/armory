@@ -30,11 +30,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def preprocessing_fn(batch):
     """
-    Input is comprised of one or more clips, where each clip i
-    is given as an ndarray with shape (n_i,).
-    Preprocessing normalizes each clip and breaks each clip into an integer number
-    of non-overlapping segments of length WINDOW_LENGTH.
-    Output is a list of clips, each of shape (int(n_i/WINDOW_LENGTH), WINDOW_LENGTH)
+    Standardize, then normalize sound clips
     """
     processed_batch = []
     for clip in batch:
@@ -43,14 +39,19 @@ def preprocessing_fn(batch):
         # Signal normalization
         signal = signal / np.max(np.abs(signal))
 
-        # split each clip into integer number of non-overlapping segments, each
-        # of length WINDOW_LENGTH
-        num_chunks = int(len(signal) / WINDOW_LENGTH)
-        signal = signal[: num_chunks * WINDOW_LENGTH]
-        signal = np.reshape(signal, (num_chunks, WINDOW_LENGTH), order="C")
+        # get pseudorandom chunk of fixed length (from SincNet's create_batches_rnd)
+        signal_length = len(signal)
+        np.random.seed(signal_length)
+        signal_start = (
+            np.random.randint(signal_length / WINDOW_LENGTH - 1)
+            * WINDOW_LENGTH
+            % signal_length
+        )
+        signal_stop = signal_start + WINDOW_LENGTH
+        signal = signal[signal_start:signal_stop]
         processed_batch.append(signal)
 
-    return processed_batch
+    return np.array(processed_batch)
 
 
 def sincnet(weights_file=None):
