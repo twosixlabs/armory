@@ -232,26 +232,39 @@ class GTSRB(Scenario):
             "validation_accuracy_targeted_class": target_class_benign_metric.mean(),
         }
 
+        test_metric = metrics.MetricList("categorical_accuracy")
         targeted_test_metric = metrics.MetricList("categorical_accuracy")
 
         logger.info("Testing on poisoned test data")
         if attack_type == "preloaded":
-            test_data = load_dataset(
+            test_data_poison = load_dataset(
                 config_adhoc["poison_samples"],
                 epochs=1,
                 split_type="poison_test",
                 preprocessing_fn=None,
             )
-            x_test_all, y_test_all = [], []
-            for x_poison_test, y_poison_test in tqdm(test_data, desc="Testing"):
+            for x_poison_test, y_poison_test in tqdm(
+                test_data_poison, desc="Testing poison"
+            ):
                 x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float)
-                x_test_all.append(x_poison_test)
-                y_test_all.append(y_poison_test)
+                y_pred = classifier.predict(x_poison_test)
+                y_true = [src_class] * len(y_pred)
+                targeted_test_metric.append(y_poison_test, y_pred)
+                test_metric.append(y_true, y_pred)
+            test_data_clean = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+                shuffle_files=False,
+            )
+            for x_clean_test, y_clean_test in tqdm(
+                test_data_clean, desc="Testing clean"
+            ):
+                x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float)
+                y_pred = classifier.predict(x_clean_test)
+                test_metric.append(y_clean_test, y_pred)
 
-            x_test_all = np.concatenate(x_test_all, axis=0)
-            y_test_all = np.concatenate(y_test_all, axis=0)
-            y_pred = classifier.predict(x_test_all)
-            targeted_test_metric.append(y_test_all, y_pred)
         elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
             test_data = load_dataset(
@@ -274,14 +287,21 @@ class GTSRB(Scenario):
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
+                test_metric.append(y_test, y_pred)
+
                 y_pred_targeted = y_pred[y_test == src_class]
                 if not len(y_pred_targeted):
                     continue
                 targeted_test_metric.append(
                     [tgt_class] * len(y_pred_targeted), y_pred_targeted
                 )
-        results["targeted_misclassification_accuracy"] = targeted_test_metric.mean()
-        logger.info(
-            f"Test targeted misclassification accuracy: {targeted_test_metric.mean():.2%}"
-        )
+
+        if poison_dataset_flag or attack_type == "preloaded":
+            results["test_accuracy"] = test_metric.mean()
+            results["targeted_misclassification_accuracy"] = targeted_test_metric.mean()
+            logger.info(f"Test accuracy: {test_metric.mean():.2%}")
+            logger.info(
+                f"Test targeted misclassification accuracy: {targeted_test_metric.mean():.2%}"
+            )
+
         return results
