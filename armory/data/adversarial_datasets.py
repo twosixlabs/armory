@@ -10,6 +10,7 @@ from armory.data.adversarial import (  # noqa: F401
     librispeech_adversarial as LA,
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
+    gtsrb_bh_poison_micronnet,
 )
 
 
@@ -192,4 +193,37 @@ def ucf101_adversarial_112x112(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
+    )
+
+
+def gtsrb_poison(
+    split_type: str = "poison",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    clean_key: str = None,
+    adversarial_key: str = None,
+) -> datasets.ArmoryDataGenerator:
+    """
+    German traffic sign poison dataset of size (48, 48, 3),
+    including only poisoned data
+
+    DataGenerator returns batches of (x_poison, y)
+    """
+    return datasets._generator_from_tfds(
+        "gtsrb_bh_poison_micronnet:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "label"),
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        lambda_map=lambda x, y: (x, y),
     )
