@@ -44,7 +44,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.9.0-dev",
+        "docker_image": "twosixarmory/tf1:0.10.0-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

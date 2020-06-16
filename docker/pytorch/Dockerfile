@@ -10,6 +10,8 @@ RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
  cudatoolkit=10.1 -c pytorch && \
     /opt/conda/bin/conda clean --all
 
+RUN pip install --no-cache-dir dareblopy==0.0.3
+
 ########## PyTorch 1.4 Release #################
 
 FROM armory-pytorch-base AS armory-pytorch
