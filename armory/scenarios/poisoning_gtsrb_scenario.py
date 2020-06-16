@@ -95,9 +95,12 @@ class GTSRB(Scenario):
             logger.info(
                 f"Loading poison dataset {config_adhoc['poison_samples']['name']}..."
             )
-            config_adhoc["poison_samples"]["batch_size"] = int(
-                config_adhoc["fraction_poisoned"] * num_images_tgt_class
-            )
+            num_poisoned = int(config_adhoc["fraction_poisoned"] * num_images_tgt_class)
+            if num_poisoned == 0:
+                raise ValueError(
+                    "For the preloaded attack, fraction_poisoned must be set so that at least on data point is poisoned."
+                )
+            config_adhoc["poison_samples"]["batch_size"] = num_poisoned
             poison_data = load_dataset(
                 config["adhoc"]["poison_samples"],
                 epochs=1,
