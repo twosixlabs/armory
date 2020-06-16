@@ -31,12 +31,7 @@
         "module": "armory.data.datasets",
         "name": "german_traffic_sign"
     },
-    "defense": {
-        "kwargs": {},
-        "module": "art.poison_detection.activation_defence",
-        "name": "ActivationDefence",
-        "type": "PoisonFilteringDefence"
-    },
+    "defense": null,
     "metric": null,
     "model": {
         "fit": true,
