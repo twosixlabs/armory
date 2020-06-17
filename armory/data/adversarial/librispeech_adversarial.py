@@ -12,16 +12,20 @@ logger = logging.getLogger(__name__)
 _DESCRIPTION = """\
 LibriSpeech-dev-clean adversarial audio dataset for SincNet
 
-UniversalPerturbation
+Universal Perturbation
     Max iterations = 100
     Epsilon = 0.3
     Attacker = Projected Gradient Descent
+        Max iterations = 100
+        Epsilon = 0.3
+        Attack step size = 0.1
+        Targeted = false
 
 Projected Gradient Descent
-    Max iterations = 100
-    Epsilon = 0.3
-    Attack step size = 0.1
-    Targeted = false
+        Max iterations = 100
+        Epsilon = 0.3
+        Attack step size = 0.1
+        Targeted = True
 """
 
 _LABELS = [
@@ -69,12 +73,12 @@ _LABELS = [
 
 _URL = (
     "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/"
-    "LibriSpeech_SincNet_UniversalPerturbation.tar.gz"
+    "LibriSpeech_SincNet_UnivPerturbation_and_PGD.tar.gz"
 )
 
 
 class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.1.0")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -84,7 +88,8 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
                 {
                     "audio": {
                         "clean": tfds.features.Audio(),
-                        "adversarial": tfds.features.Audio(),
+                        "adversarial_univperturbation": tfds.features.Audio(),
+                        "adversarial_perturbation": tfds.features.Audio(),
                     },
                     "label": tfds.features.ClassLabel(names=_LABELS),
                 }
@@ -94,10 +99,7 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """Returns SplitGenerators"""
-        path = os.path.join(
-            dl_manager.download_and_extract(_URL),
-            "LibriSpeech_SincNet_UniversalPerturbation",
-        )
+        path = os.path.join(dl_manager.download_and_extract(_URL), "data",)
         splits = [
             tfds.core.SplitGenerator(
                 name="adversarial", gen_kwargs={"data_dir_path": path}
@@ -107,7 +109,11 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _generate_examples(self, data_dir_path):
         """Yields examples."""
-        split_dirs = ["clean", "adversarial"]
+        split_dirs = [
+            "clean",
+            "adversarial_univperturbation",
+            "adversarial_perturbation",
+        ]
         labels = tf.io.gfile.listdir(os.path.join(data_dir_path, split_dirs[0]))
         labels.sort()
         for label in labels:
@@ -131,8 +137,11 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
                             "clean": os.path.join(
                                 data_dir_path, split_dirs[0], label, chapter, clip
                             ),
-                            "adversarial": os.path.join(
+                            "adversarial_univperturbation": os.path.join(
                                 data_dir_path, split_dirs[1], label, chapter, clip
+                            ),
+                            "adversarial_perturbation": os.path.join(
+                                data_dir_path, split_dirs[2], label, chapter, clip
                             ),
                         },
                         "label": label,

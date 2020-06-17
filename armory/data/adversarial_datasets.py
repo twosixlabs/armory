@@ -65,12 +65,12 @@ def librispeech_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
-    adversarial_key: str = "adversarial",
+    adversarial_key: str = "adversarial_perturbation",
     targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
-    Adversarial dataset based on Librispeech-dev-clean using Universal
-    Perturbation with PGD.
+    Adversarial dataset based on Librispeech-dev-clean including clean,
+    Universal Perturbation using PGD, and PGD.
 
     split_type - one of ("adversarial")
 
@@ -79,13 +79,14 @@ def librispeech_adversarial(
     """
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
-    if adversarial_key != "adversarial":
-        raise ValueError(f"{adversarial_key} != 'adversarial'")
+    adversarial_keys = ("adversarial_perturbation", "adversarial_univperturbation")
+    if adversarial_key not in adversarial_keys:
+        raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
     if targeted:
         raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
-        "librispeech_adversarial:1.0.0",
+        "librispeech_adversarial:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
