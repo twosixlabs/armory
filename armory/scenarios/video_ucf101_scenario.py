@@ -122,6 +122,7 @@ class Ucf101(Scenario):
             )
         else:
             attack = load_attack(attack_config, classifier)
+            attack.set_params(batch_size=1)
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -141,7 +142,6 @@ class Ucf101(Scenario):
                 else:
                     # each x is of shape (n_stack, 3, 16, 112, 112)
                     #    n_stack varies
-                    attack.set_params(batch_size=x.shape[0])
                     if attack_config.get("use_label"):
                         x_adv = attack.generate(x=x, y=y)
                     elif targeted:
