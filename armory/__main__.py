@@ -18,6 +18,7 @@ import sys
 import coloredlogs
 import docker
 from docker.errors import ImageNotFound
+from jsonschema import ValidationError
 
 import armory
 from armory import paths
@@ -218,6 +219,11 @@ def run(command_args, prog, description):
 
     try:
         config = load_config(args.filepath)
+    except ValidationError as e:
+        logger.error(
+            f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
+        )
+        sys.exit(1)
     except json.decoder.JSONDecodeError:
         logger.exception(f"Could not decode {args.filepath} as a json file.")
         if not args.filepath.lower().endswith(".json"):
