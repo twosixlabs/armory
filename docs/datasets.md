@@ -71,7 +71,7 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 
 
 ### Adversarial Datasets
-See [adversarial_datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
+See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
 
 
 <br>

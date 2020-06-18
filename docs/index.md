@@ -19,7 +19,7 @@ There are three ways to interact with the armory container system.
 1) `armory run`
 
 * `armory run <path/to/config.json>`. 
-This will run a [configuration file](docs/configuration_files.md) end to end. Stdout 
+This will run a [configuration file](configuration_files.md) end to end. Stdout 
 and stderror logs will be displayed to the user, and the container will be removed 
 gracefully upon completion. Results from the evaluation can be found in your output 
 directory.
@@ -57,7 +57,7 @@ the container will be removed.
 
 To use custom docker images with `launch` or `exec`, replace `<tf1|tf2|pytorch>` with its
 full name: `<your_image/name:your_tag>`. For use with `run`, you will need to modify the
-[configuration file](docs/configuration_files.md).
+[configuration file](configuration_files.md).
 
 Note: Since ARMORY launches Docker containers, the python package must be ran on 
 system host (i.e. not inside of a docker container).
@@ -77,10 +77,10 @@ datasets, and scenarios can be utilized.
 
 Additionally, volumes (such as your current working directory) will be mounted from 
 your system host so that you can modify code to be ran, and retrieve outputs. 
-For more information on these mounts, please see our [Docker documentation](docs/docker.md#docker-volume-mounts) 
+For more information on these mounts, please see our [Docker documentation](docker.md#docker-volume-mounts) 
 
 ## Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities. 
 When running an armory configuration file, the robustness of a defense will be 
 evaluated against that given scenario. For more information please see our 
-[Scenario Documentation](docs/scenarios.md).
+[Scenario Documentation](scenarios.md).
