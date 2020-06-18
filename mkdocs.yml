@@ -6,9 +6,11 @@ nav:
   - Configuration Files: configuration_files.md
   - Baseline Models: baseline_models.md
   - Datasets: datasets.md
+  - Adversarial Datasets: adversarial_datasets.md
   - Docker: docker.md
   - Metrics: metrics.md
   - Scenarios: scenarios.md
+  - External Repos: external_repos.md
   - FAQs: faqs.md
   - Contributing: contributing.md
 theme: readthedocs
