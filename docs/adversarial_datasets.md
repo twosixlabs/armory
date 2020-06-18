@@ -12,7 +12,7 @@ Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord fi
 These tfrecord files will be pulled from S3 if not available on your 
 `dataset_dir` directory.
 
-Refer to [datasets.md](https://github.com/twosixlabs/armory/blob/master/docs/datasets.md) for descriptions of the original datasets from which
+Refer to [datasets.md](datasets.md) for descriptions of the original datasets from which
 the adversarial datasets are created.
 
 ### Usage
