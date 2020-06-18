@@ -1,4 +1,4 @@
-from art.defences import JpegCompression
+from art.defences.preprocessor import JpegCompression
 import numpy as np
 
 

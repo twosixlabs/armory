@@ -1,6 +1,18 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 import numpy as np
-from art.poison_detection.ground_truth_evaluator import GroundTruthEvaluator
-from art.poison_detection.poison_filtering_defence import PoisonFilteringDefence
+
+try:
+    from art.poison_detection.ground_truth_evaluator import GroundTruthEvaluator
+    from art.poison_detection.poison_filtering_defence import PoisonFilteringDefence
+except ImportError:
+    logger.warning("ART 1.3 support is currently experimental in ARMORY.")
+    from art.defences.detector.poison import (
+        GroundTruthEvaluator,
+        PoisonFilteringDefence,
+    )
 
 
 class SpectralSignatureDefense(PoisonFilteringDefence):
