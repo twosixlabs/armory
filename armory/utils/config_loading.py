@@ -18,9 +18,8 @@ from art.attacks import Attack
 try:
     from art.classifiers import Classifier
 except ImportError:
-    from art.estimators import BaseEstimator as Classifier
-
     logger.warning("ART 1.3 support is currently experimental in ARMORY.")
+    from art.estimators import BaseEstimator as Classifier
 from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
