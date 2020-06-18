@@ -22,7 +22,7 @@ and run evaluations on an image that has all additional requirements for their d
 ### Custom Images
 
 If you wish to utilize custom images for armory, these can be directly specified by
-either the `"docker_image"` field of the [config file](docs/configuration_files.md)
+either the `"docker_image"` field of the [config file](configuration_files.md)
 of `armory run <path/to/config.json>` or in the CLI of the `launch` and `exec` commands,
 as in `run launch <custom_image:tag>`.
 
@@ -32,7 +32,7 @@ exit while those commands are being executed.
 
 ### Interactive Use
 
-As detailed [here](docs/index.md), it is possible to run the armory docker container in an
+As detailed [here](index.md), it is possible to run the armory docker container in an
 interactive mode using the `--interactive` CLI argument on `launch` or `run` commands.
 We recommend this for debugging purposes, primarily.
 
