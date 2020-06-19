@@ -31,6 +31,6 @@ for framework in "tf1" "tf2" "pytorch"; do
         echo "\n\n\n"
         echo "------------------------------------------------"
         echo "Building docker image for framework: $framework"
-        docker build --cache-from davidslater/${framework}:latest,twosixarmory/armory:${version} --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t davidslater/${framework}:${version} .
+        docker build --cache-from twosixarmory/${framework}:latest,twosixarmory/armory:${version} --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} .
     fi
 done
