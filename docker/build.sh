@@ -22,12 +22,15 @@ if [[ $version == *"-dev" ]]; then
 fi
 
 # Build images
+echo "\n\n\n"
+echo "------------------------------------------------"
 echo "Building base docker image: armory"
 docker build --cache-from twosixarmory/armory:latest --force-rm --file docker/Dockerfile --target armory -t twosixarmory/armory:${version} .
 for framework in "tf1" "tf2" "pytorch"; do
     if [[ "$1" == "$framework" || "$1" == "all" ]]; then
-        echo "Building docker images for framework: $framework"
-        docker build --cache-from twosixarmory/armory:${version} --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-base -t twosixarmory/${framework}-base:${version} .
-        docker build --cache-from twosixarmory/armory:${version} --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} .
+        echo "\n\n\n"
+        echo "------------------------------------------------"
+        echo "Building docker image for framework: $framework"
+        docker build --cache-from twosixarmory/${framework}:latest,twosixarmory/armory:${version} --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} .
     fi
 done
