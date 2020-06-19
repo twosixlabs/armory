@@ -1,4 +1,4 @@
-########## TF 1.15 Dev #################
+########## TF 1 Dev #################
 
 ARG armory_version
 FROM twosixarmory/tf1-base:${armory_version} AS armory-tf1-dev

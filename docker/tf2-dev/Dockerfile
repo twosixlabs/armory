@@ -1,4 +1,4 @@
-########## TF 2.2 Dev #################
+########## TF 2 Dev #################
 
 ARG armory_version
 FROM twosixarmory/tf2-base:${armory_version} AS armory-tf2-dev

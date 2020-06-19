@@ -1,4 +1,4 @@
-########## PyTorch 1.5 Base #################
+########## PyTorch 1 Base #################
 
 ARG armory_version
 FROM twosixarmory/armory:${armory_version} AS armory-pytorch-base
@@ -12,7 +12,7 @@ RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
 
 RUN pip install --no-cache-dir dareblopy==0.0.3
 
-########## PyTorch 1.5 Release #################
+########## PyTorch 1 Release #################
 
 FROM armory-pytorch-base AS armory-pytorch
 ARG armory_version
