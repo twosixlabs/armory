@@ -100,7 +100,7 @@ def load_model(model_config):
 def load_attack(attack_config, classifier):
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
-    attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
+    attack = attack_fn(classifier, **attack_config["kwargs"])
     if not isinstance(attack, Attack):
         raise TypeError(f"attack {attack} is not an instance of {Attack}")
     return attack
@@ -141,7 +141,7 @@ def load_defense_wrapper(defense_config, classifier):
 
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
-    defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
+    defense = defense_fn(classifier, **defense_config["kwargs"])
     _check_defense_api(defense, Trainer)
 
     return defense
