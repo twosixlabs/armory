@@ -12,7 +12,7 @@ import logging
 
 from art.defences.trainer.trainer import Trainer
 from art.defences.trainer.adversarial_trainer import AdversarialTrainer
-from art.attacks.evasion.projected_gradient_descent import ProjectedGradientDescent
+from art.attacks.evasion import ProjectedGradientDescent
 
 logger = logging.getLogger(__name__)
 

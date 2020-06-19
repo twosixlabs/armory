@@ -5,10 +5,10 @@ Uses binary search to quickly find optimal epsilon values per test point
 """
 
 import numpy as np
-from art import attacks
+from art.attacks.evasion import FastGradientMethod
 
 
-class FGMBinarySearch(attacks.FastGradientMethod):
+class FGMBinarySearch(FastGradientMethod):
     """
     Find minimum epsilon perturbations for the given inputs
 
