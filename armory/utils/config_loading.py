@@ -16,10 +16,12 @@ except ImportError:
 from art.attacks import Attack
 
 try:
-    from art.classifiers import Classifier
-except ImportError:
-    logger.warning("ART 1.3 support is currently experimental in ARMORY.")
     from art.estimators import BaseEstimator as Classifier
+except ImportError:
+    logger.warning(
+        "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
+    )
+    from art.classifiers import Classifier
 from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
