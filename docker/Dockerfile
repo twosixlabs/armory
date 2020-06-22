@@ -24,10 +24,11 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     adversarial-robustness-toolbox==1.3.0 \
     Pillow==7.1.2 \
     pydub==0.24.1 \
-    apache-beam==2.18.0 \
+    apache-beam==2.22.0 \
+    dill==0.3.1.1 \
     pytest==5.3.5
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2 && \
+RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace
