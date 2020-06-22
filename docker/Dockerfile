@@ -31,4 +31,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
 
+RUN git clone https://github.com/IBM/adversarial-robustness-toolbox && \
+    cd adversarial-robustness-toolbox && \
+    git checkout development_fit_generator && \
+    pip install -e .
+
 WORKDIR /workspace
