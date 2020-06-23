@@ -5,6 +5,8 @@ Helper utilies to load things from armory configuration files.
 from importlib import import_module
 import logging
 
+logger = logging.getLogger(__name__)
+
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
 try:
@@ -12,12 +14,19 @@ try:
 except ImportError:
     pass
 from art.attacks import Attack
-from art import defences
-from art.classifiers import Classifier
+
+try:
+    from art.estimators import BaseEstimator as Classifier
+except ImportError:
+    logger.warning(
+        "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
+    )
+    from art.classifiers import Classifier
+from art.defences.postprocessor import Postprocessor
+from art.defences.preprocessor import Preprocessor
+from art.defences.trainer import Trainer
 
 from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
-
-logger = logging.getLogger(__name__)
 
 
 def load(sub_config):
@@ -91,7 +100,7 @@ def load_model(model_config):
 def load_attack(attack_config, classifier):
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
-    attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
+    attack = attack_fn(classifier, **attack_config["kwargs"])
     if not isinstance(attack, Attack):
         raise TypeError(f"attack {attack} is not an instance of {Attack}")
     return attack
@@ -132,8 +141,8 @@ def load_defense_wrapper(defense_config, classifier):
 
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
-    defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
-    _check_defense_api(defense, defences.Trainer)
+    defense = defense_fn(classifier, **defense_config["kwargs"])
+    _check_defense_api(defense, Trainer)
 
     return defense
 
@@ -143,13 +152,13 @@ def load_defense_internal(defense_config, classifier):
 
     defense_type = defense_config["type"]
     if defense_type == "Preprocessor":
-        _check_defense_api(defense, defences.Preprocessor)
+        _check_defense_api(defense, Preprocessor)
         if classifier.preprocessing_defences:
             classifier.preprocessing_defences.append(defense)
         else:
             classifier.preprocessing_defences = [defense]
     elif defense_type == "Postprocessor":
-        _check_defense_api(defense, defences.Postprocessor)
+        _check_defense_api(defense, Postprocessor)
         if classifier.postprocessing_defences:
             classifier.postprocessing_defences.append(defense)
         else:

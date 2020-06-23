@@ -33,7 +33,7 @@
             "nb_dims": 43,
             "reduce": "PCA"
         },
-        "module": "art.poison_detection.activation_defence",
+        "module": "art.defences.detector.poison.activation_defence",
         "name": "ActivationDefence",
         "type": "PoisonFilteringDefence"
     },

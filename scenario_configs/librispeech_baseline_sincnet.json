@@ -13,7 +13,7 @@
             "num_random_init": 0,
             "targeted": false
         },
-        "module": "art.attacks",
+        "module": "art.attacks.evasion",
         "name": "FastGradientMethod",
         "use_label": false
     },

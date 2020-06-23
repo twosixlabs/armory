@@ -21,13 +21,14 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==2.0.0 \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
-    adversarial-robustness-toolbox==1.2.0 \
-    Pillow==7.0.0 \
-    pydub==0.23.1 \
-    apache-beam==2.18.0 \
+    adversarial-robustness-toolbox==1.3.1 \
+    Pillow==7.1.2 \
+    pydub==0.24.1 \
+    apache-beam==2.22.0 \
+    dill==0.3.1.1 \
     pytest==5.3.5
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2 && \
+RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace

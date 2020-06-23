@@ -1,4 +1,4 @@
-########## PyTorch 1.4 Dev #################
+########## PyTorch 1 Dev #################
 
 ARG armory_version
 FROM twosixarmory/pytorch-base:${armory_version} AS armory-pytorch-dev
