@@ -16,7 +16,7 @@ array of repositories. For example:
 ```
 ```
 "sysconfig": {
-    "external_github_repo": ["hkakitani/SincNet, "twosixlabs/armory-example"],
+    "external_github_repo": ["hkakitani/SincNet", "twosixlabs/armory-example"],
 }
 ```
 
