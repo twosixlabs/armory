@@ -169,8 +169,8 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
                     },
                     "labels": {
                         "clean": label,
-                        "adversarial_perturbation": label,  # untargeted, label not used
-                        "adversarial_patch": labels[_TARGET_CLASS],  # targeted
+                        "adversarial_univperturbation": label,  # untargeted, label not used
+                        "adversarial_univpatch": labels[_TARGET_CLASS],  # targeted
                     },
                     "imagename": imagename,
                 }
