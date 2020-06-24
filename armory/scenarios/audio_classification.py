@@ -28,6 +28,10 @@ class AudioClassificationTask(Scenario):
 
         model_config = config["model"]
         classifier, preprocessing_fn = load_model(model_config)
+        if isinstance(preprocessing_fn, tuple):
+            fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
+        else:
+            fit_preprocessing_fn = predict_preprocessing_fn = preprocessing_fn
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
@@ -44,12 +48,17 @@ class AudioClassificationTask(Scenario):
             fit_kwargs = model_config["fit_kwargs"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
+            batch_size = config["dataset"].pop("batch_size")
+            config["dataset"]["batch_size"] = config.get("adhoc", {}).get(
+                "fit_batch_size", batch_size
+            )
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
-                preprocessing_fn=preprocessing_fn,
+                preprocessing_fn=fit_preprocessing_fn,
             )
+            config["dataset"]["batch_size"] = batch_size
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
@@ -72,7 +81,7 @@ class AudioClassificationTask(Scenario):
             config["dataset"],
             epochs=1,
             split_type="test",
-            preprocessing_fn=preprocessing_fn,
+            preprocessing_fn=predict_preprocessing_fn,
         )
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
@@ -84,15 +93,17 @@ class AudioClassificationTask(Scenario):
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
-
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
+        if targeted and attack_config.get("use_label"):
+            raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
                 split_type="adversarial",
-                preprocessing_fn=preprocessing_fn,
+                preprocessing_fn=predict_preprocessing_fn,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -100,15 +111,27 @@ class AudioClassificationTask(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=preprocessing_fn,
+                preprocessing_fn=predict_preprocessing_fn,
             )
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
+                if targeted:
+                    y, y_target = y
+            elif attack_config.get("use_label"):
+                x_adv = attack.generate(x=x, y=y)
+            elif targeted:
+                raise NotImplementedError("Requires generation of target labels")
+                # x_adv = attack.generate(x=x, y=y_target)
             else:
                 x_adv = attack.generate(x=x)
+
             y_pred_adv = classifier.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            if targeted:
+                # NOTE: does not remove data points where y == y_target
+                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+            else:
+                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True)
+        metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()

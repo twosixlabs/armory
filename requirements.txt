@@ -1,4 +1,5 @@
 coloredlogs
 docker
 jsonschema
+pymongo
 requests

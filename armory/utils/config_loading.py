@@ -3,6 +3,9 @@ Helper utilies to load things from armory configuration files.
 """
 
 from importlib import import_module
+import logging
+
+logger = logging.getLogger(__name__)
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
@@ -11,10 +14,19 @@ try:
 except ImportError:
     pass
 from art.attacks import Attack
-from art import defences
-from art.classifiers import Classifier
 
-from armory.data.datasets import ArmoryDataGenerator
+try:
+    from art.estimators import BaseEstimator as Classifier
+except ImportError:
+    logger.warning(
+        "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
+    )
+    from art.classifiers import Classifier
+from art.defences.postprocessor import Postprocessor
+from art.defences.preprocessor import Preprocessor
+from art.defences.trainer import Trainer
+
+from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
 
 
 def load(sub_config):
@@ -41,12 +53,17 @@ def load_dataset(dataset_config, *args, **kwargs):
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if dataset_config.get("check_run"):
+        return CheckGenerator(dataset)
     return dataset
 
 
 def load_model(model_config):
     """
     Loads a model and preprocessing function from configuration file
+
+    preprocessing_fn can be a tuple of functions or None values
+        If so, it applies to training and inference separately
     """
     model_module = import_module(model_config["module"])
     model_fn = getattr(model_module, model_config["name"])
@@ -56,17 +73,34 @@ def load_model(model_config):
     )
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
+    if not weights_file and not model_config["fit"]:
+        logger.warning(
+            "You're attempting to evaluate an unfitted model with no "
+            "pre-trained weights!"
+        )
 
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
-    if preprocessing_fn is not None and not callable(preprocessing_fn):
-        raise TypeError(f"preprocessing_fn {preprocessing_fn} must be None or callable")
+    if preprocessing_fn is not None:
+        if isinstance(preprocessing_fn, tuple):
+            if len(preprocessing_fn) != 2:
+                raise ValueError(
+                    f"preprocessing tuple length {len(preprocessing_fn)} != 2"
+                )
+            elif not all([x is None or callable(x) for x in preprocessing_fn]):
+                raise TypeError(
+                    f"preprocessing_fn tuple elements {preprocessing_fn} must be None or callable"
+                )
+        elif not callable(preprocessing_fn):
+            raise TypeError(
+                f"preprocessing_fn {preprocessing_fn} must be None, tuple, or callable"
+            )
     return model, preprocessing_fn
 
 
 def load_attack(attack_config, classifier):
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
-    attack = attack_fn(classifier=classifier, **attack_config["kwargs"])
+    attack = attack_fn(classifier, **attack_config["kwargs"])
     if not isinstance(attack, Attack):
         raise TypeError(f"attack {attack} is not an instance of {Attack}")
     return attack
@@ -84,6 +118,8 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
+    if config.get("check_run"):
+        return CheckGenerator(dataset)
     return dataset
 
 
@@ -105,8 +141,8 @@ def load_defense_wrapper(defense_config, classifier):
 
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
-    defense = defense_fn(classifier=classifier, **defense_config["kwargs"])
-    _check_defense_api(defense, defences.Trainer)
+    defense = defense_fn(classifier, **defense_config["kwargs"])
+    _check_defense_api(defense, Trainer)
 
     return defense
 
@@ -116,13 +152,13 @@ def load_defense_internal(defense_config, classifier):
 
     defense_type = defense_config["type"]
     if defense_type == "Preprocessor":
-        _check_defense_api(defense, defences.Preprocessor)
+        _check_defense_api(defense, Preprocessor)
         if classifier.preprocessing_defences:
             classifier.preprocessing_defences.append(defense)
         else:
             classifier.preprocessing_defences = [defense]
     elif defense_type == "Postprocessor":
-        _check_defense_api(defense, defences.Postprocessor)
+        _check_defense_api(defense, Postprocessor)
         if classifier.postprocessing_defences:
             classifier.postprocessing_defences.append(defense)
         else:

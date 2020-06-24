@@ -2,16 +2,16 @@
     "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial",
+            "adversarial_key": "adversarial_perturbation",
             "batch_size": 16,
-            "description": "'adversarial_key' must be 'adversarial'"
+            "description": "'adversarial_key' must be 'adversarial_perturbation' or 'adversarial_univperturbation'"
         },
         "module": "armory.data.adversarial_datasets",
         "name": "librispeech_adversarial",
-        "type": "preloaded"
+        "type": "preloaded",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 128,
@@ -45,9 +45,11 @@
         "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.8.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.11.0-dev",
         "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
         "use_gpu": false
     }
 }

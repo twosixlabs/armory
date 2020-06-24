@@ -78,7 +78,11 @@ def test_imagenet_adv():
     batch_size = 100
     total_size = 1000
     test_dataset = adversarial_datasets.imagenet_adversarial(
-        dataset_dir=DATASET_DIR, split_type="clean", batch_size=batch_size, epochs=1,
+        dataset_dir=DATASET_DIR,
+        split_type="adversarial",
+        batch_size=batch_size,
+        epochs=1,
+        adversarial_key="adversarial",
     )
     assert test_dataset.size == total_size
     assert test_dataset.batch_size == batch_size
@@ -87,7 +91,8 @@ def test_imagenet_adv():
     )
 
     x, y = test_dataset.get_batch()
-    assert x.shape == (batch_size, 224, 224, 3)
+    for i in range(2):
+        assert x[i].shape == (batch_size, 224, 224, 3)
     assert y.shape == (batch_size,)
 
 
@@ -201,6 +206,92 @@ def test_resisc45():
 
         x, y = dataset.get_batch()
         assert x.shape == (batch_size, 256, 256, 3)
+        assert y.shape == (batch_size,)
+
+
+def test_librispeech_adversarial():
+    if not os.path.exists(
+        os.path.join(DATASET_DIR, "librispeech_adversarial", "1.0.0")
+    ):
+        pytest.skip("Librispeech adversarial dataset not downloaded.")
+
+    size = 2703
+    min_dim1 = 23120
+    max_dim1 = 522320
+    batch_size = 1
+    split = "adversarial"
+
+    dataset = adversarial_datasets.librispeech_adversarial(
+        split_type=split,
+        epochs=1,
+        batch_size=batch_size,
+        dataset_dir=DATASET_DIR,
+        adversarial_key="adversarial",
+    )
+    assert dataset.size == size
+    assert dataset.batch_size == batch_size
+    assert dataset.batches_per_epoch == (size // batch_size + bool(size % batch_size))
+
+    x, y = dataset.get_batch()
+    for i in range(2):
+        assert x[i].shape[0] == 1
+        assert min_dim1 <= x[i].shape[1] <= max_dim1
+    assert y.shape == (batch_size,)
+
+
+def test_resisc45_adversarial_224x224():
+    size = 225
+    split = "adversarial"
+    batch_size = 16
+    epochs = 1
+    for adversarial_key in ("adversarial_univpatch", "adversarial_univperturbation"):
+        dataset = adversarial_datasets.resisc45_adversarial_224x224(
+            split_type=split,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=DATASET_DIR,
+            adversarial_key=adversarial_key,
+        )
+        assert dataset.size == size
+        assert dataset.batch_size == batch_size
+        assert dataset.batches_per_epoch == (
+            size // batch_size + bool(size % batch_size)
+        )
+
+        x, y = dataset.get_batch()
+        for i in range(2):
+            assert x[i].shape == (batch_size, 224, 224, 3)
+        assert y.shape == (batch_size,)
+
+
+def test_ucf101_adversarial_112x112():
+    if not os.path.isdir(
+        os.path.join(
+            DATASET_DIR,
+            "ucf101_mars_perturbation_and_patch_adversarial112x112",
+            "1.0.0",
+        )
+    ):
+        pytest.skip("ucf101 adversarial dataset not locally available.")
+
+    for adversarial_key in ("adversarial_perturbation", "adversarial_patch"):
+        batch_size = 1
+        epochs = 1
+        size = 505
+        split_type = "adversarial"
+        dataset = adversarial_datasets.ucf101_adversarial_112x112(
+            split_type=split_type,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=DATASET_DIR,
+            adversarial_key=adversarial_key,
+        )
+        assert dataset.size == size
+
+        x, y = dataset.get_batch()
+        for i in range(2):
+            # video length is variable so we don't compare 2nd dim
+            assert x[i].shape[:1] + x[i].shape[2:] == (batch_size, 112, 112, 3)
         assert y.shape == (batch_size,)
 
 

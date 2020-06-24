@@ -9,6 +9,7 @@ import logging
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
+from torch import nn
 
 from armory.data.utils import maybe_download_weights_from_s3
 
@@ -28,21 +29,22 @@ WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def preprocessing_fn(batch):
+def fit_preprocessing_fn(batch):
     """
     Standardize, then normalize sound clips
+
+    Then generate a random cut of the input
     """
     processed_batch = []
     for clip in batch:
-
+        # convert and normalize
         signal = clip.astype(np.float64)
-        # Signal normalization
         signal = signal / np.max(np.abs(signal))
 
-        # get pseudorandom chunk of fixed length (from SincNet's create_batches_rnd)
+        # make a pseudorandom cut of size equal to WINDOW_LENGTH
         signal_length = len(signal)
         np.random.seed(signal_length)
-        signal_start = (
+        signal_start = int(
             np.random.randint(signal_length / WINDOW_LENGTH - 1)
             * WINDOW_LENGTH
             % signal_length
@@ -50,8 +52,38 @@ def preprocessing_fn(batch):
         signal_stop = signal_start + WINDOW_LENGTH
         signal = signal[signal_start:signal_stop]
         processed_batch.append(signal)
-
     return np.array(processed_batch)
+
+
+def predict_preprocessing_fn(batch):
+    """
+    Input is comprised of one or more clips, where each clip i
+    is given as an ndarray with shape (n_i,).
+    Preprocessing normalizes each clip and breaks each clip into an integer number
+    of non-overlapping segments of length WINDOW_LENGTH.
+    Output is a list of clips, each of shape (int(n_i/WINDOW_LENGTH), WINDOW_LENGTH)
+    """
+    if len(batch) != 1:
+        raise NotImplementedError(
+            "Requires ART variable length input capability for batch size != 1"
+        )
+    processed_batch = []
+    for clip in batch:
+        # convert and normalize
+        signal = clip.astype(np.float64)
+        signal = signal / np.max(np.abs(signal))
+
+        # break into a number of chunks of equal length
+        num_chunks = int(len(signal) / WINDOW_LENGTH)
+        signal = signal[: num_chunks * WINDOW_LENGTH]
+        signal = np.reshape(signal, (num_chunks, WINDOW_LENGTH), order="C")
+        processed_batch.append(signal)
+    # remove outer batch (of size 1)
+    processed_batch = processed_batch[0]
+    return np.array(processed_batch)
+
+
+preprocessing_fn = fit_preprocessing_fn, predict_preprocessing_fn
 
 
 def sincnet(weights_file=None):
@@ -143,13 +175,30 @@ def sincnet(weights_file=None):
     return sincNet
 
 
+class SincNetWrapperWrapper(nn.Module):
+    def __init__(self, sincnet_model):
+        super().__init__()
+        self.sincnet_model = sincnet_model
+
+    def forward(self, x):
+        if self.training:
+            output = self.sincnet_model(x)
+            return output
+
+        else:
+            output = torch.mean(self.sincnet_model(x), dim=0).unsqueeze(0)
+            return output
+
+
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = sincnet(weights_file=weights_file, **model_kwargs)
     model.to(DEVICE)
+    wrapper = SincNetWrapperWrapper(model)
+    wrapper.to(DEVICE)
 
     wrapped_model = PyTorchClassifier(
-        model,
+        wrapper,
         loss=torch.nn.NLLLoss(),
         optimizer=torch.optim.RMSprop(
             model.parameters(), lr=0.001, alpha=0.95, eps=1e-8

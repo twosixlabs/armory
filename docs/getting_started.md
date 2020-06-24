@@ -13,7 +13,7 @@ while so you may want to run it overnight:
 ```
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
-armory download official_scenario_configs/scenarios-set1.json
+armory download scenario_download_configs/scenarios-set1.json
 ```  
 
 ## Baseline models

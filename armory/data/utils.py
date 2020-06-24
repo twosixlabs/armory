@@ -20,12 +20,9 @@ from tqdm import tqdm
 
 from armory import paths
 from armory.data.progress_percentage import ProgressPercentage
+from armory.configuration import get_verify_ssl
 
 logger = logging.getLogger(__name__)
-
-requests.packages.urllib3.disable_warnings(
-    requests.packages.urllib3.exceptions.InsecureRequestWarning
-)
 
 
 def maybe_download_weights_from_s3(weights_file: str) -> str:
@@ -43,11 +40,39 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
         logger.info(
             f"{weights_file} not found in Armory `saved_model_dir`. Attempting to pull weights from S3"
         )
-        download_file_from_s3(
-            "armory-public-data",
-            f"model-weights/{weights_file}",
-            f"{saved_model_dir}/{weights_file}",
-        )
+        try:
+            download_file_from_s3(
+                "armory-public-data",
+                f"model-weights/{weights_file}",
+                f"{saved_model_dir}/{weights_file}",
+            )
+        except KeyError:
+            if (
+                "ARMORY_INCLUDE_SUBMISSION_BUCKETS" in os.environ
+                and os.getenv("ARMORY_INCLUDE_SUBMISSION_BUCKETS") != ""
+            ):
+                try:
+                    download_private_file_from_s3(
+                        "armory-submission-data",
+                        f"model-weights/{weights_file}",
+                        f"{saved_model_dir}/{weights_file}",
+                    )
+
+                except KeyError:
+                    raise ValueError(
+                        (
+                            f"{weights_file} was not found in the armory public & submission S3 buckets."
+                        )
+                    )
+            else:
+                raise ValueError(
+                    (
+                        f"{weights_file} was not found in the armory S3 bucket. If "
+                        "you're attempting to load a custom set of weights for "
+                        "your model be sure that they are available in the armory "
+                        "`saved_model_dir` directory on your host environment."
+                    )
+                )
     return filepath
 
 
@@ -58,7 +83,7 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
     :param key: S3 File key name
     :param local_path: Local file path to download as
     """
-    verify_ssl = _get_verify_ssl()
+    verify_ssl = get_verify_ssl()
     if not os.path.isfile(local_path):
         client = boto3.client(
             "s3", config=Config(signature_version=UNSIGNED), verify=verify_ssl
@@ -66,7 +91,8 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
 
         try:
             logger.info("Downloading S3 data file...")
-            with ProgressPercentage(client, bucket_name, key) as Callback:
+            total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
+            with ProgressPercentage(client, bucket_name, key, total) as Callback:
                 client.download_file(bucket_name, key, local_path, Callback=Callback)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
@@ -75,12 +101,34 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         logger.info(f"Reusing cached file {local_path}...")
 
 
-def _get_verify_ssl():
-    return os.getenv("VERIFY_SSL") == "true" or os.getenv("VERIFY_SSL") is None
+def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
+    """
+    Downloads file from S3 using credentials stored in ENV variables.
+    :param bucket_name: S3 Bucket name
+    :param key: S3 File keyname
+    :param local_path: Local file path to download as
+    """
+    verify_ssl = get_verify_ssl()
+    if not os.path.isfile(local_path):
+        client = boto3.client(
+            "s3",
+            aws_access_key_id=os.getenv("ARMORY_PRIVATE_S3_ID"),
+            aws_secret_access_key=os.getenv("ARMORY_PRIVATE_S3_KEY"),
+            verify=verify_ssl,
+        )
+        try:
+            logger.info("Downloading S3 data file...")
+            total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
+            with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                client.download_file(bucket_name, key, local_path, Callback=Callback)
+        except ClientError:
+            raise KeyError(f"File {key} not available in {bucket_name} bucket.")
+    else:
+        logger.info("Reusing cached S3 data file...")
 
 
 def download_requests(url: str, dirpath: str, filename: str):
-    verify_ssl = _get_verify_ssl()
+    verify_ssl = get_verify_ssl()
 
     filepath = os.path.join(dirpath, filename)
     chunk_size = 4096

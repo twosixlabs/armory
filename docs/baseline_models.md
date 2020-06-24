@@ -3,7 +3,7 @@ Armory has several baseline models available for use in evaluations. All of thes
 models return an ART wrapped classifier for use with ART attacks and defenses.
 
 
-### Pretrined Weights
+### Pretrained Weights
 Pretrained weights can be loaded in to the baseline models or custom models. This is 
 acheived by specifying the name in the `weights_file` field of a model's config. 
 

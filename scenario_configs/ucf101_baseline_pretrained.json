@@ -2,13 +2,18 @@
     "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": null,
         "knowledge": "white",
         "kwargs": {
-            "eps": 51.0
+            "batch_size": 1,
+            "eps": 51.0,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
         },
-        "module": "art.attacks",
-        "name": "FastGradientMethod"
+        "module": "art.attacks.evasion",
+        "name": "FastGradientMethod",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 16,
@@ -45,9 +50,11 @@
         "name": "Ucf101"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.8.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.11.0-dev",
         "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
         "use_gpu": false
     }
 }

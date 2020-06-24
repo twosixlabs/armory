@@ -1,0 +1,2 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/gtsrb_poisoned_images_entire_class.npy 61378688 5b0cacfd3be173d1e73a415dc22a9c6e8f7be63469cdc0dfbc13089c017a12a5
+https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/gtsrb_poisoned_test_images.npy 20736128 e9b3c62b303661fc71361de9dcfe9ba6f190be15d2f32fd06f175b6837493652

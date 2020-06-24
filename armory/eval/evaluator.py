@@ -7,14 +7,14 @@ import json
 import logging
 import shutil
 import time
-import uuid
+import datetime
 
 import docker
 import requests
 from docker.errors import ImageNotFound
 
 from armory.configuration import load_global_config
-from armory.docker.management import ManagementInstance
+from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
@@ -39,7 +39,10 @@ class Evaluator(object):
         else:
             self.armory_global_config = {"verify_ssl": True}
 
-        eval_id = str(uuid.uuid4())
+        date_time = datetime.datetime.utcnow().isoformat().replace(":", "")
+        output_dir = self.config["sysconfig"].get("output_dir", None)
+        eval_id = f"{output_dir}_{date_time}" if output_dir else date_time
+
         self.config["eval_id"] = eval_id
         self.output_dir = os.path.join(self.host_paths.output_dir, eval_id)
         self.tmp_dir = os.path.join(self.host_paths.tmp_dir, eval_id)
@@ -66,6 +69,20 @@ class Evaluator(object):
             docker_client.images.get(kwargs["image_name"])
         except ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
+            if "twosixarmory" in image_name and "-dev" in image_name:
+                raise ValueError(
+                    (
+                        "You are attempting to pull an armory developer "
+                        "docker image; however, these are not published. This "
+                        "is likely because you're running armory from its "
+                        "master branch. If you want a stable release with "
+                        "published docker images try pip installing 'armory-testbed' "
+                        "or checking out one of the stable branches on the git repository. "
+                        "If you'd like to continue working on the developer image please "
+                        "build it from source on your machine as described here: "
+                        "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers"
+                    )
+                )
             docker_api.pull_verbose(docker_client, image_name)
         except requests.exceptions.ConnectionError:
             logger.error("Docker connection refused. Is Docker Daemon running?")
@@ -85,6 +102,9 @@ class Evaluator(object):
         )
         self.extra_env_vars["ARMORY_PRIVATE_S3_KEY"] = os.getenv(
             "ARMORY_PRIVATE_S3_KEY", default=""
+        )
+        self.extra_env_vars["ARMORY_INCLUDE_SUBMISSION_BUCKETS"] = os.getenv(
+            "ARMORY_INCLUDE_SUBMISSION_BUCKETS", default=""
         )
 
         if not self.armory_global_config["verify_ssl"]:
@@ -110,7 +130,12 @@ class Evaluator(object):
             pass
 
     def run(
-        self, interactive=False, jupyter=False, host_port=8888, command=None
+        self,
+        interactive=False,
+        jupyter=False,
+        host_port=None,
+        command=None,
+        check_run=False,
     ) -> None:
         if self.no_docker:
             if jupyter or interactive or command:
@@ -119,7 +144,7 @@ class Evaluator(object):
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
             try:
-                self._run_config(runner)
+                self._run_config(runner, check_run=check_run)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -127,21 +152,33 @@ class Evaluator(object):
             self._cleanup()
             return
 
-        container_port = 8888
-        ports = {container_port: host_port} if jupyter else None
+        if check_run and (jupyter or interactive or command):
+            raise ValueError(
+                "check_run incompatible with interactive, jupyter, or command"
+            )
+
+        # Handle docker and jupyter ports
+        if jupyter or host_port:
+            if host_port:
+                ports = {host_port: host_port}
+            else:
+                ports = {8888: 8888}
+        else:
+            ports = None
+
         try:
             runner = self.manager.start_armory_instance(
                 envs=self.extra_env_vars, ports=ports
             )
             try:
                 if jupyter:
-                    self._run_jupyter(runner)
+                    self._run_jupyter(runner, ports)
                 elif interactive:
                     self._run_interactive_bash(runner)
                 elif command:
                     self._run_command(runner, command)
                 else:
-                    self._run_config(runner)
+                    self._run_config(runner, check_run=check_run)
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -171,21 +208,25 @@ class Evaluator(object):
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
 
-    def _run_config(self, runner) -> None:
+    def _run_config(self, runner: ArmoryInstance, check_run=False) -> None:
         logger.info(bold(red("Running evaluation script")))
 
-        if self.no_docker:
-            docker_option = " --no-docker"
-        else:
-            docker_option = ""
         b64_config = self._b64_encode_config()
-        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{docker_option}")
+        options = ""
+        if self.no_docker:
+            options += " --no-docker"
+        if check_run:
+            options += " --check"
+        if logger.level == logging.DEBUG:
+            options += " --debug"
 
-    def _run_command(self, runner, command) -> None:
+        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{options}")
+
+    def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
         runner.exec_cmd(command)
 
-    def _run_interactive_bash(self, runner) -> None:
+    def _run_interactive_bash(self, runner: ArmoryInstance) -> None:
         user_id = os.getuid() if os.name != "nt" else 0
         group_id = os.getgid() if os.name != "nt" else 0
         lines = [
@@ -227,9 +268,10 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    def _run_jupyter(self, runner) -> None:
+    def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
         user_id = os.getuid() if os.name != "nt" else 0
         group_id = os.getgid() if os.name != "nt" else 0
+        port = list(ports.keys())[0]
         lines = [
             "About to launch jupyter.",
             bold("*** To connect on the command line as well, in a new terminal, run:"),
@@ -242,5 +284,6 @@ class Evaluator(object):
         ]
         logger.info("\n".join(lines))
         runner.exec_cmd(
-            "jupyter lab --ip=0.0.0.0 --no-browser --allow-root", user="root",
+            f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
+            user="root",
         )

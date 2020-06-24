@@ -2,18 +2,17 @@
     "_description": "Librispeech_dev_clean audio spectrogram classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "budget": {
-            "norm": [
-                "L2"
-            ]
-        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 32,
-            "eps": 0.2
+            "eps": 0.2,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
         },
-        "module": "art.attacks",
-        "name": "FastGradientMethod"
+        "module": "art.attacks.evasion",
+        "name": "FastGradientMethod",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 64,
@@ -39,9 +38,11 @@
         "name": "AudioSpectrogramClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.8.0-dev",
+        "docker_image": "twosixarmory/tf1:0.11.0-dev",
         "external_github_repo": "twosixlabs/armory-example@master",
         "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
         "use_gpu": false
     }
 }

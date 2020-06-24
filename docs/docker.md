@@ -22,7 +22,7 @@ and run evaluations on an image that has all additional requirements for their d
 ### Custom Images
 
 If you wish to utilize custom images for armory, these can be directly specified by
-either the `"docker_image"` field of the [config file](docs/configuration_files.md)
+either the `"docker_image"` field of the [config file](configuration_files.md)
 of `armory run <path/to/config.json>` or in the CLI of the `launch` and `exec` commands,
 as in `run launch <custom_image:tag>`.
 
@@ -32,7 +32,7 @@ exit while those commands are being executed.
 
 ### Interactive Use
 
-As detailed [here](docs/index.md), it is possible to run the armory docker container in an
+As detailed [here](index.md), it is possible to run the armory docker container in an
 interactive mode using the `--interactive` CLI argument on `launch` or `run` commands.
 We recommend this for debugging purposes, primarily.
 
@@ -60,7 +60,7 @@ the container.
 Once inside the container, you should be able to run or import armory as required:
 ```
 I have no name!@c10db6c70a81:/workspace$ armory version
-0.8.0-dev
+0.11.0-dev
 I have no name!@c10db6c70a81:/workspace$ python
 Python 3.7.6 (default, Jan  8 2020, 19:59:22) 
 [GCC 7.3.0] :: Anaconda, Inc. on linux
@@ -217,6 +217,24 @@ Armory has partial support for users wishing to run without docker. Currently, t
 docker, either set the `docker_image` field to be null in the scenario
 configuration json file, or call `armory run` with the --no-docker option.
 
+Armory can also download and use datasets without docker. To use the download command,
+simply add the `--no-docker` option, which will skip downloading the images and
+run it in host mode:
+```
+armory download <path/to/scenario-set1.json> --no-docker
+```
+
+After datasets have been downloaded, they can be used outside of docker by setting
+the pathing mode to host in python:
+```python
+from armory import paths
+paths.set_mode("host")
+from armory.data import datasets
+ds = datasets.mnist()
+x, y = next(ds)
+```
+
 ### Environment setup
-The listing of libraries needed for Armory when run on host is available at
-`host-requirements.txt`. 
+NOTE: The listing of libraries needed for Armory when run on host is available at
+`host-requirements.txt`. You will need to manually install the requirements in
+that file that match your framework (TF1, TF2, PyTorch).

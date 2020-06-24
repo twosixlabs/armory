@@ -4,7 +4,12 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.2
+            "batch_size": 1,
+            "eps": 0.2,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
         },
         "module": "art.attacks",
         "name": "FastGradientMethod"
@@ -39,9 +44,11 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.8.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.11.0-dev",
         "external_github_repo": null,
         "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
         "use_gpu": false
     }
 }

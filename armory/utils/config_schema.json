@@ -22,6 +22,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "use_label": {
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -203,11 +206,24 @@
                 "external_github_repo": {
                     "type": [
                         "string",
-                        "null"
+                        "null",
+                        "array"
                     ]
                 },
                 "gpus": {
                     "type": "string"
+                },
+                "output_dir": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "output_filename": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 },
                 "use_gpu": {
                     "type": "boolean"

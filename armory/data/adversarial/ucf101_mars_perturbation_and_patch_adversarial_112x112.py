@@ -154,7 +154,7 @@ _DL_URL = (
 class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedBuilder):
     """Ucf101 action recognition adversarial dataset"""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.1.0")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -171,11 +171,17 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
                             shape=(None, 112, 112, 3)
                         ),
                     },
-                    "label": tfds.features.ClassLabel(names=_LABELS),
+                    "labels": {
+                        "clean": tfds.features.ClassLabel(names=_LABELS),
+                        "adversarial_perturbation": tfds.features.ClassLabel(
+                            names=_LABELS
+                        ),
+                        "adversarial_patch": tfds.features.ClassLabel(names=_LABELS),
+                    },
                     "videoname": tfds.features.Text(),
                 }
             ),
-            supervised_keys=("videos", "label"),
+            supervised_keys=("videos", "labels"),
             homepage=_URL,
             citation=_CITATION,
         )
@@ -200,8 +206,9 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
         labels = tf.io.gfile.listdir(
             os.path.join(data_dir_path, root_dir, split_dirs[0])
         )
-        labels.sort()
-        for label in labels:
+        labels.sort(key=str.casefold)  # _LABELS is sorted case insensitive
+        assert labels == _LABELS
+        for i, label in enumerate(labels):
             videonames = tf.io.gfile.listdir(
                 os.path.join(data_dir_path, root_dir, split_dirs[0], label)
             )
@@ -249,7 +256,11 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
                         "adversarial_perturbation": adv_pert,
                         "adversarial_patch": adv_patch,
                     },
-                    "label": label,
+                    "labels": {
+                        "clean": label,
+                        "adversarial_perturbation": label,  # untargeted, label not used
+                        "adversarial_patch": labels[(i + 1) % len(_LABELS)],  # targeted
+                    },
                     "videoname": videoname,
                 }
                 yield videoname, example

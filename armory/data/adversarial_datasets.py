@@ -10,17 +10,21 @@ from armory.data.adversarial import (  # noqa: F401
     librispeech_adversarial as LA,
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
+    gtsrb_bh_poison_micronnet,
 )
 
 
 def imagenet_adversarial(
-    split_type: str = "clean",
+    split_type: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    clean_key: str = "clean",
+    adversarial_key: str = "adversarial",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -31,9 +35,15 @@ def imagenet_adversarial(
         Attack step size = 2
         Targeted = True
     """
+    if clean_key != "clean":
+        raise ValueError(f"{clean_key} != 'clean'")
+    if adversarial_key != "adversarial":
+        raise ValueError(f"{adversarial_key} != 'adversarial'")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
-        "imagenet_adversarial:1.0.0",
+        "imagenet_adversarial:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -42,6 +52,7 @@ def imagenet_adversarial(
         shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
+        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
 
 
@@ -54,11 +65,12 @@ def librispeech_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
-    adversarial_key: str = "adversarial",
+    adversarial_key: str = "adversarial_perturbation",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
-    Adversarial dataset based on Librispeech-dev-clean using Universal
-    Perturbation with PGD.
+    Adversarial dataset based on Librispeech-dev-clean including clean,
+    Universal Perturbation using PGD, and PGD.
 
     split_type - one of ("adversarial")
 
@@ -67,11 +79,14 @@ def librispeech_adversarial(
     """
     if clean_key != "clean":
         raise ValueError(f"{clean_key} != 'clean'")
-    if adversarial_key != "adversarial":
-        raise ValueError(f"{adversarial_key} != 'adversarial'")
+    adversarial_keys = ("adversarial_perturbation", "adversarial_univperturbation")
+    if adversarial_key not in adversarial_keys:
+        raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
-        "librispeech_adversarial:1.0.0",
+        "librispeech_adversarial:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -96,6 +111,7 @@ def resisc45_adversarial_224x224(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_univpatch",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     resisc45 Adversarial Dataset of size (224, 224, 3),
@@ -107,6 +123,8 @@ def resisc45_adversarial_224x224(
     adversarial_keys = ("adversarial_univpatch", "adversarial_univperturbation")
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
+    if targeted:
+        raise ValueError(f"{adversarial_key} is not a targeted attack")
 
     return datasets._generator_from_tfds(
         "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
@@ -134,6 +152,7 @@ def ucf101_adversarial_112x112(
     framework: str = "numpy",
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_perturbation",
+    targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
@@ -147,18 +166,65 @@ def ucf101_adversarial_112x112(
     adversarial_keys = ("adversarial_patch", "adversarial_perturbation")
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
+    if targeted:
+        if adversarial_key == "adversarial_perturbation":
+            raise ValueError("adversarial_perturbation is not a targeted attack")
+
+        def lambda_map(x, y):
+            return (
+                (x[clean_key], x[adversarial_key]),
+                (y[clean_key], y[adversarial_key]),
+            )
+
+    else:
+
+        def lambda_map(x, y):
+            return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.0.0",
+        "ucf101_mars_perturbation_and_patch_adversarial112x112:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("videos", "label"),
+        supervised_xy_keys=("videos", "labels"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        lambda_map=lambda_map,
+    )
+
+
+def gtsrb_poison(
+    split_type: str = "poison",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    clean_key: str = None,
+    adversarial_key: str = None,
+) -> datasets.ArmoryDataGenerator:
+    """
+    German traffic sign poison dataset of size (48, 48, 3),
+    including only poisoned data
+
+    DataGenerator returns batches of (x_poison, y)
+    """
+    return datasets._generator_from_tfds(
+        "gtsrb_bh_poison_micronnet:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "label"),
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        lambda_map=lambda x, y: (x, y),
     )

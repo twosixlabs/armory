@@ -18,6 +18,7 @@ import sys
 import coloredlogs
 import docker
 from docker.errors import ImageNotFound
+from jsonschema import ValidationError
 
 import armory
 from armory import paths
@@ -120,8 +121,11 @@ def _port(parser):
         type=int,
         action=PortNumber,
         metavar="",
-        default=8888,
-        help="Port number {0, ..., 65535} to connect to Jupyter on",
+        default=None,
+        help=(
+            "Port number {0, ..., 65535} to expose from docker container. If --jupyter "
+            "flag is set then this port will be used for the jupyter server."
+        ),
     )
 
 
@@ -149,6 +153,14 @@ def _docker_image(parser):
     )
 
 
+def _no_docker(parser):
+    parser.add_argument(
+        "--no-docker",
+        action="store_true",
+        help="Whether to use Docker or the local host environment",
+    )
+
+
 # Config
 
 
@@ -166,6 +178,13 @@ def _set_gpus(config, use_gpu, gpus):
         config["sysconfig"]["use_gpu"] = use_gpu
 
 
+def _set_outputs(config, output_dir, output_filename):
+    if output_dir:
+        config["sysconfig"]["output_dir"] = output_dir
+    if output_filename:
+        config["sysconfig"]["output_filename"] = output_filename
+
+
 # Commands
 
 
@@ -180,10 +199,19 @@ def run(command_args, prog, description):
     _port(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _no_docker(parser)
     parser.add_argument(
-        "--no-docker",
+        "--output-dir", type=str, help="Override of default output directory prefix",
+    )
+    parser.add_argument(
+        "--output-filename",
+        type=str,
+        help="Override of default output filename prefix",
+    )
+    parser.add_argument(
+        "--check",
         action="store_true",
-        help="Whether to use Docker or a local environment with armory run",
+        help="Whether to quickly check to see if scenario code runs",
     )
 
     args = parser.parse_args(command_args)
@@ -191,15 +219,26 @@ def run(command_args, prog, description):
 
     try:
         config = load_config(args.filepath)
+    except ValidationError as e:
+        logger.error(
+            f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
+        )
+        sys.exit(1)
     except json.decoder.JSONDecodeError:
         logger.exception(f"Could not decode {args.filepath} as a json file.")
         if not args.filepath.lower().endswith(".json"):
             logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.gpus)
+    _set_outputs(config, args.output_dir, args.output_filename)
 
     rig = Evaluator(config, no_docker=args.no_docker)
-    rig.run(interactive=args.interactive, jupyter=args.jupyter, host_port=args.port)
+    rig.run(
+        interactive=args.interactive,
+        jupyter=args.jupyter,
+        host_port=args.port,
+        check_run=args.check,
+    )
 
 
 def _pull_docker_images(docker_client=None):
@@ -230,7 +269,6 @@ def download(command_args, prog, description):
         action=DownloadConfig,
         help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
-
     parser.add_argument(
         metavar="<scenario>",
         dest="scenario",
@@ -239,9 +277,20 @@ def download(command_args, prog, description):
         help="scenario for which to download data, 'list' for available scenarios, or blank to download all scenarios",
         nargs="?",
     )
+    _no_docker(parser)
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
+
+    if args.no_docker:
+        logger.info("Downloading requested datasets and model weights in host mode...")
+        paths.set_mode("host")
+        from armory.data import datasets
+        from armory.data import model_weights
+
+        datasets.download_all(args.download_config, args.scenario)
+        model_weights.download_all(args.download_config, args.scenario)
+        return
 
     if not armory.is_dev():
         logger.info("Downloading all docker images....")
@@ -255,7 +304,7 @@ def download(command_args, prog, description):
         [
             "import logging",
             "import coloredlogs",
-            "coloredlogs.install(logging.INFO)",
+            f"coloredlogs.install({args.log_level})",
             "from armory.data import datasets",
             "from armory.data import model_weights",
             f'datasets.download_all("{args.download_config}", "{args.scenario}")',
