@@ -78,7 +78,6 @@ def load_model(model_config):
     model = model_fn(
         model_config["model_kwargs"], model_config["wrapper_kwargs"], weights_file
     )
-
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
