@@ -27,6 +27,7 @@ from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
 from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
+from armory.data.utils import maybe_download_weights_from_s3
 
 
 def load(sub_config):
@@ -68,9 +69,16 @@ def load_model(model_config):
     model_module = import_module(model_config["module"])
     model_fn = getattr(model_module, model_config["name"])
     weights_file = model_config.get("weights_file", None)
+    if isinstance(weights_file, str):
+        maybe_download_weights_from_s3(weights_file)
+    elif isinstance(weights_file, list):
+        for filename in weights_file:
+            maybe_download_weights_from_s3(weights_file)
+
     model = model_fn(
         model_config["model_kwargs"], model_config["wrapper_kwargs"], weights_file
     )
+
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
