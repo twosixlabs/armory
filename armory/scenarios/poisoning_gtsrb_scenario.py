@@ -5,9 +5,12 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
+import os
+import random
 
 import numpy as np
-from tensorflow import set_random_seed
+from tensorflow import set_random_seed, ConfigProto, Session
+from tensorflow.keras.backend import set_session
 from tensorflow.keras.utils import to_categorical
 from tqdm import tqdm
 
@@ -54,7 +57,8 @@ class GTSRB(Scenario):
         """
         Evaluate a config file for classification robustness against attack.
         """
-
+        if config["sysconfig"].get("use_gpu"):
+            os.environ["TF_CUDNN_DETERMINISM"] = "1"
         model_config = config["model"]
         # Scenario assumes preprocessing_fn makes images all same size
         classifier, preprocessing_fn = load_model(model_config)
@@ -67,9 +71,14 @@ class GTSRB(Scenario):
             "fit_batch_size", config["dataset"]["batch_size"]
         )
 
+        if not config["sysconfig"].get("use_gpu"):
+            conf = ConfigProto(intra_op_parallelism_threads=1)
+            set_session(Session(config=conf))
+
         # Set random seed due to large variance in attack and defense success
-        np.random.seed(config_adhoc["np_seed"])
-        set_random_seed(config_adhoc["tf_seed"])
+        np.random.seed(config_adhoc["split_id"])
+        set_random_seed(config_adhoc["split_id"])
+        random.seed(config_adhoc["split_id"])
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
         )
@@ -157,6 +166,7 @@ class GTSRB(Scenario):
 
         if use_poison_filtering_defense:
             defense_config = config["defense"]
+            detection_kwargs = config_adhoc.get("detection_kwargs", dict())
 
             defense_model_config = config_adhoc.get("defense_model", model_config)
             defense_train_epochs = config_adhoc.get(
@@ -179,7 +189,7 @@ class GTSRB(Scenario):
                 classifier_for_defense, x_train_all, y_train_all_categorical
             )
 
-            _, is_clean = defense.detect_poison(nb_clusters=2, nb_dims=43, reduce="PCA")
+            _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             logger.info(f"Total clean data points: {np.sum(is_clean)}")
 
