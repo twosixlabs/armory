@@ -110,15 +110,17 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
                     },
                     "labels": {
                         "clean": tfds.features.ClassLabel(names=_LABELS),
-                        "adversarial_perturbation": tfds.features.ClassLabel(
+                        "adversarial_univperturbation": tfds.features.ClassLabel(
                             names=_LABELS
                         ),
-                        "adversarial_patch": tfds.features.ClassLabel(names=_LABELS),
+                        "adversarial_univpatch": tfds.features.ClassLabel(
+                            names=_LABELS
+                        ),
                     },
                     "imagename": tfds.features.Text(),
                 }
             ),
-            supervised_keys=("images", "label"),
+            supervised_keys=("images", "labels"),
             homepage=_URL,
             citation=_CITATION,
         )

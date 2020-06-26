@@ -146,7 +146,7 @@ def resisc45_adversarial_224x224(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("images", "label"),
+        supervised_xy_keys=("images", "labels"),
         variable_length=False,
         cache_dataset=cache_dataset,
         framework=framework,
