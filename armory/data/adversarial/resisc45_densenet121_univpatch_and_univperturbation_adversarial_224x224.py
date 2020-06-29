@@ -89,7 +89,7 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
     tfds.core.GeneratorBasedBuilder
 ):
 
-    VERSION = tfds.core.Version("1.0.1")
+    VERSION = tfds.core.Version("1.0.2")
 
     def _info(self):
         return tfds.core.DatasetInfo(

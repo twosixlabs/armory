@@ -107,10 +107,10 @@ def resisc45_adversarial_224x224(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
+    cache_dataset: bool = False,
     framework: str = "numpy",
     clean_key: str = "clean",
-    adversarial_key: str = "adversarial_univpatch",
+    adversarial_key: str = "adversarial_univperturbation",
     targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
@@ -139,7 +139,7 @@ def resisc45_adversarial_224x224(
             return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
+        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.2",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
