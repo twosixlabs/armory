@@ -152,7 +152,7 @@ class GTSRB(Scenario):
                 poison_indices_config = config_adhoc.get("poisoned_indices_train")
                 if poison_indices_config:
                     logger.info(
-                        f"Reading poisoned indices from config. Disregarding fraction_poisoned and split_id"
+                        "Reading poisoned indices from config. Disregarding fraction_poisoned and split_id"
                     )
                     poisoned_indices = poison_indices_config
                 else:
