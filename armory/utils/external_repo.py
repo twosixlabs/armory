@@ -99,26 +99,24 @@ def download_and_extract_repo(
 
 
 def add_local_repo(local_repo_name: str) -> None:
-    os.path.join(paths.runtime_paths(), local_repo_name)
-
     local_repo_dir = os.path.join(paths.runtime_paths().tmp_dir, "local")
     if not os.path.isdir(local_repo_dir):
         raise ValueError(f"{local_repo_dir} is not a valid directory path")
     if local_repo_dir not in sys.path:
         sys.path.insert(0, local_repo_dir)
-        logger.info("Added {local_repo_dir} to PYTHONPATH")
+        logger.info(f"Added {local_repo_dir} to PYTHONPATH")
 
     local_repo_path = os.path.join(local_repo_dir, local_repo_name)
     if not os.path.isdir(local_repo_path):
         raise ValueError(f"{local_repo_path} is not a valid directory path")
     if local_repo_path not in sys.path:
         sys.path.insert(0, local_repo_path)
-        logger.info("Added {local_repo_path} to PYTHONPATH")
+        logger.info(f"Added {local_repo_path} to PYTHONPATH")
 
     local_repo_parent_path = os.path.dirname(local_repo_path)
     if local_repo_parent_path not in sys.path:
         sys.path.insert(0, local_repo_parent_path)
-        logger.info("Added {local_repo_parent_path} to PYTHONPATH")
+        logger.info(f"Added {local_repo_parent_path} to PYTHONPATH")
 
 
 def add_pythonpath(subpath: str, external_repo_dir: str = None) -> None:
