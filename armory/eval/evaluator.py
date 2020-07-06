@@ -114,6 +114,8 @@ class Evaluator(object):
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+        if self.config["sysconfig"].get("set_pythonhashseed"):
+            self.extra_env_vars["PYTHONHASHSEED"] = "0"
 
     def _cleanup(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")

@@ -59,6 +59,7 @@ class GTSRB(Scenario):
         """
         if config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
+        logger.info(f"PYTHONHASHSEED={os.environ['PYTHONHASHSEED']}")
         model_config = config["model"]
         # Scenario assumes preprocessing_fn makes images all same size
         classifier, preprocessing_fn = load_model(model_config)

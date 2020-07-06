@@ -250,6 +250,7 @@
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
+        "set_pythonhashseed": true,
         "use_gpu": false
     }
 }
