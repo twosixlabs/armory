@@ -96,3 +96,22 @@ def download_and_extract_repo(
             f"status_code is {response.status_code}\n"
             f"full response is {response.text}"
         )
+
+
+def add_pythonpath(subpath: str, external_repo_dir: str = None) -> None:
+    if external_repo_dir is None:
+        external_repo_dir = paths.HostPaths().external_repo_dir
+
+    subpath = subpath.rstrip("/")
+    # Add primary path and root path (for module import)
+    repo_base = os.path.join(external_repo_dir, subpath)
+    if not os.path.isdir(repo_base):
+        raise ValueError(f"{repo_base} is not a valid directory path")
+    if repo_base not in sys.path:
+        sys.path.insert(0, repo_base)
+
+    top_level = os.path.dirname(subpath)
+    if not os.path.isdir(top_level):
+        raise ValueError(f"{top_level} is not a valid directory path")
+    if top_level not in sys.path:
+        sys.path.insert(0, top_level)

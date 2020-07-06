@@ -210,6 +210,13 @@
                         "array"
                     ]
                 },
+                "external_github_repo_pythonpath": {
+                    "type": [
+                        "string",
+                        "null",
+                        "array"
+                    ]
+                },
                 "gpus": {
                     "type": "string"
                 },

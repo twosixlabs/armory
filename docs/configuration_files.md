@@ -60,7 +60,8 @@ All configuration files are verified against the jsonschema definition at run ti
 `sysconfig` [Object]
   {
     docker_image: [String or null] Docker image name and tag to run scenario in
-    external_github_repo: [String or null] External github repository to download and place on PYTHONPATH within container
+    external_github_repo: [String or null or Object] External github repository(s) to download and place on PYTHONPATH within container
+    external_github_repo_pythonpath: [String or null or Object] Relative path(s) in the repo directory to add to PYTHONPATH within container
     gpus: [String]: Which GPUs should the docker container have access to. "all" or comma sperated list (e.g. "1,3")
     output_dir: [Optional String]:  Add an optional output directory prefix to the default output directory name.
     output_filename: [Optional String]: Optionally change the output filename prefix (from default of scenario name)  

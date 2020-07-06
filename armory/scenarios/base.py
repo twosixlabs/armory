@@ -160,6 +160,13 @@ def _scenario_setup(config: dict):
             config["sysconfig"]["external_github_repo"],
             external_repo_dir=external_repo_dir,
         )
+    pythonpaths = config["sysconfig"].get("external_github_repo_pythonpath")
+    if isinstance(pythonpaths, str):
+        pythonpaths = [pythonpaths]
+    elif isinstance(pythonpaths, None):
+        pythonpaths = []
+    for pythonpath in pythonpaths:
+        external_repo.add_pythonpath(pythonpath, external_repo_dir=external_repo_dir)
 
 
 def run_config(config_json, from_file=False, check=False, mongo_host=None):
