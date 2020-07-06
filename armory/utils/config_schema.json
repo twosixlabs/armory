@@ -220,6 +220,13 @@
                 "gpus": {
                     "type": "string"
                 },
+                "local_repo_path": {
+                    "type": [
+                        "string",
+                        "null",
+                        "array"
+                    ]
+                },
                 "output_dir": {
                     "type": [
                         "string",
