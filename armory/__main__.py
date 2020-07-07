@@ -415,6 +415,7 @@ def configure(command_args, prog, description):
 
     config = {
         "dataset_dir": _get_path("dataset_dir", default_host_paths.dataset_dir),
+        "local_git_dir": _get_path("local_git_dir", default_host_paths.local_git_dir),
         "saved_model_dir": _get_path(
             "saved_model_dir", default_host_paths.saved_model_dir
         ),
@@ -426,6 +427,7 @@ def configure(command_args, prog, description):
         [
             "Resolved paths:",
             f"    dataset_dir:     {config['dataset_dir']}",
+            f"    local_git_dir:   {config['local_git_dir']}",
             f"    saved_model_dir: {config['saved_model_dir']}",
             f"    tmp_dir:         {config['tmp_dir']}",
             f"    output_dir:      {config['output_dir']}",

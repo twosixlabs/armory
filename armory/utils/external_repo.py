@@ -17,6 +17,23 @@ from armory.configuration import get_verify_ssl
 logger = logging.getLogger(__name__)
 
 
+def add_path(path, include_parent=False, index=1):
+    """
+    Add path to the PYTHONPATH, inserted after current working directory
+
+    If include_parent, parent is also included and is inserted first
+    """
+    path = path.rstrip("/")
+    if include_parent:
+        parent_path = os.path.dirname(path)
+        add_path(parent_path, include_parent=False, index=index)
+
+    if not os.path.isdir(path):
+        raise ValueError(f"{path} is not a valid directory path")
+    if path not in sys.path:
+        sys.path.insert(index, path)
+
+
 def download_and_extract_repos(
     external_repos: Union[str, List[str]], external_repo_dir: str = None
 ):
@@ -47,7 +64,7 @@ def download_and_extract_repo(
     verify_ssl = get_verify_ssl()
 
     if external_repo_dir is None:
-        external_repo_dir = paths.HostPaths().external_repo_dir
+        external_repo_dir = paths.runtime_paths().external_repo_dir
 
     os.makedirs(external_repo_dir, exist_ok=True)
     headers = {}
@@ -86,8 +103,7 @@ def download_and_extract_repo(
         os.rename(
             os.path.join(external_repo_dir, dl_directory_name), final_dir_name,
         )
-        sys.path.insert(0, external_repo_dir)
-        sys.path.insert(0, final_dir_name)
+        add_path(final_dir_name, include_parent=True)
 
     else:
         raise ConnectionError(
@@ -99,40 +115,14 @@ def download_and_extract_repo(
 
 
 def add_local_repo(local_repo_name: str) -> None:
-    local_repo_dir = os.path.join(paths.runtime_paths().tmp_dir, "local")
-    if not os.path.isdir(local_repo_dir):
-        raise ValueError(f"{local_repo_dir} is not a valid directory path")
-    if local_repo_dir not in sys.path:
-        sys.path.insert(0, local_repo_dir)
-        logger.info(f"Added {local_repo_dir} to PYTHONPATH")
-
-    local_repo_path = os.path.join(local_repo_dir, local_repo_name)
-    if not os.path.isdir(local_repo_path):
-        raise ValueError(f"{local_repo_path} is not a valid directory path")
-    if local_repo_path not in sys.path:
-        sys.path.insert(0, local_repo_path)
-        logger.info(f"Added {local_repo_path} to PYTHONPATH")
-
-    local_repo_parent_path = os.path.dirname(local_repo_path)
-    if local_repo_parent_path not in sys.path:
-        sys.path.insert(0, local_repo_parent_path)
-        logger.info(f"Added {local_repo_parent_path} to PYTHONPATH")
+    local_repo_dir = paths.runtime_paths().local_git_dir
+    path = os.path.join(local_repo_dir, local_repo_name)
+    add_path(path, include_parent=True)
 
 
 def add_pythonpath(subpath: str, external_repo_dir: str = None) -> None:
     if external_repo_dir is None:
-        external_repo_dir = paths.HostPaths().external_repo_dir
+        external_repo_dir = paths.runtime_paths().external_repo_dir
 
-    subpath = subpath.rstrip("/")
-    # Add primary path and root path (for module import)
-    repo_base = os.path.join(external_repo_dir, subpath)
-    if not os.path.isdir(repo_base):
-        raise ValueError(f"{repo_base} is not a valid directory path")
-    if repo_base not in sys.path:
-        sys.path.insert(0, repo_base)
-
-    top_level = os.path.dirname(repo_base)
-    if not os.path.isdir(top_level):
-        raise ValueError(f"{top_level} is not a valid directory path")
-    if top_level not in sys.path:
-        sys.path.insert(0, top_level)
+    path = os.path.join(external_repo_dir, subpath)
+    add_path(path, include_parent=True)
