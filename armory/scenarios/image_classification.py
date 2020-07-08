@@ -74,7 +74,7 @@ class ImageClassificationTask(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
-            num_batches=num_eval_batches
+            num_batches=num_eval_batches,
         )
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
@@ -98,7 +98,7 @@ class ImageClassificationTask(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
-                num_batches=num_eval_batches
+                num_batches=num_eval_batches,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -107,7 +107,7 @@ class ImageClassificationTask(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
-                num_batches=num_eval_batches
+                num_batches=num_eval_batches,
             )
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":

@@ -216,7 +216,7 @@ def run(command_args, prog, description):
     parser.add_argument(
         "--num-eval-batches",
         type=int,
-        help="Number of batches to use for evaluation of benign and adversarial examples"
+        help="Number of batches to use for evaluation of benign and adversarial examples",
     )
 
     args = parser.parse_args(command_args)
@@ -243,7 +243,7 @@ def run(command_args, prog, description):
         jupyter=args.jupyter,
         host_port=args.port,
         check_run=args.check,
-        num_eval_batches=args.num_eval_batches
+        num_eval_batches=args.num_eval_batches,
     )
 
 

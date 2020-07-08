@@ -44,7 +44,9 @@ class Scenario(abc.ABC):
     def __init__(self):
         self.check_run = False
 
-    def evaluate(self, config: dict, mongo_host: Optional[str], num_eval_batches: Optional[int]):
+    def evaluate(
+        self, config: dict, mongo_host: Optional[str], num_eval_batches: Optional[int]
+    ):
         """
         Evaluate a config for robustness against attack.
         """
@@ -162,7 +164,9 @@ def _scenario_setup(config: dict):
         )
 
 
-def run_config(config_json, from_file=False, check=False, mongo_host=None, num_eval_batches=None):
+def run_config(
+    config_json, from_file=False, check=False, mongo_host=None, num_eval_batches=None
+):
     if from_file:
         config = load_config(config_json)
     else:
@@ -218,7 +222,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num-eval-batches",
         type=int,
-        help="Number of batches to use for evaluation of benign and adversarial examples"
+        help="Number of batches to use for evaluation of benign and adversarial examples",
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
@@ -226,6 +230,10 @@ if __name__ == "__main__":
         paths.set_mode("host")
 
     if args.check and args.num_eval_batches:
-        logging.warning("--num_eval_batches will be overwritten and set to 1 since --check was passed")
+        logging.warning(
+            "--num_eval_batches will be overwritten and set to 1 since --check was passed"
+        )
 
-    run_config(args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches)
+    run_config(
+        args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches
+    )

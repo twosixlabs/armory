@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class Ucf101(Scenario):
-    def _evaluate(self, config: dict, num_eval_batches: Optional[int] ) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -94,7 +94,7 @@ class Ucf101(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
-            num_batches=num_eval_batches
+            num_batches=num_eval_batches,
         )
 
         logger.info("Running inference on benign examples...")
@@ -121,7 +121,7 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
-                num_batches=num_eval_batches
+                num_batches=num_eval_batches,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -131,7 +131,7 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
-                num_batches=num_eval_batches
+                num_batches=num_eval_batches,
             )
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
