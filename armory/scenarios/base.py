@@ -44,7 +44,7 @@ class Scenario(abc.ABC):
     def __init__(self):
         self.check_run = False
 
-    def evaluate(self, config: dict, mongo_host: Optional[str]):
+    def evaluate(self, config: dict, mongo_host: Optional[str], num_eval_batches: Optional[int]):
         """
         Evaluate a config for robustness against attack.
         """
@@ -56,7 +56,7 @@ class Scenario(abc.ABC):
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
 
-        results = self._evaluate(config)
+        results = self._evaluate(config, num_eval_batches)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(config, results)
@@ -71,7 +71,7 @@ class Scenario(abc.ABC):
         self.check_run = bool(check_run)
 
     @abc.abstractmethod
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -162,7 +162,7 @@ def _scenario_setup(config: dict):
         )
 
 
-def run_config(config_json, from_file=False, check=False, mongo_host=None):
+def run_config(config_json, from_file=False, check=False, mongo_host=None, num_eval_batches=None):
     if from_file:
         config = load_config(config_json)
     else:
@@ -176,7 +176,7 @@ def run_config(config_json, from_file=False, check=False, mongo_host=None):
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host)
+    scenario.evaluate(config, mongo_host, num_eval_batches)
 
 
 if __name__ == "__main__":
@@ -215,9 +215,17 @@ if __name__ == "__main__":
         action="store_true",
         help="Whether to quickly check to see if scenario code runs",
     )
+    parser.add_argument(
+        "--num-eval-batches",
+        type=int,
+        help="Number of batches to use for evaluation of benign and adversarial examples"
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     if args.no_docker:
         paths.set_mode("host")
 
-    run_config(args.config, args.from_file, args.check, args.mongo_host)
+    if args.check and args.num_eval_batches:
+        logging.warning("--num_eval_batches will be overwritten and set to 1 since --check was passed")
+
+    run_config(args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches)
