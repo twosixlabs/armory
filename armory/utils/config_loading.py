@@ -104,7 +104,7 @@ def load_attack(attack_config, classifier):
     if not isinstance(attack, Attack):
         logger.warning(
             f"attack {attack} is not an instance of {Attack}."
-            " Ensure that it implements ART `__init__` and `generate` APIs."
+            " Ensure that it implements ART `generate` API."
         )
     return attack
 
