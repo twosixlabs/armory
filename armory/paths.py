@@ -41,6 +41,7 @@ class DockerPaths:
         self.cwd = "/workspace"
         armory_dir = "/armory"
         self.dataset_dir = armory_dir + "/datasets"
+        self.local_git_dir = armory_dir + "/git"
         self.saved_model_dir = armory_dir + "/saved_models"
         self.tmp_dir = armory_dir + "/tmp"
         self.output_dir = armory_dir + "/outputs"
@@ -54,6 +55,7 @@ class HostDefaultPaths:
         self.armory_dir = os.path.join(self.user_dir, ".armory")
         self.armory_config = os.path.join(self.armory_dir, "config.json")
         self.dataset_dir = os.path.join(self.armory_dir, "datasets")
+        self.local_git_dir = os.path.join(self.armory_dir, "git")
         self.saved_model_dir = os.path.join(self.armory_dir, "saved_models")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
@@ -68,6 +70,7 @@ class HostPaths(HostDefaultPaths):
             config = configuration.load_global_config(self.armory_config)
             for k in (
                 "dataset_dir",
+                "local_git_dir",
                 "saved_model_dir",
                 "output_dir",
                 "tmp_dir",
@@ -78,6 +81,7 @@ class HostPaths(HostDefaultPaths):
             logger.warning("Please run `armory configure`")
 
         os.makedirs(self.dataset_dir, exist_ok=True)
+        os.makedirs(self.local_git_dir, exist_ok=True)
         os.makedirs(self.saved_model_dir, exist_ok=True)
         os.makedirs(self.tmp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
