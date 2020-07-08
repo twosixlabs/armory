@@ -102,7 +102,10 @@ def load_attack(attack_config, classifier):
     attack_fn = getattr(attack_module, attack_config["name"])
     attack = attack_fn(classifier, **attack_config["kwargs"])
     if not isinstance(attack, Attack):
-        raise TypeError(f"attack {attack} is not an instance of {Attack}")
+        logger.warning(
+            f"attack {attack} is not an instance of {Attack}."
+            " Ensure that it implements ART `generate` API."
+        )
     return attack
 
 
