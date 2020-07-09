@@ -123,6 +123,7 @@ class Scenario(abc.ABC):
         client = pymongo.MongoClient(mongo_host, MONGO_PORT)
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
+        # strip user/pass off of mongodb url for logging
         tail_of_host = re.findall(r"@([^@]*$)", mongo_host)
         if len(tail_of_host) > 0:
             mongo_ip = tail_of_host[0]
