@@ -1,4 +1,4 @@
-"""
+u"""
 TensorFlow Dataset for resisc45 attacked by Adversarial Patch with adv/clean splits
 """
 from __future__ import absolute_import
@@ -82,13 +82,14 @@ _LABELS = [
     "thermal_power_station",
     "wetland",
 ]
+_TARGET_CLASS = 21
 
 
 class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
     tfds.core.GeneratorBasedBuilder
 ):
 
-    VERSION = tfds.core.Version("1.0.1")
+    VERSION = tfds.core.Version("1.0.2")
 
     def _info(self):
         return tfds.core.DatasetInfo(
@@ -107,11 +108,19 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
                             shape=[224, 224, 3], dtype=tf.uint8, encoding_format="png"
                         ),
                     },
-                    "label": tfds.features.ClassLabel(names=_LABELS),
+                    "labels": {
+                        "clean": tfds.features.ClassLabel(names=_LABELS),
+                        "adversarial_univperturbation": tfds.features.ClassLabel(
+                            names=_LABELS
+                        ),
+                        "adversarial_univpatch": tfds.features.ClassLabel(
+                            names=_LABELS
+                        ),
+                    },
                     "imagename": tfds.features.Text(),
                 }
             ),
-            supervised_keys=("images", "label"),
+            supervised_keys=("images", "labels"),
             homepage=_URL,
             citation=_CITATION,
         )
@@ -160,7 +169,11 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
                         "adversarial_univpatch": adv_univpatch_img_path,
                         "adversarial_univperturbation": adv_univperturbation_img_path,
                     },
-                    "label": label,
+                    "labels": {
+                        "clean": label,
+                        "adversarial_univperturbation": label,  # untargeted, label not used
+                        "adversarial_univpatch": labels[_TARGET_CLASS],  # targeted
+                    },
                     "imagename": imagename,
                 }
                 yield imagename, example
