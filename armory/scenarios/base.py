@@ -123,7 +123,11 @@ class Scenario(abc.ABC):
         client = pymongo.MongoClient(mongo_host, MONGO_PORT)
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
-        mongo_ip = re.findall(r"@([^@]*$)", mongo_host)[0]
+        tail_of_host = re.findall(r"@([^@]*$)", mongo_host)
+        if len(tail_of_host) > 0:
+            mongo_ip = tail_of_host[0]
+        else:
+            mongo_ip = mongo_host
         logger.info(
             f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}"
         )
