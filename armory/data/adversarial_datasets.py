@@ -110,7 +110,7 @@ def resisc45_adversarial_224x224(
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
-    adversarial_key: str = "adversarial_univpatch",
+    adversarial_key: str = "adversarial_univperturbation",
     targeted: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
@@ -124,21 +124,33 @@ def resisc45_adversarial_224x224(
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
     if targeted:
-        raise ValueError(f"{adversarial_key} is not a targeted attack")
+        if adversarial_key == "adversarial_univperturbation":
+            raise ValueError("adversarial_univperturbation is not a targeted attack")
+
+        def lambda_map(x, y):
+            return (
+                (x[clean_key], x[adversarial_key]),
+                (y[clean_key], y[adversarial_key]),
+            )
+
+    else:
+
+        def lambda_map(x, y):
+            return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
+        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.2",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("images", "label"),
+        supervised_xy_keys=("images", "labels"),
         variable_length=False,
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        lambda_map=lambda_map,
     )
 
 
