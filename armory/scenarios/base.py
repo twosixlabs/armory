@@ -56,6 +56,9 @@ class Scenario(abc.ABC):
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
+            # For poisoning scenario
+            if config.get("adhoc").get("train_epochs"):
+                config["adhoc"]["train_epochs"] = 1
 
         results = self._evaluate(config)
         if results is None:
