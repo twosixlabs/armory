@@ -124,7 +124,9 @@ class Scenario(abc.ABC):
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
         mongo_ip = re.findall(r"@([^@]*$)", mongo_host)[0]
-        logger.info(f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}")
+        logger.info(
+            f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}"
+        )
         try:
             col.insert_one(output)
         except pymongo.errors.PyMongoError as e:
