@@ -120,10 +120,10 @@ class Scenario(abc.ABC):
         """
         Send results to a Mongo database at mongo_host
         """
-        client=pymongo.MongoClient(mongo_host,MONGO_PORT)
+        client = pymongo.MongoClient(mongo_host,MONGO_PORT)
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
-        mongo_ip=re.findall(r"@([^@]*$)", mongo_host)[0]
+        mongo_ip = re.findall(r"@([^@]*$)", mongo_host)[0]
         logger.info(f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}")
         try:
             col.insert_one(output)
