@@ -24,6 +24,7 @@ from typing import Optional
 import coloredlogs
 import pymongo
 import pymongo.errors
+import re
 
 import armory
 from armory import paths
@@ -122,8 +123,14 @@ class Scenario(abc.ABC):
         client = pymongo.MongoClient(mongo_host, MONGO_PORT)
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
+        # strip user/pass off of mongodb url for logging
+        tail_of_host = re.findall(r"@([^@]*$)", mongo_host)
+        if len(tail_of_host) > 0:
+            mongo_ip = tail_of_host[0]
+        else:
+            mongo_ip = mongo_host
         logger.info(
-            f"Sending evaluation results to MongoDB instance {mongo_host}:{MONGO_PORT}"
+            f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}"
         )
         try:
             col.insert_one(output)
@@ -222,7 +229,7 @@ if __name__ == "__main__":
         "--mongo",
         dest="mongo_host",
         default=None,
-        help="Send scenario results to a MongoDB instance at the given host (eg 'localhost', '1.2.3.4', 'mongodb://USER:PASS@5.6.7.8')",
+        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://USER:PASS@5.6.7.8')",
     )
     parser.add_argument(
         "--check",
