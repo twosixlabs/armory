@@ -5,6 +5,7 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
+from typing import Optional
 
 import numpy as np
 from tensorflow import set_random_seed
@@ -50,10 +51,15 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
 
 
 class GTSRB(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate a config file for classification robustness against attack.
+
+        Note: num_eval_batches shouldn't be set for poisoning scenario and will raise an
+        error if it is
         """
+        if num_eval_batches:
+            raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
 
         model_config = config["model"]
         # Scenario assumes preprocessing_fn makes images all same size
