@@ -57,7 +57,7 @@ class Scenario(abc.ABC):
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
             # For poisoning scenario
-            if config.get("adhoc").get("train_epochs"):
+            if config.get("adhoc") and config.get("adhoc").get("train_epochs"):
                 config["adhoc"]["train_epochs"] = 1
 
         results = self._evaluate(config)
