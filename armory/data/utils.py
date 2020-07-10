@@ -24,6 +24,13 @@ from armory.configuration import get_verify_ssl
 
 logger = logging.getLogger(__name__)
 
+CHECKSUMS_DIRS = []
+
+
+def add_checksums_dir(dir):
+    global CHECKSUMS_DIRS
+    CHECKSUMS_DIRS.append(dir)
+
 
 def maybe_download_weights_from_s3(weights_file: str) -> str:
     """
@@ -195,7 +202,16 @@ def move_merge(source, dest):
 
 
 def download_verify_dataset_cache(dataset_dir, checksum_file, name):
-    with open(checksum_file, "r") as fh:
+    found_checksum_flag = False
+    for checksum_dir in CHECKSUMS_DIRS:
+        checksum_file_full_path = os.path.join(checksum_dir, checksum_file)
+        if os.path.exists(checksum_file_full_path):
+            found_checksum_flag = True
+            break
+    if not found_checksum_flag:
+        raise FileNotFoundError(f"Could not locate checksum file {checksum_file}")
+
+    with open(checksum_file_full_path, "r") as fh:
         s3_bucket_name, s3_key, file_length, hash = fh.readline().strip().split()
 
     # download
