@@ -231,6 +231,8 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
             os.remove(tar_filepath)
 
     if not os.path.exists(tar_filepath):
+        if s3_bucket_name == "local":
+            raise FileNotFoundError(f"Expected to find {s3_key} locally in cache!")
         logger.info(f"Downloading dataset: {name}...")
         try:
             s3_url_region = "us-east-2"
