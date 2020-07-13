@@ -298,6 +298,7 @@ def mnist(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -312,6 +313,7 @@ def mnist(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -323,6 +325,7 @@ def cifar10(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -337,6 +340,7 @@ def cifar10(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -348,6 +352,7 @@ def digit(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -363,6 +368,7 @@ def digit(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -374,6 +380,7 @@ def imagenette(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -389,6 +396,7 @@ def imagenette(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -400,7 +408,7 @@ def german_traffic_sign(
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
-    shuffle_files=True,
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -427,6 +435,7 @@ def librispeech_dev_clean(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -453,6 +462,7 @@ def librispeech_dev_clean(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -464,6 +474,7 @@ def resisc45(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -489,6 +500,7 @@ def resisc45(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -500,6 +512,7 @@ def ucf101(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
@@ -517,6 +530,7 @@ def ucf101(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
