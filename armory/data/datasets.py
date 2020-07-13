@@ -28,6 +28,7 @@ from art.data_generators import DataGenerator
 from armory.data.utils import (
     download_verify_dataset_cache,
     _read_validate_scenario_config,
+    add_checksums_dir,
 )
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
 CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_s3_checksums")
+add_checksums_dir(CACHED_CHECKSUMS_DIR)
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -538,9 +540,7 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
 
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
-            dataset_dir=dataset_dir,
-            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
-            name=name,
+            dataset_dir=dataset_dir, checksum_file=name + ".txt", name=name,
         )
 
 
