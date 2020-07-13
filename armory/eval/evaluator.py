@@ -136,6 +136,7 @@ class Evaluator(object):
         host_port=None,
         command=None,
         check_run=False,
+        num_eval_batches=None,
     ) -> None:
         if self.no_docker:
             if jupyter or interactive or command:
@@ -144,7 +145,9 @@ class Evaluator(object):
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
             try:
-                self._run_config(runner, check_run=check_run)
+                self._run_config(
+                    runner, check_run=check_run, num_eval_batches=num_eval_batches
+                )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -178,7 +181,9 @@ class Evaluator(object):
                 elif command:
                     self._run_command(runner, command)
                 else:
-                    self._run_config(runner, check_run=check_run)
+                    self._run_config(
+                        runner, check_run=check_run, num_eval_batches=num_eval_batches
+                    )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -208,7 +213,9 @@ class Evaluator(object):
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
 
-    def _run_config(self, runner: ArmoryInstance, check_run=False) -> None:
+    def _run_config(
+        self, runner: ArmoryInstance, check_run=False, num_eval_batches=None
+    ) -> None:
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
@@ -219,6 +226,8 @@ class Evaluator(object):
             options += " --check"
         if logger.level == logging.DEBUG:
             options += " --debug"
+        if num_eval_batches:
+            options += f" --num-eval-batches {num_eval_batches}"
 
         runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{options}")
 

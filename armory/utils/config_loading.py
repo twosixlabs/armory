@@ -26,7 +26,7 @@ from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
-from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
+from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 
 
 def load(sub_config):
@@ -42,9 +42,12 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
-def load_dataset(dataset_config, *args, **kwargs):
+def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     """
     Loads a dataset from configuration file
+
+    If num_batches is None, this function will return a generator that iterates
+    over the entire dataset.
     """
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
@@ -54,7 +57,9 @@ def load_dataset(dataset_config, *args, **kwargs):
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if dataset_config.get("check_run"):
-        return CheckGenerator(dataset)
+        return EvalGenerator(dataset, num_eval_batches=1)
+    if num_batches:
+        return EvalGenerator(dataset, num_eval_batches=num_batches)
     return dataset
 
 
@@ -109,7 +114,7 @@ def load_attack(attack_config, classifier):
     return attack
 
 
-def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
+def load_adversarial_dataset(config, preprocessing_fn=None, num_batches=None, **kwargs):
     if config.get("type") != "preloaded":
         raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
     dataset_module = import_module(config["module"])
@@ -122,7 +127,9 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if config.get("check_run"):
-        return CheckGenerator(dataset)
+        return EvalGenerator(dataset, num_eval_batches=1)
+    if num_batches:
+        return EvalGenerator(dataset, num_eval_batches=num_batches)
     return dataset
 
 

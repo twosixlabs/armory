@@ -149,24 +149,25 @@ class ArmoryDataGenerator(DataGenerator):
         return self.batches_per_epoch * self.epochs
 
 
-class CheckGenerator(DataGenerator):
+class EvalGenerator(DataGenerator):
     """
-    Wraps a single batch in a DataGenerator to quickly run through a scenario
+    Wraps a specified number of batches in a DataGenerator to allow for evaluating on
+    part of a dataset when running through a scenario
     """
 
-    def __init__(self, armory_generator):
+    def __init__(self, armory_generator, num_eval_batches):
         if not isinstance(armory_generator, ArmoryDataGenerator):
             raise ValueError(f"{armory_generator} is not of type ArmoryDataGenerator")
         super().__init__(armory_generator.batch_size, armory_generator.batch_size)
         self.armory_generator = armory_generator
-        self.batches_per_epoch = 1
-        self.used = False
+        self.num_eval_batches = num_eval_batches
+        self.batches_processed = 0
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
-        if self.used:
+        if self.batches_processed == self.num_eval_batches:
             raise StopIteration()
         batch = self.armory_generator.get_batch()
-        self.used = True
+        self.batches_processed += 1
         return batch
 
     def __iter__(self):
@@ -176,7 +177,7 @@ class CheckGenerator(DataGenerator):
         return self.get_batch()
 
     def __len__(self):
-        return self.batches_per_epoch
+        return self.num_eval_batches
 
 
 def _generator_from_tfds(

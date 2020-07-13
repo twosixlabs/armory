@@ -3,6 +3,7 @@ General audio classification scenario
 """
 
 import logging
+from typing import Optional
 
 from tqdm import tqdm
 
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioClassificationTask(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -83,6 +84,7 @@ class AudioClassificationTask(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=predict_preprocessing_fn,
+            num_batches=num_eval_batches,
             shuffle_files=False,
         )
         logger.info("Running inference on benign examples...")
@@ -106,6 +108,7 @@ class AudioClassificationTask(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=predict_preprocessing_fn,
+                num_batches=num_eval_batches,
                 shuffle_files=False,
             )
         else:
@@ -115,6 +118,7 @@ class AudioClassificationTask(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=predict_preprocessing_fn,
+                num_batches=num_eval_batches,
                 shuffle_files=False,
             )
         for x, y in tqdm(test_data, desc="Attack"):
