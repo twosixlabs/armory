@@ -17,7 +17,14 @@ def get_verify_ssl():
 def validate_config(config: dict) -> None:
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
-    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir", "verify_ssl")
+    keys = (
+        "dataset_dir",
+        "local_git_dir",
+        "saved_model_dir",
+        "output_dir",
+        "tmp_dir",
+        "verify_ssl",
+    )
     for key in keys:
         if key not in config:
             raise KeyError(
@@ -25,7 +32,8 @@ def validate_config(config: dict) -> None:
             )
     for key, value in config.items():
         if key not in keys:
-            raise KeyError(f"config has additional key {key}")
+            # warning instead of error to make forward compatible
+            logger.warning(f"config has additional key {key}")
 
         if key in ("verify_ssl") and not isinstance(value, bool):
             raise ValueError(f"{key} value {value} is not a bool")

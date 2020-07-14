@@ -24,6 +24,7 @@ from typing import Optional
 import coloredlogs
 import pymongo
 import pymongo.errors
+import re
 
 import armory
 from armory import paths
@@ -44,7 +45,9 @@ class Scenario(abc.ABC):
     def __init__(self):
         self.check_run = False
 
-    def evaluate(self, config: dict, mongo_host: Optional[str]):
+    def evaluate(
+        self, config: dict, mongo_host: Optional[str], num_eval_batches: Optional[int]
+    ):
         """
         Evaluate a config for robustness against attack.
         """
@@ -55,8 +58,11 @@ class Scenario(abc.ABC):
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
+            # For poisoning scenario
+            if config.get("adhoc") and config.get("adhoc").get("train_epochs"):
+                config["adhoc"]["train_epochs"] = 1
 
-        results = self._evaluate(config)
+        results = self._evaluate(config, num_eval_batches)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(config, results)
@@ -71,7 +77,7 @@ class Scenario(abc.ABC):
         self.check_run = bool(check_run)
 
     @abc.abstractmethod
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -122,8 +128,14 @@ class Scenario(abc.ABC):
         client = pymongo.MongoClient(mongo_host, MONGO_PORT)
         db = client[MONGO_DATABASE]
         col = db[MONGO_COLLECTION]
+        # strip user/pass off of mongodb url for logging
+        tail_of_host = re.findall(r"@([^@]*$)", mongo_host)
+        if len(tail_of_host) > 0:
+            mongo_ip = tail_of_host[0]
+        else:
+            mongo_ip = mongo_host
         logger.info(
-            f"Sending evaluation results to MongoDB instance {mongo_host}:{MONGO_PORT}"
+            f"Sending evaluation results to MongoDB instance {mongo_ip}:{MONGO_PORT}"
         )
         try:
             col.insert_one(output)
@@ -160,9 +172,25 @@ def _scenario_setup(config: dict):
             config["sysconfig"]["external_github_repo"],
             external_repo_dir=external_repo_dir,
         )
+    pythonpaths = config["sysconfig"].get("external_github_repo_pythonpath")
+    if isinstance(pythonpaths, str):
+        pythonpaths = [pythonpaths]
+    elif pythonpaths is None:
+        pythonpaths = []
+    for pythonpath in pythonpaths:
+        external_repo.add_pythonpath(pythonpath, external_repo_dir=external_repo_dir)
+    local_paths = config["sysconfig"].get("local_repo_path")
+    if isinstance(local_paths, str):
+        local_paths = [local_paths]
+    elif local_paths is None:
+        local_paths = []
+    for local_path in local_paths:
+        external_repo.add_local_repo(local_path)
 
 
-def run_config(config_json, from_file=False, check=False, mongo_host=None):
+def run_config(
+    config_json, from_file=False, check=False, mongo_host=None, num_eval_batches=None
+):
     if from_file:
         config = load_config(config_json)
     else:
@@ -176,7 +204,7 @@ def run_config(config_json, from_file=False, check=False, mongo_host=None):
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host)
+    scenario.evaluate(config, mongo_host, num_eval_batches)
 
 
 if __name__ == "__main__":
@@ -208,16 +236,28 @@ if __name__ == "__main__":
         "--mongo",
         dest="mongo_host",
         default=None,
-        help="Send scenario results to a MongoDB instance at the given host (eg 'localhost', '1.2.3.4', 'mongodb://USER:PASS@5.6.7.8')",
+        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://USER:PASS@5.6.7.8')",
     )
     parser.add_argument(
         "--check",
         action="store_true",
         help="Whether to quickly check to see if scenario code runs",
     )
+    parser.add_argument(
+        "--num-eval-batches",
+        type=int,
+        help="Number of batches to use for evaluation of benign and adversarial examples",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     if args.no_docker:
         paths.set_mode("host")
 
-    run_config(args.config, args.from_file, args.check, args.mongo_host)
+    if args.check and args.num_eval_batches:
+        logging.warning(
+            "--num_eval_batches will be overwritten and set to 1 since --check was passed"
+        )
+
+    run_config(
+        args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches
+    )

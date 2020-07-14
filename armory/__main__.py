@@ -213,6 +213,11 @@ def run(command_args, prog, description):
         action="store_true",
         help="Whether to quickly check to see if scenario code runs",
     )
+    parser.add_argument(
+        "--num-eval-batches",
+        type=int,
+        help="Number of batches to use for evaluation of benign and adversarial examples",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -238,6 +243,7 @@ def run(command_args, prog, description):
         jupyter=args.jupyter,
         host_port=args.port,
         check_run=args.check,
+        num_eval_batches=args.num_eval_batches,
     )
 
 
@@ -415,6 +421,7 @@ def configure(command_args, prog, description):
 
     config = {
         "dataset_dir": _get_path("dataset_dir", default_host_paths.dataset_dir),
+        "local_git_dir": _get_path("local_git_dir", default_host_paths.local_git_dir),
         "saved_model_dir": _get_path(
             "saved_model_dir", default_host_paths.saved_model_dir
         ),
@@ -426,6 +433,7 @@ def configure(command_args, prog, description):
         [
             "Resolved paths:",
             f"    dataset_dir:     {config['dataset_dir']}",
+            f"    local_git_dir:   {config['local_git_dir']}",
             f"    saved_model_dir: {config['saved_model_dir']}",
             f"    tmp_dir:         {config['tmp_dir']}",
             f"    output_dir:      {config['output_dir']}",

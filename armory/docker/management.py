@@ -43,6 +43,10 @@ class ArmoryInstance(object):
                     "bind": docker_paths.dataset_dir,
                     "mode": "rw",
                 },
+                host_paths.local_git_dir: {
+                    "bind": docker_paths.local_git_dir,
+                    "mode": "rw",
+                },
                 host_paths.saved_model_dir: {
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",

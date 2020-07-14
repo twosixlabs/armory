@@ -25,6 +25,7 @@ def imagenet_adversarial(
     clean_key: str = "clean",
     adversarial_key: str = "adversarial",
     targeted: bool = False,
+    shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -49,7 +50,7 @@ def imagenet_adversarial(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        shuffle_files=False,
+        shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
@@ -67,6 +68,7 @@ def librispeech_adversarial(
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_perturbation",
     targeted: bool = False,
+    shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     Adversarial dataset based on Librispeech-dev-clean including clean,
@@ -95,6 +97,7 @@ def librispeech_adversarial(
         as_supervised=False,
         supervised_xy_keys=("audio", "label"),
         variable_length=bool(batch_size > 1),
+        shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
@@ -110,8 +113,9 @@ def resisc45_adversarial_224x224(
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
-    adversarial_key: str = "adversarial_univpatch",
+    adversarial_key: str = "adversarial_univperturbation",
     targeted: bool = False,
+    shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     resisc45 Adversarial Dataset of size (224, 224, 3),
@@ -124,21 +128,34 @@ def resisc45_adversarial_224x224(
     if adversarial_key not in adversarial_keys:
         raise ValueError(f"{adversarial_key} not in {adversarial_keys}")
     if targeted:
-        raise ValueError(f"{adversarial_key} is not a targeted attack")
+        if adversarial_key == "adversarial_univperturbation":
+            raise ValueError("adversarial_univperturbation is not a targeted attack")
+
+        def lambda_map(x, y):
+            return (
+                (x[clean_key], x[adversarial_key]),
+                (y[clean_key], y[adversarial_key]),
+            )
+
+    else:
+
+        def lambda_map(x, y):
+            return (x[clean_key], x[adversarial_key]), y[clean_key]
 
     return datasets._generator_from_tfds(
-        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.1",
+        "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.2",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=("images", "label"),
+        supervised_xy_keys=("images", "labels"),
         variable_length=False,
+        shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        lambda_map=lambda_map,
     )
 
 
@@ -153,6 +170,7 @@ def ucf101_adversarial_112x112(
     clean_key: str = "clean",
     adversarial_key: str = "adversarial_perturbation",
     targeted: bool = False,
+    shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
@@ -191,6 +209,7 @@ def ucf101_adversarial_112x112(
         as_supervised=False,
         supervised_xy_keys=("videos", "labels"),
         variable_length=bool(batch_size > 1),
+        shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
@@ -207,6 +226,7 @@ def gtsrb_poison(
     framework: str = "numpy",
     clean_key: str = None,
     adversarial_key: str = None,
+    shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
     """
     German traffic sign poison dataset of size (48, 48, 3),
@@ -224,6 +244,7 @@ def gtsrb_poison(
         as_supervised=False,
         supervised_xy_keys=("image", "label"),
         variable_length=bool(batch_size > 1),
+        shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: (x, y),

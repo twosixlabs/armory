@@ -5,6 +5,7 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
+from typing import Optional
 
 import numpy as np
 from tqdm import tqdm
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class Ucf101(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -53,6 +54,7 @@ class Ucf101(Scenario):
                 epochs=train_epochs,
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
+                shuffle_files=True,
             )
 
             if defense_type == "Trainer":
@@ -93,6 +95,8 @@ class Ucf101(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            num_batches=num_eval_batches,
+            shuffle_files=False,
         )
 
         logger.info("Running inference on benign examples...")
@@ -119,6 +123,8 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
         else:
             attack = load_attack(attack_config, classifier)
@@ -128,6 +134,8 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
