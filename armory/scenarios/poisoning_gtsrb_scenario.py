@@ -150,16 +150,9 @@ class GTSRB(Scenario):
                         f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
                     )
                 src_indices = np.where(y_train_all == src_class)[0]
-                poison_indices_config = config_adhoc.get("poisoned_indices_train")
-                if poison_indices_config:
-                    logger.info(
-                        "Reading poisoned indices from config. Disregarding fraction_poisoned and split_id"
-                    )
-                    poisoned_indices = poison_indices_config
-                else:
-                    poisoned_indices = np.sort(
-                        np.random.choice(src_indices, size=poison_count, replace=False)
-                    )
+                poisoned_indices = np.sort(
+                    np.random.choice(src_indices, size=poison_count, replace=False)
+                )
                 x_train_all, y_train_all = poison_dataset(
                     x_train_all,
                     y_train_all,
