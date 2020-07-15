@@ -161,6 +161,12 @@ def _no_docker(parser):
     )
 
 
+def _root(parser):
+    parser.add_argument(
+        "--root", action="store_true", help="Whether to run docker as root",
+    )
+
+
 # Config
 
 
@@ -200,6 +206,7 @@ def run(command_args, prog, description):
     _use_gpu(parser)
     _gpus(parser)
     _no_docker(parser)
+    _root(parser)
     parser.add_argument(
         "--output-dir", type=str, help="Override of default output directory prefix",
     )
@@ -237,7 +244,7 @@ def run(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
 
-    rig = Evaluator(config, no_docker=args.no_docker)
+    rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -472,6 +479,7 @@ def launch(command_args, prog, description):
     _port(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _root(parser)
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -479,7 +487,7 @@ def launch(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.gpus)
 
-    rig = Evaluator(config)
+    rig = Evaluator(config, root=args.root)
     rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -496,6 +504,7 @@ def exec(command_args, prog, description):
     _debug(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _root(parser)
 
     try:
         index = command_args.index(delimiter)
@@ -518,7 +527,7 @@ def exec(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.gpus)
 
-    rig = Evaluator(config)
+    rig = Evaluator(config, root=args.root)
     rig.run(command=command)
 
 

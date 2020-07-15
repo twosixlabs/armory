@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class Evaluator(object):
     def __init__(
-        self, config: dict, no_docker: bool = False,
+        self, config: dict, no_docker: bool = False, root: bool = False,
     ):
         if not isinstance(config, dict):
             raise ValueError(f"config {config} must be a dict")
@@ -54,12 +54,15 @@ class Evaluator(object):
         image_name = self.config["sysconfig"].get("docker_image")
         kwargs["image_name"] = image_name
         self.no_docker = not image_name or no_docker
+        self.root = root
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
         if self.no_docker:
+            if self.root:
+                raise ValueError("running with --root is incompatible with --no-docker")
             self.manager = HostManagementInstance()
             return
 
@@ -143,7 +146,9 @@ class Evaluator(object):
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
+            runner = self.manager.start_armory_instance(
+                envs=self.extra_env_vars, root=self.root
+            )
             try:
                 self._run_config(
                     runner, check_run=check_run, num_eval_batches=num_eval_batches
@@ -171,7 +176,7 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports
+                envs=self.extra_env_vars, ports=ports, root=self.root,
             )
             try:
                 if jupyter:
@@ -229,15 +234,30 @@ class Evaluator(object):
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
 
-        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{options}")
+        runner.exec_cmd(
+            f"python -m armory.scenarios.base {b64_config}{options}", user=self.get_id()
+        )
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
-        runner.exec_cmd(command)
+        runner.exec_cmd(command, user=self.get_id())
+
+    def get_id(self):
+        """
+        Return uid, gid
+        """
+        # Windows docker does not require synchronizing file and
+        # directoriy permissions via uid and gid.
+        if os.name == "nt" or self.root:
+            user_id = 0
+            group_id = 0
+        else:
+            user_id = os.getuid()
+            group_id = os.getgid()
+        return f"{user_id}:{group_id}"
 
     def _run_interactive_bash(self, runner: ArmoryInstance) -> None:
-        user_id = os.getuid() if os.name != "nt" else 0
-        group_id = os.getgid() if os.name != "nt" else 0
+        user_group_id = self.get_id()
         lines = [
             "Container ready for interactive use.",
             bold(
@@ -245,7 +265,7 @@ class Evaluator(object):
             ),
             bold(
                 red(
-                    f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
+                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
                 )
             ),
         ]
@@ -278,20 +298,20 @@ class Evaluator(object):
             time.sleep(1)
 
     def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
-        user_id = os.getuid() if os.name != "nt" else 0
-        group_id = os.getgid() if os.name != "nt" else 0
+        user_group_id = self.get_id()
         port = list(ports.keys())[0]
         lines = [
             "About to launch jupyter.",
             bold("*** To connect on the command line as well, in a new terminal, run:"),
             bold(
-                f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
+                f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",
             "Jupyter notebook log:",
         ]
         logger.info("\n".join(lines))
+        # TODO: fix jupyter launch to run in non-root mode
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
             user="root",
