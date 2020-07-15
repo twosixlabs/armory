@@ -146,9 +146,7 @@ class Evaluator(object):
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, user=self.get_id(),
-            )
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
             try:
                 self._run_config(
                     runner, check_run=check_run, num_eval_batches=num_eval_batches
