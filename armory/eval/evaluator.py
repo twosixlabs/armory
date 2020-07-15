@@ -147,7 +147,7 @@ class Evaluator(object):
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, root=self.root
+                envs=self.extra_env_vars, user=self.get_id(),
             )
             try:
                 self._run_config(
@@ -176,7 +176,7 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports, root=self.root,
+                envs=self.extra_env_vars, ports=ports, user=self.get_id(),
             )
             try:
                 if jupyter:
@@ -298,20 +298,24 @@ class Evaluator(object):
             time.sleep(1)
 
     def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
+        if not self.root:
+            logger.warning("Running Jupyter Lab as root inside the container.")
+
         user_group_id = self.get_id()
         port = list(ports.keys())[0]
         lines = [
             "About to launch jupyter.",
             bold("*** To connect on the command line as well, in a new terminal, run:"),
             bold(
-                f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
+                red(
+                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
+                )
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",
             "Jupyter notebook log:",
         ]
         logger.info("\n".join(lines))
-        # TODO: fix jupyter launch to run in non-root mode
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
             user="root",

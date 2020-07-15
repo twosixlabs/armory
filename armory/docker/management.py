@@ -94,10 +94,10 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None, root: bool = False,
+        self, envs: dict = None, ports: dict = None, user: str = "",
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name, runtime=self.runtime, envs=envs, ports=ports, root=root,
+            self.name, runtime=self.runtime, envs=envs, ports=ports, user=user,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst
