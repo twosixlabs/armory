@@ -225,6 +225,9 @@ class Evaluator(object):
         options = ""
         if self.no_docker:
             options += " --no-docker"
+            kwargs = {}
+        else:
+            kwargs = {"user": self.get_id()}
         if check_run:
             options += " --check"
         if logger.level == logging.DEBUG:
@@ -233,7 +236,7 @@ class Evaluator(object):
             options += f" --num-eval-batches {num_eval_batches}"
 
         runner.exec_cmd(
-            f"python -m armory.scenarios.base {b64_config}{options}", user=self.get_id()
+            f"python -m armory.scenarios.base {b64_config}{options}", **kwargs
         )
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
