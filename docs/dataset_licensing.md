@@ -28,7 +28,7 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 |------------------------------|--------------|
 | Creator/attribution parties  | Yann LeCun and Corinna Cortes |
 | Copyright notice             | Copyright &copy; 1998 by Yann LeCun and Corinna Cortes |
-| Public license notice        | See (#license) |
+| Public license notice        | See (#original-licenses) |
 | Disclaimer notice            | UNLESS OTHERWISE MUTUALLY AGREED TO BY THE PARTIES IN WRITING, LICENSOR OFFERS THE WORK AS-IS AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE WORK, EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTIBILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, OR THE ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OF ABSENCE OF ERRORS, WHETHER OR NOT DISCOVERABLE. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO SUCH EXCLUSION MAY NOT APPLY TO YOU. |
 | Dataset link | http://yann.lecun.com/exdb/mnist/ |
 | License link | See [Original Licenses](#original-licenses) |
@@ -40,7 +40,7 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 |------------------------------|--------------|
 | Creator/attribution parties  | Alex Krizhevsky, Vinod Nair, and Geoffrey Hinton |
 | Copyright notice             | Not Available |
-| Public license notice        | See (#license) |
+| Public license notice        | See (#original-licenses) |
 | Disclaimer notice            | THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. |
 | Dataset link | https://www.cs.toronto.edu/~kriz/cifar.html |
 | License link | See [Original Licenses](#original-licenses) |
