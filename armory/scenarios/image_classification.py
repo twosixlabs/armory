@@ -105,6 +105,9 @@ class ImageClassificationTask(Scenario):
             )
         else:
             attack = load_attack(attack_config, classifier)
+            assert (
+                targeted == attack.targeted
+            ), "Error determining whether attack is targeted."
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,

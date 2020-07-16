@@ -128,6 +128,9 @@ class Ucf101(Scenario):
             )
         else:
             attack = load_attack(attack_config, classifier)
+            assert (
+                targeted == attack.targeted
+            ), "Error determining whether attack is targeted."
             attack.set_params(batch_size=1)
             test_data = load_dataset(
                 config["dataset"],
