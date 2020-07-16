@@ -3,7 +3,6 @@ Docker orchestration managers for ARMORY.
 """
 
 import logging
-import os
 
 import docker
 
@@ -25,13 +24,12 @@ class ArmoryInstance(object):
         envs: dict = None,
         ports: dict = None,
         command: str = "tail -f /dev/null",
+        user: str = "",
     ):
         self.docker_client = docker.from_env(version="auto")
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
-        host_tmp_dir = host_paths.tmp_dir
-        host_output_dir = host_paths.output_dir
 
         container_args = {
             "runtime": runtime,
@@ -47,30 +45,24 @@ class ArmoryInstance(object):
                     "bind": docker_paths.local_git_dir,
                     "mode": "rw",
                 },
+                host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
                 host_paths.saved_model_dir: {
                     "bind": docker_paths.saved_model_dir,
                     "mode": "rw",
                 },
-                host_output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
-                host_tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
+                host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
             },
             "shm_size": "16G",
         }
+
         if ports is not None:
             container_args["ports"] = ports
         if command is not None:
             container_args["command"] = command
-
-        # Windows docker does not require syncronizing file and
-        # directoriy permissions via uid and gid.
-        if os.name != "nt":
-            user_id = os.getuid()
-            group_id = os.getgid()
-            container_args["user"] = f"{user_id}:{group_id}"
-
+        if user:
+            container_args["user"] = user
         if envs:
             container_args["environment"] = envs
-
         self.docker_container = self.docker_client.containers.run(
             image_name, **container_args
         )
@@ -79,7 +71,7 @@ class ArmoryInstance(object):
 
     def exec_cmd(self, cmd: str, user=""):
         log = self.docker_container.exec_run(
-            cmd, stdout=True, stderr=True, stream=True, user=user
+            cmd, stdout=True, stderr=True, stream=True, user=user,
         )
 
         for out in log.output:
@@ -102,10 +94,10 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None
+        self, envs: dict = None, ports: dict = None, user: str = "",
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name, runtime=self.runtime, envs=envs, ports=ports,
+            self.name, runtime=self.runtime, envs=envs, ports=ports, user=user,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

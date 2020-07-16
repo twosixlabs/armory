@@ -10,6 +10,7 @@ nav:
   - Docker: docker.md
   - Metrics: metrics.md
   - Scenarios: scenarios.md
+  - Command Line: command_line.md
   - External Repos: external_repos.md
   - FAQs: faqs.md
   - Contributing: contributing.md
