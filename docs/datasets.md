@@ -73,6 +73,9 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 ### Adversarial Datasets
 See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
 
+### Dataset Licensing
+See [dataset_licensing.md](dataset_licensing.md) for details related to the licensing of datasets.
+
 
 <br>
 <style>
