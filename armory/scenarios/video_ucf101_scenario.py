@@ -128,6 +128,10 @@ class Ucf101(Scenario):
             )
         else:
             attack = load_attack(attack_config, classifier)
+            if targeted != getattr(attack, "targeted", False):
+                logger.warning(
+                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                )
             attack.set_params(batch_size=1)
             test_data = load_dataset(
                 config["dataset"],

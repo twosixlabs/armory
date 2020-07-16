@@ -105,6 +105,10 @@ class ImageClassificationTask(Scenario):
             )
         else:
             attack = load_attack(attack_config, classifier)
+            if targeted != getattr(attack, "targeted", False):
+                logger.warning(
+                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                )
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
