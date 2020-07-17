@@ -63,7 +63,6 @@ class GTSRB(Scenario):
         """
         if config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
-        logger.info(f"PYTHONHASHSEED={os.environ['PYTHONHASHSEED']}")
         if num_eval_batches:
             raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
 
@@ -135,12 +134,12 @@ class GTSRB(Scenario):
         x_train_all, y_train_all = [], []
         if attack_type == "preloaded":
             for x_clean, y_clean in clean_data:
-                x_poison, y_poison = poison_data.get_batch()
-                x_poison = np.array([xp for xp in x_poison], dtype=np.float)
                 x_train_all.append(x_clean)
                 y_train_all.append(y_clean)
-                x_train_all.append(x_poison)
-                y_train_all.append(y_poison)
+            x_poison, y_poison = poison_data.get_batch()
+            x_poison = np.array([xp for xp in x_poison], dtype=np.float)
+            x_train_all.append(x_poison)
+            y_train_all.append(y_poison)
             x_train_all = np.concatenate(x_train_all, axis=0)
             y_train_all = np.concatenate(y_train_all, axis=0)
         else:
@@ -172,7 +171,18 @@ class GTSRB(Scenario):
 
         y_train_all_categorical = to_categorical(y_train_all)
 
+        fit_defense_classifier_outside_defense = config_adhoc.get(
+            "fit_defense_classifier_outside_defense", True
+        )
+        defense_categorical_labels = config_adhoc.get(
+            "defense_categorical_labels", True
+        )
         if use_poison_filtering_defense:
+            if defense_categorical_labels:
+                y_train_defense = y_train_all_categorical
+            else:
+                y_train_defense = y_train_all
+
             defense_config = config["defense"]
             detection_kwargs = config_adhoc.get("detection_kwargs", dict())
 
@@ -185,17 +195,17 @@ class GTSRB(Scenario):
                 f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
                 f"for defense {defense_config['name']}..."
             )
-            classifier_for_defense.fit(
-                x_train_all,
-                y_train_all_categorical,
-                batch_size=fit_batch_size,
-                nb_epochs=defense_train_epochs,
-                verbose=False,
-            )
+            if fit_defense_classifier_outside_defense:
+                classifier_for_defense.fit(
+                    x_train_all,
+                    y_train_defense,
+                    batch_size=fit_batch_size,
+                    nb_epochs=defense_train_epochs,
+                    verbose=False,
+                    shuffle=True,
+                )
             defense_fn = load_fn(defense_config)
-            defense = defense_fn(
-                classifier_for_defense, x_train_all, y_train_all_categorical
-            )
+            defense = defense_fn(classifier_for_defense, x_train_all, y_train_defense)
 
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
@@ -221,12 +231,12 @@ class GTSRB(Scenario):
                 batch_size=fit_batch_size,
                 nb_epochs=train_epochs,
                 verbose=False,
+                shuffle=True,
             )
         else:
             logger.warning("All data points filtered by defense. Skipping training")
 
         logger.info("Validating on clean test data")
-        config["dataset"]["batch_size"] = fit_batch_size
         test_data = load_dataset(
             config["dataset"],
             epochs=1,
