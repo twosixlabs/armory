@@ -137,7 +137,7 @@ class GTSRB(Scenario):
                 x_train_all.append(x_clean)
                 y_train_all.append(y_clean)
             x_poison, y_poison = poison_data.get_batch()
-            x_poison = np.array([xp for xp in x_poison], dtype=np.float)
+            x_poison = np.array([xp for xp in x_poison], dtype=np.float32)
             x_train_all.append(x_poison)
             y_train_all.append(y_poison)
             x_train_all = np.concatenate(x_train_all, axis=0)
@@ -277,7 +277,7 @@ class GTSRB(Scenario):
             for x_poison_test, y_poison_test in tqdm(
                 test_data_poison, desc="Testing poison"
             ):
-                x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float)
+                x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float32)
                 y_pred = classifier.predict(x_poison_test)
                 y_true = [src_class] * len(y_pred)
                 targeted_test_metric.append(y_poison_test, y_pred)
@@ -292,7 +292,7 @@ class GTSRB(Scenario):
             for x_clean_test, y_clean_test in tqdm(
                 test_data_clean, desc="Testing clean"
             ):
-                x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float)
+                x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float32)
                 y_pred = classifier.predict(x_clean_test)
                 test_metric.append(y_clean_test, y_pred)
 
