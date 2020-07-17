@@ -5,6 +5,7 @@ General audio classification scenario
 import logging
 from typing import Optional
 
+import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -131,7 +132,15 @@ class AudioClassificationTask(Scenario):
                 if targeted:
                     y, y_target = y
             elif attack_config.get("use_label"):
-                x_adv = attack.generate(x=x, y=y)
+                y_input = y
+                if x.shape[0] != y_input.shape[0]:
+                    if y_input.shape[0] != 1:
+                        raise ValueError(
+                            "batch_size > 1 not currently permitted with use_label"
+                        )
+                    # expansion required due to preprocessing
+                    y_input = np.repeat(y_input, x.shape[0])
+                x_adv = attack.generate(x=x, y=y_input)
             elif targeted:
                 raise NotImplementedError("Requires generation of target labels")
                 # x_adv = attack.generate(x=x, y=y_target)

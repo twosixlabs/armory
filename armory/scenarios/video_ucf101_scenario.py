@@ -155,7 +155,9 @@ class Ucf101(Scenario):
                     # each x is of shape (n_stack, 3, 16, 112, 112)
                     #    n_stack varies
                     if attack_config.get("use_label"):
-                        x_adv = attack.generate(x=x, y=y)
+                        # expansion required due to preprocessing
+                        y_input = np.repeat(y, x.shape[0])
+                        x_adv = attack.generate(x=x, y=y_input)
                     elif targeted:
                         raise NotImplementedError(
                             "Requires generation of target labels"
