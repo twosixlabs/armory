@@ -14,6 +14,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -117,6 +118,8 @@ class ImageClassificationTask(Scenario):
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
@@ -125,14 +128,13 @@ class ImageClassificationTask(Scenario):
             elif attack_config.get("use_label"):
                 x_adv = attack.generate(x=x, y=y)
             elif targeted:
-                raise NotImplementedError("Requires generation of target labels")
-                # x_adv = attack.generate(x=x, y=y_target)
+                y_target = label_targeter.generate(y)
+                x_adv = attack.generate(x=x, y=y_target)
             else:
                 x_adv = attack.generate(x=x)
 
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
-                # NOTE: does not remove data points where y == y_target
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)

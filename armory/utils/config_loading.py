@@ -27,6 +27,7 @@ from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
+from armory.utils import labels
 
 
 def load(sub_config):
@@ -179,3 +180,27 @@ def load_defense_internal(defense_config, classifier):
         )
 
     return classifier
+
+
+def load_label_targeter(config):
+    scheme = config["scheme"].lower()
+    if scheme == "fixed":
+        value = config.get("value")
+        return labels.FixedLabelTargeter(value)
+    elif scheme == "random":
+        num_classes = config.get("num_classes")
+        return labels.RandomLabelTargeter(num_classes)
+    elif scheme == "round-robin":
+        num_classes = config.get("num_classes")
+        offset = config.get("offset", 1)
+        return labels.RoundRobinTargeter(num_classes, offset)
+    elif scheme == "manual":
+        values = config.get("values")
+        repeat = config.get("repeat", False)
+        return labels.ManualTargeter(values, repeat)
+    elif scheme == "identity":
+        return labels.IdentityTargeter()
+    else:
+        raise ValueError(
+            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity")'
+        )
