@@ -71,7 +71,7 @@ class ArmoryInstance(object):
 
     def exec_cmd(self, cmd: str, user=""):
         log = self.docker_container.exec_run(
-            cmd, stdout=True, stderr=True, stream=True, user=user,
+            cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
         )
 
         for out in log.output:

@@ -230,7 +230,7 @@ class Evaluator(object):
             kwargs = {"user": self.get_id()}
         if check_run:
             options += " --check"
-        if logger.level == logging.DEBUG:
+        if logger.getEffectiveLevel() == logging.DEBUG:
             options += " --debug"
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
