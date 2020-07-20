@@ -253,7 +253,7 @@ if __name__ == "__main__":
     coloredlogs.install(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
-        logging.warning(
+        logger.warning(
             f"armory calling version {calling_version} != "
             f"armory imported version {armory.__version__}"
         )
