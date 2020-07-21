@@ -26,6 +26,7 @@ from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
+from armory.art_experimental.attacks import patch
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.utils import labels
 
@@ -104,6 +105,14 @@ def load_model(model_config):
 
 
 def load_attack(attack_config, classifier):
+    if attack_config.get("type") == "patch":
+        original_kwargs = attack_config.pop("kwargs")
+        kwargs = original_kwargs.copy()
+        apply_patch_args = kwargs.pop("apply_patch_args", [])
+        apply_patch_kwargs = kwargs.pop("apply_patch_kwargs", {})
+        kwargs.pop("targeted")  # not explicitly used by patch attacks
+        attack_config["kwargs"] = kwargs
+
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
     attack = attack_fn(classifier, **attack_config["kwargs"])
@@ -112,6 +121,9 @@ def load_attack(attack_config, classifier):
             f"attack {attack} is not an instance of {Attack}."
             " Ensure that it implements ART `generate` API."
         )
+    if attack_config.get("type") == "patch":
+        attack_config["kwargs"] = original_kwargs
+        return patch.AttackWrapper(attack, apply_patch_args, apply_patch_kwargs)
     return attack
 
 
