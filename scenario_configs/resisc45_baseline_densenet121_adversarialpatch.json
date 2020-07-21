@@ -14,12 +14,16 @@
             "rotation_max": 22.5,
             "scale_max": 0.3,
             "scale_min": 0.29999,
-            "targeted": false
+            "targeted": true
         },
         "module": "art.attacks.evasion",
         "name": "AdversarialPatch",
+        "targeted_labels": {
+            "num_classes": 45,
+            "scheme": "round-robin"
+        },
         "type": "patch",
-        "use_label": true
+        "use_label": false
     },
     "dataset": {
         "batch_size": 1,
