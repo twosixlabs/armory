@@ -15,6 +15,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -126,6 +127,8 @@ class AudioClassificationTask(Scenario):
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x, x_adv = x
@@ -142,14 +145,20 @@ class AudioClassificationTask(Scenario):
                     y_input = np.repeat(y_input, x.shape[0])
                 x_adv = attack.generate(x=x, y=y_input)
             elif targeted:
-                raise NotImplementedError("Requires generation of target labels")
-                # x_adv = attack.generate(x=x, y=y_target)
+                y_target = label_targeter.generate(y)
+                if x.shape[0] != y_target.shape[0]:
+                    if y_target.shape[0] != 1:
+                        raise ValueError(
+                            "batch_size > 1 not currently permitted with targeted"
+                        )
+                    # expansion required due to preprocessing
+                    y_input = np.repeat(y_target, x.shape[0])
+                x_adv = attack.generate(x=x, y=y_input)
             else:
                 x_adv = attack.generate(x=x)
 
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
-                # NOTE: does not remove data points where y == y_target
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)
