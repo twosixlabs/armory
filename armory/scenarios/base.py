@@ -28,6 +28,7 @@ import re
 
 import armory
 from armory import paths
+from armory import environment
 from armory.utils import config_loading
 from armory.utils import external_repo
 from armory.utils.configuration import load_config
@@ -250,11 +251,18 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
+    calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
+    if calling_version != armory.__version__:
+        logger.warning(
+            f"armory calling version {calling_version} != "
+            f"armory imported version {armory.__version__}"
+        )
+
     if args.no_docker:
         paths.set_mode("host")
 
     if args.check and args.num_eval_batches:
-        logging.warning(
+        logger.warning(
             "--num_eval_batches will be overwritten and set to 1 since --check was passed"
         )
 

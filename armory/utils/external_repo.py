@@ -87,7 +87,7 @@ def download_and_extract_repo(
     )
 
     if response.status_code == 200:
-        logging.info(f"Downloading external repo: {external_repo_name}")
+        logger.info(f"Downloading external repo: {external_repo_name}")
 
         tar_filename = os.path.join(external_repo_dir, repo_name + ".tar.gz")
         with open(tar_filename, "wb") as f:

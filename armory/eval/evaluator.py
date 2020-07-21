@@ -13,12 +13,14 @@ import docker
 import requests
 from docker.errors import ImageNotFound
 
+import armory
 from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
+from armory import environment
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +119,8 @@ class Evaluator(object):
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+
+        self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
     def _cleanup(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")
