@@ -192,7 +192,7 @@
                 "l2",
                 "lp",
                 "linf",
-		"image_circle_patch_area"
+                "image_circle_patch_area"
             ],
             "type": "string"
         },
