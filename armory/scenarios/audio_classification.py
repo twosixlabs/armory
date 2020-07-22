@@ -87,7 +87,10 @@ class AudioClassificationTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
         for x, y in tqdm(test_data, desc="Benign"):
-            y_pred = classifier.predict(x)
+            with metrics.resource_context(
+                name="Inference", profiler=config["metric"].get("profiler_type")
+            ):
+                y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
@@ -114,17 +117,20 @@ class AudioClassificationTask(Scenario):
                 preprocessing_fn=predict_preprocessing_fn,
             )
         for x, y in tqdm(test_data, desc="Attack"):
-            if attack_type == "preloaded":
-                x, x_adv = x
-                if targeted:
-                    y, y_target = y
-            elif attack_config.get("use_label"):
-                x_adv = attack.generate(x=x, y=y)
-            elif targeted:
-                raise NotImplementedError("Requires generation of target labels")
-                # x_adv = attack.generate(x=x, y=y_target)
-            else:
-                x_adv = attack.generate(x=x)
+            with metrics.resource_context(
+                name="Attack", profiler=config["metric"].get("profiler_type")
+            ):
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                    if targeted:
+                        y, y_target = y
+                elif attack_config.get("use_label"):
+                    x_adv = attack.generate(x=x, y=y)
+                elif targeted:
+                    raise NotImplementedError("Requires generation of target labels")
+                    # x_adv = attack.generate(x=x, y=y_target)
+                else:
+                    x_adv = attack.generate(x=x)
 
             y_pred_adv = classifier.predict(x_adv)
             if targeted:

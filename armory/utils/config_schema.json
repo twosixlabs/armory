@@ -109,6 +109,13 @@
                         "$ref": "#/definitions/supported_metric"
                     },
                     "type": "array"
+                },
+                "profiler_type": {
+                    "enum": [
+                        "Basic",
+                        "Deterministic"
+                    ],
+                    "type": "string"
                 }
             },
             "required": [
