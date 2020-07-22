@@ -158,9 +158,9 @@ def _snr_spectrogram(x_i, x_adv_i):
 
 
 @contextmanager
-def resource_context(name="Name", profiler="Basic"):
+def resource_context(name="Name", profiler=None):
     profiler_types = ["Basic", "Deterministic"]
-    if profiler not in profiler_types:
+    if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
     if profiler == "Deterministic":
         logger.warn(
@@ -168,30 +168,30 @@ def resource_context(name="Name", profiler="Basic"):
         )
         pr = cProfile.Profile()
         pr.enable()
-    startTime = time.perf_counter()
+    if profiler == "Basic" or profiler == "Deterministic":
+        startTime = time.perf_counter()
     yield
-    elapsedTime = time.perf_counter() - startTime
-    if profiler == "Deterministic":
-        pr.disable()
-        s = io.StringIO()
-        sortby = "cumulative"
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        stats = s.getvalue()
-        logger.info(stats)
-    if name in computational_resource_dict:
-        computational_resource_dict[name]["execution_count"] += 1
-        computational_resource_dict[name]["total_time"] += elapsedTime
+    if profiler == "Basic" or profiler == "Deterministic":
+        elapsedTime = time.perf_counter() - startTime
         if profiler == "Deterministic":
-            computational_resource_dict[name]["stats"] += stats
+            pr.disable()
+            s = io.StringIO()
+            sortby = "cumulative"
+            pstats.Stats(pr, stream=s).sort_stats(sortby)
+            stats = s.getvalue()
+            logger.info(stats)
+        if name in computational_resource_dict:
+            computational_resource_dict[name]["execution_count"] += 1
+            computational_resource_dict[name]["total_time"] += elapsedTime
+            if profiler == "Deterministic":
+                computational_resource_dict[name]["stats"] += stats
 
-    else:
-        computational_resource_dict[name] = {}
-        computational_resource_dict[name]["execution_count"] = 1
-        computational_resource_dict[name]["total_time"] = elapsedTime
-        if profiler == "Deterministic":
-            computational_resource_dict[name]["stats"] = stats
-
+        else:
+            computational_resource_dict[name] = {}
+            computational_resource_dict[name]["execution_count"] = 1
+            computational_resource_dict[name]["total_time"] = elapsedTime
+            if profiler == "Deterministic":
+                computational_resource_dict[name]["stats"] = stats
     return 0
 
 
@@ -279,7 +279,12 @@ class MetricsLogger:
     """
 
     def __init__(
-        self, task=None, perturbation=None, means=True, record_metric_per_sample=False
+        self,
+        task=None,
+        perturbation=None,
+        means=True,
+        record_metric_per_sample=False,
+        profiler_type=None,
     ):
         """
         task - single metric or list of metrics
@@ -313,8 +318,6 @@ class MetricsLogger:
                 f"{names} must be one of (None, str, list), not {type(names)}"
             )
         return [MetricList(x) for x in names]
-
-    from contextlib import contextmanager
 
     @classmethod
     def from_config(cls, config):
@@ -372,20 +375,19 @@ class MetricsLogger:
                         raise ZeroDivisionError(
                             f"No values to calculate mean in {prefix}_{metric.name}"
                         )
-        if computational_resource_dict:
 
-            for name in computational_resource_dict:
-                entry = computational_resource_dict[name]
-                if "execution_count" not in entry or "total_time" not in entry:
-                    raise ValueError(
-                        "Computational resource dictionary entry corrupted, missing data."
-                    )
-                total_time = entry["total_time"]
-                execution_count = entry["execution_count"]
-                average_time = total_time / execution_count
-                results[
-                    f"Avg. CPU time (s) for {execution_count} executions of {name}"
-                ] = average_time
-                if "stats" in entry:
-                    results["{name} profiler stats"] = entry["stats"]
+        for name in computational_resource_dict:
+            entry = computational_resource_dict[name]
+            if "execution_count" not in entry or "total_time" not in entry:
+                raise ValueError(
+                    "Computational resource dictionary entry corrupted, missing data."
+                )
+            total_time = entry["total_time"]
+            execution_count = entry["execution_count"]
+            average_time = total_time / execution_count
+            results[
+                f"Avg. CPU time (s) for {execution_count} executions of {name}"
+            ] = average_time
+            if "stats" in entry:
+                results["{name} profiler stats"] = entry["stats"]
         return results
