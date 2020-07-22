@@ -101,7 +101,10 @@ class Ucf101(Scenario):
         for x_batch, y_batch in tqdm(test_data, desc="Benign"):
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
-                y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
+                with metrics.resource_context(
+                        name="Inference", profiler=config["metric"].get("profiler_type")
+                ):
+                    y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
@@ -135,22 +138,25 @@ class Ucf101(Scenario):
                 if targeted:
                     y_batch = list(zip(*y_batch))
             for x, y in zip(x_batch, y_batch):
-                if attack_type == "preloaded":
-                    x, x_adv = x
-                    if targeted:
-                        y, y_target = y
-                else:
-                    # each x is of shape (n_stack, 3, 16, 112, 112)
-                    #    n_stack varies
-                    if attack_config.get("use_label"):
-                        x_adv = attack.generate(x=x, y=y)
-                    elif targeted:
-                        raise NotImplementedError(
-                            "Requires generation of target labels"
-                        )
-                        # x_adv = attack.generate(x=x, y=y_target)
+                with metrics.resource_context(
+                        name="Attack", profiler=config["metric"].get("profiler_type")
+                ):
+                    if attack_type == "preloaded":
+                        x, x_adv = x
+                        if targeted:
+                            y, y_target = y
                     else:
-                        x_adv = attack.generate(x=x)
+                        # each x is of shape (n_stack, 3, 16, 112, 112)
+                        #    n_stack varies
+                        if attack_config.get("use_label"):
+                            x_adv = attack.generate(x=x, y=y)
+                        elif targeted:
+                            raise NotImplementedError(
+                                "Requires generation of target labels"
+                            )
+                            # x_adv = attack.generate(x=x, y=y_target)
+                        else:
+                            x_adv = attack.generate(x=x)
                 # combine predictions across all stacks
                 y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 if targeted:
