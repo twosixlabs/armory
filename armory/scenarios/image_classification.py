@@ -3,6 +3,7 @@ General image classification scenario
 """
 
 import logging
+from typing import Optional
 
 from tqdm import tqdm
 
@@ -13,6 +14,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageClassificationTask(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -49,6 +51,7 @@ class ImageClassificationTask(Scenario):
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
+                shuffle_files=True,
             )
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
@@ -73,6 +76,8 @@ class ImageClassificationTask(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            num_batches=num_eval_batches,
+            shuffle_files=False,
         )
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
@@ -99,15 +104,25 @@ class ImageClassificationTask(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
         else:
             attack = load_attack(attack_config, classifier)
+            if targeted != getattr(attack, "targeted", False):
+                logger.warning(
+                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                )
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
                 name="Attack", profiler=config["metric"].get("profiler_type")
@@ -119,13 +134,13 @@ class ImageClassificationTask(Scenario):
                 elif attack_config.get("use_label"):
                     x_adv = attack.generate(x=x, y=y)
                 elif targeted:
-                    raise NotImplementedError("Requires generation of target labels")
-                    # x_adv = attack.generate(x=x, y=y_target)
+                    y_target = label_targeter.generate(y)
+                    x_adv = attack.generate(x=x, y=y_target)
                 else:
                     x_adv = attack.generate(x=x)
+
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
-                # NOTE: does not remove data points where y == y_target
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)
