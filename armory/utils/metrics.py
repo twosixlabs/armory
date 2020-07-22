@@ -174,6 +174,36 @@ def snr_spectrogram_db(x, x_adv):
     return [float(i) for i in 10 * np.log10(snr_spectrogram(x, x_adv))]
 
 
+def _image_circle_patch_area(x_i, x_adv_i):
+    if x_i.shape != x_adv_i.shape:
+        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
+    img_shape = x_i.shape
+    if len(img_shape) != 3:
+        raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
+    if (x_i == x_adv_i).mean() < 0.5:
+        logging.warning(f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of indices. image_circle_patch_area may not be accurate")
+    channel_dim = img_shape.index(min(img_shape))
+    spat_ind = 1 if channel_dim !=1 else 0
+    pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
+    right_ind = max(pert_spatial_indices)
+    unpert_ind_left_of_patch = [i for i in range(right_ind) if i not in pert_spatial_indices]
+    left_ind = max(unpert_ind_left_of_patch) + 1 if unpert_ind_left_of_patch else 0
+    if min(pert_spatial_indices) < left_ind:
+        logging.warning("Multiple regions of the image have been perturbed")
+    radius = (right_ind - left_ind)/2.
+    patch_area = np.pi*(radius*radius)
+    image_area = np.prod([dim for i,dim in enumerate(img_shape) if i != channel_dim])
+    breakpoint()
+    return patch_area / image_area
+
+
+def image_circle_patch_area(x, x_adv):
+    """
+    Return what fraction of the image is covered by a circular patch
+    """
+    return [_image_circle_patch_area(x_i, x_adv_i) for (x_i, x_adv_i) in zip(x, x_adv)]
+
+
 SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
@@ -188,6 +218,7 @@ SUPPORTED_METRICS = {
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
     "snr_spectrogram_db": snr_spectrogram_db,
+    "image_circle_patch_area": image_circle_patch_area,
 }
 
 
