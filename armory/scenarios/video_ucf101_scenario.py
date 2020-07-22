@@ -102,7 +102,7 @@ class Ucf101(Scenario):
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
                 with metrics.resource_context(
-                        name="Inference", profiler=config["metric"].get("profiler_type")
+                    name="Inference", profiler=config["metric"].get("profiler_type")
                 ):
                     y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
@@ -139,7 +139,7 @@ class Ucf101(Scenario):
                     y_batch = list(zip(*y_batch))
             for x, y in zip(x_batch, y_batch):
                 with metrics.resource_context(
-                        name="Attack", profiler=config["metric"].get("profiler_type")
+                    name="Attack", profiler=config["metric"].get("profiler_type")
                 ):
                     if attack_type == "preloaded":
                         x, x_adv = x
