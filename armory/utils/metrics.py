@@ -182,32 +182,48 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
         raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
     if (x_i == x_adv_i).mean() < 0.5:
         logging.warning(
-            f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of indices. image_circle_patch_area may not be accurate"
+            f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
+            "indices. image_circle_patch_area may not be accurate"
         )
-    channel_dim = img_shape.index(min(img_shape))
-    spat_ind = 1 if channel_dim != 1 else 0
+    # Identify which axes of input array are spatial vs. depth dimensions
+    depth_dim = img_shape.index(min(img_shape))
+    spat_ind = 1 if depth_dim != 1 else 0
+
+    # Determine which indices (along the spatial dimension) are perturbed
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
     if len(pert_spatial_indices) == 0:
         logging.warning("x_i == x_adv_i. image_circle_patch_area is 0")
         return 0
-    right_ind = max(pert_spatial_indices)
-    unpert_ind_left_of_patch = [
-        i for i in range(right_ind) if i not in pert_spatial_indices
+
+    # Find which indices (preceding the patch's max index) are unperturbed, in order
+    # to determine the index of the edge of the patch
+    max_ind_of_patch = max(pert_spatial_indices)
+    unpert_ind_less_than_patch_max_ind = [
+        i for i in range(max_ind_of_patch) if i not in pert_spatial_indices
     ]
-    left_ind = max(unpert_ind_left_of_patch) + 1 if unpert_ind_left_of_patch else 0
-    if min(pert_spatial_indices) < left_ind:
+    min_ind_of_patch = (
+        max(unpert_ind_less_than_patch_max_ind) + 1
+        if unpert_ind_less_than_patch_max_ind
+        else 0
+    )
+
+    # If there are any perturbed indices outside the range of the patch just computed
+    if min(pert_spatial_indices) < min_ind_of_patch:
         logging.warning("Multiple regions of the image have been perturbed")
-    diameter = right_ind - left_ind + 1
-    spatial_dims = [dim for i, dim in enumerate(img_shape) if i != channel_dim]
+
+    diameter = max_ind_of_patch - min_ind_of_patch + 1
+    spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
     patch_diameter = diameter / min(spatial_dims)
     return patch_diameter
 
 
 def image_circle_patch_diameter(x, x_adv):
     """
-    Return what fraction of the image is covered by a circular patch
+    Returns diameter of circular image patch, normalized by the smaller spatial dimension
     """
-    return [_image_circle_patch_diameter(x_i, x_adv_i) for (x_i, x_adv_i) in zip(x, x_adv)]
+    return [
+        _image_circle_patch_diameter(x_i, x_adv_i) for (x_i, x_adv_i) in zip(x, x_adv)
+    ]
 
 
 SUPPORTED_METRICS = {
