@@ -177,9 +177,9 @@ def resource_context(name="Name", profiler=None):
             pr.disable()
             s = io.StringIO()
             sortby = "cumulative"
-            pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
             stats = s.getvalue()
-            logger.info(stats)
         if name in computational_resource_dict:
             computational_resource_dict[name]["execution_count"] += 1
             computational_resource_dict[name]["total_time"] += elapsedTime
