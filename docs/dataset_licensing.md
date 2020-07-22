@@ -3,8 +3,7 @@
 Armory datasets are either licensed or available in accordance to the fair use 
 exception to copyright infringement. The passthrough license is the same as the original
 license for nonadapted datasets. Adapted datasets ("derivative works") are licensed under
-the Creative Commons 4.0 International ShareAlike license and are Copyright Two Six Labs,
-2020.
+the Creative Commons 4.0 International ShareAlike license and are Copyright Two Six Labs, 2020.
 
 ## Original Licenses
 
@@ -32,8 +31,8 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 | Public license notice        | http://www.pymvpa.org/datadb/mnist.html |
 | Disclaimer notice            | UNLESS OTHERWISE MUTUALLY AGREED TO BY THE PARTIES IN WRITING, LICENSOR OFFERS THE WORK AS-IS AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE WORK, EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTIBILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, OR THE ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OF ABSENCE OF ERRORS, WHETHER OR NOT DISCOVERABLE. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO SUCH EXCLUSION MAY NOT APPLY TO YOU. |
 | Dataset link | http://yann.lecun.com/exdb/mnist/ |
-| Citation | LeCun, Yann, Corinna Cortes, and Christopher JC Burges. "The MNIST database of handwritten digits, 1998." URL http://yann.lecun.com/exdb/mnist 10, no. 34 (1998): 14. |
 | Modification | (Slight) Representation of images as binary tensors |
+| Citation | LeCun, Yann, Corinna Cortes, and Christopher JC Burges. "The MNIST database of handwritten digits, 1998." URL http://yann.lecun.com/exdb/mnist 10, no. 34 (1998): 14. |
 
 ### CIFAR-10
 |Attribution                   |              |  
@@ -115,4 +114,5 @@ Research Projects Agency (DARPA).
 ### Citations for RESISC45 and UCF101
 
 Cheng, Gong, Junwei Han, and Xiaoqiang Lu. "Remote sensing image scene classification: Benchmark and state of the art." Proceedings of the IEEE 105, no. 10 (2017): 1865-1883.
+
 Soomro, Khurram, Amir Roshan Zamir, and Mubarak Shah. "UCF101: A dataset of 101 human actions classes from videos in the wild." arXiv preprint arXiv:1212.0402 (2012).
