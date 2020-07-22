@@ -8,6 +8,7 @@ import logging
 import shutil
 import time
 import datetime
+import sys
 
 import docker
 import requests
@@ -230,8 +231,10 @@ class Evaluator(object):
         if self.no_docker:
             options += " --no-docker"
             kwargs = {}
+            python = sys.executable
         else:
             kwargs = {"user": self.get_id()}
+            python = "python"
         if check_run:
             options += " --check"
         if logger.getEffectiveLevel() == logging.DEBUG:
@@ -239,9 +242,8 @@ class Evaluator(object):
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
 
-        runner.exec_cmd(
-            f"python -m armory.scenarios.base {b64_config}{options}", **kwargs
-        )
+        cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
+        runner.exec_cmd(cmd, **kwargs)
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
