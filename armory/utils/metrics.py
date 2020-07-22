@@ -314,8 +314,6 @@ class MetricsLogger:
             )
         return [MetricList(x) for x in names]
 
-    from contextlib import contextmanager
-
     @classmethod
     def from_config(cls, config):
         return cls(**config)
