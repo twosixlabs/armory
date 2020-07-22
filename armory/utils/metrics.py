@@ -187,6 +187,9 @@ def _image_circle_patch_area(x_i, x_adv_i):
     channel_dim = img_shape.index(min(img_shape))
     spat_ind = 1 if channel_dim != 1 else 0
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
+    if len(pert_spatial_indices) == 0:
+        logging.warning("x_i == x_adv_i. image_circle_patch_area is 0")
+        return 0
     right_ind = max(pert_spatial_indices)
     unpert_ind_left_of_patch = [
         i for i in range(right_ind) if i not in pert_spatial_indices
