@@ -8,8 +8,14 @@ Outputs are lists of python variables amenable to JSON serialization:
 
 import logging
 import numpy as np
+import time
+from contextlib import contextmanager
+import cProfile
+import pstats
+import io
 
 logger = logging.getLogger(__name__)
+computational_resource_dict = {}
 
 
 def categorical_accuracy(y, y_pred):
@@ -151,6 +157,44 @@ def _snr_spectrogram(x_i, x_adv_i):
     return signal_power / noise_power
 
 
+@contextmanager
+def resource_context(name="Name", profiler="Basic"):
+    profiler_types = ["Basic", "Deterministic"]
+    if profiler not in profiler_types:
+        raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
+    if profiler == "Deterministic":
+        logger.warn(
+            "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
+        )
+        pr = cProfile.Profile()
+        pr.enable()
+    startTime = time.perf_counter()
+    yield
+    elapsedTime = time.perf_counter() - startTime
+    if profiler == "Deterministic":
+        pr.disable()
+        s = io.StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        stats = s.getvalue()
+        logger.info(stats)
+    if name in computational_resource_dict:
+        computational_resource_dict[name]["execution_count"] += 1
+        computational_resource_dict[name]["total_time"] += elapsedTime
+        if profiler == "Deterministic":
+            computational_resource_dict[name]["stats"] += stats
+
+    else:
+        computational_resource_dict[name] = {}
+        computational_resource_dict[name]["execution_count"] = 1
+        computational_resource_dict[name]["total_time"] = elapsedTime
+        if profiler == "Deterministic":
+            computational_resource_dict[name]["stats"] = stats
+
+    return 0
+
+
 def snr_spectrogram(x, x_adv):
     """
     Return the SNR of a batch of samples with spectrogram input
@@ -270,6 +314,8 @@ class MetricsLogger:
             )
         return [MetricList(x) for x in names]
 
+    from contextlib import contextmanager
+
     @classmethod
     def from_config(cls, config):
         return cls(**config)
@@ -326,5 +372,20 @@ class MetricsLogger:
                         raise ZeroDivisionError(
                             f"No values to calculate mean in {prefix}_{metric.name}"
                         )
+        if computational_resource_dict:
 
+            for name in computational_resource_dict:
+                entry = computational_resource_dict[name]
+                if "execution_count" not in entry or "total_time" not in entry:
+                    raise ValueError(
+                        "Computational resource dictionary entry corrupted, missing data."
+                    )
+                total_time = entry["total_time"]
+                execution_count = entry["execution_count"]
+                average_time = total_time / execution_count
+                results[
+                    f"Avg. CPU time (s) for {execution_count} executions of {name}"
+                ] = average_time
+                if "stats" in entry:
+                    results["{name} profiler stats"] = entry["stats"]
         return results
