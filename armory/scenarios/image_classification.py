@@ -124,7 +124,6 @@ class ImageClassificationTask(Scenario):
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
-<<<<<<< HEAD
             with metrics.resource_context(
                 name="Attack", profiler=config["metric"].get("profiler_type")
             ):
@@ -135,24 +134,11 @@ class ImageClassificationTask(Scenario):
                 elif attack_config.get("use_label"):
                     x_adv = attack.generate(x=x, y=y)
                 elif targeted:
-                    raise NotImplementedError("Requires generation of target labels")
-                    # x_adv = attack.generate(x=x, y=y_target)
+                    y_target = label_targeter.generate(y)
+                    x_adv = attack.generate(x=x, y=y_target)
                 else:
                     x_adv = attack.generate(x=x)
-=======
-            if attack_type == "preloaded":
-                x, x_adv = x
-                if targeted:
-                    y, y_target = y
-            elif attack_config.get("use_label"):
-                x_adv = attack.generate(x=x, y=y)
-            elif targeted:
-                y_target = label_targeter.generate(y)
-                x_adv = attack.generate(x=x, y=y_target)
-            else:
-                x_adv = attack.generate(x=x)
 
->>>>>>> 1c31757c00326b7876a9ddd76f04484751460378
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)

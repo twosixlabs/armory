@@ -148,54 +148,41 @@ class Ucf101(Scenario):
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
-            if attack_type == "preloaded":
-                x_batch = list(zip(*x_batch))
-                if targeted:
-                    y_batch = list(zip(*y_batch))
-            for x, y in zip(x_batch, y_batch):
-<<<<<<< HEAD
-                with metrics.resource_context(
-                    name="Attack", profiler=config["metric"].get("profiler_type")
-                ):
+            with metrics.resource_context(
+                name="Attack", profiler=config["metric"].get("profiler_type")
+            ):
+                if attack_type == "preloaded":
+                    x_batch = list(zip(*x_batch))
+                    if targeted:
+                        y_batch = list(zip(*y_batch))
+                for x, y in zip(x_batch, y_batch):
                     if attack_type == "preloaded":
                         x, x_adv = x
                         if targeted:
                             y, y_target = y
-=======
-                if attack_type == "preloaded":
-                    x, x_adv = x
-                    if targeted:
-                        y, y_target = y
-                else:
-                    # each x is of shape (n_stack, 3, 16, 112, 112)
-                    #    n_stack varies
-                    if attack_config.get("use_label"):
-                        # expansion required due to preprocessing
-                        y_input = np.repeat(y, x.shape[0])
-                        x_adv = attack.generate(x=x, y=y_input)
-                    elif targeted:
-                        y_target = label_targeter.generate(y)
-                        y_input = np.repeat(y_target, x.shape[0])
-                        x_adv = attack.generate(x=x, y=y_input)
->>>>>>> 1c31757c00326b7876a9ddd76f04484751460378
                     else:
                         # each x is of shape (n_stack, 3, 16, 112, 112)
                         #    n_stack varies
                         if attack_config.get("use_label"):
-                            x_adv = attack.generate(x=x, y=y)
+                            # expansion required due to preprocessing
+                            y_input = np.repeat(y, x.shape[0])
+                            x_adv = attack.generate(x=x, y=y_input)
                         elif targeted:
-                            raise NotImplementedError(
-                                "Requires generation of target labels"
-                            )
-                            # x_adv = attack.generate(x=x, y=y_target)
+                            y_target = label_targeter.generate(y)
+                            y_input = np.repeat(y_target, x.shape[0])
+                            x_adv = attack.generate(x=x, y=y_input)
                         else:
                             x_adv = attack.generate(x=x)
-                # combine predictions across all stacks
-                y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
-                if targeted:
-                    metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
-                else:
-                    metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-                metrics_logger.update_perturbation([x], [x_adv])
+                    # combine predictions across all stacks
+                    y_pred_adv = np.mean(
+                        classifier.predict(x_adv, batch_size=1), axis=0
+                    )
+                    if targeted:
+                        metrics_logger.update_task(
+                            y_target, y_pred_adv, adversarial=True
+                        )
+                    else:
+                        metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                    metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()
