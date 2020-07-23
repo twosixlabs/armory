@@ -108,3 +108,10 @@ Please see the [frequently asked questions](docs/faqs.md) documentation for more
 # Contributing
 Armory is an open source project and as such we welcome contributions! Please refer to 
 our [contribution docs](docs/contributing.md) for how to get started.
+
+# Acknowledgment
+This material is based upon work supported by the Defense Advanced Research Projects
+Agency (DARPA) under Contract No. HR001120C0114. Any opinions, findings and 
+conclusions or recommendations expressed in this material are those of the author(s)
+and do not necessarily reflect the views of the Defense Advanced Research Projects
+Agency (DARPA).

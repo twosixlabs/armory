@@ -86,3 +86,13 @@ Armory provides several baseline threat-model scenarios for various data modalit
 When running an armory configuration file, the robustness of a defense will be 
 evaluated against that given scenario. For more information please see our 
 [Scenario Documentation](scenarios.md).
+
+## Dataset licensing
+See [dataset_licensing.md](dataset_licensing.md) for details related to the licensing of datasets.
+
+## Acknowledgment
+This material is  based upon work supported by the Defense Advanced Research Projects
+Agency  (DARPA) under Contract No. HR001120C0114. Any opinions, findings and 
+conclusions or recommendations expressed in this material are those of the author(s)
+and do not necessarily reflect the views of the Defense Advanced Research Projects
+Agency (DARPA).
