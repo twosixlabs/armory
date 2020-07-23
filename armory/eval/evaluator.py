@@ -8,24 +8,27 @@ import logging
 import shutil
 import time
 import datetime
+import sys
 
 import docker
 import requests
 from docker.errors import ImageNotFound
 
+import armory
 from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
+from armory import environment
 
 logger = logging.getLogger(__name__)
 
 
 class Evaluator(object):
     def __init__(
-        self, config: dict, no_docker: bool = False,
+        self, config: dict, no_docker: bool = False, root: bool = False,
     ):
         if not isinstance(config, dict):
             raise ValueError(f"config {config} must be a dict")
@@ -54,12 +57,15 @@ class Evaluator(object):
         image_name = self.config["sysconfig"].get("docker_image")
         kwargs["image_name"] = image_name
         self.no_docker = not image_name or no_docker
+        self.root = root
 
         # Retrieve environment variables that should be used in evaluation
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
         if self.no_docker:
+            if self.root:
+                raise ValueError("running with --root is incompatible with --no-docker")
             self.manager = HostManagementInstance()
             return
 
@@ -115,6 +121,8 @@ class Evaluator(object):
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
 
+        self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
+
     def _cleanup(self):
         logger.info(f"Deleting tmp_dir {self.tmp_dir}")
         try:
@@ -136,15 +144,18 @@ class Evaluator(object):
         host_port=None,
         command=None,
         check_run=False,
+        num_eval_batches=None,
     ) -> None:
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars)
+            runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
             try:
-                self._run_config(runner, check_run=check_run)
+                self._run_config(
+                    runner, check_run=check_run, num_eval_batches=num_eval_batches
+                )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -168,7 +179,7 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports
+                envs=self.extra_env_vars, ports=ports, user=self.get_id(),
             )
             try:
                 if jupyter:
@@ -178,7 +189,9 @@ class Evaluator(object):
                 elif command:
                     self._run_command(runner, command)
                 else:
-                    self._run_config(runner, check_run=check_run)
+                    self._run_config(
+                        runner, check_run=check_run, num_eval_batches=num_eval_batches
+                    )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
             finally:
@@ -208,27 +221,50 @@ class Evaluator(object):
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
 
-    def _run_config(self, runner: ArmoryInstance, check_run=False) -> None:
+    def _run_config(
+        self, runner: ArmoryInstance, check_run=False, num_eval_batches=None
+    ) -> None:
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
         options = ""
         if self.no_docker:
             options += " --no-docker"
+            kwargs = {}
+            python = sys.executable
+        else:
+            kwargs = {"user": self.get_id()}
+            python = "python"
         if check_run:
             options += " --check"
-        if logger.level == logging.DEBUG:
+        if logger.getEffectiveLevel() == logging.DEBUG:
             options += " --debug"
+        if num_eval_batches:
+            options += f" --num-eval-batches {num_eval_batches}"
 
-        runner.exec_cmd(f"python -m armory.scenarios.base {b64_config}{options}")
+        cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
+        runner.exec_cmd(cmd, **kwargs)
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
-        runner.exec_cmd(command)
+        runner.exec_cmd(command, user=self.get_id())
+
+    def get_id(self):
+        """
+        Return uid, gid
+        """
+        # Windows docker does not require synchronizing file and
+        # directoriy permissions via uid and gid.
+        if os.name == "nt" or self.root:
+            user_id = 0
+            group_id = 0
+        else:
+            user_id = os.getuid()
+            group_id = os.getgid()
+        return f"{user_id}:{group_id}"
 
     def _run_interactive_bash(self, runner: ArmoryInstance) -> None:
-        user_id = os.getuid() if os.name != "nt" else 0
-        group_id = os.getgid() if os.name != "nt" else 0
+        user_group_id = self.get_id()
         lines = [
             "Container ready for interactive use.",
             bold(
@@ -236,7 +272,7 @@ class Evaluator(object):
             ),
             bold(
                 red(
-                    f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
+                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
                 )
             ),
         ]
@@ -269,14 +305,18 @@ class Evaluator(object):
             time.sleep(1)
 
     def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
-        user_id = os.getuid() if os.name != "nt" else 0
-        group_id = os.getgid() if os.name != "nt" else 0
+        if not self.root:
+            logger.warning("Running Jupyter Lab as root inside the container.")
+
+        user_group_id = self.get_id()
         port = list(ports.keys())[0]
         lines = [
             "About to launch jupyter.",
             bold("*** To connect on the command line as well, in a new terminal, run:"),
             bold(
-                f"    docker exec -it -u {user_id}:{group_id} {runner.docker_container.short_id} bash"
+                red(
+                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
+                )
             ),
             bold("*** To gracefully shut down container, press: Ctrl-C"),
             "",

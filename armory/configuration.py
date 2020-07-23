@@ -5,6 +5,7 @@ Utilities for handling the global armory configuration file
 import logging
 import json
 import os
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -17,21 +18,41 @@ def get_verify_ssl():
 def validate_config(config: dict) -> None:
     if not isinstance(config, dict):
         raise TypeError(f"config is a {type(config)}, not a dict")
-    keys = ("dataset_dir", "saved_model_dir", "output_dir", "tmp_dir", "verify_ssl")
+    keys = (
+        "dataset_dir",
+        "local_git_dir",
+        "saved_model_dir",
+        "output_dir",
+        "tmp_dir",
+        "verify_ssl",
+    )
     for key in keys:
         if key not in config:
             raise KeyError(
                 f"config is missing key {key}. config may be out of date. Please run 'armory configure'"
             )
+
+    inverse_dir = defaultdict(list)
+
     for key, value in config.items():
         if key not in keys:
-            raise KeyError(f"config has additional key {key}")
+            # warning instead of error to make forward compatible
+            logger.warning(f"config has additional key {key}")
 
         if key in ("verify_ssl") and not isinstance(value, bool):
             raise ValueError(f"{key} value {value} is not a bool")
 
         if key not in ("verify_ssl") and not isinstance(value, str):
             raise ValueError(f"{key} value {value} is not a string")
+
+        if key not in ("verify_ssl"):
+            inverse_dir[value].append(key)
+
+    for value, keys in inverse_dir.items():
+        if len(keys) > 1:
+            raise ValueError(
+                f"Configuration paths must be unique; {keys} are set to {value}"
+            )
 
 
 def load_global_config(config_path: str) -> dict:

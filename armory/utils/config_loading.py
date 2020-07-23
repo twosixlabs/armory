@@ -26,7 +26,9 @@ from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
-from armory.data.datasets import ArmoryDataGenerator, CheckGenerator
+from armory.art_experimental.attacks import patch
+from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
+from armory.utils import labels
 
 
 def load(sub_config):
@@ -42,9 +44,12 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
-def load_dataset(dataset_config, *args, **kwargs):
+def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     """
     Loads a dataset from configuration file
+
+    If num_batches is None, this function will return a generator that iterates
+    over the entire dataset.
     """
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
@@ -54,7 +59,9 @@ def load_dataset(dataset_config, *args, **kwargs):
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if dataset_config.get("check_run"):
-        return CheckGenerator(dataset)
+        return EvalGenerator(dataset, num_eval_batches=1)
+    if num_batches:
+        return EvalGenerator(dataset, num_eval_batches=num_batches)
     return dataset
 
 
@@ -98,15 +105,29 @@ def load_model(model_config):
 
 
 def load_attack(attack_config, classifier):
+    if attack_config.get("type") == "patch":
+        original_kwargs = attack_config.pop("kwargs")
+        kwargs = original_kwargs.copy()
+        apply_patch_args = kwargs.pop("apply_patch_args", [])
+        apply_patch_kwargs = kwargs.pop("apply_patch_kwargs", {})
+        kwargs.pop("targeted")  # not explicitly used by patch attacks
+        attack_config["kwargs"] = kwargs
+
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
     attack = attack_fn(classifier, **attack_config["kwargs"])
     if not isinstance(attack, Attack):
-        raise TypeError(f"attack {attack} is not an instance of {Attack}")
+        logger.warning(
+            f"attack {attack} is not an instance of {Attack}."
+            " Ensure that it implements ART `generate` API."
+        )
+    if attack_config.get("type") == "patch":
+        attack_config["kwargs"] = original_kwargs
+        return patch.AttackWrapper(attack, apply_patch_args, apply_patch_kwargs)
     return attack
 
 
-def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
+def load_adversarial_dataset(config, preprocessing_fn=None, num_batches=None, **kwargs):
     if config.get("type") != "preloaded":
         raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
     dataset_module = import_module(config["module"])
@@ -119,7 +140,9 @@ def load_adversarial_dataset(config, preprocessing_fn=None, **kwargs):
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if config.get("check_run"):
-        return CheckGenerator(dataset)
+        return EvalGenerator(dataset, num_eval_batches=1)
+    if num_batches:
+        return EvalGenerator(dataset, num_eval_batches=num_batches)
     return dataset
 
 
@@ -169,3 +192,27 @@ def load_defense_internal(defense_config, classifier):
         )
 
     return classifier
+
+
+def load_label_targeter(config):
+    scheme = config["scheme"].lower()
+    if scheme == "fixed":
+        value = config.get("value")
+        return labels.FixedLabelTargeter(value)
+    elif scheme == "random":
+        num_classes = config.get("num_classes")
+        return labels.RandomLabelTargeter(num_classes)
+    elif scheme == "round-robin":
+        num_classes = config.get("num_classes")
+        offset = config.get("offset", 1)
+        return labels.RoundRobinTargeter(num_classes, offset)
+    elif scheme == "manual":
+        values = config.get("values")
+        repeat = config.get("repeat", False)
+        return labels.ManualTargeter(values, repeat)
+    elif scheme == "identity":
+        return labels.IdentityTargeter()
+    else:
+        raise ValueError(
+            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity")'
+        )

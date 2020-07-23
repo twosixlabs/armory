@@ -41,11 +41,12 @@ class FGMBinarySearch(FastGradientMethod):
         batch_classes = np.argmax(batch_labels, axis=1)
 
         # Get perturbation
-        perturbation = self._compute_perturbation(batch, batch_labels)
+        mask = None
+        perturbation = self._compute_perturbation(batch, batch_labels, mask)
 
         def check_epsilon(i, epsilon):
             adv_batch = self._apply_perturbation(batch[[i]], perturbation[[i]], epsilon)
-            adv_pred = self.classifier.predict(adv_batch)
+            adv_pred = self.estimator.predict(adv_batch)
             adv_class = np.argmax(adv_pred, axis=1)
             if self.targeted:
                 success = batch_classes[[i]] == adv_class
@@ -102,8 +103,8 @@ class FGMBinarySearch(FastGradientMethod):
             )
 
             # Check for success
-            adv_preds = self.classifier.predict(adv_batch[active])
-            # adv_preds = self.classifier.predict(adv_batch)  # can we pare this down?
+            adv_preds = self.estimator.predict(adv_batch[active])
+            # adv_preds = self.estimator.predict(adv_batch)  # can we pare this down?
             adv_classes[active] = np.argmax(adv_preds, axis=1)
             # If targeted active check to see whether we have hit the target
             if self.targeted:
@@ -114,11 +115,13 @@ class FGMBinarySearch(FastGradientMethod):
 
         return adv_batch
 
-    def _minimal_perturbation(self, x, y) -> np.ndarray:
+    def _minimal_perturbation(self, x, y, mask) -> np.ndarray:
         """
         Iteratively compute the minimal perturbation necessary to make the
         class prediction change, using binary search.
         """
+        if mask is not None:
+            raise NotImplementedError("non-None mask not implemented")
         adv_x = x.copy()
 
         # Compute perturbation with implicit batching

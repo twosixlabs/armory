@@ -3,7 +3,9 @@ General audio classification scenario
 """
 
 import logging
+from typing import Optional
 
+import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -13,6 +15,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -21,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioClassificationTask(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -57,6 +60,7 @@ class AudioClassificationTask(Scenario):
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
                 preprocessing_fn=fit_preprocessing_fn,
+                shuffle_files=True,
             )
             config["dataset"]["batch_size"] = batch_size
             if defense_type == "Trainer":
@@ -82,6 +86,8 @@ class AudioClassificationTask(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=predict_preprocessing_fn,
+            num_batches=num_eval_batches,
+            shuffle_files=False,
         )
         logger.info("Running inference on benign examples...")
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
@@ -107,16 +113,27 @@ class AudioClassificationTask(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=predict_preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
         else:
             attack = load_attack(attack_config, classifier)
+            if targeted != getattr(attack, "targeted", False):
+                logger.warning(
+                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                )
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=predict_preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
+<<<<<<< HEAD
             with metrics.resource_context(
                 name="Attack", profiler=config["metric"].get("profiler_type")
             ):
@@ -131,10 +148,37 @@ class AudioClassificationTask(Scenario):
                     # x_adv = attack.generate(x=x, y=y_target)
                 else:
                     x_adv = attack.generate(x=x)
+=======
+            if attack_type == "preloaded":
+                x, x_adv = x
+                if targeted:
+                    y, y_target = y
+            elif attack_config.get("use_label"):
+                y_input = y
+                if x.shape[0] != y_input.shape[0]:
+                    if y_input.shape[0] != 1:
+                        raise ValueError(
+                            "batch_size > 1 not currently permitted with use_label"
+                        )
+                    # expansion required due to preprocessing
+                    y_input = np.repeat(y_input, x.shape[0])
+                x_adv = attack.generate(x=x, y=y_input)
+            elif targeted:
+                y_target = label_targeter.generate(y)
+                if x.shape[0] != y_target.shape[0]:
+                    if y_target.shape[0] != 1:
+                        raise ValueError(
+                            "batch_size > 1 not currently permitted with targeted"
+                        )
+                    # expansion required due to preprocessing
+                    y_input = np.repeat(y_target, x.shape[0])
+                x_adv = attack.generate(x=x, y=y_input)
+            else:
+                x_adv = attack.generate(x=x)
+>>>>>>> 1c31757c00326b7876a9ddd76f04484751460378
 
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
-                # NOTE: does not remove data points where y == y_target
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)

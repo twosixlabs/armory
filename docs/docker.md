@@ -151,7 +151,7 @@ and will default to `all` if not present in `run` or when using `launch` and `ex
 
 Examples:
 ```
-armory run scenario_configs/mnist_baseline.json --use_gpus
+armory run scenario_configs/mnist_baseline.json --use-gpu
 armory launch tf1 --gpus=1,4 --interactive
 armory exec pytorch --gpus=0 -- nvidia-smi
 ```

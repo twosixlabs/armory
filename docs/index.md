@@ -62,6 +62,8 @@ full name: `<your_image/name:your_tag>`. For use with `run`, you will need to mo
 Note: Since ARMORY launches Docker containers, the python package must be ran on 
 system host (i.e. not inside of a docker container).
 
+For more information, see [command line usage](command_line.md).
+
 ### Example usage:
 ```
 pip install armory-testbed

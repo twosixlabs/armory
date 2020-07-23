@@ -28,6 +28,7 @@ from art.data_generators import DataGenerator
 from armory.data.utils import (
     download_verify_dataset_cache,
     _read_validate_scenario_config,
+    add_checksums_dir,
 )
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
 CACHED_CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "cached_s3_checksums")
+add_checksums_dir(CACHED_CHECKSUMS_DIR)
 
 
 class ArmoryDataGenerator(DataGenerator):
@@ -147,24 +149,25 @@ class ArmoryDataGenerator(DataGenerator):
         return self.batches_per_epoch * self.epochs
 
 
-class CheckGenerator(DataGenerator):
+class EvalGenerator(DataGenerator):
     """
-    Wraps a single batch in a DataGenerator to quickly run through a scenario
+    Wraps a specified number of batches in a DataGenerator to allow for evaluating on
+    part of a dataset when running through a scenario
     """
 
-    def __init__(self, armory_generator):
+    def __init__(self, armory_generator, num_eval_batches):
         if not isinstance(armory_generator, ArmoryDataGenerator):
             raise ValueError(f"{armory_generator} is not of type ArmoryDataGenerator")
         super().__init__(armory_generator.batch_size, armory_generator.batch_size)
         self.armory_generator = armory_generator
-        self.batches_per_epoch = 1
-        self.used = False
+        self.num_eval_batches = num_eval_batches
+        self.batches_processed = 0
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
-        if self.used:
+        if self.batches_processed == self.num_eval_batches:
             raise StopIteration()
         batch = self.armory_generator.get_batch()
-        self.used = True
+        self.batches_processed += 1
         return batch
 
     def __iter__(self):
@@ -174,7 +177,7 @@ class CheckGenerator(DataGenerator):
         return self.get_batch()
 
     def __len__(self):
-        return self.batches_per_epoch
+        return self.num_eval_batches
 
 
 def _generator_from_tfds(
@@ -297,6 +300,7 @@ def mnist(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -311,6 +315,7 @@ def mnist(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -322,6 +327,7 @@ def cifar10(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -336,6 +342,7 @@ def cifar10(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -347,6 +354,7 @@ def digit(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -362,6 +370,7 @@ def digit(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -373,6 +382,7 @@ def imagenette(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -388,6 +398,7 @@ def imagenette(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -399,7 +410,7 @@ def german_traffic_sign(
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
-    shuffle_files=True,
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -426,6 +437,7 @@ def librispeech_dev_clean(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -452,6 +464,7 @@ def librispeech_dev_clean(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -463,6 +476,7 @@ def resisc45(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -488,6 +502,7 @@ def resisc45(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -499,6 +514,7 @@ def ucf101(
     preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
+    shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
@@ -516,6 +532,7 @@ def ucf101(
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
+        shuffle_files=shuffle_files,
     )
 
 
@@ -524,9 +541,7 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
 
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
-            dataset_dir=dataset_dir,
-            checksum_file=os.path.join(CACHED_CHECKSUMS_DIR, name + ".txt"),
-            name=name,
+            dataset_dir=dataset_dir, checksum_file=name + ".txt", name=name,
         )
 
 

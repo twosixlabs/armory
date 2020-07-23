@@ -1,24 +1,29 @@
 {
-    "_description": "",
+    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
+            "eps": 0.5,
             "eps_step": 0.1,
             "minimal": false,
             "num_random_init": 0,
-            "targeted": false
+            "targeted": true
         },
         "module": "art.attacks.evasion",
-        "name": "FastGradientMethod"
+        "name": "FastGradientMethod",
+        "targeted_labels": {
+            "num_classes": 45,
+            "scheme": "round-robin"
+        },
+        "use_label": false
     },
     "dataset": {
-        "batch_size": 64,
+        "batch_size": 16,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "mnist"
+        "name": "resisc45"
     },
     "defense": null,
     "metric": {
@@ -33,9 +38,9 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.mnist",
+        "module": "armory.baseline_models.keras.densenet121_resisc45",
         "name": "get_art_model",
-        "weights_file": "undefended_mnist_5epochs.pth",
+        "weights_file": "densenet121_resisc45_v1.h5",
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -44,7 +49,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.11.0-dev",
+        "docker_image": "twosixarmory/tf1:0.11.0-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

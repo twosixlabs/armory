@@ -161,6 +161,12 @@ def _no_docker(parser):
     )
 
 
+def _root(parser):
+    parser.add_argument(
+        "--root", action="store_true", help="Whether to run docker as root",
+    )
+
+
 # Config
 
 
@@ -200,6 +206,7 @@ def run(command_args, prog, description):
     _use_gpu(parser)
     _gpus(parser)
     _no_docker(parser)
+    _root(parser)
     parser.add_argument(
         "--output-dir", type=str, help="Override of default output directory prefix",
     )
@@ -212,6 +219,11 @@ def run(command_args, prog, description):
         "--check",
         action="store_true",
         help="Whether to quickly check to see if scenario code runs",
+    )
+    parser.add_argument(
+        "--num-eval-batches",
+        type=int,
+        help="Number of batches to use for evaluation of benign and adversarial examples",
     )
 
     args = parser.parse_args(command_args)
@@ -232,12 +244,13 @@ def run(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
 
-    rig = Evaluator(config, no_docker=args.no_docker)
+    rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
         host_port=args.port,
         check_run=args.check,
+        num_eval_batches=args.num_eval_batches,
     )
 
 
@@ -415,6 +428,7 @@ def configure(command_args, prog, description):
 
     config = {
         "dataset_dir": _get_path("dataset_dir", default_host_paths.dataset_dir),
+        "local_git_dir": _get_path("local_git_dir", default_host_paths.local_git_dir),
         "saved_model_dir": _get_path(
             "saved_model_dir", default_host_paths.saved_model_dir
         ),
@@ -426,6 +440,7 @@ def configure(command_args, prog, description):
         [
             "Resolved paths:",
             f"    dataset_dir:     {config['dataset_dir']}",
+            f"    local_git_dir:   {config['local_git_dir']}",
             f"    saved_model_dir: {config['saved_model_dir']}",
             f"    tmp_dir:         {config['tmp_dir']}",
             f"    output_dir:      {config['output_dir']}",
@@ -464,6 +479,7 @@ def launch(command_args, prog, description):
     _port(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _root(parser)
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -471,7 +487,7 @@ def launch(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.gpus)
 
-    rig = Evaluator(config)
+    rig = Evaluator(config, root=args.root)
     rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -488,6 +504,7 @@ def exec(command_args, prog, description):
     _debug(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _root(parser)
 
     try:
         index = command_args.index(delimiter)
@@ -510,7 +527,7 @@ def exec(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.gpus)
 
-    rig = Evaluator(config)
+    rig = Evaluator(config, root=args.root)
     rig.run(command=command)
 
 

@@ -5,6 +5,7 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
+from typing import Optional
 
 import numpy as np
 from tqdm import tqdm
@@ -16,6 +17,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class Ucf101(Scenario):
-    def _evaluate(self, config: dict) -> dict:
+    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -53,6 +55,7 @@ class Ucf101(Scenario):
                 epochs=train_epochs,
                 split_type="train",
                 preprocessing_fn=preprocessing_fn,
+                shuffle_files=True,
             )
 
             if defense_type == "Trainer":
@@ -93,6 +96,8 @@ class Ucf101(Scenario):
             epochs=1,
             split_type="test",
             preprocessing_fn=preprocessing_fn,
+            num_batches=num_eval_batches,
+            shuffle_files=False,
         )
 
         logger.info("Running inference on benign examples...")
@@ -122,22 +127,33 @@ class Ucf101(Scenario):
                 epochs=1,
                 split_type="adversarial",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
         else:
             attack = load_attack(attack_config, classifier)
+            if targeted != getattr(attack, "targeted", False):
+                logger.warning(
+                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                )
             attack.set_params(batch_size=1)
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
                 preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
             if attack_type == "preloaded":
                 x_batch = list(zip(*x_batch))
                 if targeted:
                     y_batch = list(zip(*y_batch))
             for x, y in zip(x_batch, y_batch):
+<<<<<<< HEAD
                 with metrics.resource_context(
                     name="Attack", profiler=config["metric"].get("profiler_type")
                 ):
@@ -145,6 +161,23 @@ class Ucf101(Scenario):
                         x, x_adv = x
                         if targeted:
                             y, y_target = y
+=======
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                    if targeted:
+                        y, y_target = y
+                else:
+                    # each x is of shape (n_stack, 3, 16, 112, 112)
+                    #    n_stack varies
+                    if attack_config.get("use_label"):
+                        # expansion required due to preprocessing
+                        y_input = np.repeat(y, x.shape[0])
+                        x_adv = attack.generate(x=x, y=y_input)
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                        y_input = np.repeat(y_target, x.shape[0])
+                        x_adv = attack.generate(x=x, y=y_input)
+>>>>>>> 1c31757c00326b7876a9ddd76f04484751460378
                     else:
                         # each x is of shape (n_stack, 3, 16, 112, 112)
                         #    n_stack varies
@@ -160,7 +193,6 @@ class Ucf101(Scenario):
                 # combine predictions across all stacks
                 y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 if targeted:
-                    # NOTE: assumes y != y_target
                     metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
                 else:
                     metrics_logger.update_task(y, y_pred_adv, adversarial=True)
