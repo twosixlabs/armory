@@ -191,7 +191,8 @@
                 "l1",
                 "l2",
                 "lp",
-                "linf"
+                "linf",
+                "image_circle_patch_diameter"
             ],
             "type": "string"
         },

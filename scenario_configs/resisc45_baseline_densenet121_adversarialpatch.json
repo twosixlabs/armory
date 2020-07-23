@@ -34,7 +34,7 @@
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "image_circle_patch_diameter",
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
