@@ -181,7 +181,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
     if (x_i == x_adv_i).mean() < 0.5:
-        logging.warning(
+        logger.warning(
             f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
             "indices. image_circle_patch_area may not be accurate"
         )
@@ -192,7 +192,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     # Determine which indices (along the spatial dimension) are perturbed
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
     if len(pert_spatial_indices) == 0:
-        logging.warning("x_i == x_adv_i. image_circle_patch_area is 0")
+        logger.warning("x_i == x_adv_i. image_circle_patch_area is 0")
         return 0
 
     # Find which indices (preceding the patch's max index) are unperturbed, in order
@@ -209,7 +209,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
 
     # If there are any perturbed indices outside the range of the patch just computed
     if min(pert_spatial_indices) < min_ind_of_patch:
-        logging.warning("Multiple regions of the image have been perturbed")
+        logger.warning("Multiple regions of the image have been perturbed")
 
     diameter = max_ind_of_patch - min_ind_of_patch + 1
     spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
