@@ -91,7 +91,7 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 ## Fair use notes for RESISC-45 and UCF101
 * Two Six Labs does not charge users for access to the Armory repository, 
 nor the datasets therein, nor does it derive a profit directly from use of the 
-data sets.
+datasets.
 * Two Six Labs is not merely republishing the original datasets. The 
 datasets have undergone transformative changes, specifically they have been 
 repackaged to be integrated with Tensorflow Datasets. This repackaging 
@@ -100,10 +100,14 @@ binary tensors as well as decoding audio and video files. Further, Two Six Labs
 has published derived adversarial datasets that modify the original images/videos with 
 small perturbations that are crafted to fool machine learning models for both 
 the RESISC-45 and UCF101 datasets.
-* Two Six Labs uses these data sets within Armory, however there are 
+* Two Six Labs uses these datasets within Armory, however there are 
 other additional datasets present, as well as multiple other features present 
 in Armory beyond providing datasets.
-* Two Size Labs provides public benefit through the public distribution 
+* Two Six Labs attempted to contact the authors of RESISC-45, but received no
+response.
+* UCF101 direct download functionality has been used by other machine learning
+frameworks, such as TensorFlow: https://www.tensorflow.org/datasets/catalog/ucf101
+* Two Six Labs provides public benefit through the public distribution 
 of the Armory framework to evaluate machine learning models. This material is 
 based upon work supported by the Defense Advanced Research Projects Agency 
 (DARPA) under Contract No. HR001120C0114. Any opinions, findings and 
