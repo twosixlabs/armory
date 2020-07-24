@@ -41,6 +41,8 @@ MONGO_PORT = 27017
 MONGO_DATABASE = "armory"
 MONGO_COLLECTION = "scenario_results"
 
+END_SENTINEL = "Scenario has finished running cleanly"
+
 
 class Scenario(abc.ABC):
     def __init__(self):
@@ -269,3 +271,4 @@ if __name__ == "__main__":
     run_config(
         args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches
     )
+    print(END_SENTINEL)  # indicates to host that the scenario finished w/out error

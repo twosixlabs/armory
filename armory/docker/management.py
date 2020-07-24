@@ -6,7 +6,7 @@ import logging
 
 import docker
 
-from armory import paths
+from armory import paths, scenarios
 
 
 logger = logging.getLogger(__name__)
@@ -27,6 +27,7 @@ class ArmoryInstance(object):
         user: str = "",
     ):
         self.docker_client = docker.from_env(version="auto")
+        self.clean_exit = False  # did the most recent command run in the container exit cleanly?
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
@@ -70,12 +71,23 @@ class ArmoryInstance(object):
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str, user=""):
+        # We would like to check the return code to see if the command ran cleanly,
+        #  but `exec_run()` cannot both return the code and stream logs
+        # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
         log = self.docker_container.exec_run(
             cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
         )
 
+        last_output = ""
         for out in log.output:
-            print(out.decode())
+            last_output = out.decode().rstrip()
+            print(last_output)
+
+        if last_output == scenarios.base.END_SENTINEL:
+            logger.info("Command exited cleanly")
+            self.clean_exit = True
+        else:
+            logger.error("Command did not finish cleanly")
 
     def __del__(self):
         # Needed if there is an error in __init__

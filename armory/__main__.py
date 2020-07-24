@@ -252,6 +252,8 @@ def run(command_args, prog, description):
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
     )
+    if not rig.clean_exit:
+        sys.exit(1)
 
 
 def _pull_docker_images(docker_client=None):

@@ -34,6 +34,8 @@ class Evaluator(object):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
 
+        self.clean_exit = False  # did the command exit cleanly? Only used by `armory run`
+
         self.host_paths = paths.HostPaths()
         if os.path.exists(self.host_paths.armory_config):
             self.armory_global_config = load_global_config(
@@ -244,6 +246,8 @@ class Evaluator(object):
 
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
         runner.exec_cmd(cmd, **kwargs)
+        if not self.no_docker:
+            self.clean_exit = runner.clean_exit
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))
