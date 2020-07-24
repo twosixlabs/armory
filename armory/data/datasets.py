@@ -188,8 +188,8 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
     def __iter__(self):
         for ex in self.tf_dataset.take(-1):
             x, y = ex
-            x = torch.from_numpy(x.numpy())
-            y = torch.from_numpy(y.numpy())
+            x = x.numpy()
+            y = y.numpy()
             yield y, x
 
 
@@ -276,8 +276,6 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        logger.warning("PyTorch Dataset loaders are experimental!!")
-
         torch_ds = TFToTorchGenerator(ds)
         generator = torch.utils.data.DataLoader(
             torch_ds, batch_size=None, num_workers=0
