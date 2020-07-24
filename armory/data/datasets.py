@@ -188,8 +188,12 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
     def __iter__(self):
         for ex in self.tf_dataset.take(-1):
             x, y = ex
-            x = x.numpy()
-            y = y.numpy()
+            if isinstance(x, tuple):
+                x = (torch.from_numpy(x[0].numpy()), torch.from_numpy(x[1].numpy()))
+                y = torch.from_numpy(y.numpy())
+            else:
+                x = torch.from_numpy(x.numpy())
+                y = torch.from_numpy(y.numpy())
             yield y, x
 
 
@@ -278,7 +282,7 @@ def _generator_from_tfds(
     elif framework == "pytorch":
         torch_ds = TFToTorchGenerator(ds)
         generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, num_workers=0
+            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
         )
 
     else:
