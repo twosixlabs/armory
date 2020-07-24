@@ -32,6 +32,7 @@ from armory import environment
 from armory.utils import config_loading
 from armory.utils import external_repo
 from armory.utils.configuration import load_config
+from armory.scenarios import END_SENTINEL
 
 
 logger = logging.getLogger(__name__)
@@ -40,8 +41,6 @@ logger = logging.getLogger(__name__)
 MONGO_PORT = 27017
 MONGO_DATABASE = "armory"
 MONGO_COLLECTION = "scenario_results"
-
-END_SENTINEL = "Scenario has finished running cleanly"
 
 
 class Scenario(abc.ABC):
