@@ -22,7 +22,7 @@ tensorflow-gpu==1.15.0
 ### Begin Pytorch required libraries
 pytorch==1.5
 torchvision==0.6.0
-cudatoolkit=10.1
+cudatoolkit==10.1
 ### End Pytorch required libraries
 
 ### Begin TF2 required libraries
