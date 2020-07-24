@@ -194,7 +194,7 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
             else:
                 x = torch.from_numpy(x.numpy())
                 y = torch.from_numpy(y.numpy())
-            yield y, x
+            yield x, y
 
 
 def _generator_from_tfds(

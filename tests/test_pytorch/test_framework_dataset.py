@@ -22,7 +22,7 @@ def test_pytorch_generator_cifar10():
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
-    labels, images = next(iter(dataset))
+    images, labels = next(iter(dataset))
     assert labels.dtype == torch.int64
     assert labels.shape == (batch_size,)
 
@@ -41,7 +41,7 @@ def test_pytorch_generator_mnist():
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
-    labels, images = next(iter(dataset))
+    images, labels = next(iter(dataset))
     assert labels.dtype == torch.int64
     assert labels.shape == (batch_size,)
 
@@ -60,7 +60,7 @@ def test_pytorch_generator_resisc():
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
-    labels, images = next(iter(dataset))
+    images, labels = next(iter(dataset))
     assert labels.dtype == torch.int64
     assert labels.shape == (batch_size,)
 
@@ -112,13 +112,12 @@ def test_tf_pytorch_equality():
         )
     )
 
-    for img_tf, label_tf in ds_tf:
-        label_pytorch, img_pytorch = next(ds_pytorch)
+    for ex_tf, ex_pytorch in zip(ds_tf, ds_pytorch):
 
-        img_tf = img_tf.numpy()
-        label_tf = label_tf.numpy()
-        img_pytorch = img_pytorch.numpy()
-        label_pytorch = label_pytorch.numpy()
+        img_tf = ex_tf[0].numpy()
+        label_tf = ex_tf[1].numpy()
+        img_pytorch = ex_pytorch[0].numpy()
+        label_pytorch = ex_pytorch[1].numpy()
 
         assert np.amax(np.abs(img_tf - img_pytorch)) == 0
         assert np.amax(np.abs(label_tf - label_pytorch)) == 0
