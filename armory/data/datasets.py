@@ -180,6 +180,19 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
+class TFToTorchGenerator(torch.utils.data.IterableDataset):
+    def __init__(self, tf_dataset):
+        super().__init__()
+        self.tf_dataset = tf_dataset
+
+    def __iter__(self):
+        for ex in self.tf_dataset.take(-1):
+            x, y = ex
+            x = torch.from_numpy(x.numpy())
+            y = torch.from_numpy(y.numpy())
+            yield y, x
+
+
 def _generator_from_tfds(
     dataset_name: str,
     split_type: str,
@@ -211,83 +224,69 @@ def _generator_from_tfds(
             dataset_dir, dataset_name=dataset_name,
         )
 
-    if framework == "pytorch":
-        logger.warning(
-            "PyTorch Dataset loaders are experimental!! Support for multi-worker loading is still to come."
-        )
+    default_graph = tf.compat.v1.keras.backend.get_session().graph
 
-        if not shuffle_files:
+    ds, ds_info = tfds.load(
+        dataset_name,
+        split=split_type,
+        as_supervised=as_supervised,
+        data_dir=dataset_dir,
+        with_info=True,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
+        shuffle_files=shuffle_files,
+    )
+    if not as_supervised:
+        try:
+            x_key, y_key = supervised_xy_keys
+        except (TypeError, ValueError):
             raise ValueError(
-                "Armory PyTorch DataLoaders use dareblopy which shuffles reads from TFRecord files by default"
+                f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
+                f" tuple, not {supervised_xy_keys}"
             )
-
-        ds_name, ds_version = dataset_name.split(":")
-        dataset_map = _get_pytorch_dataset_map()
-        if ds_name not in dataset_map.keys():
-            raise NotImplementedError(
-                f"PyTorch DataLoader for `{ds_name}` not yet available."
+        if not isinstance(x_key, str) or not isinstance(y_key, str):
+            raise ValueError(
+                f"supervised_xy_keys be a tuple of strings,"
+                f" not {type(x_key), type(y_key)}"
             )
+        ds = ds.map(lambda x: (x[x_key], x[y_key]))
+    if lambda_map is not None:
+        ds = ds.map(lambda_map)
 
-        ds = dataset_map[ds_name](ds_name, ds_version, split_type, epochs)
-        generator = torch.utils.data.DataLoader(
-            ds, batch_size=batch_size, num_workers=0
-        )
+    ds = ds.repeat(epochs)
+    if shuffle_files:
+        ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+    if variable_length and batch_size > 1:
+        ds = ds.batch(1, drop_remainder=False)
     else:
-        default_graph = tf.compat.v1.keras.backend.get_session().graph
+        ds = ds.batch(batch_size, drop_remainder=False)
+    ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
-        ds, ds_info = tfds.load(
-            dataset_name,
-            split=split_type,
-            as_supervised=as_supervised,
-            data_dir=dataset_dir,
-            with_info=True,
-            download_and_prepare_kwargs=download_and_prepare_kwargs,
-            shuffle_files=shuffle_files,
+    if framework == "numpy":
+        ds = tfds.as_numpy(ds, graph=default_graph)
+        generator = ArmoryDataGenerator(
+            ds,
+            size=ds_info.splits[split_type].num_examples,
+            batch_size=batch_size,
+            epochs=epochs,
+            preprocessing_fn=preprocessing_fn,
+            variable_length=bool(variable_length and batch_size > 1),
         )
-        if not as_supervised:
-            try:
-                x_key, y_key = supervised_xy_keys
-            except (TypeError, ValueError):
-                raise ValueError(
-                    f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
-                    f" tuple, not {supervised_xy_keys}"
-                )
-            if not isinstance(x_key, str) or not isinstance(y_key, str):
-                raise ValueError(
-                    f"supervised_xy_keys be a tuple of strings,"
-                    f" not {type(x_key), type(y_key)}"
-                )
-            ds = ds.map(lambda x: (x[x_key], x[y_key]))
-        if lambda_map is not None:
-            ds = ds.map(lambda_map)
 
-        ds = ds.repeat(epochs)
-        if shuffle_files:
-            ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
-        if variable_length and batch_size > 1:
-            ds = ds.batch(1, drop_remainder=False)
-        else:
-            ds = ds.batch(batch_size, drop_remainder=False)
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    elif framework == "tf":
+        generator = ds
 
-        if framework == "numpy":
-            ds = tfds.as_numpy(ds, graph=default_graph)
-            generator = ArmoryDataGenerator(
-                ds,
-                size=ds_info.splits[split_type].num_examples,
-                batch_size=batch_size,
-                epochs=epochs,
-                preprocessing_fn=preprocessing_fn,
-                variable_length=bool(variable_length and batch_size > 1),
-            )
+    elif framework == "pytorch":
+        logger.warning("PyTorch Dataset loaders are experimental!!")
 
-        elif framework == "tf":
-            generator = ds
+        torch_ds = TFToTorchGenerator(ds)
+        generator = torch.utils.data.DataLoader(
+            torch_ds, batch_size=None, num_workers=0
+        )
 
-        else:
-            raise ValueError(
-                f"`framework` must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"
-            )
+    else:
+        raise ValueError(
+            f"`framework` must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"
+        )
 
     return generator
 
@@ -622,13 +621,3 @@ def _download_data(dataset_name):
         logger.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         logger.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _get_pytorch_dataset_map():
-    import armory.data.pytorch_loaders as ptl
-
-    return {
-        "cifar10": ptl.ImageTFRecordDataSet,
-        "mnist": ptl.ImageTFRecordDataSet,
-        "resisc45_split": ptl.ImageTFRecordDataSet,
-    }
