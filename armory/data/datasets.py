@@ -614,4 +614,3 @@ def _get_pytorch_dataset(ds):
     ds = ptl.TFToTorchGenerator(ds)
 
     return ds
-

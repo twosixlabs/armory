@@ -1,5 +1,6 @@
 import torch
 
+
 class TFToTorchGenerator(torch.utils.data.IterableDataset):
     def __init__(self, tf_dataset):
         super().__init__()
@@ -15,4 +16,3 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
                 x = torch.from_numpy(x.numpy())
                 y = torch.from_numpy(y.numpy())
             yield x, y
-
