@@ -180,23 +180,6 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
-class TFToTorchGenerator(torch.utils.data.IterableDataset):
-    def __init__(self, tf_dataset):
-        super().__init__()
-        self.tf_dataset = tf_dataset
-
-    def __iter__(self):
-        for ex in self.tf_dataset.take(-1):
-            x, y = ex
-            if isinstance(x, tuple):
-                x = (torch.from_numpy(x[0].numpy()), torch.from_numpy(x[1].numpy()))
-                y = torch.from_numpy(y.numpy())
-            else:
-                x = torch.from_numpy(x.numpy())
-                y = torch.from_numpy(y.numpy())
-            yield x, y
-
-
 def _generator_from_tfds(
     dataset_name: str,
     split_type: str,
@@ -280,7 +263,7 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = TFToTorchGenerator(ds)
+        torch_ds = _get_pytorch_dataset(ds)
         generator = torch.utils.data.DataLoader(
             torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
         )
@@ -623,3 +606,12 @@ def _download_data(dataset_name):
         logger.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         logger.exception(f"Loading dataset {dataset_name} failed.")
+
+
+def _get_pytorch_dataset(ds):
+    import armory.data.pytorch_loader as ptl
+
+    ds = ptl.TFToTorchGenerator(ds)
+
+    return ds
+
