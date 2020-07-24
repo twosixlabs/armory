@@ -27,7 +27,7 @@ class ArmoryInstance(object):
         user: str = "",
     ):
         self.docker_client = docker.from_env(version="auto")
-        self.clean_exit = False  # did the most recent command run in the container exit cleanly?
+        self.clean_exit = False  # did the most recent command exit cleanly?
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()

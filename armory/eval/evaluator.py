@@ -34,7 +34,8 @@ class Evaluator(object):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
 
-        self.clean_exit = False  # did the command exit cleanly? Only used by `armory run`
+        # did the command exit cleanly? Only used by `armory run`
+        self.clean_exit = False
 
         self.host_paths = paths.HostPaths()
         if os.path.exists(self.host_paths.armory_config):
