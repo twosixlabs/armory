@@ -84,7 +84,9 @@ class ImageClassificationTask(Scenario):
 
         for x, y in tqdm(test_data, desc="Benign"):
             with metrics.resource_context(
-                name="Inference", profiler=config["metric"].get("profiler_type")
+                name="Inference",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
             ):
                 y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
@@ -125,7 +127,9 @@ class ImageClassificationTask(Scenario):
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
-                name="Attack", profiler=config["metric"].get("profiler_type")
+                name="Attack",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
             ):
                 if attack_type == "preloaded":
                     x, x_adv = x

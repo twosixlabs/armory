@@ -107,7 +107,9 @@ class Ucf101(Scenario):
             for x, y in zip(x_batch, y_batch):
                 # combine predictions across all stacks
                 with metrics.resource_context(
-                    name="Inference", profiler=config["metric"].get("profiler_type")
+                    name="Inference",
+                    profiler=config["metric"].get("profiler_type"),
+                    computational_resource_dict=metrics_logger.computational_resource_dict,
                 ):
                     y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
                 metrics_logger.update_task(y, y_pred)
@@ -148,14 +150,16 @@ class Ucf101(Scenario):
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x_batch, y_batch in tqdm(test_data, desc="Attack"):
-            with metrics.resource_context(
-                name="Attack", profiler=config["metric"].get("profiler_type")
-            ):
-                if attack_type == "preloaded":
-                    x_batch = list(zip(*x_batch))
-                    if targeted:
-                        y_batch = list(zip(*y_batch))
-                for x, y in zip(x_batch, y_batch):
+            if attack_type == "preloaded":
+                x_batch = list(zip(*x_batch))
+                if targeted:
+                    y_batch = list(zip(*y_batch))
+            for x, y in zip(x_batch, y_batch):
+                with metrics.resource_context(
+                    name="Attack",
+                    profiler=config["metric"].get("profiler_type"),
+                    computational_resource_dict=metrics_logger.computational_resource_dict,
+                ):
                     if attack_type == "preloaded":
                         x, x_adv = x
                         if targeted:
@@ -173,16 +177,12 @@ class Ucf101(Scenario):
                             x_adv = attack.generate(x=x, y=y_input)
                         else:
                             x_adv = attack.generate(x=x)
-                    # combine predictions across all stacks
-                    y_pred_adv = np.mean(
-                        classifier.predict(x_adv, batch_size=1), axis=0
-                    )
-                    if targeted:
-                        metrics_logger.update_task(
-                            y_target, y_pred_adv, adversarial=True
-                        )
-                    else:
-                        metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-                    metrics_logger.update_perturbation([x], [x_adv])
+                # combine predictions across all stacks
+                y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
+                if targeted:
+                    metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+                else:
+                    metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()

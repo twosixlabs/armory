@@ -13,9 +13,10 @@ from contextlib import contextmanager
 import cProfile
 import pstats
 import io
+from collections import defaultdict
+
 
 logger = logging.getLogger(__name__)
-computational_resource_dict = {}
 
 
 def categorical_accuracy(y, y_pred):
@@ -158,7 +159,10 @@ def _snr_spectrogram(x_i, x_adv_i):
 
 
 @contextmanager
-def resource_context(name="Name", profiler=None):
+def resource_context(name="Name", profiler=None, computational_resource_dict=None):
+    if profiler is None:
+        yield
+        return 0
     profiler_types = ["Basic", "Deterministic"]
     if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
@@ -168,30 +172,23 @@ def resource_context(name="Name", profiler=None):
         )
         pr = cProfile.Profile()
         pr.enable()
-    if profiler == "Basic" or profiler == "Deterministic":
-        startTime = time.perf_counter()
+    startTime = time.perf_counter()
     yield
-    if profiler == "Basic" or profiler == "Deterministic":
-        elapsedTime = time.perf_counter() - startTime
-        if profiler == "Deterministic":
-            pr.disable()
-            s = io.StringIO()
-            sortby = "cumulative"
-            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            ps.print_stats()
-            stats = s.getvalue()
-        if name in computational_resource_dict:
-            computational_resource_dict[name]["execution_count"] += 1
-            computational_resource_dict[name]["total_time"] += elapsedTime
-            if profiler == "Deterministic":
-                computational_resource_dict[name]["stats"] += stats
-
-        else:
-            computational_resource_dict[name] = {}
-            computational_resource_dict[name]["execution_count"] = 1
-            computational_resource_dict[name]["total_time"] = elapsedTime
-            if profiler == "Deterministic":
-                computational_resource_dict[name]["stats"] = stats
+    elapsedTime = time.perf_counter() - startTime
+    if profiler == "Deterministic":
+        pr.disable()
+        s = io.StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        stats = s.getvalue()
+    if name not in computational_resource_dict:
+        computational_resource_dict[name] = defaultdict(lambda: 0)
+    comp = computational_resource_dict[name]
+    comp["execution_count"] += 1
+    comp["total_time"] += elapsedTime
+    if profiler == "Deterministic":
+        comp["stats"] += stats
     return 0
 
 
@@ -285,6 +282,7 @@ class MetricsLogger:
         means=True,
         record_metric_per_sample=False,
         profiler_type=None,
+        computational_resource_dict=None,
     ):
         """
         task - single metric or list of metrics
@@ -297,6 +295,7 @@ class MetricsLogger:
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
         self.full = bool(record_metric_per_sample)
+        self.computational_resource_dict = {}
         if not self.means and not self.full:
             logger.warning(
                 "No metric results will be produced. "
@@ -376,8 +375,8 @@ class MetricsLogger:
                             f"No values to calculate mean in {prefix}_{metric.name}"
                         )
 
-        for name in computational_resource_dict:
-            entry = computational_resource_dict[name]
+        for name in self.computational_resource_dict:
+            entry = self.computational_resource_dict[name]
             if "execution_count" not in entry or "total_time" not in entry:
                 raise ValueError(
                     "Computational resource dictionary entry corrupted, missing data."
