@@ -34,9 +34,6 @@ class Evaluator(object):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
 
-        # did the command exit cleanly? Only used by `armory run`
-        self.clean_exit = False
-
         self.host_paths = paths.HostPaths()
         if os.path.exists(self.host_paths.armory_config):
             self.armory_global_config = load_global_config(
@@ -149,6 +146,7 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
     ) -> None:
+        exit_code = 0
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
@@ -156,7 +154,7 @@ class Evaluator(object):
                 )
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
             try:
-                self._run_config(
+                exit_code = self._run_config(
                     runner, check_run=check_run, num_eval_batches=num_eval_batches
                 )
             except KeyboardInterrupt:
@@ -164,7 +162,7 @@ class Evaluator(object):
             finally:
                 logger.warning("Cleaning up...")
             self._cleanup()
-            return
+            return exit_code
 
         if check_run and (jupyter or interactive or command):
             raise ValueError(
@@ -190,9 +188,9 @@ class Evaluator(object):
                 elif interactive:
                     self._run_interactive_bash(runner)
                 elif command:
-                    self._run_command(runner, command)
+                    exit_code = self._run_command(runner, command)
                 else:
-                    self._run_config(
+                    exit_code = self._run_config(
                         runner, check_run=check_run, num_eval_batches=num_eval_batches
                     )
             except KeyboardInterrupt:
@@ -218,6 +216,7 @@ class Evaluator(object):
             else:
                 logger.error("Is Docker Daemon running?")
         self._cleanup()
+        return exit_code
 
     def _b64_encode_config(self):
         bytes_config = json.dumps(self.config).encode("utf-8")
@@ -226,7 +225,7 @@ class Evaluator(object):
 
     def _run_config(
         self, runner: ArmoryInstance, check_run=False, num_eval_batches=None
-    ) -> None:
+    ) -> int:
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
@@ -246,9 +245,7 @@ class Evaluator(object):
             options += f" --num-eval-batches {num_eval_batches}"
 
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
-        runner.exec_cmd(cmd, **kwargs)
-        if not self.no_docker:
-            self.clean_exit = runner.clean_exit
+        return runner.exec_cmd(cmd, **kwargs)
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> None:
         logger.info(bold(red(f"Running bash command: {command}")))

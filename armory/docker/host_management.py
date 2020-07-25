@@ -10,17 +10,16 @@ class HostArmoryInstance:
         self.env = os.environ
         for k, v in envs.items():
             self.env[k] = v
-        self.clean_exit = False
 
     def exec_cmd(self, cmd: str, user=""):
         if user:
             raise ValueError("HostArmoryInstance does not support the user input")
         completion = subprocess.run(cmd, env=self.env, shell=True)
-        if not completion.returncode:
-            logger.info("Command exited cleanly")
-            self.clean_exit = True
-        else:
+        if completion.returncode:
             logger.error("Command did not finish cleanly")
+        else:
+            logger.info("Command exited cleanly")
+        return completion.returncode
 
 
 class HostManagementInstance:

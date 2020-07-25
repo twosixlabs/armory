@@ -27,7 +27,6 @@ class ArmoryInstance(object):
         user: str = "",
     ):
         self.docker_client = docker.from_env(version="auto")
-        self.clean_exit = False  # did the most recent command exit cleanly?
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
@@ -85,9 +84,10 @@ class ArmoryInstance(object):
 
         if last_output == scenarios.END_SENTINEL:
             logger.info("Command exited cleanly")
-            self.clean_exit = True
+            return 0
         else:
             logger.error("Command did not finish cleanly")
+            return 1
 
     def __del__(self):
         # Needed if there is an error in __init__
