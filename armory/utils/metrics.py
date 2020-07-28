@@ -184,6 +184,8 @@ def resource_context(name="Name", profiler=None, computational_resource_dict=Non
         stats = s.getvalue()
     if name not in computational_resource_dict:
         computational_resource_dict[name] = defaultdict(lambda: 0)
+        if profiler == "Deterministic":
+            computational_resource_dict[name]["stats"] = ""
     comp = computational_resource_dict[name]
     comp["execution_count"] += 1
     comp["total_time"] += elapsedTime
@@ -388,5 +390,5 @@ class MetricsLogger:
                 f"Avg. CPU time (s) for {execution_count} executions of {name}"
             ] = average_time
             if "stats" in entry:
-                results["{name} profiler stats"] = entry["stats"]
+                results[f"{name} profiler stats"] = entry["stats"]
         return results
