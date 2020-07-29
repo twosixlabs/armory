@@ -106,6 +106,12 @@ class GTSRB(Scenario):
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
 
+        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        poison_dataset_flag = config["adhoc"]["poison_dataset"]
+        # detect_poison does not currently support data generators
+        #     therefore, make in memory dataset
+        x_train_all, y_train_all = [], []
+
         if attack_type == "preloaded":
             num_images_tgt_class = config_adhoc["num_images_target_class"]
             logger.info(
@@ -123,16 +129,10 @@ class GTSRB(Scenario):
                 split_type="poison",
                 preprocessing_fn=None,
             )
-        else:
-            attack = load(attack_config)
-        logger.info("Building in-memory dataset for poisoning detection and training")
-        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
-        poison_dataset_flag = config["adhoc"]["poison_dataset"]
 
-        # detect_poison does not currently support data generators
-        #     therefore, make in memory dataset
-        x_train_all, y_train_all = [], []
-        if attack_type == "preloaded":
+            logger.info(
+                "Building in-memory dataset for poisoning detection and training"
+            )
             for x_clean, y_clean in clean_data:
                 x_train_all.append(x_clean)
                 y_train_all.append(y_clean)
@@ -143,6 +143,10 @@ class GTSRB(Scenario):
             x_train_all = np.concatenate(x_train_all, axis=0)
             y_train_all = np.concatenate(y_train_all, axis=0)
         else:
+            attack = load(attack_config)
+            logger.info(
+                "Building in-memory dataset for poisoning detection and training"
+            )
             for x_train, y_train in clean_data:
                 x_train_all.append(x_train)
                 y_train_all.append(y_train)
