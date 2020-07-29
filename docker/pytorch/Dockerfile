@@ -4,13 +4,11 @@ ARG armory_version
 FROM twosixarmory/armory:${armory_version} AS armory-pytorch-base
 
 # TF used for dataset loading
-RUN /opt/conda/bin/conda install tensorflow==1.15.0 \
+RUN /opt/conda/bin/conda install tensorflow-gpu==2.2.0 \
  pytorch==1.5 \
  torchvision==0.6.0 \
  cudatoolkit=10.1 -c pytorch && \
     /opt/conda/bin/conda clean --all
-
-RUN pip install --no-cache-dir dareblopy==0.0.3
 
 ########## PyTorch 1 Release #################
 
