@@ -14,12 +14,7 @@ class HostArmoryInstance:
     def exec_cmd(self, cmd: str, user=""):
         if user:
             raise ValueError("HostArmoryInstance does not support the user input")
-        completion = subprocess.run(cmd, env=self.env, shell=True)
-        if completion.returncode:
-            logger.error("Command did not finish cleanly")
-        else:
-            logger.info("Command exited cleanly")
-        return completion.returncode
+        subprocess.run(cmd, env=self.env, shell=True)
 
 
 class HostManagementInstance:
