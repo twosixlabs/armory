@@ -107,12 +107,15 @@ class GTSRB(Scenario):
         attack_type = attack_config.get("type")
 
         fraction_poisoned = config["adhoc"]["fraction_poisoned"]
+        # Flag for whether to poison dataset -- used to evaluate
+        #     performance of defense on clean data
         poison_dataset_flag = config["adhoc"]["poison_dataset"]
         # detect_poison does not currently support data generators
         #     therefore, make in memory dataset
         x_train_all, y_train_all = [], []
 
         if attack_type == "preloaded":
+            # Number of datapoints in train split of target clasc
             num_images_tgt_class = config_adhoc["num_images_target_class"]
             logger.info(
                 f"Loading poison dataset {config_adhoc['poison_samples']['name']}..."
@@ -122,6 +125,7 @@ class GTSRB(Scenario):
                 raise ValueError(
                     "For the preloaded attack, fraction_poisoned must be set so that at least on data point is poisoned."
                 )
+            # Set batch size to number of poisons -- read only one batch of preloaded poisons
             config_adhoc["poison_samples"]["batch_size"] = num_poisoned
             poison_data = load_dataset(
                 config["adhoc"]["poison_samples"],
@@ -175,9 +179,13 @@ class GTSRB(Scenario):
 
         y_train_all_categorical = to_categorical(y_train_all)
 
+        # Flag to determine whether defense_classifier is trained directly
+        #     (default API) or is trained as part of detect_poisons method
         fit_defense_classifier_outside_defense = config_adhoc.get(
             "fit_defense_classifier_outside_defense", True
         )
+        # Flag to determine whether defense_classifier uses sparse
+        #     or categorical labels
         defense_categorical_labels = config_adhoc.get(
             "defense_categorical_labels", True
         )
