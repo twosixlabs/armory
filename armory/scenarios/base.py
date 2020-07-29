@@ -32,7 +32,6 @@ from armory import environment
 from armory.utils import config_loading
 from armory.utils import external_repo
 from armory.utils.configuration import load_config
-from armory.scenarios import END_SENTINEL
 
 
 logger = logging.getLogger(__name__)
@@ -270,4 +269,3 @@ if __name__ == "__main__":
     run_config(
         args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches
     )
-    print(END_SENTINEL)  # indicates to host that the scenario finished w/out error
