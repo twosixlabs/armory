@@ -101,6 +101,13 @@
                 "perturbation": {
                     "$ref": "#/definitions/supported_metric"
                 },
+                "profiler_type": {
+                    "enum": [
+                        "Basic",
+                        "Deterministic"
+                    ],
+                    "type": "string"
+                },
                 "record_metric_per_sample": {
                     "type": "boolean"
                 },

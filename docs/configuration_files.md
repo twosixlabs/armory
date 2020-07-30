@@ -40,6 +40,7 @@ All configuration files are verified against the jsonschema definition at run ti
     perturbation: [String] Perturbation metric to calculate for adversarial examples
     record_metric_per_sample: [Bool] Boolean to record metric for every sample in save in output
     task: [List[String]] List of task metrics to record (e.g. categorical_accuracy)
+    profiler_type: [Optional String] Type of computational resource profiling desired for scenario profiling. One of <Basic, Deterministic>
   }
 `model`: [Object]
   {

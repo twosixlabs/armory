@@ -8,6 +8,13 @@ Outputs are lists of python variables amenable to JSON serialization:
 
 import logging
 import numpy as np
+import time
+from contextlib import contextmanager
+import cProfile
+import pstats
+import io
+from collections import defaultdict
+
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +158,42 @@ def _snr_spectrogram(x_i, x_adv_i):
     return signal_power / noise_power
 
 
+@contextmanager
+def resource_context(name="Name", profiler=None, computational_resource_dict=None):
+    if profiler is None:
+        yield
+        return 0
+    profiler_types = ["Basic", "Deterministic"]
+    if profiler is not None and profiler not in profiler_types:
+        raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
+    if profiler == "Deterministic":
+        logger.warn(
+            "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
+        )
+        pr = cProfile.Profile()
+        pr.enable()
+    startTime = time.perf_counter()
+    yield
+    elapsedTime = time.perf_counter() - startTime
+    if profiler == "Deterministic":
+        pr.disable()
+        s = io.StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        stats = s.getvalue()
+    if name not in computational_resource_dict:
+        computational_resource_dict[name] = defaultdict(lambda: 0)
+        if profiler == "Deterministic":
+            computational_resource_dict[name]["stats"] = ""
+    comp = computational_resource_dict[name]
+    comp["execution_count"] += 1
+    comp["total_time"] += elapsedTime
+    if profiler == "Deterministic":
+        comp["stats"] += stats
+    return 0
+
+
 def snr_spectrogram(x, x_adv):
     """
     Return the SNR of a batch of samples with spectrogram input
@@ -288,7 +331,13 @@ class MetricsLogger:
     """
 
     def __init__(
-        self, task=None, perturbation=None, means=True, record_metric_per_sample=False
+        self,
+        task=None,
+        perturbation=None,
+        means=True,
+        record_metric_per_sample=False,
+        profiler_type=None,
+        computational_resource_dict=None,
     ):
         """
         task - single metric or list of metrics
@@ -301,6 +350,7 @@ class MetricsLogger:
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
         self.full = bool(record_metric_per_sample)
+        self.computational_resource_dict = {}
         if not self.means and not self.full:
             logger.warning(
                 "No metric results will be produced. "
@@ -380,4 +430,18 @@ class MetricsLogger:
                             f"No values to calculate mean in {prefix}_{metric.name}"
                         )
 
+        for name in self.computational_resource_dict:
+            entry = self.computational_resource_dict[name]
+            if "execution_count" not in entry or "total_time" not in entry:
+                raise ValueError(
+                    "Computational resource dictionary entry corrupted, missing data."
+                )
+            total_time = entry["total_time"]
+            execution_count = entry["execution_count"]
+            average_time = total_time / execution_count
+            results[
+                f"Avg. CPU time (s) for {execution_count} executions of {name}"
+            ] = average_time
+            if "stats" in entry:
+                results[f"{name} profiler stats"] = entry["stats"]
         return results

@@ -93,7 +93,12 @@ class AudioClassificationTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
 
         for x, y in tqdm(test_data, desc="Benign"):
-            y_pred = classifier.predict(x)
+            with metrics.resource_context(
+                name="Inference",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
+            ):
+                y_pred = classifier.predict(x)
             metrics_logger.update_task(y, y_pred)
         metrics_logger.log_task()
 
@@ -130,32 +135,37 @@ class AudioClassificationTask(Scenario):
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
-            if attack_type == "preloaded":
-                x, x_adv = x
-                if targeted:
-                    y, y_target = y
-            elif attack_config.get("use_label"):
-                y_input = y
-                if x.shape[0] != y_input.shape[0]:
-                    if y_input.shape[0] != 1:
-                        raise ValueError(
-                            "batch_size > 1 not currently permitted with use_label"
-                        )
-                    # expansion required due to preprocessing
-                    y_input = np.repeat(y_input, x.shape[0])
-                x_adv = attack.generate(x=x, y=y_input)
-            elif targeted:
-                y_target = label_targeter.generate(y)
-                if x.shape[0] != y_target.shape[0]:
-                    if y_target.shape[0] != 1:
-                        raise ValueError(
-                            "batch_size > 1 not currently permitted with targeted"
-                        )
-                    # expansion required due to preprocessing
-                    y_input = np.repeat(y_target, x.shape[0])
-                x_adv = attack.generate(x=x, y=y_input)
-            else:
-                x_adv = attack.generate(x=x)
+            with metrics.resource_context(
+                name="Attack",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
+            ):
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                    if targeted:
+                        y, y_target = y
+                elif attack_config.get("use_label"):
+                    y_input = y
+                    if x.shape[0] != y_input.shape[0]:
+                        if y_input.shape[0] != 1:
+                            raise ValueError(
+                                "batch_size > 1 not currently permitted with use_label"
+                            )
+                        # expansion required due to preprocessing
+                        y_input = np.repeat(y_input, x.shape[0])
+                    x_adv = attack.generate(x=x, y=y_input)
+                elif targeted:
+                    y_target = label_targeter.generate(y)
+                    if x.shape[0] != y_target.shape[0]:
+                        if y_target.shape[0] != 1:
+                            raise ValueError(
+                                "batch_size > 1 not currently permitted with targeted"
+                            )
+                        # expansion required due to preprocessing
+                        y_input = np.repeat(y_target, x.shape[0])
+                    x_adv = attack.generate(x=x, y=y_input)
+                else:
+                    x_adv = attack.generate(x=x)
 
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
