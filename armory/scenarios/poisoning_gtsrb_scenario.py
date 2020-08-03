@@ -258,27 +258,29 @@ class GTSRB(Scenario):
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
-        validation_metric = metrics.MetricList("categorical_accuracy")
+        benign_validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
         for x, y in tqdm(test_data, desc="Testing"):
             y_pred = classifier.predict(x)
-            validation_metric.append(y, y_pred)
+            benign_validation_metric.append(y, y_pred)
             y_pred_tgt_class = y_pred[y == src_class]
             if len(y_pred_tgt_class):
                 target_class_benign_metric.append(
                     [src_class] * len(y_pred_tgt_class), y_pred_tgt_class
                 )
-        logger.info(f"Unpoisoned validation accuracy: {validation_metric.mean():.2%}")
+        logger.info(
+            f"Unpoisoned validation accuracy: {benign_validation_metric.mean():.2%}"
+        )
         logger.info(
             f"Unpoisoned validation accuracy on targeted class: {target_class_benign_metric.mean():.2%}"
         )
         results = {
-            "validation_accuracy": validation_metric.mean(),
-            "validation_accuracy_targeted_class": target_class_benign_metric.mean(),
+            "benign_validation_accuracy": benign_validation_metric.mean(),
+            "benign_validation_accuracy_targeted_class": target_class_benign_metric.mean(),
         }
 
-        test_metric = metrics.MetricList("categorical_accuracy")
-        targeted_test_metric = metrics.MetricList("categorical_accuracy")
+        poisoned_test_metric = metrics.MetricList("categorical_accuracy")
+        poisoned_targeted_test_metric = metrics.MetricList("categorical_accuracy")
 
         logger.info("Testing on poisoned test data")
         if attack_type == "preloaded":
@@ -294,8 +296,8 @@ class GTSRB(Scenario):
                 x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float32)
                 y_pred = classifier.predict(x_poison_test)
                 y_true = [src_class] * len(y_pred)
-                targeted_test_metric.append(y_poison_test, y_pred)
-                test_metric.append(y_true, y_pred)
+                poisoned_targeted_test_metric.append(y_poison_test, y_pred)
+                poisoned_test_metric.append(y_true, y_pred)
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -308,7 +310,7 @@ class GTSRB(Scenario):
             ):
                 x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float32)
                 y_pred = classifier.predict(x_clean_test)
-                test_metric.append(y_clean_test, y_pred)
+                poisoned_test_metric.append(y_clean_test, y_pred)
 
         elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
@@ -332,21 +334,23 @@ class GTSRB(Scenario):
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
-                test_metric.append(y_test, y_pred)
+                poisoned_test_metric.append(y_test, y_pred)
 
                 y_pred_targeted = y_pred[y_test == src_class]
                 if not len(y_pred_targeted):
                     continue
-                targeted_test_metric.append(
+                poisoned_targeted_test_metric.append(
                     [tgt_class] * len(y_pred_targeted), y_pred_targeted
                 )
 
         if poison_dataset_flag or attack_type == "preloaded":
-            results["test_accuracy"] = test_metric.mean()
-            results["targeted_misclassification_accuracy"] = targeted_test_metric.mean()
-            logger.info(f"Test accuracy: {test_metric.mean():.2%}")
+            results["poisoned_test_accuracy"] = poisoned_test_metric.mean()
+            results[
+                "poisoned_targeted_misclassification_accuracy"
+            ] = poisoned_targeted_test_metric.mean()
+            logger.info(f"Test accuracy: {poisoned_test_metric.mean():.2%}")
             logger.info(
-                f"Test targeted misclassification accuracy: {targeted_test_metric.mean():.2%}"
+                f"Test targeted misclassification accuracy: {poisoned_targeted_test_metric.mean():.2%}"
             )
 
         return results
