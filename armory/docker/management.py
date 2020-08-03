@@ -79,8 +79,10 @@ class ArmoryInstance(object):
 
         last_output = ""
         for out in log.output:
-            last_output = out.decode().rstrip()
-            print("!!! " + last_output)
+            new_output = out.decode().rstrip()
+            if new_output:  # skip empty lines
+                last_output = new_output
+                print("!!! " + last_output)
 
         # what happens if we put a logging() call here?
         print("End of output")
