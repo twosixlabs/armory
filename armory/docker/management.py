@@ -80,8 +80,9 @@ class ArmoryInstance(object):
         last_output = ""
         for out in log.output:
             last_output = out.decode().rstrip()
-            print(last_output)
+            print("!!! " + last_output)
 
+        print("End of output")
         if last_output == scenarios.END_SENTINEL:
             logger.info("Command exited cleanly")
             return 0
