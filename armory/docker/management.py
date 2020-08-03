@@ -88,7 +88,7 @@ class ArmoryInstance(object):
             logger.info("Command exited cleanly")
             return 0
         else:
-            logger.error(f"Command did not finish cleanly")
+            logger.error("Command did not finish cleanly")
             return 1
 
     def __del__(self):
