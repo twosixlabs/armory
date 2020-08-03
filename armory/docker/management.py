@@ -82,15 +82,13 @@ class ArmoryInstance(object):
             new_output = out.decode().rstrip().strip()
             if new_output:  # skip empty lines
                 last_output = new_output
-                print("!!! " + last_output)
+                print(last_output)
 
-        # what happens if we put a logging() call here?
-        print("End of output")
         if last_output == scenarios.END_SENTINEL:
             logger.info("Command exited cleanly")
             return 0
         else:
-            logger.error(f"Command did not finish cleanly {last_output}")
+            logger.error(f"Command did not finish cleanly")
             return 1
 
     def __del__(self):
