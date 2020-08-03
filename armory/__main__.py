@@ -245,13 +245,14 @@ def run(command_args, prog, description):
     _set_outputs(config, args.output_dir, args.output_filename)
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
-    rig.run(
+    exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
         host_port=args.port,
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
     )
+    sys.exit(exit_code)
 
 
 def _pull_docker_images(docker_client=None):
@@ -324,7 +325,8 @@ def download(command_args, prog, description):
             f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
     )
-    rig.run(command=f"python -c '{cmd}'")
+    exit_code = rig.run(command=f"python -c '{cmd}'")
+    sys.exit(exit_code)
 
 
 def clean(command_args, prog, description):
@@ -488,12 +490,13 @@ def launch(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.gpus)
 
     rig = Evaluator(config, root=args.root)
-    rig.run(
+    exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
         host_port=args.port,
         command="true # No-op",
     )
+    sys.exit(exit_code)
 
 
 def exec(command_args, prog, description):
@@ -528,7 +531,8 @@ def exec(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.gpus)
 
     rig = Evaluator(config, root=args.root)
-    rig.run(command=command)
+    exit_code = rig.run(command=command)
+    sys.exit(exit_code)
 
 
 # command, (function, description)
