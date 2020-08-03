@@ -79,7 +79,7 @@ class ArmoryInstance(object):
 
         last_output = ""
         for out in log.output:
-            new_output = out.decode().rstrip()
+            new_output = out.decode().rstrip().strip()
             if new_output:  # skip empty lines
                 last_output = new_output
                 print("!!! " + last_output)
