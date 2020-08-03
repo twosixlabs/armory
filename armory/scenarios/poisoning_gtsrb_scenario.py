@@ -202,6 +202,8 @@ class GTSRB(Scenario):
             defense_train_epochs = config_adhoc.get(
                 "defense_train_epochs", train_epochs
             )
+
+            # Assumes classifier_for_defense and classifier use same preprocessing function
             classifier_for_defense, _ = load_model(defense_model_config)
             logger.info(
                 f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
