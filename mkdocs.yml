@@ -7,6 +7,7 @@ nav:
   - Baseline Models: baseline_models.md
   - Datasets: datasets.md
   - Adversarial Datasets: adversarial_datasets.md
+  - Dataset Licensing: dataset_licensing.md
   - Docker: docker.md
   - Metrics: metrics.md
   - Scenarios: scenarios.md
