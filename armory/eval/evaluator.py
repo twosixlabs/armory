@@ -120,6 +120,8 @@ class Evaluator(object):
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
                 self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+        if self.config["sysconfig"].get("set_pythonhashseed"):
+            self.extra_env_vars["PYTHONHASHSEED"] = "0"
 
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
