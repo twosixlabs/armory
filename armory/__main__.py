@@ -225,6 +225,11 @@ def run(command_args, prog, description):
         type=int,
         help="Number of batches to use for evaluation of benign and adversarial examples",
     )
+    parser.add_argument(
+        "--skip-benign",
+        action="store_true",
+        help="Skip benign inference and metric calculations",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -251,6 +256,7 @@ def run(command_args, prog, description):
         host_port=args.port,
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
+        skip_benign=args.skip_benign,
     )
     sys.exit(exit_code)
 

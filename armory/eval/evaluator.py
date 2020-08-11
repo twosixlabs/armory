@@ -145,6 +145,7 @@ class Evaluator(object):
         command=None,
         check_run=False,
         num_eval_batches=None,
+        skip_benign=None,
     ) -> None:
         exit_code = 0
         if self.no_docker:
@@ -155,7 +156,10 @@ class Evaluator(object):
             runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
             try:
                 exit_code = self._run_config(
-                    runner, check_run=check_run, num_eval_batches=num_eval_batches
+                    runner,
+                    check_run=check_run,
+                    num_eval_batches=num_eval_batches,
+                    skip_benign=skip_benign,
                 )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -191,7 +195,10 @@ class Evaluator(object):
                     exit_code = self._run_command(runner, command)
                 else:
                     exit_code = self._run_config(
-                        runner, check_run=check_run, num_eval_batches=num_eval_batches
+                        runner,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
                     )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -224,7 +231,11 @@ class Evaluator(object):
         return base64_bytes.decode("utf-8")
 
     def _run_config(
-        self, runner: ArmoryInstance, check_run=False, num_eval_batches=None
+        self,
+        runner: ArmoryInstance,
+        check_run=False,
+        num_eval_batches=None,
+        skip_benign=None,
     ) -> int:
         logger.info(bold(red("Running evaluation script")))
 
@@ -243,6 +254,8 @@ class Evaluator(object):
             options += " --debug"
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
+        if skip_benign:
+            options += f" --skip-benign"
 
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
         return runner.exec_cmd(cmd, **kwargs)
