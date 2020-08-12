@@ -367,5 +367,5 @@ class Evaluator(object):
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
         if skip_benign:
-            options += f" --skip-benign"
+            options += " --skip-benign"
         return options
