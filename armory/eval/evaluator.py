@@ -192,7 +192,12 @@ class Evaluator(object):
                 if jupyter:
                     self._run_jupyter(runner, ports)
                 elif interactive:
-                    self._run_interactive_bash(runner)
+                    self._run_interactive_bash(
+                        runner,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
+                    )
                 elif command:
                     exit_code = self._run_command(runner, command)
                 else:
@@ -242,22 +247,17 @@ class Evaluator(object):
         logger.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
-        options = ""
+        options = self._build_options(
+            check_run=check_run,
+            num_eval_batches=num_eval_batches,
+            skip_benign=skip_benign,
+        )
         if self.no_docker:
-            options += " --no-docker"
             kwargs = {}
             python = sys.executable
         else:
             kwargs = {"user": self.get_id()}
             python = "python"
-        if check_run:
-            options += " --check"
-        if logger.getEffectiveLevel() == logging.DEBUG:
-            options += " --debug"
-        if num_eval_batches:
-            options += f" --num-eval-batches {num_eval_batches}"
-        if skip_benign:
-            options += f" --skip-benign"
 
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
         return runner.exec_cmd(cmd, **kwargs)
@@ -280,7 +280,13 @@ class Evaluator(object):
             group_id = os.getgid()
         return f"{user_id}:{group_id}"
 
-    def _run_interactive_bash(self, runner: ArmoryInstance) -> None:
+    def _run_interactive_bash(
+        self,
+        runner: ArmoryInstance,
+        check_run=False,
+        num_eval_batches=None,
+        skip_benign=None,
+    ) -> None:
         user_group_id = self.get_id()
         lines = [
             "Container ready for interactive use.",
@@ -294,6 +300,11 @@ class Evaluator(object):
             ),
         ]
         if self.config.get("scenario"):
+            options = self._build_options(
+                check_run=check_run,
+                num_eval_batches=num_eval_batches,
+                skip_benign=skip_benign,
+            )
             tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
             os.makedirs(tmp_dir)
             self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
@@ -310,7 +321,7 @@ class Evaluator(object):
                     bold("*** To run your scenario in the container:"),
                     bold(
                         red(
-                            f"    python -m armory.scenarios.base {docker_config_path} --load-config-from-file"
+                            f"    python -m armory.scenarios.base {docker_config_path}{options} --load-config-from-file"
                         )
                     ),
                     bold("*** To gracefully shut down container, press: Ctrl-C"),
@@ -344,3 +355,17 @@ class Evaluator(object):
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
             user="root",
         )
+
+    def _build_options(self, check_run, num_eval_batches, skip_benign):
+        options = ""
+        if self.no_docker:
+            options += " --no-docker"
+        if check_run:
+            options += " --check"
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            options += " --debug"
+        if num_eval_batches:
+            options += f" --num-eval-batches {num_eval_batches}"
+        if skip_benign:
+            options += f" --skip-benign"
+        return options
