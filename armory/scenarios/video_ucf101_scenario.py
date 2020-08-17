@@ -94,7 +94,9 @@ class Ucf101(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
-        if not skip_benign:
+        if skip_benign:
+            logger.info("Skipping benign classification...")
+        else:
             # Evaluate the ART classifier on benign test examples
             logger.info(f"Loading test dataset {config['dataset']['name']}...")
             test_data = load_dataset(
