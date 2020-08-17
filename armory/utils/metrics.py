@@ -287,6 +287,38 @@ SUPPORTED_METRICS = {
     "image_circle_patch_diameter": image_circle_patch_diameter,
 }
 
+# Image-based metrics applied to video
+
+
+def video_metric(metric, frame_average="mean"):
+    mapping = {
+        "mean": np.mean,
+        "max": np.max,
+        "min": np.min,
+    }
+    if frame_average not in mapping:
+        raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
+    frame_average_func = mapping[frame_average]
+
+    def func(x, x_adv):
+        results = []
+        for x_sample, x_adv_sample in zip(x, x_adv):
+            frames = metric(x_sample, x_adv_sample)
+            results.append(frame_average_func(frames))
+        return results
+
+    return func
+
+
+for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
+    metric = SUPPORTED_METRICS[metric_name]
+    for prefix in "mean", "max":
+        new_metric_name = prefix + "_" + metric_name
+        if new_metric_name in SUPPORTED_METRICS:
+            raise ValueError(f"Duplicate metric {new_metric_name} in SUPPORTED_METRICS")
+        new_metric = video_metric(metric, frame_average=prefix)
+        SUPPORTED_METRICS[new_metric_name] = new_metric
+
 
 class MetricList:
     """
