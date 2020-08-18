@@ -291,7 +291,7 @@ def mnist(
         http://yann.lecun.com/exdb/mnist/
     """
     return _generator_from_tfds(
-        "mnist:3.0.0",
+        "mnist:3.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -318,7 +318,7 @@ def cifar10(
         https://www.cs.toronto.edu/~kriz/cifar.html
     """
     return _generator_from_tfds(
-        "cifar10:3.0.0",
+        "cifar10:3.0.2",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
