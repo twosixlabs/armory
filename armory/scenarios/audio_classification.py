@@ -24,7 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 class AudioClassificationTask(Scenario):
-    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
+    def _evaluate(
+        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+    ) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -79,28 +81,33 @@ class AudioClassificationTask(Scenario):
 
         classifier.set_learning_phase(False)
 
-        # Evaluate the ART classifier on benign test examples
-        logger.info(f"Loading test dataset {config['dataset']['name']}...")
-        test_data = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=predict_preprocessing_fn,
-            num_batches=num_eval_batches,
-            shuffle_files=False,
+        metrics_logger = metrics.MetricsLogger.from_config(
+            config["metric"], skip_benign=skip_benign
         )
-        logger.info("Running inference on benign examples...")
-        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
+        if skip_benign:
+            logger.info("Skipping benign classification...")
+        else:
+            # Evaluate the ART classifier on benign test examples
+            logger.info(f"Loading test dataset {config['dataset']['name']}...")
+            test_data = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=predict_preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
+            )
+            logger.info("Running inference on benign examples...")
 
-        for x, y in tqdm(test_data, desc="Benign"):
-            with metrics.resource_context(
-                name="Inference",
-                profiler=config["metric"].get("profiler_type"),
-                computational_resource_dict=metrics_logger.computational_resource_dict,
-            ):
-                y_pred = classifier.predict(x)
-            metrics_logger.update_task(y, y_pred)
-        metrics_logger.log_task()
+            for x, y in tqdm(test_data, desc="Benign"):
+                with metrics.resource_context(
+                    name="Inference",
+                    profiler=config["metric"].get("profiler_type"),
+                    computational_resource_dict=metrics_logger.computational_resource_dict,
+                ):
+                    y_pred = classifier.predict(x)
+                metrics_logger.update_task(y, y_pred)
+            metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")

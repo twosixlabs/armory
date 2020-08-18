@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 
 
 class Ucf101(Scenario):
-    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
+    def _evaluate(
+        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+    ) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -89,31 +91,36 @@ class Ucf101(Scenario):
 
         classifier.set_learning_phase(False)
 
-        # Evaluate the ART classifier on benign test examples
-        logger.info(f"Loading test dataset {config['dataset']['name']}...")
-        test_data = load_dataset(
-            config["dataset"],
-            epochs=1,
-            split_type="test",
-            preprocessing_fn=preprocessing_fn,
-            num_batches=num_eval_batches,
-            shuffle_files=False,
+        metrics_logger = metrics.MetricsLogger.from_config(
+            config["metric"], skip_benign=skip_benign
         )
+        if skip_benign:
+            logger.info("Skipping benign classification...")
+        else:
+            # Evaluate the ART classifier on benign test examples
+            logger.info(f"Loading test dataset {config['dataset']['name']}...")
+            test_data = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type="test",
+                preprocessing_fn=preprocessing_fn,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
+            )
 
-        logger.info("Running inference on benign examples...")
-        metrics_logger = metrics.MetricsLogger.from_config(config["metric"])
+            logger.info("Running inference on benign examples...")
 
-        for x_batch, y_batch in tqdm(test_data, desc="Benign"):
-            for x, y in zip(x_batch, y_batch):
-                # combine predictions across all stacks
-                with metrics.resource_context(
-                    name="Inference",
-                    profiler=config["metric"].get("profiler_type"),
-                    computational_resource_dict=metrics_logger.computational_resource_dict,
-                ):
-                    y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
-                metrics_logger.update_task(y, y_pred)
-        metrics_logger.log_task()
+            for x_batch, y_batch in tqdm(test_data, desc="Benign"):
+                for x, y in zip(x_batch, y_batch):
+                    # combine predictions across all stacks
+                    with metrics.resource_context(
+                        name="Inference",
+                        profiler=config["metric"].get("profiler_type"),
+                        computational_resource_dict=metrics_logger.computational_resource_dict,
+                    ):
+                        y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
+                    metrics_logger.update_task(y, y_pred)
+            metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")

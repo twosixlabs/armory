@@ -48,7 +48,11 @@ class Scenario(abc.ABC):
         self.check_run = False
 
     def evaluate(
-        self, config: dict, mongo_host: Optional[str], num_eval_batches: Optional[int]
+        self,
+        config: dict,
+        mongo_host: Optional[str],
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
     ):
         """
         Evaluate a config for robustness against attack.
@@ -64,7 +68,7 @@ class Scenario(abc.ABC):
             if config.get("adhoc") and config.get("adhoc").get("train_epochs"):
                 config["adhoc"]["train_epochs"] = 1
 
-        results = self._evaluate(config, num_eval_batches)
+        results = self._evaluate(config, num_eval_batches, skip_benign)
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(config, results)
@@ -79,7 +83,9 @@ class Scenario(abc.ABC):
         self.check_run = bool(check_run)
 
     @abc.abstractmethod
-    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
+    def _evaluate(
+        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+    ) -> dict:
         """
         Evaluate the config and return a results dict
         """
@@ -191,7 +197,12 @@ def _scenario_setup(config: dict):
 
 
 def run_config(
-    config_json, from_file=False, check=False, mongo_host=None, num_eval_batches=None
+    config_json,
+    from_file=False,
+    check=False,
+    mongo_host=None,
+    num_eval_batches=None,
+    skip_benign=None,
 ):
     if from_file:
         config = load_config(config_json)
@@ -206,7 +217,7 @@ def run_config(
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host, num_eval_batches)
+    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign)
 
 
 if __name__ == "__main__":
@@ -250,6 +261,11 @@ if __name__ == "__main__":
         type=int,
         help="Number of batches to use for evaluation of benign and adversarial examples",
     )
+    parser.add_argument(
+        "--skip-benign",
+        action="store_true",
+        help="Skip benign inference and metric calculations",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
@@ -268,6 +284,11 @@ if __name__ == "__main__":
         )
 
     run_config(
-        args.config, args.from_file, args.check, args.mongo_host, args.num_eval_batches
+        args.config,
+        args.from_file,
+        args.check,
+        args.mongo_host,
+        args.num_eval_batches,
+        args.skip_benign,
     )
     print(END_SENTINEL)  # indicates to host that the scenario finished w/out error

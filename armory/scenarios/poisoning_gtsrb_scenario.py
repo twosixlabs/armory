@@ -54,7 +54,9 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
 
 
 class GTSRB(Scenario):
-    def _evaluate(self, config: dict, num_eval_batches: Optional[int]) -> dict:
+    def _evaluate(
+        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+    ) -> dict:
         """
         Evaluate a config file for classification robustness against attack.
 
@@ -65,6 +67,8 @@ class GTSRB(Scenario):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
         if num_eval_batches:
             raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
+        if skip_benign:
+            raise ValueError("skip_benign shouldn't be set for poisoning scenario")
 
         model_config = config["model"]
         # Scenario assumes preprocessing_fn makes images all same size

@@ -10,10 +10,11 @@ import logging
 import numpy as np
 import time
 from contextlib import contextmanager
-import cProfile
-import pstats
 import io
 from collections import defaultdict
+
+import cProfile
+import pstats
 
 
 logger = logging.getLogger(__name__)
@@ -338,6 +339,7 @@ class MetricsLogger:
         record_metric_per_sample=False,
         profiler_type=None,
         computational_resource_dict=None,
+        skip_benign=None,
     ):
         """
         task - single metric or list of metrics
@@ -345,7 +347,7 @@ class MetricsLogger:
         means - whether to return the mean value for each metric
         record_metric_per_sample - whether to return metric values for each sample
         """
-        self.tasks = self._generate_counters(task)
+        self.tasks = [] if skip_benign else self._generate_counters(task)
         self.adversarial_tasks = self._generate_counters(task)
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
@@ -356,7 +358,7 @@ class MetricsLogger:
                 "No metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
-        if not self.tasks and not self.perturbations:
+        if not self.tasks and not self.perturbations and not self.adversarial_tasks:
             logger.warning(
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
@@ -374,7 +376,9 @@ class MetricsLogger:
         return [MetricList(x) for x in names]
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config, skip_benign=None):
+        if skip_benign:
+            config["skip_benign"] = skip_benign
         return cls(**config)
 
     def clear(self):
