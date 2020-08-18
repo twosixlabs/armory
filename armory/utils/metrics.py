@@ -168,7 +168,7 @@ def verify_mars(x, x_adv):
     for x_i, x_adv_i in zip(x, x_adv):
         if x_i.shape[1:] != x_adv_i.shape[1:]:
             raise ValueError(f"Shape {x_i.shape[1:]} != {x_adv_i.shape[1:]}")
-        if x_i.shape[1:] != (16, 3, 112, 112):
+        if x_i.shape[1:] != (3, 16, 112, 112):
             raise ValueError(f"Shape {x_i.shape[1:]} != (16, 3, 112, 112)")
 
 
