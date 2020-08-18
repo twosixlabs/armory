@@ -159,6 +159,50 @@ def _snr_spectrogram(x_i, x_adv_i):
     return signal_power / noise_power
 
 
+# Metrics specific to MARS model preprocessing in video UCF101 scenario
+
+
+def verify_mars(x, x_adv):
+    if len(x) != len(x_adv):
+        raise ValueError(f"len(x) {len(x)} != {len(x_adv)} len(x_adv)")
+    for x_i, x_adv_i in zip(x, x_adv):
+        if x_i.shape[1:] != x_adv_i.shape[1:]:
+            raise ValueError(f"Shape {x_i.shape[1:]} != {x_adv_i.shape[1:]}")
+        if x_i.shape[1:] != (16, 3, 112, 112):
+            raise ValueError(f"Shape {x_i.shape[1:]} != (16, 3, 112, 112)")
+
+
+def mars_mean_l2(x, x_adv):
+    """
+    Input dimensions: (n_batch, n_stacks, channels, stack_frames, height, width)
+        Typically: (1, variable, 3, 16, 112, 112)
+    """
+    verify_mars(x, x_adv)
+    out = []
+    for x_i, x_adv_i in zip(x, x_adv):
+        out.append(np.mean(l2(x_i, x_adv_i)))
+    return out
+
+
+def mars_reshape(x_i):
+    """
+    Reshape (n_stacks, 3, 16, 112, 112) into (n_stacks * 16, 112, 112, 3)
+    """
+    return np.transpose(x_i, (0, 2, 3, 4, 1)).reshape((-1, 112, 112, 3))
+
+
+def mars_mean_patch(x, x_adv):
+    verify_mars(x, x_adv)
+    out = []
+    for x_i, x_adv_i in zip(x, x_adv):
+        out.append(
+            np.mean(
+                image_circle_patch_diameter(mars_reshape(x_i), mars_reshape(x_adv_i))
+            )
+        )
+    return out
+
+
 @contextmanager
 def resource_context(name="Name", profiler=None, computational_resource_dict=None):
     if profiler is None:
@@ -285,6 +329,8 @@ SUPPORTED_METRICS = {
     "snr_spectrogram": snr_spectrogram,
     "snr_spectrogram_db": snr_spectrogram_db,
     "image_circle_patch_diameter": image_circle_patch_diameter,
+    "mars_mean_l2": mars_mean_l2,
+    "mars_mean_patch": mars_mean_patch,
 }
 
 # Image-based metrics applied to video

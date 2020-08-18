@@ -190,10 +190,6 @@ class Ucf101(Scenario):
                     metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
                 else:
                     metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-
-                # Map to (batch, frames, W, H, C) = (1, n_stack * 16, 112, 112, 3)
-                x = np.transpose(x, (0, 2, 3, 4, 1)).reshape((-1, 112, 112, 3))
-                x_adv = np.transpose(x_adv, (0, 2, 3, 4, 1)).reshape((-1, 112, 112, 3))
                 metrics_logger.update_perturbation([x], [x_adv])
         metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()

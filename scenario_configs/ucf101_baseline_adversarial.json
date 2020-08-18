@@ -48,7 +48,7 @@
     },
     "metric": {
         "means": true,
-        "perturbation": "mean_image_circle_patch_diameter",
+        "perturbation": "mars_mean_patch",
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy",
