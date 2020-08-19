@@ -82,14 +82,14 @@ class ArmoryInstance(object):
         #  ie after the sentinel
         sentinel_found = False
         for out in log.output:
-            output = out.decode().rstrip().strip()
+            output = out.decode().strip()
             if not output:  # skip empty lines
                 continue
             # this looks absurd, but in some circumstances log.output will combine
             #  outputs from the container into a single string
             # eg, print(a); print(b) is delivered as 'a\r\nb'
             for inner_line in output.splitlines():
-                inner_output = inner_line.rstrip().strip()
+                inner_output = inner_line.strip()
                 if not inner_output:
                     continue
                 print(inner_output)
