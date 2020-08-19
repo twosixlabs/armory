@@ -18,4 +18,4 @@ def test_tf_generator():
         dataset_dir=DATASET_DIR,
         framework="tf",
     )
-    assert isinstance(dataset, tf.data.Dataset)
+    assert isinstance(dataset, (tf.compat.v2.data.Dataset, tf.compat.v1.data.Dataset))
