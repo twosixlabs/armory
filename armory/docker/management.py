@@ -77,14 +77,26 @@ class ArmoryInstance(object):
             cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
         )
 
-        last_output = ""
+        # the sentinel should be the last output from the container
+        # but threading may cause certain warning messages to be printed during container shutdown
+        #  ie after the sentinel
+        sentinel_found = False
         for out in log.output:
-            new_output = out.decode().rstrip().strip()
-            if new_output:  # skip empty lines
-                last_output = new_output
-                print(last_output)
+            output = out.decode().strip()
+            if not output:  # skip empty lines
+                continue
+            # this looks absurd, but in some circumstances log.output will combine
+            #  outputs from the container into a single string
+            # eg, print(a); print(b) is delivered as 'a\r\nb'
+            for inner_line in output.splitlines():
+                inner_output = inner_line.strip()
+                if not inner_output:
+                    continue
+                print(inner_output)
+                if inner_output == scenarios.END_SENTINEL:
+                    sentinel_found = True
 
-        if last_output == scenarios.END_SENTINEL:
+        if sentinel_found:
             logger.info("Command exited cleanly")
             return 0
         else:
