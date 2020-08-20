@@ -50,7 +50,7 @@
         "name": "Ucf101"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.11.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.11.1-dev",
         "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
         "output_dir": null,

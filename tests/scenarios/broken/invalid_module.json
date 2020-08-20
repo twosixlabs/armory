@@ -39,7 +39,7 @@
         "name": "fgm_attack"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.11.0-dev",
+        "docker_image": "twosixarmory/tf1:0.11.1-dev",
         "external_github_repo": null,
         "gpus": "",
         "output_dir": null,
