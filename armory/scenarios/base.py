@@ -204,7 +204,7 @@ def _get_config(config_json, from_file=False):
         config_b64_bytes = base64.b64decode(config_base64_bytes)
         config_string = config_b64_bytes.decode("utf-8")
         config = json.loads(config_string)
-    return config 
+    return config
 
 
 def run_config(
@@ -232,6 +232,7 @@ def init_interactive(config_json, from_file=True):
     coloredlogs.install(level=logging.INFO)
     config = _get_config(config_json, from_file=from_file)
     _scenario_setup(config)
+    return config
 
 
 if __name__ == "__main__":
