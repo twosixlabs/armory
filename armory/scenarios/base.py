@@ -74,12 +74,12 @@ class Scenario(abc.ABC):
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 logger.exception(
-                    f"Encountered error during scenario evaluation. Be sure "
+                    "Encountered error during scenario evaluation. Be sure "
                     + "that the classifier's predict() isn't directly modifying the "
                     + "input variable itself, as this can cause unexpected behavior in ART."
                 )
             else:
-                logger.exception(f"Encountered error during scenario evaluation.")
+                logger.exception("Encountered error during scenario evaluation.")
             sys.exit(1)
 
         if results is None:
