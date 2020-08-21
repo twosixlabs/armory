@@ -48,7 +48,7 @@
     },
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "mars_mean_patch",
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy",

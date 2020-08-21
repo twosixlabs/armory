@@ -159,6 +159,50 @@ def _snr_spectrogram(x_i, x_adv_i):
     return signal_power / noise_power
 
 
+# Metrics specific to MARS model preprocessing in video UCF101 scenario
+
+
+def verify_mars(x, x_adv):
+    if len(x) != len(x_adv):
+        raise ValueError(f"len(x) {len(x)} != {len(x_adv)} len(x_adv)")
+    for x_i, x_adv_i in zip(x, x_adv):
+        if x_i.shape[1:] != x_adv_i.shape[1:]:
+            raise ValueError(f"Shape {x_i.shape[1:]} != {x_adv_i.shape[1:]}")
+        if x_i.shape[1:] != (3, 16, 112, 112):
+            raise ValueError(f"Shape {x_i.shape[1:]} != (3, 16, 112, 112)")
+
+
+def mars_mean_l2(x, x_adv):
+    """
+    Input dimensions: (n_batch, n_stacks, channels, stack_frames, height, width)
+        Typically: (1, variable, 3, 16, 112, 112)
+    """
+    verify_mars(x, x_adv)
+    out = []
+    for x_i, x_adv_i in zip(x, x_adv):
+        out.append(np.mean(l2(x_i, x_adv_i)))
+    return out
+
+
+def mars_reshape(x_i):
+    """
+    Reshape (n_stacks, 3, 16, 112, 112) into (n_stacks * 16, 112, 112, 3)
+    """
+    return np.transpose(x_i, (0, 2, 3, 4, 1)).reshape((-1, 112, 112, 3))
+
+
+def mars_mean_patch(x, x_adv):
+    verify_mars(x, x_adv)
+    out = []
+    for x_i, x_adv_i in zip(x, x_adv):
+        out.append(
+            np.mean(
+                image_circle_patch_diameter(mars_reshape(x_i), mars_reshape(x_adv_i))
+            )
+        )
+    return out
+
+
 @contextmanager
 def resource_context(name="Name", profiler=None, computational_resource_dict=None):
     if profiler is None:
@@ -285,7 +329,41 @@ SUPPORTED_METRICS = {
     "snr_spectrogram": snr_spectrogram,
     "snr_spectrogram_db": snr_spectrogram_db,
     "image_circle_patch_diameter": image_circle_patch_diameter,
+    "mars_mean_l2": mars_mean_l2,
+    "mars_mean_patch": mars_mean_patch,
 }
+
+# Image-based metrics applied to video
+
+
+def video_metric(metric, frame_average="mean"):
+    mapping = {
+        "mean": np.mean,
+        "max": np.max,
+        "min": np.min,
+    }
+    if frame_average not in mapping:
+        raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
+    frame_average_func = mapping[frame_average]
+
+    def func(x, x_adv):
+        results = []
+        for x_sample, x_adv_sample in zip(x, x_adv):
+            frames = metric(x_sample, x_adv_sample)
+            results.append(frame_average_func(frames))
+        return results
+
+    return func
+
+
+for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
+    metric = SUPPORTED_METRICS[metric_name]
+    for prefix in "mean", "max":
+        new_metric_name = prefix + "_" + metric_name
+        if new_metric_name in SUPPORTED_METRICS:
+            raise ValueError(f"Duplicate metric {new_metric_name} in SUPPORTED_METRICS")
+        new_metric = video_metric(metric, frame_average=prefix)
+        SUPPORTED_METRICS[new_metric_name] = new_metric
 
 
 class MetricList:
