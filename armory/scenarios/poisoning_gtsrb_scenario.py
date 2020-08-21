@@ -265,6 +265,8 @@ class GTSRB(Scenario):
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
         for x, y in tqdm(test_data, desc="Testing"):
+            # Ensure that input sample isn't overwritten by classifier
+            x.flags.writeable = False
             y_pred = classifier.predict(x)
             benign_validation_metric.append(y, y_pred)
             y_pred_tgt_class = y_pred[y == src_class]
