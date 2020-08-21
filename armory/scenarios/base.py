@@ -196,6 +196,17 @@ def _scenario_setup(config: dict):
         external_repo.add_local_repo(local_path)
 
 
+def _get_config(config_json, from_file=False):
+    if from_file:
+        config = load_config(config_json)
+    else:
+        config_base64_bytes = config_json.encode("utf-8")
+        config_b64_bytes = base64.b64decode(config_base64_bytes)
+        config_string = config_b64_bytes.decode("utf-8")
+        config = json.loads(config_string)
+    return config
+
+
 def run_config(
     config_json,
     from_file=False,
@@ -204,13 +215,7 @@ def run_config(
     num_eval_batches=None,
     skip_benign=None,
 ):
-    if from_file:
-        config = load_config(config_json)
-    else:
-        config_base64_bytes = config_json.encode("utf-8")
-        config_b64_bytes = base64.b64decode(config_base64_bytes)
-        config_string = config_b64_bytes.decode("utf-8")
-        config = json.loads(config_string)
+    config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
     if scenario_config is None:
         raise KeyError('"scenario" missing from evaluation config')
@@ -218,6 +223,16 @@ def run_config(
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
     scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign)
+
+
+def init_interactive(config_json, from_file=True):
+    """
+    Init environment variables from config to setup environment for interactive use.
+    """
+    coloredlogs.install(level=logging.INFO)
+    config = _get_config(config_json, from_file=from_file)
+    _scenario_setup(config)
+    return config
 
 
 if __name__ == "__main__":
