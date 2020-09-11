@@ -162,6 +162,9 @@ class EvalGenerator(DataGenerator):
         self.armory_generator = armory_generator
         self.num_eval_batches = num_eval_batches
         self.batches_processed = 0
+        # This attr is only used by ucf video scenarios that involve finetuning. It
+        # must be set to enable check runs.
+        self.batches_per_epoch = 1
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
         if self.batches_processed == self.num_eval_batches:
