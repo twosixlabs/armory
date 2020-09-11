@@ -1,6 +1,7 @@
 # Formatting
 All contributions to the repository must be formatted with [black](https://github.com/psf/black).
 ```
+pip install black==19.10b0
 black .
 ```
 
