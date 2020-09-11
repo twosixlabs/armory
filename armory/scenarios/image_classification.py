@@ -90,6 +90,8 @@ class ImageClassificationTask(Scenario):
 
             logger.info("Running inference on benign examples...")
             for x, y in tqdm(test_data, desc="Benign"):
+                # Ensure that input sample isn't overwritten by classifier
+                x.flags.writeable = False
                 with metrics.resource_context(
                     name="Inference",
                     profiler=config["metric"].get("profiler_type"),
@@ -150,6 +152,8 @@ class ImageClassificationTask(Scenario):
                 else:
                     x_adv = attack.generate(x=x)
 
+            # Ensure that input sample isn't overwritten by classifier
+            x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
             if targeted:
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)

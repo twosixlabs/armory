@@ -113,6 +113,8 @@ class Ucf101(Scenario):
             for x_batch, y_batch in tqdm(test_data, desc="Benign"):
                 for x, y in zip(x_batch, y_batch):
                     # combine predictions across all stacks
+                    # Ensure that input sample isn't overwritten by classifier
+                    x.flags.writeable = False
                     with metrics.resource_context(
                         name="Inference",
                         profiler=config["metric"].get("profiler_type"),
@@ -185,6 +187,8 @@ class Ucf101(Scenario):
                         else:
                             x_adv = attack.generate(x=x)
                 # combine predictions across all stacks
+                # Ensure that input sample isn't overwritten by classifier
+                x_adv.flags.writeable = False
                 y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
                 if targeted:
                     metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)

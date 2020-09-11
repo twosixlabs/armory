@@ -20,6 +20,7 @@ import logging
 import os
 import time
 from typing import Optional
+import sys
 
 import coloredlogs
 import pymongo
@@ -68,7 +69,19 @@ class Scenario(abc.ABC):
             if config.get("adhoc") and config.get("adhoc").get("train_epochs"):
                 config["adhoc"]["train_epochs"] = 1
 
-        results = self._evaluate(config, num_eval_batches, skip_benign)
+        try:
+            results = self._evaluate(config, num_eval_batches, skip_benign)
+        except Exception as e:
+            if str(e) == "assignment destination is read-only":
+                logger.exception(
+                    "Encountered error during scenario evaluation. Be sure "
+                    + "that the classifier's predict() isn't directly modifying the "
+                    + "input variable itself, as this can cause unexpected behavior in ART."
+                )
+            else:
+                logger.exception("Encountered error during scenario evaluation.")
+            sys.exit(1)
+
         if results is None:
             logger.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(config, results)
