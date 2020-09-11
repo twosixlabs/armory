@@ -499,7 +499,6 @@ def launch(command_args, prog, description):
     _jupyter(parser)
     _port(parser)
     _use_gpu(parser)
-    _no_use_gpu(parser)
     _gpus(parser)
     _root(parser)
 
@@ -507,7 +506,7 @@ def launch(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
-    _set_gpus(config, args.use_gpu, args.no_use_gpu, args.gpus)
+    _set_gpus(config, args.use_gpu, False, args.gpus)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(
@@ -548,7 +547,8 @@ def exec(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
-    _set_gpus(config, args.use_gpu, args.no_use_gpu, args.gpus)
+    # Config
+    _set_gpus(config, args.use_gpu, False, args.gpus)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(command=command)
