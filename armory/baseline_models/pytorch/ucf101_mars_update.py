@@ -42,7 +42,7 @@ def preprocessing_torch(
     """
     if not isinstance(batch, torch.Tensor):
         logger.warning(f"batch {type(batch)} is not a torch.Tensor. Casting")
-        batch = torch.from_numpy(batch)
+        batch = torch.from_numpy(batch).to(DEVICE)
         # raise ValueError(f"batch {type(batch)} is not a torch.Tensor")
     if batch.dtype != torch.float32:
         raise ValueError(f"batch {batch.dtype} should be torch.float32")
@@ -126,7 +126,9 @@ def preprocessing_torch(
 
     # normalize before changing channel position?
     video = torch.transpose(video, 1, 4)
-    video = ((video * 255) - torch.from_numpy(MEAN)) / torch.from_numpy(STD)
+    video = ((video * 255) - torch.from_numpy(MEAN).to(DEVICE)) / torch.from_numpy(
+        STD
+    ).to(DEVICE)
     video = torch.transpose(video, 4, 1)
 
     return video
