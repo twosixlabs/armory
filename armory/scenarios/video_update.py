@@ -69,7 +69,9 @@ class Ucf101(Scenario):
         if config["dataset"]["batch_size"] != 1:
             raise NotImplementedError("Currently working only with batch size = 1")
 
-        classifier = load_model(config["model"], context)
+        print(context)
+        classifier, _ = load_model(config["model"])
+        # classifier = load_model(config["model"], context)
 
         if config["model"]["fit"]:
             classifier.set_learning_phase(True)
