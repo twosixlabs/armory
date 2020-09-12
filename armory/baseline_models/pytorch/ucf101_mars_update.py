@@ -2,7 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from art.estimation.classification import PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 import numpy as np
 import torch
 from torch import optim
@@ -234,6 +234,7 @@ def make_model(model_status="ucf101_trained", weights_file=None):
 
 class OuterModel(torch.nn.Module):
     def __init__(self, model):
+        super().__init__()
         self.model = model
 
     def forward(self, x):
