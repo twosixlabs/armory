@@ -193,7 +193,7 @@ def _set_gpus(config, use_gpu, no_gpu, gpus):
         # Override if use_gpu, otherwise if config exists, leave config setting in place
         config["sysconfig"]["use_gpu"] = use_gpu
     elif no_gpu:
-        config["sysconfig"]["use_gpu"] = not no_gpu
+        config["sysconfig"]["use_gpu"] = False
 
 
 def _set_outputs(config, output_dir, output_filename):
