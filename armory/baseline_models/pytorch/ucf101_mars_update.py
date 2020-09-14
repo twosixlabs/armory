@@ -247,7 +247,7 @@ class OuterModel(torch.nn.Module):
             # self.model(x)
         else:
             stack_outputs = self.model(x)
-            output = stack_outputs.mean(axis=0)
+            output = stack_outputs.mean(axis=0, keepdims=True)
 
         return output
 
