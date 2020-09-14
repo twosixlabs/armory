@@ -129,6 +129,12 @@ def _port(parser):
     )
 
 
+def _no_gpu(parser):
+    parser.add_argument(
+        "--no-gpu", action="store_true", help="Whether to not use GPU(s)",
+    )
+
+
 def _use_gpu(parser):
     parser.add_argument(
         "--use-gpu", action="store_true", help="Whether to use GPU(s)",
@@ -170,18 +176,24 @@ def _root(parser):
 # Config
 
 
-def _set_gpus(config, use_gpu, gpus):
+def _set_gpus(config, use_gpu, no_gpu, gpus):
     """
     Set gpu values from parser in config
     """
+    if (use_gpu or gpus) and no_gpu:
+        raise ValueError("no_gpu cannot be set with use_gpu or gpus!")
+
     if gpus:
         if not use_gpu:
             logger.info("--gpus field specified. Setting --use-gpu to True")
             use_gpu = True
         config["sysconfig"]["gpus"] = gpus
+
     if use_gpu or "use_gpu" not in config["sysconfig"]:
         # Override if use_gpu, otherwise if config exists, leave config setting in place
         config["sysconfig"]["use_gpu"] = use_gpu
+    elif no_gpu:
+        config["sysconfig"]["use_gpu"] = False
 
 
 def _set_outputs(config, output_dir, output_filename):
@@ -204,6 +216,7 @@ def run(command_args, prog, description):
     _jupyter(parser)
     _port(parser)
     _use_gpu(parser)
+    _no_gpu(parser)
     _gpus(parser)
     _no_docker(parser)
     _root(parser)
@@ -246,7 +259,7 @@ def run(command_args, prog, description):
         if not args.filepath.lower().endswith(".json"):
             logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
-    _set_gpus(config, args.use_gpu, args.gpus)
+    _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
@@ -486,6 +499,7 @@ def launch(command_args, prog, description):
     _jupyter(parser)
     _port(parser)
     _use_gpu(parser)
+    _no_gpu(parser)
     _gpus(parser)
     _root(parser)
 
@@ -493,7 +507,7 @@ def launch(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
-    _set_gpus(config, args.use_gpu, args.gpus)
+    _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(
@@ -513,6 +527,7 @@ def exec(command_args, prog, description):
     _debug(parser)
     _use_gpu(parser)
     _gpus(parser)
+    _no_gpu(parser)
     _root(parser)
 
     try:
@@ -534,7 +549,8 @@ def exec(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
-    _set_gpus(config, args.use_gpu, args.gpus)
+    # Config
+    _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(command=command)
