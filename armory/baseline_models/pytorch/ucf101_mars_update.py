@@ -114,7 +114,7 @@ def preprocessing_torch(
 
     if video.max() > 1.0:
         raise ValueError("Video exceeded max after interpolation")
-    if video.min() > 1.0:
+    if video.min() < 0.0:
         raise ValueError("Video under min after interpolation")
 
     # reshape into stacks of frames
