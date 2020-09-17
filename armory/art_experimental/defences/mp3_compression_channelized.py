@@ -8,11 +8,7 @@ class Mp3CompressionChannelized(Mp3Compression):
     """
 
     def __init__(
-        self,
-        sample_rate,
-        channels_first=False,
-        apply_fit=False,
-        apply_predict=True,
+        self, sample_rate, channels_first=False, apply_fit=False, apply_predict=True,
     ):
         super().__init__(
             sample_rate=sample_rate,
@@ -20,7 +16,6 @@ class Mp3CompressionChannelized(Mp3Compression):
             apply_fit=apply_fit,
             apply_predict=apply_predict,
         )
-
 
     def __call__(self, x, y=None):
         # add a channel axis

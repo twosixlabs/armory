@@ -52,7 +52,7 @@ class VideoCompressionNormalized(VideoCompression):
         self.stds = stds
 
         if dtype is None:
-            dtype = 'float32'
+            dtype = "float32"
         self.dtype = dtype
 
         self.same_video = same_video
@@ -66,13 +66,13 @@ class VideoCompressionNormalized(VideoCompression):
         # number of video compression calls
         if self.same_video:
             x_shape = x.shape
-            x = x.reshape((x_shape[0]*x_shape[1], *x_shape[2:]), order='C')
+            x = x.reshape((x_shape[0] * x_shape[1], *x_shape[2:]), order="C")
             x = np.expand_dims(x, axis=0)
         x, _ = super().__call__(x)
         if self.same_video:
-            x = x.reshape(x_shape, order='C')
+            x = x.reshape(x_shape, order="C")
         x = (x - self.means) / self.stds
-        if self.dtype == 'float32':
+        if self.dtype == "float32":
             x = x.astype(np.float32)
         x = x.transpose(np.argsort(self.transpose))
         return x, y
