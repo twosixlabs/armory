@@ -189,6 +189,21 @@
         },
         "supported_metric": {
             "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
+            "anyOf": [
+                {
+                    "$ref": "#/definitions/supported_metric_enum",
+                    "type": "string"
+                },
+                {
+                    "items": {
+                        "$ref": "#/definitions/supported_metric_enum",
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            ]
+        },
+        "supported_metric_enum": {
             "enum": [
                 "categorical_accuracy",
                 "top_n_categorical_accuracy",
@@ -216,8 +231,7 @@
                 "max_linf",
                 "mean_image_circle_patch_diameter",
                 "max_image_circle_patch_diameter"
-            ],
-            "type": "string"
+            ]
         },
         "sysconfig": {
             "properties": {
