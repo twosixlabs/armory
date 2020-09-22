@@ -55,7 +55,7 @@ def validate_config(config: dict) -> None:
             )
 
 
-def load_global_config(config_path: str) -> dict:
+def load_global_config(config_path: str, validate: bool = True) -> dict:
     try:
         with open(config_path) as f:
             config = json.load(f)
@@ -66,15 +66,16 @@ def load_global_config(config_path: str) -> dict:
         logger.exception(f"Armory config file {config_path} could not be read")
         raise
 
-    try:
-        validate_config(config)
-    except (TypeError, KeyError, ValueError):
-        logger.error(
-            "Error parsing config.json. Please run `armory configure`.\n"
-            "    If you previously ran an older version of armory, you may\n"
-            f"    need to remove the {os.path.dirname(config_path)} directory due to changes"
-        )
-        raise
+    if validate:
+        try:
+            validate_config(config)
+        except (TypeError, KeyError, ValueError):
+            logger.error(
+                "Error parsing config.json. Please run `armory configure`.\n"
+                "    If you previously ran an older version of armory, you may\n"
+                f"    need to remove the {os.path.dirname(config_path)} directory due to changes"
+            )
+            raise
 
     return config
 
