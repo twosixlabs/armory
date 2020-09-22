@@ -436,21 +436,24 @@ def configure(command_args, prog, description):
 
     config = None
     if os.path.exists(default_host_paths.armory_config):
-        prompt = f"Existing configuration found: {default_host_paths.armory_config}"
-        print(prompt)
+        response = None
+        while response is None:
+            prompt = f"Existing configuration found: {default_host_paths.armory_config}"
+            print(prompt)
 
-        response = input("Load existing configuration? [Y/n]")
-        if response in ("Y", "y", ""):
-            print("Loading configuration...")
-            config = load_global_config(
-                default_host_paths.armory_config, validate=False
-            )
-            print("Load successful")
-        elif response in ("N", "n"):
-            print("Configuration not loaded")
-        else:
-            print(f"Invalid selection: {response}")
-        print()
+            response = input("Load existing configuration? [Y/n]")
+            if response in ("Y", "y", ""):
+                print("Loading configuration...")
+                config = load_global_config(
+                    default_host_paths.armory_config, validate=False
+                )
+                print("Load successful")
+            elif response in ("N", "n"):
+                print("Configuration not loaded")
+            else:
+                print(f"Invalid selection: {response}")
+                response = None
+            print()
 
     instructions = "\n".join(
         [
