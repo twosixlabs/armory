@@ -18,6 +18,10 @@ class Mp3CompressionChannelized(Mp3Compression):
         )
 
     def __call__(self, x, y=None):
+        # Check implicit batchsize
+        if x.shape[0] == 1:
+            raise NotImplementedError("Batch size 1 currently not supported for Mp3CompressionChannelizedDefense")
+
         # add a channel axis
         x = np.expand_dims(x, axis=-1)
         x, _ = super().__call__(x)
