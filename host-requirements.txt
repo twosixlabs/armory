@@ -16,7 +16,7 @@ ffmpeg==4.2.3
 pymongo==3.1.0
 
 ### Begin TF1 required libraries
-tensorflow-gpu==1.15.0
+tensorflow-gpu==1.15.4
 ### End TF1 required libraries
 
 ### Begin Pytorch required libraries
@@ -26,5 +26,5 @@ cudatoolkit==10.1
 ### End Pytorch required libraries
 
 ### Begin TF2 required libraries
-tensorflow-gpu==2.2.0
+tensorflow-gpu==2.2.1
 ### End TF2 required libraries
