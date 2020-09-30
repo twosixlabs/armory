@@ -93,7 +93,6 @@ class OuterModel(tf.keras.Model):
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
     inner_model = make_densenet121_resisc_model(**model_kwargs)
-    breakpoint()
     if weights_file:
         filepath = maybe_download_weights_from_s3(weights_file)
         inner_model.load_weights(filepath)
