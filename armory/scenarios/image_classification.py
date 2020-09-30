@@ -52,7 +52,7 @@ class ImageClassificationTask(Scenario):
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
-                #preprocessing_fn=preprocessing_fn,
+                # preprocessing_fn=preprocessing_fn,
                 shuffle_files=True,
             )
             if defense_type == "Trainer":
@@ -83,7 +83,7 @@ class ImageClassificationTask(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                #preprocessing_fn=preprocessing_fn,
+                # preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -91,7 +91,6 @@ class ImageClassificationTask(Scenario):
             logger.info("Running inference on benign examples...")
             for x, y in tqdm(test_data, desc="Benign"):
                 # Ensure that input sample isn't overwritten by classifier
-                breakpoint()
                 x.flags.writeable = False
                 with metrics.resource_context(
                     name="Inference",
@@ -115,7 +114,7 @@ class ImageClassificationTask(Scenario):
                 attack_config,
                 epochs=1,
                 split_type="adversarial",
-                #preprocessing_fn=preprocessing_fn,
+                # preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -129,7 +128,7 @@ class ImageClassificationTask(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                #preprocessing_fn=preprocessing_fn,
+                # preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )

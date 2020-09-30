@@ -79,8 +79,6 @@ def preprocessing_keras(x: np.ndarray) -> np.ndarray:
     breakpoint()
 
 
-
-
 class OuterModel(tf.keras.Model):
     def __init__(self, model):
         super().__init__()
