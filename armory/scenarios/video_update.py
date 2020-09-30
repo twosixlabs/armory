@@ -7,7 +7,6 @@ Scenario Contributor: MITRE Corporation
 import logging
 from typing import Optional
 
-import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
