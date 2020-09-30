@@ -486,11 +486,24 @@ def resisc45(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=resisc45_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
+
+
+def resisc45_canonical_preprocessing(batch):
+    assert batch.dtype == np.uint8
+    assert batch.ndim == 4
+    assert batch.shape[1:] == (256, 256, 3)
+
+    batch = batch.astype(np.float32) / 255
+    assert batch.dtype == np.float32
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def ucf101(

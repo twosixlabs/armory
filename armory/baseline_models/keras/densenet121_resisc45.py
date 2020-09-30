@@ -74,12 +74,31 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
     return new_model
 
 
+def preprocessing_keras(x: np.ndarray) -> np.ndarray:
+    mean, std = mean_std()
+    breakpoint()
+
+
+
+
+class OuterModel(tf.keras.Model):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, x):
+        x = preprocessing_keras(x)
+        return self.model(x)
+
+
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
-    model = make_densenet121_resisc_model(**model_kwargs)
+    inner_model = make_densenet121_resisc_model(**model_kwargs)
+    breakpoint()
     if weights_file:
         filepath = maybe_download_weights_from_s3(weights_file)
-        model.load_weights(filepath)
+        inner_model.load_weights(filepath)
 
+    model = OuterModel(inner_model)
     mean, std = mean_std()
     wrapped_model = KerasClassifier(
         model, clip_values=((0.0 - mean) / std, (1.0 - mean) / std), **wrapper_kwargs
