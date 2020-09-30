@@ -48,6 +48,8 @@ jobs:
           bash docker/build-dev.sh tf1
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+          docker run -w /armory_dev twosixarmory/tf1:${version} python \
+          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf1_test.py
   armory-tf1:
     name: Armory run tests TF1
     runs-on: ubuntu-18.04
@@ -76,6 +78,8 @@ jobs:
           bash docker/build-dev.sh tf2
           docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_docker
           docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_tf2
+          docker run -w /armory_dev twosixarmory/tf2:${version} python \
+          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf2_test.py
   pytest-pytorch:
     name: PyTest PyTorch
     runs-on: ubuntu-18.04
