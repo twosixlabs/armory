@@ -513,7 +513,7 @@ def ucf101(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=ucf101_dataset_canonical_preprocessing,
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
@@ -617,3 +617,35 @@ def _get_pytorch_dataset(ds):
     ds = ptl.TFToTorchGenerator(ds)
 
     return ds
+
+
+class Context:
+    def __init__(self):
+        self.x_dimensions = (None, None, 240, 320, 3)
+        self.default_float = np.float32
+        self.quantization = 255
+
+
+ucf101_context = Context()
+
+
+def ucf101_dataset_canonical_preprocessing(batch):
+    if batch.ndim != len(ucf101_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(ucf101_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, ucf101_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == np.uint8
+    assert batch.shape[2:] == ucf101_context.x_dimensions[2:]
+
+    batch = (
+        batch.astype(ucf101_context.default_float) / ucf101_context.quantization
+    )  # 255
+    assert batch.dtype == ucf101_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch

@@ -10,12 +10,9 @@ from torch import optim
 from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 
-# from MARS.dataset import preprocess_data
-
 from armory.data.utils import maybe_download_weights_from_s3
 
-# from armory.data import datasets
-from armory.scenarios.video_update import dataset_canonical_preprocessing
+from armory.data.datasets import ucf101_dataset_canonical_preprocessing
 from armory.baseline_models.pytorch.ucf101_mars import preprocessing_fn as orig_fn
 
 MEAN = np.array([114.7748, 107.7354, 99.4750], dtype=np.float32)
@@ -137,7 +134,7 @@ def preprocessing_torch(
 def process_both(x):
     original = orig_fn(x)
     original = original[0]
-    numpy_canon = dataset_canonical_preprocessing(x)
+    numpy_canon = ucf101_dataset_canonical_preprocessing(x)
     update = torch.from_numpy(numpy_canon)
     update = preprocessing_torch(update)
     numpy = update.numpy()
@@ -148,34 +145,6 @@ def process_both(x):
         y = y + MEAN
         outputs.append(y)
     return outputs[0], outputs[1]
-
-
-def compare_videos(a, b):
-    a = a.round().astype(np.uint8)
-    b = b.round().astype(np.uint8)
-
-    rows = []
-    for i, (ai, bi) in enumerate(zip(a, b)):
-        row = []
-        for j, (aj, bj) in enumerate(zip(ai, bi)):
-            cj = np.vstack([aj, bj])
-            row.append(cj)
-        rows.append(np.hstack(row))
-    rows = np.vstack(rows)
-    return rows
-
-
-def save_video(c, name):
-    from PIL import Image
-
-    c = c.round().astype(np.uint8)
-    rows = []
-    for ci in c:
-        row = np.hstack(ci)
-        rows.append(row)
-    rows = np.vstack(rows)
-    Image.fromarray(rows).convert("RGB").save(name)
-    return rows
 
 
 def make_model(model_status="ucf101_trained", weights_file=None):
