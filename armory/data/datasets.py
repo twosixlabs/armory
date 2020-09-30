@@ -619,14 +619,14 @@ def _get_pytorch_dataset(ds):
     return ds
 
 
-class Context:
+class Ucf101Context:
     def __init__(self):
         self.x_dimensions = (None, None, 240, 320, 3)
         self.default_float = np.float32
         self.quantization = 255
 
 
-ucf101_context = Context()
+ucf101_context = Ucf101Context()
 
 
 def ucf101_dataset_canonical_preprocessing(batch):
