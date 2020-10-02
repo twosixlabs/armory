@@ -326,11 +326,43 @@ def cifar10(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=cifar10_dataset_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
+
+
+class Cifar10Context:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 32, 32, 3)
+
+
+cifar10_context = Cifar10Context()
+
+
+def cifar10_dataset_canonical_preprocessing(batch):
+    if batch.ndim != len(cifar10_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(cifar10_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, cifar10_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == np.uint8
+    assert batch.shape[2:] == cifar10_context.x_dimensions[2:]
+
+    batch = (
+        batch.astype(cifar10_context.default_float) / cifar10_context.quantization
+    )  # 255
+    assert batch.dtype == cifar10_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def digit(
