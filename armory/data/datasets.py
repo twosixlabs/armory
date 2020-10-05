@@ -299,7 +299,7 @@ def mnist_dataset_canonical_preprocessing(batch):
     ):
         pass
     assert batch.dtype == np.uint8
-    assert batch.shape[2:] == mnist_context.x_dimensions[2:]
+    assert batch.shape[1:] == mnist_context.x_dimensions[1:]
 
     batch = (
         batch.astype(mnist_context.default_float) / mnist_context.quantization
@@ -385,7 +385,7 @@ def cifar10_dataset_canonical_preprocessing(batch):
     ):
         pass
     assert batch.dtype == np.uint8
-    assert batch.shape[2:] == cifar10_context.x_dimensions[2:]
+    assert batch.shape[1:] == cifar10_context.x_dimensions[1:]
 
     batch = (
         batch.astype(cifar10_context.default_float) / cifar10_context.quantization
