@@ -1,19 +1,12 @@
 """
 CNN model for 28x28x1 image classification
 """
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
 
 from armory.data.utils import maybe_download_weights_from_s3
-
-
-def preprocessing_fn(img):
-    # Model will trained with inputs normalized from 0 to 1
-    img = img.astype(np.float32) / 255.0
-    return img
 
 
 def make_mnist_model(**kwargs) -> tf.keras.Model:

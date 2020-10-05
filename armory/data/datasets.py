@@ -279,12 +279,44 @@ def _generator_from_tfds(
     return generator
 
 
+class MnistContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 28, 28, 1)
+
+
+mnist_context = MnistContext()
+
+
+def mnist_dataset_canonical_preprocessing(batch):
+    if batch.ndim != len(mnist_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(mnist_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, mnist_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == np.uint8
+    assert batch.shape[2:] == mnist_context.x_dimensions[2:]
+
+    batch = (
+        batch.astype(mnist_context.default_float) / mnist_context.quantization
+    )  # 255
+    assert batch.dtype == mnist_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
+
+
 def mnist(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
