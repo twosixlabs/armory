@@ -2,6 +2,9 @@
 
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04 AS armory
 
+# Temporary fix for broken nvidia package checksum
+RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
+
 RUN apt-get -y -qq update && \
     apt-get install -y wget vim build-essential git curl
 
