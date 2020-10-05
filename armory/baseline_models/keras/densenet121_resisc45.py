@@ -29,15 +29,20 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
     input = tf.keras.Input(shape=(256, 256, 3))
 
     # Preprocessing layers
-    img_scaled_to_255 = Lambda(lambda image: image*255)(input)
-    img_resized = Lambda(lambda image: tf.image.resize(image, (224, 224)))(img_scaled_to_255)
+    img_scaled_to_255 = Lambda(lambda image: image * 255)(input)
+    img_resized = Lambda(lambda image: tf.image.resize(image, (224, 224)))(
+        img_scaled_to_255
+    )
     img_scaled_to_1 = Lambda(lambda image: image / 255)(img_resized)
     mean, std = mean_std()
     img_standardized = Lambda(lambda image: (image - mean) / std)(img_scaled_to_1)
 
     # Load ImageNet pre-trained DenseNet
     model_notop = DenseNet121(
-        include_top=False, weights=None, input_tensor=img_standardized, input_shape=(224, 224, 3)
+        include_top=False,
+        weights=None,
+        input_tensor=img_standardized,
+        input_shape=(224, 224, 3),
     )
 
     # Add new layers
