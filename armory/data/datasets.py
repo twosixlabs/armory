@@ -574,7 +574,6 @@ def resisc45_canonical_preprocessing(batch):
         )
     assert batch.dtype == np.uint8
     assert batch.shape[1:] == resisc45_context.x_dimensions[1:]
-    assert batch.dtype == np.uint8
 
     batch = batch.astype(resisc45_context.default_float) / resisc45_context.quantization
     assert batch.dtype == resisc45_context.default_float
