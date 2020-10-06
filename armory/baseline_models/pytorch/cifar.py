@@ -2,7 +2,6 @@
 CNN model for 32x32x3 image classification
 """
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from art.classifiers import PyTorchClassifier
@@ -10,12 +9,6 @@ from art.classifiers import PyTorchClassifier
 from armory.data.utils import maybe_download_weights_from_s3
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def preprocessing_fn(img):
-    # Model will trained with inputs normalized from 0 to 1
-    img = img.astype(np.float32) / 255.0
-    return img
 
 
 class Net(nn.Module):
