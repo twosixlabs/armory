@@ -11,12 +11,6 @@ from armory import paths
 from armory.data.utils import maybe_download_weights_from_s3
 
 
-def preprocessing_fn(img):
-    # Model will trained with inputs normalized from 0 to 1
-    img = img.astype(np.float32) / 255.0
-    return img
-
-
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     input_ph = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
     labels_ph = tf.placeholder(tf.int32, shape=[None, 10])
