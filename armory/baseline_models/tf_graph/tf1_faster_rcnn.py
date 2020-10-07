@@ -21,11 +21,18 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
         tf.float32, shape=(1, 1024, 1024, 3)
     )  # trade resolution for speed
 
-    # There is no model wrapper for object detection
-    # This is an MSCOCO pre-trained model that outputs 0-indexed classes,
-    # whose (1-indexed) label map can be found at
-    # https://github.com/tensorflow/models/blob/master/research
-    # /object_detection/data/mscoco_label_map.pbtxt
+    """
+    This is an MSCOCO pre-trained model that outputs 0-indexed classes,
+    whose (1-indexed) label map can be found at
+    https://github.com/tensorflow/models/blob/master/research
+    /object_detection/data/mscoco_label_map.pbtxt
+
+    This model only performs inference and is not trainable. To train
+    or fine-tune this model, please follow instructions at
+    https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1.md
+    """
+
+    # There is no ART model wrapper for object detection
     model = TensorFlowFasterRCNN(
         images,
         model=None,
