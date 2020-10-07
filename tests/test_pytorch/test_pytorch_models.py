@@ -16,16 +16,10 @@ def test_pytorch_mnist():
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.mnist(
-        split_type="train",
-        epochs=1,
-        batch_size=600,
-        dataset_dir=DATASET_DIR,
+        split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(
@@ -49,10 +43,7 @@ def test_pytorch_mnist_pretrained():
     )
 
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     accuracy = 0
@@ -70,16 +61,10 @@ def test_keras_cifar():
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.cifar10(
-        split_type="train",
-        epochs=1,
-        batch_size=500,
-        dataset_dir=DATASET_DIR,
+        split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.cifar10(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(

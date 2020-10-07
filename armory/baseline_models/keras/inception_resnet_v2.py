@@ -21,9 +21,11 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
         img_scaled_to_255
     )
     # Model was trained with inputs normalized from -1 to 1
-    img_normalized = Lambda(lambda image: (image/127.5) -1.)(img_resized)
+    img_normalized = Lambda(lambda image: (image / 127.5) - 1.0)(img_resized)
 
-    inception_resnet_v2 = InceptionResNetV2(weights=None, input_tensor=img_normalized, **model_kwargs)
+    inception_resnet_v2 = InceptionResNetV2(
+        weights=None, input_tensor=img_normalized, **model_kwargs
+    )
     model = Model(inputs=input, outputs=inception_resnet_v2.output)
     if weights_file:
         filepath = maybe_download_weights_from_s3(weights_file)

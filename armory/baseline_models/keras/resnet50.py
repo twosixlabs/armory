@@ -22,7 +22,9 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     # Preprocessing layers
     img_scaled_to_255 = Lambda(lambda image: image * 255)(input)
     # Reorder image channels i.e. img = img[..., ::-1]
-    img_channel_reorder = Lambda(lambda image: tf.reverse(image, axis=[-1]))(img_scaled_to_255)
+    img_channel_reorder = Lambda(lambda image: tf.reverse(image, axis=[-1]))(
+        img_scaled_to_255
+    )
     # Model was trained with inputs zero-centered on ImageNet mean
     img_normalized = Lambda(lambda image: image - IMAGENET_MEANS)(img_channel_reorder)
 

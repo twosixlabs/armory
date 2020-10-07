@@ -16,16 +16,10 @@ def test_tf1_mnist():
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.mnist(
-        split_type="train",
-        epochs=1,
-        batch_size=600,
-        dataset_dir=DATASET_DIR,
+        split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(
