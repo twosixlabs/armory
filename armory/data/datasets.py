@@ -455,6 +455,36 @@ def librispeech_dev_clean(
     )
 
 
+def librispeech(
+    split_type: str = "train_clean100",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
+    cache_dataset: bool = False,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    flags = []
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+
+    return _generator_from_tfds(
+        "librispeech/plain_text:1.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def resisc45(
     split_type: str = "train",
     epochs: int = 1,
