@@ -279,12 +279,43 @@ def _generator_from_tfds(
     return generator
 
 
+class MnistContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 28, 28, 1)
+
+
+mnist_context = MnistContext()
+
+
+def mnist_dataset_canonical_preprocessing(batch):
+    if batch.ndim != len(mnist_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(mnist_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, mnist_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == np.uint8
+    assert batch.shape[1:] == mnist_context.x_dimensions[1:]
+
+    batch = (
+        batch.astype(mnist_context.default_float) / mnist_context.quantization
+    )  # 255
+    assert batch.dtype == mnist_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
+
+
 def mnist(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -299,7 +330,7 @@ def mnist(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=mnist_dataset_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -311,7 +342,6 @@ def cifar10(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -326,11 +356,43 @@ def cifar10(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=cifar10_dataset_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
+
+
+class Cifar10Context:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 32, 32, 3)
+
+
+cifar10_context = Cifar10Context()
+
+
+def cifar10_dataset_canonical_preprocessing(batch):
+    if batch.ndim != len(cifar10_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(cifar10_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, cifar10_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == np.uint8
+    assert batch.shape[1:] == cifar10_context.x_dimensions[1:]
+
+    batch = (
+        batch.astype(cifar10_context.default_float) / cifar10_context.quantization
+    )  # 255
+    assert batch.dtype == cifar10_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def digit(
@@ -460,7 +522,6 @@ def resisc45(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -486,11 +547,37 @@ def resisc45(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=resisc45_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
+
+
+class Resisc45Context:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 256, 256, 3)
+
+
+resisc45_context = Resisc45Context()
+
+
+def resisc45_canonical_preprocessing(batch):
+    if batch.ndim != len(resisc45_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(resisc45_context.x_dimensions)}"
+        )
+    assert batch.dtype == np.uint8
+    assert batch.shape[1:] == resisc45_context.x_dimensions[1:]
+
+    batch = batch.astype(resisc45_context.default_float) / resisc45_context.quantization
+    assert batch.dtype == resisc45_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def ucf101(

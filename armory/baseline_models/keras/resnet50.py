@@ -3,9 +3,11 @@ ResNet50 CNN model for 244x244x3 image classification
 """
 
 import numpy as np
+import tensorflow as tf
 from art.classifiers import KerasClassifier
 from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras.preprocessing import image
+from tensorflow.keras.layers import Lambda
+from tensorflow.keras.models import Model
 
 from armory.data.utils import maybe_download_weights_from_s3
 
@@ -13,29 +15,20 @@ from armory.data.utils import maybe_download_weights_from_s3
 IMAGENET_MEANS = [103.939, 116.779, 123.68]
 
 
-def preprocess_input_resnet50(img):
-    # Model was trained with inputs zero-centered on ImageNet mean
-    img = img[..., ::-1]
-    img[..., 0] -= IMAGENET_MEANS[0]
-    img[..., 1] -= IMAGENET_MEANS[1]
-    img[..., 2] -= IMAGENET_MEANS[2]
-
-    return img
-
-
-def preprocessing_fn(x: np.ndarray) -> np.ndarray:
-    shape = (224, 224)  # Expected input shape of model
-    output = []
-    for i in range(x.shape[0]):
-        im_raw = image.array_to_img(x[i])
-        im = image.img_to_array(im_raw.resize(shape))
-        output.append(im)
-    output = preprocess_input_resnet50(np.array(output))
-    return output
-
-
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    model = ResNet50(weights=None, **model_kwargs)
+    input = tf.keras.Input(shape=(224, 224, 3))
+
+    # Preprocessing layers
+    img_scaled_to_255 = Lambda(lambda image: image * 255)(input)
+    # Reorder image channels i.e. img = img[..., ::-1]
+    img_channel_reorder = Lambda(lambda image: tf.reverse(image, axis=[-1]))(
+        img_scaled_to_255
+    )
+    # Model was trained with inputs zero-centered on ImageNet mean
+    img_normalized = Lambda(lambda image: image - IMAGENET_MEANS)(img_channel_reorder)
+
+    resnet50 = ResNet50(weights=None, input_tensor=img_normalized, **model_kwargs)
+    model = Model(inputs=input, outputs=resnet50.output)
 
     if weights_file:
         filepath = maybe_download_weights_from_s3(weights_file)
