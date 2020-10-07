@@ -36,7 +36,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     model = TensorFlowFasterRCNN(
         images,
         model=None,
-        filename="faster_rcnn_resnet50_coco_2018_01_28.tar.gz",
+        filename="faster_rcnn_resnet50_coco_2018_01_28",
         url="http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet50_coco_2018_01_28.tar.gz",
         sess=None,
         is_training=False,
