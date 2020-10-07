@@ -2,9 +2,7 @@
 Inception_ResNet_v2 CNN model for 299x299x3 image classification
 """
 from art.classifiers import KerasClassifier
-import numpy as np
 import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model

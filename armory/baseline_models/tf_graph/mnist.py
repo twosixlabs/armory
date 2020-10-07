@@ -3,7 +3,6 @@ CNN model for 28x28x1 image classification
 """
 import tarfile
 
-import numpy as np
 import tensorflow.compat.v1 as tf
 from art.classifiers import TFClassifier
 
