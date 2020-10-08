@@ -13,15 +13,10 @@ try:
     import torch  # noqa: F401
 except ImportError:
     pass
+import numpy as np
 from art.attacks import Attack
 
-try:
-    from art.estimators import BaseEstimator as Classifier
-except ImportError:
-    logger.warning(
-        "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
-    )
-    from art.classifiers import Classifier
+from art.estimators import BaseEstimator as Classifier
 from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
@@ -90,13 +85,7 @@ def load_model(model_config):
     model = model_fn(
         model_config["model_kwargs"], model_config["wrapper_kwargs"], weights_path
     )
-    if not isinstance(model, Classifier):
-        raise TypeError(f"{model} is not an instance of {Classifier}")
-    if not weights_file and not model_config["fit"]:
-        logger.warning(
-            "No weights file was provided and the model is not configured to train. "
-            "Are you loading model weights from an online repository?"
-        )
+    _check_model_configuration(model, model_config)
 
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
     if preprocessing_fn is not None:
@@ -165,6 +154,61 @@ def _check_defense_api(defense, defense_baseclass):
         raise ValueError(
             f"defense {defense} does not extend type {type(defense_baseclass)}"
         )
+
+
+def _check_model_configuration(model, model_config):
+
+    weights_file = model_config.get("weights_file", None)
+    if not isinstance(model, Classifier):
+        raise TypeError(f"{model} is not an instance of {Classifier}")
+    if not weights_file and not model_config["fit"]:
+        logger.warning(
+            "You're attempting to evaluate an unfitted model with no "
+            "pre-trained weights!"
+        )
+
+    test_input = np.random.randn(2, *model.input_shape).astype(np.float32)
+    if model.clip_values is not None:
+        try:
+            clip_min, clip_max = model.clip_values
+            np.broadcast_to(clip_min, model.input_shape)
+            np.broadcast_to(clip_max, model.input_shape)
+        except ValueError:
+            raise ValueError(
+                f"Clip values of shape {model.clip_values.shape} cannot be broadcast to input of shape {model.input_shape}"
+            )
+        test_input = np.clip(test_input, clip_min, clip_max)
+
+    try:
+        test_output = model.predict(test_input)
+    except Exception:
+        raise RuntimeError(
+            f"Model input shape configured as {model.input_shape}, but model prediction with shape {test_input.shape} failed"
+        )
+
+    test_output_sq = np.squeeze(test_output)
+    if not np.all(test_output_sq.shape == (2,)) and not np.all(
+        test_output_sq.shape == (2, model.nb_classes)
+    ):
+        raise ValueError(
+            f"Expected output of shape (2,), (2, 1) or (2, {model.nb_classes}) for input batch of size 2, but got {test_output.shape}"
+        )
+
+    test_labels = np.zeros_like(test_output)
+    if test_labels.ndim == 2 and test_labels.shape[1] > 2:
+        test_labels[:, 0] = 1
+    try:
+        test_grad = model.loss_gradient(test_input, test_labels)
+        if not np.all(test_grad.shape == test_input.shape):
+            raise ValueError(
+                f"For input of size {test_input.shape} got gradient of size {test_grad.shape}"
+            )
+    except Exception:
+        logger.warning(
+            "Model encountered error during gradient computation. Gradient-based attack evaluation may be limited"
+        )
+
+    logger.info("Finished model configuration check")
 
 
 def load_defense_wrapper(defense_config, classifier):
