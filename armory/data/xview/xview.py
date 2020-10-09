@@ -39,7 +39,7 @@ The dataset is split into ~58k training images and ~19k test images
 
 _URL = "http://xviewdataset.org/"
 
-_URLS = "/nfs/gard/datasets/xView/xview.tar.gz"  # TODO: replace with s3 bucket
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/xview/xview.tar.gz"
 
 """
 original dataset have 62 classes whose labels are not sequential. Map to sequential classes

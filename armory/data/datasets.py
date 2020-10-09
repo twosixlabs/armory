@@ -33,6 +33,7 @@ from armory.data.utils import (
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 
@@ -610,6 +611,63 @@ def ucf101(
     )
 
 
+def xview(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    split_type - one of ("train", "test")
+    """
+    return _generator_from_tfds(
+        "xview:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=xview_canonical_preprocessing,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+class XViewContext:
+    def __init__(self):
+        self.default_type = np.uint8
+        self.x_dimensions = (
+            None,
+            None,
+            None,
+            3,
+        )  # xview images are square but with different sizes
+
+
+xview_context = XViewContext()
+
+
+def xview_canonical_preprocessing(batch):
+    if batch.ndim != len(xview_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, xview_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == xview_context.default_type
+    assert batch.shape[1] == batch.shape[2]  # Ensure square shape
+    assert batch.shape[3] == xview_context.x_dimensions[3]
+
+    return batch
+
+
 def _cache_dataset(dataset_dir: str, dataset_name: str):
     name, subpath = _parse_dataset_name(dataset_name)
 
@@ -646,6 +704,7 @@ SUPPORTED_DATASETS = {
     "ucf101": ucf101,
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
+    "xview": xview,
 }
 
 
