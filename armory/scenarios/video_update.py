@@ -53,7 +53,6 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
-                preprocessing_fn=ucf101_dataset_canonical_preprocessing,
                 shuffle_files=True,
             )
             config["dataset"]["batch_size"] = batch_size
@@ -79,7 +78,6 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=ucf101_dataset_canonical_preprocessing,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -125,7 +123,6 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=ucf101_dataset_canonical_preprocessing,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
