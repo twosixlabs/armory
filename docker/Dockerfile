@@ -2,6 +2,9 @@
 
 FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04 AS armory
 
+# Temporary fix for broken nvidia package checksum
+RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
+
 RUN apt-get -y -qq update && \
     apt-get install -y wget vim build-essential git curl
 
@@ -21,13 +24,12 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
+    adversarial-robustness-toolbox==1.4.1 \
     Pillow==7.1.2 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
     pytest==5.3.5
-
-RUN /opt/conda/bin/pip install git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@c9f3bdeb79f2fd392c449bbcf2714cf11c485610
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all

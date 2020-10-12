@@ -15,21 +15,12 @@ def test_keras_mnist():
     classifier_module = import_module("armory.baseline_models.keras.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     train_dataset = datasets.mnist(
-        split_type="train",
-        epochs=1,
-        batch_size=600,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(
@@ -51,14 +42,9 @@ def test_keras_mnist_pretrained():
     classifier = classifier_fn(
         model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.h5"
     )
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     accuracy = 0
@@ -74,21 +60,12 @@ def test_keras_cifar():
     classifier_module = import_module("armory.baseline_models.keras.cifar")
     classifier_fn = getattr(classifier_module, "get_art_model")
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     train_dataset = datasets.cifar10(
-        split_type="train",
-        epochs=1,
-        batch_size=500,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="train", epochs=1, batch_size=500, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.cifar10(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(
@@ -110,14 +87,9 @@ def test_keras_imagenet():
     classifier = classifier_fn(
         model_kwargs={}, wrapper_kwargs={}, weights_file="resnet50_imagenet_v1.h5",
     )
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     dataset = adversarial_datasets.imagenet_adversarial(
-        split_type="adversarial",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="adversarial", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     accuracy_clean = 0
@@ -143,14 +115,9 @@ def test_keras_imagenet_transfer():
         wrapper_kwargs={},
         weights_file="inceptionresnetv2_imagenet_v1.h5",
     )
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     dataset = adversarial_datasets.imagenet_adversarial(
-        split_type="adversarial",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="adversarial", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
     accuracy_clean = 0
     accuracy_adv = 0
@@ -161,5 +128,5 @@ def test_keras_imagenet_transfer():
         predictions_adv = classifier.predict(x_adv)
         accuracy_adv += np.sum(np.argmax(predictions_adv, axis=1) == y) / len(y)
 
-    assert (accuracy_clean / dataset.batches_per_epoch) > 0.75
+    assert (accuracy_clean / dataset.batches_per_epoch) > 0.74
     assert (accuracy_adv / dataset.batches_per_epoch) < 0.73

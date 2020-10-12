@@ -4,6 +4,8 @@ Adversarial datasets
 
 from typing import Callable
 
+import numpy as np
+
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
     imagenet_adversarial as IA,
@@ -19,7 +21,6 @@ def imagenet_adversarial(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -49,12 +50,39 @@ def imagenet_adversarial(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=imagenet_canonical_preprocessing,
         shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
+
+
+class ImagenetContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 224, 224, 3)
+
+
+imagenet_context = ImagenetContext()
+
+
+def imagenet_canonical_preprocessing(batch):
+    if batch.ndim != len(imagenet_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(imagenet_context.x_dimensions)}"
+        )
+    assert batch.dtype == np.uint8
+    assert batch.shape[1:] == imagenet_context.x_dimensions[1:]
+    assert batch.dtype == np.uint8
+
+    batch = batch.astype(imagenet_context.default_float) / imagenet_context.quantization
+    assert batch.dtype == imagenet_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def librispeech_adversarial(
