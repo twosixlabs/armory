@@ -3,6 +3,7 @@
 import collections
 import json
 import os
+
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets.public_api as tfds
 
@@ -89,7 +90,7 @@ public release; distribution unlimited.  Case #19-3440.
 
 _URL = "https://arxiv.org/abs/1912.08166"
 
-_URLS = "/armory/datasets/apricot_dev.tar.gz"  # TODO: replace with s3 bucket
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_dev.tar.gz"
 
 
 class ApricotDev(tfds.core.GeneratorBasedBuilder):
