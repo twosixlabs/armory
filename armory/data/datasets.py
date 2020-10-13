@@ -528,8 +528,8 @@ def librispeech_dev_clean_asr(
     shuffle_files: bool = True,
 ):
     """
-    Librispeech dev dataset with custom split used for speaker
-    identification
+    Librispeech dev dataset with custom split used for automatic 
+    speech recognition
 
     split_type - one of ("train", "validation", "test")
 
