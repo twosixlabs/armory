@@ -5,22 +5,17 @@ Automatic speech recognition scenario
 import logging
 from typing import Optional
 
-import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
-    load_attack,
-    load_adversarial_dataset,
-    load_defense_wrapper,
-    load_defense_internal,
-    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
+
 
 class AutomaticSpeechRecognition(Scenario):
     def _evaluate(
@@ -35,10 +30,9 @@ class AutomaticSpeechRecognition(Scenario):
         if isinstance(preprocessing_fn, tuple):
             fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
         else:
-            fit_preprocessing_fn = predict_preprocessing_fn = preprocessing_fn
-
-        defense_config = config.get("defense") or {}
-        defense_type = defense_config.get("type")
+            fit_preprocessing_fn = (
+                predict_preprocessing_fn
+            ) = preprocessing_fn  # noqa: F841
 
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign

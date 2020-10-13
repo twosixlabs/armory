@@ -516,7 +516,8 @@ def librispeech_dev_clean(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-    
+
+
 def librispeech_dev_clean_asr(
     split_type: str = "train",
     epochs: int = 1,
@@ -528,8 +529,8 @@ def librispeech_dev_clean_asr(
     shuffle_files: bool = True,
 ):
     """
-    Librispeech dev dataset with custom split used for automatic 
-    speech recognition
+    Librispeech dev dataset with custom split used for automatic
+    speech recognition.
 
     split_type - one of ("train", "validation", "test")
 
@@ -549,8 +550,8 @@ def librispeech_dev_clean_asr(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         download_and_prepare_kwargs={"download_config": dl_config},
-        as_supervised = False,
-        supervised_xy_keys = ('speech', 'text'),
+        as_supervised=False,
+        supervised_xy_keys=("speech", "text"),
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -746,7 +747,6 @@ SUPPORTED_DATASETS = {
     "librispeech_dev_clean": librispeech_dev_clean,
     "xview": xview,
     "librispeech_dev_clean_asr": librispeech_dev_clean_asr,
-
 }
 
 

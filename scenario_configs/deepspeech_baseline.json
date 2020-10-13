@@ -7,8 +7,7 @@
     },
     "attack": {
         "knowledge": "white",
-        "kwargs": {
-        },
+        "kwargs": {},
         "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
         "name": "ImperceptibleASRPytorch",
         "use_label": false
@@ -37,7 +36,9 @@
         "module": "armory.baseline_models.pytorch.deep_speech",
         "name": "get_art_model",
         "weights_file": "",
-        "wrapper_kwargs": {"pretrained_model":"librispeech"}
+        "wrapper_kwargs": {
+            "pretrained_model": "librispeech"
+        }
     },
     "scenario": {
         "kwargs": {},
@@ -49,7 +50,7 @@
         "external_github_repo": null,
         "gpus": "all",
         "local_repo_path": [
-          "twosixlabs/deepspeech.pytorch/deepspeech_pytorch"
+            "twosixlabs/deepspeech.pytorch/deepspeech_pytorch"
         ],
         "output_dir": null,
         "output_filename": null,
