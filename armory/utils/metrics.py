@@ -158,6 +158,37 @@ def _snr_spectrogram(x_i, x_adv_i):
     noise_power = np.abs(x_i - x_adv_i).mean()
     return signal_power / noise_power
 
+def word_error_rate(y, y_pred): 
+    """
+    Return the word error rate for a batch of transcriptions.
+    """
+    if len(y) != len(y_pred):
+        raise ValueError(f"len(y) {len(y)} != len(y_pred) {len(y_pred)}")
+    return [_word_error_rate(y_i, y_pred_i) for (y_i, y_pred_i) in zip(y, y_pred)]
+
+def _word_error_rate(y_i, y_pred_i):
+    reference = y_i.decode('utf-8').split()
+    hypothesis = y_pred_i.split()
+    r_length = len(reference)
+    h_length = len(hypothesis)
+    matrix = np.zeros((r_length+1, h_length+1))
+    for i in range(r_length + 1):
+        for j in range(h_length + 1):
+            if i == 0: 
+                matrix[0][j] = j
+            elif j == 0:
+                matrix[i][0] = i
+    for i in range(1, r_length + 1):
+        for j in range(1, h_length + 1):
+            if reference[i-1] == hypothesis[j-1]:
+                matrix[i][j] = matrix[i-1][j-1]
+            else:
+                substitute = matrix[i-1][j-1] + 1
+                insertion = matrix[i][j-1] + 1
+                deletion = matrix[i-1][j] + 1
+                matrix[i][j] = min(substitute, insertion, deletion)
+    return float(matrix[r_length][h_length] / r_length)
+
 
 # Metrics specific to MARS model preprocessing in video UCF101 scenario
 
@@ -331,6 +362,7 @@ SUPPORTED_METRICS = {
     "image_circle_patch_diameter": image_circle_patch_diameter,
     "mars_mean_l2": mars_mean_l2,
     "mars_mean_patch": mars_mean_patch,
+    "word_error_rate": word_error_rate,
 }
 
 # Image-based metrics applied to video

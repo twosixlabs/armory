@@ -1,0 +1,58 @@
+{
+    "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
+    "adhoc": {
+        "predict_kwargs": {
+            "transcription_output": true
+        }
+    },
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+        },
+        "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
+        "name": "ImperceptibleASRPytorch",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 32,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean_asr"
+    },
+    "defense": null,
+    "metric": {
+        "means": false,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "word_error_rate"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 20000
+        },
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.deep_speech",
+        "name": "get_art_model",
+        "weights_file": "",
+        "wrapper_kwargs": {"pretrained_model":"librispeech"}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.audio_asr",
+        "name": "AutomaticSpeechRecognition"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.12.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "local_repo_path": [
+          "twosixlabs/deepspeech.pytorch/deepspeech_pytorch"
+        ],
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": true
+    }
+}
