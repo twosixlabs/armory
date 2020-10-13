@@ -13,6 +13,7 @@ from armory.data.adversarial import (  # noqa: F401
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
     gtsrb_bh_poison_micronnet,
+    apricot_dev,
 )
 
 
@@ -277,3 +278,56 @@ def gtsrb_poison(
         framework=framework,
         lambda_map=lambda x, y: (x, y),
     )
+
+
+def apricot_dev_adversarial(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise NotImplementedError("Currently working only with batch size = 1")
+
+    return datasets._generator_from_tfds(
+        "apricot_dev:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=apricot_canonical_preprocessing,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+    )
+
+
+class ApricotContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, None, None, 3)
+
+
+apricot_context = ApricotContext()
+
+
+def apricot_canonical_preprocessing(batch):
+    if batch.ndim != len(apricot_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(apricot_context.x_dimensions)}"
+        )
+    assert batch.dtype == np.uint8
+    assert batch.shape[3] == apricot_context.x_dimensions[3]
+
+    batch = batch.astype(apricot_context.default_float) / apricot_context.quantization
+    assert batch.dtype == apricot_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
