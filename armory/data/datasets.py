@@ -509,13 +509,48 @@ def librispeech_dev_clean(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=librispeech_dev_clean_dataset_canonical_preprocessing,
         download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
+
+
+class LibriSpeechDevCleanContext:
+    def __init__(self):
+        self.input_type = np.int64  # TODO: why not int64?
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+        self.x_shape = (None,)
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+librispeech_dev_clean_context = LibriSpeechDevCleanContext()
+
+
+def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
+    context = librispeech_dev_clean_context
+    if batch.ndim != len(context.x_shape) + 1:
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(context.x_dimensions) + 1}"
+        )
+    if batch.dtype != context.input_type:
+        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.max() <= context.input_max
+    assert batch.min() >= context.input_min
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+    assert batch.dtype == context.output_type
+    assert batch.max() <= context.output_max
+    assert batch.min() >= context.output_min
+
+    return batch
 
 
 def resisc45(
