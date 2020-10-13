@@ -30,10 +30,9 @@ class AutomaticSpeechRecognition(Scenario):
         if isinstance(preprocessing_fn, tuple):
             fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
         else:
-            fit_preprocessing_fn = (
+            fit_preprocessing_fn = (  # noqa: F841
                 predict_preprocessing_fn
-            ) = preprocessing_fn  # noqa: F841
-
+            ) = preprocessing_fn
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
