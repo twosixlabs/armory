@@ -4,6 +4,8 @@ Adversarial datasets
 
 from typing import Callable
 
+import numpy as np
+
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
     imagenet_adversarial as IA,
@@ -11,6 +13,7 @@ from armory.data.adversarial import (  # noqa: F401
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
     gtsrb_bh_poison_micronnet,
+    apricot_dev,
 )
 
 
@@ -19,7 +22,6 @@ def imagenet_adversarial(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -49,12 +51,39 @@ def imagenet_adversarial(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=imagenet_canonical_preprocessing,
         shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
+
+
+class ImagenetContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, 224, 224, 3)
+
+
+imagenet_context = ImagenetContext()
+
+
+def imagenet_canonical_preprocessing(batch):
+    if batch.ndim != len(imagenet_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(imagenet_context.x_dimensions)}"
+        )
+    assert batch.dtype == np.uint8
+    assert batch.shape[1:] == imagenet_context.x_dimensions[1:]
+    assert batch.dtype == np.uint8
+
+    batch = batch.astype(imagenet_context.default_float) / imagenet_context.quantization
+    assert batch.dtype == imagenet_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
 
 
 def librispeech_adversarial(
@@ -249,3 +278,56 @@ def gtsrb_poison(
         framework=framework,
         lambda_map=lambda x, y: (x, y),
     )
+
+
+def apricot_dev_adversarial(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise NotImplementedError("Currently working only with batch size = 1")
+
+    return datasets._generator_from_tfds(
+        "apricot_dev:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=apricot_canonical_preprocessing,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+    )
+
+
+class ApricotContext:
+    def __init__(self):
+        self.default_float = np.float32
+        self.quantization = 255
+        self.x_dimensions = (None, None, None, 3)
+
+
+apricot_context = ApricotContext()
+
+
+def apricot_canonical_preprocessing(batch):
+    if batch.ndim != len(apricot_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(apricot_context.x_dimensions)}"
+        )
+    assert batch.dtype == np.uint8
+    assert batch.shape[3] == apricot_context.x_dimensions[3]
+
+    batch = batch.astype(apricot_context.default_float) / apricot_context.quantization
+    assert batch.dtype == apricot_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch

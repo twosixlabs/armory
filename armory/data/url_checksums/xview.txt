@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/xview/xview.tar.gz 1316164908 72c81c118b252c5d9539075760660eb2222811b9bce7c609f594284d785e04e5

@@ -14,21 +14,12 @@ def test_tf1_mnist():
     classifier_module = import_module("armory.baseline_models.tf_graph.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
-    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
 
     train_dataset = datasets.mnist(
-        split_type="train",
-        epochs=1,
-        batch_size=600,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.mnist(
-        split_type="test",
-        epochs=1,
-        batch_size=100,
-        dataset_dir=DATASET_DIR,
-        preprocessing_fn=preprocessing_fn,
+        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(

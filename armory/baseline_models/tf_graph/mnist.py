@@ -3,18 +3,11 @@ CNN model for 28x28x1 image classification
 """
 import tarfile
 
-import numpy as np
 import tensorflow.compat.v1 as tf
 from art.classifiers import TFClassifier
 
 from armory import paths
 from armory.data.utils import maybe_download_weights_from_s3
-
-
-def preprocessing_fn(img):
-    # Model will trained with inputs normalized from 0 to 1
-    img = img.astype(np.float32) / 255.0
-    return img
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
