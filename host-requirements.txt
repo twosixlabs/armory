@@ -28,7 +28,7 @@ cudatoolkit==10.1
 ### End Pytorch required libraries
 
 ### Begin TF2 required libraries
-tensorflow-gpu==2.2.0
+tensorflow-gpu==1.15.4
 # TF2 object detection API
 # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2.md#python-package-installation
 ### End TF2 required libraries
