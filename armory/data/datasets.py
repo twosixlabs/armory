@@ -734,6 +734,7 @@ SUPPORTED_DATASETS = {
     "ucf101": ucf101,
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
+    "librispeech": librispeech,
     "xview": xview,
 }
 
