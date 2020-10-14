@@ -667,10 +667,6 @@ def xview_canonical_preprocessing(batch):
         raise ValueError(
             f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
         )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, xview_context.x_dimensions)
-    ):
-        pass
     assert batch.dtype == xview_context.default_type
     assert batch.shape[1] == batch.shape[2]  # Ensure square shape
     assert batch.shape[3] == xview_context.x_dimensions[3]
