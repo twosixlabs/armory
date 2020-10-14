@@ -744,7 +744,7 @@ def so2sat_canonical_preprocessing(batch):
     assert batch.shape[1:] == so2sat_context.x_dimensions[1:]
 
     batch = batch.astype(so2sat_context.default_float) / so2sat_context.quantization
-    assert batch.dtype == mnist_context.default_float
+    assert batch.dtype == so2sat_context.default_float
     assert batch.max() <= 1.0
     assert batch.min() >= -1.0
 
