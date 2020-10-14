@@ -497,10 +497,27 @@ librispeech_dev_clean_context = LibriSpeechDevCleanContext()
 
 def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
     context = librispeech_dev_clean_context
-    if batch.ndim != len(context.x_shape) + 1:
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(context.x_dimensions) + 1}"
+    if batch.dtype == np.object:
+        for x in batch:
+            if x.dtype != context.input_type:
+                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
+            assert x.max() <= context.input_max
+            assert x.min() >= context.input_min
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
         )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.max() <= context.output_max
+            assert x.min() >= context.output_min
+        return batch
+
+    if batch.ndim != len(context.x_shape) + 1:
+        print(batch)
+        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
     if batch.dtype != context.input_type:
         raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
     assert batch.max() <= context.input_max
