@@ -234,12 +234,22 @@ def _generator_from_tfds(
                 f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
                 f" tuple, not {supervised_xy_keys}"
             )
-        if not isinstance(x_key, str) or not isinstance(y_key, str):
+        if not (isinstance(x_key, str) or isinstance(x_key, tuple)) or not isinstance(
+            y_key, str
+        ):
             raise ValueError(
-                f"supervised_xy_keys be a tuple of strings,"
+                f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
                 f" not {type(x_key), type(y_key)}"
             )
-        ds = ds.map(lambda x: (x[x_key], x[y_key]))
+        if isinstance(x_key, tuple):
+            for k in x_key:
+                if not (isinstance(k, str)):
+                    raise ValueError(
+                        f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                    )
+            ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
+        else:
+            ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
         ds = ds.map(lambda_map)
 
@@ -668,6 +678,41 @@ def xview_canonical_preprocessing(batch):
     return batch
 
 
+def so2sat(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    return _generator_from_tfds(
+        "so2sat/all:2.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=None,
+        as_supervised=False,
+        supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
+        lambda_map=so2sat_concat_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+def so2sat_concat_map(x, y):
+    try:
+        x1, x2 = x
+    except (ValueError, TypeError):
+        raise ValueError(
+            "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
+        )
+    return tf.concat([x1[..., :4], x2], -1), y
+
+
 def _cache_dataset(dataset_dir: str, dataset_name: str):
     name, subpath = _parse_dataset_name(dataset_name)
 
@@ -705,6 +750,7 @@ SUPPORTED_DATASETS = {
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
     "xview": xview,
+    "so2sat": so2sat,
 }
 
 
