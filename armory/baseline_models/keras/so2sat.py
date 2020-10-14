@@ -5,6 +5,8 @@ from tensorflow.keras.layers import MaxPooling2D, Input, concatenate, Lambda
 from art.estimators.classification import KerasClassifier
 from tensorflow.keras.optimizers import SGD
 
+from armory.data.utils import maybe_download_weights_from_s3
+
 
 def preprocessing_fn(img):
     return img
@@ -29,13 +31,14 @@ def make_model(**kwargs):
 
     input_shape = [32, 32, 14]
     concat_input = Input(input_shape)
+    renorm_input = Lambda(lambda x: x * 115.25348)(concat_input)
 
     SAR_input = Lambda(
         lambda concat_input: slice(concat_input, [0, 0, 0, 0], [-1, 32, 32, 4])
-    )(concat_input)
+    )(renorm_input)
     EO_input = Lambda(
         lambda concat_input: slice(concat_input, [0, 0, 0, 4], [-1, 32, 32, 10])
-    )(concat_input)
+    )(renorm_input)
 
     encoded_SAR = SAR_model(SAR_input)
     encoded_EO = EO_model(EO_input)
@@ -56,7 +59,8 @@ def make_model(**kwargs):
 def get_art_model(model_kwargs, wrapper_kwargs, weights=None):
     model = make_model(**model_kwargs)
     if weights:
-        model.load_weights(weights)
+        filepath = maybe_download_weights_from_s3(weights)
+        model.load_weights(filepath)
 
     wrapped_model = KerasClassifier(model=model, **wrapper_kwargs)
     return wrapped_model
