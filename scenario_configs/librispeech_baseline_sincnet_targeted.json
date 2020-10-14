@@ -41,8 +41,10 @@
         "fit_kwargs": {
             "nb_epochs": 20000
         },
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.sincnet_full",
+        "model_kwargs": {
+            "predict_mode": "all"
+        },
+        "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
         "weights_file": "sincnet_librispeech_v1.pth",
         "wrapper_kwargs": {}
