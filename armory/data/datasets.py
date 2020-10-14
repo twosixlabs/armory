@@ -693,7 +693,7 @@ def so2sat(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=None,
+        preprocessing_fn=so2sat_canonical_preprocessing,
         as_supervised=False,
         supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
         lambda_map=so2sat_concat_map,
@@ -711,6 +711,44 @@ def so2sat_concat_map(x, y):
             "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
         )
     return tf.concat([x1[..., :4], x2], -1), y
+
+
+class So2SatContext:
+    def __init__(self):
+        self.default_type = np.float32
+        self.default_float = np.float32
+        self.x_dimensions = (
+            None,
+            32,
+            32,
+            14,
+        )
+        self.quantization = (
+            115.25348  # max absolute value across all channels in train/validation
+        )
+
+
+so2sat_context = So2SatContext()
+
+
+def so2sat_canonical_preprocessing(batch):
+    if batch.ndim != len(so2sat_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(so2sat_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, so2sat_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == so2sat_context.default_type
+    assert batch.shape[1:] == so2sat_context.x_dimensions[1:]
+
+    batch = batch.astype(so2sat_context.default_float) / so2sat_context.quantization
+    assert batch.dtype == mnist_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= -1.0
+
+    return batch
 
 
 def _cache_dataset(dataset_dir: str, dataset_name: str):
