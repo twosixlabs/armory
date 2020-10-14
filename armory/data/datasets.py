@@ -245,7 +245,7 @@ def _generator_from_tfds(
             for k in x_key:
                 if not (isinstance(k, str)):
                     raise ValueError(
-                        f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                        "supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
                     )
             ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
         else:
