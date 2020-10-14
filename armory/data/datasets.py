@@ -234,12 +234,22 @@ def _generator_from_tfds(
                 f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
                 f" tuple, not {supervised_xy_keys}"
             )
-        if not isinstance(x_key, str) or not isinstance(y_key, str):
+        if not (isinstance(x_key, str) or isinstance(x_key, tuple)) or not isinstance(
+            y_key, str
+        ):
             raise ValueError(
-                f"supervised_xy_keys be a tuple of strings,"
+                f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
                 f" not {type(x_key), type(y_key)}"
             )
-        ds = ds.map(lambda x: (x[x_key], x[y_key]))
+        if isinstance(x_key, tuple):
+            for k in x_key:
+                if not (isinstance(k, str)):
+                    raise ValueError(
+                        "supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                    )
+            ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
+        else:
+            ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
         ds = ds.map(lambda_map)
 
@@ -657,13 +667,82 @@ def xview_canonical_preprocessing(batch):
         raise ValueError(
             f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
         )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, xview_context.x_dimensions)
-    ):
-        pass
     assert batch.dtype == xview_context.default_type
     assert batch.shape[1] == batch.shape[2]  # Ensure square shape
     assert batch.shape[3] == xview_context.x_dimensions[3]
+
+    return batch
+
+
+def so2sat(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    return _generator_from_tfds(
+        "so2sat/all:2.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=so2sat_canonical_preprocessing,
+        as_supervised=False,
+        supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
+        lambda_map=so2sat_concat_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+def so2sat_concat_map(x, y):
+    try:
+        x1, x2 = x
+    except (ValueError, TypeError):
+        raise ValueError(
+            "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
+        )
+    return tf.concat([x1[..., :4], x2], -1), y
+
+
+class So2SatContext:
+    def __init__(self):
+        self.default_type = np.float32
+        self.default_float = np.float32
+        self.x_dimensions = (
+            None,
+            32,
+            32,
+            14,
+        )
+        self.quantization = (
+            115.25348  # max absolute value across all channels in train/validation
+        )
+
+
+so2sat_context = So2SatContext()
+
+
+def so2sat_canonical_preprocessing(batch):
+    if batch.ndim != len(so2sat_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(so2sat_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, so2sat_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == so2sat_context.default_type
+    assert batch.shape[1:] == so2sat_context.x_dimensions[1:]
+
+    batch = batch.astype(so2sat_context.default_float) / so2sat_context.quantization
+    assert batch.dtype == so2sat_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= -1.0
 
     return batch
 
@@ -705,6 +784,7 @@ SUPPORTED_DATASETS = {
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
     "xview": xview,
+    "so2sat": so2sat,
 }
 
 
