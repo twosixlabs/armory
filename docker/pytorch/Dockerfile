@@ -5,8 +5,8 @@ FROM twosixarmory/armory:${armory_version} AS armory-pytorch-base
 
 # TF used for dataset loading
 RUN /opt/conda/bin/conda install tensorflow-gpu==2.2.0 \
- pytorch==1.5 \
- torchvision==0.6.0 \
+ pytorch==1.6 \
+ torchvision==0.7.0 \
  cudatoolkit=10.1 -c pytorch && \
     /opt/conda/bin/conda clean --all
 
