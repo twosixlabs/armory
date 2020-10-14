@@ -1,0 +1,1 @@
+armory-public-data so2sat/so2sat_2.1.0_cached.tar.gz 15938827741 aa2f7d4686f03aa86aaf25749982c695bb5598fff3432aee0c569056246e6d92
