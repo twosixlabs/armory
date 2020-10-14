@@ -1,8 +1,6 @@
 {
     "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
-    "adhoc": {
-        "fit_batch_size": 16
-    },
+    "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
@@ -35,6 +33,7 @@
     "model": {
         "fit": false,
         "fit_kwargs": {
+            "fit_batch_size": 16,
             "nb_epochs": 20000
         },
         "model_kwargs": {

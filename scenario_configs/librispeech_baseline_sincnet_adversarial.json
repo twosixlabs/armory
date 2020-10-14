@@ -31,6 +31,7 @@
     "model": {
         "fit": false,
         "fit_kwargs": {
+            "fit_batch_size": 16,
             "nb_epochs": 20000
         },
         "model_kwargs": {

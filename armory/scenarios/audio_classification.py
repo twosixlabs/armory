@@ -31,7 +31,7 @@ class AudioClassificationTask(Scenario):
         """
 
         model_config = config["model"]
-        classifier, _ = load_model(model_config)
+        classifier, fit_preprocessing_fn = load_model(model_config)
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
@@ -49,13 +49,14 @@ class AudioClassificationTask(Scenario):
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             batch_size = config["dataset"].pop("batch_size")
-            config["dataset"]["batch_size"] = config.get("adhoc", {}).get(
+            config["dataset"]["batch_size"] = fit_kwargs.get(
                 "fit_batch_size", batch_size
             )
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
+                preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
             config["dataset"]["batch_size"] = batch_size

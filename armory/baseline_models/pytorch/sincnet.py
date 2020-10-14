@@ -266,7 +266,7 @@ class SincNetWrapper(nn.Module):
         return output
 
 
-fit_preprocessing_fn = numpy_random_preprocessing_fn
+preprocessing_fn = numpy_random_preprocessing_fn
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
