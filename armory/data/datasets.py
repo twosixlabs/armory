@@ -290,6 +290,22 @@ def _generator_from_tfds(
     return generator
 
 
+def preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of functions
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x):
+        for function in functions:
+            x = function(x)
+        return x
+
+    return wrapped
+
+
 class MnistContext:
     def __init__(self):
         self.default_float = np.float32
@@ -337,8 +353,7 @@ def mnist(
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "mnist:3.0.1",
@@ -400,8 +415,7 @@ def cifar10(
     Ten class image dataset:
         https://www.cs.toronto.edu/~kriz/cifar.html
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "cifar10:3.0.2",
@@ -421,8 +435,8 @@ def digit(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -431,8 +445,7 @@ def digit(
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "digit:1.0.8",
@@ -453,8 +466,8 @@ def imagenette(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -463,8 +476,7 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
@@ -559,22 +571,6 @@ def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
     return batch
 
 
-def preprocessing_chain(*args):
-    """
-    Wraps and returns a sequence of functions
-    """
-    functions = [x for x in args if x is not None]
-    if not functions:
-        return None
-
-    def wrapped(x):
-        for function in functions:
-            x = function(x)
-        return x
-
-    return wrapped
-
-
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
@@ -600,8 +596,7 @@ def librispeech_dev_clean(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
 
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
@@ -649,8 +644,8 @@ def resisc45(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = resisc45_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -670,8 +665,7 @@ def resisc45(
 
     split_type - one of ("train", "validation", "test")
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
@@ -691,8 +685,8 @@ def ucf101(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -701,8 +695,7 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
@@ -755,8 +748,8 @@ def xview(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -764,8 +757,7 @@ def xview(
     """
     split_type - one of ("train", "test")
     """
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "xview:1.0.0",
@@ -825,14 +817,16 @@ def so2sat(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    fit_preprocessing_fn: Callable = None,
     preprocessing_fn: Callable = so2sat_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    """
+    Multimodal SAR / EO image dataset
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "so2sat/all:2.1.0",
