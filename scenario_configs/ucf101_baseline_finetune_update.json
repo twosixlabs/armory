@@ -1,31 +1,25 @@
 {
-    "_description": "Librispeech_dev_clean raw audio classification, contributed by MITRE Corporation",
-    "adhoc": {
-        "fit_batch_size": 16
-    },
+    "_description": "UCF101 video classification with finetuning, contributed by MITRE Corporation",
+    "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
+            "eps": 51.0,
             "eps_step": 0.1,
             "minimal": false,
             "num_random_init": 0,
-            "targeted": true
+            "targeted": false
         },
         "module": "art.attacks.evasion",
         "name": "FastGradientMethod",
-        "targeted_labels": {
-            "num_classes": 40,
-            "scheme": "round-robin"
-        },
         "use_label": false
     },
     "dataset": {
         "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "librispeech_dev_clean"
+        "name": "ucf101"
     },
     "defense": null,
     "metric": {
@@ -33,28 +27,31 @@
         "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
-            "categorical_accuracy"
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
         ]
     },
     "model": {
-        "fit": false,
+        "fit": true,
         "fit_kwargs": {
-            "nb_epochs": 20000
+            "nb_epochs": 10
         },
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.sincnet_full",
+        "model_kwargs": {
+            "model_status": "kinetics_pretrained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars_update",
         "name": "get_art_model",
-        "weights_file": "sincnet_librispeech_v1.pth",
+        "weights_file": "mars_kinetics_v1.pth",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.audio_classification",
-        "name": "AudioClassificationTask"
+        "module": "armory.scenarios.video_update",
+        "name": "Ucf101"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.12.1-dev",
-        "external_github_repo": "hkakitani/SincNet",
+        "external_github_repo": "yusong-tan/MARS",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
