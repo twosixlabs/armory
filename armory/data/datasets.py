@@ -290,6 +290,22 @@ def _generator_from_tfds(
     return generator
 
 
+def preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of functions
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x):
+        for function in functions:
+            x = function(x)
+        return x
+
+    return wrapped
+
+
 class MnistContext:
     def __init__(self):
         self.default_float = np.float32
@@ -327,6 +343,8 @@ def mnist(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -335,39 +353,15 @@ def mnist(
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "mnist:3.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=mnist_dataset_canonical_preprocessing,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
-    )
-
-
-def cifar10(
-    split_type: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
-    """
-    Ten class image dataset:
-        https://www.cs.toronto.edu/~kriz/cifar.html
-    """
-    return _generator_from_tfds(
-        "cifar10:3.0.2",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=cifar10_dataset_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -406,12 +400,43 @@ def cifar10_dataset_canonical_preprocessing(batch):
     return batch
 
 
+def cifar10(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = cifar10_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    Ten class image dataset:
+        https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "cifar10:3.0.2",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def digit(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -420,6 +445,8 @@ def digit(
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "digit:1.0.8",
         split_type=split_type,
@@ -440,6 +467,7 @@ def imagenette(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -448,6 +476,8 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
         split_type=split_type,
@@ -541,22 +571,6 @@ def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
     return batch
 
 
-def preprocessing_chain(*args):
-    """
-    Wraps and returns a sequence of functions
-    """
-    functions = [x for x in args if x is not None]
-    if not functions:
-        return None
-
-    def wrapped(x):
-        for function in functions:
-            x = function(x)
-        return x
-
-    return wrapped
-
-
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
@@ -582,8 +596,7 @@ def librispeech_dev_clean(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
 
-    if fit_preprocessing_fn is not None:
-        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
@@ -594,43 +607,6 @@ def librispeech_dev_clean(
         preprocessing_fn=preprocessing_fn,
         download_and_prepare_kwargs={"download_config": dl_config},
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
-    )
-
-
-def resisc45(
-    split_type: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
-    """
-    REmote Sensing Image Scene Classification (RESISC) dataset
-        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
-
-    Contains 31,500 images covering 45 scene classes with 700 images per class
-
-    Uses TFDS:
-        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
-
-    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
-        Each sample is a 256 x 256 3-color (RGB) image
-    Dimensions of y: (31500,) of int, with values in range(45)
-
-    split_type - one of ("train", "validation", "test")
-    """
-    return _generator_from_tfds(
-        "resisc45_split:3.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=resisc45_canonical_preprocessing,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -663,12 +639,54 @@ def resisc45_canonical_preprocessing(batch):
     return batch
 
 
+def resisc45(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = resisc45_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    REmote Sensing Image Scene Classification (RESISC) dataset
+        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
+
+    Contains 31,500 images covering 45 scene classes with 700 images per class
+
+    Uses TFDS:
+        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
+
+    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
+        Each sample is a 256 x 256 3-color (RGB) image
+    Dimensions of y: (31500,) of int, with values in range(45)
+
+    split_type - one of ("train", "validation", "test")
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "resisc45_split:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -677,6 +695,8 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
         split_type=split_type,
@@ -687,33 +707,6 @@ def ucf101(
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
-    )
-
-
-def xview(
-    split_type: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
-    """
-    split_type - one of ("train", "test")
-    """
-    return _generator_from_tfds(
-        "xview:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=xview_canonical_preprocessing,
-        as_supervised=False,
-        supervised_xy_keys=("image", "objects"),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -750,39 +743,35 @@ def xview_canonical_preprocessing(batch):
     return batch
 
 
-def so2sat(
+def xview(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = xview_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
+    """
+    split_type - one of ("train", "test")
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
-        "so2sat/all:2.1.0",
+        "xview:1.0.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=so2sat_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
         as_supervised=False,
-        supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
-        lambda_map=so2sat_concat_map,
+        supervised_xy_keys=("image", "objects"),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-def so2sat_concat_map(x, y):
-    try:
-        x1, x2 = x
-    except (ValueError, TypeError):
-        raise ValueError(
-            "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
-        )
-    return tf.concat([x1[..., :4], x2], -1), y
 
 
 class So2SatContext:
@@ -821,6 +810,48 @@ def so2sat_canonical_preprocessing(batch):
     assert batch.min() >= -1.0
 
     return batch
+
+
+def so2sat(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = so2sat_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    Multimodal SAR / EO image dataset
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "so2sat/all:2.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
+        lambda_map=so2sat_concat_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+def so2sat_concat_map(x, y):
+    try:
+        x1, x2 = x
+    except (ValueError, TypeError):
+        raise ValueError(
+            "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
+        )
+    return tf.concat([x1[..., :4], x2], -1), y
 
 
 def _cache_dataset(dataset_dir: str, dataset_name: str):
