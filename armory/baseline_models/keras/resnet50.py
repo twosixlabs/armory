@@ -9,13 +9,11 @@ from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 
 IMAGENET_MEANS = [103.939, 116.779, 123.68]
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     input = tf.keras.Input(shape=(224, 224, 3))
 
     # Preprocessing layers
@@ -30,9 +28,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     resnet50 = ResNet50(weights=None, input_tensor=img_normalized, **model_kwargs)
     model = Model(inputs=input, outputs=resnet50.output)
 
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        model.load_weights(filepath)
+    if weights_path:
+        model.load_weights(weights_path)
 
     wrapped_model = KerasClassifier(
         model,

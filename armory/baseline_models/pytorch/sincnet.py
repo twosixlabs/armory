@@ -11,7 +11,6 @@ import numpy as np
 import torch
 from torch import nn
 
-from armory.data.utils import maybe_download_weights_from_s3
 
 # Load model from MITRE external repo: https://github.com/hkakitani/SincNet
 # This needs to be defined in your config's `external_github_repo` field to be
@@ -149,11 +148,10 @@ def torch_all_preprocessing_fn(x):
     return x
 
 
-def sincnet(weights_file=None):
-    pretrained = weights_file is not None
+def sincnet(weights_path=None):
+    pretrained = weights_path is not None
     if pretrained:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        model_params = torch.load(filepath, map_location=DEVICE)
+        model_params = torch.load(weights_path, map_location=DEVICE)
     else:
         model_params = {}
     CNN_params = model_params.get("CNN_model_par")
@@ -244,14 +242,14 @@ class SincNetWrapper(nn.Module):
         "all": torch_all_preprocessing_fn,
     }
 
-    def __init__(self, model_kwargs, weights_file):
+    def __init__(self, model_kwargs, weights_path):
         super().__init__()
         predict_mode = model_kwargs.pop("predict_mode", "all")
         if predict_mode not in self.MODES:
             raise ValueError(f"predict_mode {predict_mode} not in {tuple(self.MODES)}")
         self.predict_mode = predict_mode
 
-        self.model = sincnet(weights_file=weights_file, **model_kwargs)
+        self.model = sincnet(weights_path=weights_path, **model_kwargs)
         self.model.to(DEVICE)
 
     def forward(self, x):
@@ -269,8 +267,8 @@ class SincNetWrapper(nn.Module):
 preprocessing_fn = numpy_random_preprocessing_fn
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    model = SincNetWrapper(model_kwargs, weights_file)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+    model = SincNetWrapper(model_kwargs, weights_path)
     model.to(DEVICE)
 
     wrapped_model = PyTorchClassifier(
