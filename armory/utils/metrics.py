@@ -189,7 +189,7 @@ def _word_error_rate(y_i, y_pred_i):
                 insertion = matrix[i][j - 1] + 1
                 deletion = matrix[i - 1][j] + 1
                 matrix[i][j] = min(substitute, insertion, deletion)
-    return float(matrix[r_length][h_length] / r_length)
+    return (matrix[r_length][h_length], r_length)
 
 
 # Metrics specific to MARS model preprocessing in video UCF101 scenario
@@ -437,6 +437,18 @@ class MetricList:
     def mean(self):
         return sum(float(x) for x in self._values) / len(self._values)
 
+    def total_wer(self):
+        # checks if all values are tuples from the WER metric
+        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
+            total_edit_distance = 0
+            total_words = 0
+            for wer_tuple in self._values:
+                total_edit_distance += wer_tuple[0]
+                total_words += wer_tuple[1]
+            return float(total_edit_distance / total_words)
+        else:
+            raise ValueError("total_wer() only for WER metric")
+
 
 class MetricsLogger:
     """
@@ -520,10 +532,17 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
 
         for metric in metrics:
-            logger.info(
-                f"Average {metric.name} on {task_type} test examples: "
-                f"{metric.mean():.2%}"
-            )
+            # Do not calculate mean WER, calcuate total WER
+            if metric.name == "word_error_rate":
+                logger.info(
+                    f"Word error rate on {task_type} examples: "
+                    f"{metric.total_wer():.2%}"
+                )
+            else:
+                logger.info(
+                    f"Average {metric.name} on {task_type} test examples: "
+                    f"{metric.mean():.2%}"
+                )
 
     def results(self):
         """
@@ -544,6 +563,13 @@ class MetricsLogger:
                     except ZeroDivisionError:
                         raise ZeroDivisionError(
                             f"No values to calculate mean in {prefix}_{metric.name}"
+                        )
+                if metric.name == "word_error_rate" and prefix == "benign":
+                    try:
+                        results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
+                    except ZeroDivisionError:
+                        raise ZeroDivisionError(
+                            f"No values to calculate WER in {prefix}_{metric.name}"
                         )
 
         for name in self.computational_resource_dict:

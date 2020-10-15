@@ -10,6 +10,8 @@ from tqdm import tqdm
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
+    load_attack,
+    load_adversarial_dataset,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -25,7 +27,9 @@ class AutomaticSpeechRecognition(Scenario):
         Evaluate the config and return a results dict
         """
         skip_benign = False
+        skip_adversarial = True
         model_config = config["model"]
+        predict_kwargs = config["adhoc"]["predict_kwargs"]
         classifier, preprocessing_fn = load_model(model_config)
         if isinstance(preprocessing_fn, tuple):
             fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
@@ -50,7 +54,6 @@ class AutomaticSpeechRecognition(Scenario):
                 shuffle_files=False,
             )
             logger.info("Running inference on benign examples...")
-            predict_kwargs = config["adhoc"]["predict_kwargs"]
             for x, y in tqdm(test_data, desc="Benign"):
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
@@ -62,5 +65,51 @@ class AutomaticSpeechRecognition(Scenario):
                     y_pred = classifier.predict(x, **predict_kwargs)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
+
         # Imperceptible attack still WIP
+        if skip_adversarial:
+            logger.info("Skipping benign classification...")
+        else:
+            # Evaluate the ART classifier on adversarial test examples
+            logger.info("Generating or loading / testing adversarial examples...")
+
+            attack_config = config["attack"]
+            attack_type = attack_config.get("type")
+            if attack_type == "preloaded":
+                test_data = load_adversarial_dataset(
+                    attack_config,
+                    epochs=1,
+                    split_type="adversarial",
+                    num_batches=num_eval_batches,
+                    shuffle_files=False,
+                )
+            else:
+                attack = load_attack(attack_config, classifier)
+                test_data = load_dataset(
+                    config["dataset"],
+                    epochs=1,
+                    split_type="test",
+                    num_batches=num_eval_batches,
+                    shuffle_files=False,
+                )
+            for x, y in tqdm(test_data, desc="Attack"):
+                with metrics.resource_context(
+                    name="Attack",
+                    profiler=config["metric"].get("profiler_type"),
+                    computational_resource_dict=metrics_logger.computational_resource_dict,
+                ):
+                    if attack_type == "preloaded":
+                        x, x_adv = x
+                        y, y_target = y
+                    elif attack_config.get("use_label"):
+                        x_adv = attack.generate(x=x, y=y)
+                    else:
+                        x_adv = attack.generate(x=x, y=["TEST STRING"])
+
+                # Ensure that input sample isn't overwritten by classifier
+                x_adv.flags.writeable = False
+                y_pred_adv = classifier.predict(x_adv, **predict_kwargs)
+                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                metrics_logger.update_perturbation(x, x_adv)
+            metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()
