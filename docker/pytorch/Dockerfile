@@ -22,6 +22,9 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
   soundfile \ 
   sox \ 
   warpctc_pytorch
+
+RUN apt-get install -y sox
+
 ########## PyTorch 1 Release #################
 
 FROM armory-pytorch-base AS armory-pytorch

@@ -13,7 +13,7 @@
         "use_label": false
     },
     "dataset": {
-        "batch_size": 32,
+        "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech_dev_clean_asr"
@@ -47,13 +47,11 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.12.0-dev",
-        "external_github_repo": null,
+        "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
-        "local_repo_path": [
-            "twosixlabs/deepspeech.pytorch/deepspeech_pytorch"
-        ],
+        "local_repo_path": null,
         "output_dir": null,
         "output_filename": null,
-        "use_gpu": true
+        "use_gpu": false
     }
 }
