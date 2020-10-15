@@ -130,7 +130,7 @@ def preprocessing_fn(inputs):
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
-    model, optimizer = make_model(weights_file=weights_path, **model_kwargs)
+    model, optimizer = make_model(weights_path=weights_path, **model_kwargs)
     model.to(DEVICE)
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])
