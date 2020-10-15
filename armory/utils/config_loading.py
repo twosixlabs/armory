@@ -138,7 +138,11 @@ def load_adversarial_dataset(config, preprocessing_fn=None, num_batches=None, **
     dataset_kwargs.update(kwargs)
     if "description" in dataset_kwargs:
         dataset_kwargs.pop("description")
-    dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
+    if preprocessing_fn:
+        dataset = dataset_fn(preprocessing_fn=preprocessing_fn, **dataset_kwargs)
+    else:
+        # Use dataset fn's default preprocessing_fn
+        dataset = dataset_fn(**dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if config.get("check_run"):
