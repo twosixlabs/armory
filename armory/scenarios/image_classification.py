@@ -6,6 +6,7 @@ import logging
 from typing import Optional
 
 from tqdm import tqdm
+import numpy as np
 
 from armory.utils.config_loading import (
     load_dataset,
@@ -73,6 +74,8 @@ class ImageClassificationTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+
+        eval_split = config["dataset"].get("eval_split", "test")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -81,7 +84,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -104,6 +107,11 @@ class ImageClassificationTask(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+        attack_mask = attack_config.get("mask")
+        attack_mask_flag = attack_mask
+        if attack_mask_flag:
+            attack_mask = np.array(attack_mask)
+
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
@@ -124,7 +132,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -140,13 +148,16 @@ class ImageClassificationTask(Scenario):
                     x, x_adv = x
                     if targeted:
                         y, y_target = y
-                elif attack_config.get("use_label"):
-                    x_adv = attack.generate(x=x, y=y)
-                elif targeted:
-                    y_target = label_targeter.generate(y)
-                    x_adv = attack.generate(x=x, y=y_target)
                 else:
-                    x_adv = attack.generate(x=x)
+                    generate_kwargs = {"x": x}
+                    if attack_config.get("use_label"):
+                        generate_kwargs["y"] = y
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                        generate_kwargs["y"] = y_target
+                    if attack_mask_flag:
+                        generate_kwargs["mask"] = attack_mask
+                    x_adv = attack.generate(**generate_kwargs)
 
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
