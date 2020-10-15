@@ -489,12 +489,81 @@ def german_traffic_sign(
     )
 
 
+class LibriSpeechDevCleanContext:
+    def __init__(self):
+        self.input_type = np.int64  # However, stores values in int16 range
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+        self.x_shape = (None,)
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+librispeech_dev_clean_context = LibriSpeechDevCleanContext()
+
+
+def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
+    context = librispeech_dev_clean_context
+    if batch.dtype == np.object:
+        for x in batch:
+            if x.dtype != context.input_type:
+                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
+            assert x.max() <= context.input_max
+            assert x.min() >= context.input_min
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.max() <= context.output_max
+            assert x.min() >= context.output_min
+        return batch
+
+    if batch.ndim != len(context.x_shape) + 1:
+        print(batch)
+        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
+    if batch.dtype != context.input_type:
+        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.max() <= context.input_max
+    assert batch.min() >= context.input_min
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+    assert batch.dtype == context.output_type
+    assert batch.max() <= context.output_max
+    assert batch.min() >= context.output_min
+
+    return batch
+
+
+def preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of functions
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x):
+        for function in functions:
+            x = function(x)
+        return x
+
+    return wrapped
+
+
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -512,6 +581,9 @@ def librispeech_dev_clean(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
+
+    if fit_preprocessing_fn is not None:
+        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
