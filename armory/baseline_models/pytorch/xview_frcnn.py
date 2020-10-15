@@ -2,7 +2,6 @@
 Pytorch Faster-RCNN for xView object detection
 """
 import logging
-import sys
 
 import torch
 import torchvision
@@ -47,14 +46,13 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     try:
         model = make_fastrcnn_model(weights_file=weights_file, **model_kwargs)
     except PermissionError:
-        logger.exception(
+        raise PermissionError(
             "Tried writing pretrained weights to directory without write "
             "permissions. To fix this error, either run the scenario with "
             "--root or run in --interactive mode and inside the container "
             "set the TORCH_HOME environment variable to a directory with "
             "write permissions. "
         )
-        sys.exit(1)
     model.to(DEVICE)
 
     # This model receives inputs in the canonical form of [0,1], so no further

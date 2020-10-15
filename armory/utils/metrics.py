@@ -314,6 +314,84 @@ def image_circle_patch_diameter(x, x_adv):
     ]
 
 
+def object_detection_class_precision(y, y_pred, score_threshold=0.5):
+    _check_object_detection_input(y, y_pred)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
+    if num_tps + num_fps > 0:
+        return [num_tps / (num_tps + num_fps)]
+    else:
+        return [0]
+
+
+def object_detection_class_recall(y, y_pred, score_threshold=0.5):
+    _check_object_detection_input(y, y_pred)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
+    if num_tps + num_fns > 0:
+        return [num_tps / (num_tps + num_fns)]
+    else:
+        return [0]
+
+
+def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
+    """
+    Helper function to compute the number of true positives, false positives, and false
+    negatives given a set of of object detection labels and predictions
+    """
+    ground_truth_set_of_classes = set(y["category_id"].flatten().tolist())
+    predicted_set_of_classes = set(
+        y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist()
+    )
+
+    num_true_positives = len(
+        predicted_set_of_classes.intersection(ground_truth_set_of_classes)
+    )
+    num_false_positives = len(
+        [c for c in predicted_set_of_classes if c not in ground_truth_set_of_classes]
+    )
+    num_false_negatives = len(
+        [c for c in ground_truth_set_of_classes if c not in predicted_set_of_classes]
+    )
+
+    return num_true_positives, num_false_positives, num_false_negatives
+
+
+def _check_object_detection_input(y, y_pred):
+    """
+    Helper function to check that the object detection labels and predictions are in
+    the expected format and contain the expected fields
+    """
+    if not isinstance(y, dict):
+        raise TypeError("Expected y to be a dictionary")
+
+    if not isinstance(y_pred, list):
+        raise TypeError("Expected y_pred to be a list")
+
+    # Current object detection pipeline only supports batch_size of 1
+    if len(y_pred) != 1:
+        raise ValueError(
+            f"Expected y_pred to be a list of length 1, found length of {len(y_pred)}"
+        )
+
+    y_pred = y_pred[0]
+
+    required_pred_keys = ("labels", "boxes", "scores")
+    required_label_keys = ("category_id", "bbox")
+
+    if not all(key in y for key in required_label_keys):
+        raise ValueError(
+            f"y must contain the following keys: {required_label_keys}. The following keys were found: {y.keys()}"
+        )
+
+    if not all(key in y_pred for key in required_pred_keys):
+        raise ValueError(
+            f"y_pred must contain the following keys: {required_pred_keys}. The following keys were found: {y_pred.keys()}"
+        )
+
+
 SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
@@ -331,6 +409,8 @@ SUPPORTED_METRICS = {
     "image_circle_patch_diameter": image_circle_patch_diameter,
     "mars_mean_l2": mars_mean_l2,
     "mars_mean_patch": mars_mean_patch,
+    "object_detection_class_precision": object_detection_class_precision,
+    "object_detection_class_recall": object_detection_class_recall,
 }
 
 # Image-based metrics applied to video

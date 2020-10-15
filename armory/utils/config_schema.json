@@ -230,7 +230,9 @@
                 "mean_linf",
                 "max_linf",
                 "mean_image_circle_patch_diameter",
-                "max_image_circle_patch_diameter"
+                "max_image_circle_patch_diameter",
+                "object_detection_class_recall",
+                "object_detection_class_precision"
             ]
         },
         "sysconfig": {
