@@ -49,8 +49,9 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     except PermissionError:
         logger.exception("Tried writing pretrained weights to directory without write "
                          "permissions. To fix this error, either run the scenario with "
-                         "--root or set TORCH_HOME environment variable to a directory "
-                         "with write permissions. ")
+                         "--root or run in --interactive mode and inside the container "
+                         "set the TORCH_HOME environment variable to a directory with "
+                         "write permissions. ")
         sys.exit(1)
     model.to(DEVICE)
 
