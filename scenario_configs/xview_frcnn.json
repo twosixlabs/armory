@@ -3,11 +3,19 @@
     "adhoc": null,
     "attack": {
         "knowledge": "white",
-        "kwargs": {"patch_shape": [40, 40, 3], "max_iter":100 , "batch_size": 1},
+        "kwargs": {
+            "batch_size": 1,
+            "max_iter": 100,
+            "patch_shape": [
+                40,
+                40,
+                3
+            ]
+        },
         "module": "art.attacks.evasion",
         "name": "DPatch",
-        "use_label": false,
-	"type": "patch"
+        "type": "patch",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 1,
@@ -21,8 +29,8 @@
         "perturbation": "image_circle_patch_diameter",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_class_precision", 
-	    "object_detection_class_recall"
+            "object_detection_class_precision",
+            "object_detection_class_recall"
         ]
     },
     "model": {
