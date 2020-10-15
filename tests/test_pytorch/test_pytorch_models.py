@@ -10,7 +10,6 @@ from armory.utils.metrics import _object_detection_get_tp_fp_fn
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
-"""
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_mnist():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
@@ -79,7 +78,6 @@ def test_keras_cifar():
         predictions = classifier.predict(x)
         accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
     assert (accuracy / test_dataset.batches_per_epoch) > 0.25
-"""
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
