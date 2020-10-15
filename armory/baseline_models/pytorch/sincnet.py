@@ -9,6 +9,7 @@ import logging
 from art.classifiers import PyTorchClassifier
 import numpy as np
 import torch
+from torch import nn
 
 from armory.data.utils import maybe_download_weights_from_s3
 
@@ -28,21 +29,24 @@ WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def preprocessing_fn(batch):
+def numpy_random_preprocessing_fn(batch):
     """
     Standardize, then normalize sound clips
+
+    Then generate a random cut of the input
     """
     processed_batch = []
     for clip in batch:
-
-        signal = clip.astype(np.float64)
+        # convert and normalize
+        signal = clip.astype(np.float32)
         # Signal normalization
         signal = signal / np.max(np.abs(signal))
 
-        # get pseudorandom chunk of fixed length (from SincNet's create_batches_rnd)
+        # make a pseudorandom cut of size equal to WINDOW_LENGTH
+        # (from SincNet's create_batches_rnd)
         signal_length = len(signal)
         np.random.seed(signal_length)
-        signal_start = (
+        signal_start = int(
             np.random.randint(signal_length / WINDOW_LENGTH - 1)
             * WINDOW_LENGTH
             % signal_length
@@ -52,6 +56,97 @@ def preprocessing_fn(batch):
         processed_batch.append(signal)
 
     return np.array(processed_batch)
+
+
+def numpy_all_preprocessing_fn(batch):
+    """
+    Input is comprised of one or more clips, where each clip i
+    is given as an ndarray with shape (n_i,).
+    Preprocessing normalizes each clip and breaks each clip into an integer number
+    of non-overlapping segments of length WINDOW_LENGTH.
+    Output is a list of clips, each of shape (int(n_i/WINDOW_LENGTH), WINDOW_LENGTH)
+    """
+    if len(batch) != 1:
+        raise NotImplementedError(
+            "Requires ART variable length input capability for batch size != 1"
+        )
+    processed_batch = []
+    for clip in batch:
+        # convert and normalize
+        signal = clip.astype(np.float64)
+        signal = signal / np.max(np.abs(signal))
+
+        # break into a number of chunks of equal length
+        num_chunks = int(len(signal) / WINDOW_LENGTH)
+        signal = signal[: num_chunks * WINDOW_LENGTH]
+        signal = np.reshape(signal, (num_chunks, WINDOW_LENGTH), order="C")
+        processed_batch.append(signal)
+    # remove outer batch (of size 1)
+    processed_batch = processed_batch[0]
+    return np.array(processed_batch)
+
+
+def torch_random_preprocessing_fn(x):
+    """
+    Standardize, then normalize sound clips
+    """
+    if x.shape[0] != 1:
+        raise ValueError(f"Shape of batch x {x.shape[0]} != 1")
+    if x.dtype != torch.float32:
+        raise ValueError(f"dtype of batch x {x.dtype} != torch.float32")
+    if x.max() > 1.0:
+        raise ValueError(f"batch x max {x.max()} > 1.0")
+    if x.min() < -1.0:
+        raise ValueError(f"batch x min {x.min()} < -1.0")
+    x = x.squeeze(0)
+
+    # Signal normalization
+    x = x / x.abs().max()
+
+    # get pseudorandom chunk of fixed length (from SincNet's create_batches_rnd)
+    signal_length = len(x)
+    np.random.seed(signal_length)
+    start = int(
+        np.random.randint(signal_length / WINDOW_LENGTH - 1)
+        * WINDOW_LENGTH
+        % signal_length
+    )
+
+    x = x[start : start + WINDOW_LENGTH]
+
+    x = x.unsqueeze(0)
+    return x
+
+
+def torch_all_preprocessing_fn(x):
+    """
+    Input is comprised of one or more clips, where each clip i
+    is given as an ndarray with shape (n_i,).
+    Preprocessing normalizes each clip and breaks each clip into an integer number
+    of non-overlapping segments of length WINDOW_LENGTH.
+    Output is a list of clips, each of shape (int(n_i/WINDOW_LENGTH), WINDOW_LENGTH)
+    """
+    if x.shape[0] != 1:
+        raise NotImplementedError(
+            "Requires ART variable length input capability for batch size != 1"
+        )
+    if x.max() > 1.0:
+        raise ValueError(f"batch x max {x.max()} > 1.0")
+    if x.min() < -1.0:
+        raise ValueError(f"batch x min {x.min()} < -1.0")
+    if x.dtype != torch.float32:
+        raise ValueError(f"dtype of batch x {x.dtype} != torch.float32")
+    x = x.squeeze(0)
+
+    # Signal normalization
+    x = x / x.abs().max()
+
+    # break into a number of chunks of equal length
+    num_chunks = int(len(x) / WINDOW_LENGTH)
+    x = x[: num_chunks * WINDOW_LENGTH]
+    x = x.reshape((num_chunks, WINDOW_LENGTH))
+
+    return x
 
 
 def sincnet(weights_file=None):
@@ -143,9 +238,39 @@ def sincnet(weights_file=None):
     return sincNet
 
 
-# NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
+class SincNetWrapper(nn.Module):
+    MODES = {
+        "random": torch_random_preprocessing_fn,
+        "all": torch_all_preprocessing_fn,
+    }
+
+    def __init__(self, model_kwargs, weights_file):
+        super().__init__()
+        predict_mode = model_kwargs.pop("predict_mode", "all")
+        if predict_mode not in self.MODES:
+            raise ValueError(f"predict_mode {predict_mode} not in {tuple(self.MODES)}")
+        self.predict_mode = predict_mode
+
+        self.model = sincnet(weights_file=weights_file, **model_kwargs)
+        self.model.to(DEVICE)
+
+    def forward(self, x):
+        if self.training:
+            # preprocessing should be done before model for arbitrary length input
+            return self.model(x)
+
+        x = self.MODES[self.predict_mode](x)
+        output = self.model(x)
+        if self.predict_mode == "all":
+            output = torch.mean(output, dim=0, keepdim=True)
+        return output
+
+
+preprocessing_fn = numpy_random_preprocessing_fn
+
+
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    model = sincnet(weights_file=weights_file, **model_kwargs)
+    model = SincNetWrapper(model_kwargs, weights_file)
     model.to(DEVICE)
 
     wrapped_model = PyTorchClassifier(
@@ -154,7 +279,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
         optimizer=torch.optim.RMSprop(
             model.parameters(), lr=0.001, alpha=0.95, eps=1e-8
         ),
-        input_shape=(WINDOW_LENGTH,),
+        input_shape=(None,),
         nb_classes=40,
+        **wrapper_kwargs,
     )
     return wrapped_model
