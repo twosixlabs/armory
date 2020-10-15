@@ -115,9 +115,7 @@ def test_keras_imagenet_transfer():
     classifier_fn = getattr(classifier_module, "get_art_model")
     weights_path = maybe_download_weights_from_s3("inceptionresnetv2_imagenet_v1.h5")
     classifier = classifier_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_path=weights_path
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     dataset = adversarial_datasets.imagenet_adversarial(
