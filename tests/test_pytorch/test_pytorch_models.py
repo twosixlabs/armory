@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
 from armory.utils.metrics import _object_detection_get_tp_fp_fn
 
@@ -39,8 +40,9 @@ def test_pytorch_mnist():
 def test_pytorch_mnist_pretrained():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("undefended_mnist_5epochs.pth")
     classifier = classifier_fn(
-        model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.pth"
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     test_dataset = datasets.mnist(
