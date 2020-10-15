@@ -2,7 +2,6 @@
 Pytorch Faster-RCNN for xView object detection
 """
 import logging
-import sys
 
 import torch
 import torchvision

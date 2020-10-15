@@ -4,7 +4,6 @@ General image recognition scenario for image classification and object detection
 
 import logging
 from typing import Optional
-import sys
 
 from tqdm import tqdm
 
