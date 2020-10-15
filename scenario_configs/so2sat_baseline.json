@@ -2,6 +2,24 @@
     "_description": "Baseline so2sat classification",
     "adhoc": null,
     "attack": {
+        "generate_kwargs": {
+            "mask": [
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
@@ -13,22 +31,6 @@
             "targeted": false,
             "verbose": false
         },
-        "mask": [
-            1,
-            1,
-            1,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
         "module": "art.attacks.evasion",
         "name": "ProjectedGradientDescent",
         "use_label": true

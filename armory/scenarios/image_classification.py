@@ -4,6 +4,7 @@ General image classification scenario
 
 import logging
 from typing import Optional
+from copy import deepcopy
 
 from tqdm import tqdm
 import numpy as np
@@ -107,10 +108,6 @@ class ImageClassificationTask(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
-        attack_mask = attack_config.get("mask")
-        attack_mask_flag = attack_mask
-        if attack_mask_flag:
-            attack_mask = np.array(attack_mask)
 
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
@@ -149,15 +146,16 @@ class ImageClassificationTask(Scenario):
                     if targeted:
                         y, y_target = y
                 else:
-                    generate_kwargs = {"x": x}
+                    generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
+                    # Temporary workaround for ART code requirement of ndarray mask
+                    if "mask" in generate_kwargs:
+                        generate_kwargs["mask"] = np.array(generate_kwargs["mask"])
                     if attack_config.get("use_label"):
                         generate_kwargs["y"] = y
                     elif targeted:
                         y_target = label_targeter.generate(y)
                         generate_kwargs["y"] = y_target
-                    if attack_mask_flag:
-                        generate_kwargs["mask"] = attack_mask
-                    x_adv = attack.generate(**generate_kwargs)
+                    x_adv = attack.generate(x=x, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
