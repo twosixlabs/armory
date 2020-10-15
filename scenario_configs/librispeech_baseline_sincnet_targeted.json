@@ -41,6 +41,10 @@
             "nb_epochs": 20000
         },
         "model_kwargs": {
+            "clip_values": [
+                -1.0,
+                1.0
+            ],
             "predict_mode": "all"
         },
         "module": "armory.baseline_models.pytorch.sincnet",

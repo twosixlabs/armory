@@ -279,8 +279,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
         optimizer=torch.optim.RMSprop(
             model.parameters(), lr=0.001, alpha=0.95, eps=1e-8
         ),
-        # input_shape=(WINDOW_LENGTH,),  # TODO: needed for training?
         input_shape=(None,),
         nb_classes=40,
+        **wrapper_kwargs,
     )
     return wrapped_model
