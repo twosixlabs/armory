@@ -316,7 +316,9 @@ def image_circle_patch_diameter(x, x_adv):
 
 def object_detection_class_precision(y, y_pred, score_threshold=0.5):
     _check_object_detection_input(y, y_pred)
-    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(y, y_pred[0], score_threshold=score_threshold)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
     if num_tps + num_fps > 0:
         return [num_tps / (num_tps + num_fps)]
     else:
@@ -325,7 +327,9 @@ def object_detection_class_precision(y, y_pred, score_threshold=0.5):
 
 def object_detection_class_recall(y, y_pred, score_threshold=0.5):
     _check_object_detection_input(y, y_pred)
-    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(y, y_pred[0], score_threshold=score_threshold)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
     if num_tps + num_fns > 0:
         return [num_tps / (num_tps + num_fns)]
     else:
@@ -338,7 +342,9 @@ def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
     negatives given a set of of object detection labels and predictions
     """
     ground_truth_set_of_classes = set(y["category_id"].flatten().tolist())
-    predicted_set_of_classes = set(y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist())
+    predicted_set_of_classes = set(
+        y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist()
+    )
 
     num_true_positives = len(
         predicted_set_of_classes.intersection(ground_truth_set_of_classes)

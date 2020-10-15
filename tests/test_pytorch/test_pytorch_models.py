@@ -81,14 +81,23 @@ def test_keras_cifar():
     assert (accuracy / test_dataset.batches_per_epoch) > 0.25
 """
 
+
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_xview_pretrained():
     detector_module = import_module("armory.baseline_models.pytorch.xview_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
-    detector = detector_fn(model_kwargs={}, wrapper_kwargs={}, weights_file="xview_model_state_dict_epoch_99_loss_0p67")
+    detector = detector_fn(
+        model_kwargs={},
+        wrapper_kwargs={},
+        weights_file="xview_model_state_dict_epoch_99_loss_0p67",
+    )
 
     test_dataset = datasets.xview(
-        split_type="test", epochs=1, batch_size=1, dataset_dir=DATASET_DIR, shuffle_files=False
+        split_type="test",
+        epochs=1,
+        batch_size=1,
+        dataset_dir=DATASET_DIR,
+        shuffle_files=False,
     )
 
     num_test_samples = 100
@@ -99,7 +108,9 @@ def test_pytorch_xview_pretrained():
         x, y = test_dataset.get_batch()
         predictions = detector.predict(x)
         # TODO: use mAP once implemented
-        img_num_tps, img_num_fps, img_num_fns = _object_detection_get_tp_fp_fn(y, predictions[0], score_threshold=0.5)
+        img_num_tps, img_num_fps, img_num_fns = _object_detection_get_tp_fp_fn(
+            y, predictions[0], score_threshold=0.5
+        )
         tp_count += img_num_tps
         fp_count += img_num_fps
         fn_count += img_num_fns
