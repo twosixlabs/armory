@@ -79,10 +79,9 @@ def load_model(model_config):
     if isinstance(weights_file, str):
         weights_path = maybe_download_weights_from_s3(weights_file)
     elif isinstance(weights_file, list):
-        # TODO: if there are multiple weights files,
-        #  should model_fn() be called for each
-        #  or called once on the list?
         weights_path = [maybe_download_weights_from_s3(w) for w in weights_file]
+    elif isinstance(weights_file, dict):
+        weights_path = [maybe_download_weights_from_s3(w) for w in weights_file.keys()]
     else:
         weights_path = None
 
