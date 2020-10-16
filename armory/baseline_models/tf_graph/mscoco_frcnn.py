@@ -21,9 +21,7 @@ def make_tf_faster_rcnn(**kwargs):
     https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1.md
     """
 
-    images = tf.placeholder(
-        tf.float32, shape=(1, None, None, 3)
-    )
+    images = tf.placeholder(tf.float32, shape=(1, None, None, 3))
 
     # There is no ART model wrapper for object detection
     model = TensorFlowFasterRCNN(

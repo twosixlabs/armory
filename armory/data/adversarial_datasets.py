@@ -307,7 +307,6 @@ def apricot_canonical_preprocessing(batch):
     return batch
 
 
-
 def apricot_dev_adversarial(
     split_type: str = "adversarial",
     epochs: int = 1,
@@ -334,5 +333,3 @@ def apricot_dev_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
     )
-
-
