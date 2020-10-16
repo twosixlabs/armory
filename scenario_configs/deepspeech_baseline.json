@@ -5,7 +5,11 @@
     },
     "attack": {
         "knowledge": "white",
-        "kwargs": {},
+        "kwargs": {
+            "global_max_length": 522320,
+            "max_iter_1st_stage": 30,
+            "max_iter_2nd_stage": 125
+        },
         "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
         "name": "ImperceptibleASRPytorch",
         "use_label": false

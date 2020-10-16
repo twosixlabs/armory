@@ -644,7 +644,7 @@ class MetricsLogger:
                         raise ZeroDivisionError(
                             f"No values to calculate mean in {prefix}_{metric.name}"
                         )
-                if metric.name == "word_error_rate" and prefix == "benign":
+                if metric.name == "word_error_rate":
                     try:
                         results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
                     except ZeroDivisionError:
