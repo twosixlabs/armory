@@ -8,8 +8,6 @@ import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from art.estimators.object_detection import PyTorchFasterRCNN
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +17,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 63
 
 
-def make_fastrcnn_model(weights_file=None):
+def make_fastrcnn_model(weights_path=None):
     """
     This is an MSCOCO pre-trained model that's fine-tuned on xView.
     This model only performs inference and is not trainable. To perform other
@@ -34,17 +32,16 @@ def make_fastrcnn_model(weights_file=None):
     # replace the pre-trained head with a new one
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, NUM_CLASSES)
 
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        checkpoint = torch.load(filepath, map_location=DEVICE)
+    if weights_path:
+        checkpoint = torch.load(weights_path, map_location=DEVICE)
         model.load_state_dict(checkpoint)
 
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     try:
-        model = make_fastrcnn_model(weights_file=weights_file, **model_kwargs)
+        model = make_fastrcnn_model(weights_path=weights_path, **model_kwargs)
     except PermissionError:
         raise PermissionError(
             "Tried writing pretrained weights to directory without write "
