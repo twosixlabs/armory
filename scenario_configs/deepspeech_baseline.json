@@ -1,7 +1,7 @@
 {
     "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
     "adhoc": {
-        "skip_adversarial": true
+        "skip_adversarial": false
     },
     "attack": {
         "knowledge": "white",
