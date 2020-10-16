@@ -26,8 +26,8 @@ class AutomaticSpeechRecognition(Scenario):
         """
         Evaluate the config and return a results dict
         """
-        skip_benign = False
-        skip_adversarial = True
+        # TODO: 
+        skip_adversarial = False
         model_config = config["model"]
         predict_kwargs = config["adhoc"]["predict_kwargs"]
         classifier, preprocessing_fn = load_model(model_config)
