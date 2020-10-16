@@ -86,6 +86,7 @@ class ImageClassificationTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+        eval_split = config["dataset"].get("eval_split", "test")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -94,7 +95,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -137,7 +138,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -150,7 +151,10 @@ class ImageClassificationTask(Scenario):
                 computational_resource_dict=metrics_logger.computational_resource_dict,
             ):
                 if attack_type == "preloaded":
-                    x, x_adv = x
+                    if len(x) == 2:
+                        x, x_adv = x
+                    else:
+                        x_adv = x
                     if targeted:
                         y, y_target = y
                 elif attack_config.get("use_label"):
