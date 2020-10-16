@@ -8,10 +8,6 @@ from tensorflow.keras.optimizers import SGD
 from armory.data.utils import maybe_download_weights_from_s3
 
 
-def preprocessing_fn(img):
-    return img
-
-
 def make_model(**kwargs):
     SAR_model = Sequential()
     SAR_model.add(
