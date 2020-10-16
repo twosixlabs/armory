@@ -618,7 +618,8 @@ def librispeech_dev_clean_asr(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -636,6 +637,8 @@ def librispeech_dev_clean_asr(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
+
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
