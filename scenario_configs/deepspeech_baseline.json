@@ -3,7 +3,8 @@
     "adhoc": {
         "predict_kwargs": {
             "transcription_output": true
-        }
+        },
+        "skip_adversarial": true
     },
     "attack": {
         "knowledge": "white",

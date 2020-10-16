@@ -26,11 +26,12 @@ class AutomaticSpeechRecognition(Scenario):
         """
         Evaluate the config and return a results dict
         """
-        # TODO: 
-        skip_adversarial = False
         model_config = config["model"]
         predict_kwargs = config["adhoc"]["predict_kwargs"]
         classifier, preprocessing_fn = load_model(model_config)
+
+        
+
         if isinstance(preprocessing_fn, tuple):
             fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
         else:
@@ -67,8 +68,8 @@ class AutomaticSpeechRecognition(Scenario):
             metrics_logger.log_task()
 
         # Imperceptible attack still WIP
-        if skip_adversarial:
-            logger.info("Skipping benign classification...")
+        if (config.get("adhoc") or {}).get("skip_adversarial"):
+            logger.info("Skipping adversarial classification...")
         else:
             # Evaluate the ART classifier on adversarial test examples
             logger.info("Generating or loading / testing adversarial examples...")
