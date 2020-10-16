@@ -680,6 +680,40 @@ def resisc45(
     )
 
 
+class Context:
+    def __init__(self):
+        self.nb_classes = 101
+        self.classes = tuple(range(self.nb_classes))
+        self.x_dimensions = (None, None, 240, 320, 3)
+        self.default_float = np.float32
+        self.quantization = 255
+
+
+context = Context()
+
+
+def check_input(batch):
+    if batch.dtype != np.uint8:
+        raise ValueError(f"input batch dtype {batch.dtype} != np.uint8")
+    elif batch.ndim != len(context.x_dimensions):
+        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_dimensions)}")
+    for dim, (source, target) in enumerate(zip(batch.shape, context.x_dimensions)):
+        pass
+
+
+def dataset_canonical_preprocessing(batch):
+    assert batch.dtype == np.uint8
+    assert batch.ndim == 5
+    assert batch.shape[2:] == context.x_dimensions[2:]
+
+    batch = batch.astype(context.default_float) / context.quantization  # 255
+    assert batch.dtype == context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= 0.0
+
+    return batch
+
+
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
