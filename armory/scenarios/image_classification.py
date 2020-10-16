@@ -4,7 +4,6 @@ General image recognition scenario for image classification and object detection
 
 import logging
 from typing import Optional
-import sys
 
 from tqdm import tqdm
 
@@ -64,10 +63,9 @@ class ImageClassificationTask(Scenario):
                     logger.info("Fitting estimator on clean train dataset...")
                     estimator.fit_generator(train_data, **fit_kwargs)
             except NotImplementedError:
-                logger.exception(
+                raise NotImplementedError(
                     "Training has not yet been implemented for object detectors"
                 )
-                sys.exit(1)
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported

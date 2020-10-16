@@ -91,7 +91,7 @@ def librispeech_adversarial(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = datasets.librispeech_dev_clean_dataset_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",

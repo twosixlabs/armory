@@ -5,7 +5,6 @@ General audio classification scenario
 import logging
 from typing import Optional
 
-import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -32,11 +31,7 @@ class AudioClassificationTask(Scenario):
         """
 
         model_config = config["model"]
-        classifier, preprocessing_fn = load_model(model_config)
-        if isinstance(preprocessing_fn, tuple):
-            fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
-        else:
-            fit_preprocessing_fn = predict_preprocessing_fn = preprocessing_fn
+        classifier, fit_preprocessing_fn = load_model(model_config)
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
@@ -54,7 +49,7 @@ class AudioClassificationTask(Scenario):
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             batch_size = config["dataset"].pop("batch_size")
-            config["dataset"]["batch_size"] = config.get("adhoc", {}).get(
+            config["dataset"]["batch_size"] = fit_kwargs.get(
                 "fit_batch_size", batch_size
             )
             train_data = load_dataset(
@@ -84,6 +79,9 @@ class AudioClassificationTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+        if config["dataset"]["batch_size"] != 1:
+            logger.warning("Evaluation batch_size != 1 may not be supported.")
+
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -93,12 +91,11 @@ class AudioClassificationTask(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=predict_preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
-            logger.info("Running inference on benign examples...")
 
+            logger.info("Running inference on benign examples...")
             for x, y in tqdm(test_data, desc="Benign"):
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
@@ -113,6 +110,7 @@ class AudioClassificationTask(Scenario):
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
+
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
@@ -123,7 +121,6 @@ class AudioClassificationTask(Scenario):
                 attack_config,
                 epochs=1,
                 split_type="adversarial",
-                preprocessing_fn=predict_preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -137,7 +134,6 @@ class AudioClassificationTask(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=predict_preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -154,25 +150,10 @@ class AudioClassificationTask(Scenario):
                     if targeted:
                         y, y_target = y
                 elif attack_config.get("use_label"):
-                    y_input = y
-                    if x.shape[0] != y_input.shape[0]:
-                        if y_input.shape[0] != 1:
-                            raise ValueError(
-                                "batch_size > 1 not currently permitted with use_label"
-                            )
-                        # expansion required due to preprocessing
-                        y_input = np.repeat(y_input, x.shape[0])
-                    x_adv = attack.generate(x=x, y=y_input)
+                    x_adv = attack.generate(x=x, y=y)
                 elif targeted:
                     y_target = label_targeter.generate(y)
-                    if x.shape[0] != y_target.shape[0]:
-                        if y_target.shape[0] != 1:
-                            raise ValueError(
-                                "batch_size > 1 not currently permitted with targeted"
-                            )
-                        # expansion required due to preprocessing
-                        y_input = np.repeat(y_target, x.shape[0])
-                    x_adv = attack.generate(x=x, y=y_input)
+                    x_adv = attack.generate(x=x, y=y_target)
                 else:
                     x_adv = attack.generate(x=x)
 
