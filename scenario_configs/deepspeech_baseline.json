@@ -1,9 +1,6 @@
 {
     "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
     "adhoc": {
-        "predict_kwargs": {
-            "transcription_output": true
-        },
         "skip_adversarial": true
     },
     "attack": {
@@ -36,6 +33,9 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.deep_speech",
         "name": "get_art_model",
+        "predict_kwargs": {
+            "transcription_output": true
+        },
         "weights_file": "",
         "wrapper_kwargs": {
             "pretrained_model": "librispeech"

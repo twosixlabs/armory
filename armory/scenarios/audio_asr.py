@@ -27,17 +27,9 @@ class AutomaticSpeechRecognition(Scenario):
         Evaluate the config and return a results dict
         """
         model_config = config["model"]
-        predict_kwargs = config["adhoc"]["predict_kwargs"]
-        classifier, preprocessing_fn = load_model(model_config)
+        classifier, _ = load_model(model_config)
 
-        
-
-        if isinstance(preprocessing_fn, tuple):
-            fit_preprocessing_fn, predict_preprocessing_fn = preprocessing_fn
-        else:
-            fit_preprocessing_fn = (  # noqa: F841
-                predict_preprocessing_fn
-            ) = preprocessing_fn
+        predict_kwargs = config["model"].get("predict_kwargs", {})
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
@@ -50,7 +42,6 @@ class AutomaticSpeechRecognition(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=predict_preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
