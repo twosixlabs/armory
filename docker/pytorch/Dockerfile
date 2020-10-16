@@ -10,23 +10,6 @@ RUN /opt/conda/bin/conda install tensorflow-gpu==2.2.0 \
  cudatoolkit=10.1 -c pytorch && \
     /opt/conda/bin/conda clean --all
 
-ENV NUMBA_CACHE_DIR /tmp
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
-
-RUN /opt/conda/bin/conda install -c conda-forge librosa 
-RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
-  python-levenshtein \
-  torchaudio \
-  numba==0.43.0 \
-  --ignore-installed llvmlite==0.32.1 \
-  soundfile \
-  sox \
-  warpctc-pytorch==0.2.1+torch16.cuda100
-
-#  warpctc_pytorch
-
-RUN apt-get install -y sox
-
 ########## PyTorch 1 Release #################
 
 FROM armory-pytorch-base AS armory-pytorch
