@@ -1,11 +1,13 @@
 """
-General image classification scenario
+General image recognition scenario for image classification and object detection.
 """
 
 import logging
 from typing import Optional
+from copy import deepcopy
 
 from tqdm import tqdm
+import numpy as np
 
 from armory.utils.config_loading import (
     load_dataset,
@@ -31,79 +33,93 @@ class ImageClassificationTask(Scenario):
         """
 
         model_config = config["model"]
-        classifier, _ = load_model(model_config)
+        estimator, _ = load_model(model_config)
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
 
         if defense_type in ["Preprocessor", "Postprocessor"]:
-            logger.info(f"Applying internal {defense_type} defense to classifier")
-            classifier = load_defense_internal(config["defense"], classifier)
+            logger.info(f"Applying internal {defense_type} defense to estimator")
+            estimator = load_defense_internal(config["defense"], estimator)
 
         if model_config["fit"]:
-            classifier.set_learning_phase(True)
-            logger.info(
-                f"Fitting model {model_config['module']}.{model_config['name']}..."
-            )
-            fit_kwargs = model_config["fit_kwargs"]
+            try:
+                estimator.set_learning_phase(False)
+                logger.info(
+                    f"Fitting model {model_config['module']}.{model_config['name']}..."
+                )
+                fit_kwargs = model_config["fit_kwargs"]
 
-            logger.info(f"Loading train dataset {config['dataset']['name']}...")
-            train_data = load_dataset(
-                config["dataset"],
-                epochs=fit_kwargs["nb_epochs"],
-                split_type="train",
-                shuffle_files=True,
-            )
-            if defense_type == "Trainer":
-                logger.info(f"Training with {defense_type} defense...")
-                defense = load_defense_wrapper(config["defense"], classifier)
-                defense.fit_generator(train_data, **fit_kwargs)
-            else:
-                logger.info("Fitting classifier on clean train dataset...")
-                classifier.fit_generator(train_data, **fit_kwargs)
+                logger.info(f"Loading train dataset {config['dataset']['name']}...")
+                train_data = load_dataset(
+                    config["dataset"],
+                    epochs=fit_kwargs["nb_epochs"],
+                    split_type="train",
+                    shuffle_files=True,
+                )
+                if defense_type == "Trainer":
+                    logger.info(f"Training with {defense_type} defense...")
+                    defense = load_defense_wrapper(config["defense"], estimator)
+                    defense.fit_generator(train_data, **fit_kwargs)
+                else:
+                    logger.info("Fitting estimator on clean train dataset...")
+                    estimator.fit_generator(train_data, **fit_kwargs)
+            except NotImplementedError:
+                raise NotImplementedError(
+                    "Training has not yet been implemented for object detectors"
+                )
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported
-            logger.info(f"Transforming classifier with {defense_type} defense...")
-            defense = load_defense_wrapper(config["defense"], classifier)
-            classifier = defense()
+            logger.info(f"Transforming estimator with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], estimator)
+            estimator = defense()
 
-        classifier.set_learning_phase(False)
+        try:
+            estimator.set_learning_phase(False)
+        except NotImplementedError:
+            logger.warning(
+                "Unable to set estimator's learning phase. As of ART 1.4.1, "
+                "this is not yet supported for object detectors."
+            )
 
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+
+        eval_split = config["dataset"].get("eval_split", "test")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
-            # Evaluate the ART classifier on benign test examples
+            # Evaluate the ART estimator on benign test examples
             logger.info(f"Loading test dataset {config['dataset']['name']}...")
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
 
             logger.info("Running inference on benign examples...")
             for x, y in tqdm(test_data, desc="Benign"):
-                # Ensure that input sample isn't overwritten by classifier
+                # Ensure that input sample isn't overwritten by estimator
                 x.flags.writeable = False
                 with metrics.resource_context(
                     name="Inference",
                     profiler=config["metric"].get("profiler_type"),
                     computational_resource_dict=metrics_logger.computational_resource_dict,
                 ):
-                    y_pred = classifier.predict(x)
+                    y_pred = estimator.predict(x)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
 
-        # Evaluate the ART classifier on adversarial test examples
+        # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
@@ -116,7 +132,7 @@ class ImageClassificationTask(Scenario):
                 shuffle_files=False,
             )
         else:
-            attack = load_attack(attack_config, classifier)
+            attack = load_attack(attack_config, estimator)
             if targeted != getattr(attack, "targeted", False):
                 logger.warning(
                     f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
@@ -124,7 +140,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -140,17 +156,21 @@ class ImageClassificationTask(Scenario):
                     x, x_adv = x
                     if targeted:
                         y, y_target = y
-                elif attack_config.get("use_label"):
-                    x_adv = attack.generate(x=x, y=y)
-                elif targeted:
-                    y_target = label_targeter.generate(y)
-                    x_adv = attack.generate(x=x, y=y_target)
                 else:
-                    x_adv = attack.generate(x=x)
+                    generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
+                    # Temporary workaround for ART code requirement of ndarray mask
+                    if "mask" in generate_kwargs:
+                        generate_kwargs["mask"] = np.array(generate_kwargs["mask"])
+                    if attack_config.get("use_label"):
+                        generate_kwargs["y"] = y
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                        generate_kwargs["y"] = y_target
+                    x_adv = attack.generate(x=x, **generate_kwargs)
 
-            # Ensure that input sample isn't overwritten by classifier
+            # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
-            y_pred_adv = classifier.predict(x_adv)
+            y_pred_adv = estimator.predict(x_adv)
             if targeted:
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
