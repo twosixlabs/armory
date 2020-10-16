@@ -29,6 +29,9 @@ class AutomaticSpeechRecognition(Scenario):
         model_config = config["model"]
         classifier, _ = load_model(model_config)
 
+        if model_config["fit"]:
+            raise NotImplementedError("Model fit not yet implemented for ASR")
+
         predict_kwargs = config["model"].get("predict_kwargs", {})
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
