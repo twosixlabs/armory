@@ -7,7 +7,6 @@ Scenario Contributor: MITRE Corporation
 import logging
 from typing import Optional
 
-import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -15,46 +14,14 @@ from armory.utils.config_loading import (
     load_model,
     load_attack,
     load_adversarial_dataset,
+    load_defense_wrapper,
+    load_defense_internal,
     load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
-
-
-class Context:
-    def __init__(self):
-        self.nb_classes = 101
-        self.classes = tuple(range(self.nb_classes))
-        self.x_dimensions = (None, None, 240, 320, 3)
-        self.default_float = np.float32
-        self.quantization = 255
-
-
-context = Context()
-
-
-def check_input(batch):
-    if batch.dtype != np.uint8:
-        raise ValueError(f"input batch dtype {batch.dtype} != np.uint8")
-    elif batch.ndim != len(context.x_dimensions):
-        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_dimensions)}")
-    for dim, (source, target) in enumerate(zip(batch.shape, context.x_dimensions)):
-        pass
-
-
-def dataset_canonical_preprocessing(batch):
-    assert batch.dtype == np.uint8
-    assert batch.ndim == 5
-    assert batch.shape[2:] == context.x_dimensions[2:]
-
-    batch = batch.astype(context.default_float) / context.quantization  # 255
-    assert batch.dtype == context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
 
 
 class Ucf101(Scenario):
@@ -64,48 +31,59 @@ class Ucf101(Scenario):
         """
         Evaluate the config and return a results dict
         """
-        if config["model"]["fit"]:
-            raise NotImplementedError("Skipping model training for now")
-        if config["dataset"]["batch_size"] != 1:
-            raise NotImplementedError("Currently working only with batch size = 1")
 
-        print(context)
-        classifier, _ = load_model(config["model"])
-        # classifier = load_model(config["model"], context)
+        model_config = config["model"]
+        classifier, fit_preprocessing_fn = load_model(model_config)
 
-        if config["model"]["fit"]:
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to classifier")
+            classifier = load_defense_internal(config["defense"], classifier)
+
+        if model_config["fit"]:
             classifier.set_learning_phase(True)
             logger.info(
-                f"Fitting model {config['model']['module']}.{config['model']['name']}..."
+                f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
-            fit_kwargs = config["model"]["fit_kwargs"]
+            fit_kwargs = model_config["fit_kwargs"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
             batch_size = config["dataset"].pop("batch_size")
-            config["dataset"]["batch_size"] = config.get("adhoc", {}).get(
+            config["dataset"]["batch_size"] = fit_kwargs.get(
                 "fit_batch_size", batch_size
             )
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
-                preprocessing_fn=dataset_canonical_preprocessing,
+                preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
             config["dataset"]["batch_size"] = batch_size
+            if defense_type == "Trainer":
+                logger.info(f"Training with {defense_type} defense...")
+                defense = load_defense_wrapper(config["defense"], classifier)
+                defense.fit_generator(train_data, **fit_kwargs)
+            else:
+                logger.info("Fitting classifier on clean train dataset...")
+                classifier.fit_generator(train_data, **fit_kwargs)
 
-            logger.info("Fitting classifier on clean train dataset...")
-            classifier.fit_generator(train_data, **fit_kwargs)
-            # TODO: make the training process much more robust!
-            # Need to make it easy to do custom training
-
-            # TODO: save model weights
+        if defense_type == "Transform":
+            # NOTE: Transform currently not supported
+            logger.info(f"Transforming classifier with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], classifier)
+            classifier = defense()
 
         classifier.set_learning_phase(False)
 
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+        if config["dataset"]["batch_size"] != 1:
+            logger.warning("Evaluation batch_size != 1 may not be supported.")
+
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -115,7 +93,6 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=dataset_canonical_preprocessing,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -146,7 +123,6 @@ class Ucf101(Scenario):
                 attack_config,
                 epochs=1,
                 split_type="adversarial",
-                preprocessing_fn=dataset_canonical_preprocessing,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -161,7 +137,6 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=dataset_canonical_preprocessing,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -192,6 +167,6 @@ class Ucf101(Scenario):
                 metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
             else:
                 metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-            metrics_logger.update_perturbation([x], [x_adv])
+            metrics_logger.update_perturbation(x, x_adv)
         metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()
