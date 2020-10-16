@@ -27,3 +27,8 @@ for framework in "tf1" "tf2" "pytorch"; do
         docker build --force-rm --file docker/${framework}-dev/Dockerfile --build-arg armory_version=${version} --target armory-${framework}-dev -t twosixarmory/${framework}:${version} .
     fi
 done
+
+if [[ "$1" == "pytorch" || "$1" == "all" ]]; then
+    echo "Building docker images for deep speech model"
+    docker build --force-rm --file docker/pytorch-deepspeech-dev/Dockerfile --build-arg armory_version=${version} --target armory-pytorch-deepspeech-dev -t twosixarmory/pytorch-deepspeech:${version} .
+fi
