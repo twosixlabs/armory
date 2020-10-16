@@ -81,7 +81,9 @@ def load_model(model_config):
     elif isinstance(weights_file, list):
         weights_path = [maybe_download_weights_from_s3(w) for w in weights_file]
     elif isinstance(weights_file, dict):
-        weights_path = {k: maybe_download_weights_from_s3(v) for k, v in weights_file.items()}
+        weights_path = {
+            k: maybe_download_weights_from_s3(v) for k, v in weights_file.items()
+        }
     else:
         weights_path = None
 
