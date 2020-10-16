@@ -5,8 +5,6 @@ from tensorflow.keras.layers import MaxPooling2D, Input, concatenate, Lambda
 from art.estimators.classification import KerasClassifier
 from tensorflow.keras.optimizers import SGD
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 
 def make_model(**kwargs):
     SAR_model = Sequential()
@@ -52,11 +50,10 @@ def make_model(**kwargs):
     return fused_net
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     model = make_model(**model_kwargs)
-    if weights:
-        filepath = maybe_download_weights_from_s3(weights)
-        model.load_weights(filepath)
+    if weights_path:
+        model.load_weights(weights_path)
 
     wrapped_model = KerasClassifier(model=model, **wrapper_kwargs)
     return wrapped_model

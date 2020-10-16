@@ -19,8 +19,6 @@ from MARS.opts import parse_opts
 from MARS.models.model import generate_model
 from MARS.dataset import preprocess_data
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 
 logger = logging.getLogger(__name__)
 
@@ -28,16 +26,13 @@ logger = logging.getLogger(__name__)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def make_model(model_status="ucf101_trained", weights_file=None):
+def make_model(model_status="ucf101_trained", weights_path=None):
     statuses = ("ucf101_trained", "kinetics_pretrained")
     if model_status not in statuses:
         raise ValueError(f"model_status {model_status} not in {statuses}")
     trained = model_status == "ucf101_trained"
-    if not trained and weights_file is None:
-        raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
-
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
+    if not trained and weights_path is None:
+        raise ValueError("weights_path cannot be None for 'kinetics_pretrained'")
 
     opt = parse_opts(arguments=[])
     opt.dataset = "UCF101"
@@ -54,13 +49,13 @@ def make_model(model_status="ucf101_trained", weights_file=None):
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
-        opt.pretrain_path = filepath
+        opt.pretrain_path = weights_path
 
     logger.info(f"Loading model... {opt.model} {opt.model_depth}")
     model, parameters = generate_model(opt)
 
-    if trained and weights_file is not None:
-        checkpoint = torch.load(filepath, map_location=DEVICE)
+    if trained and weights_path is not None:
+        checkpoint = torch.load(weights_path, map_location=DEVICE)
         model.load_state_dict(checkpoint["state_dict"])
 
     # Initializing the optimizer
@@ -134,8 +129,8 @@ def preprocessing_fn(inputs):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
-    model, optimizer = make_model(weights_file=weights_file, **model_kwargs)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
+    model, optimizer = make_model(weights_path=weights_path, **model_kwargs)
     model.to(DEVICE)
 
     activity_means = np.array([114.7748, 107.7354, 99.4750])

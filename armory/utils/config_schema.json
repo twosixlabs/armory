@@ -146,6 +146,8 @@
                 "weights_file": {
                     "type": [
                         "string",
+                        "array",
+                        "object",
                         "null"
                     ]
                 },

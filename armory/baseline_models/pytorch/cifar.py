@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from art.classifiers import PyTorchClassifier
 
-from armory.data.utils import maybe_download_weights_from_s3
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -39,13 +38,12 @@ def make_cifar_model(**kwargs):
     return Net()
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     model = make_cifar_model(**model_kwargs)
     model.to(DEVICE)
 
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        checkpoint = torch.load(filepath, map_location=DEVICE)
+    if weights_path:
+        checkpoint = torch.load(weights_path, map_location=DEVICE)
         model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchClassifier(
