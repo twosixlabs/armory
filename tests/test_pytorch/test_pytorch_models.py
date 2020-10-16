@@ -86,10 +86,11 @@ def test_keras_cifar():
 def test_pytorch_xview_pretrained():
     detector_module = import_module("armory.baseline_models.pytorch.xview_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3(
+        "xview_model_state_dict_epoch_99_loss_0p67"
+    )
     detector = detector_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_file="xview_model_state_dict_epoch_99_loss_0p67",
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
     )
 
     test_dataset = datasets.xview(
