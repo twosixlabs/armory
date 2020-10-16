@@ -16,8 +16,6 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
   sox \
   warpctc-pytorch==0.2.1+torch16.cuda100
 
-#  warpctc_pytorch
-
 COPY . /armory_dev/
 RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
 CMD tail -f /dev/null
