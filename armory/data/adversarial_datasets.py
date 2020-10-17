@@ -289,17 +289,19 @@ def apricot_dev_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
-    new_adv_patch_category_id=-10,
+    transformed_adv_patch_category_id=-10,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
 
-    old_adv_patch_category_id = 12
+    raw_adv_patch_category_id = 12
 
-    def replace_magic_val(data, old_val, new_val, sub_key):
+    def replace_magic_val(data, raw_val, transformed_val, sub_key):
         rhs = data[sub_key]
         data[sub_key] = tf.where(
-            tf.equal(rhs, old_val), tf.ones_like(rhs, dtype=tf.int64) * new_val, rhs,
+            tf.equal(rhs, raw_val),
+            tf.ones_like(rhs, dtype=tf.int64) * transformed_val,
+            rhs,
         )
         return data
 
@@ -318,7 +320,10 @@ def apricot_dev_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y, old_adv_patch_category_id, new_adv_patch_category_id, "category_id"
+                y,
+                raw_adv_patch_category_id,
+                transformed_adv_patch_category_id,
+                "category_id",
             ),
         ),
     )
