@@ -16,6 +16,8 @@ from collections import defaultdict
 import cProfile
 import pstats
 
+from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+
 
 logger = logging.getLogger(__name__)
 
@@ -374,7 +376,11 @@ def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
     Helper function to compute the number of true positives, false positives, and false
     negatives given a set of of object detection labels and predictions
     """
-    ground_truth_set_of_classes = set(y["labels"].flatten().tolist())
+    ground_truth_set_of_classes = set(
+        y["labels"][np.where(y["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID)]
+        .flatten()
+        .tolist()
+    )
     predicted_set_of_classes = set(
         y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist()
     )
