@@ -296,6 +296,10 @@ def apricot_dev_adversarial(
 
     raw_adv_patch_category_id = 12
 
+    # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
+    # meaningful categories for other datasets. This method is applied as a lambda_map to make this
+    # labels field configurable -- we choose a negative integer so it is unlikely there are
+    # collisions with other labels.
     def replace_magic_val(data, raw_val, transformed_val, sub_key):
         rhs = data[sub_key]
         data[sub_key] = tf.where(
