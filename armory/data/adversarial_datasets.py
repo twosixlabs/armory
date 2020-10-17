@@ -306,6 +306,7 @@ def apricot_dev_adversarial(
     #  for the latter since it is unlikely that such a number represents the ID of a class in
     # another dataset
     raw_adv_patch_category_id = 12
+
     def replace_magic_val(data, raw_val, transformed_val, sub_key):
         rhs = data[sub_key]
         data[sub_key] = tf.where(
@@ -330,10 +331,7 @@ def apricot_dev_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y,
-                raw_adv_patch_category_id,
-                ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
-                "labels",
+                y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
             ),
         ),
     )
