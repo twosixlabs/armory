@@ -289,12 +289,12 @@ def apricot_dev_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
-    transformed_adv_patch_category_id=-10,
+    transformed_adv_patch_labels=-10,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
 
-    raw_adv_patch_category_id = 12
+    raw_adv_patch_labels = 12
 
     # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
     # meaningful categories for other datasets. This method is applied as a lambda_map to make this
@@ -324,10 +324,7 @@ def apricot_dev_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y,
-                raw_adv_patch_category_id,
-                transformed_adv_patch_category_id,
-                "category_id",
+                y, raw_adv_patch_labels, transformed_adv_patch_labels, "labels",
             ),
         ),
     )
