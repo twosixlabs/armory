@@ -137,7 +137,6 @@ class ArmoryDataGenerator(DataGenerator):
                 x = tuple(self.preprocessing_fn(i) for i in x)
             else:
                 x = self.preprocessing_fn(x)
-
         return x, y
 
     def __iter__(self):
@@ -203,6 +202,7 @@ def _generator_from_tfds(
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
+        supervised_xy_keys=('speech', 'text')  # librispeech-dev-clean with ASR
     if variable_length=True and batch_size > 1:
         output batches are 1D np.arrays of objects
     lambda_map - if not None, mapping function to apply to dataset elements
@@ -234,12 +234,22 @@ def _generator_from_tfds(
                 f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
                 f" tuple, not {supervised_xy_keys}"
             )
-        if not isinstance(x_key, str) or not isinstance(y_key, str):
+        if not (isinstance(x_key, str) or isinstance(x_key, tuple)) or not isinstance(
+            y_key, str
+        ):
             raise ValueError(
-                f"supervised_xy_keys be a tuple of strings,"
+                f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
                 f" not {type(x_key), type(y_key)}"
             )
-        ds = ds.map(lambda x: (x[x_key], x[y_key]))
+        if isinstance(x_key, tuple):
+            for k in x_key:
+                if not (isinstance(k, str)):
+                    raise ValueError(
+                        "supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                    )
+            ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
+        else:
+            ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
         ds = ds.map(lambda_map)
 
@@ -280,6 +290,22 @@ def _generator_from_tfds(
     return generator
 
 
+def preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of functions
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x):
+        for function in functions:
+            x = function(x)
+        return x
+
+    return wrapped
+
+
 class MnistContext:
     def __init__(self):
         self.default_float = np.float32
@@ -317,6 +343,8 @@ def mnist(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -325,39 +353,15 @@ def mnist(
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "mnist:3.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=mnist_dataset_canonical_preprocessing,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
-    )
-
-
-def cifar10(
-    split_type: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
-    """
-    Ten class image dataset:
-        https://www.cs.toronto.edu/~kriz/cifar.html
-    """
-    return _generator_from_tfds(
-        "cifar10:3.0.2",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=cifar10_dataset_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -396,12 +400,43 @@ def cifar10_dataset_canonical_preprocessing(batch):
     return batch
 
 
+def cifar10(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = cifar10_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    Ten class image dataset:
+        https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "cifar10:3.0.2",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def digit(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -410,6 +445,8 @@ def digit(
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "digit:1.0.8",
         split_type=split_type,
@@ -430,6 +467,7 @@ def imagenette(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -438,6 +476,8 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
         split_type=split_type,
@@ -479,12 +519,65 @@ def german_traffic_sign(
     )
 
 
+class LibriSpeechDevCleanContext:
+    def __init__(self):
+        self.input_type = np.int64  # However, stores values in int16 range
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+        self.x_shape = (None,)
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+librispeech_dev_clean_context = LibriSpeechDevCleanContext()
+
+
+def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
+    context = librispeech_dev_clean_context
+    if batch.dtype == np.object:
+        for x in batch:
+            if x.dtype != context.input_type:
+                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
+            assert x.max() <= context.input_max
+            assert x.min() >= context.input_min
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.max() <= context.output_max
+            assert x.min() >= context.output_min
+        return batch
+
+    if batch.ndim != len(context.x_shape) + 1:
+        print(batch)
+        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
+    if batch.dtype != context.input_type:
+        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.max() <= context.input_max
+    assert batch.min() >= context.input_min
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+    assert batch.dtype == context.output_type
+    assert batch.max() <= context.output_max
+    assert batch.min() >= context.output_min
+
+    return batch
+
+
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -502,6 +595,8 @@ def librispeech_dev_clean(
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
     )
+
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
@@ -548,37 +643,44 @@ def librispeech(
     )
 
 
-def resisc45(
+def librispeech_dev_clean_asr(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
+):
     """
-    REmote Sensing Image Scene Classification (RESISC) dataset
-        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
-
-    Contains 31,500 images covering 45 scene classes with 700 images per class
-
-    Uses TFDS:
-        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
-
-    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
-        Each sample is a 256 x 256 3-color (RGB) image
-    Dimensions of y: (31500,) of int, with values in range(45)
+    Librispeech dev dataset with custom split used for automatic
+    speech recognition.
 
     split_type - one of ("train", "validation", "test")
+
+    returns:
+        Generator
     """
+    flags = []
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
-        "resisc45_split:3.0.0",
+        "librispeech_dev_clean_split/plain_text:1.1.0",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=resisc45_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
+        as_supervised=False,
+        supervised_xy_keys=("speech", "text"),
+        variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -611,12 +713,54 @@ def resisc45_canonical_preprocessing(batch):
     return batch
 
 
+def resisc45(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = resisc45_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    REmote Sensing Image Scene Classification (RESISC) dataset
+        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
+
+    Contains 31,500 images covering 45 scene classes with 700 images per class
+
+    Uses TFDS:
+        https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/image/resisc45.py
+
+    Dimensions of X: (31500, 256, 256, 3) of uint8, ~ 5.8 GB in memory
+        Each sample is a 256 x 256 3-color (RGB) image
+    Dimensions of y: (31500,) of int, with values in range(45)
+
+    split_type - one of ("train", "validation", "test")
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "resisc45_split:3.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -625,6 +769,8 @@ def ucf101(
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
     """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
         split_type=split_type,
@@ -641,36 +787,10 @@ def ucf101(
     )
 
 
-def xview(
-    split_type: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
-) -> ArmoryDataGenerator:
-    """
-    split_type - one of ("train", "test")
-    """
-    return _generator_from_tfds(
-        "xview:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=xview_canonical_preprocessing,
-        as_supervised=False,
-        supervised_xy_keys=("image", "objects"),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
-    )
-
-
 class XViewContext:
     def __init__(self):
-        self.default_type = np.uint8
+        self.default_float = np.float32
+        self.quantization = 255
         self.x_dimensions = (
             None,
             None,
@@ -687,15 +807,125 @@ def xview_canonical_preprocessing(batch):
         raise ValueError(
             f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
         )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, xview_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == xview_context.default_type
+
+    batch = batch.astype(xview_context.default_float) / xview_context.quantization
+
+    assert batch.dtype == xview_context.default_float
     assert batch.shape[1] == batch.shape[2]  # Ensure square shape
     assert batch.shape[3] == xview_context.x_dimensions[3]
 
     return batch
+
+
+def xview(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = xview_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    split_type - one of ("train", "test")
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "xview:1.0.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+class So2SatContext:
+    def __init__(self):
+        self.default_type = np.float32
+        self.default_float = np.float32
+        self.x_dimensions = (
+            None,
+            32,
+            32,
+            14,
+        )
+        self.quantization = (
+            115.25348  # max absolute value across all channels in train/validation
+        )
+
+
+so2sat_context = So2SatContext()
+
+
+def so2sat_canonical_preprocessing(batch):
+    if batch.ndim != len(so2sat_context.x_dimensions):
+        raise ValueError(
+            f"input batch dim {batch.ndim} != {len(so2sat_context.x_dimensions)}"
+        )
+    for dim, (source, target) in enumerate(
+        zip(batch.shape, so2sat_context.x_dimensions)
+    ):
+        pass
+    assert batch.dtype == so2sat_context.default_type
+    assert batch.shape[1:] == so2sat_context.x_dimensions[1:]
+
+    batch = batch.astype(so2sat_context.default_float) / so2sat_context.quantization
+    assert batch.dtype == so2sat_context.default_float
+    assert batch.max() <= 1.0
+    assert batch.min() >= -1.0
+
+    return batch
+
+
+def so2sat(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = so2sat_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    Multimodal SAR / EO image dataset
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "so2sat/all:2.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
+        lambda_map=so2sat_concat_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
+def so2sat_concat_map(x, y):
+    try:
+        x1, x2 = x
+    except (ValueError, TypeError):
+        raise ValueError(
+            "so2 dataset intermediate format corrupted. Should be in format (sentinel1,sentinel2),label"
+        )
+    return tf.concat([x1[..., :4], x2], -1), y
 
 
 def _cache_dataset(dataset_dir: str, dataset_name: str):
@@ -736,6 +966,8 @@ SUPPORTED_DATASETS = {
     "librispeech_dev_clean": librispeech_dev_clean,
     "librispeech": librispeech,
     "xview": xview,
+    "librispeech_dev_clean_asr": librispeech_dev_clean_asr,
+    "so2sat": so2sat,
 }
 
 

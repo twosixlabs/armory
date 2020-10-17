@@ -1,49 +1,51 @@
 {
-    "_description": "",
+    "_description": "XView object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
-            "num_random_init": 0,
-            "targeted": false
+            "max_iter": 100,
+            "patch_shape": [
+                40,
+                40,
+                3
+            ]
         },
         "module": "art.attacks.evasion",
-        "name": "FastGradientMethod"
+        "name": "DPatch",
+        "type": "patch",
+        "use_label": false
     },
     "dataset": {
-        "batch_size": 64,
+        "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "mnist"
+        "name": "xview"
     },
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "image_circle_patch_diameter",
         "record_metric_per_sample": false,
         "task": [
-            "categorical_accuracy"
+            "object_detection_class_precision",
+            "object_detection_class_recall"
         ]
     },
     "model": {
-        "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 3
-        },
+        "fit": false,
+        "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.mnist",
+        "module": "armory.baseline_models.pytorch.xview_frcnn",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "xview_model_state_dict_epoch_99_loss_0p67",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "module": "armory.scenarios.object_detection",
+        "name": "ObjectDetectionTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.12.1-dev",

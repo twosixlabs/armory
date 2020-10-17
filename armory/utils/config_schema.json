@@ -146,6 +146,8 @@
                 "weights_file": {
                     "type": [
                         "string",
+                        "array",
+                        "object",
                         "null"
                     ]
                 },
@@ -230,7 +232,10 @@
                 "mean_linf",
                 "max_linf",
                 "mean_image_circle_patch_diameter",
-                "max_image_circle_patch_diameter"
+                "max_image_circle_patch_diameter",
+                "word_error_rate",
+                "object_detection_class_recall",
+                "object_detection_class_precision"
             ]
         },
         "sysconfig": {

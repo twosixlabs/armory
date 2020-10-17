@@ -159,6 +159,39 @@ def _snr_spectrogram(x_i, x_adv_i):
     return signal_power / noise_power
 
 
+def word_error_rate(y, y_pred):
+    """
+    Return the word error rate for a batch of transcriptions.
+    """
+    if len(y) != len(y_pred):
+        raise ValueError(f"len(y) {len(y)} != len(y_pred) {len(y_pred)}")
+    return [_word_error_rate(y_i, y_pred_i) for (y_i, y_pred_i) in zip(y, y_pred)]
+
+
+def _word_error_rate(y_i, y_pred_i):
+    reference = y_i.decode("utf-8").split()
+    hypothesis = y_pred_i.split()
+    r_length = len(reference)
+    h_length = len(hypothesis)
+    matrix = np.zeros((r_length + 1, h_length + 1))
+    for i in range(r_length + 1):
+        for j in range(h_length + 1):
+            if i == 0:
+                matrix[0][j] = j
+            elif j == 0:
+                matrix[i][0] = i
+    for i in range(1, r_length + 1):
+        for j in range(1, h_length + 1):
+            if reference[i - 1] == hypothesis[j - 1]:
+                matrix[i][j] = matrix[i - 1][j - 1]
+            else:
+                substitute = matrix[i - 1][j - 1] + 1
+                insertion = matrix[i][j - 1] + 1
+                deletion = matrix[i - 1][j] + 1
+                matrix[i][j] = min(substitute, insertion, deletion)
+    return (matrix[r_length][h_length], r_length)
+
+
 # Metrics specific to MARS model preprocessing in video UCF101 scenario
 
 
@@ -314,6 +347,84 @@ def image_circle_patch_diameter(x, x_adv):
     ]
 
 
+def object_detection_class_precision(y, y_pred, score_threshold=0.5):
+    _check_object_detection_input(y, y_pred)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
+    if num_tps + num_fps > 0:
+        return [num_tps / (num_tps + num_fps)]
+    else:
+        return [0]
+
+
+def object_detection_class_recall(y, y_pred, score_threshold=0.5):
+    _check_object_detection_input(y, y_pred)
+    num_tps, num_fps, num_fns = _object_detection_get_tp_fp_fn(
+        y, y_pred[0], score_threshold=score_threshold
+    )
+    if num_tps + num_fns > 0:
+        return [num_tps / (num_tps + num_fns)]
+    else:
+        return [0]
+
+
+def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
+    """
+    Helper function to compute the number of true positives, false positives, and false
+    negatives given a set of of object detection labels and predictions
+    """
+    ground_truth_set_of_classes = set(y["category_id"].flatten().tolist())
+    predicted_set_of_classes = set(
+        y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist()
+    )
+
+    num_true_positives = len(
+        predicted_set_of_classes.intersection(ground_truth_set_of_classes)
+    )
+    num_false_positives = len(
+        [c for c in predicted_set_of_classes if c not in ground_truth_set_of_classes]
+    )
+    num_false_negatives = len(
+        [c for c in ground_truth_set_of_classes if c not in predicted_set_of_classes]
+    )
+
+    return num_true_positives, num_false_positives, num_false_negatives
+
+
+def _check_object_detection_input(y, y_pred):
+    """
+    Helper function to check that the object detection labels and predictions are in
+    the expected format and contain the expected fields
+    """
+    if not isinstance(y, dict):
+        raise TypeError("Expected y to be a dictionary")
+
+    if not isinstance(y_pred, list):
+        raise TypeError("Expected y_pred to be a list")
+
+    # Current object detection pipeline only supports batch_size of 1
+    if len(y_pred) != 1:
+        raise ValueError(
+            f"Expected y_pred to be a list of length 1, found length of {len(y_pred)}"
+        )
+
+    y_pred = y_pred[0]
+
+    required_pred_keys = ("labels", "boxes", "scores")
+    required_label_keys = ("category_id", "bbox")
+
+    if not all(key in y for key in required_label_keys):
+        raise ValueError(
+            f"y must contain the following keys: {required_label_keys}. The following keys were found: {y.keys()}"
+        )
+
+    if not all(key in y_pred for key in required_pred_keys):
+        raise ValueError(
+            f"y_pred must contain the following keys: {required_pred_keys}. The following keys were found: {y_pred.keys()}"
+        )
+
+
 SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
@@ -331,6 +442,9 @@ SUPPORTED_METRICS = {
     "image_circle_patch_diameter": image_circle_patch_diameter,
     "mars_mean_l2": mars_mean_l2,
     "mars_mean_patch": mars_mean_patch,
+    "word_error_rate": word_error_rate,
+    "object_detection_class_precision": object_detection_class_precision,
+    "object_detection_class_recall": object_detection_class_recall,
 }
 
 # Image-based metrics applied to video
@@ -402,6 +516,18 @@ class MetricList:
 
     def mean(self):
         return sum(float(x) for x in self._values) / len(self._values)
+
+    def total_wer(self):
+        # checks if all values are tuples from the WER metric
+        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
+            total_edit_distance = 0
+            total_words = 0
+            for wer_tuple in self._values:
+                total_edit_distance += wer_tuple[0]
+                total_words += wer_tuple[1]
+            return float(total_edit_distance / total_words)
+        else:
+            raise ValueError("total_wer() only for WER metric")
 
 
 class MetricsLogger:
@@ -486,10 +612,17 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
 
         for metric in metrics:
-            logger.info(
-                f"Average {metric.name} on {task_type} test examples: "
-                f"{metric.mean():.2%}"
-            )
+            # Do not calculate mean WER, calcuate total WER
+            if metric.name == "word_error_rate":
+                logger.info(
+                    f"Word error rate on {task_type} examples: "
+                    f"{metric.total_wer():.2%}"
+                )
+            else:
+                logger.info(
+                    f"Average {metric.name} on {task_type} test examples: "
+                    f"{metric.mean():.2%}"
+                )
 
     def results(self):
         """
@@ -510,6 +643,13 @@ class MetricsLogger:
                     except ZeroDivisionError:
                         raise ZeroDivisionError(
                             f"No values to calculate mean in {prefix}_{metric.name}"
+                        )
+                if metric.name == "word_error_rate":
+                    try:
+                        results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
+                    except ZeroDivisionError:
+                        raise ZeroDivisionError(
+                            f"No values to calculate WER in {prefix}_{metric.name}"
                         )
 
         for name in self.computational_resource_dict:

@@ -5,6 +5,7 @@ import pytest
 
 from armory.data import datasets
 from armory.data import adversarial_datasets
+from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
 
 DATASET_DIR = paths.runtime_paths().dataset_dir
@@ -39,8 +40,9 @@ def test_keras_mnist():
 def test_keras_mnist_pretrained():
     classifier_module = import_module("armory.baseline_models.keras.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("undefended_mnist_5epochs.h5")
     classifier = classifier_fn(
-        model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.h5"
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     test_dataset = datasets.mnist(
@@ -84,8 +86,9 @@ def test_keras_cifar():
 def test_keras_imagenet():
     classifier_module = import_module("armory.baseline_models.keras.resnet50")
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("resnet50_imagenet_v1.h5")
     classifier = classifier_fn(
-        model_kwargs={}, wrapper_kwargs={}, weights_file="resnet50_imagenet_v1.h5",
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     dataset = adversarial_datasets.imagenet_adversarial(
@@ -110,10 +113,9 @@ def test_keras_imagenet_transfer():
         "armory.baseline_models.keras.inception_resnet_v2"
     )
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("inceptionresnetv2_imagenet_v1.h5")
     classifier = classifier_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_file="inceptionresnetv2_imagenet_v1.h5",
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     dataset = adversarial_datasets.imagenet_adversarial(

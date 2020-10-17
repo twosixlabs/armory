@@ -1,24 +1,46 @@
 {
-    "_description": "",
+    "_description": "Baseline so2sat classification",
     "adhoc": null,
     "attack": {
+        "generate_kwargs": {
+            "mask": [
+                1,
+                1,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ]
+        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
-            "num_random_init": 0,
-            "targeted": false
+            "eps": 0.031,
+            "eps_step": 0.007,
+            "max_iter": 20,
+            "num_random_init": 1,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
         },
         "module": "art.attacks.evasion",
-        "name": "FastGradientMethod"
+        "name": "ProjectedGradientDescent",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 64,
+        "eval_split": "validation",
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "mnist"
+        "name": "so2sat"
     },
     "defense": null,
     "metric": {
@@ -30,14 +52,14 @@
         ]
     },
     "model": {
-        "fit": true,
+        "fit": false,
         "fit_kwargs": {
-            "nb_epochs": 3
+            "nb_epochs": 20
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.mnist",
+        "module": "armory.baseline_models.keras.so2sat",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "multimodal_baseline_weights.h5",
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -46,7 +68,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.12.1-dev",
+        "docker_image": "twosixarmory/tf1:0.12.1-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
