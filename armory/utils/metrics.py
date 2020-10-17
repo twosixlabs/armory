@@ -379,7 +379,7 @@ def _check_object_detection_input(y, y_pred):
     y_pred = y_pred[0]
 
     REQUIRED_LABEL_KEYS = ["labels", "boxes"]
-    REQUIRED_PRED_KEYS= REQUIRED_LABEL_KEYS + ["scores"]
+    REQUIRED_PRED_KEYS = REQUIRED_LABEL_KEYS + ["scores"]
 
     if not all(key in y for key in REQUIRED_LABEL_KEYS):
         raise ValueError(
