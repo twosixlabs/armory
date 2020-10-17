@@ -137,7 +137,6 @@ class ArmoryDataGenerator(DataGenerator):
                 x = tuple(self.preprocessing_fn(i) for i in x)
             else:
                 x = self.preprocessing_fn(x)
-
         return x, y
 
     def __iter__(self):
@@ -203,6 +202,7 @@ def _generator_from_tfds(
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
         supervised_xy_keys=('video', 'label')  # ucf101 dataset
+        supervised_xy_keys=('speech', 'text')  # librispeech-dev-clean with ASR
     if variable_length=True and batch_size > 1:
         output batches are 1D np.arrays of objects
     lambda_map - if not None, mapping function to apply to dataset elements
@@ -613,6 +613,50 @@ def librispeech_dev_clean(
     )
 
 
+def librispeech_dev_clean_asr(
+    split_type: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+):
+    """
+    Librispeech dev dataset with custom split used for automatic
+    speech recognition.
+
+    split_type - one of ("train", "validation", "test")
+
+    returns:
+        Generator
+    """
+    flags = []
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "librispeech_dev_clean_split/plain_text:1.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
+        as_supervised=False,
+        supervised_xy_keys=("speech", "text"),
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 class Resisc45Context:
     def __init__(self):
         self.default_float = np.float32
@@ -891,6 +935,7 @@ SUPPORTED_DATASETS = {
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
     "xview": xview,
+    "librispeech_dev_clean_asr": librispeech_dev_clean_asr,
     "so2sat": so2sat,
 }
 
