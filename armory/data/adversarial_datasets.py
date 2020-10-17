@@ -5,6 +5,7 @@ Adversarial datasets
 from typing import Callable
 
 import numpy as np
+import tensorflow as tf
 
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
@@ -288,9 +289,25 @@ def apricot_dev_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
+    transformed_adv_patch_category_id=-10,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
+
+    raw_adv_patch_category_id = 12
+
+    # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
+    # meaningful categories for other datasets. This method is applied as a lambda_map to make this
+    # labels field configurable -- we choose a negative integer so it is unlikely there are
+    # collisions with other labels.
+    def replace_magic_val(data, raw_val, transformed_val, sub_key):
+        rhs = data[sub_key]
+        data[sub_key] = tf.where(
+            tf.equal(rhs, raw_val),
+            tf.ones_like(rhs, dtype=tf.int64) * transformed_val,
+            rhs,
+        )
+        return data
 
     return datasets._generator_from_tfds(
         "apricot_dev:1.0.0",
@@ -304,6 +321,15 @@ def apricot_dev_adversarial(
         shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
+        lambda_map=lambda x, y: (
+            x,
+            replace_magic_val(
+                y,
+                raw_adv_patch_category_id,
+                transformed_adv_patch_category_id,
+                "category_id",
+            ),
+        ),
     )
 
 
