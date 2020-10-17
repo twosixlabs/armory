@@ -293,7 +293,7 @@ def apricot_dev_adversarial(
         raise NotImplementedError("Currently working only with batch size = 1")
 
     return datasets._generator_from_tfds(
-        "apricot_dev:1.0.0",
+        "apricot_dev:1.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,

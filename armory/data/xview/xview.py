@@ -122,7 +122,7 @@ LABEL_MAP = {
 class Xview(tfds.core.GeneratorBasedBuilder):
     """xView dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
 
     def _info(self):
         features = {
@@ -132,8 +132,8 @@ class Xview(tfds.core.GeneratorBasedBuilder):
                     "id": tf.int64,
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
-                    "bbox": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "category_id": tfds.features.ClassLabel(num_classes=63),
+                    "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
+                    "labels": tfds.features.ClassLabel(num_classes=63),
                     "is_crowd": tf.bool,
                 }
             ),
@@ -222,8 +222,8 @@ class Xview(tfds.core.GeneratorBasedBuilder):
                     "id": annotations["id"],
                     "image_id": annotations["image_id"],
                     "area": annotations["area"],
-                    "bbox": annotations["box"],
-                    "category_id": annotations["label"],
+                    "boxes": annotations["box"],
+                    "labels": annotations["label"],
                     "is_crowd": annotations["iscrowd"],
                 },
             }
