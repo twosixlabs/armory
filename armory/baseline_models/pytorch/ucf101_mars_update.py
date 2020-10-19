@@ -127,13 +127,13 @@ def preprocessing_torch(
     return video
 
 
-def make_model(model_status="ucf101_trained", weights_file=None):
+def make_model(model_status="ucf101_trained", weights_path=None):
     statuses = ("ucf101_trained", "kinetics_pretrained")
     if model_status not in statuses:
         raise ValueError(f"model_status {model_status} not in {statuses}")
     trained = model_status == "ucf101_trained"
-    if not trained and weights_file is None:
-        raise ValueError("weights_file cannot be None for 'kinetics_pretrained'")
+    if not trained and weights_path is None:
+        raise ValueError("weights_path cannot be None for 'kinetics_pretrained'")
 
     opt = parse_opts(arguments=[])
     opt.dataset = "UCF101"
@@ -150,13 +150,13 @@ def make_model(model_status="ucf101_trained", weights_file=None):
         opt.batch_size = 32
         opt.ft_begin_index = 4
 
-        opt.pretrain_path = filepath
+        opt.pretrain_path = weights_path
 
     logger.info(f"Loading model... {opt.model} {opt.model_depth}")
     model, parameters = generate_model(opt)
 
-    if trained and weights_file is not None:
-        checkpoint = torch.load(filepath, map_location=DEVICE)
+    if trained and weights_path is not None:
+        checkpoint = torch.load(weights_path, map_location=DEVICE)
         model.load_state_dict(checkpoint["state_dict"])
 
     # Initializing the optimizer
@@ -198,8 +198,8 @@ class OuterModel(torch.nn.Module):
         return output
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
-    inner_model, optimizer = make_model(weights_file=weights_file, **model_kwargs)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
+    inner_model, optimizer = make_model(weights_path=weights_path, **model_kwargs)
     inner_model.to(DEVICE)
     model = OuterModel(inner_model)
     model.to(DEVICE)
