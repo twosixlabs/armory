@@ -96,7 +96,7 @@ _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datas
 class ApricotDev(tfds.core.GeneratorBasedBuilder):
     """APRICOT Dev dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
 
     def _info(self):
         features = {
@@ -147,8 +147,8 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
                     "id": tf.int64,
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
-                    "bbox": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "category_id": tfds.features.ClassLabel(num_classes=91),
+                    "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
+                    "labels": tfds.features.ClassLabel(num_classes=91),
                     "is_crowd": tf.bool,
                     "is_warped": tf.bool,
                     "angle": tfds.features.Tensor(shape=(3,), dtype=tf.int64),
@@ -206,8 +206,8 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
                         "id": anno["id"],
                         "image_id": anno["image_id"],
                         "area": anno["area"],
-                        "bbox": build_bbox(*anno["bbox"]),
-                        "category_id": anno["category_id"],
+                        "boxes": build_bbox(*anno["bbox"]),
+                        "labels": anno["category_id"],
                         "is_crowd": bool(anno["iscrowd"]),
                         "is_warped": anno.get("is_warped", False),
                         "angle": anno.get("angle", [-1, -1, -1]),

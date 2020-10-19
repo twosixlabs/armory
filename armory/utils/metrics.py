@@ -16,6 +16,8 @@ from collections import defaultdict
 import cProfile
 import pstats
 
+from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+
 
 logger = logging.getLogger(__name__)
 
@@ -374,7 +376,11 @@ def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
     Helper function to compute the number of true positives, false positives, and false
     negatives given a set of of object detection labels and predictions
     """
-    ground_truth_set_of_classes = set(y["category_id"].flatten().tolist())
+    ground_truth_set_of_classes = set(
+        y["labels"][np.where(y["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID)]
+        .flatten()
+        .tolist()
+    )
     predicted_set_of_classes = set(
         y_pred["labels"][np.where(y_pred["scores"] > score_threshold)].tolist()
     )
@@ -411,17 +417,17 @@ def _check_object_detection_input(y, y_pred):
 
     y_pred = y_pred[0]
 
-    required_pred_keys = ("labels", "boxes", "scores")
-    required_label_keys = ("category_id", "bbox")
+    REQUIRED_LABEL_KEYS = ["labels", "boxes"]
+    REQUIRED_PRED_KEYS = REQUIRED_LABEL_KEYS + ["scores"]
 
-    if not all(key in y for key in required_label_keys):
+    if not all(key in y for key in REQUIRED_LABEL_KEYS):
         raise ValueError(
-            f"y must contain the following keys: {required_label_keys}. The following keys were found: {y.keys()}"
+            f"y must contain the following keys: {REQUIRED_LABEL_KEYS}. The following keys were found: {y.keys()}"
         )
 
-    if not all(key in y_pred for key in required_pred_keys):
+    if not all(key in y_pred for key in REQUIRED_PRED_KEYS):
         raise ValueError(
-            f"y_pred must contain the following keys: {required_pred_keys}. The following keys were found: {y_pred.keys()}"
+            f"y_pred must contain the following keys: {REQUIRED_PRED_KEYS}. The following keys were found: {y_pred.keys()}"
         )
 
 
