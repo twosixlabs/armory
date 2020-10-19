@@ -44,7 +44,7 @@ class ImageClassificationTask(Scenario):
 
         if model_config["fit"]:
             try:
-                estimator.set_learning_phase(False)
+                estimator.set_learning_phase(True)
                 logger.info(
                     f"Fitting model {model_config['module']}.{model_config['name']}..."
                 )

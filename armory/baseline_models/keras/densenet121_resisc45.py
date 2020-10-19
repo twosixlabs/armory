@@ -10,8 +10,6 @@ from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Lambda
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 num_classes = 45
 
 
@@ -65,11 +63,10 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
     return new_model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
     model = make_densenet121_resisc_model(**model_kwargs)
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        model.load_weights(filepath)
+    if weights_path:
+        model.load_weights(weights_path)
 
     mean, std = mean_std()
     wrapped_model = KerasClassifier(

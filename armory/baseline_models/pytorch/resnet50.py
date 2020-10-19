@@ -8,8 +8,6 @@ import numpy as np
 import torch
 from torchvision import models
 
-from armory.data.utils import maybe_download_weights_from_s3
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +33,12 @@ def preprocessing_fn(img):
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     model = models.resnet50(**model_kwargs)
     model.to(DEVICE)
 
-    if weights_file:
-        filepath = maybe_download_weights_from_s3(weights_file)
-        checkpoint = torch.load(filepath, map_location=DEVICE)
+    if weights_path:
+        checkpoint = torch.load(weights_path, map_location=DEVICE)
         model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchClassifier(

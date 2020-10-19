@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
 from armory.utils.metrics import _object_detection_get_tp_fp_fn
 
@@ -39,8 +40,9 @@ def test_pytorch_mnist():
 def test_pytorch_mnist_pretrained():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("undefended_mnist_5epochs.pth")
     classifier = classifier_fn(
-        model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.pth"
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     test_dataset = datasets.mnist(
@@ -84,10 +86,11 @@ def test_keras_cifar():
 def test_pytorch_xview_pretrained():
     detector_module = import_module("armory.baseline_models.pytorch.xview_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3(
+        "xview_model_state_dict_epoch_99_loss_0p67"
+    )
     detector = detector_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_file="xview_model_state_dict_epoch_99_loss_0p67",
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
     )
 
     test_dataset = datasets.xview(

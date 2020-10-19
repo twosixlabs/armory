@@ -7,10 +7,9 @@ import tensorflow.compat.v1 as tf
 from art.classifiers import TFClassifier
 
 from armory import paths
-from armory.data.utils import maybe_download_weights_from_s3
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     input_ph = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
     labels_ph = tf.placeholder(tf.int32, shape=[None, 10])
     training_ph = tf.placeholder(tf.bool, shape=())
@@ -31,10 +30,9 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
-    if weights_file:
+    if weights_path:
         # Load Model using preferred save/restore method
-        filepath = maybe_download_weights_from_s3(weights_file)
-        tar = tarfile.open(filepath)
+        tar = tarfile.open(weights_path)
         tar.extractall(path=paths.runtime_paths().saved_model_dir)
         tar.close()
         # Restore variables...
