@@ -479,26 +479,26 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
 
     # Converting all boxes to a list of dicts (a list for predicted boxes, and a
     # separate list for ground truth boxes), where each dict corresponds to a box and
-    # has the following keys "img_idx", "label", "bbox", as well as "score" for predicted boxes
+    # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     pred_boxes_list = []
     gt_boxes_list = []
     for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        for gt_box_idx in range(len(y["category_id"][0].flatten())):
-            label = y["category_id"][0][gt_box_idx]
-            bbox = y["bbox"][0][gt_box_idx]
+        for gt_box_idx in range(len(y["labels"][0].flatten())):
+            label = y["labels"][0][gt_box_idx]
+            box = y["boxes"][0][gt_box_idx]
 
-            gt_box_dict = {"img_idx": img_idx, "label": label, "bbox": bbox}
+            gt_box_dict = {"img_idx": img_idx, "label": label, "box": box}
             gt_boxes_list.append(gt_box_dict)
 
         for pred_box_idx in range(len(y_pred["labels"].flatten())):
             label = y_pred["labels"][pred_box_idx]
-            bbox = y_pred["boxes"][pred_box_idx]
+            box = y_pred["boxes"][pred_box_idx]
             score = y_pred["scores"][pred_box_idx]
 
             pred_box_dict = {
                 "img_idx": img_idx,
                 "label": label,
-                "bbox": bbox,
+                "box": box,
                 "score": score,
             }
             pred_boxes_list.append(pred_box_dict)
@@ -567,7 +567,7 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
             # etermining which gt box has the highest iou with the predicted box
             highest_iou = 0
             for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
-                iou = _intersection_over_union(pred_box["bbox"], gt_box["bbox"])
+                iou = _intersection_over_union(pred_box["box"], gt_box["box"])
                 if iou >= highest_iou:
                     highest_iou = iou
                     highest_iou_gt_idx = gt_idx
