@@ -800,11 +800,11 @@ def tf_to_pytorch_box_conversion(x, y):
     TF format: [y1/height, x1/width, y2/height, x2/width]
     PyTorch format: [x1, y1, x2, y2] (unnormalized)
     """
-    orig_boxes = y["bbox"]
+    orig_boxes = y["boxes"]
     converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
     height, width = x.shape[1:3]
     converted_boxes *= [width, height, width, height]
-    y["bbox"] = converted_boxes
+    y["boxes"] = converted_boxes
     return y
 
 
