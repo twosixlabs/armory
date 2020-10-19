@@ -10,7 +10,8 @@
             "max_iter": 20,
             "num_random_init": 1,
             "random_eps": false,
-            "targeted": false
+            "targeted": false,
+            "verbose": false
         },
         "module": "art.attacks.evasion",
         "name": "ProjectedGradientDescent",
