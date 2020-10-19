@@ -33,7 +33,8 @@ class Ucf101(Scenario):
         """
         if config["dataset"]["batch_size"] != 1:
             raise ValueError(
-                "batch_size must be 1 for evaluation, due to variable length inputs"
+                "batch_size must be 1 for evaluation, due to variable length inputs.\n"
+                "    If training, set config['model']['fit_kwargs']['fit_batch_size']"
             )
 
         model_config = config["model"]

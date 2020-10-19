@@ -180,7 +180,16 @@ def preprocessing_fn_torch(
     return video
 
 
-preprocessing_fn = preprocessing_fn_numpy
+def fit_preprocessing_fn_numpy(batch):
+    """
+    Randomly sample a single stack from each video
+    """
+    x = preprocessing_fn_numpy(batch)
+    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
+    return x
+
+
+preprocessing_fn = fit_preprocessing_fn_numpy
 
 
 def make_model(model_status="ucf101_trained", weights_path=None):
@@ -244,8 +253,7 @@ class OuterModel(torch.nn.Module):
     def forward(self, x):
         if self.training:
             # Use preprocessing_fn_numpy in dataset preprocessing
-            raise NotImplementedError("training mode not complete yet")
-            # self.model(x)
+            return self.model(x)
         else:
             x = preprocessing_fn_torch(x)
             stack_outputs = self.model(x)
