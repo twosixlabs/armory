@@ -574,12 +574,19 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
 
             if highest_iou > IOU_THRESHOLD:
                 # If the gt box has not yet been covered
-                if img_idx_to_gtboxismatched_array[pred_box["img_idx"]][highest_iou_gt_idx] == 0:
+                if (
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ]
+                    == 0
+                ):
                     true_positives[pred_idx] = 1
 
                     # Record that we've now covered this gt box. Any subsequent
                     # pred boxes that overlap with it are considered false positives
-                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][highest_iou_gt_idx] = 1
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ] = 1
                 else:
                     # This gt box was already covered previously (i.e a different predicted
                     # box was deemed a true positive after overlapping with this gt box)
@@ -612,7 +619,9 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
 
         # Compute mean precision across the different recall levels
         average_precision = interpolated_precisions.mean()
-        average_precisions_by_class[int(class_id)] = np.around(average_precision, decimals=2)
+        average_precisions_by_class[int(class_id)] = np.around(
+            average_precision, decimals=2
+        )
 
     return average_precisions_by_class
 
