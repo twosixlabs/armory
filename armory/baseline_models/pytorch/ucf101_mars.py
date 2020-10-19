@@ -254,8 +254,8 @@ class OuterModel(torch.nn.Module):
         return output
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_file):
-    inner_model, optimizer = make_model(weights_file=weights_file, **model_kwargs)
+def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
+    inner_model, optimizer = make_model(weights_path=weights_path, **model_kwargs)
     inner_model.to(DEVICE)
     model = OuterModel(inner_model)
     model.to(DEVICE)
