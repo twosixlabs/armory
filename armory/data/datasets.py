@@ -620,7 +620,7 @@ def librispeech(
     dataset_dir: str = None,
     preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = False,
+    cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
@@ -630,6 +630,13 @@ def librispeech(
     )
 
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
+
+    if cache_dataset and split_type not in CACHED_SPLITS:
+        raise ValueError(
+            f"Split {split_type} not available in cache. Must be one of {CACHED_SPLITS}"
+        )
 
     return _generator_from_tfds(
         "librispeech/plain_text:1.1.0",
