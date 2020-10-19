@@ -433,7 +433,7 @@ def _check_object_detection_input(y, y_pred):
 
 def _intersection_over_union(box_1, box_2):
     """
-    Assumes format of [y1, x1, y2, x2]
+    Assumes format of [y1, x1, y2, x2] or [x1, y1, x2, y2]
     """
     assert box_1[2] >= box_1[0]
     assert box_2[2] >= box_2[0]
