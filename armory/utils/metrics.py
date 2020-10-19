@@ -603,7 +603,7 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
         # the corresponding recall exceeds the recall point
         # See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.157.5766&rep=rep1&type=pdf
         for i, recall_point in enumerate(RECALL_POINTS):
-            precisions_points = precisions[np.where(recalls > recall_point)]
+            precisions_points = precisions[np.where(recalls >= recall_point)]
             # If there's no cutoff at which the recall > recall_point
             if len(precisions_points) == 0:
                 interpolated_precisions[i] = 0
