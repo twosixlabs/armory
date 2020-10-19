@@ -62,10 +62,12 @@ class ArmoryDataGenerator(DataGenerator):
         epochs,
         batch_size,
         preprocessing_fn=None,
+        label_preprocessing_fn=None,
         variable_length=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
+        self.label_preprocessing_fn = label_preprocessing_fn
         self.generator = generator
 
         self.epochs = epochs
@@ -129,6 +131,9 @@ class ArmoryDataGenerator(DataGenerator):
         else:
             x, y = next(self.generator)
 
+        if self.label_preprocessing_fn:
+            y = self.label_preprocessing_fn(x, y)
+
         if self.preprocessing_fn:
             # Apply preprocessing to multiple inputs as needed
             if isinstance(x, dict):
@@ -190,6 +195,7 @@ def _generator_from_tfds(
     epochs: int,
     dataset_dir: str,
     preprocessing_fn: Callable,
+    label_preprocessing_fn: Callable = None,
     as_supervised: bool = True,
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
@@ -270,6 +276,7 @@ def _generator_from_tfds(
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
+            label_preprocessing_fn=label_preprocessing_fn,
             variable_length=bool(variable_length and batch_size > 1),
         )
 
@@ -787,6 +794,20 @@ def xview_canonical_preprocessing(batch):
     return batch
 
 
+def tf_to_pytorch_box_conversion(x, y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+    """
+    orig_boxes = y["boxes"]
+    converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
+    height, width = x.shape[1:3]
+    converted_boxes *= [width, height, width, height]
+    y["boxes"] = converted_boxes
+    return y
+
+
 def xview(
     split_type: str = "train",
     epochs: int = 1,
@@ -794,12 +815,17 @@ def xview(
     dataset_dir: str = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
+    label_preprocessing_fn: Callable = tf_to_pytorch_box_conversion,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     split_type - one of ("train", "test")
+
+    Bounding boxes are by default loaded in PyTorch format of [x1, y1, x2, y2]
+    where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
+    See https://pytorch.org/docs/stable/torchvision/models.html#faster-r-cnn.
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
@@ -810,6 +836,7 @@ def xview(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         cache_dataset=cache_dataset,
