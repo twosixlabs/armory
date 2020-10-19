@@ -152,13 +152,14 @@ class Ucf101(Scenario):
                     x, x_adv = x
                     if targeted:
                         y, y_target = y
-                elif attack_config.get("use_label"):
-                    x_adv = attack.generate(x=x, y=y)
-                elif targeted:
-                    y_target = label_targeter.generate(y)
-                    x_adv = attack.generate(x=x, y=y_target)
                 else:
-                    x_adv = attack.generate(x=x)
+                    generate_kwargs = {}
+                    if attack_config.get("use_label"):
+                        generate_kwargs["y"] = y
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                        generate_kwargs["y"] = y_target
+                    x_adv = attack.generate(x=x, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
