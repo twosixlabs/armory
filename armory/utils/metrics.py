@@ -532,12 +532,13 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
         # Determine how many gt boxes (of class_id) there are in each image
         num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_gt_boxes])
 
-        # Initialize array where we'll keep track of whether a gt box has been matched to a
+        # Initialize dict where we'll keep track of whether a gt box has been matched to a
         # prediction yet. This is necessary because if multiple predicted boxes of class_id
         # overlap with a single gt box, only one of the predicted boxes can be considered a
         # true positive
+        img_idx_to_gtboxismatched_array = {}
         for img_idx, num_gt_boxes in num_gt_boxes_per_img.items():
-            num_gt_boxes_per_img[img_idx] = np.zeros(num_gt_boxes)
+            img_idx_to_gtboxismatched_array[img_idx] = np.zeros(num_gt_boxes)
 
         # Sort all predicted boxes (of class_id) by descending confidence
         class_predicted_boxes.sort(key=lambda x: x["score"], reverse=True)
@@ -573,12 +574,12 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
 
             if highest_iou > IOU_THRESHOLD:
                 # If the gt box has not yet been covered
-                if num_gt_boxes_per_img[pred_box["img_idx"]][highest_iou_gt_idx] == 0:
+                if img_idx_to_gtboxismatched_array[pred_box["img_idx"]][highest_iou_gt_idx] == 0:
                     true_positives[pred_idx] = 1
 
                     # Record that we've now covered this gt box. Any subsequent
                     # pred boxes that overlap with it are considered false positives
-                    num_gt_boxes_per_img[pred_box["img_idx"]][highest_iou_gt_idx] = 1
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][highest_iou_gt_idx] = 1
                 else:
                     # This gt box was already covered previously (i.e a different predicted
                     # box was deemed a true positive after overlapping with this gt box)
