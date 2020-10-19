@@ -97,10 +97,18 @@ The defaults are shown below:
 | ~/.armory/saved_models | /armory/saved_models |
 | ~/.armory/outputs | /armory/outputs |
 
-<br>
 
 When using these paths in code, armory provides a programatic way to access these 
 directories.
+
+### PyTorch model persistent storage
+
+If you are using the Armory PyTorch container, published models from PyTorch Hub
+will often need to be retieved from a remote source. To avoid re-download of
+that data on each container run, these will be stored in the
+`/armory/saved_models/pytorch` container directory which is normally mapped to
+`~/.armory/saved_models` on the host as shown in the table above. 
+
 
 #### Utilizing the paths
 ```
