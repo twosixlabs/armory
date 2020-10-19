@@ -40,7 +40,7 @@
         "predict_kwargs": {
             "transcription_output": true
         },
-        "weights_file": "",
+        "weights_file": null,
         "wrapper_kwargs": {
             "pretrained_model": "librispeech"
         }
