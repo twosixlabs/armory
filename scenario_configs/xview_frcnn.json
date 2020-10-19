@@ -29,7 +29,7 @@
         "perturbation": "image_circle_patch_diameter",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_mAP"
+            "object_detection_AP_per_class"
         ]
     },
     "model": {

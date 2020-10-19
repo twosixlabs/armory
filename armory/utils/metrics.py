@@ -464,7 +464,7 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
-def object_detection_mAP(list_of_ys, list_of_y_preds):
+def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     """
     Mean average precision for object detection. This function returns a dictionary
     mapping each class to the average precision (AP) for the class. The mAP can be computed
@@ -612,7 +612,7 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
 
         # Compute mean precision across the different recall levels
         average_precision = interpolated_precisions.mean()
-        average_precisions_by_class[class_id] = np.around(average_precision, decimals=2)
+        average_precisions_by_class[int(class_id)] = np.around(average_precision, decimals=2)
 
     return average_precisions_by_class
 
@@ -635,7 +635,7 @@ SUPPORTED_METRICS = {
     "mars_mean_l2": mars_mean_l2,
     "mars_mean_patch": mars_mean_patch,
     "word_error_rate": word_error_rate,
-    "object_detection_mAP": object_detection_mAP,
+    "object_detection_AP_per_class": object_detection_AP_per_class,
     "object_detection_class_precision": object_detection_class_precision,
     "object_detection_class_recall": object_detection_class_recall,
 }
@@ -726,11 +726,11 @@ class MetricList:
         else:
             raise ValueError("total_wer() only for WER metric")
 
-    def mAP(self):
+    def AP_per_class(self):
         # Computed at once across all samples
         y_s = [i[0] for i in self._inputs]
         y_preds = [i[1] for i in self._inputs]
-        return object_detection_mAP(y_s, y_preds)
+        return object_detection_AP_per_class(y_s, y_preds)
 
 
 class MetricsLogger:
@@ -796,7 +796,7 @@ class MetricsLogger:
     def update_task(self, y, y_pred, adversarial=False):
         tasks = self.adversarial_tasks if adversarial else self.tasks
         for metric in tasks:
-            if metric.name == "object_detection_mAP":
+            if metric.name == "object_detection_AP_per_class":
                 metric.append_inputs(y, y_pred[0])
             else:
                 metric.append(y, y_pred)
@@ -825,8 +825,8 @@ class MetricsLogger:
                     f"Word error rate on {task_type} examples: "
                     f"{metric.total_wer():.2%}"
                 )
-            elif metric.name == "object_detection_mAP":
-                average_precision_by_class = metric.mAP()
+            elif metric.name == "object_detection_AP_per_class":
+                average_precision_by_class = metric.AP_per_class()
                 logger.info(
                     f"object_detection_mAP on {task_type} examples: "
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
@@ -849,11 +849,12 @@ class MetricsLogger:
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
-                if metric.name == "object_detection_mAP":
-                    average_precision_by_class = metric.mAP()
-                    results[f"{prefix}_{metric.name}"] = np.fromiter(
+                if metric.name == "object_detection_AP_per_class":
+                    average_precision_by_class = metric.AP_per_class()
+                    results[f"{prefix}_object_detection_mAP"] = np.fromiter(
                         average_precision_by_class.values(), dtype=float
                     ).mean()
+                    results[f"{prefix}_{metric.name}"] = average_precision_by_class
                     continue
 
                 if self.full:
