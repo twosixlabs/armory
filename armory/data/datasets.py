@@ -804,7 +804,7 @@ def xview(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "xview:1.0.0",
+        "xview:1.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,

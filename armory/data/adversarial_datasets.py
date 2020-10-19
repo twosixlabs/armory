@@ -18,6 +18,13 @@ from armory.data.adversarial import (  # noqa: F401
 )
 
 
+# The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this
+# number may correspond to real classes in other datasets, we convert this label 12 in the
+# APRICOT dataset to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID. We choose a negative integer
+# since it is unlikely that such a number represents the ID of a class in another dataset
+ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
+
+
 def imagenet_adversarial(
     split_type: str = "adversarial",
     epochs: int = 1,
@@ -289,17 +296,17 @@ def apricot_dev_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
-    transformed_adv_patch_category_id=-10,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
 
+    # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
+    # meaningful categories for other datasets. This method is applied as a lambda_map to convert
+    #  this label from 12 to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID -- we choose a negative integer
+    #  for the latter since it is unlikely that such a number represents the ID of a class in
+    # another dataset
     raw_adv_patch_category_id = 12
 
-    # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
-    # meaningful categories for other datasets. This method is applied as a lambda_map to make this
-    # labels field configurable -- we choose a negative integer so it is unlikely there are
-    # collisions with other labels.
     def replace_magic_val(data, raw_val, transformed_val, sub_key):
         rhs = data[sub_key]
         data[sub_key] = tf.where(
@@ -310,7 +317,7 @@ def apricot_dev_adversarial(
         return data
 
     return datasets._generator_from_tfds(
-        "apricot_dev:1.0.0",
+        "apricot_dev:1.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
@@ -324,10 +331,7 @@ def apricot_dev_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y,
-                raw_adv_patch_category_id,
-                transformed_adv_patch_category_id,
-                "category_id",
+                y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
             ),
         ),
     )
