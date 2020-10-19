@@ -195,7 +195,7 @@ def _generator_from_tfds(
     epochs: int,
     dataset_dir: str,
     preprocessing_fn: Callable,
-    label_preprocessing_fn: Callable,
+    label_preprocessing_fn: Callable = None,
     as_supervised: bool = True,
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
