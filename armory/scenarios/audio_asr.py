@@ -12,6 +12,9 @@ from armory.utils.config_loading import (
     load_model,
     load_attack,
     load_adversarial_dataset,
+    load_defense_wrapper,
+    load_defense_internal,
+    #    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -27,84 +30,129 @@ class AutomaticSpeechRecognition(Scenario):
         Evaluate the config and return a results dict
         """
         model_config = config["model"]
-        classifier, _ = load_model(model_config)
+        estimator, fit_preprocessing_fn = load_model(model_config)
+
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
+
+        if defense_type in ["Preprocessor", "Postprocessor"]:
+            logger.info(f"Applying internal {defense_type} defense to estimator")
+            estimator = load_defense_internal(config["defense"], estimator)
 
         if model_config["fit"]:
-            raise NotImplementedError("Model fit not yet implemented for ASR")
+            estimator.set_learning_phase(True)
+            logger.info(
+                f"Fitting model {model_config['module']}.{model_config['name']}..."
+            )
+            fit_kwargs = model_config["fit_kwargs"]
 
-        predict_kwargs = config["model"].get("predict_kwargs", {})
+            logger.info(f"Loading train dataset {config['dataset']['name']}...")
+            batch_size = config["dataset"].pop("batch_size")
+            config["dataset"]["batch_size"] = fit_kwargs.get(
+                "fit_batch_size", batch_size
+            )
+            train_data = load_dataset(
+                config["dataset"],
+                epochs=fit_kwargs["nb_epochs"],
+                split_type=config["dataset"].get("train_split", "train_clean100"),
+                preprocessing_fn=fit_preprocessing_fn,
+                shuffle_files=True,
+            )
+            config["dataset"]["batch_size"] = batch_size
+            if defense_type == "Trainer":
+                logger.info(f"Training with {defense_type} defense...")
+                defense = load_defense_wrapper(config["defense"], estimator)
+                defense.fit_generator(train_data, **fit_kwargs)
+            else:
+                logger.info("Fitting estimator on clean train dataset...")
+                estimator.fit_generator(train_data, **fit_kwargs)
+
+        if defense_type == "Transform":
+            # NOTE: Transform currently not supported
+            logger.info(f"Transforming estimator with {defense_type} defense...")
+            defense = load_defense_wrapper(config["defense"], estimator)
+            estimator = defense()
+
+        estimator.set_learning_phase(False)
+
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+        if config["dataset"]["batch_size"] != 1:
+            logger.warning("Evaluation batch_size != 1 may not be supported.")
+
+        predict_kwargs = config["model"].get("predict_kwargs", {})
+        eval_split = config["dataset"].get("eval_split", "test_clean")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
-            # Evaluate the ART classifier on benign test examples
+            # Evaluate the ART estimator on benign test examples
             logger.info(f"Loading test dataset {config['dataset']['name']}...")
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split_type=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
             logger.info("Running inference on benign examples...")
             for x, y in tqdm(test_data, desc="Benign"):
-                # Ensure that input sample isn't overwritten by classifier
+                # Ensure that input sample isn't overwritten by estimator
                 x.flags.writeable = False
                 with metrics.resource_context(
                     name="Inference",
                     profiler=config["metric"].get("profiler_type"),
                     computational_resource_dict=metrics_logger.computational_resource_dict,
                 ):
-                    y_pred = classifier.predict(x, **predict_kwargs)
+                    y_pred = estimator.predict(x, **predict_kwargs)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
 
         # Imperceptible attack still WIP
         if (config.get("adhoc") or {}).get("skip_adversarial"):
             logger.info("Skipping adversarial classification...")
+            return metrics_logger.results()
+
+        # Evaluate the ART estimator on adversarial test examples
+        logger.info("Generating or loading / testing adversarial examples...")
+
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+        if attack_type == "preloaded":
+            test_data = load_adversarial_dataset(
+                attack_config,
+                epochs=1,
+                split_type="adversarial",
+                num_batches=num_eval_batches,
+                shuffle_files=False,
+            )
         else:
-            # Evaluate the ART classifier on adversarial test examples
-            logger.info("Generating or loading / testing adversarial examples...")
+            attack = load_attack(attack_config, estimator)
+            test_data = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split_type=eval_split,
+                num_batches=num_eval_batches,
+                shuffle_files=False,
+            )
+        for x, y in tqdm(test_data, desc="Attack"):
+            with metrics.resource_context(
+                name="Attack",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
+            ):
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                    y, y_target = y
+                elif attack_config.get("use_label"):
+                    x_adv = attack.generate(x=x, y=y)
+                else:
+                    x_adv = attack.generate(x=x, y=["TEST STRING"])
 
-            attack_config = config["attack"]
-            attack_type = attack_config.get("type")
-            if attack_type == "preloaded":
-                test_data = load_adversarial_dataset(
-                    attack_config,
-                    epochs=1,
-                    split_type="adversarial",
-                    num_batches=num_eval_batches,
-                    shuffle_files=False,
-                )
-            else:
-                attack = load_attack(attack_config, classifier)
-                test_data = load_dataset(
-                    config["dataset"],
-                    epochs=1,
-                    split_type="test",
-                    num_batches=num_eval_batches,
-                    shuffle_files=False,
-                )
-            for x, y in tqdm(test_data, desc="Attack"):
-                with metrics.resource_context(
-                    name="Attack",
-                    profiler=config["metric"].get("profiler_type"),
-                    computational_resource_dict=metrics_logger.computational_resource_dict,
-                ):
-                    if attack_type == "preloaded":
-                        x, x_adv = x
-                        y, y_target = y
-                    elif attack_config.get("use_label"):
-                        x_adv = attack.generate(x=x, y=y)
-                    else:
-                        x_adv = attack.generate(x=x, y=["TEST STRING"])
-
-                # Ensure that input sample isn't overwritten by classifier
-                x_adv.flags.writeable = False
-                y_pred_adv = classifier.predict(x_adv, **predict_kwargs)
-                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-                metrics_logger.update_perturbation(x, x_adv)
-            metrics_logger.log_task(adversarial=True, targeted=True)
+            # Ensure that input sample isn't overwritten by estimator
+            x_adv.flags.writeable = False
+            y_pred_adv = estimator.predict(x_adv, **predict_kwargs)
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
+        metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()
