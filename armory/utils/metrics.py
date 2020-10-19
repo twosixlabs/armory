@@ -726,6 +726,12 @@ class MetricList:
         else:
             raise ValueError("total_wer() only for WER metric")
 
+    def mAP(self):
+        # Computed at once across all samples
+        y_s = [i[0] for i in self._inputs]
+        y_preds = [i[1] for i in self._inputs]
+        return object_detection_mAP(y_s, y_preds)
+
 
 class MetricsLogger:
     """
@@ -757,7 +763,7 @@ class MetricsLogger:
         self.computational_resource_dict = {}
         if not self.means and not self.full:
             logger.warning(
-                "No metric results will be produced. "
+                "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
         if not self.tasks and not self.perturbations and not self.adversarial_tasks:
@@ -820,9 +826,7 @@ class MetricsLogger:
                     f"{metric.total_wer():.2%}"
                 )
             elif metric.name == "object_detection_mAP":
-                y_s = [i[0] for i in metric._inputs]
-                y_preds = [i[1] for i in metric._inputs]
-                average_precision_by_class = object_detection_mAP(y_s, y_preds)
+                average_precision_by_class = metric.mAP()
                 logger.info(
                     f"object_detection_mAP on {task_type} examples: "
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
@@ -845,6 +849,13 @@ class MetricsLogger:
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
+                if metric.name == "object_detection_mAP":
+                    average_precision_by_class = metric.mAP()
+                    results[f"{prefix}_{metric.name}"] = np.fromiter(
+                        average_precision_by_class.values(), dtype=float
+                    ).mean()
+                    continue
+
                 if self.full:
                     results[f"{prefix}_{metric.name}"] = metric.values()
                 if self.means:
