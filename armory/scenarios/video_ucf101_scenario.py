@@ -137,7 +137,6 @@ class Ucf101(Scenario):
                 logger.warning(
                     f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
                 )
-            # attack.set_params(batch_size=1)  # TODO: do we still need this?
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
