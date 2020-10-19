@@ -510,7 +510,6 @@ def object_detection_mAP(list_of_ys, list_of_y_preds):
 
     # Remove the class ID that corresponds to a physical adversarial patch in APRICOT
     # dataset, if present
-    # TODO: retrieve this ID from datasets.py rather than hardcoding it
     set_of_class_ids.discard(ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
 
     # Initialize dict that will store AP for each class
