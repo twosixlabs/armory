@@ -31,6 +31,10 @@ class Ucf101(Scenario):
         """
         Evaluate the config and return a results dict
         """
+        if config["dataset"]["batch_size"] != 1:
+            raise ValueError(
+                "batch_size must be 1 for evaluation, due to variable length inputs"
+            )
 
         model_config = config["model"]
         classifier, fit_preprocessing_fn = load_model(model_config)
