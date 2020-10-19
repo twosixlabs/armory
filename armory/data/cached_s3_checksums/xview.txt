@@ -1,1 +1,1 @@
-armory-public-data xview/xview_cached_1.0.0.tar.gz 1327675970 3b398aa50db565657bd69f44df4d490f9f2073d3d1121b01212bc922de58ad1b
+armory-public-data xview/xview_cached_1.0.1.tar.gz 1327660246 33dfc93788a7d3b345d7054e6667200b57d87971af410be59a8e24d38fb164cd

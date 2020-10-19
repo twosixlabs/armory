@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.utils.config_loading import load_dataset
 from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
 from armory.utils.metrics import _object_detection_get_tp_fp_fn
@@ -93,20 +94,25 @@ def test_pytorch_xview_pretrained():
         model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
     )
 
-    test_dataset = datasets.xview(
-        split_type="test",
+    NUM_TEST_SAMPLES = 250
+    dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "xview",
+    }
+    test_dataset = load_dataset(
+        dataset_config,
         epochs=1,
-        batch_size=1,
-        dataset_dir=DATASET_DIR,
+        split_type="test",
+        num_batches=NUM_TEST_SAMPLES,
         shuffle_files=False,
     )
 
-    num_test_samples = 100
     tp_count = 0
     fp_count = 0
     fn_count = 0
-    for _ in range(num_test_samples):
-        x, y = test_dataset.get_batch()
+    for x, y in test_dataset:
         predictions = detector.predict(x)
         # TODO: use mAP once implemented
         img_num_tps, img_num_fps, img_num_fns = _object_detection_get_tp_fp_fn(
@@ -127,4 +133,4 @@ def test_pytorch_xview_pretrained():
         recall = 0
 
     assert precision > 0.78
-    assert recall > 0.62
+    assert recall > 0.64
