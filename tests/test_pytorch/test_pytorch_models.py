@@ -7,7 +7,7 @@ from armory.data import datasets
 from armory.utils.config_loading import load_dataset
 from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
-from armory.utils.metrics import _object_detection_get_tp_fp_fn
+from armory.utils.metrics import object_detection_AP_per_class
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
@@ -109,28 +109,17 @@ def test_pytorch_xview_pretrained():
         shuffle_files=False,
     )
 
-    tp_count = 0
-    fp_count = 0
-    fn_count = 0
+    list_of_ys = []
+    list_of_ypreds = []
     for x, y in test_dataset:
-        predictions = detector.predict(x)
-        # TODO: use mAP once implemented
-        img_num_tps, img_num_fps, img_num_fns = _object_detection_get_tp_fp_fn(
-            y, predictions[0], score_threshold=0.5
-        )
-        tp_count += img_num_tps
-        fp_count += img_num_fps
-        fn_count += img_num_fns
+        y_pred = detector.predict(x)[0]
+        list_of_ys.append(y)
+        list_of_ypreds.append(y_pred)
 
-    if tp_count + fp_count > 0:
-        precision = tp_count / (tp_count + fp_count)
-    else:
-        precision = 0
-
-    if tp_count + fn_count > 0:
-        recall = tp_count / (tp_count + fn_count)
-    else:
-        recall = 0
-
-    assert precision > 0.78
-    assert recall > 0.64
+    average_precision_by_class = object_detection_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    mAP = np.fromiter(average_precision_by_class.values(), dtype=float).mean()
+    for class_id in [4, 23, 33, 39]:
+        assert average_precision_by_class[class_id] > 0.9
+    assert mAP > 0.25
