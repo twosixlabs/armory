@@ -4,8 +4,10 @@ import numpy as np
 
 class JpegCompressionMultiChannelImage(JpegCompression):
     """
-    Unnormalize inputs that were normalized during preprocessing,
-    process use ART JpegCompression, and renormalize
+    Rescale inputs that may not be in [0,1] after preprocessing,
+    process use ART JpegCompression treating input as video
+    (so that number of channels need not be 1,3), scale back
+    to original preprocessing
     """
 
     def __init__(
