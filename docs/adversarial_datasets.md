@@ -44,7 +44,7 @@ Example attack module for image classification scenario:
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
-| "apricot_dev_adversarial" | "adversarial" | A Dataset of Physical Adversarial Attacks on Object Detection | Targeted, universal patch | dev | (N, H, W, 3) | uint8 | n/a | dict | 138 images |
+| "apricot_dev_adversarial"      | "adversarial"                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | dev          | (N, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
 
 Note: the APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches. 
 The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in 
