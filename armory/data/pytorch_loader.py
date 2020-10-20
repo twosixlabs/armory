@@ -26,7 +26,9 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
                     if isinstance(v, tf.Tensor):
                         y_torch[k] = torch.from_numpy(v.numpy())
                     else:
-                        y_torch[k] = v
+                        raise ValueError(
+                            f"Expected all values to be of type tf.Tensor, but value at key {k} is of type {type(v)}"
+                        )
             else:
                 y_torch = torch.from_numpy(y.numpy())
 
