@@ -18,6 +18,16 @@ class FixedLabelTargeter:
         return np.ones_like(y) * self.value
 
 
+class FixedStringTargeter:
+    def __init__(self, value):
+        if not isinstance(value, str):
+            raise ValueError(f"target value {value} is not a string")
+        self.value = value
+
+    def generate(self, y):
+        return [self.value] * len(y)
+
+
 class RandomLabelTargeter:
     def __init__(self, num_classes):
         if not isinstance(num_classes, int) or num_classes < 2:

@@ -12,13 +12,20 @@
         },
         "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
         "name": "ImperceptibleASRPytorch",
+        "targeted": true,
+        "targeted_labels": {
+            "scheme": "string",
+            "value": "TEST STRING"
+        },
         "use_label": false
     },
     "dataset": {
         "batch_size": 1,
+        "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "librispeech_dev_clean_asr"
+        "name": "librispeech",
+        "train_split": "train_clean100"
     },
     "defense": null,
     "metric": {
@@ -40,7 +47,7 @@
         "predict_kwargs": {
             "transcription_output": true
         },
-        "weights_file": "",
+        "weights_file": null,
         "wrapper_kwargs": {
             "pretrained_model": "librispeech"
         }
