@@ -18,7 +18,7 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
 
 ########## PyTorch 1 Deep Speech Release #################
 
-FROM pytorch-deepspeech-base as armory-pytorch-deepspeech
+FROM armory-pytorch-deepspeech-base as armory-pytorch-deepspeech
 ARG armory_version
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
 CMD tail -f /dev/null
