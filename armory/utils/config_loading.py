@@ -94,8 +94,8 @@ def load_model(model_config):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
         logger.warning(
-            "You're attempting to evaluate an unfitted model with no "
-            "pre-trained weights!"
+            "No weights file was provided and the model is not configured to train. "
+            "Are you loading model weights from an online repository?"
         )
 
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
