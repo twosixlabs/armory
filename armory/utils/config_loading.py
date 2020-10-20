@@ -213,6 +213,9 @@ def load_label_targeter(config):
     if scheme == "fixed":
         value = config.get("value")
         return labels.FixedLabelTargeter(value)
+    elif scheme == "string":
+        value = config.get("value")
+        return labels.FixedStringTargeter(value)
     elif scheme == "random":
         num_classes = config.get("num_classes")
         return labels.RandomLabelTargeter(num_classes)

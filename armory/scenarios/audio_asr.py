@@ -14,7 +14,7 @@ from armory.utils.config_loading import (
     load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
-    #    load_label_targeter,
+    load_label_targeter,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
@@ -40,7 +40,11 @@ class AutomaticSpeechRecognition(Scenario):
             estimator = load_defense_internal(config["defense"], estimator)
 
         if model_config["fit"]:
-            estimator.set_learning_phase(True)
+            try:
+                estimator.set_learning_phase(True)
+            except NotImplementedError:
+                logger.exception("set_learning_phase error; training may not work.")
+
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
@@ -73,7 +77,13 @@ class AutomaticSpeechRecognition(Scenario):
             defense = load_defense_wrapper(config["defense"], estimator)
             estimator = defense()
 
-        estimator.set_learning_phase(False)
+        try:
+            estimator.set_learning_phase(False)
+        except NotImplementedError:
+            logger.warning(
+                "Unable to set estimator's learning phase. As of ART 1.4.1, "
+                "this is not yet supported for speech recognition models."
+            )
 
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
@@ -118,6 +128,8 @@ class AutomaticSpeechRecognition(Scenario):
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
+
+        targeted = bool(attack_config.get("targeted"))
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
@@ -128,6 +140,10 @@ class AutomaticSpeechRecognition(Scenario):
             )
         else:
             attack = load_attack(attack_config, estimator)
+            if targeted != attack.targeted:
+                logger.warning(
+                    f"targeted config {targeted} != attack field {attack.targeted}"
+                )
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -135,6 +151,8 @@ class AutomaticSpeechRecognition(Scenario):
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
+            if targeted:
+                label_targeter = load_label_targeter(attack_config["targeted_labels"])
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
                 name="Attack",
@@ -143,11 +161,15 @@ class AutomaticSpeechRecognition(Scenario):
             ):
                 if attack_type == "preloaded":
                     x, x_adv = x
-                    y, y_target = y
+                    if targeted:
+                        y, y_target = y
                 elif attack_config.get("use_label"):
                     x_adv = attack.generate(x=x, y=y)
+                elif targeted:
+                    y_target = label_targeter.generate(y)
+                    x_adv = attack.generate(x=x, y=y_target)
                 else:
-                    x_adv = attack.generate(x=x, y=["TEST STRING"])
+                    x_adv = attack.generate(x=x)
 
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
