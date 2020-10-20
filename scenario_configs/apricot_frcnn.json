@@ -24,8 +24,7 @@
         "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_class_precision",
-            "object_detection_class_recall"
+            "object_detection_AP_per_class"
         ]
     },
     "model": {
