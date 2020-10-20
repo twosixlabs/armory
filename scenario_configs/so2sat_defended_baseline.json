@@ -51,7 +51,7 @@
                 0.0,
                 1.0
             ],
-            "means": [
+            "mins": [
                 -1.0,
                 -1.0,
                 -1.0,
@@ -68,7 +68,7 @@
                 0.0
             ],
             "quality": 50,
-            "stds": [
+            "ranges": [
                 2.0,
                 2.0,
                 2.0,
@@ -106,7 +106,12 @@
         "module": "armory.baseline_models.keras.so2sat",
         "name": "get_art_model",
         "weights_file": "multimodal_baseline_weights.h5",
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "clip_values": [
+                -1,
+                1
+            ]
+        }
     },
     "scenario": {
         "kwargs": {},

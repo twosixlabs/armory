@@ -60,7 +60,12 @@
         "module": "armory.baseline_models.keras.so2sat",
         "name": "get_art_model",
         "weights_file": "multimodal_baseline_weights.h5",
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "clip_values": [
+                -1,
+                1
+            ]
+        }
     },
     "scenario": {
         "kwargs": {},
