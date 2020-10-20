@@ -43,6 +43,7 @@ class DockerPaths:
         self.dataset_dir = armory_dir + "/datasets"
         self.local_git_dir = armory_dir + "/git"
         self.saved_model_dir = armory_dir + "/saved_models"
+        self.pytorch_dir = self.saved_model_dir + "/pytorch"
         self.tmp_dir = armory_dir + "/tmp"
         self.output_dir = armory_dir + "/outputs"
         self.external_repo_dir = self.tmp_dir + "/external"
@@ -57,6 +58,7 @@ class HostDefaultPaths:
         self.dataset_dir = os.path.join(self.armory_dir, "datasets")
         self.local_git_dir = os.path.join(self.armory_dir, "git")
         self.saved_model_dir = os.path.join(self.armory_dir, "saved_models")
+        self.pytorch_dir = os.path.join(self.armory_dir, "saved_models", "pytorch")
         self.tmp_dir = os.path.join(self.armory_dir, "tmp")
         self.output_dir = os.path.join(self.armory_dir, "outputs")
         self.external_repo_dir = os.path.join(self.tmp_dir, "external")
@@ -72,6 +74,8 @@ class HostPaths(HostDefaultPaths):
                 "dataset_dir",
                 "local_git_dir",
                 "saved_model_dir",
+                # pytorch_dir should not be found in the config file
+                # because it is not configurable (yet)
                 "output_dir",
                 "tmp_dir",
             ):
@@ -83,5 +87,6 @@ class HostPaths(HostDefaultPaths):
         os.makedirs(self.dataset_dir, exist_ok=True)
         os.makedirs(self.local_git_dir, exist_ok=True)
         os.makedirs(self.saved_model_dir, exist_ok=True)
+        os.makedirs(self.pytorch_dir, exist_ok=True)
         os.makedirs(self.tmp_dir, exist_ok=True)
         os.makedirs(self.output_dir, exist_ok=True)
