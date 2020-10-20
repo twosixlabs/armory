@@ -48,7 +48,7 @@ Example attack module for image classification scenario:
 
 Note: the APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches. 
 The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in 
-[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py]). Each image contains one adversarial 
+[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial 
 patch and a varying number of COCO objects (including zero).
 
 
