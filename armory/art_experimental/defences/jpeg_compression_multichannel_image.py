@@ -29,11 +29,11 @@ class JpegCompressionMultiChannelImage(JpegCompression):
             apply_predict=apply_predict,
         )
         if mins is None:
-            mins = (0.0) * n_channels  # identity operation
+            mins = (0.0,) * n_channels  # identity operation
         self.mins = mins
 
         if ranges is None:
-            ranges = (1.0) * n_channels  # identity operation
+            ranges = (1.0,) * n_channels  # identity operation
         self.ranges = ranges
 
     def __call__(self, x, y=None):
