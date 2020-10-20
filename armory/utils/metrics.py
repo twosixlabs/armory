@@ -11,7 +11,7 @@ import numpy as np
 import time
 from contextlib import contextmanager
 import io
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import cProfile
 import pstats
@@ -431,6 +431,201 @@ def _check_object_detection_input(y, y_pred):
         )
 
 
+def _intersection_over_union(box_1, box_2):
+    """
+    Assumes format of [y1, x1, y2, x2] or [x1, y1, x2, y2]
+    """
+    assert box_1[2] >= box_1[0]
+    assert box_2[2] >= box_2[0]
+    assert box_1[3] >= box_1[1]
+    assert box_2[3] >= box_2[1]
+
+    if sum([mean < 1 and mean >= 0 for mean in [box_1.mean(), box_2.mean()]]) == 1:
+        logger.warning(
+            "One set of boxes appears to be normalized while the other is not"
+        )
+
+    # Determine coordinates of intersection box
+    x_left = max(box_1[1], box_2[1])
+    x_right = min(box_1[3], box_2[3])
+    y_top = max(box_1[0], box_2[0])
+    y_bottom = min(box_1[2], box_2[2])
+
+    intersect_area = max(0, x_right - x_left) * max(0, y_bottom - y_top)
+    if intersect_area == 0:
+        return 0
+
+    box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
+    box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
+
+    iou = intersect_area / (box_1_area + box_2_area - intersect_area)
+    assert iou >= 0
+    assert iou <= 1
+    return iou
+
+
+def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
+    """
+    Mean average precision for object detection. This function returns a dictionary
+    mapping each class to the average precision (AP) for the class. The mAP can be computed
+    by taking the mean of the AP's across all classes.
+
+    This metric is computed over all evaluation samples, rather than on a per-sample basis.
+    """
+
+    IOU_THRESHOLD = 0.5
+    # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
+    RECALL_POINTS = np.linspace(0, 1, 11)
+
+    # Converting all boxes to a list of dicts (a list for predicted boxes, and a
+    # separate list for ground truth boxes), where each dict corresponds to a box and
+    # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
+    pred_boxes_list = []
+    gt_boxes_list = []
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        for gt_box_idx in range(len(y["labels"][0].flatten())):
+            label = y["labels"][0][gt_box_idx]
+            box = y["boxes"][0][gt_box_idx]
+
+            gt_box_dict = {"img_idx": img_idx, "label": label, "box": box}
+            gt_boxes_list.append(gt_box_dict)
+
+        for pred_box_idx in range(len(y_pred["labels"].flatten())):
+            label = y_pred["labels"][pred_box_idx]
+            box = y_pred["boxes"][pred_box_idx]
+            score = y_pred["scores"][pred_box_idx]
+
+            pred_box_dict = {
+                "img_idx": img_idx,
+                "label": label,
+                "box": box,
+                "score": score,
+            }
+            pred_boxes_list.append(pred_box_dict)
+
+    # Union of (1) the set of all true classes and (2) the set of all predicted classes
+    set_of_class_ids = set([i["label"] for i in gt_boxes_list]) | set(
+        [i["label"] for i in pred_boxes_list]
+    )
+
+    # Remove the class ID that corresponds to a physical adversarial patch in APRICOT
+    # dataset, if present
+    set_of_class_ids.discard(ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
+
+    # Initialize dict that will store AP for each class
+    average_precisions_by_class = {}
+
+    # Compute AP for each class
+    for class_id in set_of_class_ids:
+
+        # Buiild lists that contain all the predicted/ground-truth boxes with a
+        # label of class_id
+        class_predicted_boxes = []
+        class_gt_boxes = []
+        for pred_box in pred_boxes_list:
+            if pred_box["label"] == class_id:
+                class_predicted_boxes.append(pred_box)
+        for gt_box in gt_boxes_list:
+            if gt_box["label"] == class_id:
+                class_gt_boxes.append(gt_box)
+
+        # Determine how many gt boxes (of class_id) there are in each image
+        num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_gt_boxes])
+
+        # Initialize dict where we'll keep track of whether a gt box has been matched to a
+        # prediction yet. This is necessary because if multiple predicted boxes of class_id
+        # overlap with a single gt box, only one of the predicted boxes can be considered a
+        # true positive
+        img_idx_to_gtboxismatched_array = {}
+        for img_idx, num_gt_boxes in num_gt_boxes_per_img.items():
+            img_idx_to_gtboxismatched_array[img_idx] = np.zeros(num_gt_boxes)
+
+        # Sort all predicted boxes (of class_id) by descending confidence
+        class_predicted_boxes.sort(key=lambda x: x["score"], reverse=True)
+
+        # Initialize arrays. Once filled in, true_positives[i] indicates (with a 1 or 0)
+        # whether the ith predicted box (of class_id) is a true positive. Likewise for
+        # false_positives array
+        true_positives = np.zeros(len(class_predicted_boxes))
+        false_positives = np.zeros(len(class_predicted_boxes))
+
+        # Iterating over all predicted boxes of class_id
+        for pred_idx, pred_box in enumerate(class_predicted_boxes):
+            # Only compare gt boxes from the same image as the predicted box
+            gt_boxes_from_same_img = [
+                gt_box
+                for gt_box in class_gt_boxes
+                if gt_box["img_idx"] == pred_box["img_idx"]
+            ]
+
+            # If there are no gt boxes in the predicted box's image that have the predicted class
+            if len(gt_boxes_from_same_img) == 0:
+                false_positives[pred_idx] = 1
+                continue
+
+            # Iterate over all gt boxes (of class_id) from the same image as the predicted box, d
+            # etermining which gt box has the highest iou with the predicted box
+            highest_iou = 0
+            for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
+                iou = _intersection_over_union(pred_box["box"], gt_box["box"])
+                if iou >= highest_iou:
+                    highest_iou = iou
+                    highest_iou_gt_idx = gt_idx
+
+            if highest_iou > IOU_THRESHOLD:
+                # If the gt box has not yet been covered
+                if (
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ]
+                    == 0
+                ):
+                    true_positives[pred_idx] = 1
+
+                    # Record that we've now covered this gt box. Any subsequent
+                    # pred boxes that overlap with it are considered false positives
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ] = 1
+                else:
+                    # This gt box was already covered previously (i.e a different predicted
+                    # box was deemed a true positive after overlapping with this gt box)
+                    false_positives[pred_idx] = 1
+            else:
+                false_positives[pred_idx] = 1
+
+        # Cumulative sums of false/true positives across all predictions which were sorted by
+        # descending confidence
+        tp_cumulative_sum = np.cumsum(true_positives)
+        fp_cumulative_sum = np.cumsum(false_positives)
+
+        # Total number of gt boxes with a label of class_id
+        total_gt_boxes = len(class_gt_boxes)
+
+        recalls = tp_cumulative_sum / (total_gt_boxes + 1e-6)
+        precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-6)
+
+        interpolated_precisions = np.zeros(len(RECALL_POINTS))
+        # Interpolate the precision at each recall level by taking the max precision for which
+        # the corresponding recall exceeds the recall point
+        # See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.157.5766&rep=rep1&type=pdf
+        for i, recall_point in enumerate(RECALL_POINTS):
+            precisions_points = precisions[np.where(recalls >= recall_point)]
+            # If there's no cutoff at which the recall > recall_point
+            if len(precisions_points) == 0:
+                interpolated_precisions[i] = 0
+            else:
+                interpolated_precisions[i] = max(precisions_points)
+
+        # Compute mean precision across the different recall levels
+        average_precision = interpolated_precisions.mean()
+        average_precisions_by_class[int(class_id)] = np.around(
+            average_precision, decimals=2
+        )
+
+    return average_precisions_by_class
+
+
 SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
@@ -449,6 +644,7 @@ SUPPORTED_METRICS = {
     "mars_mean_l2": mars_mean_l2,
     "mars_mean_patch": mars_mean_patch,
     "word_error_rate": word_error_rate,
+    "object_detection_AP_per_class": object_detection_AP_per_class,
     "object_detection_class_precision": object_detection_class_precision,
     "object_detection_class_recall": object_detection_class_recall,
 }
@@ -503,6 +699,7 @@ class MetricList:
             raise ValueError(f"function must be callable or None, not {function}")
         self.name = name
         self._values = []
+        self._inputs = []
 
     def clear(self):
         self._values.clear()
@@ -523,6 +720,9 @@ class MetricList:
     def mean(self):
         return sum(float(x) for x in self._values) / len(self._values)
 
+    def append_inputs(self, *args):
+        self._inputs.append(args)
+
     def total_wer(self):
         # checks if all values are tuples from the WER metric
         if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
@@ -534,6 +734,12 @@ class MetricList:
             return float(total_edit_distance / total_words)
         else:
             raise ValueError("total_wer() only for WER metric")
+
+    def AP_per_class(self):
+        # Computed at once across all samples
+        y_s = [i[0] for i in self._inputs]
+        y_preds = [i[1] for i in self._inputs]
+        return object_detection_AP_per_class(y_s, y_preds)
 
 
 class MetricsLogger:
@@ -550,6 +756,7 @@ class MetricsLogger:
         profiler_type=None,
         computational_resource_dict=None,
         skip_benign=None,
+        **kwargs,
     ):
         """
         task - single metric or list of metrics
@@ -565,7 +772,7 @@ class MetricsLogger:
         self.computational_resource_dict = {}
         if not self.means and not self.full:
             logger.warning(
-                "No metric results will be produced. "
+                "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
         if not self.tasks and not self.perturbations and not self.adversarial_tasks:
@@ -598,7 +805,10 @@ class MetricsLogger:
     def update_task(self, y, y_pred, adversarial=False):
         tasks = self.adversarial_tasks if adversarial else self.tasks
         for metric in tasks:
-            metric.append(y, y_pred)
+            if metric.name == "object_detection_AP_per_class":
+                metric.append_inputs(y, y_pred[0])
+            else:
+                metric.append(y, y_pred)
 
     def update_perturbation(self, x, x_adv):
         for metric in self.perturbations:
@@ -624,6 +834,13 @@ class MetricsLogger:
                     f"Word error rate on {task_type} examples: "
                     f"{metric.total_wer():.2%}"
                 )
+            elif metric.name == "object_detection_AP_per_class":
+                average_precision_by_class = metric.AP_per_class()
+                logger.info(
+                    f"object_detection_mAP on {task_type} examples: "
+                    f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
+                    f" AP by class ID: {average_precision_by_class}"
+                )
             else:
                 logger.info(
                     f"Average {metric.name} on {task_type} test examples: "
@@ -641,6 +858,14 @@ class MetricsLogger:
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
+                if metric.name == "object_detection_AP_per_class":
+                    average_precision_by_class = metric.AP_per_class()
+                    results[f"{prefix}_object_detection_mAP"] = np.fromiter(
+                        average_precision_by_class.values(), dtype=float
+                    ).mean()
+                    results[f"{prefix}_{metric.name}"] = average_precision_by_class
+                    continue
+
                 if self.full:
                     results[f"{prefix}_{metric.name}"] = metric.values()
                 if self.means:
