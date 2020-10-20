@@ -963,8 +963,12 @@ class So2SatContext:
             32,
             14,
         )
-        self.quantization = (
-            115.25348  # max absolute value across all channels in train/validation
+        self.quantization = np.concatenate(
+            (
+                128 * np.ones((1, 1, 1, 4), dtype=np.float32),
+                4 * np.ones((1, 1, 1, 10), dtype=np.float32),
+            ),
+            axis=-1,
         )
 
 
