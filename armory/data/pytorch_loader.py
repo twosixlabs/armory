@@ -12,10 +12,13 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
             x, y = ex
             # separately handle benign/adversarial data formats
             if isinstance(x, tuple):
-                x_torch = (torch.from_numpy(x[0].numpy()), torch.from_numpy(x[1].numpy()))
+                x_torch = (
+                    torch.from_numpy(x[0].numpy()),
+                    torch.from_numpy(x[1].numpy()),
+                )
             else:
                 x_torch = torch.from_numpy(x.numpy())
-            
+
             # separately handle tensor/object detection label formats
             if isinstance(y, dict):
                 y_torch = {}
@@ -26,5 +29,5 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
                         y_torch[k] = v
             else:
                 y_torch = torch.from_numpy(y.numpy())
-            
+
             yield x_torch, y_torch
