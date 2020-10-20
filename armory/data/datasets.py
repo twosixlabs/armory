@@ -771,12 +771,73 @@ def resisc45(
     )
 
 
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+        actual should not have None values
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if None in actual:
+        raise ValueError(f"None should not be in actual shape {actual}")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+class UCF101Context:
+    def __init__(self):
+        self.nb_classes = 101
+        self.input_type = np.uint8
+        self.x_shape = (None, 240, 320, 3)
+        self.frame_rate = 25
+        self.quantization = 255
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
+
+
+ucf101_context = UCF101Context()
+
+
+def ucf101_canonical_preprocessing(batch):
+    context = ucf101_context
+    if batch.dtype == np.uint8:
+        check_shapes(batch.shape, (None,) + context.x_shape)
+
+        batch = batch.astype(context.output_type) / context.quantization
+    elif batch.dtype == np.object:
+        for x in batch:
+            if x.dtype != context.input_type:
+                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
+            check_shapes(x.shape, context.x_shape)
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+    else:
+        raise ValueError(f"input batch dtype {batch.dtype} not in (np.uint8, 'O')")
+
+    for x in batch:
+        assert x.dtype == context.output_type
+        assert x.min() >= context.output_min
+        assert x.max() <= context.output_max
+    return batch
+
+
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = ucf101_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
