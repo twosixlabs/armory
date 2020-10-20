@@ -268,6 +268,13 @@ def _generator_from_tfds(
         ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
+    if framework != "numpy" and (
+        preprocessing_fn is not None or label_preprocessing_fn is not None
+    ):
+        raise ValueError(
+            f"Data/label preprocessing functions only supported for numpy framework.  Selected {framework} framework"
+        )
+
     if framework == "numpy":
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
