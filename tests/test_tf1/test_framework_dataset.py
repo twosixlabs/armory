@@ -17,5 +17,7 @@ def test_tf_generator():
         batch_size=16,
         dataset_dir=DATASET_DIR,
         framework="tf",
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
     assert isinstance(dataset, (tf.compat.v2.data.Dataset, tf.compat.v1.data.Dataset))

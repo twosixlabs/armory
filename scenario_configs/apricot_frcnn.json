@@ -1,32 +1,27 @@
 {
-    "_description": "XView object detection, contributed by MITRE Corporation",
+    "_description": "APRICOT object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "max_iter": 100,
-            "patch_shape": [
-                40,
-                40,
-                3
-            ]
+            "batch_size": 1
         },
-        "module": "art.attacks.evasion",
-        "name": "DPatch",
-        "type": "patch",
+        "module": "armory.data.adversarial_datasets",
+        "name": "apricot_dev_adversarial",
+        "type": "preloaded",
         "use_label": false
     },
     "dataset": {
         "batch_size": 1,
+        "eval_split": "adversarial",
         "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "xview"
+        "module": "armory.data.adversarial_datasets",
+        "name": "apricot_dev_adversarial"
     },
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "image_circle_patch_diameter",
+        "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
             "object_detection_AP_per_class"
@@ -36,9 +31,9 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.xview_frcnn",
+        "module": "armory.baseline_models.tf_graph.mscoco_frcnn",
         "name": "get_art_model",
-        "weights_file": "xview_model_state_dict_epoch_99_loss_0p67",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -47,7 +42,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.12.1-dev",
+        "docker_image": "twosixarmory/tf1:0.12.1-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

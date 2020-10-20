@@ -5,6 +5,7 @@ Adversarial datasets
 from typing import Callable
 
 import numpy as np
+import tensorflow as tf
 
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
@@ -15,6 +16,13 @@ from armory.data.adversarial import (  # noqa: F401
     gtsrb_bh_poison_micronnet,
     apricot_dev,
 )
+
+
+# The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this
+# number may correspond to real classes in other datasets, we convert this label 12 in the
+# APRICOT dataset to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID. We choose a negative integer
+# since it is unlikely that such a number represents the ID of a class in another dataset
+ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
 
 
 def imagenet_adversarial(
@@ -280,33 +288,6 @@ def gtsrb_poison(
     )
 
 
-def apricot_dev_adversarial(
-    split_type: str = "adversarial",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = False,
-) -> datasets.ArmoryDataGenerator:
-    if batch_size != 1:
-        raise NotImplementedError("Currently working only with batch size = 1")
-
-    return datasets._generator_from_tfds(
-        "apricot_dev:1.0.0",
-        split_type=split_type,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=apricot_canonical_preprocessing,
-        as_supervised=False,
-        supervised_xy_keys=("image", "objects"),
-        shuffle_files=shuffle_files,
-        cache_dataset=cache_dataset,
-        framework=framework,
-    )
-
-
 class ApricotContext:
     def __init__(self):
         self.default_float = np.float32
@@ -326,8 +307,59 @@ def apricot_canonical_preprocessing(batch):
     assert batch.shape[3] == apricot_context.x_dimensions[3]
 
     batch = batch.astype(apricot_context.default_float) / apricot_context.quantization
+
     assert batch.dtype == apricot_context.default_float
     assert batch.max() <= 1.0
     assert batch.min() >= 0.0
 
     return batch
+
+
+def apricot_dev_adversarial(
+    split_type: str = "adversarial",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = apricot_canonical_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise NotImplementedError("Currently working only with batch size = 1")
+
+    # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
+    # meaningful categories for other datasets. This method is applied as a lambda_map to convert
+    #  this label from 12 to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID -- we choose a negative integer
+    #  for the latter since it is unlikely that such a number represents the ID of a class in
+    # another dataset
+    raw_adv_patch_category_id = 12
+
+    def replace_magic_val(data, raw_val, transformed_val, sub_key):
+        rhs = data[sub_key]
+        data[sub_key] = tf.where(
+            tf.equal(rhs, raw_val),
+            tf.ones_like(rhs, dtype=tf.int64) * transformed_val,
+            rhs,
+        )
+        return data
+
+    return datasets._generator_from_tfds(
+        "apricot_dev:1.0.1",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        lambda_map=lambda x, y: (
+            x,
+            replace_magic_val(
+                y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
+            ),
+        ),
+    )

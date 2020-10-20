@@ -16,7 +16,7 @@
         "use_label": false
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "ucf101"
@@ -34,6 +34,7 @@
     "model": {
         "fit": true,
         "fit_kwargs": {
+            "fit_batch_size": 16,
             "nb_epochs": 10
         },
         "model_kwargs": {

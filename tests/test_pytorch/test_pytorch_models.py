@@ -4,8 +4,10 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.utils.config_loading import load_dataset
+from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
-from armory.utils.metrics import _object_detection_get_tp_fp_fn
+from armory.utils.metrics import object_detection_AP_per_class
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
@@ -39,8 +41,9 @@ def test_pytorch_mnist():
 def test_pytorch_mnist_pretrained():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
     classifier_fn = getattr(classifier_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("undefended_mnist_5epochs.pth")
     classifier = classifier_fn(
-        model_kwargs={}, wrapper_kwargs={}, weights_file="undefended_mnist_5epochs.pth"
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path
     )
 
     test_dataset = datasets.mnist(
@@ -84,44 +87,39 @@ def test_keras_cifar():
 def test_pytorch_xview_pretrained():
     detector_module = import_module("armory.baseline_models.pytorch.xview_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3(
+        "xview_model_state_dict_epoch_99_loss_0p67"
+    )
     detector = detector_fn(
-        model_kwargs={},
-        wrapper_kwargs={},
-        weights_file="xview_model_state_dict_epoch_99_loss_0p67",
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
     )
 
-    test_dataset = datasets.xview(
-        split_type="test",
+    NUM_TEST_SAMPLES = 250
+    dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "xview",
+    }
+    test_dataset = load_dataset(
+        dataset_config,
         epochs=1,
-        batch_size=1,
-        dataset_dir=DATASET_DIR,
+        split_type="test",
+        num_batches=NUM_TEST_SAMPLES,
         shuffle_files=False,
     )
 
-    num_test_samples = 100
-    tp_count = 0
-    fp_count = 0
-    fn_count = 0
-    for _ in range(num_test_samples):
-        x, y = test_dataset.get_batch()
-        predictions = detector.predict(x)
-        # TODO: use mAP once implemented
-        img_num_tps, img_num_fps, img_num_fns = _object_detection_get_tp_fp_fn(
-            y, predictions[0], score_threshold=0.5
-        )
-        tp_count += img_num_tps
-        fp_count += img_num_fps
-        fn_count += img_num_fns
+    list_of_ys = []
+    list_of_ypreds = []
+    for x, y in test_dataset:
+        y_pred = detector.predict(x)[0]
+        list_of_ys.append(y)
+        list_of_ypreds.append(y_pred)
 
-    if tp_count + fp_count > 0:
-        precision = tp_count / (tp_count + fp_count)
-    else:
-        precision = 0
-
-    if tp_count + fn_count > 0:
-        recall = tp_count / (tp_count + fn_count)
-    else:
-        recall = 0
-
-    assert precision > 0.78
-    assert recall > 0.62
+    average_precision_by_class = object_detection_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    mAP = np.fromiter(average_precision_by_class.values(), dtype=float).mean()
+    for class_id in [4, 23, 33, 39]:
+        assert average_precision_by_class[class_id] > 0.9
+    assert mAP > 0.25

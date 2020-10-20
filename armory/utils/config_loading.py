@@ -28,6 +28,7 @@ from art.defences.trainer import Trainer
 
 from armory.art_experimental.attacks import patch
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
+from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
 
 
@@ -75,15 +76,26 @@ def load_model(model_config):
     model_module = import_module(model_config["module"])
     model_fn = getattr(model_module, model_config["name"])
     weights_file = model_config.get("weights_file", None)
+    if isinstance(weights_file, str):
+        weights_path = maybe_download_weights_from_s3(weights_file)
+    elif isinstance(weights_file, list):
+        weights_path = [maybe_download_weights_from_s3(w) for w in weights_file]
+    elif isinstance(weights_file, dict):
+        weights_path = {
+            k: maybe_download_weights_from_s3(v) for k, v in weights_file.items()
+        }
+    else:
+        weights_path = None
+
     model = model_fn(
-        model_config["model_kwargs"], model_config["wrapper_kwargs"], weights_file
+        model_config["model_kwargs"], model_config["wrapper_kwargs"], weights_path
     )
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
         logger.warning(
-            "You're attempting to evaluate an unfitted model with no "
-            "pre-trained weights!"
+            "No weights file was provided and the model is not configured to train. "
+            "Are you loading model weights from an online repository?"
         )
 
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)

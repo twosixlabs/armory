@@ -7,7 +7,6 @@ Scenario Contributor: MITRE Corporation
 import logging
 from typing import Optional
 
-import numpy as np
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -32,9 +31,14 @@ class Ucf101(Scenario):
         """
         Evaluate the config and return a results dict
         """
+        if config["dataset"]["batch_size"] != 1:
+            raise ValueError(
+                "batch_size must be 1 for evaluation, due to variable length inputs.\n"
+                "    If training, set config['model']['fit_kwargs']['fit_batch_size']"
+            )
 
         model_config = config["model"]
-        classifier, preprocessing_fn = load_model(model_config)
+        classifier, fit_preprocessing_fn = load_model(model_config)
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
@@ -48,40 +52,28 @@ class Ucf101(Scenario):
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
-            train_epochs = config["model"]["fit_kwargs"]["nb_epochs"]
-            batch_size = config["dataset"]["batch_size"]
+            fit_kwargs = model_config["fit_kwargs"]
 
             logger.info(f"Loading train dataset {config['dataset']['name']}...")
+            batch_size = config["dataset"].pop("batch_size")
+            config["dataset"]["batch_size"] = fit_kwargs.get(
+                "fit_batch_size", batch_size
+            )
             train_data = load_dataset(
                 config["dataset"],
-                epochs=train_epochs,
+                epochs=fit_kwargs["nb_epochs"],
                 split_type="train",
-                preprocessing_fn=preprocessing_fn,
+                preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
-
+            config["dataset"]["batch_size"] = batch_size
             if defense_type == "Trainer":
                 logger.info(f"Training with {defense_type} defense...")
                 defense = load_defense_wrapper(config["defense"], classifier)
+                defense.fit_generator(train_data, **fit_kwargs)
             else:
                 logger.info("Fitting classifier on clean train dataset...")
-
-            for epoch in range(train_epochs):
-                classifier.set_learning_phase(True)
-
-                for _ in tqdm(
-                    range(train_data.batches_per_epoch),
-                    desc=f"Epoch: {epoch}/{train_epochs}",
-                ):
-                    x, y = train_data.get_batch()
-                    # x_trains consists of one or more videos, each represented as an
-                    # ndarray of shape (n_stacks, 3, 16, 112, 112).
-                    # To train, randomly sample a batch of stacks
-                    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
-                    if defense_type == "Trainer":
-                        defense.fit(x, y, batch_size=batch_size, nb_epochs=1)
-                    else:
-                        classifier.fit(x, y, batch_size=batch_size, nb_epochs=1)
+                classifier.fit_generator(train_data, **fit_kwargs)
 
         if defense_type == "Transform":
             # NOTE: Transform currently not supported
@@ -94,6 +86,9 @@ class Ucf101(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=skip_benign
         )
+        if config["dataset"]["batch_size"] != 1:
+            logger.warning("Evaluation batch_size != 1 may not be supported.")
+
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -103,25 +98,21 @@ class Ucf101(Scenario):
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
 
             logger.info("Running inference on benign examples...")
-
-            for x_batch, y_batch in tqdm(test_data, desc="Benign"):
-                for x, y in zip(x_batch, y_batch):
-                    # combine predictions across all stacks
-                    # Ensure that input sample isn't overwritten by classifier
-                    x.flags.writeable = False
-                    with metrics.resource_context(
-                        name="Inference",
-                        profiler=config["metric"].get("profiler_type"),
-                        computational_resource_dict=metrics_logger.computational_resource_dict,
-                    ):
-                        y_pred = np.mean(classifier.predict(x, batch_size=1), axis=0)
-                    metrics_logger.update_task(y, y_pred)
+            for x, y in tqdm(test_data, desc="Benign"):
+                # Ensure that input sample isn't overwritten by classifier
+                x.flags.writeable = False
+                with metrics.resource_context(
+                    name="Inference",
+                    profiler=config["metric"].get("profiler_type"),
+                    computational_resource_dict=metrics_logger.computational_resource_dict,
+                ):
+                    y_pred = classifier.predict(x)
+                metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
 
         # Evaluate the ART classifier on adversarial test examples
@@ -137,7 +128,6 @@ class Ucf101(Scenario):
                 attack_config,
                 epochs=1,
                 split_type="adversarial",
-                preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -147,53 +137,41 @@ class Ucf101(Scenario):
                 logger.warning(
                     f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
                 )
-            attack.set_params(batch_size=1)
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split_type="test",
-                preprocessing_fn=preprocessing_fn,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
-        for x_batch, y_batch in tqdm(test_data, desc="Attack"):
-            if attack_type == "preloaded":
-                x_batch = list(zip(*x_batch))
-                if targeted:
-                    y_batch = list(zip(*y_batch))
-            for x, y in zip(x_batch, y_batch):
-                with metrics.resource_context(
-                    name="Attack",
-                    profiler=config["metric"].get("profiler_type"),
-                    computational_resource_dict=metrics_logger.computational_resource_dict,
-                ):
-                    if attack_type == "preloaded":
-                        x, x_adv = x
-                        if targeted:
-                            y, y_target = y
-                    else:
-                        # each x is of shape (n_stack, 3, 16, 112, 112)
-                        #    n_stack varies
-                        if attack_config.get("use_label"):
-                            # expansion required due to preprocessing
-                            y_input = np.repeat(y, x.shape[0])
-                            x_adv = attack.generate(x=x, y=y_input)
-                        elif targeted:
-                            y_target = label_targeter.generate(y)
-                            y_input = np.repeat(y_target, x.shape[0])
-                            x_adv = attack.generate(x=x, y=y_input)
-                        else:
-                            x_adv = attack.generate(x=x)
-                # combine predictions across all stacks
-                # Ensure that input sample isn't overwritten by classifier
-                x_adv.flags.writeable = False
-                y_pred_adv = np.mean(classifier.predict(x_adv, batch_size=1), axis=0)
-                if targeted:
-                    metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+        for x, y in tqdm(test_data, desc="Attack"):
+            with metrics.resource_context(
+                name="Attack",
+                profiler=config["metric"].get("profiler_type"),
+                computational_resource_dict=metrics_logger.computational_resource_dict,
+            ):
+                if attack_type == "preloaded":
+                    x, x_adv = x
+                    if targeted:
+                        y, y_target = y
                 else:
-                    metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-                metrics_logger.update_perturbation([x], [x_adv])
+                    generate_kwargs = {}
+                    if attack_config.get("use_label"):
+                        generate_kwargs["y"] = y
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                        generate_kwargs["y"] = y_target
+                    x_adv = attack.generate(x=x, **generate_kwargs)
+
+            # Ensure that input sample isn't overwritten by classifier
+            x_adv.flags.writeable = False
+            y_pred_adv = classifier.predict(x_adv)
+            if targeted:
+                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
+            else:
+                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_perturbation(x, x_adv)
         metrics_logger.log_task(adversarial=True, targeted=targeted)
         return metrics_logger.results()
