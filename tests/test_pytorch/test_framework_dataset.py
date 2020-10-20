@@ -19,6 +19,8 @@ def test_pytorch_generator_cifar10():
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
         framework="pytorch",
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
@@ -38,6 +40,8 @@ def test_pytorch_generator_mnist():
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
         framework="pytorch",
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
@@ -57,6 +61,8 @@ def test_pytorch_generator_resisc():
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
         framework="pytorch",
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
 
     assert isinstance(dataset, torch.utils.data.DataLoader)
@@ -76,6 +82,8 @@ def test_pytorch_generator_epochs():
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
         framework="pytorch",
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
 
     cnt = 0
@@ -100,6 +108,8 @@ def test_tf_pytorch_equality():
         dataset_dir=DATASET_DIR,
         framework="tf",
         shuffle_files=False,
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
     )
 
     ds_pytorch = iter(
@@ -109,6 +119,8 @@ def test_tf_pytorch_equality():
             dataset_dir=DATASET_DIR,
             framework="pytorch",
             shuffle_files=False,
+            preprocessing_fn=None,
+            fit_preprocessing_fn=None,
         )
     )
 
