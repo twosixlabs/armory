@@ -62,10 +62,12 @@ class ArmoryDataGenerator(DataGenerator):
         epochs,
         batch_size,
         preprocessing_fn=None,
+        label_preprocessing_fn=None,
         variable_length=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
+        self.label_preprocessing_fn = label_preprocessing_fn
         self.generator = generator
 
         self.epochs = epochs
@@ -129,6 +131,9 @@ class ArmoryDataGenerator(DataGenerator):
         else:
             x, y = next(self.generator)
 
+        if self.label_preprocessing_fn:
+            y = self.label_preprocessing_fn(x, y)
+
         if self.preprocessing_fn:
             # Apply preprocessing to multiple inputs as needed
             if isinstance(x, dict):
@@ -190,6 +195,7 @@ def _generator_from_tfds(
     epochs: int,
     dataset_dir: str,
     preprocessing_fn: Callable,
+    label_preprocessing_fn: Callable = None,
     as_supervised: bool = True,
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
@@ -270,6 +276,7 @@ def _generator_from_tfds(
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
+            label_preprocessing_fn=label_preprocessing_fn,
             variable_length=bool(variable_length and batch_size > 1),
         )
 
@@ -613,6 +620,46 @@ def librispeech_dev_clean(
     )
 
 
+def librispeech(
+    split_type: str = "train_clean100",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    flags = []
+    dl_config = tfds.download.DownloadConfig(
+        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
+    )
+
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
+
+    if cache_dataset and split_type not in CACHED_SPLITS:
+        raise ValueError(
+            f"Split {split_type} not available in cache. Must be one of {CACHED_SPLITS}"
+        )
+
+    return _generator_from_tfds(
+        "librispeech/plain_text:1.1.0",
+        split_type=split_type,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs={"download_config": dl_config},
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def librispeech_dev_clean_asr(
     split_type: str = "train",
     epochs: int = 1,
@@ -724,12 +771,73 @@ def resisc45(
     )
 
 
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+        actual should not have None values
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if None in actual:
+        raise ValueError(f"None should not be in actual shape {actual}")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+class UCF101Context:
+    def __init__(self):
+        self.nb_classes = 101
+        self.input_type = np.uint8
+        self.x_shape = (None, 240, 320, 3)
+        self.frame_rate = 25
+        self.quantization = 255
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
+
+
+ucf101_context = UCF101Context()
+
+
+def ucf101_canonical_preprocessing(batch):
+    context = ucf101_context
+    if batch.dtype == np.uint8:
+        check_shapes(batch.shape, (None,) + context.x_shape)
+
+        batch = batch.astype(context.output_type) / context.quantization
+    elif batch.dtype == np.object:
+        for x in batch:
+            if x.dtype != context.input_type:
+                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
+            check_shapes(x.shape, context.x_shape)
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+    else:
+        raise ValueError(f"input batch dtype {batch.dtype} not in (np.uint8, 'O')")
+
+    for x in batch:
+        assert x.dtype == context.output_type
+        assert x.min() >= context.output_min
+        assert x.max() <= context.output_max
+    return batch
+
+
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = ucf101_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -787,6 +895,20 @@ def xview_canonical_preprocessing(batch):
     return batch
 
 
+def tf_to_pytorch_box_conversion(x, y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+    """
+    orig_boxes = y["boxes"]
+    converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
+    height, width = x.shape[1:3]
+    converted_boxes *= [width, height, width, height]
+    y["boxes"] = converted_boxes
+    return y
+
+
 def xview(
     split_type: str = "train",
     epochs: int = 1,
@@ -794,22 +916,28 @@ def xview(
     dataset_dir: str = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
+    label_preprocessing_fn: Callable = tf_to_pytorch_box_conversion,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
     split_type - one of ("train", "test")
+
+    Bounding boxes are by default loaded in PyTorch format of [x1, y1, x2, y2]
+    where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
+    See https://pytorch.org/docs/stable/torchvision/models.html#faster-r-cnn.
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "xview:1.0.0",
+        "xview:1.0.1",
         split_type=split_type,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         cache_dataset=cache_dataset,
@@ -934,6 +1062,7 @@ SUPPORTED_DATASETS = {
     "ucf101": ucf101,
     "resisc45": resisc45,
     "librispeech_dev_clean": librispeech_dev_clean,
+    "librispeech": librispeech,
     "xview": xview,
     "librispeech_dev_clean_asr": librispeech_dev_clean_asr,
     "so2sat": so2sat,
