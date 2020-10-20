@@ -11,6 +11,7 @@ from armory.utils.metrics import object_detection_AP_per_class
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
+
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_mnist():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
@@ -115,9 +116,10 @@ def test_pytorch_xview_pretrained():
         list_of_ys.append(y)
         list_of_ypreds.append(y_pred)
 
-    average_precision_by_class = object_detection_AP_per_class(list_of_ys, list_of_ypreds)
+    average_precision_by_class = object_detection_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
     mAP = np.fromiter(average_precision_by_class.values(), dtype=float).mean()
     for class_id in [4, 23, 33, 39]:
         assert average_precision_by_class[class_id] > 0.9
     assert mAP > 0.25
-
