@@ -268,6 +268,13 @@ def _generator_from_tfds(
         ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
+    if framework != "numpy" and (
+        preprocessing_fn is not None or label_preprocessing_fn is not None
+    ):
+        raise ValueError(
+            f"Data/label preprocessing functions only supported for numpy framework.  Selected {framework} framework"
+        )
+
     if framework == "numpy":
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
@@ -956,8 +963,12 @@ class So2SatContext:
             32,
             14,
         )
-        self.quantization = (
-            115.25348  # max absolute value across all channels in train/validation
+        self.quantization = np.concatenate(
+            (
+                128 * np.ones((1, 1, 1, 4), dtype=np.float32),
+                4 * np.ones((1, 1, 1, 10), dtype=np.float32),
+            ),
+            axis=-1,
         )
 
 
