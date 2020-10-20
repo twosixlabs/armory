@@ -1,4 +1,4 @@
-########## PyTorch 1 Deep Speech #################
+########## PyTorch 1 Deep Speech Base #################
 
 ARG armory_version
 FROM twosixarmory/pytorch-base:${armory_version} AS armory-pytorch-deepspeech-base
@@ -15,6 +15,8 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
   soundfile \
   sox \
   warpctc-pytorch==0.2.1+torch16.cuda100
+
+########## PyTorch 1 Deep Speech Release #################
 
 FROM pytorch-deepspeech-base as armory-pytorch-deepspeech
 ARG armory_version
