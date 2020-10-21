@@ -87,23 +87,3 @@ See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of adver
 
 ### Dataset Licensing
 See [dataset_licensing.md](dataset_licensing.md) for details related to the licensing of datasets.
-
-
-<br>
-<style>
-    table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 50%;
-}
-table th:nth-of-type(3) {
-    width: 30%;
-}
-table th:nth-of-type(4) {
-    width: 10%;
-}
-table th:nth-of-type(5) {
-    width: 10%;
-}
-</style>
