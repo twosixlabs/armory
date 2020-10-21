@@ -69,7 +69,7 @@ class ArmoryInstance(object):
 
         logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
-    def exec_cmd(self, cmd: str, user=""):
+    def exec_cmd(self, cmd: str, user="", expect_sentinel=True) -> int:
         # We would like to check the return code to see if the command ran cleanly,
         #  but `exec_run()` cannot both return the code and stream logs
         # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
@@ -96,7 +96,9 @@ class ArmoryInstance(object):
                 if inner_output == scenarios.END_SENTINEL:
                     sentinel_found = True
 
-        if sentinel_found:
+        # if we're not running a config (eg armory exec or launch)
+        #  we don't expect the sentinel to be printed, so its absence is not an error
+        if sentinel_found or not expect_sentinel:
             logger.info("Command exited cleanly")
             return 0
         else:
