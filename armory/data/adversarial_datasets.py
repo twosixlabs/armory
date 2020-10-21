@@ -25,11 +25,60 @@ from armory.data.adversarial import (  # noqa: F401
 ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
 
 
+class ImageContext:
+    def __init__(self, x_shape):
+        self.x_shape = x_shape
+        self.input_type = np.uint8
+        self.input_min = 0
+        self.input_max = 255
+
+        self.scaling = 255
+
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
+
+
+def canonical_preprocess(context, batch):
+    datasets.check_shapes(batch.shape, (None,) + context.x_shape)
+    if batch.dtype != context.input_type:
+        raise ValueError("input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
+
+    batch = batch.astype(context.output_type) / context.scaling
+
+    if batch.dtype != context.output_type:
+        raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
+imagenet_adversarial_context = ImageContext(x_shape=(224, 224, 3))
+resisc45_adversarial_context = ImageContext(x_shape=(224, 224, 3))
+ucf101_adversarial_context = ImageContext(x_shape=(None, 112, 112, 3))
+
+
+def imagenet_adversarial_canonical_preprocessing(batch):
+    return canonical_preprocess(imagenet_adversarial_context, batch)
+
+
+def resisc45_adversarial_canonical_preprocessing(batch):
+    return canonical_preprocess(resisc45_adversarial_context, batch)
+
+
+def ucf101_adversarial_canonical_preprocessing(batch):
+    return canonical_preprocess(ucf101_adversarial_context, batch)
+
+
 def imagenet_adversarial(
     split_type: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = imagenet_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -59,39 +108,12 @@ def imagenet_adversarial(
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=imagenet_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
         shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
     )
-
-
-class ImagenetContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 224, 224, 3)
-
-
-imagenet_context = ImagenetContext()
-
-
-def imagenet_canonical_preprocessing(batch):
-    if batch.ndim != len(imagenet_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(imagenet_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == imagenet_context.x_dimensions[1:]
-    assert batch.dtype == np.uint8
-
-    batch = batch.astype(imagenet_context.default_float) / imagenet_context.quantization
-    assert batch.dtype == imagenet_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
 
 
 def librispeech_adversarial(
@@ -146,7 +168,7 @@ def resisc45_adversarial_224x224(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = resisc45_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -201,7 +223,7 @@ def ucf101_adversarial_112x112(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = ucf101_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
