@@ -26,7 +26,9 @@ ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
 
 
 imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
-librispeech_adversarial = datasets.AudioContext(x_shape=(None,), sample_rate=16000)
+librispeech_adversarial_context = datasets.AudioContext(
+    x_shape=(None,), sample_rate=16000
+)
 resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 
@@ -36,7 +38,7 @@ def imagenet_adversarial_canonical_preprocessing(batch):
 
 
 def librispeech_adversarial_canonical_preprocessing(batch):
-    return datasets.canonical_audio_preprocess(librispeech_adversarial, batch)
+    return datasets.canonical_audio_preprocess(librispeech_adversarial_context, batch)
 
 
 def resisc45_adversarial_canonical_preprocessing(batch):
@@ -95,7 +97,7 @@ def librispeech_adversarial(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = datasets.librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",

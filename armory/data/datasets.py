@@ -320,6 +320,26 @@ def preprocessing_chain(*args):
     return wrapped
 
 
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+        actual should not have None values
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if None in actual:
+        raise ValueError(f"None should not be in actual shape {actual}")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
 class ImageContext:
     def __init__(self, x_shape):
         self.x_shape = x_shape
@@ -327,7 +347,7 @@ class ImageContext:
         self.input_min = 0
         self.input_max = 255
 
-        self.scaling = 255
+        self.quantization = 255
 
         self.output_type = np.float32
         self.output_min = 0.0
@@ -341,7 +361,7 @@ def canonical_image_preprocess(context, batch):
     assert batch.min() >= context.input_min
     assert batch.max() <= context.input_max
 
-    batch = batch.astype(context.output_type) / context.scaling
+    batch = batch.astype(context.output_type) / context.quantization
 
     if batch.dtype != context.output_type:
         raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
@@ -349,6 +369,23 @@ def canonical_image_preprocess(context, batch):
     assert batch.max() <= context.output_max
 
     return batch
+
+
+mnist_context = ImageContext(x_shape=(28, 28, 1))
+cifar10_context = ImageContext(x_shape=(32, 32, 3))
+resisc45_context = ImageContext(x_shape=(256, 256, 3))
+
+
+def mnist_canonical_preprocessing(batch):
+    return canonical_image_preprocess(mnist_context, batch)
+
+
+def cifar10_canonical_preprocessing(batch):
+    return canonical_image_preprocess(cifar10_context, batch)
+
+
+def resisc45_canonical_preprocessing(batch):
+    return canonical_image_preprocess(resisc45_context, batch)
 
 
 class AudioContext:
@@ -415,44 +452,12 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
     return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
 
 
-class MnistContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 28, 28, 1)
-
-
-mnist_context = MnistContext()
-
-
-def mnist_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(mnist_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(mnist_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, mnist_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == mnist_context.x_dimensions[1:]
-
-    batch = (
-        batch.astype(mnist_context.default_float) / mnist_context.quantization
-    )  # 255
-    assert batch.dtype == mnist_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def mnist(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = mnist_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -477,44 +482,12 @@ def mnist(
     )
 
 
-class Cifar10Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 32, 32, 3)
-
-
-cifar10_context = Cifar10Context()
-
-
-def cifar10_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(cifar10_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(cifar10_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, cifar10_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == cifar10_context.x_dimensions[1:]
-
-    batch = (
-        batch.astype(cifar10_context.default_float) / cifar10_context.quantization
-    )  # 255
-    assert batch.dtype == cifar10_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def cifar10(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = cifar10_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = cifar10_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -754,32 +727,6 @@ def librispeech_dev_clean_asr(
     )
 
 
-class Resisc45Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 256, 256, 3)
-
-
-resisc45_context = Resisc45Context()
-
-
-def resisc45_canonical_preprocessing(batch):
-    if batch.ndim != len(resisc45_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(resisc45_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == resisc45_context.x_dimensions[1:]
-
-    batch = batch.astype(resisc45_context.default_float) / resisc45_context.quantization
-    assert batch.dtype == resisc45_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def resisc45(
     split_type: str = "train",
     epochs: int = 1,
@@ -819,26 +766,6 @@ def resisc45(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-def check_shapes(actual, target):
-    """
-    Ensure that shapes match, ignoring None values
-
-    actual and target should be tuples
-        actual should not have None values
-    """
-    if type(actual) != tuple:
-        raise ValueError(f"actual shape {actual} is not a tuple")
-    if type(target) != tuple:
-        raise ValueError(f"target shape {target} is not a tuple")
-    if None in actual:
-        raise ValueError(f"None should not be in actual shape {actual}")
-    if len(actual) != len(target):
-        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
-    for a, t in zip(actual, target):
-        if a != t and t is not None:
-            raise ValueError(f"shape {actual} does not match shape {target}")
 
 
 class UCF101Context:
