@@ -196,6 +196,135 @@ To be added
 * **Baseline Defense Performance:**
 To be added
 
+### Librispeech automatic speech recognition
+
+* **Description:**
+In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
+passively monitoring or not monitoring at all.
+* **Dataset:**
+The dataset is the [LibriSpeech dataset](http://www.openslr.org/12).
+* **Baseline Model:**
+To maximize time spent on defense research, a trained baseline model will be provided, but
+performers are not required to use it, if their defense requires a different architecture.
+The model uses the [DeepSpeech 2](https://arxiv.org/pdf/1512.02595v1.pdf) architecture with
+pretrained weights from either the AN4, LibriSpeech, or TEDLIUM datasets.  Custom weights
+may also be loaded by the model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary may simply wish for speech to be transcribed incorrectly
+    * Targeted - an adversary may wish for specific strings to be predicted
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
+    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
+    * Assuming perfect acoustic channel
+    * Black-box, white-box, and adaptive attacks will be performed on defenses.
+  * Adversary Capabilities and Resources
+    * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
+    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget 
+    allowed while meeting the perceptibility requirement.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Word error rate, attack computational cost, defense computational cost, various distance measures of perturbation
+    (Lp-norms, Wasserstein distance, signal-to-noise ratio)
+  * Derivative metrics - see end of document
+  * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Model Performance:**
+To be added
+* **Baseline Defense Performance:**
+To be added
+
+### so2sat multimodal image classification
+
+* **Description:**
+In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral optical images.
+* **Dataset:**
+The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690).
+* **Baseline Model:**
+To maximize time spent on defense research, a trained baseline model will be provided, but
+performers are not required to use it, if their defense requires a different architecture.
+The model uses a custom CNN architecture on both SAR and optical data, then fuses the two
+networks into a single prediction network.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary may simply wish to evade detection
+    * Targeted - an adversary may wish for a specific local climate zone to be predicted
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
+    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
+    * Assumes adversary can only perturb either SAR or optical data at once.
+    * Black-box, white-box, and adaptive attacks will be performed on defenses.
+  * Adversary Capabilities and Resources
+    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
+    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
+    budget allowed while meeting the perceptibility requirement.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
+    (Lp-norms, Wasserstein distance)
+  * Derivative metrics - see end of document 
+  * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Model Performance:**
+To be added
+* **Baseline Defense Performance:**
+To be added
+
+### xView object detection
+
+* **Description:**
+In this scenario, the system under evaluation is an object detector which localizes and identifies various classes from satellite imagery.
+* **Dataset:**
+The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856).
+* **Baseline Model:**
+To maximize time spent on defense research, a trained baseline model will be provided, but
+performers are not required to use it, if their defense requires a different architecture.
+The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture.
+
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary may simply to evade detection
+    * Targeted - an adversary may wish for a specific object class to be predicted
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
+    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
+    * Black-box, white-box, and adaptive attacks will be performed on defenses.
+  * Adversary Capabilities and Resources
+    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
+    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
+    budget allowed while meeting the perceptibility requirement.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Average precision (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
+    (Lp-norms, Wasserstein distance)
+  * Derivative metrics - see end of document 
+  * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Model Performance:**
+To be added
+* **Baseline Defense Performance:**
+To be added
+
+### APRICOT object detection
+
+* **Description:**
+In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
+* **Dataset:**
+The dataset is the [APRICOT dataset](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 images of printed adversarial patches.
+* **Baseline Model:**
+To maximize time spent on defense research, a trained baseline model will be provided, but
+performers are not required to use it, if their defense requires a different architecture.
+The model uses the pretrained[Faster-RCNN ResNet-50 COCO](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
+
+* **Threat Scenario:**
+  * Adversary Operating Environment:
+    * This is a dataset of precomputed adversarial images on which trained models will be evaluated.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Average precision (mean, per-class), defense computational cost
+  * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Model Performance:**
+To be added
+* **Baseline Defense Performance:**
+To be added
+
 ## Academic Scenarios
 
 ### Cifar10 image classification
