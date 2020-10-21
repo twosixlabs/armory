@@ -16,7 +16,9 @@ the Creative Commons 4.0 International ShareAlike license and are Copyright Two 
 | GTSRB | [CC0 Public Domain](https://www.kaggle.com/meowmeowmeowmeowmeow/gtsrb-german-traffic-sign)|
 | Imagenette | [Apache 2.0](https://github.com/fastai/imagenette/blob/master/LICENSE) |  
 | UCF101 | Fair use exception |
-| RESISC45 | Fair use exception |
+| RESISC45 | Fair use exception | (http://xviewdataset.org/)
+| xView | [Creative Commons Attribution-Noncommercial-ShareAlike 4.0 International](https://arxiv.org/pdf/1802.07856) |
+| so2sat | [Creative Commons 4.0](https://mediatum.ub.tum.de/1454690) |
 
 ## Attributions
 
@@ -87,6 +89,26 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 | Disclaimer notice            | Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License. |
 | Dataset link | https://github.com/fastai/imagenette |
 | Modification | (Slight) Representation of images as binary tensors |
+
+### xView
+|Attribution                   |              |  
+|------------------------------|--------------|
+| Creator/attribution parties  | Defense Innovation Unit Experimental (DIUx) and the National Geospatial-Intelligence Agency (NGA)  |
+| Copyright notice             |  |
+| Public license notice        | http://xviewdataset.org/terms.html |
+| Disclaimer notice            | |
+| Dataset link | http://xviewdataset.org/#dataset |
+| Modification |  |
+
+### so2sat
+|Attribution                   |              |  
+|------------------------------|--------------|
+| Creator/attribution parties  | Xiaoxiang Zhu, Jingliang Hu, Chunping Qiu, Yilei Shi, Jian Kang, Lichao Mou, Hossein Bagheri, Matthias Haeberle, Yuansheng Hua, Rong Huang, Lloyd Hughes, Hao Li, Yao Sun, Guichen Zhang, Shiyao Han, Michael Schmitt, and Yuanyuan Wang  |
+| Copyright notice             |  |
+| Public license notice        | https://mediatum.ub.tum.de/1454690 |
+| Disclaimer notice            | a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU. b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION, NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES, COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR IN PART, THIS LIMITATION MAY NOT APPLY TO YOU. c. The disclaimer of warranties and limitation of liability provided above shall be interpreted in a manner that, to the extent possible, most closely approximates an absolute disclaimer and waiver of all liability. |
+| Dataset link | https://mediatum.ub.tum.de/1454690 |
+| Modification |  |
 
 ## Fair use notes for RESISC-45 and UCF101
 * Two Six Labs does not charge users for access to the Armory repository, 
