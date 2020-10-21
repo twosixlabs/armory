@@ -377,7 +377,7 @@ def canonical_variable_image_preprocess(context, batch):
     """
     if batch.dtype == np.object:
         for x in batch:
-            check_shapes(x, context.x_shape)
+            check_shapes(x.shape, context.x_shape)
             assert x.dtype == context.input_type
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
@@ -398,9 +398,10 @@ def canonical_variable_image_preprocess(context, batch):
             f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
         )
 
-    assert batch.dtype == context.output_type
-    assert batch.min() >= context.output_min
-    assert batch.max() <= context.output_max
+    for x in batch:
+        assert x.dtype == context.output_type
+        assert x.min() >= context.output_min
+        assert x.max() <= context.output_max
 
     return batch
 
@@ -444,7 +445,7 @@ class AudioContext:
 def canonical_audio_preprocess(context, batch):
     if batch.dtype == np.object:
         for x in batch:
-            check_shapes(x, context.x_shape)
+            check_shapes(x.shape, context.x_shape)
             assert x.dtype == context.input_type
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
