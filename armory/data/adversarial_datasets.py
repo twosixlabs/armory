@@ -25,52 +25,26 @@ from armory.data.adversarial import (  # noqa: F401
 ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
 
 
-class ImageContext:
-    def __init__(self, x_shape):
-        self.x_shape = x_shape
-        self.input_type = np.uint8
-        self.input_min = 0
-        self.input_max = 255
-
-        self.scaling = 255
-
-        self.output_type = np.float32
-        self.output_min = 0.0
-        self.output_max = 1.0
-
-
-def canonical_preprocess(context, batch):
-    datasets.check_shapes(batch.shape, (None,) + context.x_shape)
-    if batch.dtype != context.input_type:
-        raise ValueError("input batch dtype {batch.dtype} != {context.input_type}")
-    assert batch.min() >= context.input_min
-    assert batch.max() <= context.input_max
-
-    batch = batch.astype(context.output_type) / context.scaling
-
-    if batch.dtype != context.output_type:
-        raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
-    assert batch.min() >= context.output_min
-    assert batch.max() <= context.output_max
-
-    return batch
-
-
-imagenet_adversarial_context = ImageContext(x_shape=(224, 224, 3))
-resisc45_adversarial_context = ImageContext(x_shape=(224, 224, 3))
-ucf101_adversarial_context = ImageContext(x_shape=(None, 112, 112, 3))
+imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
+librispeech_adversarial = datasets.AudioContext(x_shape=(None,), sample_rate=16000)
+resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
+ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
-    return canonical_preprocess(imagenet_adversarial_context, batch)
+    return datasets.canonical_image_preprocess(imagenet_adversarial_context, batch)
+
+
+def librispeech_adversarial_canonical_preprocessing(batch):
+    return datasets.canonical_audio_preprocess(librispeech_adversarial, batch)
 
 
 def resisc45_adversarial_canonical_preprocessing(batch):
-    return canonical_preprocess(resisc45_adversarial_context, batch)
+    return datasets.canonical_image_preprocess(resisc45_adversarial_context, batch)
 
 
 def ucf101_adversarial_canonical_preprocessing(batch):
-    return canonical_preprocess(ucf101_adversarial_context, batch)
+    return datasets.canonical_image_preprocess(ucf101_adversarial_context, batch)
 
 
 def imagenet_adversarial(

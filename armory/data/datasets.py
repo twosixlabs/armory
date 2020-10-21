@@ -320,6 +320,101 @@ def preprocessing_chain(*args):
     return wrapped
 
 
+class ImageContext:
+    def __init__(self, x_shape):
+        self.x_shape = x_shape
+        self.input_type = np.uint8
+        self.input_min = 0
+        self.input_max = 255
+
+        self.scaling = 255
+
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
+
+
+def canonical_image_preprocess(context, batch):
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    if batch.dtype != context.input_type:
+        raise ValueError("input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
+
+    batch = batch.astype(context.output_type) / context.scaling
+
+    if batch.dtype != context.output_type:
+        raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
+class AudioContext:
+    def __init__(self, x_shape, sample_rate, input_type=np.int64):
+        self.x_shape = x_shape
+        self.input_type = input_type
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+def canonical_audio_preprocess(context, batch):
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.min() >= context.output_min
+            assert x.max() <= context.output_max
+        return batch
+
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    assert batch.dtype == context.input_type
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+
+    assert batch.dtype == context.output_type
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
+digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
+librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
+librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+
+
+def digit_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(digit_context, batch)
+
+
+def librispeech_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_context, batch)
+
+
+def librispeech_dev_clean_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
+
+
 class MnistContext:
     def __init__(self):
         self.default_float = np.float32
@@ -533,64 +628,12 @@ def german_traffic_sign(
     )
 
 
-class LibriSpeechDevCleanContext:
-    def __init__(self):
-        self.input_type = np.int64  # However, stores values in int16 range
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
-        self.x_shape = (None,)
-        self.sample_rate = 16000
-        self.quantization = 2 ** 15
-        self.output_type = np.float32
-        self.output_min = -1.0
-        self.output_max = 1.0
-
-
-librispeech_dev_clean_context = LibriSpeechDevCleanContext()
-
-
-def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
-    context = librispeech_dev_clean_context
-    if batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            assert x.max() <= context.input_max
-            assert x.min() >= context.input_min
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-
-        for x in batch:
-            assert x.dtype == context.output_type
-            assert x.max() <= context.output_max
-            assert x.min() >= context.output_min
-        return batch
-
-    if batch.ndim != len(context.x_shape) + 1:
-        print(batch)
-        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
-    if batch.dtype != context.input_type:
-        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
-    assert batch.max() <= context.input_max
-    assert batch.min() >= context.input_min
-
-    batch = batch.astype(context.output_type) / context.quantization  # 2**15
-    assert batch.dtype == context.output_type
-    assert batch.max() <= context.output_max
-    assert batch.min() >= context.output_min
-
-    return batch
-
-
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -632,7 +675,7 @@ def librispeech(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -672,7 +715,7 @@ def librispeech_dev_clean_asr(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
