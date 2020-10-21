@@ -371,9 +371,44 @@ def canonical_image_preprocess(context, batch):
     return batch
 
 
+def canonical_variable_image_preprocess(context, batch):
+    """
+    Preprocessing when images are of variable size
+    """
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+    elif batch.dtype == context.input_type:
+        check_shapes(batch.shape, (None,) + context.x_shape)
+        assert batch.dtype == context.input_type
+        assert batch.min() >= context.input_min
+        assert batch.max() <= context.input_max
+
+        batch = batch.astype(context.output_type) / context.quantization
+    else:
+        raise ValueError(
+            f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
+        )
+
+    assert batch.dtype == context.output_type
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
 mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
+imagenette_context = ImageContext(x_shape=(None, None, 3))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -386,6 +421,10 @@ def cifar10_canonical_preprocessing(batch):
 
 def resisc45_canonical_preprocessing(batch):
     return canonical_image_preprocess(resisc45_context, batch)
+
+
+def imagenette_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(imagenette_context, batch)
 
 
 class AudioContext:
@@ -548,7 +587,7 @@ def imagenette(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = imagenette_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
