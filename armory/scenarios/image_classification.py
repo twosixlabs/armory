@@ -153,7 +153,10 @@ class ImageClassificationTask(Scenario):
                 computational_resource_dict=metrics_logger.computational_resource_dict,
             ):
                 if attack_type == "preloaded":
-                    x, x_adv = x
+                    if len(x) == 2:
+                        x, x_adv = x
+                    else:
+                        x_adv = x
                     if targeted:
                         y, y_target = y
                 else:

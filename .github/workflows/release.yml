@@ -93,7 +93,7 @@ jobs:
           docker tag twosixarmory/tf2:${version} twosixarmory/tf2:latest
           docker push twosixarmory/tf2:latest
   release-pytorch-docker:
-    name: Build and release pytorch docker image
+    name: Build and release pytorch and pytorch-deepspeech docker images
     needs: [release-wheel, release-armory-docker]
     runs-on: ubuntu-18.04
     steps:
@@ -115,3 +115,6 @@ jobs:
           docker push twosixarmory/pytorch:${version}
           docker tag twosixarmory/pytorch:${version} twosixarmory/pytorch:latest
           docker push twosixarmory/pytorch:latest
+          docker push twosixarmory/pytorch-deepspeech:${version}
+          docker tag twosixarmory/pytorch-deepspeech:${version} twosixarmory/pytorch-deepspeech:latest
+          docker push twosixarmory/pytorch-deepspeech:latest

@@ -25,14 +25,16 @@ def make_model(**kwargs):
 
     input_shape = [32, 32, 14]
     concat_input = Input(input_shape)
-    renorm_input = Lambda(lambda x: x * 115.25348)(concat_input)
 
-    SAR_input = Lambda(
+    SAR_slice = Lambda(
         lambda concat_input: slice(concat_input, [0, 0, 0, 0], [-1, 32, 32, 4])
-    )(renorm_input)
-    EO_input = Lambda(
+    )(concat_input)
+    EO_slice = Lambda(
         lambda concat_input: slice(concat_input, [0, 0, 0, 4], [-1, 32, 32, 10])
-    )(renorm_input)
+    )(concat_input)
+
+    SAR_input = Lambda(lambda x: x * 128)(SAR_slice)
+    EO_input = Lambda(lambda x: x * 4)(EO_slice)
 
     encoded_SAR = SAR_model(SAR_input)
     encoded_EO = EO_model(EO_input)

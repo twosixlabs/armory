@@ -30,5 +30,6 @@ done
 
 if [[ "$1" == "pytorch" || "$1" == "all" ]]; then
     echo "Building docker images for deep speech model"
+    docker build --force-rm --file docker/pytorch-deepspeech/Dockerfile --build-arg armory_version=${version} --target armory-pytorch-deepspeech-base -t twosixarmory/pytorch-deepspeech-base:${version} .
     docker build --force-rm --file docker/pytorch-deepspeech-dev/Dockerfile --build-arg armory_version=${version} --target armory-pytorch-deepspeech-dev -t twosixarmory/pytorch-deepspeech:${version} .
 fi

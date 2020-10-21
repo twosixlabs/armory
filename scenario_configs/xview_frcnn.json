@@ -47,7 +47,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.12.1-dev",
+        "docker_image": "twosixarmory/pytorch:0.12.2-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
