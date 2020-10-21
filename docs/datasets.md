@@ -23,6 +23,7 @@ These tfrecord files will be pulled from S3 if not available on your
 | [mnist](http://yann.lecun.com/exdb/mnist/) | MNIST hand written digit image dataset | (N, 28, 28, 1) | uint8 | (N,) | int64 | train, test | 
 | [resisc45](https://arxiv.org/abs/1703.00121) | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | uint8 | (N,) | int64 | train, validation, test | 
 | imagenet_adversarial | ILSVRC12 adversarial dataset from ResNet50 | (N, 224, 224, 3) | uint8 | (N,) | int64 | NA |
+| [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | uint8 | n/a | dict | train, test | 
 
 <br>
 
@@ -65,6 +66,8 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 | librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
 |                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
 |                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
+| xView                 | train      | ~58k images                            |     see [xView arXiv](https://arxiv.org/abs/1802.07856)     |
+|                       | test       | ~18k images                            |                                                        |
 
 
 <br>

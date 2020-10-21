@@ -5,8 +5,12 @@ various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which
 implements the methods needed  by the ART framework. Specifically `get_batch` will 
 return a tuple of `((data_clean, data_adversarial), label_clean)` for a specified batch size in numpy format,
 where 'data_clean' and 'label_clean' represent a clean example and its true label, and 'data_adversarial'
-represents the corresponding adversarially attacked example.
+represents the corresponding adversarially attacked example. The lone exception to this is the [APRICOT](https://arxiv.org/abs/1912.08166)
+dataset, which contains physical adversarial patches and returns a tuple of `(data_adversarial, label_adversarial)` for each batch.
 Each adversarial dataset contains adversarial examples generated using one or more attacks.
+
+
+
 
 Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
 These tfrecord files will be pulled from S3 if not available on your 
@@ -40,6 +44,13 @@ Example attack module for image classification scenario:
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
+| "apricot_dev_adversarial"      | "adversarial"                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | dev          | (N, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
+
+Note: the APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches. 
+The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in 
+[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial 
+patch and a varying number of COCO objects (including zero).
+
 
 
 ### Audio Datasets

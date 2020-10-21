@@ -18,10 +18,12 @@ is a JSON-able dict.
 |:-------: |:-------: |:-------: |
 | categorical_accuracy | Task | Categorical Accuracy |
 | top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
+| object_detection_AP_per_class | Task | Average Precision @ IOU=0.5 |
 | linf | Perturbation | L-infinity norm |
 | l2 | Perturbation | L2 norm |
 | l1 | Perturbation | L1 norm |
 | l0 | Perturbation | L0 "norm" |
+| image_circle_patch_diameter | Perturbation | Patch Diameter |
 
 <br>
 

@@ -5,7 +5,7 @@ models return an ART wrapped classifier for use with ART attacks and defenses.
 
 ### Pretrained Weights
 Pretrained weights can be loaded in to the baseline models or custom models. This is 
-acheived by specifying the name in the `weights_file` field of a model's config. 
+achieved by specifying the name in the `weights_file` field of a model's config. 
 
 When the model is loaded it will first try to load the file from the armory 
 `saved_model_dir`. This enables you to place your own custom weights in that directory 
@@ -13,9 +13,8 @@ for loading. If the weights file is not found it'll then try to download the fil
 our S3 bucket. Files that are available in the armory S3 bucket are listed in the table 
 below. 
 
-If the `weights_file` is not found locally or in the S3 bucket an S3 error will be 
-returned. It is [on the roadmap](https://github.com/twosixlabs/armory/issues/440) 
-to return a more informative error.
+If the `weights_file` is not found locally or in the S3 bucket an error will be 
+returned. 
 
 
 ### Keras
@@ -41,10 +40,18 @@ The model files can be found in [armory/baseline_models/pytorch](../armory/basel
 | MARS | `mars_ucf101_v1.pth` , `mars_kinetics_v1.pth` |
 | ResNet50 CNN | `resnet50_imagenet_v1.pth` |
 | MNIST CNN | `undefended_mnist_5epochs.pth` |
+| xView Faster-RCNN | xview_model_state_dict_epoch_99_loss_0p67 |
+
+
+### TensorFlow 1
+The model file can be found in [armory/baseline_models/tf_graph](../armory/baseline_models/tf_graph). 
+The weights for this model are downloaded from the link listed below.
+
+| Model   | TF Weights URL   | 
+|:----------: | :-----------: | 
+| MSCOCO Faster-RCNN | http://download.tensorflow.org/models/object_detection/faster_rcnn_resnet50_coco_2018_01_28.tar.gz |
 
 
 ### Preprocessing Functions
-Each model has it's own preprocessing function defined in it's model file. This is to 
-ensure that data is preprocessed specifically for that model architecture. If there is 
-no preprocessing function define the Dataset generator will return the defaults as 
-defined in our [dataset documentation](datasets.md)
+Preprocessing functions have been moved inside each model's forward pass. This is to allow each
+model to receive as input the canonicalized form of a dataset.
