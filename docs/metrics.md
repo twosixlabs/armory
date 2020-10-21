@@ -18,8 +18,6 @@ is a JSON-able dict.
 |:-------: |:-------: |:-------: |
 | categorical_accuracy | Task | Categorical Accuracy |
 | object_detection_AP_per_class | Task | Average Precision @ IOU=0.5 |
-| object_detection_class_precision | Task | Per-class precision @ IOU=0.5 |
-| object_detection_class_recall | Task | Per-class recall @ IOU=0.5 |
 | top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
 | top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
 | word_error_rate | Task | Word Error Rate |
