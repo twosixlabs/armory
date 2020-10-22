@@ -97,8 +97,11 @@ class ArmoryInstance(object):
                     sentinel_found = True
 
         # if we're not running a config (eg armory exec or launch)
-        #  we don't expect the sentinel to be printed, so its absence is not an error
-        if sentinel_found or not expect_sentinel:
+        #  we don't expect the sentinel to be printed and we have no way of
+        #  knowing if the command ran cleanly so we return unconditionally
+        if not expect_sentinel:
+            return 0
+        if sentinel_found:
             logger.info("Command exited cleanly")
             return 0
         else:
