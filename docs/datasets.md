@@ -52,7 +52,7 @@ These tfrecord files will be pulled from S3 if not available on your
 
 ### Preprocessing
 
-Armory applies preprocessing to each convert each dataset to canonical form (e.g. normalize the range of values, set the data type).
+Armory applies preprocessing to convert each dataset to canonical form (e.g. normalize the range of values, set the data type).
 Any additional preprocessing that is desired should occur as part of the model under evaluation.
 
 Canonical preprocessing is not yet supported when `framework` is `tf` or `pytorch`.
