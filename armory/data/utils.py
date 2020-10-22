@@ -10,6 +10,7 @@ import shutil
 import random
 import string
 import json
+import subprocess
 
 import boto3
 from botocore import UNSIGNED
@@ -268,8 +269,15 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
 
     logger.info("Extracting .tfrecord files from download...")
     try:
-        with tarfile.open(tar_filepath, "r:gz") as tar_ref:
-            tar_ref.extractall(tmp_dir)
+        completedprocess = subprocess.run(
+            ["tar", "zxvf", tar_filepath, "--directory", tmp_dir],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if completedprocess.returncode:
+            logger.warning("bash tar failed. Reverting to python tar unpacking")
+            with tarfile.open(tar_filepath, "r:gz") as tar_ref:
+                tar_ref.extractall(tmp_dir)
     except tarfile.ReadError:
         logger.warning(f"Could not read tarfile: {tar_filepath}")
         logger.warning("Falling back to processing data...")
