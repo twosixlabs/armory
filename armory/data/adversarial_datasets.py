@@ -50,7 +50,9 @@ def ucf101_adversarial_canonical_preprocessing(batch):
 
 
 def apricot_canonical_preprocessing(batch):
-    return datasets.canonical_variable_image_preprocess(apricot_adversarial_context, batch)
+    return datasets.canonical_variable_image_preprocess(
+        apricot_adversarial_context, batch
+    )
 
 
 def imagenet_adversarial(
