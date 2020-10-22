@@ -354,6 +354,12 @@ class ImageContext:
         self.output_max = 1.0
 
 
+class VideoContext(ImageContext):
+    def __init__(self, x_shape, frame_rate):
+        super().__init__(x_shape)
+        self.frame_rate = frame_rate
+
+
 def canonical_image_preprocess(context, batch):
     check_shapes(batch.shape, (None,) + context.x_shape)
     if batch.dtype != context.input_type:
@@ -410,6 +416,8 @@ mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
+xview_context = ImageContext(x_shape=(None, None, 3))
+ucf101_context = VideoContext(x_shape=(None, 240, 320, 3), frame_rate=25)
 
 
 def mnist_canonical_preprocessing(batch):
@@ -426,6 +434,14 @@ def resisc45_canonical_preprocessing(batch):
 
 def imagenette_canonical_preprocessing(batch):
     return canonical_variable_image_preprocess(imagenette_context, batch)
+
+
+def xview_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(xview_context, batch)
+
+
+def ucf101_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(ucf101_context, batch)
 
 
 class AudioContext:
@@ -808,47 +824,6 @@ def resisc45(
     )
 
 
-class UCF101Context:
-    def __init__(self):
-        self.nb_classes = 101
-        self.input_type = np.uint8
-        self.x_shape = (None, 240, 320, 3)
-        self.frame_rate = 25
-        self.quantization = 255
-        self.output_type = np.float32
-        self.output_min = 0.0
-        self.output_max = 1.0
-
-
-ucf101_context = UCF101Context()
-
-
-def ucf101_canonical_preprocessing(batch):
-    context = ucf101_context
-    if batch.dtype == np.uint8:
-        check_shapes(batch.shape, (None,) + context.x_shape)
-
-        batch = batch.astype(context.output_type) / context.quantization
-    elif batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            check_shapes(x.shape, context.x_shape)
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-    else:
-        raise ValueError(f"input batch dtype {batch.dtype} not in (np.uint8, 'O')")
-
-    for x in batch:
-        assert x.dtype == context.output_type
-        assert x.min() >= context.output_min
-        assert x.max() <= context.output_max
-    return batch
-
-
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
@@ -880,36 +855,6 @@ def ucf101(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-class XViewContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (
-            None,
-            None,
-            None,
-            3,
-        )  # xview images are square but with different sizes
-
-
-xview_context = XViewContext()
-
-
-def xview_canonical_preprocessing(batch):
-    if batch.ndim != len(xview_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
-        )
-
-    batch = batch.astype(xview_context.default_float) / xview_context.quantization
-
-    assert batch.dtype == xview_context.default_float
-    assert batch.shape[1] == batch.shape[2]  # Ensure square shape
-    assert batch.shape[3] == xview_context.x_dimensions[3]
-
-    return batch
 
 
 def tf_to_pytorch_box_conversion(x, y):

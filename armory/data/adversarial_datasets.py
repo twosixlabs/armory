@@ -4,7 +4,6 @@ Adversarial datasets
 
 from typing import Callable
 
-import numpy as np
 import tensorflow as tf
 
 from armory.data import datasets
@@ -31,6 +30,7 @@ librispeech_adversarial_context = datasets.AudioContext(
 )
 resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
+apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -47,6 +47,10 @@ def resisc45_adversarial_canonical_preprocessing(batch):
 
 def ucf101_adversarial_canonical_preprocessing(batch):
     return datasets.canonical_image_preprocess(ucf101_adversarial_context, batch)
+
+
+def apricot_canonical_preprocessing(batch):
+    return datasets.canonical_variable_image_preprocess(apricot_adversarial_context, batch)
 
 
 def imagenet_adversarial(
@@ -284,33 +288,6 @@ def gtsrb_poison(
         framework=framework,
         lambda_map=lambda x, y: (x, y),
     )
-
-
-class ApricotContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, None, None, 3)
-
-
-apricot_context = ApricotContext()
-
-
-def apricot_canonical_preprocessing(batch):
-    if batch.ndim != len(apricot_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(apricot_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[3] == apricot_context.x_dimensions[3]
-
-    batch = batch.astype(apricot_context.default_float) / apricot_context.quantization
-
-    assert batch.dtype == apricot_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
 
 
 def apricot_dev_adversarial(
