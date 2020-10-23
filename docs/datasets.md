@@ -20,7 +20,7 @@ These tfrecord files will be pulled from S3 if not available on your
 | [cifar10](https://www.cs.toronto.edu/~kriz/cifar.html) | CIFAR 10 classes image dataset | (N, 32, 32, 3) | float32 | (N,) | int64 | train, test |
 | [german_traffic_sign](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset) | German traffic sign dataset | (N, variable_height, variable_width, 3) | uint8 | (N,) | int64 | train, test | 
 | [imagenette](https://github.com/fastai/imagenette) | Smaller subset of 10 classes from Imagenet | (N, variable_height, variable_width, 3) | uint8  | (N,) | int64 | train, validation |
-| [mnist](http://yann.lecun.com/exdb/mnist/) | MNIST hand written digit image dataset | (N, 28, 28, 1) | uint8 | (N,) | int64 | train, test | 
+| [mnist](http://yann.lecun.com/exdb/mnist/) | MNIST hand written digit image dataset | (N, 28, 28, 1) | float32 | (N,) | int64 | train, test | 
 | [resisc45](https://arxiv.org/abs/1703.00121) | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | float32 | (N,) | int64 | train, validation, test | 
 | [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | dict | train, test | 
 
