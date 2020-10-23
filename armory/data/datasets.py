@@ -320,36 +320,192 @@ def preprocessing_chain(*args):
     return wrapped
 
 
-class MnistContext:
-    def __init__(self):
-        self.default_float = np.float32
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+        actual should not have None values
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if None in actual:
+        raise ValueError(f"None should not be in actual shape {actual}")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+class ImageContext:
+    def __init__(self, x_shape):
+        self.x_shape = x_shape
+        self.input_type = np.uint8
+        self.input_min = 0
+        self.input_max = 255
+
         self.quantization = 255
-        self.x_dimensions = (None, 28, 28, 1)
+
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
 
 
-mnist_context = MnistContext()
+class VideoContext(ImageContext):
+    def __init__(self, x_shape, frame_rate):
+        super().__init__(x_shape)
+        self.frame_rate = frame_rate
 
 
-def mnist_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(mnist_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(mnist_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, mnist_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == mnist_context.x_dimensions[1:]
+def canonical_image_preprocess(context, batch):
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    if batch.dtype != context.input_type:
+        raise ValueError("input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
 
-    batch = (
-        batch.astype(mnist_context.default_float) / mnist_context.quantization
-    )  # 255
-    assert batch.dtype == mnist_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
+    batch = batch.astype(context.output_type) / context.quantization
+
+    if batch.dtype != context.output_type:
+        raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
 
     return batch
+
+
+def canonical_variable_image_preprocess(context, batch):
+    """
+    Preprocessing when images are of variable size
+    """
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x.shape, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+    elif batch.dtype == context.input_type:
+        check_shapes(batch.shape, (None,) + context.x_shape)
+        assert batch.dtype == context.input_type
+        assert batch.min() >= context.input_min
+        assert batch.max() <= context.input_max
+
+        batch = batch.astype(context.output_type) / context.quantization
+    else:
+        raise ValueError(
+            f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
+        )
+
+    for x in batch:
+        assert x.dtype == context.output_type
+        assert x.min() >= context.output_min
+        assert x.max() <= context.output_max
+
+    return batch
+
+
+mnist_context = ImageContext(x_shape=(28, 28, 1))
+cifar10_context = ImageContext(x_shape=(32, 32, 3))
+resisc45_context = ImageContext(x_shape=(256, 256, 3))
+imagenette_context = ImageContext(x_shape=(None, None, 3))
+xview_context = ImageContext(x_shape=(None, None, 3))
+ucf101_context = VideoContext(x_shape=(None, 240, 320, 3), frame_rate=25)
+
+
+def mnist_canonical_preprocessing(batch):
+    return canonical_image_preprocess(mnist_context, batch)
+
+
+def cifar10_canonical_preprocessing(batch):
+    return canonical_image_preprocess(cifar10_context, batch)
+
+
+def resisc45_canonical_preprocessing(batch):
+    return canonical_image_preprocess(resisc45_context, batch)
+
+
+def imagenette_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(imagenette_context, batch)
+
+
+def xview_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(xview_context, batch)
+
+
+def ucf101_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(ucf101_context, batch)
+
+
+class AudioContext:
+    def __init__(self, x_shape, sample_rate, input_type=np.int64):
+        self.x_shape = x_shape
+        self.input_type = input_type
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+def canonical_audio_preprocess(context, batch):
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x.shape, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.min() >= context.output_min
+            assert x.max() <= context.output_max
+        return batch
+
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    assert batch.dtype == context.input_type
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+
+    assert batch.dtype == context.output_type
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
+digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
+librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
+librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+
+
+def digit_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(digit_context, batch)
+
+
+def librispeech_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_context, batch)
+
+
+def librispeech_dev_clean_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
 
 
 def mnist(
@@ -357,7 +513,7 @@ def mnist(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = mnist_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -382,44 +538,12 @@ def mnist(
     )
 
 
-class Cifar10Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 32, 32, 3)
-
-
-cifar10_context = Cifar10Context()
-
-
-def cifar10_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(cifar10_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(cifar10_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, cifar10_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == cifar10_context.x_dimensions[1:]
-
-    batch = (
-        batch.astype(cifar10_context.default_float) / cifar10_context.quantization
-    )  # 255
-    assert batch.dtype == cifar10_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def cifar10(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = cifar10_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = cifar10_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -480,7 +604,7 @@ def imagenette(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = imagenette_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -533,64 +657,12 @@ def german_traffic_sign(
     )
 
 
-class LibriSpeechDevCleanContext:
-    def __init__(self):
-        self.input_type = np.int64  # However, stores values in int16 range
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
-        self.x_shape = (None,)
-        self.sample_rate = 16000
-        self.quantization = 2 ** 15
-        self.output_type = np.float32
-        self.output_min = -1.0
-        self.output_max = 1.0
-
-
-librispeech_dev_clean_context = LibriSpeechDevCleanContext()
-
-
-def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
-    context = librispeech_dev_clean_context
-    if batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            assert x.max() <= context.input_max
-            assert x.min() >= context.input_min
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-
-        for x in batch:
-            assert x.dtype == context.output_type
-            assert x.max() <= context.output_max
-            assert x.min() >= context.output_min
-        return batch
-
-    if batch.ndim != len(context.x_shape) + 1:
-        print(batch)
-        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
-    if batch.dtype != context.input_type:
-        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
-    assert batch.max() <= context.input_max
-    assert batch.min() >= context.input_min
-
-    batch = batch.astype(context.output_type) / context.quantization  # 2**15
-    assert batch.dtype == context.output_type
-    assert batch.max() <= context.output_max
-    assert batch.min() >= context.output_min
-
-    return batch
-
-
 def librispeech_dev_clean(
     split_type: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -632,7 +704,7 @@ def librispeech(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -672,7 +744,7 @@ def librispeech_dev_clean_asr(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -709,32 +781,6 @@ def librispeech_dev_clean_asr(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-class Resisc45Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 256, 256, 3)
-
-
-resisc45_context = Resisc45Context()
-
-
-def resisc45_canonical_preprocessing(batch):
-    if batch.ndim != len(resisc45_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(resisc45_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == resisc45_context.x_dimensions[1:]
-
-    batch = batch.astype(resisc45_context.default_float) / resisc45_context.quantization
-    assert batch.dtype == resisc45_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
 
 
 def resisc45(
@@ -778,67 +824,6 @@ def resisc45(
     )
 
 
-def check_shapes(actual, target):
-    """
-    Ensure that shapes match, ignoring None values
-
-    actual and target should be tuples
-        actual should not have None values
-    """
-    if type(actual) != tuple:
-        raise ValueError(f"actual shape {actual} is not a tuple")
-    if type(target) != tuple:
-        raise ValueError(f"target shape {target} is not a tuple")
-    if None in actual:
-        raise ValueError(f"None should not be in actual shape {actual}")
-    if len(actual) != len(target):
-        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
-    for a, t in zip(actual, target):
-        if a != t and t is not None:
-            raise ValueError(f"shape {actual} does not match shape {target}")
-
-
-class UCF101Context:
-    def __init__(self):
-        self.nb_classes = 101
-        self.input_type = np.uint8
-        self.x_shape = (None, 240, 320, 3)
-        self.frame_rate = 25
-        self.quantization = 255
-        self.output_type = np.float32
-        self.output_min = 0.0
-        self.output_max = 1.0
-
-
-ucf101_context = UCF101Context()
-
-
-def ucf101_canonical_preprocessing(batch):
-    context = ucf101_context
-    if batch.dtype == np.uint8:
-        check_shapes(batch.shape, (None,) + context.x_shape)
-
-        batch = batch.astype(context.output_type) / context.quantization
-    elif batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            check_shapes(x.shape, context.x_shape)
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-    else:
-        raise ValueError(f"input batch dtype {batch.dtype} not in (np.uint8, 'O')")
-
-    for x in batch:
-        assert x.dtype == context.output_type
-        assert x.min() >= context.output_min
-        assert x.max() <= context.output_max
-    return batch
-
-
 def ucf101(
     split_type: str = "train",
     epochs: int = 1,
@@ -870,36 +855,6 @@ def ucf101(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-class XViewContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (
-            None,
-            None,
-            None,
-            3,
-        )  # xview images are square but with different sizes
-
-
-xview_context = XViewContext()
-
-
-def xview_canonical_preprocessing(batch):
-    if batch.ndim != len(xview_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
-        )
-
-    batch = batch.astype(xview_context.default_float) / xview_context.quantization
-
-    assert batch.dtype == xview_context.default_float
-    assert batch.shape[1] == batch.shape[2]  # Ensure square shape
-    assert batch.shape[3] == xview_context.x_dimensions[3]
-
-    return batch
 
 
 def tf_to_pytorch_box_conversion(x, y):
