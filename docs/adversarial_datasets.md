@@ -43,7 +43,7 @@ Example attack module for image classification scenario:
 |             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type | y_shape | y_type |      Size      |
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
 | "apricot_dev_adversarial"      | "adversarial"                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | dev          | (N, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
-| "imagenet_adversarial"         | "adversarial"                  | ILSVRC12 adversarial image dataset for ResNet50  |                             |              | (N, 224, 224, 3) |uint8   | (N,)    | int64  | 1000 images    |
+| "imagenet_adversarial"         | "adversarial"                  | ILSVRC12 adversarial image dataset for ResNet50  | Targeted, universal perturbation   |     test         | (N, 224, 224, 3) |uint8   | (N,)    | int64  | 1000 images    |
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 
@@ -58,7 +58,7 @@ patch and a varying number of COCO objects (including zero).
 ### Audio Datasets
 |           `name`          | `adversarial_key`              |                     Description                    |               Attack               | Source Split |  x_shape  | x_type | y_shape | y_type | sampling_rate |      Size      |
 |:-------------------------:|:-----------------:|:--------------------------------------------------:|:----------------------------------:|:------------:|:---------:|:------:|:-------:|:------:|:-------------:|:--------------:|
-| "librispeech_adversarial" | "adversarial_perturbation      | Librispeech dev dataset for speaker identification |                                    |     test     | (N, variable_length) |  int64 |   (N,)  |  int64 |    16 kHz     | ~5 sec/speaker |
+| "librispeech_adversarial" | "adversarial_perturbation      | Librispeech dev dataset for speaker identification | Targeted, universal perturbation   |     test     | (N, variable_length) |  int64 |   (N,)  |  int64 |    16 kHz     | ~5 sec/speaker |
 | "librispeech_adversarial" | "adversarial_univperturbation" | Librispeech dev dataset for speaker identification | Untargeted, universal perturbation |     test     | (N, variable_length) |  int64 |   (N,)  |  int64 |    16 kHz     | ~5 sec/speaker |
 
 
@@ -69,6 +69,7 @@ patch and a varying number of COCO objects (including zero).
 | "ucf101_adversarial_112x112" | "adversarial_perturbation" | UCF 101 Action Recognition | Untargeted, universal perturbation          |     test     | (N, variable_frames, 112, 112, 3) |  uint8 |   (N,)  |  int64 | 5 videos/class |
 
 ### Poison Datasets
-|             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type  | y_shape | y_type |      Size      |
+|             `name`             |        `split_type`       |                Description                |               Attack               | Source Split |      x_shape     | x_type  | y_shape | y_type |      Size      |
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
-| "gtsrb_poison"                 | None                           | German Traffic Sign Poison Dataset        | Data poisoning                     |              |  (N, 48, 48, 3)  | float32 | (N,)    | int64  | 2220 images    |
+| "gtsrb_poison"                 | poison                           | German Traffic Sign Poison Dataset        | Data poisoning                     |       train       |  (N, 48, 48, 3)  | float32 | (N,)    | int64  | 2220 images    |
+| "gtsrb_poison"                 | poison_test                           | German Traffic Sign Poison Dataset        | Data poisoning                     |       test       |  (N, 48, 48, 3)  | float32 | (N,)    | int64  | 750 images    |
