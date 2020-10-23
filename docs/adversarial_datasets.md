@@ -43,7 +43,7 @@ Example attack module for image classification scenario:
 |             `name`             |        `adversarial_key`       |                Description                |               Attack               | Source Split |      x_shape     | x_type | y_shape | y_type |      Size      |
 |:------------------------------:|:------------------------------:|:-----------------------------------------:|:----------------------------------:|:------------:|:----------------:|:------:|:-------:|:------:|:--------------:|
 | "apricot_dev_adversarial"      | "adversarial"                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | dev          | (N, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
-| "imagenet_adversarial"         | "adversarial"                  | ILSVRC12 adversarial image dataset for ResNet50                                |              | (N, 224, 224, 3) |uint8   | (N,)    | int64  | 1000 images    |
+| "imagenet_adversarial"         | "adversarial"                  | ILSVRC12 adversarial image dataset for ResNet50  |                             |              | (N, 224, 224, 3) |uint8   | (N,)    | int64  | 1000 images    |
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (N, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 
