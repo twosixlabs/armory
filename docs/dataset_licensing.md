@@ -16,7 +16,10 @@ the Creative Commons 4.0 International ShareAlike license and are Copyright Two 
 | GTSRB | [CC0 Public Domain](https://www.kaggle.com/meowmeowmeowmeowmeow/gtsrb-german-traffic-sign)|
 | Imagenette | [Apache 2.0](https://github.com/fastai/imagenette/blob/master/LICENSE) |  
 | UCF101 | Fair use exception |
-| RESISC45 | Fair use exception |
+| RESISC45 | Fair use exception | (http://xviewdataset.org/)
+| xView | [Creative Commons Attribution-Noncommercial-ShareAlike 4.0 International](https://arxiv.org/pdf/1802.07856) |
+| so2sat | [Creative Commons 4.0](https://mediatum.ub.tum.de/1454690) |
+| APRICOT | [Apache License Version 2.0](https://apricot.mitre.org/) |
 
 ## Attributions
 
@@ -86,6 +89,36 @@ practicable. Please direct inquiries to <armory@twosixlabs.com>.
 | Public license notice        | https://github.com/fastai/imagenette |
 | Disclaimer notice            | Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License. |
 | Dataset link | https://github.com/fastai/imagenette |
+| Modification | (Slight) Representation of images as binary tensors |
+
+### xView
+|Attribution                   |              |  
+|------------------------------|--------------|
+| Creator/attribution parties  | Defense Innovation Unit Experimental (DIUx) and the National Geospatial-Intelligence Agency (NGA)  |
+| Copyright notice             | None found |
+| Public license notice        | http://xviewdataset.org/terms.html |
+| Disclaimer notice            | Disclaimer of Warranties and Limitation of Liability. a. Unless otherwise separately undertaken by the Licensor, to the extent possible, the Licensor offers the Licensed Material as-is and as-available, and makes no representations or warranties of any kind concerning the Licensed Material, whether express, implied, statutory, or other. This includes, without limitation, warranties of title, merchantability, fitness for a particular purpose, non-infringement, absence of latent or other defects, accuracy, or the presence or absence of errors, whether or not known or discoverable. Where disclaimers of warranties are not allowed in full or in part, this disclaimer may not apply to You. b. To the extent possible, in no event will the Licensor be liable to You on any legal theory (including, without limitation, negligence) or otherwise for any direct, special, indirect, incidental, consequential, punitive, exemplary, or other losses, costs, expenses, or damages arising out of this Public License or use of the Licensed Material, even if the Licensor has been advised of the possibility of such losses, costs, expenses, or damages. Where a limitation of liability is not allowed in full or in part, this limitation may not apply to You. c. The disclaimer of warranties and limitation of liability provided above shall be interpreted in a manner that, to the extent possible, most closely approximates an absolute disclaimer and waiver of all liability. |
+| Dataset link | http://xviewdataset.org/#dataset |
+| Modification | (Slight) Representation of images as binary tensors |
+
+### so2sat
+|Attribution                   |              |  
+|------------------------------|--------------|
+| Creator/attribution parties  | Xiaoxiang Zhu, Jingliang Hu, Chunping Qiu, Yilei Shi, Jian Kang, Lichao Mou, Hossein Bagheri, Matthias Haeberle, Yuansheng Hua, Rong Huang, Lloyd Hughes, Hao Li, Yao Sun, Guichen Zhang, Shiyao Han, Michael Schmitt, and Yuanyuan Wang  |
+| Copyright notice             | None found |
+| Public license notice        | https://mediatum.ub.tum.de/1454690 |
+| Disclaimer notice            | a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU. b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION, NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES, COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR IN PART, THIS LIMITATION MAY NOT APPLY TO YOU. c. The disclaimer of warranties and limitation of liability provided above shall be interpreted in a manner that, to the extent possible, most closely approximates an absolute disclaimer and waiver of all liability. |
+| Dataset link | https://mediatum.ub.tum.de/1454690 |
+| Modification | (Slight) Representation of images as binary tensors |
+
+### APRICOT
+|Attribution                   |              |  
+|------------------------------|--------------|
+| Creator/attribution parties  | A. Braunegg, Amartya Chakraborty, Michael Krumdick, Nicole Lape, Sara Leary, Keith Manville, Elizabeth Merkhofer, Laura Strickhart, and Matthew Walmer  |
+| Copyright notice             | Copyright 2020 APRICOT - MITRE Corporation |
+| Public license notice        | https://apricot.mitre.org/ |
+| Disclaimer notice            | Disclaimer of Warranty. Unless required by applicable law or agreed to in writing, Licensor provides the Work (and each Contributor provides its Contributions) on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including, without limitation, any warranties or conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A PARTICULAR PURPOSE. You are solely responsible for determining the appropriateness of using or redistributing the Work and assume any risks associated with Your exercise of permissions under this License. |
+| Dataset link | https://apricot.mitre.org/ |
 | Modification | (Slight) Representation of images as binary tensors |
 
 ## Fair use notes for RESISC-45 and UCF101

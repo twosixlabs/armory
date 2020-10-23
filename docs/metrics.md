@@ -17,13 +17,23 @@ is a JSON-able dict.
 | Name | Type | Description |
 |:-------: |:-------: |:-------: |
 | categorical_accuracy | Task | Categorical Accuracy |
-| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
 | object_detection_AP_per_class | Task | Average Precision @ IOU=0.5 |
+| top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
+| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
+| word_error_rate | Task | Word Error Rate |
+| image_circle_patch_diameter | Perturbation | Patch Diameter |
+| lp   | Perturbation | L-p norm |
 | linf | Perturbation | L-infinity norm |
 | l2 | Perturbation | L2 norm |
 | l1 | Perturbation | L1 norm |
 | l0 | Perturbation | L0 "norm" |
-| image_circle_patch_diameter | Perturbation | Patch Diameter |
+| mars_mean_l2 | Perturbation | Mean L2 norm across video stacks |
+| mars_mean_patch | Perturbation | Mean patch diameter across video stacks |
+| norm | Perturbation | L-p norm |
+| snr | Perturbation | Signal-to-noise ratio |
+| snr_db | Perturbation | Signal-to-noise ratio (decibels) |
+| snr_spectrogram | Perturbation | Signal-to-noise ratio of spectrogram |
+| snr_spectrogram_db | Perturbation | Signal-to-noise ratio of spectrogram (decibels) |
 
 <br>
 
