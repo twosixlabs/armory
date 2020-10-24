@@ -15,6 +15,11 @@ To run a single scenario as root:
 armory run official_scenario_configs/cifar10_baseline.json --root
 ```
 
+To accept a config file from standard in:
+```
+more official_scenario_configs/cifar10_baseline.json | armory run -
+```
+
 To execute the `id` command in the container:
 ```
 $ python -m armory exec pytorch --root -- id

@@ -262,9 +262,12 @@ def run(command_args, prog, description):
         )
         sys.exit(1)
     except json.decoder.JSONDecodeError:
-        logger.exception(f"Could not decode {args.filepath} as a json file.")
-        if not args.filepath.lower().endswith(".json"):
-            logger.warning(f"{args.filepath} is not a '*.json' file")
+        if args.filepath == "-":
+            logger.exception("'stdin' did not provide a json-parsable input")
+        else:
+            logger.exception(f"Could not decode '{args.filepath}' as a json file.")
+            if not args.filepath.lower().endswith(".json"):
+                logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
