@@ -19,7 +19,7 @@ class VideoCompressionNormalized(VideoCompression):
         transpose=None,
         means=None,
         stds=None,
-        dtype=None,
+        dtype=np.float32,
         same_video=True,
     ):
         super().__init__(
@@ -51,8 +51,6 @@ class VideoCompressionNormalized(VideoCompression):
             raise ValueError("stds must have 3 values, one per channel")
         self.stds = stds
 
-        if dtype is None:
-            dtype = "float32"
         self.dtype = dtype
 
         self.same_video = same_video
@@ -72,7 +70,6 @@ class VideoCompressionNormalized(VideoCompression):
         if self.same_video:
             x = x.reshape(x_shape, order="C")
         x = (x - self.means) / self.stds
-        if self.dtype == "float32":
-            x = x.astype(np.float32)
+        x = x.astype(self.dtype)
         x = x.transpose(np.argsort(self.transpose))
         return x, y
