@@ -251,11 +251,11 @@ performers are not required to use it, if their defense requires a different arc
 The model uses a custom CNN architecture with a single input that stacks SAR (first four channels only,
 representing the real and imaginary components of the reflected electromagnetic waves) 
 and EO (all ten channels) data. Immediately after the input layer, the data is split into SAR and EO data 
-streams and fed into their respective feature extraction networks. In the final layer(s), the two
+streams and fed into their respective feature extraction networks. In the final layer, the two
 networks are fused to produce a single prediction output.
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade correct classification
+    * Untargeted - an adversary wish to evade correct classification
   * Adversary Operating Environment:
     * Non-real time, digital evasion attack - the attack will be "universal" with respect to scaling, 
     rotation and translation.
@@ -271,7 +271,7 @@ networks are fused to produce a single prediction output.
 * **Baseline Attacks:**
   * (Primary) Adversarial Patch
   * (Secondary) other "per-example" attacks such as PGD, FGM, may also be considered for completeness.
-* **Baseline Defense**: MP3 Compression
+* **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
@@ -282,30 +282,32 @@ To be added
 * **Description:**
 In this scenario, the system under evaluation is an object detector which localizes and identifies various classes from satellite imagery.
 * **Dataset:**
-The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856).
+The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856). It comprises 59k/19k train and test 
+images (each with dimensions 300x300, 400x400 or 500x500) and 62 classes
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture.
+The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture pre-trained
+on MSCOCO objects and fine-tuned on xView.
 
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply to evade detection
-    * Targeted - an adversary may wish for a specific object class to be predicted
+    * Untargeted - an adversary wishes to disable object detection
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
+    * Non-real time, digital evasion attack - attack will be "universal" with respect to scaling, rotation, 
+    and translation.
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while meeting the perceptibility requirement.
+* Adversary Capabilities and Resources
+    * Patch size <5% of image area 
 * **Metrics of Interest:**
   * Primary metrics:
-    * Average precision (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
-    (Lp-norms, Wasserstein distance)
+    * Average precision (mean, per-class) of ground truth classes, Patch Size
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * (Primary) [DPatch](https://arxiv.org/abs/1806.02299)
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered.
+* **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
