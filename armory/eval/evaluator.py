@@ -152,7 +152,7 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
-    ) -> None:
+    ) -> int:
         exit_code = 0
         if self.no_docker:
             if jupyter or interactive or command:
@@ -266,9 +266,9 @@ class Evaluator(object):
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
         return runner.exec_cmd(cmd, **kwargs)
 
-    def _run_command(self, runner: ArmoryInstance, command: str) -> None:
+    def _run_command(self, runner: ArmoryInstance, command: str) -> int:
         logger.info(bold(red(f"Running bash command: {command}")))
-        runner.exec_cmd(command, user=self.get_id())
+        return runner.exec_cmd(command, user=self.get_id(), expect_sentinel=False)
 
     def get_id(self):
         """
@@ -358,6 +358,7 @@ class Evaluator(object):
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
             user="root",
+            expect_sentinel=False,
         )
 
     def _build_options(self, check_run, num_eval_batches, skip_benign):

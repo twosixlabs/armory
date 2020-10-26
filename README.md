@@ -102,7 +102,7 @@ evaluated against that given scenario. For more information please see our
 
 # FAQs
 Please see the [frequently asked questions](docs/faqs.md) documentation for more information on:
-* Datasets returning NumPy arrays
+* Dataset format and preprocessing
 * Access to underlying models from wrapped classifiers.
 
 # Contributing
