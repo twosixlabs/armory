@@ -48,11 +48,11 @@ The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45
     (Lp-norms, Wasserstein distance)
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance:**
+* **Baseline Model Performance: (results derived using Armory < v0.10)**
   * Baseline Clean Top-1 Accuracy: 93%
   * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 6%
   * Baseline Attacked (Universal Patch) Top-1 Accuracy: 23%
-* **Baseline Defense Performance:**
+* **Baseline Defense Performance: (results derived using Armory < v0.10)**
 Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=50, channel_index=3, apply_fit=False,
 apply_predict=True, means=[0.36386173189316956, 0.38118692953271804, 0.33867067558870334], stds=[0.20350874, 0.18531173, 0.18472934]) - see
 resisc45_baseline_densenet121_adversarial.json for example usage.
@@ -140,14 +140,14 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
     (Lp-norms, Wasserstein distance)
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance:**
+* **Baseline Model Performance: (results derived using Armory < v0.10)**
   * Baseline Clean Top-1 Accuracy: 93%
   * Baseline Clean Top-5 Accuracy: 99%
   * Baseline Attacked (Perturbation) Top-1 Accuracy: 4%
   * Baseline Attacked (Perturbation) Top-5 Accuracy: 35%
   * Baseline Attacked (Patch) Top-1 Accuracy: 24%
   * Baseline Attacked (Patch) Top-5 Accuracy: 97%
-* **Baseline Defense Performance:**
+* **Baseline Defense Performance: (results derived using Armory < v0.10)**
 Baseline defense is art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
 apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0]) - see ucf101_baseline_adversarial.json for example usage.
 Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
@@ -214,20 +214,22 @@ may also be loaded by the model.
     * Untargeted - an adversary may simply wish for speech to be transcribed incorrectly
     * Targeted - an adversary may wish for specific strings to be predicted
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Assuming perfect acoustic channel
+    * Non-real time, digital evasion attack. Each attack will be "universal" with respect to 
+    channel conditions (under a single perfect channel, the attack will be "per-example."
+    * At this time, single perfect acoustic channel is considered. Realistic channel models may be
+    implemented later, at which time, the attack becomes "universal."
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
   * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget 
-    allowed while meeting the perceptibility requirement.
+    * To place an evaluation bound on the perceptibility of perturbations, the SNR is restricted to >20 dB.
 * **Metrics of Interest:**
   * Primary metrics:
-    * Word error rate, attack computational cost, defense computational cost, various distance measures of perturbation
-    (Lp-norms, Wasserstein distance, signal-to-noise ratio)
+    * Word error rate, SNR
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks**: (primary) [Imperceptible ASR attack] (https://arxiv.org/abs/1903.10346) and 
+  [Kenansville attack] (https://arxiv.org/abs/1910.05262). (secondary) other "per-example" attacks 
+  such as PGD, FGM, may be considered.
+* **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
