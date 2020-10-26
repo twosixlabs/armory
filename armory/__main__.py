@@ -66,7 +66,10 @@ class DockerImage(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
+OLD_SCENARIOS = [
+    "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
+]
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set2.json"
 
 
 class DownloadConfig(argparse.Action):
@@ -156,6 +159,25 @@ def _docker_image(parser):
         type=str,
         help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
         action=DockerImage,
+    )
+
+
+def _docker_image_optional(parser):
+    parser.add_argument(
+        "--docker-image",
+        default=images.TF1,
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+
+
+def _skip_docker_images(parser):
+    parser.add_argument(
+        "--skip-docker-images",
+        action="store_true",
+        help="Whether to skip downloading docker images",
     )
 
 
@@ -295,6 +317,8 @@ def download(command_args, prog, description):
     """
     parser = argparse.ArgumentParser(prog=prog, description=description)
     _debug(parser)
+    _docker_image_optional(parser)
+    _skip_docker_images(parser)
     parser.add_argument(
         metavar="<download data config file>",
         dest="download_config",
@@ -325,12 +349,16 @@ def download(command_args, prog, description):
         model_weights.download_all(args.download_config, args.scenario)
         return
 
-    if not armory.is_dev():
-        logger.info("Downloading all docker images....")
+    if args.skip_docker_images:
+        logger.info("Skipping docker image downloads...")
+    elif armory.is_dev():
+        logger.info("Dev version. Must build docker images locally with build-dev.sh")
+    else:
+        logger.info("Downloading all docker images...")
         _pull_docker_images()
 
     logger.info("Downloading requested datasets and model weights...")
-    config = {"sysconfig": {"docker_image": images.TF1}}
+    config = {"sysconfig": {"docker_image": args.docker_image}}
 
     rig = Evaluator(config)
     cmd = "; ".join(
