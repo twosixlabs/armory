@@ -185,12 +185,22 @@ poison data (1/5/10% of the training size) that should be mixed with the trainin
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under quick glance are allowed, as are attacks that create perceptible
     but non-suspicious triggers - we assume in this scenario that a human may at most passively monitor the classifier system.
-  * The type of attack will be a trigger-based one where the inputs and labels are modified.
 * **Metrics of Interest:**
   * Primary metrics:
     * Accuracy (mean, per-class), backdoor success rate, attack computational cost, defense computational cost
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * [Dirty-label Backdoor Attack](https://arxiv.org/abs/1708.06733): 1 to 10% of a *source class* in the 
+  training data have trigger added and are intentionally mislabeled with *target label*; during test time,
+   the same trigger is added to an input of *source class* to cause targeted misclassification.
+  * [Clean-label Backdoor Attack](https://people.csail.mit.edu/madry/lab/cleanlabel.pdf): 1 to 10% of the 
+  *target class* in training data are imperceptibly perturbed (so they are still correctly labeled) and have 
+  trigger added; during test time, same trigger is added to an input of a *source class* to cause 
+  targeted misclassification
+    * Perturbation constraints: Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N))
+* **Baseline Defense**: [Activation Clustering](https://arxiv.org/abs/1811.03728) and/or
+  [Spectral Signature](https://papers.nips.cc/paper/8024-spectral-signatures-in-backdoor-attacks.pdf)
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
