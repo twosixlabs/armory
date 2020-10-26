@@ -215,9 +215,10 @@ may also be loaded by the model.
     * Targeted - an adversary may wish for specific strings to be predicted
   * Adversary Operating Environment:
     * Non-real time, digital evasion attack. Each attack will be "universal" with respect to 
-    channel conditions (under a single perfect channel, the attack will be "per-example."
-    * At this time, single perfect acoustic channel is considered. Realistic channel models may be
-    implemented later, at which time, the attack becomes "universal."
+    channel conditions (under a single perfect channel, the attack will be "per-example.")
+    * At this time, the channel model consists only a single perfect acoustic channel. 
+    Realistic channel models with arbitrary impulse responses may be implemented later, 
+    at which time, the attack becomes "universal."
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
   * Adversary Capabilities and Resources
     * To place an evaluation bound on the perceptibility of perturbations, the SNR is restricted to >20 dB.
@@ -226,9 +227,10 @@ may also be loaded by the model.
     * Word error rate, SNR
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks**: (primary) [Imperceptible ASR attack] (https://arxiv.org/abs/1903.10346) and 
-  [Kenansville attack] (https://arxiv.org/abs/1910.05262). (secondary) other "per-example" attacks 
-  such as PGD, FGM, may be considered.
+* **Baseline Attacks:**
+  * (Primary) Targeted - [Imperceptible ASR attack](https://arxiv.org/abs/1903.10346) and Untargeted - 
+  [Kenansville attack](https://arxiv.org/abs/1910.05262).
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered.
 * **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
 To be added
