@@ -141,7 +141,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Attacks:**
-  * PGD (Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a single input
+  * PGD (Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a single input)
   * Adversarial Patch (size <20% of video area)
   * [Frame Saliency](https://arxiv.org/abs/1811.11875)
 * **Baseline Defense**: Video Compression
