@@ -320,24 +320,24 @@ In this scenario, the system under evaluation is an object detector trained to i
 * **Dataset:**
 The dataset is the [APRICOT dataset](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 natural images with physically-printed adversarial patches,
 covering three object detection architectures (Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet),
-two shapes (circle and rectangular), and ten MS-COCO classes.
+two shapes (circle and rectangular), and ten MS-COCO classes as targets.
 * **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the pretrained [Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
+The model uses the pretrained [Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) models.
 Note: currently, only Tensorflow Faster-RCNN with ResNet-50 is implemented, with the other two architectures 
-to be implemented in the near future.
+to be implemented in the near future. In order to perform as close to a white-box evaluation as possible,
+it is strongly recommended, but not required, that performers adopt one of the above architectures for defense
+research - the pretrained weights may not be robust, so performers can change the weights.
 * **Threat Scenario:**
   * Adversary Operating Environment:
     * This is a dataset of precomputed adversarial images on which trained models will be evaluated.
     * Each patch is a targeted attack, whose objective is to force an object detector to localize and classify
-    the patch as a MSCOCO object.
+    the patch as an MSCOCO object.
 * **Metrics of Interest:**
   * Primary metrics:
     * Average precision (mean, per-class) of patches, Average precision of MSCOCO objects
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Attacks:**
-  * The patches were generated using original or modified [ShapeShifter](https://arxiv.org/abs/1804.05810)
+  * The patches were generated using variants of [ShapeShifter](https://arxiv.org/abs/1804.05810)
 * **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
