@@ -140,6 +140,11 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
     (Lp-norms, Wasserstein distance)
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * PGD (Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a single input
+  * Adversarial Patch (size <20% of video area)
+  * [Frame Saliency](https://arxiv.org/abs/1811.11875)
+* **Baseline Defense**: Video Compression
 * **Baseline Model Performance: (results derived using Armory < v0.10)**
   * Baseline Clean Top-1 Accuracy: 93%
   * Baseline Clean Top-5 Accuracy: 99%
@@ -198,7 +203,8 @@ poison data (1/5/10% of the training size) that should be mixed with the trainin
   *target class* in training data are imperceptibly perturbed (so they are still correctly labeled) and have 
   trigger added; during test time, same trigger is added to an input of a *source class* to cause 
   targeted misclassification
-    * Perturbation constraints: Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N))
+    * Perturbation constraints: Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a 
+    single input
 * **Baseline Defense**: [Activation Clustering](https://arxiv.org/abs/1811.03728) and/or
   [Spectral Signature](https://papers.nips.cc/paper/8024-spectral-signatures-in-backdoor-attacks.pdf)
 * **Baseline Model Performance:**
