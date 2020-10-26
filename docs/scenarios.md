@@ -202,7 +202,8 @@ To be added
 In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
 passively monitoring or not monitoring at all.
 * **Dataset:**
-The dataset is the [LibriSpeech dataset](http://www.openslr.org/12).
+The dataset is the [LibriSpeech dataset](http://www.openslr.org/12) and comprises train_clean100, 
+train_clean360 and test_clean.
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
@@ -230,7 +231,7 @@ may also be loaded by the model.
 * **Baseline Attacks:**
   * (Primary) Targeted - [Imperceptible ASR attack](https://arxiv.org/abs/1903.10346) and Untargeted - 
   [Kenansville attack](https://arxiv.org/abs/1910.05262).
-  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered.
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered for completeness.
 * **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
 To be added
@@ -240,33 +241,37 @@ To be added
 ### so2sat multimodal image classification
 
 * **Description:**
-In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral optical images.
+In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral electro-optical (EO) images.
 * **Dataset:**
-The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690).
+The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690). It comprises 352k/24k images in
+train/validation datasets and 17 classes of local climate zones.
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model uses a custom CNN architecture on both SAR and optical data, then fuses the two
-networks into a single prediction network.
+The model uses a custom CNN architecture with a single input that stacks SAR (first four channels only,
+representing the real and imaginary components of the reflected electromagnetic waves) 
+and EO (all ten channels) data. Immediately after the input layer, the data is split into SAR and EO data 
+streams and fed into their respective feature extraction networks. In the final layer(s), the two
+networks are fused to produce a single prediction output.
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection
-    * Targeted - an adversary may wish for a specific local climate zone to be predicted
+    * Untargeted - an adversary may simply wish to evade correct classification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Assumes adversary can only perturb either SAR or optical data at once.
+    * Non-real time, digital evasion attack - the attack will be "universal" with respect to scaling, 
+    rotation and translation.
+    * Adversary may perturb a single modality (SAR or EO) or both modalities simultaneously (SAR and EO)
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
   * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while meeting the perceptibility requirement.
+    * Patch size < 20% of the image area
 * **Metrics of Interest:**
   * Primary metrics:
-    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
-    (Lp-norms, Wasserstein distance)
+    * Accuracy (mean, per-class), Patch size
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * (Primary) Adversarial Patch
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may also be considered for completeness.
+* **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
