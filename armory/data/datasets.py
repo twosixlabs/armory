@@ -64,6 +64,7 @@ class ArmoryDataGenerator(DataGenerator):
         preprocessing_fn=None,
         label_preprocessing_fn=None,
         variable_length=False,
+        variable_y=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
@@ -79,8 +80,11 @@ class ArmoryDataGenerator(DataGenerator):
         )
 
         self.variable_length = variable_length
+        self.variable_y = variable_y
         if self.variable_length:
             self.current = 0
+        elif self.variable_y:
+            raise NotImplementedError("variable_y=True requires variable_length=True")
 
     @staticmethod
     def np_1D_object_array(x_list):
@@ -119,15 +123,26 @@ class ArmoryDataGenerator(DataGenerator):
             else:
                 x = self.np_1D_object_array(x_list)
 
-            # Does not currently handle variable-length y
-            if isinstance(y_list[0], dict):
-                y = {}
-                for k in y_list[0].keys():
-                    y[k] = np.hstack([y_i[k] for y_i in y_list])
-            elif isinstance(y_list[0], tuple):
-                y = tuple(np.hstack(i) for i in zip(*y_list))
+            if self.variable_y:
+                if isinstance(y_list[0], dict):
+                    # Translate a list of dicts into a dict of arrays
+                    y = {}
+                    for k in y_list[0].keys():
+                        y[k] = self.np_1D_object_array([y_i[k] for y_i in y_list])
+                elif isinstance(y_list[0], tuple):
+                    # Translate a list of tuples into a tuple of arrays
+                    y = tuple(self.np_1D_object_array(i) for i in zip(*y_list))
+                else:
+                    y = self.np_1D_object_array(y_list)
             else:
-                y = np.hstack(y_list)
+                if isinstance(y_list[0], dict):
+                    y = {}
+                    for k in y_list[0].keys():
+                        y[k] = np.hstack([y_i[k] for y_i in y_list])
+                elif isinstance(y_list[0], tuple):
+                    y = tuple(np.hstack(i) for i in zip(*y_list))
+                else:
+                    y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 
@@ -200,6 +215,7 @@ def _generator_from_tfds(
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
     variable_length=False,
+    variable_y=False,
     shuffle_files=True,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -285,6 +301,7 @@ def _generator_from_tfds(
             preprocessing_fn=preprocessing_fn,
             label_preprocessing_fn=label_preprocessing_fn,
             variable_length=bool(variable_length and batch_size > 1),
+            variable_y=bool(variable_y and batch_size > 1),
         )
 
     elif framework == "tf":
@@ -864,9 +881,20 @@ def tf_to_pytorch_box_conversion(x, y):
     PyTorch format: [x1, y1, x2, y2] (unnormalized)
     """
     orig_boxes = y["boxes"]
-    converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
-    height, width = x.shape[1:3]
-    converted_boxes *= [width, height, width, height]
+    if orig_boxes.dtype == np.object:
+        converted_boxes = np.empty(orig_boxes.shape, dtype=object)
+        for i, (x_i, orig_boxes_i) in enumerate(zip(x, orig_boxes)):
+            height, width = x_i.shape[:2]
+            converted_boxes[i] = orig_boxes_i[:, [1, 0, 3, 2]] * [
+                width,
+                height,
+                width,
+                height,
+            ]
+    else:
+        converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
+        height, width = x.shape[1:3]
+        converted_boxes *= [width, height, width, height]
     y["boxes"] = converted_boxes
     return y
 
@@ -902,6 +930,8 @@ def xview(
         label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
+        variable_length=bool(batch_size > 1),
+        variable_y=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,

@@ -13,8 +13,20 @@ while, so you may want to run it overnight:
 ```
 git clone https://github.com/twosixlabs/armory-example.git
 cd armory-example
+# First set of examples:
 armory download scenario_download_configs/scenarios-set1.json
+# Second set of scenarios:
+armory download scenario_download_configs/scenarios-set2.json
 ```  
+If you are not using Docker, then add `--no-docker`: 
+```
+armory download scenario_download_configs/scenarios-set*.json --no-docker
+```
+
+If you want to download with a specific image, use:
+```
+armory download --docker-image <image tag> scenario_download_configs/scenarios-set*.json
+```
 
 ## Baseline models
 The armory package contains several framework specific baseline models that can be used

@@ -48,11 +48,11 @@ The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45
     (Lp-norms, Wasserstein distance)
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance:**
+* **Baseline Model Performance: (results derived using Armory < v0.10)**
   * Baseline Clean Top-1 Accuracy: 93%
   * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 6%
   * Baseline Attacked (Universal Patch) Top-1 Accuracy: 23%
-* **Baseline Defense Performance:**
+* **Baseline Defense Performance: (results derived using Armory < v0.10)**
 Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=50, channel_index=3, apply_fit=False,
 apply_predict=True, means=[0.36386173189316956, 0.38118692953271804, 0.33867067558870334], stds=[0.20350874, 0.18531173, 0.18472934]) - see
 resisc45_baseline_densenet121_adversarial.json for example usage.
@@ -140,14 +140,19 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
     (Lp-norms, Wasserstein distance)
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance:**
+* **Baseline Attacks:**
+  * PGD (Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a single input)
+  * Adversarial Patch (size <20% of video area)
+  * [Frame Saliency](https://arxiv.org/abs/1811.11875)
+* **Baseline Defense**: Video Compression
+* **Baseline Model Performance: (results derived using Armory < v0.10)**
   * Baseline Clean Top-1 Accuracy: 93%
   * Baseline Clean Top-5 Accuracy: 99%
   * Baseline Attacked (Perturbation) Top-1 Accuracy: 4%
   * Baseline Attacked (Perturbation) Top-5 Accuracy: 35%
   * Baseline Attacked (Patch) Top-1 Accuracy: 24%
   * Baseline Attacked (Patch) Top-5 Accuracy: 97%
-* **Baseline Defense Performance:**
+* **Baseline Defense Performance: (results derived using Armory < v0.10)**
 Baseline defense is art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
 apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0]) - see ucf101_baseline_adversarial.json for example usage.
 Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
@@ -185,12 +190,23 @@ poison data (1/5/10% of the training size) that should be mixed with the trainin
   * Adversary Capabilities and Resources
     * Attacks that are non-overtly perceptible under quick glance are allowed, as are attacks that create perceptible
     but non-suspicious triggers - we assume in this scenario that a human may at most passively monitor the classifier system.
-  * The type of attack will be a trigger-based one where the inputs and labels are modified.
 * **Metrics of Interest:**
   * Primary metrics:
     * Accuracy (mean, per-class), backdoor success rate, attack computational cost, defense computational cost
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * [Dirty-label Backdoor Attack](https://arxiv.org/abs/1708.06733): 1 to 10% of a *source class* in the 
+  training data have trigger added and are intentionally mislabeled with *target label*; during test time,
+   the same trigger is added to an input of *source class* to cause targeted misclassification.
+  * [Clean-label Backdoor Attack](https://people.csail.mit.edu/madry/lab/cleanlabel.pdf): 1 to 10% of the 
+  *target class* in training data are imperceptibly perturbed (so they are still correctly labeled) and have 
+  trigger added; during test time, same trigger is added to an input of a *source class* to cause 
+  targeted misclassification
+    * Perturbation constraints: Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a 
+    single input
+* **Baseline Defense**: [Activation Clustering](https://arxiv.org/abs/1811.03728) and/or
+  [Spectral Signature](https://papers.nips.cc/paper/8024-spectral-signatures-in-backdoor-attacks.pdf)
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
@@ -202,7 +218,8 @@ To be added
 In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
 passively monitoring or not monitoring at all.
 * **Dataset:**
-The dataset is the [LibriSpeech dataset](http://www.openslr.org/12).
+The dataset is the [LibriSpeech dataset](http://www.openslr.org/12) and comprises train_clean100, 
+train_clean360 and test_clean.
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
@@ -214,20 +231,24 @@ may also be loaded by the model.
     * Untargeted - an adversary may simply wish for speech to be transcribed incorrectly
     * Targeted - an adversary may wish for specific strings to be predicted
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Assuming perfect acoustic channel
+    * Non-real time, digital evasion attack. Each attack will be "universal" with respect to 
+    channel conditions (under a single perfect channel, the attack will be "per-example.")
+    * At this time, the channel model consists only a single perfect acoustic channel. 
+    Realistic channel models with arbitrary impulse responses may be implemented later, 
+    at which time, the attack becomes "universal."
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
   * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget 
-    allowed while meeting the perceptibility requirement.
+    * To place an evaluation bound on the perceptibility of perturbations, the SNR is restricted to >20 dB.
 * **Metrics of Interest:**
   * Primary metrics:
-    * Word error rate, attack computational cost, defense computational cost, various distance measures of perturbation
-    (Lp-norms, Wasserstein distance, signal-to-noise ratio)
+    * Word error rate, SNR
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * (Primary) Targeted - [Imperceptible ASR attack](https://arxiv.org/abs/1903.10346) and Untargeted - 
+  [Kenansville attack](https://arxiv.org/abs/1910.05262).
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered for completeness.
+* **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
@@ -236,33 +257,37 @@ To be added
 ### so2sat multimodal image classification
 
 * **Description:**
-In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral optical images.
+In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral electro-optical (EO) images.
 * **Dataset:**
-The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690).
+The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690). It comprises 352k/24k images in
+train/validation datasets and 17 classes of local climate zones.
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model uses a custom CNN architecture on both SAR and optical data, then fuses the two
-networks into a single prediction network.
+The model uses a custom CNN architecture with a single input that stacks SAR (first four channels only,
+representing the real and imaginary components of the reflected electromagnetic waves) 
+and EO (all ten channels) data. Immediately after the input layer, the data is split into SAR and EO data 
+streams and fed into their respective feature extraction networks. In the final layer, the two
+networks are fused to produce a single prediction output.
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection
-    * Targeted - an adversary may wish for a specific local climate zone to be predicted
+    * Untargeted - an adversary wish to evade correct classification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Assumes adversary can only perturb either SAR or optical data at once.
+    * Non-real time, digital evasion attack - the attack will be "universal" with respect to scaling, 
+    rotation and translation.
+    * Adversary may perturb a single modality (SAR or EO) or both modalities simultaneously (SAR and EO)
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
   * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while meeting the perceptibility requirement.
+    * Patch size < 20% of the image area
 * **Metrics of Interest:**
   * Primary metrics:
-    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
-    (Lp-norms, Wasserstein distance)
+    * Accuracy (mean, per-class), Patch size
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * (Primary) Adversarial Patch
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may also be considered for completeness.
+* **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
@@ -273,30 +298,32 @@ To be added
 * **Description:**
 In this scenario, the system under evaluation is an object detector which localizes and identifies various classes from satellite imagery.
 * **Dataset:**
-The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856).
+The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856). It comprises 59k/19k train and test 
+images (each with dimensions 300x300, 400x400 or 500x500) and 62 classes
 * **Baseline Model:**
 To maximize time spent on defense research, a trained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
-The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture.
+The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture pre-trained
+on MSCOCO objects and fine-tuned on xView.
 
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply to evade detection
-    * Targeted - an adversary may wish for a specific object class to be predicted
+    * Untargeted - an adversary wishes to disable object detection
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" but rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
+    * Non-real time, digital evasion attack - attack will be "universal" with respect to scaling, rotation, 
+    and translation.
     * Black-box, white-box, and adaptive attacks will be performed on defenses.
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that 
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation 
-    budget allowed while meeting the perceptibility requirement.
+* Adversary Capabilities and Resources
+    * Patch size <5% of image area 
 * **Metrics of Interest:**
   * Primary metrics:
-    * Average precision (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation 
-    (Lp-norms, Wasserstein distance)
+    * Average precision (mean, per-class) of ground truth classes, Patch Size
   * Derivative metrics - see end of document 
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * (Primary) [DPatch](https://arxiv.org/abs/1806.02299)
+  * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered.
+* **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**
@@ -307,19 +334,27 @@ To be added
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
 * **Dataset:**
-The dataset is the [APRICOT dataset](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 images of printed adversarial patches.
+The dataset is the [APRICOT dataset](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 natural images with physically-printed adversarial patches,
+covering three object detection architectures (Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet),
+two shapes (circle and rectangular), and ten MS-COCO classes as targets.
 * **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the pretrained[Faster-RCNN ResNet-50 COCO](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
-
+The model uses the pretrained [Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) models.
+Note: currently, only Tensorflow Faster-RCNN with ResNet-50 is implemented, with the other two architectures 
+to be implemented in the near future. In order to perform as close to a white-box evaluation as possible,
+it is strongly recommended, but not required, that performers adopt one of the above architectures for defense
+research - the pretrained weights may not be robust, so performers can change the weights.
 * **Threat Scenario:**
   * Adversary Operating Environment:
     * This is a dataset of precomputed adversarial images on which trained models will be evaluated.
+    * Each patch is a targeted attack, whose objective is to force an object detector to localize and classify
+    the patch as an MSCOCO object.
 * **Metrics of Interest:**
   * Primary metrics:
-    * Average precision (mean, per-class), defense computational cost
+    * Average precision (mean, per-class) of patches, Average precision of MSCOCO objects
   * Additional metrics specific to the scenario or that are informative may be added later
+* **Baseline Attacks:**
+  * The patches were generated using variants of [ShapeShifter](https://arxiv.org/abs/1804.05810)
+* **Baseline Defense**: JPEG Compression
 * **Baseline Model Performance:**
 To be added
 * **Baseline Defense Performance:**

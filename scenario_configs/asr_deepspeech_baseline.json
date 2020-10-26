@@ -6,7 +6,7 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "global_max_length": 522320,
+            "global_max_length": 562480,
             "max_iter_1st_stage": 30,
             "max_iter_2nd_stage": 125
         },
