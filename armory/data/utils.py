@@ -271,8 +271,6 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     try:
         completedprocess = subprocess.run(
             ["tar", "zxvf", tar_filepath, "--directory", tmp_dir],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
         )
         if completedprocess.returncode:
             logger.warning("bash tar failed. Reverting to python tar unpacking")
