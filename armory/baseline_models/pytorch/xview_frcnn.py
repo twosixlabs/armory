@@ -59,7 +59,7 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
             "loss_objectness",
             "loss_rpn_box_reg",
         ),
-        device_type="cpu",
+        device_type=DEVICE,
         **wrapper_kwargs
     )
 
