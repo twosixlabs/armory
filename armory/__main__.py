@@ -252,6 +252,11 @@ def run(command_args, prog, description):
 
     try:
         if args.filepath == "-":
+            if sys.stdin.isatty():
+                logging.error(
+                    "Cannot read config from raw 'stdin'; must pipe or redirect a file"
+                )
+                sys.exit(1)
             logger.info("Reading config from stdin...")
             config = load_config_stdin()
         else:
