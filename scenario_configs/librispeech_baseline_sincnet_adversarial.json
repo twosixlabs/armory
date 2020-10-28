@@ -40,7 +40,12 @@
         "module": "armory.baseline_models.pytorch.sincnet",
         "name": "get_art_model",
         "weights_file": "sincnet_librispeech_v1.pth",
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "clip_values": [
+                -1.0,
+                1.0
+            ]
+        }
     },
     "scenario": {
         "kwargs": {},

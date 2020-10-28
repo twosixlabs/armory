@@ -17,6 +17,9 @@ import numpy as np
 from art.attacks import Attack
 
 from art.estimators import BaseEstimator as Classifier
+from art.estimators.classification.classifier import ClassifierMixin
+from art.estimators.speech_recognition import SpeechRecognizerMixin
+from art.estimators.object_detection import ObjectDetectorMixin
 from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
@@ -158,57 +161,104 @@ def _check_defense_api(defense, defense_baseclass):
 
 def _check_model_configuration(model, model_config):
 
+    # verify model is trained (or training) and base class
     weights_file = model_config.get("weights_file", None)
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
         logger.warning(
-            "You're attempting to evaluate an unfitted model with no "
-            "pre-trained weights!"
+            "No weights file was provided and the model is not configured to train. "
+            "Are you loading model weights from an online repository?"
         )
 
-    test_input = np.random.randn(2, *model.input_shape).astype(np.float32)
-    if model.clip_values is not None:
-        try:
-            clip_min, clip_max = model.clip_values
-            np.broadcast_to(clip_min, model.input_shape)
-            np.broadcast_to(clip_max, model.input_shape)
-        except ValueError:
-            raise ValueError(
-                f"Clip values of shape {model.clip_values.shape} cannot be broadcast to input of shape {model.input_shape}"
-            )
-        test_input = np.clip(test_input, clip_min, clip_max)
+    # generate a test input sample for the model
+    if isinstance(model, ClassifierMixin) or isinstance(model, ObjectDetectorMixin):
+        if hasattr(model, "input_shape"):
+            test_input_shape = np.array(model.input_shape)
+        else:
+            test_input_shape = np.array((32, 32, 3))
+        if np.all(test_input_shape == (None,)):
+            test_input_shape = np.array((10000,))
+        test_input_shape[test_input_shape == None] = 32
+        assert (
+            model.clip_values is not None
+        ), "Clip values not provided. Clip values are required to keep input values within valid range"
+        clip_min, clip_max = model.clip_values
+    elif isinstance(model, SpeechRecognizerMixin):
+        test_input_shape = np.array((10000,))
+        clip_min, clip_max = (-1.0, 1.0)
+    else:
+        raise TypeError(f"Unsupported model type: {type(model)}")
+    test_input = np.random.randn(1, *test_input_shape).astype(np.float32)
 
+    # verify clip_values can broadcast to the input shape
+    try:
+        np.broadcast_to(clip_min, test_input_shape)
+        np.broadcast_to(clip_max, test_input_shape)
+    except ValueError as e:
+        logger.exception(e)
+        raise ValueError(
+            f"Clip values of shape {model.clip_values.shape} cannot be broadcast to input of shape {test_input_shape}"
+        )
+    test_input = np.clip(test_input, clip_min, clip_max)
+    copy_input = test_input.copy()
+
+    # verify model runs with test sample
     try:
         test_output = model.predict(test_input)
-    except Exception:
+    except Exception as e:
+        logger.exception(e)
         raise RuntimeError(
             f"Model input shape configured as {model.input_shape}, but model prediction with shape {test_input.shape} failed"
         )
+    assert np.all(
+        test_input == copy_input
+    ), "Model prediction overwrites the input x value"
 
-    test_output_sq = np.squeeze(test_output)
-    if not np.all(test_output_sq.shape == (2,)) and not np.all(
-        test_output_sq.shape == (2, model.nb_classes)
-    ):
-        raise ValueError(
-            f"Expected output of shape (2,), (2, 1) or (2, {model.nb_classes}) for input batch of size 2, but got {test_output.shape}"
-        )
-
-    test_labels = np.zeros_like(test_output)
-    if test_labels.ndim == 2 and test_labels.shape[1] > 2:
-        test_labels[:, 0] = 1
+    # verify gradient computation produces valid output
+    test_grad = None
+    if isinstance(model, ClassifierMixin) or isinstance(model, ObjectDetectorMixin):
+        test_y = test_output
+        if (
+            isinstance(test_output, np.ndarray)
+            and test_output.ndim == 2
+            and test_output.shape[1] > 1
+        ):
+            test_y = np.zeros((1, model.nb_classes))
+            test_y[:, 0] = 1
+    elif isinstance(model, SpeechRecognizerMixin):
+        test_y = np.array(["HELLO"])
+    copy_y = test_y.copy()
     try:
-        test_grad = model.loss_gradient(test_input, test_labels)
-        if not np.all(test_grad.shape == test_input.shape):
-            raise ValueError(
-                f"For input of size {test_input.shape} got gradient of size {test_grad.shape}"
-            )
-    except Exception:
+        test_grad = model.loss_gradient(test_input, test_y)
+        assert test_grad is not None, "Gradient computation returned None"
+        test_grad = np.stack(test_grad)
+    except:
         logger.warning(
             "Model encountered error during gradient computation. Gradient-based attack evaluation may be limited"
         )
+    if test_grad is not None:
+        assert np.all(
+            test_grad.shape == test_input.shape
+        ), f"For input of size {test_input.shape} got gradient of size {test_grad.shape}"
+    assert np.all(
+        test_input == copy_input
+    ), "The gradient computation overwrites the input x value"
+    assert np.all(
+        test_y == copy_y
+    ), "The gradient computation overwrites the input y value"
+
+    # verify gradient contains no NaN or Inf values
+    if test_grad is not None:
+        if np.any(np.isnan(test_grad)) or np.any(np.isinf(test_grad)):
+            logger.warning("NaN/Inf values detected in model gradient")
+        if np.all(test_grad == 0):
+            logger.warning("All-zero gradients detected")
 
     logger.info("Finished model configuration check")
+    import pdb
+
+    pdb.set_trace()
 
 
 def load_defense_wrapper(defense_config, classifier):
