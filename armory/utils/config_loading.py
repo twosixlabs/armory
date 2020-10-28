@@ -229,7 +229,10 @@ def load_label_targeter(config):
         return labels.ManualTargeter(values, repeat)
     elif scheme == "identity":
         return labels.IdentityTargeter()
+    elif scheme == "matched length":
+        transcripts = config.get("transcripts")
+        return labels.MatchedTranscriptLengthTargeter(transcripts)
     else:
         raise ValueError(
-            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity")'
+            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'
         )
