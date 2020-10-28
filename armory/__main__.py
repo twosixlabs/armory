@@ -26,7 +26,7 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
-from armory.utils.configuration import load_config
+from armory.utils.configuration import load_config, load_config_stdin
 
 logger = logging.getLogger(__name__)
 
@@ -231,7 +231,10 @@ def _set_outputs(config, output_dir, output_filename):
 def run(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
-        "filepath", metavar="<json_config>", type=str, help="json config file"
+        "filepath",
+        metavar="<json_config>",
+        type=str,
+        help="json config file. Use '-' to accept standard input or pipe.",
     )
     _debug(parser)
     _interactive(parser)
@@ -270,16 +273,28 @@ def run(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     try:
-        config = load_config(args.filepath)
+        if args.filepath == "-":
+            if sys.stdin.isatty():
+                logging.error(
+                    "Cannot read config from raw 'stdin'; must pipe or redirect a file"
+                )
+                sys.exit(1)
+            logger.info("Reading config from stdin...")
+            config = load_config_stdin()
+        else:
+            config = load_config(args.filepath)
     except ValidationError as e:
         logger.error(
             f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
         )
         sys.exit(1)
     except json.decoder.JSONDecodeError:
-        logger.exception(f"Could not decode {args.filepath} as a json file.")
-        if not args.filepath.lower().endswith(".json"):
-            logger.warning(f"{args.filepath} is not a '*.json' file")
+        if args.filepath == "-":
+            logger.error("'stdin' did not provide a json-parsable input")
+        else:
+            logger.error(f"Could not decode '{args.filepath}' as a json file.")
+            if not args.filepath.lower().endswith(".json"):
+                logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)

@@ -5,7 +5,7 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 51.0,
+            "eps": 0.2,
             "eps_step": 0.1,
             "minimal": false,
             "num_random_init": 0,

@@ -440,7 +440,9 @@ def _intersection_over_union(box_1, box_2):
     assert box_1[3] >= box_1[1]
     assert box_2[3] >= box_2[1]
 
-    if sum([mean < 1 and mean >= 0 for mean in [box_1.mean(), box_2.mean()]]) == 1:
+    if all(i < 1 for i in box_1[np.where(box_1 > 0)]) ^ all(
+        i < 1 for i in box_2[np.where(box_2 > 0)]
+    ):
         logger.warning(
             "One set of boxes appears to be normalized while the other is not"
         )
