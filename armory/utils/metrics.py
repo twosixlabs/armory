@@ -17,6 +17,7 @@ import cProfile
 import pstats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+from armory.data.adversarial.apricot_dev_metadata import APRICOT_PATCHES
 
 
 logger = logging.getLogger(__name__)
@@ -433,7 +434,7 @@ def _check_object_detection_input(y, y_pred):
 
 def _intersection_over_union(box_1, box_2):
     """
-    Assumes format of [y1, x1, y2, x2] or [x1, y1, x2, y2]
+    Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
     """
     assert box_1[2] >= box_1[0]
     assert box_2[2] >= box_2[0]
@@ -626,7 +627,187 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     return average_precisions_by_class
 
 
+def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
+    """
+    Average precision indicating how successfully the APRICOT patch causes the detector
+    to predict the targeted class of the patch at the location of the patch. A higher
+    value for this metric implies a more successful patch.
+
+    To be more specific: the box associated with the patch is assigned the label of the
+    patch's targeted class. Thus, a true positive is the case where the detector predicts
+    the patch's targeted class (at a location overlapping the patch).
+
+    This metric is computed over all evaluation samples, rather than on a per-sample basis.
+    It returns a dictionary mapping each class to the average precision (AP) for the class.
+    The only classes with potentially nonzero AP's are the classes targeted by the patches
+    (see above paragraph).
+    """
+
+    # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
+    # generate many small, overlapping predictions in the region of the attack"
+    IOU_THRESHOLD = 0.1
+
+    # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
+    RECALL_POINTS = np.linspace(0, 1, 11)
+
+    # Converting boxes to a list of dicts (a list for predicted boxes that overlap with the patch,
+    # and a separate list for ground truth patch boxes), where each dict corresponds to a box and
+    # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
+    patch_boxes_list = []
+    overlappping_pred_boxes_list = []
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        idx_of_patch = np.where(y["labels"] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
+        patch_box = y["boxes"][idx_of_patch].flatten()
+        patch_id = y["patch_id"][idx_of_patch]
+        patch_target_label = [
+            patch["adv_target"] for patch in APRICOT_PATCHES if patch["id"] == patch_id
+        ][0]
+        patch_box_dict = {
+            "img_idx": img_idx,
+            "label": patch_target_label,
+            "box": patch_box,
+        }
+        patch_boxes_list.append(patch_box_dict)
+
+        for pred_box_idx in range(len(y_pred["labels"].flatten())):
+            box = y_pred["boxes"][pred_box_idx]
+            if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
+                label = y_pred["labels"][pred_box_idx]
+                score = y_pred["scores"][pred_box_idx]
+                pred_box_dict = {
+                    "img_idx": img_idx,
+                    "label": label,
+                    "box": box,
+                    "score": score,
+                }
+                overlappping_pred_boxes_list.append(pred_box_dict)
+
+    # Union of (1) the set of classes targeted by patches and (2) the set of all classes
+    # predicted at a location that overlaps the patch in the image
+    set_of_class_ids = set([i["label"] for i in patch_boxes_list]) | set(
+        [i["label"] for i in overlappping_pred_boxes_list]
+    )
+
+    # Initialize dict that will store AP for each class
+    average_precisions_by_class = {}
+
+    # Compute AP for each class
+    for class_id in set_of_class_ids:
+
+        # Build lists that contain all the predicted/ground-truth boxes with a
+        # label of class_id
+        class_predicted_boxes = []
+        class_gt_boxes = []
+        for pred_box in overlappping_pred_boxes_list:
+            if pred_box["label"] == class_id:
+                class_predicted_boxes.append(pred_box)
+        for gt_box in patch_boxes_list:
+            if gt_box["label"] == class_id:
+                class_gt_boxes.append(gt_box)
+
+        # Determine how many gt boxes (of class_id) there are in each image
+        num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_gt_boxes])
+
+        # Initialize dict where we'll keep track of whether a gt box has been matched to a
+        # prediction yet. This is necessary because if multiple predicted boxes of class_id
+        # overlap with a single gt box, only one of the predicted boxes can be considered a
+        # true positive
+        img_idx_to_gtboxismatched_array = {}
+        for img_idx, num_gt_boxes in num_gt_boxes_per_img.items():
+            img_idx_to_gtboxismatched_array[img_idx] = np.zeros(num_gt_boxes)
+
+        # Sort all predicted boxes (of class_id) by descending confidence
+        class_predicted_boxes.sort(key=lambda x: x["score"], reverse=True)
+
+        # Initialize arrays. Once filled in, true_positives[i] indicates (with a 1 or 0)
+        # whether the ith predicted box (of class_id) is a true positive. Likewise for
+        # false_positives array
+        true_positives = np.zeros(len(class_predicted_boxes))
+        false_positives = np.zeros(len(class_predicted_boxes))
+
+        # Iterating over all predicted boxes of class_id
+        for pred_idx, pred_box in enumerate(class_predicted_boxes):
+            # Only compare gt boxes from the same image as the predicted box
+            gt_boxes_from_same_img = [
+                gt_box
+                for gt_box in class_gt_boxes
+                if gt_box["img_idx"] == pred_box["img_idx"]
+            ]
+
+            # If there are no gt boxes in the predicted box's image that have the predicted class
+            if len(gt_boxes_from_same_img) == 0:
+                false_positives[pred_idx] = 1
+                print("A")
+                continue
+
+            # Iterate over all gt boxes (of class_id) from the same image as the predicted box,
+            # determining which gt box has the highest iou with the predicted box
+            highest_iou = 0
+            for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
+                iou = _intersection_over_union(pred_box["box"], gt_box["box"])
+                if iou >= highest_iou:
+                    highest_iou = iou
+                    highest_iou_gt_idx = gt_idx
+
+            if highest_iou > IOU_THRESHOLD:
+                # If the gt box has not yet been covered
+                if (
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ]
+                    == 0
+                ):
+                    true_positives[pred_idx] = 1
+
+                    # Record that we've now covered this gt box. Any subsequent
+                    # pred boxes that overlap with it are considered false positives
+                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
+                        highest_iou_gt_idx
+                    ] = 1
+                else:
+                    # This gt box was already covered previously (i.e a different predicted
+                    # box was deemed a true positive after overlapping with this gt box)
+                    false_positives[pred_idx] = 1
+                    print("B")
+            else:
+                false_positives[pred_idx] = 1
+                print("C")
+
+        # Cumulative sums of false/true positives across all predictions which were sorted by
+        # descending confidence
+        tp_cumulative_sum = np.cumsum(true_positives)
+        breakpoint()
+        fp_cumulative_sum = np.cumsum(false_positives)
+
+        # Total number of gt boxes with a label of class_id
+        total_gt_boxes = len(class_gt_boxes)
+
+        recalls = tp_cumulative_sum / (total_gt_boxes + 1e-6)
+        precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-6)
+
+        interpolated_precisions = np.zeros(len(RECALL_POINTS))
+        # Interpolate the precision at each recall level by taking the max precision for which
+        # the corresponding recall exceeds the recall point
+        # See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.157.5766&rep=rep1&type=pdf
+        for i, recall_point in enumerate(RECALL_POINTS):
+            precisions_points = precisions[np.where(recalls >= recall_point)]
+            # If there's no cutoff at which the recall > recall_point
+            if len(precisions_points) == 0:
+                interpolated_precisions[i] = 0
+            else:
+                interpolated_precisions[i] = max(precisions_points)
+
+        # Compute mean precision across the different recall levels
+        average_precision = interpolated_precisions.mean()
+        average_precisions_by_class[int(class_id)] = np.around(
+            average_precision, decimals=2
+        )
+
+    return average_precisions_by_class
+
+
 SUPPORTED_METRICS = {
+    "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
     "top_5_categorical_accuracy": top_5_categorical_accuracy,
@@ -741,6 +922,12 @@ class MetricList:
         y_preds = [i[1] for i in self._inputs]
         return object_detection_AP_per_class(y_s, y_preds)
 
+    def apricot_patch_targeted_AP_per_class(self):
+        # Computed at once across all samples
+        y_s = [i[0] for i in self._inputs]
+        y_preds = [i[1] for i in self._inputs]
+        return apricot_patch_targeted_AP_per_class(y_s, y_preds)
+
 
 class MetricsLogger:
     """
@@ -805,7 +992,10 @@ class MetricsLogger:
     def update_task(self, y, y_pred, adversarial=False):
         tasks = self.adversarial_tasks if adversarial else self.tasks
         for metric in tasks:
-            if metric.name == "object_detection_AP_per_class":
+            if metric.name in [
+                "object_detection_AP_per_class",
+                "apricot_patch_targeted_AP_per_class",
+            ]:
                 metric.append_inputs(y, y_pred[0])
             else:
                 metric.append(y, y_pred)
@@ -841,6 +1031,15 @@ class MetricsLogger:
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
                     f" AP by class ID: {average_precision_by_class}"
                 )
+            elif metric.name == "apricot_patch_targeted_AP_per_class":
+                apricot_patch_targeted_AP_by_class = (
+                    metric.apricot_patch_targeted_AP_per_class()
+                )
+                logger.info(
+                    f"apricot_patch_targeted_mAP on {task_type} examples: "
+                    f"{np.fromiter(apricot_patch_targeted_AP_by_class.values(), dtype=float).mean():.2%}."
+                    f" apricot_patch_targeted_AP by class ID: {apricot_patch_targeted_AP_by_class}"
+                )
             else:
                 logger.info(
                     f"Average {metric.name} on {task_type} test examples: "
@@ -864,6 +1063,18 @@ class MetricsLogger:
                         average_precision_by_class.values(), dtype=float
                     ).mean()
                     results[f"{prefix}_{metric.name}"] = average_precision_by_class
+                    continue
+
+                if metric.name == "apricot_patch_targeted_AP_per_class":
+                    apricot_patch_targeted_AP_by_class = (
+                        metric.apricot_patch_targeted_AP_per_class()
+                    )
+                    results[f"{prefix}_apricot_patch_targeted_mAP"] = np.fromiter(
+                        apricot_patch_targeted_AP_by_class.values(), dtype=float
+                    ).mean()
+                    results[
+                        f"{prefix}_{metric.name}"
+                    ] = apricot_patch_targeted_AP_by_class
                     continue
 
                 if self.full:

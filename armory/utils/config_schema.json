@@ -207,6 +207,7 @@
         },
         "supported_metric_enum": {
             "enum": [
+                "apricot_patch_targeted_AP_per_class",
                 "categorical_accuracy",
                 "top_n_categorical_accuracy",
                 "top_5_categorical_accuracy",
