@@ -564,8 +564,8 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
                 false_positives[pred_idx] = 1
                 continue
 
-            # Iterate over all gt boxes (of class_id) from the same image as the predicted box, d
-            # etermining which gt box has the highest iou with the predicted box
+            # Iterate over all gt boxes (of class_id) from the same image as the predicted box,
+            # determining which gt box has the highest iou with the predicted box
             highest_iou = 0
             for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
                 iou = _intersection_over_union(pred_box["box"], gt_box["box"])
@@ -707,15 +707,15 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
             if patch_box["label"] == class_id:
                 class_patch_boxes.append(patch_box)
 
-        # Determine how many gt boxes (of class_id) there are in each image
-        num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_patch_boxes])
+        # Determine how many patch boxes (of class_id) there are in each image
+        num_patch_boxes_per_img = Counter([gt["img_idx"] for gt in class_patch_boxes])
 
         # Initialize dict where we'll keep track of whether a patch box has been matched to a
         # prediction yet. This is necessary because if multiple predicted boxes of class_id
         # overlap with a patch box, only one of the predicted boxes can be considered a
         # true positive. The rest will be ignored
         img_idx_to_patchboxismatched_array = {}
-        for img_idx, num_patch_boxes in num_gt_boxes_per_img.items():
+        for img_idx, num_patch_boxes in num_patch_boxes_per_img.items():
             img_idx_to_patchboxismatched_array[img_idx] = np.zeros(num_patch_boxes)
 
         # Sort all predicted boxes (of class_id) by descending confidence
@@ -727,7 +727,7 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
 
         # Iterating over all predicted boxes of class_id
         for pred_idx, pred_box in enumerate(class_predicted_boxes):
-            # Only compare gt boxes from the same image as the predicted box
+            # Only compare patch boxes from the same image as the predicted box
             patch_boxes_from_same_img = [
                 patch_box
                 for patch_box in class_patch_boxes
@@ -746,12 +746,12 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
                 iou = _intersection_over_union(pred_box["box"], patch_box["box"])
                 if iou >= highest_iou:
                     highest_iou = iou
-                    highest_iou_gt_idx = patch_idx
+                    highest_iou_patch_idx = patch_idx
 
             # If the patch box has not yet been covered
             if (
                 img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
-                    highest_iou_gt_idx
+                    highest_iou_patch_idx
                 ]
                 == 0
             ):
@@ -760,7 +760,7 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
                 # Record that we've now covered this patch box. Any subsequent
                 # pred boxes that overlap with it are ignored
                 img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
-                    highest_iou_gt_idx
+                    highest_iou_patch_idx
                 ] = 1
             else:
                 # This patch box was already covered previously (i.e a different predicted
