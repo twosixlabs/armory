@@ -55,9 +55,7 @@ class RoundRobinTargeter:
 
 class ManualTargeter:
     def __init__(self, values, repeat=False):
-        if not isinstance(values, list) or not all(isinstance(x, int) for x in values):
-            raise ValueError(f'"values" {values} must be a list of ints')
-        elif not values:
+        if not values:
             raise ValueError('"values" cannot be an empty list')
         self.values = values
         self.repeat = bool(repeat)
