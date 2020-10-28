@@ -55,9 +55,7 @@ class RoundRobinTargeter:
 
 class ManualTargeter:
     def __init__(self, values, repeat=False):
-        if not isinstance(values, list) or not all(isinstance(x, int) for x in values):
-            raise ValueError(f'"values" {values} must be a list of ints')
-        elif not values:
+        if not values:
             raise ValueError('"values" cannot be an empty list')
         self.values = values
         self.repeat = bool(repeat)
@@ -84,3 +82,43 @@ class ManualTargeter:
 class IdentityTargeter:
     def generate(self, y):
         return y.copy().astype(int)
+
+
+class MatchedTranscriptLengthTargeter:
+    """
+    Targets labels of a length close to the true label
+
+    If two labels are tied in length, then it pseudorandomly picks one.
+    """
+
+    def __init__(self, transcripts):
+        if not transcripts:
+            raise ValueError('"transcripts" cannot be None or an empty list')
+        for t in transcripts:
+            if type(t) not in (bytes, str):
+                raise ValueError(f"transcript type {type(t)} not in (bytes, str)")
+        self.transcripts = transcripts
+        self.count = 0
+
+    def _generate(self, y):
+        distances = [
+            (np.abs(len(y) - len(t)), i) for (i, t) in enumerate(self.transcripts)
+        ]
+        distances.sort()
+        min_dist, i = distances[0]
+        pool = [i]
+        for dist, i in distances[1:]:
+            if dist == min_dist:
+                pool.append(i)
+
+        chosen_index = pool[self.count % len(pool)]
+        y_target = self.transcripts[chosen_index]
+        self.count += 1
+
+        return y_target
+
+    def generate(self, y):
+        y_target = [self._generate(y_i) for y_i in y]
+        if type(y) != list:
+            y_target = np.array(y_target)
+        return y_target
