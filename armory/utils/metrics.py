@@ -633,9 +633,12 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     to predict the targeted class of the patch at the location of the patch. A higher
     value for this metric implies a more successful patch.
 
-    To be more specific: the box associated with the patch is assigned the label of the
-    patch's targeted class. Thus, a true positive is the case where the detector predicts
-    the patch's targeted class (at a location overlapping the patch).
+    The box associated with the patch is assigned the label of the patch's targeted class.
+    Thus, a true positive is the case where the detector predicts the patch's targeted
+    class (at a location overlapping the patch). A false positive is the case where the
+    detector predicts a non-targeted class at a location overlapping the patch. If the
+    detector predicts multiple instances of the target class (that overlap with the patch),
+    one of the predictions is considered a true positive and the others are ignored.
 
     This metric is computed over all evaluation samples, rather than on a per-sample basis.
     It returns a dictionary mapping each class to the average precision (AP) for the class.
@@ -693,96 +696,87 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
 
     # Compute AP for each class
     for class_id in set_of_class_ids:
-
-        # Build lists that contain all the predicted/ground-truth boxes with a
+        # Build lists that contain all the predicted and patch boxes with a
         # label of class_id
         class_predicted_boxes = []
-        class_gt_boxes = []
+        class_patch_boxes = []
         for pred_box in overlappping_pred_boxes_list:
             if pred_box["label"] == class_id:
                 class_predicted_boxes.append(pred_box)
-        for gt_box in patch_boxes_list:
-            if gt_box["label"] == class_id:
-                class_gt_boxes.append(gt_box)
+        for patch_box in patch_boxes_list:
+            if patch_box["label"] == class_id:
+                class_patch_boxes.append(patch_box)
 
         # Determine how many gt boxes (of class_id) there are in each image
-        num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_gt_boxes])
+        num_gt_boxes_per_img = Counter([gt["img_idx"] for gt in class_patch_boxes])
 
-        # Initialize dict where we'll keep track of whether a gt box has been matched to a
+        # Initialize dict where we'll keep track of whether a patch box has been matched to a
         # prediction yet. This is necessary because if multiple predicted boxes of class_id
-        # overlap with a single gt box, only one of the predicted boxes can be considered a
-        # true positive
-        img_idx_to_gtboxismatched_array = {}
-        for img_idx, num_gt_boxes in num_gt_boxes_per_img.items():
-            img_idx_to_gtboxismatched_array[img_idx] = np.zeros(num_gt_boxes)
+        # overlap with a patch box, only one of the predicted boxes can be considered a
+        # true positive. The rest will be ignored
+        img_idx_to_patchboxismatched_array = {}
+        for img_idx, num_patch_boxes in num_gt_boxes_per_img.items():
+            img_idx_to_patchboxismatched_array[img_idx] = np.zeros(num_patch_boxes)
 
         # Sort all predicted boxes (of class_id) by descending confidence
         class_predicted_boxes.sort(key=lambda x: x["score"], reverse=True)
 
-        # Initialize arrays. Once filled in, true_positives[i] indicates (with a 1 or 0)
-        # whether the ith predicted box (of class_id) is a true positive. Likewise for
-        # false_positives array
-        true_positives = np.zeros(len(class_predicted_boxes))
-        false_positives = np.zeros(len(class_predicted_boxes))
+        # Initialize list. Once filled in, true_positives[i] indicates (with a 1 or 0)
+        # whether the ith predicted box (of class_id) is a true positive or false positive
+        is_true_positive = []
 
         # Iterating over all predicted boxes of class_id
         for pred_idx, pred_box in enumerate(class_predicted_boxes):
             # Only compare gt boxes from the same image as the predicted box
-            gt_boxes_from_same_img = [
-                gt_box
-                for gt_box in class_gt_boxes
-                if gt_box["img_idx"] == pred_box["img_idx"]
+            patch_boxes_from_same_img = [
+                patch_box
+                for patch_box in class_patch_boxes
+                if patch_box["img_idx"] == pred_box["img_idx"]
             ]
 
-            # If there are no gt boxes in the predicted box's image that have the predicted class
-            if len(gt_boxes_from_same_img) == 0:
-                false_positives[pred_idx] = 1
-                print("A")
+            # If there are no patch boxes in the predicted box's image that target the predicted class
+            if len(patch_boxes_from_same_img) == 0:
+                is_true_positive.append(0)
                 continue
 
-            # Iterate over all gt boxes (of class_id) from the same image as the predicted box,
-            # determining which gt box has the highest iou with the predicted box
+            # Iterate over all patch boxes (of class_id) from the same image as the predicted box,
+            # determining which patch box has the highest iou with the predicted box.
             highest_iou = 0
-            for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
-                iou = _intersection_over_union(pred_box["box"], gt_box["box"])
+            for patch_idx, patch_box in enumerate(patch_boxes_from_same_img):
+                iou = _intersection_over_union(pred_box["box"], patch_box["box"])
                 if iou >= highest_iou:
                     highest_iou = iou
-                    highest_iou_gt_idx = gt_idx
+                    highest_iou_gt_idx = patch_idx
 
-            if highest_iou > IOU_THRESHOLD:
-                # If the gt box has not yet been covered
-                if (
-                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
-                        highest_iou_gt_idx
-                    ]
-                    == 0
-                ):
-                    true_positives[pred_idx] = 1
+            # If the patch box has not yet been covered
+            if (
+                img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
+                    highest_iou_gt_idx
+                ]
+                == 0
+            ):
+                is_true_positive.append(1)
 
-                    # Record that we've now covered this gt box. Any subsequent
-                    # pred boxes that overlap with it are considered false positives
-                    img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
-                        highest_iou_gt_idx
-                    ] = 1
-                else:
-                    # This gt box was already covered previously (i.e a different predicted
-                    # box was deemed a true positive after overlapping with this gt box)
-                    false_positives[pred_idx] = 1
-                    print("B")
+                # Record that we've now covered this patch box. Any subsequent
+                # pred boxes that overlap with it are ignored
+                img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
+                    highest_iou_gt_idx
+                ] = 1
             else:
-                false_positives[pred_idx] = 1
-                print("C")
+                # This patch box was already covered previously (i.e a different predicted
+                # box was deemed a true positive after overlapping with this patch box).
+                # The predicted box is thus ignored.
+                continue
 
         # Cumulative sums of false/true positives across all predictions which were sorted by
         # descending confidence
-        tp_cumulative_sum = np.cumsum(true_positives)
-        breakpoint()
-        fp_cumulative_sum = np.cumsum(false_positives)
+        tp_cumulative_sum = np.cumsum(is_true_positive)
+        fp_cumulative_sum = np.cumsum([not i for i in is_true_positive])
 
-        # Total number of gt boxes with a label of class_id
-        total_gt_boxes = len(class_gt_boxes)
+        # Total number of patch boxes with a label of class_id
+        total_patch_boxes = len(class_patch_boxes)
 
-        recalls = tp_cumulative_sum / (total_gt_boxes + 1e-6)
+        recalls = tp_cumulative_sum / (total_patch_boxes + 1e-6)
         precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-6)
 
         interpolated_precisions = np.zeros(len(RECALL_POINTS))
@@ -1029,7 +1023,7 @@ class MetricsLogger:
                 logger.info(
                     f"object_detection_mAP on {task_type} examples: "
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
-                    f" AP by class ID: {average_precision_by_class}"
+                    f" object_detection_AP by class ID: {average_precision_by_class}"
                 )
             elif metric.name == "apricot_patch_targeted_AP_per_class":
                 apricot_patch_targeted_AP_by_class = (
