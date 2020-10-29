@@ -14,8 +14,12 @@
         "name": "ImperceptibleASRPytorch",
         "targeted": true,
         "targeted_labels": {
-            "scheme": "string",
-            "value": "TEST STRING"
+            "scheme": "matched length",
+            "transcripts": [
+                "REALLY SHORT TEST STRING",
+                "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
+                "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
+            ]
         },
         "use_label": false
     },
