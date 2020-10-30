@@ -80,11 +80,11 @@ class LibrispeechConfig(tfds.core.BuilderConfig):
     def __init__(self, text_encoder_config=None, **kwargs):
         """Constructs a LibrispeechConfig.
 
-    Args:
-      text_encoder_config: `tfds.features.text.TextEncoderConfig`, configuration
-        for the `tfds.features.text.TextEncoder` used for the text feature.
-      **kwargs: keyword arguments forwarded to super.
-    """
+        Args:
+          text_encoder_config: `tfds.features.text.TextEncoderConfig`, configuration
+            for the `tfds.features.text.TextEncoder` used for the text feature.
+          **kwargs: keyword arguments forwarded to super.
+        """
         name = kwargs.get("name")
         if name is None:
             name = text_encoder_config.name if text_encoder_config else "plain_text"
@@ -107,12 +107,12 @@ class LibrispeechConfig(tfds.core.BuilderConfig):
 def _make_builder_configs():
     """Make built-in Librispeech BuilderConfigs.
 
-  Uses 3 text encodings (plain_text, subwords with 8k vocab, subwords with 32k
-  vocab).
+    Uses 3 text encodings (plain_text, subwords with 8k vocab, subwords with 32k
+    vocab).
 
-  Returns:
-    `list<tfds.audio.LibrispeechConfig>`
-  """
+    Returns:
+      `list<tfds.audio.LibrispeechConfig>`
+    """
     text_encoder_configs = [
         None,
         tfds.features.text.TextEncoderConfig(
