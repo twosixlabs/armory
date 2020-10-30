@@ -54,7 +54,7 @@ class ImageClassificationTask(Scenario):
                 train_data = load_dataset(
                     config["dataset"],
                     epochs=fit_kwargs["nb_epochs"],
-                    split="train",
+                    split=config["dataset"].get("train_split", "train"),
                     shuffle_files=True,
                 )
                 if defense_type == "Trainer":

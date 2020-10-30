@@ -62,7 +62,7 @@ class Ucf101(Scenario):
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
-                split="train",
+                split=config["dataset"].get("train_split", "train"),
                 preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
@@ -89,6 +89,7 @@ class Ucf101(Scenario):
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
 
+        eval_split = config["dataset"].get("eval_split", "test")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -97,7 +98,7 @@ class Ucf101(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split="test",
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -140,7 +141,7 @@ class Ucf101(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split="test",
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )

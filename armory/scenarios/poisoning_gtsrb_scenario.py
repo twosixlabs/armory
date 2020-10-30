@@ -102,7 +102,7 @@ class GTSRB(Scenario):
         clean_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split="train",
+            split=config["dataset"].get("train_split", "train"),
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -258,7 +258,7 @@ class GTSRB(Scenario):
         test_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split="test",
+            split=config["dataset"].get("eval_split", "test"),
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -307,7 +307,7 @@ class GTSRB(Scenario):
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split="test",
+                split=config["dataset"].get("eval_split", "test"),
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
@@ -323,7 +323,7 @@ class GTSRB(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split="test",
+                split=config["dataset"].get("eval_split", "test"),
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
