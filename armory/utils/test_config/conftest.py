@@ -1,14 +1,12 @@
 def pytest_addoption(parser):
     parser.addoption(
-        "--scenario-file",
+        "--model-config",
         action="append",
         default=[],
-        help="list of scenario files to evaluate",
+        help="serialized, json-formatted string of model configuration",
     )
 
 
 def pytest_generate_tests(metafunc):
-    if "scenario_file" in metafunc.fixturenames:
-        metafunc.parametrize(
-            "scenario_file", metafunc.config.getoption("scenario_file")
-        )
+    if "model_config" in metafunc.fixturenames:
+        metafunc.parametrize("model_config", metafunc.config.getoption("model_config"))

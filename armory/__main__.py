@@ -268,6 +268,11 @@ def run(command_args, prog, description):
         action="store_true",
         help="Skip benign inference and metric calculations",
     )
+    parser.add_argument(
+        "--validate-config",
+        action="store_true",
+        help="Validate model configuration against several checks",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -307,6 +312,7 @@ def run(command_args, prog, description):
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
         skip_benign=args.skip_benign,
+        validate_config=args.validate_config,
     )
     sys.exit(exit_code)
 

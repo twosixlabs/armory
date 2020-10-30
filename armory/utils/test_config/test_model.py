@@ -1,17 +1,16 @@
 import warnings
 import numpy as np
+import json
 
 from armory.utils.config_loading import load_model
-from armory.utils.configuration import load_config
 from art.estimators.classification.classifier import ClassifierMixin
 from art.estimators.speech_recognition import SpeechRecognizerMixin
 from art.estimators.object_detection import ObjectDetectorMixin
 
 
 class TestModel:
-    def _get_model(self, scenario_file):
-        config = load_config(scenario_file)
-        model, _ = load_model(config["model"])
+    def _get_model(self, model_config):
+        model, _ = load_model(model_config)
         if not isinstance(
             model, (ClassifierMixin, SpeechRecognizerMixin, ObjectDetectorMixin)
         ):
@@ -22,24 +21,28 @@ class TestModel:
         if isinstance(model, ClassifierMixin):
             if hasattr(model, "input_shape"):
                 input_shape = np.array(model.input_shape)
-                if np.all(input_shape == (None,)):
-                    input_shape = np.array((10000,))
-                    warnings.warn("No model input shape specified. Assuming (10000,)")
-                elif np.all(input_shape == (None, None, 3)):
-                    input_shape = np.array((32, 32, 3))
-                    warnings.warn(
-                        "No model input shape specified. Assuming (32, 32, 3,)"
-                    )
             else:
                 warnings.warn("No model input shape specified. Assuming (32, 32, 3)")
                 input_shape = np.array((32, 32, 3))
+            if np.all(input_shape == (None,)):
+                warnings.warn("Model shape given as (None,), assuming (10000,)")
+                input_shape = np.array((10000,))
+            elif None in input_shape:
+                test_input_shape = input_shape.copy()
+                test_input_shape[np.equal(test_input_shape, None)] = 32
+                warnings.warn(
+                    f"Model shape given as {input_shape}. Assuming {test_input_shape}"
+                )
+                input_shape = test_input_shape
         elif isinstance(model, ObjectDetectorMixin):
-            if hasattr(model, "input_shape"):
-                warnings.warn("No model input shape specified. Assuming (32, 32, 3)")
             input_shape = np.array((32, 32, 3))
+            warnings.warn(
+                "Object detector model does not specify input shape. Assuming (32, 32, 3)"
+            )
         elif isinstance(model, SpeechRecognizerMixin):
-            if hasattr(model, "input_shape"):
-                warnings.warn("No model input shape specified. Assuming (32, 32, 3)")
+            warnings.warn(
+                "Speech recognition model does not specify input shape. Assuming (10000,)"
+            )
             input_shape = np.array((10000,))
         return input_shape
 
@@ -72,8 +75,11 @@ class TestModel:
             test_ground_truth = np.array(["HELLO"])
         return test_ground_truth
 
-    def test_model(self, scenario_file):
-        model = self._get_model(scenario_file)
+    def test_model(self, model_config):
+
+        # verify model loads without error
+        model_config = json.loads(model_config)
+        model = self._get_model(model_config)
         input_shape = self._get_input_shape(model)
 
         # verify model clip values broadcast to input shape
@@ -103,27 +109,27 @@ class TestModel:
                 warnings.warn(
                     "Model returned None gradient. White-box evaluation may be limited"
                 )
+            else:
+                test_grad = np.stack(test_grad)
 
-        except:
+        except Exception:
             warnings.warn(
                 "Model encountered error during gradient computation. White-box evaluation may be limited"
             )
 
-        # verify gradient output shape, and did not overwrite inputs
+        # test returned gradients for issues
         if test_grad is not None:
-            assert np.all(
-                test_grad.shape == test_input.shape
-            ), f"For input of size {test_input.shape} got gradient of size {test_grad.shape}"
+            if not np.all(test_grad.shape == test_input.shape):
+                warnings.warn(
+                    f"For input of size {test_input.shape} got gradient of size {test_grad.shape}"
+                )
+            if np.any(np.isnan(test_grad)) or np.any(np.isinf(test_grad)):
+                warnings.warn("NaN/Inf values detected in model gradient")
+            if np.all(test_grad == 0):
+                warnings.warn("All-zero gradients detected")
             assert np.all(
                 test_input == copy_input
             ), "The gradient computation overwrites the input x value"
             assert np.all(
                 test_ground_truth == copy_ground_truth
             ), "The gradient computation overwrites the input y value"
-
-        # verify gradient contains no NaN or Inf values
-        if test_grad is not None:
-            if np.any(np.isnan(test_grad)) or np.any(np.isinf(test_grad)):
-                warnings.warn("NaN/Inf values detected in model gradient")
-            if np.all(test_grad == 0):
-                warnings.warn("All-zero gradients detected")
