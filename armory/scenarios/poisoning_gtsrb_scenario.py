@@ -102,7 +102,7 @@ class GTSRB(Scenario):
         clean_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split_type="train",
+            split="train",
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -134,7 +134,7 @@ class GTSRB(Scenario):
             poison_data = load_dataset(
                 config["adhoc"]["poison_samples"],
                 epochs=1,
-                split_type="poison",
+                split="poison",
                 preprocessing_fn=None,
             )
 
@@ -258,7 +258,7 @@ class GTSRB(Scenario):
         test_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split_type="test",
+            split="test",
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -293,7 +293,7 @@ class GTSRB(Scenario):
             test_data_poison = load_dataset(
                 config_adhoc["poison_samples"],
                 epochs=1,
-                split_type="poison_test",
+                split="poison_test",
                 preprocessing_fn=None,
             )
             for x_poison_test, y_poison_test in tqdm(
@@ -307,7 +307,7 @@ class GTSRB(Scenario):
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split="test",
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
@@ -323,7 +323,7 @@ class GTSRB(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split="test",
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )

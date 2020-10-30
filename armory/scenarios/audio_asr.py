@@ -58,7 +58,7 @@ class AutomaticSpeechRecognition(Scenario):
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
-                split_type=config["dataset"].get("train_split", "train_clean100"),
+                split=config["dataset"].get("train_split", "train_clean100"),
                 preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
@@ -101,7 +101,7 @@ class AutomaticSpeechRecognition(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type=eval_split,
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -134,7 +134,7 @@ class AutomaticSpeechRecognition(Scenario):
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
-                split_type="adversarial",
+                split="adversarial",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -147,7 +147,7 @@ class AutomaticSpeechRecognition(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type=eval_split,
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )

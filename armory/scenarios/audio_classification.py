@@ -55,7 +55,7 @@ class AudioClassificationTask(Scenario):
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
-                split_type="train",
+                split="train",
                 preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
@@ -90,7 +90,7 @@ class AudioClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split="test",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -120,7 +120,7 @@ class AudioClassificationTask(Scenario):
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
-                split_type="adversarial",
+                split="adversarial",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -133,7 +133,7 @@ class AudioClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split="test",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )

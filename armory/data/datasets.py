@@ -205,7 +205,7 @@ class EvalGenerator(DataGenerator):
 
 def _generator_from_tfds(
     dataset_name: str,
-    split_type: str,
+    split: str,
     batch_size: int,
     epochs: int,
     dataset_dir: str,
@@ -241,7 +241,7 @@ def _generator_from_tfds(
 
     ds, ds_info = tfds.load(
         dataset_name,
-        split=split_type,
+        split=split,
         as_supervised=as_supervised,
         data_dir=dataset_dir,
         with_info=True,
@@ -295,7 +295,7 @@ def _generator_from_tfds(
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
             ds,
-            size=ds_info.splits[split_type].num_examples,
+            size=ds_info.splits[split].num_examples,
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
@@ -526,7 +526,7 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
 
 
 def mnist(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -544,7 +544,7 @@ def mnist(
 
     return _generator_from_tfds(
         "mnist:3.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -556,7 +556,7 @@ def mnist(
 
 
 def cifar10(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -574,7 +574,7 @@ def cifar10(
 
     return _generator_from_tfds(
         "cifar10:3.0.2",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -586,7 +586,7 @@ def cifar10(
 
 
 def digit(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -604,7 +604,7 @@ def digit(
 
     return _generator_from_tfds(
         "digit:1.0.8",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -617,7 +617,7 @@ def digit(
 
 
 def imagenette(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -635,7 +635,7 @@ def imagenette(
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -648,7 +648,7 @@ def imagenette(
 
 
 def german_traffic_sign(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     preprocessing_fn: Callable = None,
@@ -662,7 +662,7 @@ def german_traffic_sign(
     """
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -675,7 +675,7 @@ def german_traffic_sign(
 
 
 def librispeech_dev_clean(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -689,7 +689,7 @@ def librispeech_dev_clean(
     Librispeech dev dataset with custom split used for speaker
     identification
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -703,7 +703,7 @@ def librispeech_dev_clean(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -717,7 +717,7 @@ def librispeech_dev_clean(
 
 
 def librispeech(
-    split_type: str = "train_clean100",
+    split: str = "train_clean100",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -735,15 +735,18 @@ def librispeech(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
-
-    if cache_dataset and split_type not in CACHED_SPLITS:
-        raise ValueError(
-            f"Split {split_type} not available in cache. Must be one of {CACHED_SPLITS}"
-        )
+    if cache_dataset:
+        # Logic needed to work with tensorflow slicing API
+        #     E.g., split="dev_clean+dev_other[:10%]"
+        #     See: https://www.tensorflow.org/datasets/splits
+        if not any(x in split for x in CACHED_SPLITS):
+            raise ValueError(
+                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}"
+            )
 
     return _generator_from_tfds(
         "librispeech/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -757,7 +760,7 @@ def librispeech(
 
 
 def librispeech_dev_clean_asr(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -771,7 +774,7 @@ def librispeech_dev_clean_asr(
     Librispeech dev dataset with custom split used for automatic
     speech recognition.
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -785,7 +788,7 @@ def librispeech_dev_clean_asr(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -801,7 +804,7 @@ def librispeech_dev_clean_asr(
 
 
 def resisc45(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -824,13 +827,13 @@ def resisc45(
         Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (31500,) of int, with values in range(45)
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -842,7 +845,7 @@ def resisc45(
 
 
 def ucf101(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -860,7 +863,7 @@ def ucf101(
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -900,7 +903,7 @@ def tf_to_pytorch_box_conversion(x, y):
 
 
 def xview(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -912,7 +915,7 @@ def xview(
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
-    split_type - one of ("train", "test")
+    split - one of ("train", "test")
 
     Bounding boxes are by default loaded in PyTorch format of [x1, y1, x2, y2]
     where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
@@ -922,7 +925,7 @@ def xview(
 
     return _generator_from_tfds(
         "xview:1.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -981,7 +984,7 @@ def so2sat_canonical_preprocessing(batch):
 
 
 def so2sat(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -998,7 +1001,7 @@ def so2sat(
 
     return _generator_from_tfds(
         "so2sat/all:2.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
