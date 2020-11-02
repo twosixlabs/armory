@@ -14,6 +14,44 @@ from armory import paths
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
+def test__parse_token():
+    for x in "test", "train[15:20]", "train[:10%]", "train[-80%:]":
+        assert datasets._parse_token(x) == x
+
+    for x, y in [
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+    ]:
+        assert datasets._parse_token(x) == y
+
+    for x in "", "test[", "test[]", "test[[]]", "[10:11]":
+        with pytest.raises(ValueError):
+            datasets._parse_token(x)
+
+    with pytest.raises(NotImplementedError):
+        datasets._parse_token("test[10:20:2]")
+
+
+def test_parse_split_index():
+    for x in "train[15:20]", "train[:10%]+train[-80%:]":
+        assert datasets.parse_split_index(x) == x
+
+    for x, y in [
+        ("test[10]", "test[10:11]"),
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test + train", "test+train"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+    ]:
+        assert datasets.parse_split_index(x) == y
+
+    for x in (None, 13, [1, 4, 5], "", "test++train"):
+        with pytest.raises(ValueError):
+            datasets.parse_split_index(x)
+
+    with pytest.raises(NotImplementedError):
+        datasets.parse_split_index("test[10:20:2]")
+
+
 def test_mnist():
     batch_size = 600
     for split, size in [("train", 60000), ("test", 10000)]:
