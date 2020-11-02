@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 
 class Ucf101(Scenario):
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -84,7 +88,7 @@ class Ucf101(Scenario):
         classifier.set_learning_phase(False)
 
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign
+            config["metric"], skip_benign=skip_benign, skip_attack=skip_attack
         )
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
@@ -114,6 +118,10 @@ class Ucf101(Scenario):
                     y_pred = classifier.predict(x)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
+
+        if skip_attack:
+            logger.info("Skipping attack generation...")
+            return metrics_logger.results()
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
