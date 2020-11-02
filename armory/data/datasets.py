@@ -238,8 +238,8 @@ def _parse_token(token: str):
         return f"{name}[{i}:{i+1}]"
     elif re.match(r"^\[\d+(\s*,\s*\d+)*\]$", index):
         # list index of nonnegative integer indices
+        # out-of-order and duplicate indices are allowed
         index_list = json.loads(index)
-        index_list = sorted(set(index_list))
         token_list = [f"{name}[{i}:{i+1}]" for i in index_list]
         if not token_list:
             raise ValueError
