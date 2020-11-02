@@ -5,7 +5,10 @@ import pytest
 
 from armory.data import datasets, adversarial_datasets
 from armory import paths
-from armory.utils.metrics import object_detection_AP_per_class
+from armory.utils.metrics import (
+    object_detection_AP_per_class,
+    apricot_patch_targeted_AP_per_class,
+)
 
 DATASET_DIR = paths.runtime_paths().dataset_dir
 
@@ -63,3 +66,16 @@ def test_tf1_apricot():
     for class_id in [13, 15, 64]:
         assert average_precision_by_class[class_id] > 0.79
     assert mAP > 0.08
+
+    patch_targeted_AP_by_class = apricot_patch_targeted_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    expected_patch_targeted_AP_by_class = {
+        1: 0.18,
+        17: 0.18,
+        27: 0.27,
+        33: 0.51,
+        44: 0.14,
+    }
+    for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
+        assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
