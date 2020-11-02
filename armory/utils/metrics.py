@@ -661,10 +661,8 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
         idx_of_patch = np.where(y["labels"] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
         patch_box = y["boxes"][idx_of_patch].flatten()
-        patch_id = y["patch_id"][idx_of_patch]
-        patch_target_label = [
-            patch["adv_target"] for patch in APRICOT_PATCHES if patch["id"] == patch_id
-        ][0]
+        patch_id = int(y["patch_id"][idx_of_patch])
+        patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
         patch_box_dict = {
             "img_idx": img_idx,
             "label": patch_target_label,
