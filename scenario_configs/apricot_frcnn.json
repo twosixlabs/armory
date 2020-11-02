@@ -24,6 +24,7 @@
         "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
+            "apricot_patch_targeted_AP_per_class",
             "object_detection_AP_per_class"
         ]
     },
