@@ -62,7 +62,7 @@ class TestModel:
         return test_sample
 
     def _get_test_ground_truth(self, model, test_output):
-        if isinstance(model, ClassifierMixin) or isinstance(model, ObjectDetectorMixin):
+        if isinstance(model, ClassifierMixin):
             test_ground_truth = test_output
             if (
                 isinstance(test_output, np.ndarray)
@@ -70,7 +70,15 @@ class TestModel:
                 and test_output.shape[1] > 1
             ):
                 test_ground_truth = np.zeros((1, model.nb_classes))
-                test_ground_truth[:, 0] = 1
+                test_ground_truth[:, np.argmin(test_output, axis=1)[0]] = 1
+        elif isinstance(model, ObjectDetectorMixin):
+            test_ground_truth = [
+                {
+                    "boxes": np.reshape(np.arange(0.0, 1.0, 1.0 / 32.0), (8, 4)),
+                    "labels": np.ones((8,), dtype=np.int64),
+                    "scores": np.ones((8,), dtype=np.float32),
+                }
+            ]
         elif isinstance(model, SpeechRecognizerMixin):
             test_ground_truth = np.array(["HELLO"])
         return test_ground_truth
