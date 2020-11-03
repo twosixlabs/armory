@@ -37,6 +37,7 @@
             "nb_epochs": 10
         },
         "model_kwargs": {
+            "max_frames": 512,
             "model_status": "ucf101_trained"
         },
         "module": "armory.baseline_models.pytorch.ucf101_mars",
