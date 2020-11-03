@@ -94,7 +94,7 @@ class TestModel:
         assert np.all(
             test_input == copy_input
         ), "Model prediction overwrites the input x value"
-        if hasattr(model, "nb_classes"):
+        if isinstance(model, ClassifierMixin) and hasattr(model, "nb_classes"):
             assert (
                 test_output.shape[1] == model.nb_classes
             ), f"Model configured for {model.nb_classes} output classes, but output shape is {test_output.shape}"
