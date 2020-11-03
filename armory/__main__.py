@@ -269,6 +269,11 @@ def run(command_args, prog, description):
         help="Skip benign inference and metric calculations",
     )
     parser.add_argument(
+        "--skip-attack",
+        action="store_true",
+        help="Skip attack generation and metric calculations",
+    )
+    parser.add_argument(
         "--validate-config",
         action="store_true",
         help="Validate model configuration against several checks",
@@ -312,6 +317,7 @@ def run(command_args, prog, description):
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
         skip_benign=args.skip_benign,
+        skip_attack=args.skip_attack,
         validate_config=args.validate_config,
     )
     sys.exit(exit_code)

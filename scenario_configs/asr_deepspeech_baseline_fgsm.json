@@ -6,20 +6,19 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "global_max_length": 562480,
-            "max_iter_1st_stage": 30,
-            "max_iter_2nd_stage": 125
+            "batch_size": 1,
+            "eps": 0.2,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": true
         },
-        "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
-        "name": "ImperceptibleASRPytorch",
+        "module": "art.attacks.evasion",
+        "name": "FastGradientMethod",
         "targeted": true,
         "targeted_labels": {
-            "scheme": "matched length",
-            "transcripts": [
-                "REALLY SHORT TEST STRING",
-                "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
-                "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
-            ]
+            "scheme": "string",
+            "value": "TEST STRING"
         },
         "use_label": false
     },
