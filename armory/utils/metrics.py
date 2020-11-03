@@ -942,6 +942,7 @@ class MetricsLogger:
         profiler_type=None,
         computational_resource_dict=None,
         skip_benign=None,
+        skip_attack=None,
         targeted=False,
         **kwargs,
     ):
@@ -952,9 +953,13 @@ class MetricsLogger:
         record_metric_per_sample - whether to return metric values for each sample
         """
         self.tasks = [] if skip_benign else self._generate_counters(task)
-        self.adversarial_tasks = self._generate_counters(task)
-        self.targeted_tasks = self._generate_counters(task) if targeted else []
-        self.perturbations = self._generate_counters(perturbation)
+        self.adversarial_tasks = [] if skip_attack else self._generate_counters(task)
+        self.targeted_tasks = (
+            self._generate_counters(task) if targeted and not skip_attack else []
+        )
+        self.perturbations = (
+            [] if skip_attack else self._generate_counters(perturbation)
+        )
         self.means = bool(means)
         self.full = bool(record_metric_per_sample)
         self.computational_resource_dict = {}
@@ -986,9 +991,11 @@ class MetricsLogger:
         return [MetricList(x) for x in names]
 
     @classmethod
-    def from_config(cls, config, skip_benign=None, targeted=False):
+    def from_config(cls, config, skip_benign=None, skip_attack=None):
         if skip_benign:
             config["skip_benign"] = skip_benign
+        if skip_attack:
+            config["skip_attack"] = skip_attack
         return cls(**config, targeted=targeted)
 
     def clear(self):

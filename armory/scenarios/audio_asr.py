@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 
 class AutomaticSpeechRecognition(Scenario):
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -90,7 +94,10 @@ class AutomaticSpeechRecognition(Scenario):
 
         targeted = bool(attack_config.get("targeted"))
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign, targeted=targeted
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
         )
 
         if config["dataset"]["batch_size"] != 1:
@@ -122,6 +129,10 @@ class AutomaticSpeechRecognition(Scenario):
                     y_pred = estimator.predict(x, **predict_kwargs)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
+
+        if skip_attack:
+            logger.info("Skipping attack generation...")
+            return metrics_logger.results()
 
         # Imperceptible attack still WIP
         if (config.get("adhoc") or {}).get("skip_adversarial"):

@@ -268,6 +268,11 @@ def run(command_args, prog, description):
         action="store_true",
         help="Skip benign inference and metric calculations",
     )
+    parser.add_argument(
+        "--skip-attack",
+        action="store_true",
+        help="Skip attack generation and metric calculations",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
@@ -307,6 +312,7 @@ def run(command_args, prog, description):
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
         skip_benign=args.skip_benign,
+        skip_attack=args.skip_attack,
     )
     sys.exit(exit_code)
 
