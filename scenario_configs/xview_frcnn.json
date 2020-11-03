@@ -2,13 +2,13 @@
     "_description": "XView object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "knowledge": "white",
         "generate_kwargs": {
-            "xmin": 0,
-            "ymin": 0,
+            "patch_height": 50,
             "patch_width": 50,
-            "patch_height": 50
+            "xmin": 0,
+            "ymin": 0
         },
+        "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
             "eps": 1.0,
