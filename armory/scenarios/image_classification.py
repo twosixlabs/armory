@@ -26,7 +26,11 @@ logger = logging.getLogger(__name__)
 
 class ImageClassificationTask(Scenario):
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -84,7 +88,7 @@ class ImageClassificationTask(Scenario):
             )
 
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign
+            config["metric"], skip_benign=skip_benign, skip_attack=skip_attack
         )
 
         eval_split = config["dataset"].get("eval_split", "test")
@@ -113,6 +117,10 @@ class ImageClassificationTask(Scenario):
                     y_pred = estimator.predict(x)
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
+
+        if skip_attack:
+            logger.info("Skipping attack generation...")
+            return metrics_logger.results()
 
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")

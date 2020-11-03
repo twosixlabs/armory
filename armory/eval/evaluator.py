@@ -152,6 +152,7 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
+        skip_attack=None,
     ) -> int:
         exit_code = 0
         if self.no_docker:
@@ -166,6 +167,7 @@ class Evaluator(object):
                     check_run=check_run,
                     num_eval_batches=num_eval_batches,
                     skip_benign=skip_benign,
+                    skip_attack=skip_attack,
                 )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -201,6 +203,7 @@ class Evaluator(object):
                         check_run=check_run,
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
+                        skip_attack=skip_attack,
                     )
                 elif command:
                     exit_code = self._run_command(runner, command)
@@ -210,6 +213,7 @@ class Evaluator(object):
                         check_run=check_run,
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
+                        skip_attack=skip_attack,
                     )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -247,6 +251,7 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
+        skip_attack=None,
     ) -> int:
         logger.info(bold(red("Running evaluation script")))
 
@@ -255,6 +260,7 @@ class Evaluator(object):
             check_run=check_run,
             num_eval_batches=num_eval_batches,
             skip_benign=skip_benign,
+            skip_attack=skip_attack,
         )
         if self.no_docker:
             kwargs = {}
@@ -290,6 +296,7 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
+        skip_attack=None,
     ) -> None:
         user_group_id = self.get_id()
         lines = [
@@ -308,6 +315,7 @@ class Evaluator(object):
                 check_run=check_run,
                 num_eval_batches=num_eval_batches,
                 skip_benign=skip_benign,
+                skip_attack=skip_attack,
             )
             tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
             os.makedirs(tmp_dir)
@@ -361,7 +369,7 @@ class Evaluator(object):
             expect_sentinel=False,
         )
 
-    def _build_options(self, check_run, num_eval_batches, skip_benign):
+    def _build_options(self, check_run, num_eval_batches, skip_benign, skip_attack):
         options = ""
         if self.no_docker:
             options += " --no-docker"
@@ -373,4 +381,6 @@ class Evaluator(object):
             options += f" --num-eval-batches {num_eval_batches}"
         if skip_benign:
             options += " --skip-benign"
+        if skip_attack:
+            options += " --skip-attack"
         return options
