@@ -172,7 +172,12 @@ def word_error_rate(y, y_pred):
 
 
 def _word_error_rate(y_i, y_pred_i):
-    reference = y_i.decode("utf-8").split()
+    if isinstance(y_i, str):
+        reference = y_i.split()
+    elif isinstance(y_i, bytes):
+        reference = y_i.decode("utf-8").split()
+    else:
+        raise TypeError(f"y_i is of type {type(y_i)}, expected string or bytes")
     hypothesis = y_pred_i.split()
     r_length = len(reference)
     h_length = len(hypothesis)
@@ -937,6 +942,7 @@ class MetricsLogger:
         profiler_type=None,
         computational_resource_dict=None,
         skip_benign=None,
+        targeted=False,
         **kwargs,
     ):
         """
@@ -947,6 +953,7 @@ class MetricsLogger:
         """
         self.tasks = [] if skip_benign else self._generate_counters(task)
         self.adversarial_tasks = self._generate_counters(task)
+        self.targeted_tasks = self._generate_counters(task) if targeted else []
         self.perturbations = self._generate_counters(perturbation)
         self.means = bool(means)
         self.full = bool(record_metric_per_sample)
@@ -956,7 +963,12 @@ class MetricsLogger:
                 "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
-        if not self.tasks and not self.perturbations and not self.adversarial_tasks:
+        if (
+            not self.tasks
+            and not self.perturbations
+            and not self.adversarial_tasks
+            and not self.targeted_tasks
+        ):
             logger.warning(
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
@@ -974,17 +986,25 @@ class MetricsLogger:
         return [MetricList(x) for x in names]
 
     @classmethod
-    def from_config(cls, config, skip_benign=None):
+    def from_config(cls, config, skip_benign=None, targeted=False):
         if skip_benign:
             config["skip_benign"] = skip_benign
-        return cls(**config)
+        return cls(**config, targeted=targeted)
 
     def clear(self):
         for metric in self.tasks + self.adversarial_tasks + self.perturbations:
             metric.clear()
 
-    def update_task(self, y, y_pred, adversarial=False):
-        tasks = self.adversarial_tasks if adversarial else self.tasks
+    def update_task(self, y, y_pred, adversarial=False, targeted=False):
+        if targeted and not adversarial:
+            raise ValueError("benign task cannot be targeted")
+        tasks = (
+            self.targeted_tasks
+            if targeted
+            else self.adversarial_tasks
+            if adversarial
+            else self.tasks
+        )
         for metric in tasks:
             if metric.name in [
                 "object_detection_AP_per_class",
@@ -999,29 +1019,33 @@ class MetricsLogger:
             metric.append(x, x_adv)
 
     def log_task(self, adversarial=False, targeted=False):
-        if adversarial:
+        if targeted:
+            if adversarial:
+                metrics = self.targeted_tasks
+                wrt = "target"
+                task_type = "adversarial"
+            else:
+                raise ValueError("benign task cannot be targeted")
+        elif adversarial:
             metrics = self.adversarial_tasks
+            wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
+            wrt = "ground truth"
             task_type = "benign"
-        if targeted:
-            if adversarial:
-                task_type = "targeted " + task_type
-            else:
-                raise ValueError("benign task cannot be targeted")
 
         for metric in metrics:
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
                 logger.info(
-                    f"Word error rate on {task_type} examples: "
+                    f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
             elif metric.name == "object_detection_AP_per_class":
                 average_precision_by_class = metric.AP_per_class()
                 logger.info(
-                    f"object_detection_mAP on {task_type} examples: "
+                    f"object_detection_mAP on {task_type} examples relative to {wrt} labels: "
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
                     f" object_detection_AP by class ID: {average_precision_by_class}"
                 )
@@ -1036,7 +1060,7 @@ class MetricsLogger:
                 )
             else:
                 logger.info(
-                    f"Average {metric.name} on {task_type} test examples: "
+                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2%}"
                 )
 
@@ -1048,6 +1072,7 @@ class MetricsLogger:
         for metrics, prefix in [
             (self.tasks, "benign"),
             (self.adversarial_tasks, "adversarial"),
+            (self.targeted_tasks, "targeted"),
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
