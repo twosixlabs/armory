@@ -377,7 +377,9 @@ class Evaluator(object):
             expect_sentinel=False,
         )
 
-    def _build_options(self, check_run, num_eval_batches, skip_benign, skip_attack, validate_config):
+    def _build_options(
+        self, check_run, num_eval_batches, skip_benign, skip_attack, validate_config
+    ):
         options = ""
         if self.no_docker:
             options += " --no-docker"

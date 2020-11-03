@@ -319,7 +319,7 @@ if __name__ == "__main__":
         help="Skip attack generation and metric calculations",
     )
     parser.add_argument(
-    "--validate-config",
+        "--validate-config",
         action="store_true",
         help="Validate model configuration against several checks",
     )
