@@ -277,10 +277,6 @@ def run(command_args, prog, description):
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
-    if args.skip_benign and args.skip_attack:
-        logger.error("--skip-benign and --skip-attack cannot both be passed. ")
-        sys.exit(1)
-
     try:
         if args.filepath == "-":
             if sys.stdin.isatty():

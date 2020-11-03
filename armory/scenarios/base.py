@@ -322,9 +322,6 @@ if __name__ == "__main__":
             "--num_eval_batches will be overwritten and set to 1 since --check was passed"
         )
 
-    if args.skip_benign and args.skip_attack:
-        raise ValueError("--skip-benign and --skip-attack cannot both be passed")
-
     run_config(
         args.config,
         args.from_file,
