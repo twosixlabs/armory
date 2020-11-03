@@ -228,7 +228,9 @@ def run_validation(
     _scenario_setup(config)
     model_config = config.get("model")
     model_config = json.dumps(model_config)
-    pytest.main(["-x", "armory/utils/test_config/", "--model-config", model_config])
+    pytest.main(
+        ["-x", "armory/validation/test_config/", "--model-config", model_config]
+    )
 
 
 def run_config(
