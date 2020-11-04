@@ -14,11 +14,72 @@ from armory import paths
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
+def test__parse_token():
+    for x in "test", "train[15:20]", "train[:10%]", "train[-80%:]":
+        assert datasets._parse_token(x) == x
+
+    for x, y in [
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+    ]:
+        assert datasets._parse_token(x) == y
+
+    for x in "", "test[", "test[]", "test[[]]", "[10:11]":
+        with pytest.raises(ValueError):
+            datasets._parse_token(x)
+
+    with pytest.raises(NotImplementedError):
+        datasets._parse_token("test[10:20:2]")
+
+
+def test_parse_split_index():
+    for x in "train[15:20]", "train[:10%]+train[-80%:]":
+        assert datasets.parse_split_index(x) == x
+
+    for x, y in [
+        ("test[10]", "test[10:11]"),
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test + train", "test+train"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+    ]:
+        assert datasets.parse_split_index(x) == y
+
+    for x in (None, 13, [1, 4, 5], "", "test++train"):
+        with pytest.raises(ValueError):
+            datasets.parse_split_index(x)
+
+    with pytest.raises(NotImplementedError):
+        datasets.parse_split_index("test[10:20:2]")
+
+
+def test_parse_split_index_ordering():
+    """
+    Ensure that output order is deterministic for multiple splits
+    """
+    index = [5, 37, 38, 56, 111]  # test has max index 9999
+    split = "test"
+    kwargs = dict(epochs=1, batch_size=1, dataset_dir=DATASET_DIR, shuffle_files=False)
+    ds = datasets.mnist(split=split, **kwargs)
+    fixed_order = []
+    for i, (x, y) in enumerate(ds):
+        if i in index:
+            fixed_order.append(x)
+        if i >= max(index):
+            break
+
+    sliced_split = f"{split}[{index}]"
+    ds = datasets.mnist(split=sliced_split, **kwargs)
+    output_x = [x for (x, y) in ds]
+    assert len(fixed_order) == len(output_x)
+    for x_i, x_j in zip(fixed_order, output_x):
+        assert (x_i == x_j).all()
+
+
 def test_mnist():
     batch_size = 600
     for split, size in [("train", 60000), ("test", 10000)]:
         dataset = datasets.mnist(
-            split_type=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -35,7 +96,7 @@ def test_cifar():
     batch_size = 500
     for split, size in [("train", 50000), ("test", 10000)]:
         dataset = datasets.cifar10(
-            split_type=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -59,10 +120,7 @@ def test_digit():
         ("test", 5 * num_users * 10),
     ]:
         dataset = datasets.digit(
-            split_type=split,
-            epochs=epochs,
-            batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -79,7 +137,7 @@ def test_imagenet_adv():
     total_size = 1000
     test_dataset = adversarial_datasets.imagenet_adversarial(
         dataset_dir=DATASET_DIR,
-        split_type="adversarial",
+        split="adversarial",
         batch_size=batch_size,
         epochs=1,
         adversarial_key="adversarial",
@@ -101,10 +159,7 @@ def test_german_traffic_sign():
         batch_size = 1
         epochs = 1
         dataset = datasets.german_traffic_sign(
-            split_type=split,
-            epochs=epochs,
-            batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
 
@@ -122,10 +177,7 @@ def test_imagenette():
         batch_size = 1
         epochs = 1
         dataset = datasets.imagenette(
-            split_type=split,
-            epochs=epochs,
-            batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
 
@@ -143,10 +195,7 @@ def test_ucf101():
         batch_size = 1
         epochs = 1
         dataset = datasets.ucf101(
-            split_type=split,
-            epochs=epochs,
-            batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
 
@@ -168,7 +217,7 @@ def test_librispeech():
 
     for split, size, min_dim1, max_dim1 in zip(splits, sizes, min_dim1s, max_dim1s):
         dataset = datasets.librispeech_dev_clean(
-            split_type=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -193,10 +242,7 @@ def test_resisc45():
         batch_size = 16
         epochs = 1
         dataset = datasets.resisc45(
-            split_type=split,
-            epochs=epochs,
-            batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -222,7 +268,7 @@ def test_librispeech_adversarial():
     split = "adversarial"
 
     dataset = adversarial_datasets.librispeech_adversarial(
-        split_type=split,
+        split=split,
         epochs=1,
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
@@ -246,7 +292,7 @@ def test_resisc45_adversarial_224x224():
     epochs = 1
     for adversarial_key in ("adversarial_univpatch", "adversarial_univperturbation"):
         dataset = adversarial_datasets.resisc45_adversarial_224x224(
-            split_type=split,
+            split=split,
             epochs=epochs,
             batch_size=batch_size,
             dataset_dir=DATASET_DIR,
@@ -278,9 +324,9 @@ def test_ucf101_adversarial_112x112():
         batch_size = 1
         epochs = 1
         size = 505
-        split_type = "adversarial"
+        split = "adversarial"
         dataset = adversarial_datasets.ucf101_adversarial_112x112(
-            split_type=split_type,
+            split=split,
             epochs=epochs,
             batch_size=batch_size,
             dataset_dir=DATASET_DIR,
@@ -302,7 +348,7 @@ def test_variable_length():
     size = 1350
     batch_size = 4
     dataset = datasets.digit(
-        split_type="train", epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+        split="train", epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
     )
     assert dataset.batches_per_epoch == (size // batch_size + bool(size % batch_size))
 
@@ -319,7 +365,7 @@ def test_generator():
     batch_size = 600
     for split, size in [("train", 60000)]:
         dataset = datasets.mnist(
-            split_type=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
         )
 
         for x, y in dataset:
@@ -330,7 +376,7 @@ def test_generator():
 
 def test_numpy_generator():
     dataset = datasets.mnist(
-        split_type="train",
+        split="train",
         epochs=1,
         batch_size=16,
         dataset_dir=DATASET_DIR,

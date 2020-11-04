@@ -246,11 +246,26 @@ def make_model(model_status="ucf101_trained", weights_path=None):
 
 
 class OuterModel(torch.nn.Module):
-    def __init__(self, model):
+    def __init__(self, weights_path, max_frames=None, **model_kwargs):
+        """
+        Max frames is the maximum number of input frames.
+            If max_frames == 0, False, or None, no clipping is done
+            Else if max_frames > 0, frames are clipped to that number.
+            This can be helpful for smaller memory cards.
+        """
         super().__init__()
-        self.model = model
+        max_frames = int(max_frames)
+        if max_frames < 0:
+            raise ValueError(f"max_frames {max_frames} cannot be negative")
+        self.max_frames = max_frames
+        self.model, self.optimizer = make_model(
+            weights_path=weights_path, **model_kwargs
+        )
 
     def forward(self, x):
+        if self.max_frames:
+            x = x[:, : self.max_frames]
+
         if self.training:
             # Use preprocessing_fn_numpy in dataset preprocessing
             return self.model(x)
@@ -263,15 +278,13 @@ class OuterModel(torch.nn.Module):
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
-    inner_model, optimizer = make_model(weights_path=weights_path, **model_kwargs)
-    inner_model.to(DEVICE)
-    model = OuterModel(inner_model)
+    model = OuterModel(weights_path=weights_path, **model_kwargs)
     model.to(DEVICE)
 
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss(),
-        optimizer=optimizer,
+        optimizer=model.optimizer,
         input_shape=(None, 240, 320, 3),
         nb_classes=101,
         clip_values=(0.0, 1.0),

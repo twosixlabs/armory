@@ -5,12 +5,11 @@ requests
 tensorflow-datasets==3.2.0
 jupyterlab==1.2.6
 boto3==1.11.13
-adversarial-robustness-toolbox==1.3.1
+git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.4.2
 Pillow==7.1.2
 pydub==0.24.1
 apache-beam==2.22.0
 dill==0.3.1.1
-
 pytest==5.3.5
 ffmpeg==4.2.3
 pymongo==3.1.0
@@ -19,6 +18,7 @@ pymongo==3.1.0
 tensorflow-gpu==1.15.0
 # TF1 object detection API
 # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1.md#python-package-installation
+# Commit hash 79354e14a4b41ff9019f4a5ebd12cfa498917182
 ### End TF1 required libraries
 
 ### Begin Pytorch required libraries
@@ -31,4 +31,5 @@ cudatoolkit==10.1
 tensorflow-gpu==2.2.0
 # TF2 object detection API
 # https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf2.md#python-package-installation
+# Commit hash 79354e14a4b41ff9019f4a5ebd12cfa498917182
 ### End TF2 required libraries

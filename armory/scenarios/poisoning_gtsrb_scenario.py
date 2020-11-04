@@ -55,7 +55,11 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
 
 class GTSRB(Scenario):
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate a config file for classification robustness against attack.
@@ -69,6 +73,8 @@ class GTSRB(Scenario):
             raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
         if skip_benign:
             raise ValueError("skip_benign shouldn't be set for poisoning scenario")
+        if skip_attack:
+            raise ValueError("skip_attack shouldn't be set for poisoning scenario")
 
         model_config = config["model"]
         # Scenario assumes preprocessing_fn makes images all same size
@@ -102,7 +108,7 @@ class GTSRB(Scenario):
         clean_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split_type="train",
+            split=config["dataset"].get("train_split", "train"),
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -134,7 +140,7 @@ class GTSRB(Scenario):
             poison_data = load_dataset(
                 config["adhoc"]["poison_samples"],
                 epochs=1,
-                split_type="poison",
+                split="poison",
                 preprocessing_fn=None,
             )
 
@@ -258,7 +264,7 @@ class GTSRB(Scenario):
         test_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split_type="test",
+            split=config["dataset"].get("eval_split", "test"),
             preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
@@ -293,7 +299,7 @@ class GTSRB(Scenario):
             test_data_poison = load_dataset(
                 config_adhoc["poison_samples"],
                 epochs=1,
-                split_type="poison_test",
+                split="poison_test",
                 preprocessing_fn=None,
             )
             for x_poison_test, y_poison_test in tqdm(
@@ -307,7 +313,7 @@ class GTSRB(Scenario):
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split=config["dataset"].get("eval_split", "test"),
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
@@ -323,7 +329,7 @@ class GTSRB(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split=config["dataset"].get("eval_split", "test"),
                 preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )

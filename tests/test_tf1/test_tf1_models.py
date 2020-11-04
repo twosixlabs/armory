@@ -20,10 +20,10 @@ def test_tf1_mnist():
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.mnist(
-        split_type="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
+        split="train", epochs=1, batch_size=600, dataset_dir=DATASET_DIR,
     )
     test_dataset = datasets.mnist(
-        split_type="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
+        split="test", epochs=1, batch_size=100, dataset_dir=DATASET_DIR,
     )
 
     classifier.fit_generator(
@@ -45,7 +45,7 @@ def test_tf1_apricot():
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
     test_dataset = adversarial_datasets.apricot_dev_adversarial(
-        split_type="adversarial",
+        split="adversarial",
         epochs=1,
         batch_size=1,
         dataset_dir=DATASET_DIR,
