@@ -734,6 +734,7 @@ def imagenette(
 def gtsrb_canonical_preprocessing(img):
     img_size = 48
     img_out = []
+    quantization = 255.0
     for im in img:
         img_eq = ImageOps.equalize(Image.fromarray(im))
         width, height = img_eq.size
@@ -746,7 +747,7 @@ def gtsrb_canonical_preprocessing(img):
         bottom = center[1] + min_side // 2
 
         img_eq = img_eq.crop((left, top, right, bottom))
-        img_eq = np.array(img_eq.resize([img_size, img_size]))
+        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
 
         img_out.append(img_eq)
 

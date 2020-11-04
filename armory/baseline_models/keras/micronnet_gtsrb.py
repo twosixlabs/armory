@@ -5,7 +5,7 @@ Model contributed by: MITRE Corporation
 """
 import tensorflow as tf
 from tensorflow.keras import Model, Input
-from tensorflow.keras.layers import Dense, Conv2D, Activation
+from tensorflow.keras.layers import Dense, Conv2D, Activation, Lambda
 from tensorflow.keras.layers import Flatten, BatchNormalization, MaxPooling2D
 from art.classifiers import KerasClassifier
 
@@ -18,7 +18,8 @@ def make_model(**kwargs) -> tf.keras.Model:
     eps = 1e-6
 
     inputs = Input(shape=(img_size, img_size, 3))
-    x = Conv2D(1, (1, 1), padding="same")(inputs)
+    x = Lambda(lambda image: image * 255)(inputs)
+    x = Conv2D(1, (1, 1), padding="same")(x)
     x = BatchNormalization(epsilon=eps)(x)
     x = Activation("relu")(x)
     x = Conv2D(29, (5, 5), padding="same")(x)
@@ -54,5 +55,5 @@ def make_model(**kwargs) -> tf.keras.Model:
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     model = make_model(**model_kwargs)
-    wrapped_model = KerasClassifier(model, clip_values=(0.0, 255.0), **wrapper_kwargs)
+    wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs)
     return wrapped_model
