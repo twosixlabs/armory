@@ -33,6 +33,4 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
 
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.4.2
-
 WORKDIR /workspace
