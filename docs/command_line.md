@@ -82,5 +82,5 @@ The `--validate-config` flag will run a series of tests on the model in the sele
 
 ### Example Usage
 ```
-armory run scenario_configs/so2sat_baseline.json
+armory run scenario_configs/so2sat_baseline.json --validate-config
 ```
