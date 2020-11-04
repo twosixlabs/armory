@@ -56,7 +56,7 @@ def apricot_canonical_preprocessing(batch):
 
 
 def imagenet_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -86,7 +86,7 @@ def imagenet_adversarial(
 
     return datasets._generator_from_tfds(
         "imagenet_adversarial:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -99,7 +99,7 @@ def imagenet_adversarial(
 
 
 def librispeech_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -115,7 +115,7 @@ def librispeech_adversarial(
     Adversarial dataset based on Librispeech-dev-clean including clean,
     Universal Perturbation using PGD, and PGD.
 
-    split_type - one of ("adversarial")
+    split - one of ("adversarial")
 
     returns:
         Generator
@@ -130,7 +130,7 @@ def librispeech_adversarial(
 
     return datasets._generator_from_tfds(
         "librispeech_adversarial:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -146,7 +146,7 @@ def librispeech_adversarial(
 
 
 def resisc45_adversarial_224x224(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -185,7 +185,7 @@ def resisc45_adversarial_224x224(
 
     return datasets._generator_from_tfds(
         "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.2",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -201,7 +201,7 @@ def resisc45_adversarial_224x224(
 
 
 def ucf101_adversarial_112x112(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -242,7 +242,7 @@ def ucf101_adversarial_112x112(
 
     return datasets._generator_from_tfds(
         "ucf101_mars_perturbation_and_patch_adversarial112x112:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -258,7 +258,7 @@ def ucf101_adversarial_112x112(
 
 
 def gtsrb_poison(
-    split_type: str = "poison",
+    split: str = "poison",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -277,7 +277,7 @@ def gtsrb_poison(
     """
     return datasets._generator_from_tfds(
         "gtsrb_bh_poison_micronnet:1.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -293,7 +293,7 @@ def gtsrb_poison(
 
 
 def apricot_dev_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -323,7 +323,7 @@ def apricot_dev_adversarial(
 
     return datasets._generator_from_tfds(
         "apricot_dev:1.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,

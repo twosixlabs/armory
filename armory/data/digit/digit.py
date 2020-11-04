@@ -80,7 +80,7 @@ class Digit(tfds.core.GeneratorBasedBuilder):
         elif split is tfds.Split.TEST:
             samples = range(5)
         else:
-            raise ValueError(f"split_type {split} not in ('train', 'test')")
+            raise ValueError(f"split {split} not in ('train', 'test')")
 
         for digit, user, sample in itertools.product(_DIGITS, _USERS, samples):
             filename = f"{digit}_{user}_{sample}.wav"

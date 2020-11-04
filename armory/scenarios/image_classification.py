@@ -58,7 +58,7 @@ class ImageClassificationTask(Scenario):
                 train_data = load_dataset(
                     config["dataset"],
                     epochs=fit_kwargs["nb_epochs"],
-                    split_type="train",
+                    split=config["dataset"].get("train_split", "train"),
                     shuffle_files=True,
                 )
                 if defense_type == "Trainer":
@@ -100,7 +100,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type=eval_split,
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -135,7 +135,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
-                split_type="adversarial",
+                split="adversarial",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -148,7 +148,7 @@ class ImageClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type=eval_split,
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )

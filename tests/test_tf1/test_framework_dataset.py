@@ -12,7 +12,7 @@ DATASET_DIR = paths.DockerPaths().dataset_dir
 
 def test_tf_generator():
     dataset = datasets.mnist(
-        split_type="train",
+        split="train",
         epochs=1,
         batch_size=16,
         dataset_dir=DATASET_DIR,

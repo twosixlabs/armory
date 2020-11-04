@@ -9,7 +9,9 @@ The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import logging
+import json
 import os
+import re
 from typing import Callable, Union
 
 import numpy as np
@@ -203,9 +205,69 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
+def _parse_token(token: str):
+    """
+    Token from parse_split index
+
+    Return parsed token
+    """
+    if not token:
+        raise ValueError("empty token found")
+
+    left = token.find("[")
+    if left == -1:
+        return token
+
+    right = token.rfind("]")
+    if right != len(token) - 1:
+        raise ValueError(f"could not parse token {token} - mismatched brackets")
+    name = token[:left]
+    index = token[left + 1 : right]  # remove brackets
+    if not name:
+        raise ValueError(f"empty split name: {token}")
+    if not index:
+        raise ValueError(f"empty index found: {token}")
+    if index.count(":") == 2:
+        raise NotImplementedError(f"slice 'step' not enabled: {token}")
+    elif index == "[]":
+        raise ValueError(f"empty list index found: {token}")
+
+    if re.match(r"^\d+$", index):
+        # single index
+        i = int(index)
+        return f"{name}[{i}:{i+1}]"
+    elif re.match(r"^\[\d+(\s*,\s*\d+)*\]$", index):
+        # list index of nonnegative integer indices
+        # out-of-order and duplicate indices are allowed
+        index_list = json.loads(index)
+        token_list = [f"{name}[{i}:{i+1}]" for i in index_list]
+        if not token_list:
+            raise ValueError
+        return "+".join(token_list)
+
+    return token
+
+
+def parse_split_index(split: str):
+    """
+    Take a TFDS split argument and rewrite index arguments such as:
+        test[10] --> test[10:11]
+        test[[1, 5, 7]] --> test[1:2]+test[5:6]+test[7:8]
+    """
+    if not isinstance(split, str):
+        raise ValueError(f"split must be str, not {type(split)}")
+    if not split.strip():
+        raise ValueError("split cannot be empty")
+
+    tokens = split.split("+")
+    tokens = [x.strip() for x in tokens]
+    output_tokens = [_parse_token(x) for x in tokens]
+    return "+".join(output_tokens)
+
+
 def _generator_from_tfds(
     dataset_name: str,
-    split_type: str,
+    split: str,
     batch_size: int,
     epochs: int,
     dataset_dir: str,
@@ -239,15 +301,36 @@ def _generator_from_tfds(
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
-    ds, ds_info = tfds.load(
-        dataset_name,
-        split=split_type,
-        as_supervised=as_supervised,
-        data_dir=dataset_dir,
-        with_info=True,
-        download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=shuffle_files,
-    )
+    if not isinstance(split, str):
+        raise ValueError(f"split must be str, not {type(split)}")
+
+    try:
+        ds, ds_info = tfds.load(
+            dataset_name,
+            split=split,
+            as_supervised=as_supervised,
+            data_dir=dataset_dir,
+            with_info=True,
+            download_and_prepare_kwargs=download_and_prepare_kwargs,
+            shuffle_files=shuffle_files,
+        )
+    except AssertionError as e:
+        if not str(e).startswith("Unrecognized instruction format: "):
+            raise
+        logger.warning(f"Caught AssertionError in TFDS load split argument: {e}")
+        logger.warning(f"Attempting to parse split {split}")
+        split = parse_split_index(split)
+        logger.warning(f"Replacing split with {split}")
+        ds, ds_info = tfds.load(
+            dataset_name,
+            split=split,
+            as_supervised=as_supervised,
+            data_dir=dataset_dir,
+            with_info=True,
+            download_and_prepare_kwargs=download_and_prepare_kwargs,
+            shuffle_files=shuffle_files,
+        )
+
     if not as_supervised:
         try:
             x_key, y_key = supervised_xy_keys
@@ -295,7 +378,7 @@ def _generator_from_tfds(
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
             ds,
-            size=ds_info.splits[split_type].num_examples,
+            size=ds_info.splits[split].num_examples,
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
@@ -526,7 +609,7 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
 
 
 def mnist(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -544,7 +627,7 @@ def mnist(
 
     return _generator_from_tfds(
         "mnist:3.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -556,7 +639,7 @@ def mnist(
 
 
 def cifar10(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -574,7 +657,7 @@ def cifar10(
 
     return _generator_from_tfds(
         "cifar10:3.0.2",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -586,7 +669,7 @@ def cifar10(
 
 
 def digit(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -604,7 +687,7 @@ def digit(
 
     return _generator_from_tfds(
         "digit:1.0.8",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -617,7 +700,7 @@ def digit(
 
 
 def imagenette(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -635,7 +718,7 @@ def imagenette(
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -648,7 +731,7 @@ def imagenette(
 
 
 def german_traffic_sign(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     preprocessing_fn: Callable = None,
@@ -662,7 +745,7 @@ def german_traffic_sign(
     """
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -675,7 +758,7 @@ def german_traffic_sign(
 
 
 def librispeech_dev_clean(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -689,7 +772,7 @@ def librispeech_dev_clean(
     Librispeech dev dataset with custom split used for speaker
     identification
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -703,7 +786,7 @@ def librispeech_dev_clean(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -717,7 +800,7 @@ def librispeech_dev_clean(
 
 
 def librispeech(
-    split_type: str = "train_clean100",
+    split: str = "train_clean100",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -735,15 +818,18 @@ def librispeech(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
-
-    if cache_dataset and split_type not in CACHED_SPLITS:
-        raise ValueError(
-            f"Split {split_type} not available in cache. Must be one of {CACHED_SPLITS}"
-        )
+    if cache_dataset:
+        # Logic needed to work with tensorflow slicing API
+        #     E.g., split="dev_clean+dev_other[:10%]"
+        #     See: https://www.tensorflow.org/datasets/splits
+        if not any(x in split for x in CACHED_SPLITS):
+            raise ValueError(
+                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}"
+            )
 
     return _generator_from_tfds(
         "librispeech/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -757,7 +843,7 @@ def librispeech(
 
 
 def librispeech_dev_clean_asr(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -771,7 +857,7 @@ def librispeech_dev_clean_asr(
     Librispeech dev dataset with custom split used for automatic
     speech recognition.
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -785,7 +871,7 @@ def librispeech_dev_clean_asr(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -801,7 +887,7 @@ def librispeech_dev_clean_asr(
 
 
 def resisc45(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -824,13 +910,13 @@ def resisc45(
         Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (31500,) of int, with values in range(45)
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -842,7 +928,7 @@ def resisc45(
 
 
 def ucf101(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -860,7 +946,7 @@ def ucf101(
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -900,7 +986,7 @@ def tf_to_pytorch_box_conversion(x, y):
 
 
 def xview(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -912,7 +998,7 @@ def xview(
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
-    split_type - one of ("train", "test")
+    split - one of ("train", "test")
 
     Bounding boxes are by default loaded in PyTorch format of [x1, y1, x2, y2]
     where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
@@ -922,7 +1008,7 @@ def xview(
 
     return _generator_from_tfds(
         "xview:1.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -981,7 +1067,7 @@ def so2sat_canonical_preprocessing(batch):
 
 
 def so2sat(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -998,7 +1084,7 @@ def so2sat(
 
     return _generator_from_tfds(
         "so2sat/all:2.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
