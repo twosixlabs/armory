@@ -991,7 +991,7 @@ class MetricsLogger:
         return [MetricList(x) for x in names]
 
     @classmethod
-    def from_config(cls, config, skip_benign=None, skip_attack=None):
+    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
         if skip_benign:
             config["skip_benign"] = skip_benign
         if skip_attack:
