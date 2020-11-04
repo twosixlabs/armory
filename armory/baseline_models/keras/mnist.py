@@ -41,7 +41,7 @@ def make_mnist_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(model_kwargs: dict, wrapper_kwargs: dict, weights_path: str = None):
     model = make_mnist_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)

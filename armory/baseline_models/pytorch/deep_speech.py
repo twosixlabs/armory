@@ -10,6 +10,7 @@ Model contributed by: MITRE Corporation
 # https://github.com/Trusted-AI/adversarial-robustness-toolbox/issues/693
 import os
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,5 +27,7 @@ logger.warning(f"Saving art deep speech model weights to {ART_DATA_PATH}")
 from art.estimators.speech_recognition import PyTorchDeepSpeech
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchDeepSpeech:
     return PyTorchDeepSpeech(**wrapper_kwargs)

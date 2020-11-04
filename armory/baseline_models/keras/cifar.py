@@ -1,8 +1,9 @@
 """
 CNN model for 32x32x3 image classification
 """
-import tensorflow as tf
+from typing import Optional
 
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.classifiers import KerasClassifier
@@ -42,7 +43,9 @@ def make_cifar_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> KerasClassifier:
     model = make_cifar_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)

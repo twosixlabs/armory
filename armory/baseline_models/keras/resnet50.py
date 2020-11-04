@@ -1,6 +1,7 @@
 """
 ResNet50 CNN model for 244x244x3 image classification
 """
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
@@ -13,7 +14,9 @@ from tensorflow.keras.models import Model
 IMAGENET_MEANS = [103.939, 116.779, 123.68]
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: str, weights_path: Optional[str] = None
+) -> KerasClassifier:
     input = tf.keras.Input(shape=(224, 224, 3))
 
     # Preprocessing layers

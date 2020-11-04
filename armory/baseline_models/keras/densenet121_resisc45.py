@@ -3,6 +3,8 @@ DenseNet121 CNN model for 244x244x3 image classification
 
 Model contributed by: MITRE Corporation
 """
+from typing import Optional
+
 from art.classifiers import KerasClassifier
 import numpy as np
 import tensorflow as tf
@@ -63,7 +65,9 @@ def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
     return new_model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> KerasClassifier:
     model = make_densenet121_resisc_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)

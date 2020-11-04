@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tensorflow import slice
 from tensorflow.keras import Sequential, Model
 from tensorflow.keras.layers import Dense, Flatten, Conv2D
@@ -52,7 +54,9 @@ def make_model(**kwargs):
     return fused_net
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     model = make_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)
