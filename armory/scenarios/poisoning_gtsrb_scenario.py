@@ -77,8 +77,8 @@ class GTSRB(Scenario):
             raise ValueError("skip_attack shouldn't be set for poisoning scenario")
 
         model_config = config["model"]
-        # Scenario assumes preprocessing_fn makes images all same size
-        classifier, preprocessing_fn = load_model(model_config)
+        # Scenario assumes canonical preprocessing_fn is used makes images all same size
+        classifier, _ = load_model(model_config)
 
         config_adhoc = config.get("adhoc") or {}
         train_epochs = config_adhoc["train_epochs"]
@@ -109,7 +109,6 @@ class GTSRB(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("train_split", "train"),
-            preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
 
@@ -265,7 +264,6 @@ class GTSRB(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("eval_split", "test"),
-            preprocessing_fn=preprocessing_fn,
             shuffle_files=False,
         )
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
@@ -314,7 +312,6 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
-                preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
             for x_clean_test, y_clean_test in tqdm(
@@ -330,7 +327,6 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
-                preprocessing_fn=preprocessing_fn,
                 shuffle_files=False,
             )
             for x_test, y_test in tqdm(test_data, desc="Testing"):

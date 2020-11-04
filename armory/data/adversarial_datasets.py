@@ -288,7 +288,7 @@ def gtsrb_poison(
         shuffle_files=False,
         cache_dataset=cache_dataset,
         framework=framework,
-        lambda_map=lambda x, y: (x, y),
+        lambda_map=lambda x, y: (x * 255, y),
     )
 
 

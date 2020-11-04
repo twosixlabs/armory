@@ -26,6 +26,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import apache_beam as beam
 from art.data_generators import DataGenerator
+from PIL import ImageOps, Image
 
 from armory.data.utils import (
     download_verify_dataset_cache,
@@ -730,11 +731,33 @@ def imagenette(
     )
 
 
+def gtsrb_canonical_preprocessing(img):
+    img_size = 48
+    img_out = []
+    for im in img:
+        img_eq = ImageOps.equalize(Image.fromarray(im))
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width // 2, height // 2
+
+        left = center[0] - min_side // 2
+        top = center[1] - min_side // 2
+        right = center[0] + min_side // 2
+        bottom = center[1] + min_side // 2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = np.array(img_eq.resize([img_size, img_size]))
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
+
+
 def german_traffic_sign(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = gtsrb_canonical_preprocessing,
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
