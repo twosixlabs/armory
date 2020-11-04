@@ -26,5 +26,7 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.0rc1 \
 
 FROM armory-pytorch-deepspeech-base as armory-pytorch-deepspeech
 ARG armory_version
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+RUN /opt/conda/bin/pip install --no-cache-dir \ 
+    armory-testbed==${armory_version} \
+    adversarial-robustness-toolbox==1.4.2
 CMD tail -f /dev/null
