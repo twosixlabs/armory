@@ -84,6 +84,9 @@ def norm(x, x_adv, ord):
     # cast to float first to prevent overflow errors
     diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
     values = np.linalg.norm(diff, ord=ord, axis=1)
+    # normalize l0 norm by number of elements in array
+    if ord == 0:
+        return list(float(x) / diff[i].size for i, x in enumerate(values))
     return list(float(x) for x in values)
 
 
@@ -119,7 +122,8 @@ def lp(x, x_adv, p):
 
 def l0(x, x_adv):
     """
-    Return the L0 'norm' over a batch of inputs as a float
+    Return the L0 'norm' over a batch of inputs as a float,
+    normalized by the number of elements in the array
     """
     return norm(x, x_adv, 0)
 
