@@ -76,3 +76,11 @@ NOTE: `--check` will take precedence over the `--num-eval-batches` argument.
 armory run scenario_configs/mnist_baseline.json --check
 armory run scenario_configs/mnist_baseline.json --num-eval-batches=5
 ```
+
+## Model Validation
+The `--validate-config` flag will run a series of tests on the model in the selected configuration file.  These tests will alert the user to configuration errors (e.g. clip values that do not broadcast correctly to the input), as well as circumstances that may limit the evaluation (e.g. a model without gradients won't work with white box attacks without modification).
+
+### Example Usage
+```
+armory run scenario_configs/so2sat_baseline.json --validate-config
+```

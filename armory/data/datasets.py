@@ -517,7 +517,7 @@ cifar10_context = ImageContext(x_shape=(32, 32, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
-ucf101_context = VideoContext(x_shape=(None, 240, 320, 3), frame_rate=25)
+ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
 
 
 def mnist_canonical_preprocessing(batch):

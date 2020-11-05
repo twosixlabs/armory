@@ -89,9 +89,17 @@ class AutomaticSpeechRecognition(Scenario):
                 "this is not yet supported for speech recognition models."
             )
 
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+
+        targeted = bool(attack_config.get("targeted"))
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign, skip_attack=skip_attack
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
         )
+
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
 
@@ -134,10 +142,6 @@ class AutomaticSpeechRecognition(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        attack_config = config["attack"]
-        attack_type = attack_config.get("type")
-
-        targeted = bool(attack_config.get("targeted"))
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
@@ -183,6 +187,12 @@ class AutomaticSpeechRecognition(Scenario):
             x_adv.flags.writeable = False
             y_pred_adv = estimator.predict(x_adv, **predict_kwargs)
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            if targeted:
+                metrics_logger.update_task(
+                    y_target, y_pred_adv, adversarial=True, targeted=True,
+                )
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True, targeted=True)
+        metrics_logger.log_task(adversarial=True)
+        if targeted:
+            metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()

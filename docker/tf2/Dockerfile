@@ -16,5 +16,7 @@ WORKDIR /workspace
 
 FROM armory-tf2-base AS armory-tf2
 ARG armory_version
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+RUN /opt/conda/bin/pip install --no-cache-dir \ 
+    armory-testbed==${armory_version} \
+    adversarial-robustness-toolbox==1.4.2
 CMD tail -f /dev/null

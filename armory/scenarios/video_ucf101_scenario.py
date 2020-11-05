@@ -87,9 +87,17 @@ class Ucf101(Scenario):
 
         classifier.set_learning_phase(False)
 
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign, skip_attack=skip_attack
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
         )
+
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
 
@@ -127,9 +135,6 @@ class Ucf101(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        attack_config = config["attack"]
-        attack_type = attack_config.get("type")
-        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -177,10 +182,13 @@ class Ucf101(Scenario):
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             if targeted:
-                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
-            else:
-                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                metrics_logger.update_task(
+                    y_target, y_pred_adv, adversarial=True, targeted=True
+                )
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True, targeted=targeted)
+        metrics_logger.log_task(adversarial=True)
+        if targeted:
+            metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()
