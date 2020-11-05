@@ -327,15 +327,15 @@ on MSCOCO objects and fine-tuned on xView.
 * **Baseline Model Performance: (results derived using Armory v0.12)**
   * Baseline mAP: 27.53% (all test examples)
   * Baseline mAP: 26.79% (1000 test examples)
-  * Baseline Attackd (Masked PGD, 50x50 patch) mAP: 9.20% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 50x50 patch) mAP: 9.20% (1000 test examples)
   * Baseline Attacked (Masked PGD, 75x75 patch) mAP: 6.89% (1000 test examples)
   * Baseline Attacked (Masked PGD, 100x100 patch) mAP: 6.56% (1000 test examples)
 * **Baseline Defense Performance: (results derived using Armory v0.12)**\
 Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=50,
 channel_index=3, apply_fit=False, apply_predict=True).\
-Baseline defense performance is evaluated for a white-box attack
+Baseline defense performance is evaluated for a white-box attack.
   * Baseline mAP: 21.75% (1000 test examples)
-  * Baseline Attackd (Masked PGD, 50x50 patch) mAP: 11.89% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 50x50 patch) mAP: 11.89% (1000 test examples)
   * Baseline Attacked (Masked PGD, 75x75 patch) mAP: 9.95% (1000 test examples)
   * Baseline Attacked (Masked PGD, 100x100 patch) mAP: 9.03% (1000 test examples)
 
