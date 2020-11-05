@@ -4,7 +4,6 @@ Adversarial datasets
 
 from typing import Callable
 
-import numpy as np
 import tensorflow as tf
 
 from armory.data import datasets
@@ -25,11 +24,43 @@ from armory.data.adversarial import (  # noqa: F401
 ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
 
 
+imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
+librispeech_adversarial_context = datasets.AudioContext(
+    x_shape=(None,), sample_rate=16000
+)
+resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
+ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
+apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
+
+
+def imagenet_adversarial_canonical_preprocessing(batch):
+    return datasets.canonical_image_preprocess(imagenet_adversarial_context, batch)
+
+
+def librispeech_adversarial_canonical_preprocessing(batch):
+    return datasets.canonical_audio_preprocess(librispeech_adversarial_context, batch)
+
+
+def resisc45_adversarial_canonical_preprocessing(batch):
+    return datasets.canonical_image_preprocess(resisc45_adversarial_context, batch)
+
+
+def ucf101_adversarial_canonical_preprocessing(batch):
+    return datasets.canonical_image_preprocess(ucf101_adversarial_context, batch)
+
+
+def apricot_canonical_preprocessing(batch):
+    return datasets.canonical_variable_image_preprocess(
+        apricot_adversarial_context, batch
+    )
+
+
 def imagenet_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
+    preprocessing_fn: Callable = imagenet_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -55,11 +86,11 @@ def imagenet_adversarial(
 
     return datasets._generator_from_tfds(
         "imagenet_adversarial:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
-        preprocessing_fn=imagenet_canonical_preprocessing,
+        preprocessing_fn=preprocessing_fn,
         shuffle_files=shuffle_files,
         cache_dataset=cache_dataset,
         framework=framework,
@@ -67,39 +98,12 @@ def imagenet_adversarial(
     )
 
 
-class ImagenetContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 224, 224, 3)
-
-
-imagenet_context = ImagenetContext()
-
-
-def imagenet_canonical_preprocessing(batch):
-    if batch.ndim != len(imagenet_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(imagenet_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == imagenet_context.x_dimensions[1:]
-    assert batch.dtype == np.uint8
-
-    batch = batch.astype(imagenet_context.default_float) / imagenet_context.quantization
-    assert batch.dtype == imagenet_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def librispeech_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = datasets.librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -111,7 +115,7 @@ def librispeech_adversarial(
     Adversarial dataset based on Librispeech-dev-clean including clean,
     Universal Perturbation using PGD, and PGD.
 
-    split_type - one of ("adversarial")
+    split - one of ("adversarial")
 
     returns:
         Generator
@@ -126,7 +130,7 @@ def librispeech_adversarial(
 
     return datasets._generator_from_tfds(
         "librispeech_adversarial:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -142,11 +146,11 @@ def librispeech_adversarial(
 
 
 def resisc45_adversarial_224x224(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = resisc45_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -181,7 +185,7 @@ def resisc45_adversarial_224x224(
 
     return datasets._generator_from_tfds(
         "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224:1.0.2",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -197,11 +201,11 @@ def resisc45_adversarial_224x224(
 
 
 def ucf101_adversarial_112x112(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = ucf101_adversarial_canonical_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     clean_key: str = "clean",
@@ -238,7 +242,7 @@ def ucf101_adversarial_112x112(
 
     return datasets._generator_from_tfds(
         "ucf101_mars_perturbation_and_patch_adversarial112x112:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -254,7 +258,7 @@ def ucf101_adversarial_112x112(
 
 
 def gtsrb_poison(
-    split_type: str = "poison",
+    split: str = "poison",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -273,7 +277,7 @@ def gtsrb_poison(
     """
     return datasets._generator_from_tfds(
         "gtsrb_bh_poison_micronnet:1.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -288,35 +292,8 @@ def gtsrb_poison(
     )
 
 
-class ApricotContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, None, None, 3)
-
-
-apricot_context = ApricotContext()
-
-
-def apricot_canonical_preprocessing(batch):
-    if batch.ndim != len(apricot_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(apricot_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[3] == apricot_context.x_dimensions[3]
-
-    batch = batch.astype(apricot_context.default_float) / apricot_context.quantization
-
-    assert batch.dtype == apricot_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def apricot_dev_adversarial(
-    split_type: str = "adversarial",
+    split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -346,7 +323,7 @@ def apricot_dev_adversarial(
 
     return datasets._generator_from_tfds(
         "apricot_dev:1.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,

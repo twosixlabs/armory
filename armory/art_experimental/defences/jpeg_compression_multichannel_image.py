@@ -20,6 +20,7 @@ class JpegCompressionMultiChannelImage(JpegCompression):
         mins=None,
         ranges=None,
         n_channels=14,
+        dtype=np.float32,
     ):
         super().__init__(
             clip_values,
@@ -30,11 +31,15 @@ class JpegCompressionMultiChannelImage(JpegCompression):
         )
         if mins is None:
             mins = (0.0,) * n_channels  # identity operation
-        self.mins = mins
+        if len(mins) != n_channels:
+            raise ValueError(f"mins must have {n_channels} values, one per channel")
+        self.mins = np.array(mins, dtype=dtype)
 
         if ranges is None:
             ranges = (1.0,) * n_channels  # identity operation
-        self.ranges = ranges
+        if len(ranges) != n_channels:
+            raise ValueError(f"ranges must have {n_channels} values, one per channel")
+        self.ranges = np.array(ranges, dtype=dtype)
 
     def __call__(self, x, y=None):
         x = (x - self.mins) / self.ranges

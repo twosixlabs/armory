@@ -1,23 +1,33 @@
 {
-    "_description": "Resisc45 image classification, contributed by MITRE Corporation, with preloaded adversarial attack",
+    "_description": "XView object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
+        "generate_kwargs": {
+            "patch_height": 50,
+            "patch_width": 50,
+            "xmin": 0,
+            "ymin": 0
+        },
         "knowledge": "white",
         "kwargs": {
-            "adversarial_key": "adversarial_univpatch",
             "batch_size": 1,
-            "description": "'adversarial_key' can be 'adversarial_univperturbation' or 'adversarial_univpatch'"
+            "eps": 1.0,
+            "eps_step": 0.01,
+            "max_iter": 200,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": true
         },
-        "module": "armory.data.adversarial_datasets",
-        "name": "resisc45_adversarial_224x224",
-        "type": "preloaded",
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
         "use_label": false
     },
     "dataset": {
-        "batch_size": 16,
+        "batch_size": 1,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "resisc45"
+        "name": "xview"
     },
     "defense": {
         "kwargs": {
@@ -28,17 +38,7 @@
                 0.0,
                 1.0
             ],
-            "means": [
-                0.36386173189316956,
-                0.38118692953271804,
-                0.33867067558870334
-            ],
-            "quality": 50,
-            "stds": [
-                0.20350874,
-                0.18531173,
-                0.18472934
-            ]
+            "quality": 50
         },
         "module": "armory.art_experimental.defences.jpeg_compression_normalized",
         "name": "JpegCompressionNormalized",
@@ -46,28 +46,28 @@
     },
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "categorical_accuracy"
+            "object_detection_AP_per_class"
         ]
     },
     "model": {
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "module": "armory.baseline_models.pytorch.xview_frcnn",
         "name": "get_art_model",
-        "weights_file": "densenet121_resisc45_v1.h5",
+        "weights_file": "xview_model_state_dict_epoch_99_loss_0p67",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "module": "armory.scenarios.object_detection",
+        "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.12.2-dev",
+        "docker_image": "twosixarmory/pytorch:0.12.2-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

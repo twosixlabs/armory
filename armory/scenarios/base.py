@@ -21,6 +21,7 @@ import os
 import time
 from typing import Optional
 import sys
+import pytest
 
 import coloredlogs
 import pymongo
@@ -54,6 +55,7 @@ class Scenario(abc.ABC):
         mongo_host: Optional[str],
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ):
         """
         Evaluate a config for robustness against attack.
@@ -70,7 +72,7 @@ class Scenario(abc.ABC):
                 config["adhoc"]["train_epochs"] = 1
 
         try:
-            results = self._evaluate(config, num_eval_batches, skip_benign)
+            results = self._evaluate(config, num_eval_batches, skip_benign, skip_attack)
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 logger.exception(
@@ -97,7 +99,11 @@ class Scenario(abc.ABC):
 
     @abc.abstractmethod
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -220,6 +226,18 @@ def _get_config(config_json, from_file=False):
     return config
 
 
+def run_validation(
+    config_json, from_file=False,
+):
+    config = _get_config(config_json, from_file=from_file)
+    _scenario_setup(config)
+    model_config = config.get("model")
+    model_config = json.dumps(model_config)
+    pytest.main(
+        ["-x", "armory/validation/test_config/", "--model-config", model_config]
+    )
+
+
 def run_config(
     config_json,
     from_file=False,
@@ -227,6 +245,7 @@ def run_config(
     mongo_host=None,
     num_eval_batches=None,
     skip_benign=None,
+    skip_attack=None,
 ):
     config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
@@ -235,7 +254,7 @@ def run_config(
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign)
+    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign, skip_attack)
 
 
 def init_interactive(config_json, from_file=True):
@@ -294,6 +313,16 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip benign inference and metric calculations",
     )
+    parser.add_argument(
+        "--skip-attack",
+        action="store_true",
+        help="Skip attack generation and metric calculations",
+    )
+    parser.add_argument(
+        "--validate-config",
+        action="store_true",
+        help="Validate model configuration against several checks",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
@@ -311,12 +340,18 @@ if __name__ == "__main__":
             "--num_eval_batches will be overwritten and set to 1 since --check was passed"
         )
 
-    run_config(
-        args.config,
-        args.from_file,
-        args.check,
-        args.mongo_host,
-        args.num_eval_batches,
-        args.skip_benign,
-    )
+    if args.validate_config:
+        run_validation(
+            args.config, args.from_file,
+        )
+    else:
+        run_config(
+            args.config,
+            args.from_file,
+            args.check,
+            args.mongo_host,
+            args.num_eval_batches,
+            args.skip_benign,
+            args.skip_attack,
+        )
     print(END_SENTINEL)  # indicates to host that the scenario finished w/out error

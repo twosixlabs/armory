@@ -26,7 +26,7 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
-from armory.utils.configuration import load_config
+from armory.utils.configuration import load_config, load_config_stdin
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,10 @@ class DockerImage(argparse.Action):
             setattr(namespace, self.dest, values)
 
 
-DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
+OLD_SCENARIOS = [
+    "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set1.json"
+]
+DEFAULT_SCENARIO = "https://github.com/twosixlabs/armory-example/blob/master/scenario_download_configs/scenarios-set2.json"
 
 
 class DownloadConfig(argparse.Action):
@@ -159,6 +162,25 @@ def _docker_image(parser):
     )
 
 
+def _docker_image_optional(parser):
+    parser.add_argument(
+        "--docker-image",
+        default=images.TF1,
+        metavar="<docker image>",
+        type=str,
+        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        action=DockerImage,
+    )
+
+
+def _skip_docker_images(parser):
+    parser.add_argument(
+        "--skip-docker-images",
+        action="store_true",
+        help="Whether to skip downloading docker images",
+    )
+
+
 def _no_docker(parser):
     parser.add_argument(
         "--no-docker",
@@ -209,7 +231,10 @@ def _set_outputs(config, output_dir, output_filename):
 def run(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
-        "filepath", metavar="<json_config>", type=str, help="json config file"
+        "filepath",
+        metavar="<json_config>",
+        type=str,
+        help="json config file. Use '-' to accept standard input or pipe.",
     )
     _debug(parser)
     _interactive(parser)
@@ -243,21 +268,43 @@ def run(command_args, prog, description):
         action="store_true",
         help="Skip benign inference and metric calculations",
     )
+    parser.add_argument(
+        "--skip-attack",
+        action="store_true",
+        help="Skip attack generation and metric calculations",
+    )
+    parser.add_argument(
+        "--validate-config",
+        action="store_true",
+        help="Validate model configuration against several checks",
+    )
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
 
     try:
-        config = load_config(args.filepath)
+        if args.filepath == "-":
+            if sys.stdin.isatty():
+                logging.error(
+                    "Cannot read config from raw 'stdin'; must pipe or redirect a file"
+                )
+                sys.exit(1)
+            logger.info("Reading config from stdin...")
+            config = load_config_stdin()
+        else:
+            config = load_config(args.filepath)
     except ValidationError as e:
         logger.error(
             f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
         )
         sys.exit(1)
     except json.decoder.JSONDecodeError:
-        logger.exception(f"Could not decode {args.filepath} as a json file.")
-        if not args.filepath.lower().endswith(".json"):
-            logger.warning(f"{args.filepath} is not a '*.json' file")
+        if args.filepath == "-":
+            logger.error("'stdin' did not provide a json-parsable input")
+        else:
+            logger.error(f"Could not decode '{args.filepath}' as a json file.")
+            if not args.filepath.lower().endswith(".json"):
+                logger.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
@@ -270,6 +317,8 @@ def run(command_args, prog, description):
         check_run=args.check,
         num_eval_batches=args.num_eval_batches,
         skip_benign=args.skip_benign,
+        skip_attack=args.skip_attack,
+        validate_config=args.validate_config,
     )
     sys.exit(exit_code)
 
@@ -295,6 +344,8 @@ def download(command_args, prog, description):
     """
     parser = argparse.ArgumentParser(prog=prog, description=description)
     _debug(parser)
+    _docker_image_optional(parser)
+    _skip_docker_images(parser)
     parser.add_argument(
         metavar="<download data config file>",
         dest="download_config",
@@ -325,12 +376,16 @@ def download(command_args, prog, description):
         model_weights.download_all(args.download_config, args.scenario)
         return
 
-    if not armory.is_dev():
-        logger.info("Downloading all docker images....")
+    if args.skip_docker_images:
+        logger.info("Skipping docker image downloads...")
+    elif armory.is_dev():
+        logger.info("Dev version. Must build docker images locally with build-dev.sh")
+    else:
+        logger.info("Downloading all docker images...")
         _pull_docker_images()
 
     logger.info("Downloading requested datasets and model weights...")
-    config = {"sysconfig": {"docker_image": images.TF1}}
+    config = {"sysconfig": {"docker_image": args.docker_image}}
 
     rig = Evaluator(config)
     cmd = "; ".join(

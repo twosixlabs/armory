@@ -1,8 +1,10 @@
 """
 Validate configuration files
 """
+
 import json
-import os.path
+import os
+import sys
 
 import jsonschema
 
@@ -33,5 +35,15 @@ def load_config(filepath: str) -> dict:
     """
     with open(filepath) as f:
         config = json.load(f)
+
+    return validate_config(config)
+
+
+def load_config_stdin() -> dict:
+    """
+    Loads and validates a config file from stdin
+    """
+    string = sys.stdin.read()
+    config = json.loads(string)
 
     return validate_config(config)

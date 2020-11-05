@@ -5,7 +5,7 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 51.0,
+            "eps": 0.2,
             "eps_step": 0.1,
             "minimal": false,
             "num_random_init": 0,
@@ -41,6 +41,7 @@
             "nb_epochs": 10
         },
         "model_kwargs": {
+            "max_frames": 512,
             "model_status": "ucf101_trained"
         },
         "module": "armory.baseline_models.pytorch.ucf101_mars",

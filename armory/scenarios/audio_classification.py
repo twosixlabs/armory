@@ -24,7 +24,11 @@ logger = logging.getLogger(__name__)
 
 class AudioClassificationTask(Scenario):
     def _evaluate(
-        self, config: dict, num_eval_batches: Optional[int], skip_benign: Optional[bool]
+        self,
+        config: dict,
+        num_eval_batches: Optional[int],
+        skip_benign: Optional[bool],
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -55,7 +59,7 @@ class AudioClassificationTask(Scenario):
             train_data = load_dataset(
                 config["dataset"],
                 epochs=fit_kwargs["nb_epochs"],
-                split_type="train",
+                split=config["dataset"].get("train_split", "train"),
                 preprocessing_fn=fit_preprocessing_fn,
                 shuffle_files=True,
             )
@@ -75,13 +79,21 @@ class AudioClassificationTask(Scenario):
             classifier = defense()
 
         classifier.set_learning_phase(False)
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
 
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
         )
+
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
 
+        eval_split = config["dataset"].get("eval_split", "test")
         if skip_benign:
             logger.info("Skipping benign classification...")
         else:
@@ -90,7 +102,7 @@ class AudioClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -108,19 +120,20 @@ class AudioClassificationTask(Scenario):
                 metrics_logger.update_task(y, y_pred)
             metrics_logger.log_task()
 
+        if skip_attack:
+            logger.info("Skipping attack generation...")
+            return metrics_logger.results()
+
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        attack_config = config["attack"]
-        attack_type = attack_config.get("type")
-        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
-                split_type="adversarial",
+                split="adversarial",
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -133,7 +146,7 @@ class AudioClassificationTask(Scenario):
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
-                split_type="test",
+                split=eval_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
@@ -160,10 +173,13 @@ class AudioClassificationTask(Scenario):
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             if targeted:
-                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
-            else:
-                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                metrics_logger.update_task(
+                    y_target, y_pred_adv, adversarial=True, targeted=True
+                )
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True, targeted=targeted)
+        metrics_logger.log_task(adversarial=True)
+        if targeted:
+            metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()

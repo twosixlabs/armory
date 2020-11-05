@@ -5,6 +5,7 @@ Model contributed by: MITRE Corporation
 Adapted from: https://github.com/mravanelli/SincNet
 """
 import logging
+from typing import Optional
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
@@ -28,7 +29,7 @@ WINDOW_LENGTH = int(SAMPLE_RATE * WINDOW_STEP_SIZE / 1000)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def numpy_random_preprocessing_fn(batch):
+def numpy_random_preprocessing_fn(batch: np.ndarray):
     """
     Standardize, then normalize sound clips
 
@@ -57,7 +58,7 @@ def numpy_random_preprocessing_fn(batch):
     return np.array(processed_batch)
 
 
-def numpy_all_preprocessing_fn(batch):
+def numpy_all_preprocessing_fn(batch: np.ndarray):
     """
     Input is comprised of one or more clips, where each clip i
     is given as an ndarray with shape (n_i,).
@@ -117,7 +118,7 @@ def torch_random_preprocessing_fn(x):
     return x
 
 
-def torch_all_preprocessing_fn(x):
+def torch_all_preprocessing_fn(x: torch.Tensor):
     """
     Input is comprised of one or more clips, where each clip i
     is given as an ndarray with shape (n_i,).
@@ -148,7 +149,10 @@ def torch_all_preprocessing_fn(x):
     return x
 
 
-def sincnet(weights_path=None):
+def sincnet(weights_path: Optional[str] = None) -> dnn_models.SincWrapper:
+    """
+    Set configuration options and instantiates SincWrapper object
+    """
     pretrained = weights_path is not None
     if pretrained:
         model_params = torch.load(weights_path, map_location=DEVICE)
@@ -242,7 +246,7 @@ class SincNetWrapper(nn.Module):
         "all": torch_all_preprocessing_fn,
     }
 
-    def __init__(self, model_kwargs, weights_path):
+    def __init__(self, model_kwargs: dict, weights_path: Optional[str]) -> None:
         super().__init__()
         predict_mode = model_kwargs.pop("predict_mode", "all")
         if predict_mode not in self.MODES:
@@ -252,7 +256,7 @@ class SincNetWrapper(nn.Module):
         self.model = sincnet(weights_path=weights_path, **model_kwargs)
         self.model.to(DEVICE)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.training:
             # preprocessing should be done before model for arbitrary length input
             return self.model(x)
@@ -267,7 +271,9 @@ class SincNetWrapper(nn.Module):
 preprocessing_fn = numpy_random_preprocessing_fn
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchClassifier:
     model = SincNetWrapper(model_kwargs, weights_path)
     model.to(DEVICE)
 

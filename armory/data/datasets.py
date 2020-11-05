@@ -9,7 +9,9 @@ The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import logging
+import json
 import os
+import re
 from typing import Callable, Union
 
 import numpy as np
@@ -64,6 +66,7 @@ class ArmoryDataGenerator(DataGenerator):
         preprocessing_fn=None,
         label_preprocessing_fn=None,
         variable_length=False,
+        variable_y=False,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
@@ -79,8 +82,11 @@ class ArmoryDataGenerator(DataGenerator):
         )
 
         self.variable_length = variable_length
+        self.variable_y = variable_y
         if self.variable_length:
             self.current = 0
+        elif self.variable_y:
+            raise NotImplementedError("variable_y=True requires variable_length=True")
 
     @staticmethod
     def np_1D_object_array(x_list):
@@ -119,15 +125,26 @@ class ArmoryDataGenerator(DataGenerator):
             else:
                 x = self.np_1D_object_array(x_list)
 
-            # Does not currently handle variable-length y
-            if isinstance(y_list[0], dict):
-                y = {}
-                for k in y_list[0].keys():
-                    y[k] = np.hstack([y_i[k] for y_i in y_list])
-            elif isinstance(y_list[0], tuple):
-                y = tuple(np.hstack(i) for i in zip(*y_list))
+            if self.variable_y:
+                if isinstance(y_list[0], dict):
+                    # Translate a list of dicts into a dict of arrays
+                    y = {}
+                    for k in y_list[0].keys():
+                        y[k] = self.np_1D_object_array([y_i[k] for y_i in y_list])
+                elif isinstance(y_list[0], tuple):
+                    # Translate a list of tuples into a tuple of arrays
+                    y = tuple(self.np_1D_object_array(i) for i in zip(*y_list))
+                else:
+                    y = self.np_1D_object_array(y_list)
             else:
-                y = np.hstack(y_list)
+                if isinstance(y_list[0], dict):
+                    y = {}
+                    for k in y_list[0].keys():
+                        y[k] = np.hstack([y_i[k] for y_i in y_list])
+                elif isinstance(y_list[0], tuple):
+                    y = tuple(np.hstack(i) for i in zip(*y_list))
+                else:
+                    y = np.hstack(y_list)
         else:
             x, y = next(self.generator)
 
@@ -188,9 +205,69 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
+def _parse_token(token: str):
+    """
+    Token from parse_split index
+
+    Return parsed token
+    """
+    if not token:
+        raise ValueError("empty token found")
+
+    left = token.find("[")
+    if left == -1:
+        return token
+
+    right = token.rfind("]")
+    if right != len(token) - 1:
+        raise ValueError(f"could not parse token {token} - mismatched brackets")
+    name = token[:left]
+    index = token[left + 1 : right]  # remove brackets
+    if not name:
+        raise ValueError(f"empty split name: {token}")
+    if not index:
+        raise ValueError(f"empty index found: {token}")
+    if index.count(":") == 2:
+        raise NotImplementedError(f"slice 'step' not enabled: {token}")
+    elif index == "[]":
+        raise ValueError(f"empty list index found: {token}")
+
+    if re.match(r"^\d+$", index):
+        # single index
+        i = int(index)
+        return f"{name}[{i}:{i+1}]"
+    elif re.match(r"^\[\d+(\s*,\s*\d+)*\]$", index):
+        # list index of nonnegative integer indices
+        # out-of-order and duplicate indices are allowed
+        index_list = json.loads(index)
+        token_list = [f"{name}[{i}:{i+1}]" for i in index_list]
+        if not token_list:
+            raise ValueError
+        return "+".join(token_list)
+
+    return token
+
+
+def parse_split_index(split: str):
+    """
+    Take a TFDS split argument and rewrite index arguments such as:
+        test[10] --> test[10:11]
+        test[[1, 5, 7]] --> test[1:2]+test[5:6]+test[7:8]
+    """
+    if not isinstance(split, str):
+        raise ValueError(f"split must be str, not {type(split)}")
+    if not split.strip():
+        raise ValueError("split cannot be empty")
+
+    tokens = split.split("+")
+    tokens = [x.strip() for x in tokens]
+    output_tokens = [_parse_token(x) for x in tokens]
+    return "+".join(output_tokens)
+
+
 def _generator_from_tfds(
     dataset_name: str,
-    split_type: str,
+    split: str,
     batch_size: int,
     epochs: int,
     dataset_dir: str,
@@ -200,6 +277,7 @@ def _generator_from_tfds(
     supervised_xy_keys=None,
     download_and_prepare_kwargs=None,
     variable_length=False,
+    variable_y=False,
     shuffle_files=True,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -223,15 +301,36 @@ def _generator_from_tfds(
 
     default_graph = tf.compat.v1.keras.backend.get_session().graph
 
-    ds, ds_info = tfds.load(
-        dataset_name,
-        split=split_type,
-        as_supervised=as_supervised,
-        data_dir=dataset_dir,
-        with_info=True,
-        download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=shuffle_files,
-    )
+    if not isinstance(split, str):
+        raise ValueError(f"split must be str, not {type(split)}")
+
+    try:
+        ds, ds_info = tfds.load(
+            dataset_name,
+            split=split,
+            as_supervised=as_supervised,
+            data_dir=dataset_dir,
+            with_info=True,
+            download_and_prepare_kwargs=download_and_prepare_kwargs,
+            shuffle_files=shuffle_files,
+        )
+    except AssertionError as e:
+        if not str(e).startswith("Unrecognized instruction format: "):
+            raise
+        logger.warning(f"Caught AssertionError in TFDS load split argument: {e}")
+        logger.warning(f"Attempting to parse split {split}")
+        split = parse_split_index(split)
+        logger.warning(f"Replacing split with {split}")
+        ds, ds_info = tfds.load(
+            dataset_name,
+            split=split,
+            as_supervised=as_supervised,
+            data_dir=dataset_dir,
+            with_info=True,
+            download_and_prepare_kwargs=download_and_prepare_kwargs,
+            shuffle_files=shuffle_files,
+        )
+
     if not as_supervised:
         try:
             x_key, y_key = supervised_xy_keys
@@ -279,12 +378,13 @@ def _generator_from_tfds(
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
             ds,
-            size=ds_info.splits[split_type].num_examples,
+            size=ds_info.splits[split].num_examples,
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
             label_preprocessing_fn=label_preprocessing_fn,
             variable_length=bool(variable_length and batch_size > 1),
+            variable_y=bool(variable_y and batch_size > 1),
         )
 
     elif framework == "tf":
@@ -320,44 +420,205 @@ def preprocessing_chain(*args):
     return wrapped
 
 
-class MnistContext:
-    def __init__(self):
-        self.default_float = np.float32
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+        actual should not have None values
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if None in actual:
+        raise ValueError(f"None should not be in actual shape {actual}")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+class ImageContext:
+    def __init__(self, x_shape):
+        self.x_shape = x_shape
+        self.input_type = np.uint8
+        self.input_min = 0
+        self.input_max = 255
+
         self.quantization = 255
-        self.x_dimensions = (None, 28, 28, 1)
+
+        self.output_type = np.float32
+        self.output_min = 0.0
+        self.output_max = 1.0
 
 
-mnist_context = MnistContext()
+class VideoContext(ImageContext):
+    def __init__(self, x_shape, frame_rate):
+        super().__init__(x_shape)
+        self.frame_rate = frame_rate
 
 
-def mnist_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(mnist_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(mnist_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, mnist_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == mnist_context.x_dimensions[1:]
+def canonical_image_preprocess(context, batch):
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    if batch.dtype != context.input_type:
+        raise ValueError("input batch dtype {batch.dtype} != {context.input_type}")
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
 
-    batch = (
-        batch.astype(mnist_context.default_float) / mnist_context.quantization
-    )  # 255
-    assert batch.dtype == mnist_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
+    batch = batch.astype(context.output_type) / context.quantization
+
+    if batch.dtype != context.output_type:
+        raise ValueError("output batch dtype {batch.dtype} != {context.output_type}")
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
 
     return batch
 
 
+def canonical_variable_image_preprocess(context, batch):
+    """
+    Preprocessing when images are of variable size
+    """
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x.shape, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+    elif batch.dtype == context.input_type:
+        check_shapes(batch.shape, (None,) + context.x_shape)
+        assert batch.dtype == context.input_type
+        assert batch.min() >= context.input_min
+        assert batch.max() <= context.input_max
+
+        batch = batch.astype(context.output_type) / context.quantization
+    else:
+        raise ValueError(
+            f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
+        )
+
+    for x in batch:
+        assert x.dtype == context.output_type
+        assert x.min() >= context.output_min
+        assert x.max() <= context.output_max
+
+    return batch
+
+
+mnist_context = ImageContext(x_shape=(28, 28, 1))
+cifar10_context = ImageContext(x_shape=(32, 32, 3))
+gtsrb_context = ImageContext(x_shape=(None, None, 3))
+resisc45_context = ImageContext(x_shape=(256, 256, 3))
+imagenette_context = ImageContext(x_shape=(None, None, 3))
+xview_context = ImageContext(x_shape=(None, None, 3))
+ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
+
+
+def mnist_canonical_preprocessing(batch):
+    return canonical_image_preprocess(mnist_context, batch)
+
+
+def cifar10_canonical_preprocessing(batch):
+    return canonical_image_preprocess(cifar10_context, batch)
+
+
+def gtsrb_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(gtsrb_context, batch)
+
+
+def resisc45_canonical_preprocessing(batch):
+    return canonical_image_preprocess(resisc45_context, batch)
+
+
+def imagenette_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(imagenette_context, batch)
+
+
+def xview_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(xview_context, batch)
+
+
+def ucf101_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(ucf101_context, batch)
+
+
+class AudioContext:
+    def __init__(self, x_shape, sample_rate, input_type=np.int64):
+        self.x_shape = x_shape
+        self.input_type = input_type
+        self.input_min = -(2 ** 15)
+        self.input_max = 2 ** 15 - 1
+
+        self.sample_rate = 16000
+        self.quantization = 2 ** 15
+        self.output_type = np.float32
+        self.output_min = -1.0
+        self.output_max = 1.0
+
+
+def canonical_audio_preprocess(context, batch):
+    if batch.dtype == np.object:
+        for x in batch:
+            check_shapes(x.shape, context.x_shape)
+            assert x.dtype == context.input_type
+            assert x.min() >= context.input_min
+            assert x.max() <= context.input_max
+
+        batch = np.array(
+            [x.astype(context.output_type) / context.quantization for x in batch],
+            dtype=object,
+        )
+
+        for x in batch:
+            assert x.dtype == context.output_type
+            assert x.min() >= context.output_min
+            assert x.max() <= context.output_max
+        return batch
+
+    check_shapes(batch.shape, (None,) + context.x_shape)
+    assert batch.dtype == context.input_type
+    assert batch.min() >= context.input_min
+    assert batch.max() <= context.input_max
+
+    batch = batch.astype(context.output_type) / context.quantization  # 2**15
+
+    assert batch.dtype == context.output_type
+    assert batch.min() >= context.output_min
+    assert batch.max() <= context.output_max
+
+    return batch
+
+
+digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
+librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
+librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+
+
+def digit_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(digit_context, batch)
+
+
+def librispeech_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_context, batch)
+
+
+def librispeech_dev_clean_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
+
+
 def mnist(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = mnist_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = mnist_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -371,7 +632,7 @@ def mnist(
 
     return _generator_from_tfds(
         "mnist:3.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -382,44 +643,12 @@ def mnist(
     )
 
 
-class Cifar10Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 32, 32, 3)
-
-
-cifar10_context = Cifar10Context()
-
-
-def cifar10_dataset_canonical_preprocessing(batch):
-    if batch.ndim != len(cifar10_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(cifar10_context.x_dimensions)}"
-        )
-    for dim, (source, target) in enumerate(
-        zip(batch.shape, cifar10_context.x_dimensions)
-    ):
-        pass
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == cifar10_context.x_dimensions[1:]
-
-    batch = (
-        batch.astype(cifar10_context.default_float) / cifar10_context.quantization
-    )  # 255
-    assert batch.dtype == cifar10_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def cifar10(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = cifar10_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = cifar10_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -433,7 +662,7 @@ def cifar10(
 
     return _generator_from_tfds(
         "cifar10:3.0.2",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -445,7 +674,7 @@ def cifar10(
 
 
 def digit(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -463,7 +692,7 @@ def digit(
 
     return _generator_from_tfds(
         "digit:1.0.8",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -476,11 +705,11 @@ def digit(
 
 
 def imagenette(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = imagenette_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -494,7 +723,7 @@ def imagenette(
 
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -507,10 +736,10 @@ def imagenette(
 
 
 def german_traffic_sign(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = gtsrb_canonical_preprocessing,
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -521,7 +750,7 @@ def german_traffic_sign(
     """
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -533,64 +762,12 @@ def german_traffic_sign(
     )
 
 
-class LibriSpeechDevCleanContext:
-    def __init__(self):
-        self.input_type = np.int64  # However, stores values in int16 range
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
-        self.x_shape = (None,)
-        self.sample_rate = 16000
-        self.quantization = 2 ** 15
-        self.output_type = np.float32
-        self.output_min = -1.0
-        self.output_max = 1.0
-
-
-librispeech_dev_clean_context = LibriSpeechDevCleanContext()
-
-
-def librispeech_dev_clean_dataset_canonical_preprocessing(batch):
-    context = librispeech_dev_clean_context
-    if batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            assert x.max() <= context.input_max
-            assert x.min() >= context.input_min
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-
-        for x in batch:
-            assert x.dtype == context.output_type
-            assert x.max() <= context.output_max
-            assert x.min() >= context.output_min
-        return batch
-
-    if batch.ndim != len(context.x_shape) + 1:
-        print(batch)
-        raise ValueError(f"input batch dim {batch.ndim} != {len(context.x_shape) + 1}")
-    if batch.dtype != context.input_type:
-        raise ValueError(f"input batch dtype {batch.dtype} != {context.input_type}")
-    assert batch.max() <= context.input_max
-    assert batch.min() >= context.input_min
-
-    batch = batch.astype(context.output_type) / context.quantization  # 2**15
-    assert batch.dtype == context.output_type
-    assert batch.max() <= context.output_max
-    assert batch.min() >= context.output_min
-
-    return batch
-
-
 def librispeech_dev_clean(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -600,7 +777,7 @@ def librispeech_dev_clean(
     Librispeech dev dataset with custom split used for speaker
     identification
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -614,7 +791,7 @@ def librispeech_dev_clean(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -628,11 +805,11 @@ def librispeech_dev_clean(
 
 
 def librispeech(
-    split_type: str = "train_clean100",
+    split: str = "train_clean100",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -646,15 +823,18 @@ def librispeech(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
-
-    if cache_dataset and split_type not in CACHED_SPLITS:
-        raise ValueError(
-            f"Split {split_type} not available in cache. Must be one of {CACHED_SPLITS}"
-        )
+    if cache_dataset:
+        # Logic needed to work with tensorflow slicing API
+        #     E.g., split="dev_clean+dev_other[:10%]"
+        #     See: https://www.tensorflow.org/datasets/splits
+        if not any(x in split for x in CACHED_SPLITS):
+            raise ValueError(
+                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}"
+            )
 
     return _generator_from_tfds(
         "librispeech/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -668,11 +848,11 @@ def librispeech(
 
 
 def librispeech_dev_clean_asr(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = librispeech_dev_clean_dataset_canonical_preprocessing,
+    preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -682,7 +862,7 @@ def librispeech_dev_clean_asr(
     Librispeech dev dataset with custom split used for automatic
     speech recognition.
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
 
     returns:
         Generator
@@ -696,7 +876,7 @@ def librispeech_dev_clean_asr(
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -711,34 +891,8 @@ def librispeech_dev_clean_asr(
     )
 
 
-class Resisc45Context:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (None, 256, 256, 3)
-
-
-resisc45_context = Resisc45Context()
-
-
-def resisc45_canonical_preprocessing(batch):
-    if batch.ndim != len(resisc45_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(resisc45_context.x_dimensions)}"
-        )
-    assert batch.dtype == np.uint8
-    assert batch.shape[1:] == resisc45_context.x_dimensions[1:]
-
-    batch = batch.astype(resisc45_context.default_float) / resisc45_context.quantization
-    assert batch.dtype == resisc45_context.default_float
-    assert batch.max() <= 1.0
-    assert batch.min() >= 0.0
-
-    return batch
-
-
 def resisc45(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -761,13 +915,13 @@ def resisc45(
         Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (31500,) of int, with values in range(45)
 
-    split_type - one of ("train", "validation", "test")
+    split - one of ("train", "validation", "test")
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -778,69 +932,8 @@ def resisc45(
     )
 
 
-def check_shapes(actual, target):
-    """
-    Ensure that shapes match, ignoring None values
-
-    actual and target should be tuples
-        actual should not have None values
-    """
-    if type(actual) != tuple:
-        raise ValueError(f"actual shape {actual} is not a tuple")
-    if type(target) != tuple:
-        raise ValueError(f"target shape {target} is not a tuple")
-    if None in actual:
-        raise ValueError(f"None should not be in actual shape {actual}")
-    if len(actual) != len(target):
-        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
-    for a, t in zip(actual, target):
-        if a != t and t is not None:
-            raise ValueError(f"shape {actual} does not match shape {target}")
-
-
-class UCF101Context:
-    def __init__(self):
-        self.nb_classes = 101
-        self.input_type = np.uint8
-        self.x_shape = (None, 240, 320, 3)
-        self.frame_rate = 25
-        self.quantization = 255
-        self.output_type = np.float32
-        self.output_min = 0.0
-        self.output_max = 1.0
-
-
-ucf101_context = UCF101Context()
-
-
-def ucf101_canonical_preprocessing(batch):
-    context = ucf101_context
-    if batch.dtype == np.uint8:
-        check_shapes(batch.shape, (None,) + context.x_shape)
-
-        batch = batch.astype(context.output_type) / context.quantization
-    elif batch.dtype == np.object:
-        for x in batch:
-            if x.dtype != context.input_type:
-                raise ValueError(f"input x dtype {x.dtype} != {context.input_type}")
-            check_shapes(x.shape, context.x_shape)
-
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
-    else:
-        raise ValueError(f"input batch dtype {batch.dtype} not in (np.uint8, 'O')")
-
-    for x in batch:
-        assert x.dtype == context.output_type
-        assert x.min() >= context.output_min
-        assert x.max() <= context.output_max
-    return batch
-
-
 def ucf101(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -858,7 +951,7 @@ def ucf101(
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -872,36 +965,6 @@ def ucf101(
     )
 
 
-class XViewContext:
-    def __init__(self):
-        self.default_float = np.float32
-        self.quantization = 255
-        self.x_dimensions = (
-            None,
-            None,
-            None,
-            3,
-        )  # xview images are square but with different sizes
-
-
-xview_context = XViewContext()
-
-
-def xview_canonical_preprocessing(batch):
-    if batch.ndim != len(xview_context.x_dimensions):
-        raise ValueError(
-            f"input batch dim {batch.ndim} != {len(xview_context.x_dimensions)}"
-        )
-
-    batch = batch.astype(xview_context.default_float) / xview_context.quantization
-
-    assert batch.dtype == xview_context.default_float
-    assert batch.shape[1] == batch.shape[2]  # Ensure square shape
-    assert batch.shape[3] == xview_context.x_dimensions[3]
-
-    return batch
-
-
 def tf_to_pytorch_box_conversion(x, y):
     """
     Converts boxes from TF format to PyTorch format
@@ -909,15 +972,26 @@ def tf_to_pytorch_box_conversion(x, y):
     PyTorch format: [x1, y1, x2, y2] (unnormalized)
     """
     orig_boxes = y["boxes"]
-    converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
-    height, width = x.shape[1:3]
-    converted_boxes *= [width, height, width, height]
+    if orig_boxes.dtype == np.object:
+        converted_boxes = np.empty(orig_boxes.shape, dtype=object)
+        for i, (x_i, orig_boxes_i) in enumerate(zip(x, orig_boxes)):
+            height, width = x_i.shape[:2]
+            converted_boxes[i] = orig_boxes_i[:, [1, 0, 3, 2]] * [
+                width,
+                height,
+                width,
+                height,
+            ]
+    else:
+        converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
+        height, width = x.shape[1:3]
+        converted_boxes *= [width, height, width, height]
     y["boxes"] = converted_boxes
     return y
 
 
 def xview(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -929,7 +1003,7 @@ def xview(
     shuffle_files: bool = True,
 ) -> ArmoryDataGenerator:
     """
-    split_type - one of ("train", "test")
+    split - one of ("train", "test")
 
     Bounding boxes are by default loaded in PyTorch format of [x1, y1, x2, y2]
     where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
@@ -939,7 +1013,7 @@ def xview(
 
     return _generator_from_tfds(
         "xview:1.0.1",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
@@ -947,6 +1021,8 @@ def xview(
         label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
+        variable_length=bool(batch_size > 1),
+        variable_y=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
@@ -996,7 +1072,7 @@ def so2sat_canonical_preprocessing(batch):
 
 
 def so2sat(
-    split_type: str = "train",
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -1013,7 +1089,7 @@ def so2sat(
 
     return _generator_from_tfds(
         "so2sat/all:2.1.0",
-        split_type=split_type,
+        split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
