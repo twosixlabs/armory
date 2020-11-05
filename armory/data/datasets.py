@@ -26,7 +26,6 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import apache_beam as beam
 from art.data_generators import DataGenerator
-from PIL import ImageOps, Image
 
 from armory.data.utils import (
     download_verify_dataset_cache,
@@ -515,6 +514,7 @@ def canonical_variable_image_preprocess(context, batch):
 
 mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
+gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
@@ -527,6 +527,10 @@ def mnist_canonical_preprocessing(batch):
 
 def cifar10_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar10_context, batch)
+
+
+def gtsrb_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(gtsrb_context, batch)
 
 
 def resisc45_canonical_preprocessing(batch):
@@ -729,29 +733,6 @@ def imagenette(
         framework=framework,
         shuffle_files=shuffle_files,
     )
-
-
-def gtsrb_canonical_preprocessing(img):
-    img_size = 48
-    img_out = []
-    quantization = 255.0
-    for im in img:
-        img_eq = ImageOps.equalize(Image.fromarray(im))
-        width, height = img_eq.size
-        min_side = min(img_eq.size)
-        center = width // 2, height // 2
-
-        left = center[0] - min_side // 2
-        top = center[1] - min_side // 2
-        right = center[0] + min_side // 2
-        bottom = center[1] + min_side // 2
-
-        img_eq = img_eq.crop((left, top, right, bottom))
-        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
-
-        img_out.append(img_eq)
-
-    return np.array(img_out, dtype=np.float32)
 
 
 def german_traffic_sign(

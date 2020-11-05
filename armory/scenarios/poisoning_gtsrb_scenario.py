@@ -14,6 +14,7 @@ from tensorflow import set_random_seed, ConfigProto, Session
 from tensorflow.keras.backend import set_session
 from tensorflow.keras.utils import to_categorical
 from tqdm import tqdm
+from PIL import ImageOps, Image
 
 from armory.utils.config_loading import (
     load_dataset,
@@ -25,6 +26,29 @@ from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
+
+
+def poison_scenario_preprocessing(batch):
+    img_size = 48
+    img_out = []
+    quantization = 255.0
+    for im in batch:
+        img_eq = ImageOps.equalize(Image.fromarray(im))
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width // 2, height // 2
+
+        left = center[0] - min_side // 2
+        top = center[1] - min_side // 2
+        right = center[0] + min_side // 2
+        bottom = center[1] + min_side // 2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
 
 
 def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
@@ -109,6 +133,7 @@ class GTSRB(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("train_split", "train"),
+            preprocessing_fn=poison_scenario_preprocessing,
             shuffle_files=False,
         )
 
@@ -264,6 +289,7 @@ class GTSRB(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("eval_split", "test"),
+            preprocessing_fn=poison_scenario_preprocessing,
             shuffle_files=False,
         )
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
@@ -312,6 +338,7 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
+                preprocessing_fn=poison_scenario_preprocessing,
                 shuffle_files=False,
             )
             for x_clean_test, y_clean_test in tqdm(
@@ -327,6 +354,7 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
+                preprocessing_fn=poison_scenario_preprocessing,
                 shuffle_files=False,
             )
             for x_test, y_test in tqdm(test_data, desc="Testing"):
