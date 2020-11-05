@@ -42,7 +42,7 @@ class Evaluator(object):
         else:
             self.armory_global_config = {"verify_ssl": True}
 
-        date_time = datetime.datetime.utcnow().isoformat().replace(":", "")
+        date_time = datetime.datetime.utcnow().isoformat(timespec='seconds').replace(":", "")
         output_dir = self.config["sysconfig"].get("output_dir", None)
         eval_id = f"{output_dir}_{date_time}" if output_dir else date_time
 
