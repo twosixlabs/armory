@@ -8,6 +8,9 @@ from art.classifiers import KerasClassifier
 
 
 def make_mnist_model(**kwargs) -> tf.keras.Model:
+    """
+    This is a simple CNN for MNIST and does not achieve SotA performance
+    """
     model = Sequential()
     model.add(
         Conv2D(

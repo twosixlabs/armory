@@ -150,6 +150,9 @@ def torch_all_preprocessing_fn(x: torch.Tensor):
 
 
 def sincnet(weights_path: Optional[str] = None) -> dnn_models.SincWrapper:
+    """
+    Set configuration options and instantiates SincWrapper object
+    """
     pretrained = weights_path is not None
     if pretrained:
         model_params = torch.load(weights_path, map_location=DEVICE)

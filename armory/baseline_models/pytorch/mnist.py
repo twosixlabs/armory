@@ -13,6 +13,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Net(nn.Module):
+    """
+    This is a simple CNN for MNIST and does not achieve SotA performance
+    """
+
     def __init__(self) -> None:
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 4, 5, 1)

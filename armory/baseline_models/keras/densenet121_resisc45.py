@@ -26,6 +26,11 @@ def mean_std():
 
 
 def make_densenet121_resisc_model(**model_kwargs) -> tf.keras.Model:
+    """
+    This model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45.
+    The initial layers transform the input from canonical form to the expected input
+    format for the DenseNet-121.
+    """
     input = tf.keras.Input(shape=(256, 256, 3))
 
     # Preprocessing layers

@@ -9,6 +9,11 @@ from tensorflow.keras.optimizers import SGD
 
 
 def make_model(**kwargs):
+    """
+    This is a simple CNN for So2SAT. The data are split into SAR and EO data streams and fed into their respective
+    feature extraction networks. In the final layer, the two networks are fused to produce a single prediction output.
+    """
+
     SAR_model = Sequential()
     SAR_model.add(
         Conv2D(18, kernel_size=(9, 9), activation="relu", input_shape=[32, 32, 4])
