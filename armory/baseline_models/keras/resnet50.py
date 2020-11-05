@@ -15,7 +15,7 @@ IMAGENET_MEANS = [103.939, 116.779, 123.68]
 
 
 def get_art_model(
-    model_kwargs: dict, wrapper_kwargs: str, weights_path: Optional[str] = None
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> KerasClassifier:
     """
     resnet pretrained on Imagenet. The initial layers transform the input from canonical form to the expected input
