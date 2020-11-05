@@ -14,7 +14,7 @@ DATASET_DIR = paths.DockerPaths().dataset_dir
 def test_pytorch_generator_cifar10():
     batch_size = 16
     dataset = datasets.cifar10(
-        split_type="train",
+        split="train",
         epochs=1,
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
@@ -35,7 +35,7 @@ def test_pytorch_generator_cifar10():
 def test_pytorch_generator_mnist():
     batch_size = 16
     dataset = datasets.mnist(
-        split_type="train",
+        split="train",
         epochs=1,
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
@@ -56,7 +56,7 @@ def test_pytorch_generator_mnist():
 def test_pytorch_generator_resisc():
     batch_size = 16
     dataset = datasets.resisc45(
-        split_type="train",
+        split="train",
         epochs=1,
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
@@ -77,7 +77,7 @@ def test_pytorch_generator_resisc():
 def test_pytorch_generator_epochs():
     batch_size = 10
     dataset = datasets.mnist(
-        split_type="test",
+        split="test",
         epochs=2,
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
@@ -103,7 +103,7 @@ def test_tf_pytorch_equality():
 
     batch_size = 10
     ds_tf = datasets.mnist(
-        split_type="test",
+        split="test",
         batch_size=batch_size,
         dataset_dir=DATASET_DIR,
         framework="tf",
@@ -114,7 +114,7 @@ def test_tf_pytorch_equality():
 
     ds_pytorch = iter(
         datasets.mnist(
-            split_type="test",
+            split="test",
             batch_size=batch_size,
             dataset_dir=DATASET_DIR,
             framework="pytorch",

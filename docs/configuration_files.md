@@ -26,6 +26,8 @@ All configuration files are verified against the jsonschema definition at run ti
     module: [String] Python module to load dataset from 
     name: [String] Name of the dataset function
     framework: [String] Framework to return Tensors in. <`tf`|`pytorch`|`numpy`>. `numpy` by default.
+    train_split: [Optional String] Training split in dataset. Typically defaults to `train`. Can use fancy slicing via [TFDS slicing API](https://www.tensorflow.org/datasets/splits#slicing_api)
+    eval_split: [Optional String] Eval split in dataset. Typically defaults to `test`. Can use fancy slicing via [TFDS slicing API](https://www.tensorflow.org/datasets/splits#slicing_api)
   }
 `defense`: [Object or null]
   {
