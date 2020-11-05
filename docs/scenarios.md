@@ -173,7 +173,8 @@ making specific test-time decisions.
 * **Dataset:**
 The dataset is the [German Traffic Sign Recognition Benchmark](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
 It comprises 43 classes and more than 50,000 total images. The official Final_Training and Final_Test data are used
-for the train/test split.
+for the train/test split. The dataset is available in canonical format, but the official scenario applies preprocessing
+consisting of contrast equalization, cropping to a square shape, and resizing.
 * **Baseline Model:**
 To maximize time spent on defense research, an untrained baseline model will be provided, but
 performers are not required to use it, if their defense requires a different architecture.
