@@ -41,7 +41,7 @@ def test_norms():
     ]:
         assert metrics.l2(x, x_adv) == [4.0] * batch_size
         assert metrics.l1(x, x_adv) == [16.0] * batch_size
-        assert metrics.l0(x, x_adv) == [16.0] * batch_size
+        assert metrics.l0(x, x_adv) == [1.0] * batch_size
         assert metrics.lp(x, x_adv, 4) == [2.0] * batch_size
         assert metrics.linf(x, x_adv) == [1.0] * batch_size
     with pytest.raises(ValueError):
