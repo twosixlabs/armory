@@ -17,6 +17,7 @@ class JpegCompressionNormalized(JpegCompression):
         apply_predict=False,
         means=None,
         stds=None,
+        dtype=np.float32,
     ):
         super().__init__(
             clip_values,
@@ -29,13 +30,13 @@ class JpegCompressionNormalized(JpegCompression):
             means = (0.0, 0.0, 0.0)  # identity operation
         if len(means) != 3:
             raise ValueError("means must have 3 values, one per channel")
-        self.means = means
+        self.means = np.array(means, dtype=dtype)
 
         if stds is None:
             stds = (1.0, 1.0, 1.0)  # identity operation
         if len(stds) != 3:
             raise ValueError("stds must have 3 values, one per channel")
-        self.stds = stds
+        self.stds = np.array(stds, dtype=dtype)
 
     def __call__(self, x, y=None):
         x = x * self.stds + self.means

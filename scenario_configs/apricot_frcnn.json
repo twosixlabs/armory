@@ -24,6 +24,7 @@
         "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
+            "apricot_patch_targeted_AP_per_class",
             "object_detection_AP_per_class"
         ]
     },
@@ -42,7 +43,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.12.1-dev",
+        "docker_image": "twosixarmory/tf1:0.12.2-dev",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

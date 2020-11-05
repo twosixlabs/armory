@@ -88,4 +88,4 @@ class GermanTrafficSign(tfds.core.GeneratorBasedBuilder):
             for x in _read_images(prefix, gtFile):
                 yield x
         else:
-            raise ValueError(f"split_type {split} not in ('train', 'test')")
+            raise ValueError(f"split {split} not in ('train', 'test')")

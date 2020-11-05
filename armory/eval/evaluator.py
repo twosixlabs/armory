@@ -152,7 +152,9 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
-    ) -> None:
+        skip_attack=None,
+        validate_config=None,
+    ) -> int:
         exit_code = 0
         if self.no_docker:
             if jupyter or interactive or command:
@@ -166,6 +168,8 @@ class Evaluator(object):
                     check_run=check_run,
                     num_eval_batches=num_eval_batches,
                     skip_benign=skip_benign,
+                    skip_attack=skip_attack,
+                    validate_config=validate_config,
                 )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -201,6 +205,8 @@ class Evaluator(object):
                         check_run=check_run,
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        validate_config=validate_config,
                     )
                 elif command:
                     exit_code = self._run_command(runner, command)
@@ -210,6 +216,8 @@ class Evaluator(object):
                         check_run=check_run,
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        validate_config=validate_config,
                     )
             except KeyboardInterrupt:
                 logger.warning("Keyboard interrupt caught")
@@ -247,6 +255,8 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
+        skip_attack=None,
+        validate_config=None,
     ) -> int:
         logger.info(bold(red("Running evaluation script")))
 
@@ -255,6 +265,8 @@ class Evaluator(object):
             check_run=check_run,
             num_eval_batches=num_eval_batches,
             skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            validate_config=validate_config,
         )
         if self.no_docker:
             kwargs = {}
@@ -266,9 +278,9 @@ class Evaluator(object):
         cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
         return runner.exec_cmd(cmd, **kwargs)
 
-    def _run_command(self, runner: ArmoryInstance, command: str) -> None:
+    def _run_command(self, runner: ArmoryInstance, command: str) -> int:
         logger.info(bold(red(f"Running bash command: {command}")))
-        runner.exec_cmd(command, user=self.get_id())
+        return runner.exec_cmd(command, user=self.get_id(), expect_sentinel=False)
 
     def get_id(self):
         """
@@ -290,6 +302,8 @@ class Evaluator(object):
         check_run=False,
         num_eval_batches=None,
         skip_benign=None,
+        skip_attack=None,
+        validate_config=None,
     ) -> None:
         user_group_id = self.get_id()
         lines = [
@@ -308,6 +322,8 @@ class Evaluator(object):
                 check_run=check_run,
                 num_eval_batches=num_eval_batches,
                 skip_benign=skip_benign,
+                skip_attack=skip_attack,
+                validate_config=validate_config,
             )
             tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
             os.makedirs(tmp_dir)
@@ -358,9 +374,12 @@ class Evaluator(object):
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
             user="root",
+            expect_sentinel=False,
         )
 
-    def _build_options(self, check_run, num_eval_batches, skip_benign):
+    def _build_options(
+        self, check_run, num_eval_batches, skip_benign, skip_attack, validate_config
+    ):
         options = ""
         if self.no_docker:
             options += " --no-docker"
@@ -372,4 +391,8 @@ class Evaluator(object):
             options += f" --num-eval-batches {num_eval_batches}"
         if skip_benign:
             options += " --skip-benign"
+        if skip_attack:
+            options += " --skip-attack"
+        if validate_config:
+            options += " --validate-config"
         return options

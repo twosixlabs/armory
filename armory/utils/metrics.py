@@ -17,6 +17,7 @@ import cProfile
 import pstats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+from armory.data.adversarial.apricot_dev_metadata import APRICOT_PATCHES
 
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,9 @@ def norm(x, x_adv, ord):
     # cast to float first to prevent overflow errors
     diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
     values = np.linalg.norm(diff, ord=ord, axis=1)
+    # normalize l0 norm by number of elements in array
+    if ord == 0:
+        return list(float(x) / diff[i].size for i, x in enumerate(values))
     return list(float(x) for x in values)
 
 
@@ -118,7 +122,8 @@ def lp(x, x_adv, p):
 
 def l0(x, x_adv):
     """
-    Return the L0 'norm' over a batch of inputs as a float
+    Return the L0 'norm' over a batch of inputs as a float,
+    normalized by the number of elements in the array
     """
     return norm(x, x_adv, 0)
 
@@ -171,7 +176,12 @@ def word_error_rate(y, y_pred):
 
 
 def _word_error_rate(y_i, y_pred_i):
-    reference = y_i.decode("utf-8").split()
+    if isinstance(y_i, str):
+        reference = y_i.split()
+    elif isinstance(y_i, bytes):
+        reference = y_i.decode("utf-8").split()
+    else:
+        raise TypeError(f"y_i is of type {type(y_i)}, expected string or bytes")
     hypothesis = y_pred_i.split()
     r_length = len(reference)
     h_length = len(hypothesis)
@@ -433,14 +443,16 @@ def _check_object_detection_input(y, y_pred):
 
 def _intersection_over_union(box_1, box_2):
     """
-    Assumes format of [y1, x1, y2, x2] or [x1, y1, x2, y2]
+    Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
     """
     assert box_1[2] >= box_1[0]
     assert box_2[2] >= box_2[0]
     assert box_1[3] >= box_1[1]
     assert box_2[3] >= box_2[1]
 
-    if sum([mean < 1 and mean >= 0 for mean in [box_1.mean(), box_2.mean()]]) == 1:
+    if all(i < 1 for i in box_1[np.where(box_1 > 0)]) ^ all(
+        i < 1 for i in box_2[np.where(box_2 > 0)]
+    ):
         logger.warning(
             "One set of boxes appears to be normalized while the other is not"
         )
@@ -563,8 +575,8 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
                 false_positives[pred_idx] = 1
                 continue
 
-            # Iterate over all gt boxes (of class_id) from the same image as the predicted box, d
-            # etermining which gt box has the highest iou with the predicted box
+            # Iterate over all gt boxes (of class_id) from the same image as the predicted box,
+            # determining which gt box has the highest iou with the predicted box
             highest_iou = 0
             for gt_idx, gt_box in enumerate(gt_boxes_from_same_img):
                 iou = _intersection_over_union(pred_box["box"], gt_box["box"])
@@ -626,7 +638,179 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     return average_precisions_by_class
 
 
+def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
+    """
+    Average precision indicating how successfully the APRICOT patch causes the detector
+    to predict the targeted class of the patch at the location of the patch. A higher
+    value for this metric implies a more successful patch.
+
+    The box associated with the patch is assigned the label of the patch's targeted class.
+    Thus, a true positive is the case where the detector predicts the patch's targeted
+    class (at a location overlapping the patch). A false positive is the case where the
+    detector predicts a non-targeted class at a location overlapping the patch. If the
+    detector predicts multiple instances of the target class (that overlap with the patch),
+    one of the predictions is considered a true positive and the others are ignored.
+
+    This metric is computed over all evaluation samples, rather than on a per-sample basis.
+    It returns a dictionary mapping each class to the average precision (AP) for the class.
+    The only classes with potentially nonzero AP's are the classes targeted by the patches
+    (see above paragraph).
+    """
+
+    # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
+    # generate many small, overlapping predictions in the region of the attack"
+    IOU_THRESHOLD = 0.1
+
+    # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
+    RECALL_POINTS = np.linspace(0, 1, 11)
+
+    # Converting boxes to a list of dicts (a list for predicted boxes that overlap with the patch,
+    # and a separate list for ground truth patch boxes), where each dict corresponds to a box and
+    # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
+    patch_boxes_list = []
+    overlappping_pred_boxes_list = []
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        idx_of_patch = np.where(y["labels"] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
+        patch_box = y["boxes"][idx_of_patch].flatten()
+        patch_id = int(y["patch_id"][idx_of_patch])
+        patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
+        patch_box_dict = {
+            "img_idx": img_idx,
+            "label": patch_target_label,
+            "box": patch_box,
+        }
+        patch_boxes_list.append(patch_box_dict)
+
+        for pred_box_idx in range(len(y_pred["labels"].flatten())):
+            box = y_pred["boxes"][pred_box_idx]
+            if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
+                label = y_pred["labels"][pred_box_idx]
+                score = y_pred["scores"][pred_box_idx]
+                pred_box_dict = {
+                    "img_idx": img_idx,
+                    "label": label,
+                    "box": box,
+                    "score": score,
+                }
+                overlappping_pred_boxes_list.append(pred_box_dict)
+
+    # Union of (1) the set of classes targeted by patches and (2) the set of all classes
+    # predicted at a location that overlaps the patch in the image
+    set_of_class_ids = set([i["label"] for i in patch_boxes_list]) | set(
+        [i["label"] for i in overlappping_pred_boxes_list]
+    )
+
+    # Initialize dict that will store AP for each class
+    average_precisions_by_class = {}
+
+    # Compute AP for each class
+    for class_id in set_of_class_ids:
+        # Build lists that contain all the predicted and patch boxes with a
+        # label of class_id
+        class_predicted_boxes = []
+        class_patch_boxes = []
+        for pred_box in overlappping_pred_boxes_list:
+            if pred_box["label"] == class_id:
+                class_predicted_boxes.append(pred_box)
+        for patch_box in patch_boxes_list:
+            if patch_box["label"] == class_id:
+                class_patch_boxes.append(patch_box)
+
+        # Determine how many patch boxes (of class_id) there are in each image
+        num_patch_boxes_per_img = Counter([gt["img_idx"] for gt in class_patch_boxes])
+
+        # Initialize dict where we'll keep track of whether a patch box has been matched to a
+        # prediction yet. This is necessary because if multiple predicted boxes of class_id
+        # overlap with a patch box, only one of the predicted boxes can be considered a
+        # true positive. The rest will be ignored
+        img_idx_to_patchboxismatched_array = {}
+        for img_idx, num_patch_boxes in num_patch_boxes_per_img.items():
+            img_idx_to_patchboxismatched_array[img_idx] = np.zeros(num_patch_boxes)
+
+        # Sort all predicted boxes (of class_id) by descending confidence
+        class_predicted_boxes.sort(key=lambda x: x["score"], reverse=True)
+
+        # Initialize list. Once filled in, true_positives[i] indicates (with a 1 or 0)
+        # whether the ith predicted box (of class_id) is a true positive or false positive
+        is_true_positive = []
+
+        # Iterating over all predicted boxes of class_id
+        for pred_idx, pred_box in enumerate(class_predicted_boxes):
+            # Only compare patch boxes from the same image as the predicted box
+            patch_boxes_from_same_img = [
+                patch_box
+                for patch_box in class_patch_boxes
+                if patch_box["img_idx"] == pred_box["img_idx"]
+            ]
+
+            # If there are no patch boxes in the predicted box's image that target the predicted class
+            if len(patch_boxes_from_same_img) == 0:
+                is_true_positive.append(0)
+                continue
+
+            # Iterate over all patch boxes (of class_id) from the same image as the predicted box,
+            # determining which patch box has the highest iou with the predicted box.
+            highest_iou = 0
+            for patch_idx, patch_box in enumerate(patch_boxes_from_same_img):
+                iou = _intersection_over_union(pred_box["box"], patch_box["box"])
+                if iou >= highest_iou:
+                    highest_iou = iou
+                    highest_iou_patch_idx = patch_idx
+
+            # If the patch box has not yet been covered
+            if (
+                img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
+                    highest_iou_patch_idx
+                ]
+                == 0
+            ):
+                is_true_positive.append(1)
+
+                # Record that we've now covered this patch box. Any subsequent
+                # pred boxes that overlap with it are ignored
+                img_idx_to_patchboxismatched_array[pred_box["img_idx"]][
+                    highest_iou_patch_idx
+                ] = 1
+            else:
+                # This patch box was already covered previously (i.e a different predicted
+                # box was deemed a true positive after overlapping with this patch box).
+                # The predicted box is thus ignored.
+                continue
+
+        # Cumulative sums of false/true positives across all predictions which were sorted by
+        # descending confidence
+        tp_cumulative_sum = np.cumsum(is_true_positive)
+        fp_cumulative_sum = np.cumsum([not i for i in is_true_positive])
+
+        # Total number of patch boxes with a label of class_id
+        total_patch_boxes = len(class_patch_boxes)
+
+        recalls = tp_cumulative_sum / (total_patch_boxes + 1e-6)
+        precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-6)
+
+        interpolated_precisions = np.zeros(len(RECALL_POINTS))
+        # Interpolate the precision at each recall level by taking the max precision for which
+        # the corresponding recall exceeds the recall point
+        # See http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.157.5766&rep=rep1&type=pdf
+        for i, recall_point in enumerate(RECALL_POINTS):
+            precisions_points = precisions[np.where(recalls >= recall_point)]
+            # If there's no cutoff at which the recall > recall_point
+            if len(precisions_points) == 0:
+                interpolated_precisions[i] = 0
+            else:
+                interpolated_precisions[i] = max(precisions_points)
+
+        # Compute mean precision across the different recall levels
+        average_precision = interpolated_precisions.mean()
+        average_precisions_by_class[int(class_id)] = np.around(
+            average_precision, decimals=2
+        )
+
+    return average_precisions_by_class
+
+
 SUPPORTED_METRICS = {
+    "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
     "top_5_categorical_accuracy": top_5_categorical_accuracy,
@@ -741,6 +925,12 @@ class MetricList:
         y_preds = [i[1] for i in self._inputs]
         return object_detection_AP_per_class(y_s, y_preds)
 
+    def apricot_patch_targeted_AP_per_class(self):
+        # Computed at once across all samples
+        y_s = [i[0] for i in self._inputs]
+        y_preds = [i[1] for i in self._inputs]
+        return apricot_patch_targeted_AP_per_class(y_s, y_preds)
+
 
 class MetricsLogger:
     """
@@ -756,6 +946,8 @@ class MetricsLogger:
         profiler_type=None,
         computational_resource_dict=None,
         skip_benign=None,
+        skip_attack=None,
+        targeted=False,
         **kwargs,
     ):
         """
@@ -765,8 +957,13 @@ class MetricsLogger:
         record_metric_per_sample - whether to return metric values for each sample
         """
         self.tasks = [] if skip_benign else self._generate_counters(task)
-        self.adversarial_tasks = self._generate_counters(task)
-        self.perturbations = self._generate_counters(perturbation)
+        self.adversarial_tasks = [] if skip_attack else self._generate_counters(task)
+        self.targeted_tasks = (
+            self._generate_counters(task) if targeted and not skip_attack else []
+        )
+        self.perturbations = (
+            [] if skip_attack else self._generate_counters(perturbation)
+        )
         self.means = bool(means)
         self.full = bool(record_metric_per_sample)
         self.computational_resource_dict = {}
@@ -775,7 +972,12 @@ class MetricsLogger:
                 "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
-        if not self.tasks and not self.perturbations and not self.adversarial_tasks:
+        if (
+            not self.tasks
+            and not self.perturbations
+            and not self.adversarial_tasks
+            and not self.targeted_tasks
+        ):
             logger.warning(
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
@@ -793,19 +995,32 @@ class MetricsLogger:
         return [MetricList(x) for x in names]
 
     @classmethod
-    def from_config(cls, config, skip_benign=None):
+    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
         if skip_benign:
             config["skip_benign"] = skip_benign
-        return cls(**config)
+        if skip_attack:
+            config["skip_attack"] = skip_attack
+        return cls(**config, targeted=targeted)
 
     def clear(self):
         for metric in self.tasks + self.adversarial_tasks + self.perturbations:
             metric.clear()
 
-    def update_task(self, y, y_pred, adversarial=False):
-        tasks = self.adversarial_tasks if adversarial else self.tasks
+    def update_task(self, y, y_pred, adversarial=False, targeted=False):
+        if targeted and not adversarial:
+            raise ValueError("benign task cannot be targeted")
+        tasks = (
+            self.targeted_tasks
+            if targeted
+            else self.adversarial_tasks
+            if adversarial
+            else self.tasks
+        )
         for metric in tasks:
-            if metric.name == "object_detection_AP_per_class":
+            if metric.name in [
+                "object_detection_AP_per_class",
+                "apricot_patch_targeted_AP_per_class",
+            ]:
                 metric.append_inputs(y, y_pred[0])
             else:
                 metric.append(y, y_pred)
@@ -815,35 +1030,48 @@ class MetricsLogger:
             metric.append(x, x_adv)
 
     def log_task(self, adversarial=False, targeted=False):
-        if adversarial:
+        if targeted:
+            if adversarial:
+                metrics = self.targeted_tasks
+                wrt = "target"
+                task_type = "adversarial"
+            else:
+                raise ValueError("benign task cannot be targeted")
+        elif adversarial:
             metrics = self.adversarial_tasks
+            wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
+            wrt = "ground truth"
             task_type = "benign"
-        if targeted:
-            if adversarial:
-                task_type = "targeted " + task_type
-            else:
-                raise ValueError("benign task cannot be targeted")
 
         for metric in metrics:
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
                 logger.info(
-                    f"Word error rate on {task_type} examples: "
+                    f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
             elif metric.name == "object_detection_AP_per_class":
                 average_precision_by_class = metric.AP_per_class()
                 logger.info(
-                    f"object_detection_mAP on {task_type} examples: "
+                    f"object_detection_mAP on {task_type} examples relative to {wrt} labels: "
                     f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
-                    f" AP by class ID: {average_precision_by_class}"
+                    f" object_detection_AP by class ID: {average_precision_by_class}"
+                )
+            elif metric.name == "apricot_patch_targeted_AP_per_class":
+                apricot_patch_targeted_AP_by_class = (
+                    metric.apricot_patch_targeted_AP_per_class()
+                )
+                logger.info(
+                    f"apricot_patch_targeted_mAP on {task_type} examples: "
+                    f"{np.fromiter(apricot_patch_targeted_AP_by_class.values(), dtype=float).mean():.2%}."
+                    f" apricot_patch_targeted_AP by class ID: {apricot_patch_targeted_AP_by_class}"
                 )
             else:
                 logger.info(
-                    f"Average {metric.name} on {task_type} test examples: "
+                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2%}"
                 )
 
@@ -855,6 +1083,7 @@ class MetricsLogger:
         for metrics, prefix in [
             (self.tasks, "benign"),
             (self.adversarial_tasks, "adversarial"),
+            (self.targeted_tasks, "targeted"),
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
@@ -864,6 +1093,18 @@ class MetricsLogger:
                         average_precision_by_class.values(), dtype=float
                     ).mean()
                     results[f"{prefix}_{metric.name}"] = average_precision_by_class
+                    continue
+
+                if metric.name == "apricot_patch_targeted_AP_per_class":
+                    apricot_patch_targeted_AP_by_class = (
+                        metric.apricot_patch_targeted_AP_per_class()
+                    )
+                    results[f"{prefix}_apricot_patch_targeted_mAP"] = np.fromiter(
+                        apricot_patch_targeted_AP_by_class.values(), dtype=float
+                    ).mean()
+                    results[
+                        f"{prefix}_{metric.name}"
+                    ] = apricot_patch_targeted_AP_by_class
                     continue
 
                 if self.full:

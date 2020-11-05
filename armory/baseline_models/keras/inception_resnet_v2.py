@@ -1,6 +1,8 @@
 """
 Inception_ResNet_v2 CNN model for 299x299x3 image classification
 """
+from typing import Optional
+
 from art.classifiers import KerasClassifier
 import tensorflow as tf
 from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
@@ -8,7 +10,9 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     input = tf.keras.Input(shape=(224, 224, 3))
 
     # Preprocessing layers

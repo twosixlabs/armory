@@ -60,12 +60,16 @@ class Results:
                 self.mean_adversarial_task = self.results[
                     f"adversarial_mean_{self.task}"
                 ]
+                self.mean_targeted_task = self.results.get(
+                    f"targeted_mean_{self.task}", None
+                )
                 self.mean_perturbation = self.results[
                     f"perturbation_mean_{self.perturbation_metric}"
                 ]
             if self.record_metric_per_sample:
                 self.benign_task = self.results[f"benign_{self.task}"]
                 self.adversarial_task = self.results[f"adversarial_{self.task}"]
+                self.targeted_task = self.results.get(f"targeted_{self.task}", None)
                 self.perturbation = self.results[
                     f"perturbation_{self.perturbation_metric}"
                 ]
@@ -82,16 +86,21 @@ class Results:
     def from_mongo(cls, *args, **kwargs):
         raise NotImplementedError("mongo DB connector")
 
-    def perturbation_accuracy(self):
-        return perturbation_accuracy(
-            self.benign_task, self.adversarial_task, self.perturbation
-        )
+    def perturbation_accuracy(self, targeted):
+        if targeted:
+            return perturbation_accuracy(
+                self.benign_task, self.targeted_task, self.perturbation
+            )
+        else:
+            return perturbation_accuracy(
+                self.benign_task, self.adversarial_task, self.perturbation
+            )
 
-    def plot(self, filepath=None, max_epsilon=None):
+    def plot(self, filepath=None, max_epsilon=None, targeted=False):
         """
         Plot example. If filepath is None, show it, else save to filepath
         """
-        epsilons, acc = self.perturbation_accuracy()
+        epsilons, acc = self.perturbation_accuracy(targeted=targeted)
         if max_epsilon is None:
             max_epsilon = max(epsilons)
 
