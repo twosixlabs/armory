@@ -84,3 +84,12 @@ The `--validate-config` flag will run a series of tests on the model in the sele
 ```
 armory run scenario_configs/so2sat_baseline.json --validate-config
 ```
+
+## Skipping Benign Evaluation / Attack Generation
+The `--skip-benign` and `--skip-attack` flags allow the user to skip, respectively, evaluating on benign samples and generating/evaluating attack samples.
+
+### Example Usage
+```
+armory run scenario_configs/mnist_baseline.json --skip-benign
+armory run scenario_configs/mnist_baseline.json --skip-attack
+```
