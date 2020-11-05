@@ -2,19 +2,25 @@
     "_description": "XView object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
+        "generate_kwargs": {
+            "patch_height": 50,
+            "patch_width": 50,
+            "xmin": 0,
+            "ymin": 0
+        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "max_iter": 100,
-            "patch_shape": [
-                40,
-                40,
-                3
-            ]
+            "eps": 1.0,
+            "eps_step": 0.01,
+            "max_iter": 200,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": true
         },
-        "module": "art.attacks.evasion",
-        "name": "DPatch",
-        "type": "patch",
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
         "use_label": false
     },
     "dataset": {

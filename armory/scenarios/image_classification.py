@@ -87,8 +87,15 @@ class ImageClassificationTask(Scenario):
                 "this is not yet supported for object detectors."
             )
 
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+
+        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"], skip_benign=skip_benign, skip_attack=skip_attack
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
         )
 
         eval_split = config["dataset"].get("eval_split", "test")
@@ -125,10 +132,6 @@ class ImageClassificationTask(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        attack_config = config["attack"]
-        attack_type = attack_config.get("type")
-
-        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -182,10 +185,13 @@ class ImageClassificationTask(Scenario):
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
             y_pred_adv = estimator.predict(x_adv)
+            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             if targeted:
-                metrics_logger.update_task(y_target, y_pred_adv, adversarial=True)
-            else:
-                metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+                metrics_logger.update_task(
+                    y_target, y_pred_adv, adversarial=True, targeted=True
+                )
             metrics_logger.update_perturbation(x, x_adv)
-        metrics_logger.log_task(adversarial=True, targeted=targeted)
+        metrics_logger.log_task(adversarial=True)
+        if targeted:
+            metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()

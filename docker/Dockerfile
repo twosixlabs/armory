@@ -24,7 +24,6 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
     jupyterlab==1.2.6 \
     boto3==1.11.13 \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.4.2 \
     Pillow==7.1.2 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \

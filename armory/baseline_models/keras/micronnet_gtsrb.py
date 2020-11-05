@@ -3,6 +3,8 @@ MicronNet CNN model for 48x48x3 image classification
 
 Model contributed by: MITRE Corporation
 """
+from typing import Optional
+
 import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Conv2D, Activation, Lambda
@@ -53,7 +55,9 @@ def make_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     model = make_model(**model_kwargs)
     wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs)
     return wrapped_model

@@ -39,7 +39,10 @@ These tfrecord files will be pulled from S3 if not available on your
 ### Video Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | splits |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:------: |
-| [ucf101](https://www.crcv.ucf.edu/data/UCF101.php) | UCF 101 Action Recognition | (N, variable_frames, 240, 320, 3) | float32 | (N,) | int64 | train, test |
+| [ucf101](https://www.crcv.ucf.edu/data/UCF101.php) | UCF 101 Action Recognition | (N, variable_frames, None, None, 3) | float32 | (N,) | int64 | train, test |
+
+NOTE: The dimension of UCF101 videos is `(N, variable_frames, 240, 320, 3)` for the entire training set and all of the test set except for 4 examples.
+For those, the dimensions are `(N, variable_frames, 226, 400, 3)`. If not shuffled, these correspond to (0-indexed) examples 333, 694, 1343, and 3218.
 
 <br>
 
