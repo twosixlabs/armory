@@ -39,3 +39,7 @@ is a JSON-able dict.
 
 We have implemented the metrics in numpy, instead of using framework-specific 
 metrics, to prevent expanding the required set of dependencies.
+
+### Targeted vs. Untargeted Attacks
+
+For targeted attacks, each metric will be reported twice for adversarial data: once relative to the ground truth labels and once relative to the target labels.  For untargeted attacks, each metric is only reported relative to the ground truth labels.  Performance relative to ground truth measures the effectiveness of the defense, indicating the ability of the model to make correct predictions despite the perturbed input.  Performance relative to target labels measures the effectiveness of the attack, indicating the ability of the attacker to force the model to make predictions that are not only incorrect, but that align with the attackers chosen output.
