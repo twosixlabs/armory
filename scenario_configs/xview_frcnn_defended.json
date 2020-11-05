@@ -29,7 +29,21 @@
         "module": "armory.data.datasets",
         "name": "xview"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channel_index": 3,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 50
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_normalized",
+        "name": "JpegCompressionNormalized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "image_circle_patch_diameter",

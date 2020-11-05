@@ -22,52 +22,54 @@ MEAN = np.array([114.7748, 107.7354, 99.4750], dtype=np.float32)
 STD = np.array([1, 1, 1], dtype=np.float32)
 
 
-def preprocessing_fn_numpy(inputs):
+def preprocessing_fn_numpy(batch):
     """
-    Inputs is comprised of one or more videos, where each video
-    is given as an ndarray with shape (1, time, height, width, 3).
+    batch is a batch of videos, (batch, frames, height, width, channels)
+
     Preprocessing resizes the height and width to 112 x 112 and reshapes
     each video to (n_stack, 3, 16, height, width), where n_stack = int(time/16).
 
-    Outputs is a list of videos, each of shape (n_stack, 3, 16, 112, 112)
+    Outputs a list of videos, each of shape (n_stack, 3, 16, 112, 112)
     """
     sample_duration = 16  # expected number of consecutive frames as input to the model
+
     outputs = []
-    if inputs.dtype == np.uint8:  # inputs is a single video, i.e., batch size == 1
-        inputs = [inputs]
-    # else, inputs is an ndarray (of type object) of ndarrays
-    for (
-        input
-    ) in inputs:  # each input is (1, time, height, width, 3) from the same video
-        input = np.squeeze(input)
+    for i, x in enumerate(batch):
+        if x.ndim != 4:
+            raise ValueError(f"sample {i} in batch has {x.ndim} dims, not 4 (FHWC)")
+        if x.dtype in (float, np.float32):
+            if x.max() > 1.0 or x.min() < 0.0:
+                raise ValueError(f"sample {i} is a float but not in [0.0, 1.0] range")
+            x = (255 * x).round().astype(np.uint8)
+        if x.dtype != np.uint8:
+            raise ValueError(f"sample {i} - unrecognized dtype {x.dtype}")
 
         # select a fixed number of consecutive frames
-        total_frames = input.shape[0]
-        if total_frames <= sample_duration:  # cyclic pad if not enough frames
-            input_fixed = np.vstack(
-                (input, input[: sample_duration - total_frames, ...])
+        total_frames = x.shape[0]
+        if total_frames < sample_duration / 2:
+            raise ValueError(
+                f"video is too short; requires >= {sample_duration / 2} frames"
             )
-            assert input_fixed.shape[0] == sample_duration
-        else:
-            input_fixed = input
+        if total_frames <= sample_duration:  # cyclic pad if not enough frames
+            x = np.vstack([x, x[: sample_duration - total_frames]])
 
         # apply MARS preprocessing: scaling, cropping, normalizing
         opt = parse_opts(arguments=[])
         opt.modality = "RGB"
         opt.sample_size = 112
-        input_Image = []  # convert each frame to PIL Image
-        for f in input_fixed:
-            input_Image.append(Image.fromarray(f))
-        input_mars_preprocessed = preprocess_data.scale_crop(input_Image, 0, opt)
+        x_Image = []  # convert each frame to PIL Image
+        for frame in x:
+            x_Image.append(Image.fromarray(frame))
+        x_mars_preprocessed = preprocess_data.scale_crop(x_Image, 0, opt)
 
         # reshape
-        input_reshaped = []
+        x_reshaped = []
         for ns in range(int(total_frames / sample_duration)):
-            np_frames = input_mars_preprocessed[
+            np_frames = x_mars_preprocessed[
                 :, ns * sample_duration : (ns + 1) * sample_duration, :, :
             ].numpy()
-            input_reshaped.append(np_frames)
-        outputs.append(np.array(input_reshaped, dtype=np.float32))
+            x_reshaped.append(np_frames)
+        outputs.append(np.array(x_reshaped, dtype=np.float32))
     return outputs
 
 
@@ -102,8 +104,13 @@ def preprocessing_fn_torch(
         )
     if video.shape[0] < 1:
         raise ValueError("video must have at least one frame")
-    if tuple(video.shape[1:]) != (240, 320, 3):
-        raise ValueError(f"frame shape {tuple(video.shape[1:])} != (240, 320, 3)")
+    if tuple(video.shape[1:]) == (240, 320, 3):
+        standard_shape = True
+    elif tuple(video.shape[1:]) == (226, 400, 3):
+        logger.warning("Expected odd example shape (226, 400, 3)")
+        standard_shape = False
+    else:
+        raise ValueError(f"frame shape {tuple(video.shape[1:])} not recognized")
     if video.max() > 1.0 or video.min() < 0.0:
         raise ValueError("input should be float32 in [0, 1] range")
     if not isinstance(consecutive_frames, int):
@@ -123,7 +130,12 @@ def preprocessing_fn_torch(
         # Attempts to directly follow MARS approach
         # (frames, height, width, channel) to (frames, channel, height, width)
         video = video.permute(0, 3, 1, 2)
-        sample_width, sample_height = 149, 112
+        if standard_shape:  # 240 x 320
+            sample_height, sample_width = 112, 149
+        else:  # 226 x 400
+            video = video[:, :, 1:-1, :]  # crop top/bottom pixels, reduce by 2
+            sample_height, sample_width = 112, 200
+
         video = torch.nn.functional.interpolate(
             video,
             size=(sample_height, sample_width),
@@ -131,22 +143,22 @@ def preprocessing_fn_torch(
             align_corners=align_corners,
         )
 
-        crop_left = 18  # round((149 - 112)/2.0)
+        if standard_shape:
+            crop_left = 18  # round((149 - 112)/2.0)
+        else:
+            crop_left = 40
         video = video[:, :, :, crop_left : crop_left + sample_height]
 
     else:
         # More efficient, but not MARS approach
         # Center crop
         sample_size = 112
-        upsample, downsample = 7, 15
-        assert video.shape[1] * upsample / downsample == sample_size
-
-        crop_width = 40
-        assert crop_width == (video.shape[2] - video.shape[1]) / 2
-        assert video.shape[1] + 2 * crop_width == video.shape[2]
-
-        video = video[:, :, crop_width : video.shape[2] - crop_width, :]
-        assert video.shape[1] == video.shape[2] == 240
+        if standard_shape:
+            crop_width = 40
+        else:
+            video = video[:, 1:-1, :, :]
+            crop_width = 88
+        video = video[:, :, crop_width:-crop_width, :]
 
         # Downsample to (112, 112) frame size
         # (frames, height, width, channel) to (frames, channel, height, width)
