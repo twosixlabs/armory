@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tensorflow import slice
 from tensorflow.keras import Sequential, Model
 from tensorflow.keras.layers import Dense, Flatten, Conv2D
@@ -7,6 +9,11 @@ from tensorflow.keras.optimizers import SGD
 
 
 def make_model(**kwargs):
+    """
+    This is a simple CNN for So2SAT. The data are split into SAR and EO data streams and fed into their respective
+    feature extraction networks. In the final layer, the two networks are fused to produce a single prediction output.
+    """
+
     SAR_model = Sequential()
     SAR_model.add(
         Conv2D(18, kernel_size=(9, 9), activation="relu", input_shape=[32, 32, 4])
@@ -52,7 +59,9 @@ def make_model(**kwargs):
     return fused_net
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     model = make_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)

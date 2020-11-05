@@ -3,6 +3,8 @@ MicronNet CNN model for 48x48x3 image classification
 
 Model contributed by: MITRE Corporation
 """
+from typing import Optional
+
 import numpy as np
 from PIL import ImageOps, Image
 import tensorflow as tf
@@ -12,7 +14,7 @@ from tensorflow.keras.layers import Flatten, BatchNormalization, MaxPooling2D
 from art.classifiers import KerasClassifier
 
 
-def preprocessing_fn(img):
+def preprocessing_fn(img: np.ndarray):
     img_size = 48
     img_out = []
     for im in img:
@@ -76,7 +78,9 @@ def make_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     model = make_model(**model_kwargs)
     wrapped_model = KerasClassifier(model, clip_values=(0.0, 255.0), **wrapper_kwargs)
     return wrapped_model

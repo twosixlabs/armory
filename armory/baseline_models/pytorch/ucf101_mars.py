@@ -3,6 +3,7 @@ Model contributed by: MITRE Corporation
 Adapted from: https://github.com/craston/MARS
 """
 import logging
+from typing import Union, Optional, Tuple
 
 from art.classifiers import PyTorchClassifier
 import numpy as np
@@ -22,7 +23,7 @@ MEAN = np.array([114.7748, 107.7354, 99.4750], dtype=np.float32)
 STD = np.array([1, 1, 1], dtype=np.float32)
 
 
-def preprocessing_fn_numpy(batch):
+def preprocessing_fn_numpy(batch: np.ndarray):
     """
     batch is a batch of videos, (batch, frames, height, width, channels)
 
@@ -74,7 +75,10 @@ def preprocessing_fn_numpy(batch):
 
 
 def preprocessing_fn_torch(
-    batch, consecutive_frames=16, scale_first=True, align_corners=False
+    batch: Union[torch.Tensor, np.ndarray],
+    consecutive_frames: int = 16,
+    scale_first: bool = True,
+    align_corners: bool = False,
 ):
     """
     inputs - batch of videos each with shape (frames, height, width, channel)
@@ -192,7 +196,7 @@ def preprocessing_fn_torch(
     return video
 
 
-def fit_preprocessing_fn_numpy(batch):
+def fit_preprocessing_fn_numpy(batch: np.ndarray):
     """
     Randomly sample a single stack from each video
     """
@@ -204,7 +208,9 @@ def fit_preprocessing_fn_numpy(batch):
 preprocessing_fn = fit_preprocessing_fn_numpy
 
 
-def make_model(model_status="ucf101_trained", weights_path=None):
+def make_model(
+    model_status: str = "ucf101_trained", weights_path: Optional[str] = None
+) -> Tuple[torch.nn.DataParallel, optim.SGD]:
     statuses = ("ucf101_trained", "kinetics_pretrained")
     if model_status not in statuses:
         raise ValueError(f"model_status {model_status} not in {statuses}")
@@ -258,7 +264,12 @@ def make_model(model_status="ucf101_trained", weights_path=None):
 
 
 class OuterModel(torch.nn.Module):
-    def __init__(self, weights_path, max_frames=None, **model_kwargs):
+    def __init__(
+        self,
+        weights_path: Optional[str],
+        max_frames: Optional[int] = None,
+        **model_kwargs,
+    ):
         """
         Max frames is the maximum number of input frames.
             If max_frames == 0, False, or None, no clipping is done
@@ -274,7 +285,7 @@ class OuterModel(torch.nn.Module):
             weights_path=weights_path, **model_kwargs
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.max_frames:
             x = x[:, : self.max_frames]
 
@@ -289,7 +300,9 @@ class OuterModel(torch.nn.Module):
         return output
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchClassifier:
     model = OuterModel(weights_path=weights_path, **model_kwargs)
     model.to(DEVICE)
 
