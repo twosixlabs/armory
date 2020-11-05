@@ -2,6 +2,7 @@
 Pytorch Faster-RCNN for xView object detection
 """
 import logging
+from typing import Optional
 
 import torch
 import torchvision
@@ -17,7 +18,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_CLASSES = 63
 
 
-def make_fastrcnn_model(weights_path=None):
+def make_fastrcnn_model(weights_path: Optional[str] = None) -> torch.nn.Module:
     """
     This is an MSCOCO pre-trained model that's fine-tuned on xView.
     This model only performs inference and is not trainable. To perform other
@@ -39,7 +40,9 @@ def make_fastrcnn_model(weights_path=None):
     return model
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchFasterRCNN:
     model = make_fastrcnn_model(weights_path=weights_path, **model_kwargs)
     model.to(DEVICE)
 

@@ -1,6 +1,8 @@
 """
 CNN model for 28x28x1 image classification
 """
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,14 +13,18 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Net(nn.Module):
-    def __init__(self):
+    """
+    This is a simple CNN for MNIST and does not achieve SotA performance
+    """
+
+    def __init__(self) -> None:
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 4, 5, 1)
         self.conv2 = nn.Conv2d(4, 10, 5, 1)
         self.fc1 = nn.Linear(160, 100)
         self.fc2 = nn.Linear(100, 10)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 3, 1, 2)  # from NHWC to NCHW
         x = self.conv1(x)
         x = F.relu(x)
@@ -34,11 +40,13 @@ class Net(nn.Module):
         return output
 
 
-def make_mnist_model(**kwargs):
+def make_mnist_model(**kwargs) -> Net:
     return Net()
 
 
-def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchClassifier:
     model = make_mnist_model(**model_kwargs)
     model.to(DEVICE)
 

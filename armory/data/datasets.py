@@ -514,6 +514,7 @@ def canonical_variable_image_preprocess(context, batch):
 
 mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
+gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
@@ -526,6 +527,10 @@ def mnist_canonical_preprocessing(batch):
 
 def cifar10_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar10_context, batch)
+
+
+def gtsrb_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(gtsrb_context, batch)
 
 
 def resisc45_canonical_preprocessing(batch):
@@ -734,7 +739,7 @@ def german_traffic_sign(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = gtsrb_canonical_preprocessing,
     dataset_dir: str = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
