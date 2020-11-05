@@ -1,6 +1,8 @@
 """
 CNN model for 28x28x1 image classification
 """
+from typing import Optional
+
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
@@ -44,7 +46,9 @@ def make_mnist_model(**kwargs) -> tf.keras.Model:
     return model
 
 
-def get_art_model(model_kwargs: dict, wrapper_kwargs: dict, weights_path: str = None):
+def get_art_model(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+):
     model = make_mnist_model(**model_kwargs)
     if weights_path:
         model.load_weights(weights_path)
