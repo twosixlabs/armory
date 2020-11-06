@@ -60,7 +60,7 @@ the container.
 Once inside the container, you should be able to run or import armory as required:
 ```
 I have no name!@c10db6c70a81:/workspace$ armory version
-0.12.2-dev
+0.13.0-dev
 I have no name!@c10db6c70a81:/workspace$ python
 Python 3.7.6 (default, Jan  8 2020, 19:59:22) 
 [GCC 7.3.0] :: Anaconda, Inc. on linux
