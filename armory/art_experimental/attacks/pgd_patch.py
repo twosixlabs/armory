@@ -17,16 +17,18 @@ class PGDPatch(ProjectedGradientDescent):
         else:
             raise ValueError("generate_kwargs did not define 'xmin'")
 
+        channels = generate_kwargs.get("channels", range(x.shape[3]))
+
         mask = np.zeros(shape=x.shape[1:])
         if "patch_ratio" in generate_kwargs:
             patch_ratio = generate_kwargs["patch_ratio"]
             ymax = ymin + int(x.shape[1] * patch_ratio ** 0.5)
             xmax = xmin + int(x.shape[2] * patch_ratio ** 0.5)
-            mask[ymin:ymax, xmin:xmax, :] = 1
+            mask[ymin:ymax, xmin:xmax, channels] = 1
         elif "patch_height" in generate_kwargs and "patch_width" in generate_kwargs:
             patch_height = generate_kwargs["patch_height"]
             patch_width = generate_kwargs["patch_width"]
-            mask[ymin : ymin + patch_height, xmin : xmin + patch_width, :] = 1
+            mask[ymin : ymin + patch_height, xmin : xmin + patch_width, channels] = 1
         else:
             raise ValueError(
                 "generate_kwargs did not define 'patch_ratio', or it did not define 'patch_height' and 'patch_width'"
