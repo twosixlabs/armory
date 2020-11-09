@@ -25,7 +25,9 @@ class Mp3CompressionChannelized(Mp3Compression):
             )
 
         # add a channel axis
-        x = np.expand_dims(x, axis=-1)
+        for i in range(len(x)):
+            x[i] = np.expand_dims(x[i], axis=-1)
         x, _ = super().__call__(x)
-        x = np.squeeze(x)
+        for i in range(len(x)):
+            x[i] = np.squeeze(x[i])
         return x, y
