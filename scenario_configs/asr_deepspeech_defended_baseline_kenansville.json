@@ -22,7 +22,14 @@
         "name": "librispeech",
         "train_split": "train_clean100"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "sample_rate": 16000
+        },
+        "module": "armory.art_experimental.defences.mp3_compression_channelized",
+        "name": "Mp3CompressionChannelized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": false,
         "perturbation": "snr_db",
