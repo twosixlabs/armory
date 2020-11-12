@@ -5,6 +5,7 @@ import coloredlogs
 import numpy as np
 from PIL import Image
 from shutil import rmtree
+from scipy.io import wavfile
 
 
 logger = logging.getLogger(__name__)
@@ -100,7 +101,19 @@ class SampleExporter():
             self.saved_samples += 1
 
     def _export_audio(self, x, x_adv):
-        pass
+        for x_i, x_adv_i in zip(x, x_adv):
+
+            if self.saved_samples == self.num_samples:
+                break
+
+            assert np.all(x_i.shape == x_adv_i.shape), f"Benign and adversarial audio are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
+            assert x_i.min() >= -1. and x_i.max() <= 1., "Benign audio out of range, should be in [-1., 1.]"
+            assert x_adv_i.min() >= -1. and x_adv_i.max() <= 1., "Adversarial audio out of range, should be in [-1., 1.]"
+
+            wavfile.write(os.path.join(self.output_dir, f"{self.saved_samples}_benign.wav") , rate=16000, data=x_i)
+            wavfile.write(os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.wav") , rate=16000, data=x_adv_i)
+
+            self.saved_samples += 1
 
     def _export_video(self, x, x_adv):
         pass
