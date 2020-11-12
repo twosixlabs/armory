@@ -145,7 +145,8 @@ class Scenario(abc.ABC):
         )
         filename = f"{scenario_name}_{output['timestamp']}.json"
         logger.info(
-            f"Saving evaluation results saved to {scenario_output_dir}/{filename}"
+            f"Saving evaluation results to {scenario_output_dir}/{filename} path "
+            f"inside container."
         )
         with open(os.path.join(scenario_output_dir, filename), "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
