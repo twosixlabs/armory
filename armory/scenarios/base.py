@@ -141,7 +141,10 @@ class Scenario(abc.ABC):
             override_name if override_name else output["config"]["scenario"]["name"]
         )
         filename = f"{scenario_name}_{output['timestamp']}.json"
-        logger.info(f"Saving evaluation results saved to <output_dir>/{filename}")
+        logger.info(
+            f"Saving evaluation results to {self.scenario_output_dir}/{filename} path "
+            f"inside container."
+        )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
 
