@@ -23,6 +23,9 @@
                 "name": {
                     "type": "string"
                 },
+                "samples_to_save": {
+                    "type": "integer"
+                },
                 "use_label": {
                     "type": "boolean"
                 }
