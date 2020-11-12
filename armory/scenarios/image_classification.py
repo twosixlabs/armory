@@ -136,9 +136,13 @@ class ImageClassificationTask(Scenario):
         samples_to_save = config["attack"].get("samples_to_save")
         if samples_to_save is not None and samples_to_save > 0:
             if config["dataset"].get("name") == "so2sat":
-                sample_exporter = SampleExporter(self.scenario_output_dir, "so2sat", samples_to_save)
+                sample_exporter = SampleExporter(
+                    self.scenario_output_dir, "so2sat", samples_to_save
+                )
             else:
-                sample_exporter = SampleExporter(self.scenario_output_dir, "image", samples_to_save)
+                sample_exporter = SampleExporter(
+                    self.scenario_output_dir, "image", samples_to_save
+                )
         else:
             sample_exporter = None
 

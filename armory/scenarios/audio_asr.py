@@ -145,7 +145,9 @@ class AutomaticSpeechRecognition(Scenario):
 
         samples_to_save = config["attack"].get("samples_to_save")
         if samples_to_save is not None and samples_to_save > 0:
-            sample_exporter = SampleExporter(self.scenario_output_dir, "audio", samples_to_save)
+            sample_exporter = SampleExporter(
+                self.scenario_output_dir, "audio", samples_to_save
+            )
         else:
             sample_exporter = None
 
