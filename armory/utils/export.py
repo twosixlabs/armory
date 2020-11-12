@@ -230,7 +230,7 @@ class SampleExporter:
                     os.path.join(self.output_dir, f"{self.saved_samples}_benign.mp4"),
                     pix_fmt="yuv420p",
                     vcodec="libx264",
-                    r=24,
+                    r=25,
                 )
                 .overwrite_output()
                 .run_async(pipe_stdin=True, quiet=True)
