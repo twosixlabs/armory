@@ -3,6 +3,7 @@ import os
 import logging
 import coloredlogs
 import numpy as np
+import ffmpeg
 from PIL import Image
 from shutil import rmtree
 from scipy.io import wavfile
@@ -116,4 +117,48 @@ class SampleExporter():
             self.saved_samples += 1
 
     def _export_video(self, x, x_adv):
-        pass
+        for x_i, x_adv_i in zip(x, x_adv):
+
+            if self.saved_samples == self.num_samples:
+                break
+
+            assert np.all(x_i.shape == x_adv_i.shape), f"Benign and adversarial videos are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
+            assert x_i.min() >= 0. and x_i.max() <= 1., "Benign video out of range, should be in [0., 1.]"
+            assert x_adv_i.min() >= 0. and x_adv_i.max() <= 1., "Adversarial video out of range, should be in [0., 1.]"
+
+            benign_process = (
+                ffmpeg
+                .input('pipe:', format='rawvideo', pix_fmt='rgb24', s=f"{x_i.shape[2]}x{x_i.shape[1]}")
+                .output(os.path.join(self.output_dir, f"{self.saved_samples}_benign.mp4"), pix_fmt='yuv420p', vcodec="libx264", r=24)
+                .overwrite_output()
+                .run_async(pipe_stdin=True)
+            )
+
+            for x_frame in x_i:
+                benign_process.stdin.write(
+                    (x_frame * 255.)
+                    .astype(np.uint8)
+                    .tobytes()
+                )
+
+            benign_process.stdin.close()
+            benign_process.wait()
+            
+            adversarial_process = (
+                ffmpeg
+                .input('pipe:', format='rawvideo', pix_fmt='rgb24', s=f"{x_i.shape[2]}x{x_i.shape[1]}")
+                .output(os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.mp4"), pix_fmt='yuv420p', vcodec="libx264", r=24)
+                .overwrite_output()
+                .run_async(pipe_stdin=True)
+            )
+
+            for x_frame in x_adv_i:
+                adversarial_process.stdin.write(
+                    (x_frame * 255.)
+                    .astype(np.uint8)
+                    .tobytes()
+                )
+
+            adversarial_process.stdin.close()
+            adversarial_process.wait()
+            self.saved_samples += 1

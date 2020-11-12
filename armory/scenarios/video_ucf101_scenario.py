@@ -20,6 +20,7 @@ from armory.utils.config_loading import (
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
+from armory.utils.export import SampleExporter
 
 logger = logging.getLogger(__name__)
 
@@ -135,6 +136,12 @@ class Ucf101(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
+        samples_to_save = config["attack"].get("samples_to_save")
+        if samples_to_save is not None and samples_to_save > 0:
+            sample_exporter = SampleExporter(self.scenario_output_dir, "video", samples_to_save)
+        else:
+            sample_exporter = None
+
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -188,6 +195,8 @@ class Ucf101(Scenario):
                     y_target, y_pred_adv, adversarial=True, targeted=True
                 )
             metrics_logger.update_perturbation(x, x_adv)
+            if sample_exporter is not None:
+                sample_exporter.export(x, x_adv)
         metrics_logger.log_task(adversarial=True)
         if targeted:
             metrics_logger.log_task(adversarial=True, targeted=True)
