@@ -196,7 +196,7 @@ class Ucf101(Scenario):
                 )
             metrics_logger.update_perturbation(x, x_adv)
             if sample_exporter is not None:
-                sample_exporter.export(x, x_adv)
+                sample_exporter.export(x, x_adv, y, y_pred_adv)
         metrics_logger.log_task(adversarial=True)
         if targeted:
             metrics_logger.log_task(adversarial=True, targeted=True)

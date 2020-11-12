@@ -4,6 +4,7 @@ import logging
 import coloredlogs
 import numpy as np
 import ffmpeg
+import pickle
 from PIL import Image
 from shutil import rmtree
 from scipy.io import wavfile
@@ -19,21 +20,34 @@ class SampleExporter():
         self.num_samples = num_samples
         self.saved_samples = 0
         self.output_dir = None
+        self.y_dict = {}
 
         assert self.domain in ("image", "so2sat", "audio", "video")
         self._make_output_dir()
     
-    def export(self, x, x_adv):
-        if self.domain == "image":
-            self._export_images(x, x_adv)
-        elif self.domain == "so2sat":
-            self._export_so2sat(x, x_adv)
-        elif self.domain == "audio":
-            self._export_audio(x, x_adv)
-        elif self.domain == "video":
-            self._export_video(x, x_adv)
-        else:
-            raise ValueError(f"Expected domain in (\"image\", \"audio\", \"video\"), found {self.domain}")
+    def export(self, x, x_adv, y, y_adv):
+
+        if self.saved_samples < self.num_samples:
+
+            self.y_dict[self.saved_samples] = {
+                "ground truth": y,
+                "predicted": y_adv
+            }
+
+            if self.domain == "image":
+                self._export_images(x, x_adv)
+            elif self.domain == "so2sat":
+                self._export_so2sat(x, x_adv)
+            elif self.domain == "audio":
+                self._export_audio(x, x_adv)
+            elif self.domain == "video":
+                self._export_video(x, x_adv)
+            else:
+                raise ValueError(f"Expected domain in (\"image\", \"audio\", \"video\"), found {self.domain}")
+    
+            if self.saved_samples == self.num_samples:
+                with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+                    pickle.dump(self.y_dict, f)
             
     def _make_output_dir(self):
         assert os.path.exists(self.base_output_dir) and os.path.isdir(self.base_output_dir), f"Directory {self.base_output_dir} does not exist"
@@ -131,7 +145,7 @@ class SampleExporter():
                 .input('pipe:', format='rawvideo', pix_fmt='rgb24', s=f"{x_i.shape[2]}x{x_i.shape[1]}")
                 .output(os.path.join(self.output_dir, f"{self.saved_samples}_benign.mp4"), pix_fmt='yuv420p', vcodec="libx264", r=24)
                 .overwrite_output()
-                .run_async(pipe_stdin=True)
+                .run_async(pipe_stdin=True, quiet=True)
             )
 
             for x_frame in x_i:
@@ -149,7 +163,7 @@ class SampleExporter():
                 .input('pipe:', format='rawvideo', pix_fmt='rgb24', s=f"{x_i.shape[2]}x{x_i.shape[1]}")
                 .output(os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.mp4"), pix_fmt='yuv420p', vcodec="libx264", r=24)
                 .overwrite_output()
-                .run_async(pipe_stdin=True)
+                .run_async(pipe_stdin=True, quiet=True)
             )
 
             for x_frame in x_adv_i:
