@@ -250,10 +250,18 @@ may also be loaded by the model.
   [Kenansville attack](https://arxiv.org/abs/1910.05262).
   * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered for completeness.
 * **Baseline Defense**: MP3 Compression
-* **Baseline Model Performance:**
-To be added
-* **Baseline Defense Performance:**
-To be added
+* **Baseline Model Performance: (results derived using Armory v0.12.2)**
+  * Baseline WER: 9.76% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 20dB) WER: 27.28% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 30dB) WER: 11.14% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 40dB) WER: 9.92% (1000 test examples)
+* **Baseline Defense Performance: (results derived using Armory v0.12.2)**\
+Baseline defense is art_experimental.defences.mp3_compression_channelized()\
+Baseline defense performance is evaluated for both black-box (untargeted) and white-box (targeted) attacks.
+  * Baseline WER: 12.98% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 20dB) WER: 35.58% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 30dB) WER: 16.71% (1000 test examples)
+  * Baseline Untargeted Attack (SNR = 40dB) WER: 13.73% (1000 test examples)
 
 ### so2sat multimodal image classification
 
@@ -288,11 +296,28 @@ networks are fused to produce a single prediction output.
 * **Baseline Attacks:**
   * (Primary) Adversarial Patch
   * (Secondary) other "per-example" attacks such as PGD, FGM, may also be considered for completeness.
-* **Baseline Defense**: JPEG Compression
-* **Baseline Model Performance:**
-To be added
-* **Baseline Defense Performance:**
-To be added
+* **Baseline Defense**: JPEG Compression for Multi-Channel
+* **Baseline Model Performance: (results derived using Armory v0.12.2)**
+  * Baseline accuracy: 55.59% (all test examples)
+  * Baseline accuracy: 58.30% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 5% patch, EO channels) accuracy: 0.5% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 10% patch, EO channels) accuracy: 0.0% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 15% patch, EO channels) accuracy: 0.0% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 5% patch, SAR channels) accuracy: 1.0% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 10% patch, SAR channels) accuracy: 2.7% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 15% patch, SAR channels) accuracy: 0.7% (1000 test examples)
+* **Baseline Defense Performance: (results derived using Armory v0.12.2)**\
+Baseline defense is art_experimental.defences.JpegCompressionMultiChannelImage(clip_values=(0.0, 1.0),
+quality=95, channel_first=False, apply_fit=False, apply_predict=True,
+mins=[-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,0,], ranges=[2,2,2,2,1,1,1,1,1,1,1,1,1,1]).\
+Baseline defense performance is evaluated for a white-box attack.
+  * Baseline accuracy: 33.90% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 5% patch, EO channels) accuracy: 0.9% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 10% patch, EO channels) accuracy: 0.0% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 15% patch, EO channels) accuracy: 0.0% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 5% patch, SAR channels) accuracy: 1.4% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 10% patch, SAR channels) accuracy: 1.7% (1000 test examples)
+  * Baseline Attacked (Masked PGD, 15% patch, SAR channels) accuracy: 0.3% (1000 test examples)
 
 ### xView object detection
 
@@ -370,6 +395,16 @@ research - the pretrained weights may not be robust, so performers can change th
 To be added
 * **Baseline Defense Performance:**
 To be added
+
+* **Baseline Model Performance: (results derived using Armory v0.12.2)**
+  * Baseline MSCOCO Objects mAP: 8.38% (all test examples)
+  * Baseline Targeted Patch mAP: 5.52% (all test examples)
+* **Baseline Defense Performance: (results derived using Armory v0.12.2)**\
+Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=10,
+channel_index=3, apply_fit=False, apply_predict=True).\
+Baseline defense performance is evaluated for a white-box attack.
+  * Baseline MSCOCO Objects mAP: 7.38% (all test examples)
+  * Baseline Targeted Patch mAP: 4.52% (all test examples)
 
 ## Academic Scenarios
 
