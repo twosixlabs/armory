@@ -112,7 +112,7 @@ def test_pytorch_xview_pretrained():
     list_of_ys = []
     list_of_ypreds = []
     for x, y in test_dataset:
-        y_pred = detector.predict(x)[0]
+        y_pred = detector.predict(x)
         list_of_ys.append(y)
         list_of_ypreds.append(y_pred)
 
