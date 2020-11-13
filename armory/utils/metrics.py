@@ -494,26 +494,30 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     pred_boxes_list = []
     gt_boxes_list = []
-    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        for gt_box_idx in range(len(y["labels"][0].flatten())):
-            label = y["labels"][0][gt_box_idx]
-            box = y["boxes"][0][gt_box_idx]
+    # Each element in list_of_y_preds is a list with length equal to batch size
+    batch_size = len(list_of_y_preds[0])
+    for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        for img_idx in range(len(y_pred)):
+            global_img_idx = (batch_size * batch_idx) + img_idx
+            for gt_box_idx in range(y["labels"][img_idx].size):
+                label = y["labels"][img_idx][gt_box_idx]
+                box = y["boxes"][img_idx][gt_box_idx]
 
-            gt_box_dict = {"img_idx": img_idx, "label": label, "box": box}
-            gt_boxes_list.append(gt_box_dict)
+                gt_box_dict = {"img_idx": global_img_idx, "label": label, "box": box}
+                gt_boxes_list.append(gt_box_dict)
 
-        for pred_box_idx in range(len(y_pred["labels"].flatten())):
-            label = y_pred["labels"][pred_box_idx]
-            box = y_pred["boxes"][pred_box_idx]
-            score = y_pred["scores"][pred_box_idx]
+            for pred_box_idx in range(y_pred[img_idx]["labels"].size):
+                label = y_pred[img_idx]["labels"][pred_box_idx]
+                box = y_pred[img_idx]["boxes"][pred_box_idx]
+                score = y_pred[img_idx]["scores"][pred_box_idx]
 
-            pred_box_dict = {
-                "img_idx": img_idx,
-                "label": label,
-                "box": box,
-                "score": score,
-            }
-            pred_boxes_list.append(pred_box_dict)
+                pred_box_dict = {
+                    "img_idx": global_img_idx,
+                    "label": label,
+                    "box": box,
+                    "score": score,
+                }
+                pred_boxes_list.append(pred_box_dict)
 
     # Union of (1) the set of all true classes and (2) the set of all predicted classes
     set_of_class_ids = set([i["label"] for i in gt_boxes_list]) | set(
@@ -530,7 +534,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     # Compute AP for each class
     for class_id in set_of_class_ids:
 
-        # Buiild lists that contain all the predicted/ground-truth boxes with a
+        # Build lists that contain all the predicted/ground-truth boxes with a
         # label of class_id
         class_predicted_boxes = []
         class_gt_boxes = []
@@ -669,30 +673,36 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     patch_boxes_list = []
     overlappping_pred_boxes_list = []
-    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        idx_of_patch = np.where(y["labels"] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID)
-        patch_box = y["boxes"][idx_of_patch].flatten()
-        patch_id = int(y["patch_id"][idx_of_patch])
-        patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
-        patch_box_dict = {
-            "img_idx": img_idx,
-            "label": patch_target_label,
-            "box": patch_box,
-        }
-        patch_boxes_list.append(patch_box_dict)
+    # Each element in list_of_y_preds is a list with length equal to batch size
+    batch_size = len(list_of_y_preds[0])
+    for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        for img_idx in range(len(y_pred)):
+            global_img_idx = (batch_size * batch_idx) + img_idx
+            idx_of_patch = np.where(
+                y["labels"][img_idx] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+            )[0]
+            patch_box = y["boxes"][img_idx][idx_of_patch].flatten()
+            patch_id = int(y["patch_id"][img_idx][idx_of_patch])
+            patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
+            patch_box_dict = {
+                "img_idx": global_img_idx,
+                "label": patch_target_label,
+                "box": patch_box,
+            }
+            patch_boxes_list.append(patch_box_dict)
 
-        for pred_box_idx in range(len(y_pred["labels"].flatten())):
-            box = y_pred["boxes"][pred_box_idx]
-            if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
-                label = y_pred["labels"][pred_box_idx]
-                score = y_pred["scores"][pred_box_idx]
-                pred_box_dict = {
-                    "img_idx": img_idx,
-                    "label": label,
-                    "box": box,
-                    "score": score,
-                }
-                overlappping_pred_boxes_list.append(pred_box_dict)
+            for pred_box_idx in range(y_pred[img_idx]["labels"].size):
+                box = y_pred[img_idx]["boxes"][pred_box_idx]
+                if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
+                    label = y_pred[img_idx]["labels"][pred_box_idx]
+                    score = y_pred[img_idx]["scores"][pred_box_idx]
+                    pred_box_dict = {
+                        "img_idx": global_img_idx,
+                        "label": label,
+                        "box": box,
+                        "score": score,
+                    }
+                    overlappping_pred_boxes_list.append(pred_box_dict)
 
     # Union of (1) the set of classes targeted by patches and (2) the set of all classes
     # predicted at a location that overlaps the patch in the image
@@ -1021,7 +1031,7 @@ class MetricsLogger:
                 "object_detection_AP_per_class",
                 "apricot_patch_targeted_AP_per_class",
             ]:
-                metric.append_inputs(y, y_pred[0])
+                metric.append_inputs(y, y_pred)
             else:
                 metric.append(y, y_pred)
 

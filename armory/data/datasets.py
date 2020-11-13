@@ -488,10 +488,12 @@ def canonical_variable_image_preprocess(context, batch):
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
 
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
+        quantized_batch = np.zeros_like(batch, dtype=np.object)
+        for i in range(len(batch)):
+            quantized_batch[i] = (
+                batch[i].astype(context.output_type) / context.quantization
+            )
+        batch = quantized_batch
     elif batch.dtype == context.input_type:
         check_shapes(batch.shape, (None,) + context.x_shape)
         assert batch.dtype == context.input_type
