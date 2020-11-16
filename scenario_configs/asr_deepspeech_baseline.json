@@ -76,6 +76,6 @@
         "local_repo_path": null,
         "output_dir": null,
         "output_filename": null,
-        "use_gpu": true
+        "use_gpu": false
     }
 }
