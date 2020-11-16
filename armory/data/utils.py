@@ -33,10 +33,13 @@ def add_checksums_dir(dir):
     CHECKSUMS_DIRS.append(dir)
 
 
-def maybe_download_weights_from_s3(weights_file: str) -> str:
+def maybe_download_weights_from_s3(
+    weights_file: str, *, auto_expand_tars: bool = False
+) -> str:
     """
 
     :param weights_file:
+    :param auto_expand_tars:
     :return:
     """
     saved_model_dir = paths.runtime_paths().saved_model_dir
@@ -81,6 +84,29 @@ def maybe_download_weights_from_s3(weights_file: str) -> str:
                         "`saved_model_dir` directory on your host environment."
                     )
                 )
+
+    if auto_expand_tars:
+        if tarfile.is_tarfile(filepath):
+            logger.debug(f"Detected model weights file {weights_file} as a tar archive")
+            with tarfile.open(filepath) as tar:
+                # check if the tarfile contains a directory containing all its members
+                # ie if the tarfile expands out entirely into a subdirectory
+                dirs = [fi.name for fi in tar.getmembers() if fi.isdir()]
+                for d in dirs:
+                    if all(name.startswith(d) for name in tar.getnames()):
+                        subdir = d
+                        break
+                else:
+                    raise PermissionError(
+                        (
+                            f"{weights_file} does not expand into a subdirectory."
+                            f" Weights files submitted as tarballs must expand into a subdirectory."
+                        )
+                    )
+                logger.info(f"Auto-unpacking model weights from {weights_file}")
+                tar.extractall(path=saved_model_dir)
+            filepath = subdir
+
     return filepath
 
 
