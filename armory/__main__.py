@@ -43,16 +43,19 @@ class EvalIndex(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if not isinstance(values, str):
             raise ValueError(f"{values} invalid.\n Must be a string input.")
-        
+
         if not re.match(r"^\s*\d+(\s*,\s*\d+)*\s*$", values):
-            raise ValueError(f"{values} invalid. Must be ','-separated nonnegative integers")
+            raise ValueError(
+                f"{values} invalid. Must be ','-separated nonnegative integers"
+            )
 
         numbers = [int(x) for x in values.split(",")]
         sorted_unique_numbers = sorted(set(numbers))
         if numbers != sorted_unique_numbers:
-            print(f"WARNING: --eval-index sorted and made unique: {sorted_unique_numbers}")
+            print(
+                f"WARNING: --eval-index sorted and made unique: {sorted_unique_numbers}"
+            )
         setattr(namespace, self.dest, sorted_unique_numbers)
-        
 
 
 class Command(argparse.Action):
@@ -214,7 +217,7 @@ def _eval_index(parser):
         "--eval-index",
         type=str,
         help="Comma-separated nonnegative index for evaluation data points. "
-             "e.g.: `2` or ``1,3,7`",
+        "e.g.: `2` or ``1,3,7`",
         action=EvalIndex,
     )
 
@@ -343,14 +346,13 @@ def run(command_args, prog, description):
     logging.debug("unified sysconfig %s and args %s", config["sysconfig"], args)
 
     if args.num_eval_batches and args.eval_index:
-        raise ValueError("Cannot have --num-eval-batches and --eval-index")    
+        raise ValueError("Cannot have --num-eval-batches and --eval-index")
 
     if args.eval_index:
         config["dataset"]["eval_index"] = args.eval_index
 
     print(args.eval_index)
     sys.exit()
-
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(
