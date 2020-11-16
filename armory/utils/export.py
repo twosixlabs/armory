@@ -113,38 +113,32 @@ class SampleExporter:
             folder = str(self.saved_samples)
             os.mkdir(os.path.join(self.output_dir, folder))
 
+            sar_eps = 1e-9 + 1j * 1e-9
             x_vh = np.log10(
-                np.abs(np.complex128(x_i[..., 0] + 1j * x_i[..., 1]) + (1e-9 + 1e-9j))
+                np.abs(np.complex128(x_i[..., 0] + 1j * x_i[..., 1]) + sar_eps)
             )
             x_vv = np.log10(
-                np.abs(np.complex128(x_i[..., 2] + 1j * x_i[..., 3]) + (1e-9 + 1e-9j))
+                np.abs(np.complex128(x_i[..., 2] + 1j * x_i[..., 3]) + sar_eps)
             )
             x_adv_vh = np.log10(
-                np.abs(
-                    np.complex128(x_adv_i[..., 0] + 1j * x_adv_i[..., 1])
-                    + (1e-9 + 1e-9j)
-                )
+                np.abs(np.complex128(x_adv_i[..., 0] + 1j * x_adv_i[..., 1]) + sar_eps)
             )
             x_adv_vv = np.log10(
-                np.abs(
-                    np.complex128(x_adv_i[..., 2] + 1j * x_adv_i[..., 3])
-                    + (1e-9 + 1e-9j)
-                )
+                np.abs(np.complex128(x_adv_i[..., 2] + 1j * x_adv_i[..., 3]) + sar_eps)
             )
-            sar_min = np.min((x_vh.min(), x_vv.min(), x_adv_vh.min(), x_adv_vv.min()))
-            sar_max = np.max((x_vh.max(), x_vv.max(), x_adv_vh.max(), x_adv_vv.max()))
+            sar_offset = np.log10(np.abs(sar_eps))
+            sar_scale = 255.0 / (
+                np.log10(np.sqrt(np.abs(1.0 + 1.0j + sar_eps)))
+                - np.log10(np.sqrt(np.abs(sar_eps)))
+            )
 
-            benign_vh = Image.fromarray(
-                np.uint8(255.0 / (sar_max - sar_min) * (x_vh - sar_min)), "L"
-            )
-            benign_vv = Image.fromarray(
-                np.uint8(255.0 / (sar_max - sar_min) * (x_vv - sar_min)), "L"
-            )
+            benign_vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_offset)), "L")
+            benign_vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_offset)), "L")
             adversarial_vh = Image.fromarray(
-                np.uint8(255.0 / (sar_max - sar_min) * (x_adv_vh - sar_min)), "L"
+                np.uint8(sar_scale * (x_adv_vh - sar_offset)), "L"
             )
             adversarial_vv = Image.fromarray(
-                np.uint8(255.0 / (sar_max - sar_min) * (x_adv_vv - sar_min)), "L"
+                np.uint8(sar_scale * (x_adv_vv - sar_offset)), "L"
             )
             benign_vh.save(os.path.join(self.output_dir, folder, "vh_benign.png"))
             benign_vv.save(os.path.join(self.output_dir, folder, "vv_benign.png"))
