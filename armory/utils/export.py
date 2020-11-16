@@ -21,7 +21,12 @@ class SampleExporter:
         self.output_dir = None
         self.y_dict = {}
 
-        assert self.domain in ("image", "so2sat", "audio", "video")
+        assert self.domain in (
+            "image",
+            "so2sat",
+            "audio",
+            "video",
+        ), f"Unsupported domain: {self.domain}"
         self._make_output_dir()
 
     def export(self, x, x_adv, y, y_adv):
@@ -71,15 +76,21 @@ class SampleExporter:
             assert np.all(
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            assert (
-                x_i.min() >= 0.0 and x_i.max() <= 1.0
-            ), "Benign image out of range, should be in [0., 1.]"
-            assert (
-                x_adv_i.min() >= 0.0 and x_adv_i.max() <= 1.0
-            ), "Adversarial image out of range, should be in [0., 1.]"
+            if x_i.min() < 0.0 or x_i.max() > 1.0:
+                logger.warning(
+                    "Benign image out of expected range. Clipping to [0, 1]."
+                )
+            if x_adv_i.min() < 0.0 or x_adv_i.max() > 1.0:
+                logger.warning(
+                    "Adversarial image out of expected range. Clipping to [0, 1]."
+                )
 
-            benign_image = Image.fromarray(np.uint8(x_i * 255.0), "RGB")
-            adversarial_image = Image.fromarray(np.uint8(x_adv_i * 255.0), "RGB")
+            benign_image = Image.fromarray(
+                np.uint8(np.clip(x_i, 0.0, 1.0) * 255.0), "RGB"
+            )
+            adversarial_image = Image.fromarray(
+                np.uint8(np.clip(x_adv_i, 0.0, 1.0) * 255.0), "RGB"
+            )
             benign_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_benign.png")
             )
@@ -97,48 +108,74 @@ class SampleExporter:
             assert np.all(
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            assert (
-                x_i[..., :4].min() >= -1.0 and x_i[..., :4].max() <= 1.0
-            ), "Benign SAR images out of range, should be in [-1., 1.]"
-            assert (
-                x_adv_i[..., :4].min() >= -1.0 and x_adv_i[..., :4].max() <= 1.0
-            ), "Adversarial SAR images out of range, should be in [-1., 1.]"
-            assert (
-                x_i[..., 4:].min() >= 0.0 and x_i[..., 4:].max() <= 1.0
-            ), "Benign EO images out of range, should be in [0., 1.]"
-            assert (
-                x_adv_i[..., 4:].min() >= 0.0 and x_adv_i[..., 4:].max() <= 1.0
-            ), "Adversarial EO images out of range, should be in [0., 1.]"
+            if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
+                logger.warning(
+                    "Benign SAR images out of expected range. Clipping to [-1, 1]."
+                )
+            if x_adv_i[..., :4].min() < -1.0 or x_adv_i[..., :4].max() > 1.0:
+                logger.warning(
+                    "Adversarial SAR images out of expected range. Clipping to [-1, 1]."
+                )
+            if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
+                logger.warning(
+                    "Benign EO images out of expected range. Clipping to [0, 1]."
+                )
+            if x_adv_i[..., 4:].min() < 0.0 or x_adv_i[..., 4:].max() > 1.0:
+                logger.warning(
+                    "Adversarial EO images out of expected range. Clipping to [0, 1]."
+                )
 
             folder = str(self.saved_samples)
             os.mkdir(os.path.join(self.output_dir, folder))
 
             sar_eps = 1e-9 + 1j * 1e-9
             x_vh = np.log10(
-                np.abs(np.complex128(x_i[..., 0] + 1j * x_i[..., 1]) + sar_eps)
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 0], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+                    )
+                    + sar_eps
+                )
             )
             x_vv = np.log10(
-                np.abs(np.complex128(x_i[..., 2] + 1j * x_i[..., 3]) + sar_eps)
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 2], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+                    )
+                    + sar_eps
+                )
             )
             x_adv_vh = np.log10(
-                np.abs(np.complex128(x_adv_i[..., 0] + 1j * x_adv_i[..., 1]) + sar_eps)
+                np.abs(
+                    np.complex128(
+                        np.clip(x_adv_i[..., 0], -1.0, 1.0)
+                        + 1j * np.clip(x_adv_i[..., 1], -1.0, 1.0)
+                    )
+                    + sar_eps
+                )
             )
             x_adv_vv = np.log10(
-                np.abs(np.complex128(x_adv_i[..., 2] + 1j * x_adv_i[..., 3]) + sar_eps)
+                np.abs(
+                    np.complex128(
+                        np.clip(x_adv_i[..., 2], -1.0, 1.0)
+                        + 1j * np.clip(x_adv_i[..., 3], -1.0, 1.0)
+                    )
+                    + sar_eps
+                )
             )
-            sar_offset = np.log10(np.abs(sar_eps))
-            sar_scale = 255.0 / (
-                np.log10(np.sqrt(np.abs(1.0 + 1.0j + sar_eps)))
-                - np.log10(np.sqrt(np.abs(sar_eps)))
-            )
+            sar_min = np.min((x_vh.min(), x_vv.min(), x_adv_vh.min(), x_adv_vv.min()))
+            sar_max = np.max((x_vh.max(), x_vv.max(), x_adv_vh.max(), x_adv_vv.max()))
+            sar_scale = 255.0 / (sar_max - sar_min)
 
-            benign_vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_offset)), "L")
-            benign_vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_offset)), "L")
+            benign_vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+            benign_vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
             adversarial_vh = Image.fromarray(
-                np.uint8(sar_scale * (x_adv_vh - sar_offset)), "L"
+                np.uint8(sar_scale * (x_adv_vh - sar_min)), "L"
             )
             adversarial_vv = Image.fromarray(
-                np.uint8(sar_scale * (x_adv_vv - sar_offset)), "L"
+                np.uint8(sar_scale * (x_adv_vv - sar_min)), "L"
             )
             benign_vh.save(os.path.join(self.output_dir, folder, "vh_benign.png"))
             benign_vv.save(os.path.join(self.output_dir, folder, "vv_benign.png"))
@@ -151,12 +188,13 @@ class SampleExporter:
 
             eo_min = np.min((x_i[..., 4:].min(), x_adv[..., 4:].min()))
             eo_max = np.max((x_i[..., 4:].max(), x_adv[..., 4:].max()))
+            eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 benign_eo = Image.fromarray(
-                    np.uint8(255.0 / (eo_max - eo_min) * (x_i[..., c] - eo_min)), "L"
+                    np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
                 )
                 adversarial_eo = Image.fromarray(
-                    np.uint8(255.0 / (eo_max - eo_min) * (x_adv_i[..., c] - eo_min)),
+                    np.uint8(eo_scale * (np.clip(x_adv_i[..., c], 0.0, 1.0) - eo_min)),
                     "L",
                 )
                 benign_eo.save(
@@ -177,22 +215,24 @@ class SampleExporter:
             assert np.all(
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial audio are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            assert (
-                x_i.min() >= -1.0 and x_i.max() <= 1.0
-            ), "Benign audio out of range, should be in [-1., 1.]"
-            assert (
-                x_adv_i.min() >= -1.0 and x_adv_i.max() <= 1.0
-            ), "Adversarial audio out of range, should be in [-1., 1.]"
+            if x_i.min() < -1.0 or x_i.max() > 1.0:
+                logger.warning(
+                    "Benign audio out of expected range. Clipping to [-1, 1]"
+                )
+            if x_adv_i.min() < -1.0 or x_adv_i.max() > 1.0:
+                logger.warning(
+                    "Adversarial audio out of expected range. Clipping to [-1, 1]"
+                )
 
             wavfile.write(
                 os.path.join(self.output_dir, f"{self.saved_samples}_benign.wav"),
                 rate=16000,
-                data=x_i,
+                data=np.clip(x_i, -1.0, 1.0),
             )
             wavfile.write(
                 os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.wav"),
                 rate=16000,
-                data=x_adv_i,
+                data=np.clip(x_adv_i, -1.0, 1.0),
             )
 
             self.saved_samples += 1
@@ -206,12 +246,12 @@ class SampleExporter:
             assert np.all(
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial videos are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            assert (
-                x_i.min() >= 0.0 and x_i.max() <= 1.0
-            ), "Benign video out of range, should be in [0., 1.]"
-            assert (
-                x_adv_i.min() >= 0.0 and x_adv_i.max() <= 1.0
-            ), "Adversarial video out of range, should be in [0., 1.]"
+            if x_i.min() < 0.0 or x_i.max() > 1.0:
+                logger.warning("Benign video out of expected range. Clipping to [0, 1]")
+            if x_adv_i.min() < 0.0 or x_adv_i.max() > 1.0:
+                logger.warning(
+                    "Adversarial video out of expected range. Clipping to [0, 1]"
+                )
 
             folder = str(self.saved_samples)
             os.mkdir(os.path.join(self.output_dir, folder))
@@ -252,8 +292,8 @@ class SampleExporter:
 
             for n_frame, (x_frame, x_adv_frame) in enumerate(zip(x_i, x_adv_i)):
 
-                benign_pixels = np.uint8(x_frame * 255.0)
-                adversarial_pixels = np.uint8(x_adv_frame * 255.0)
+                benign_pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+                adversarial_pixels = np.uint8(np.clip(x_adv_frame, 0.0, 1.0) * 255.0)
 
                 benign_image = Image.fromarray(benign_pixels, "RGB")
                 adversarial_image = Image.fromarray(adversarial_pixels, "RGB")
