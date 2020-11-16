@@ -251,7 +251,8 @@ may also be loaded by the model.
   * (Secondary) other "per-example" attacks such as PGD, FGM, may be considered for completeness.
 * **Baseline Defense**: MP3 Compression
 * **Baseline Model Performance:**
-To be added
+  * Baseline Attack (Imperceptible ASR attack) word error rate: 1.67% (5 examples)
+  * Baseline Attack (Imperceptible ASR attack) SNR: 29.9 dB (5 examples) 
 * **Baseline Defense Performance:**
 To be added
 
