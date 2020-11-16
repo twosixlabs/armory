@@ -213,6 +213,9 @@ class SampleExporter:
                 x_adv_i.min() >= 0.0 and x_adv_i.max() <= 1.0
             ), "Adversarial video out of range, should be in [0., 1.]"
 
+            folder = str(self.saved_samples)
+            os.mkdir(os.path.join(self.output_dir, folder))
+
             benign_process = (
                 ffmpeg.input(
                     "pipe:",
@@ -221,7 +224,7 @@ class SampleExporter:
                     s=f"{x_i.shape[2]}x{x_i.shape[1]}",
                 )
                 .output(
-                    os.path.join(self.output_dir, f"{self.saved_samples}_benign.mp4"),
+                    os.path.join(self.output_dir, folder, "video_benign.mp4"),
                     pix_fmt="yuv420p",
                     vcodec="libx264",
                     r=25,
@@ -229,12 +232,6 @@ class SampleExporter:
                 .overwrite_output()
                 .run_async(pipe_stdin=True, quiet=True)
             )
-
-            for x_frame in x_i:
-                benign_process.stdin.write((x_frame * 255.0).astype(np.uint8).tobytes())
-
-            benign_process.stdin.close()
-            benign_process.wait()
 
             adversarial_process = (
                 ffmpeg.input(
@@ -244,9 +241,7 @@ class SampleExporter:
                     s=f"{x_i.shape[2]}x{x_i.shape[1]}",
                 )
                 .output(
-                    os.path.join(
-                        self.output_dir, f"{self.saved_samples}_adversarial.mp4"
-                    ),
+                    os.path.join(self.output_dir, folder, "video_adversarial.mp4"),
                     pix_fmt="yuv420p",
                     vcodec="libx264",
                     r=24,
@@ -255,11 +250,29 @@ class SampleExporter:
                 .run_async(pipe_stdin=True, quiet=True)
             )
 
-            for x_frame in x_adv_i:
-                adversarial_process.stdin.write(
-                    (x_frame * 255.0).astype(np.uint8).tobytes()
+            for n_frame, (x_frame, x_adv_frame) in enumerate(zip(x_i, x_adv_i)):
+
+                benign_pixels = np.uint8(x_frame * 255.0)
+                adversarial_pixels = np.uint8(x_adv_frame * 255.0)
+
+                benign_image = Image.fromarray(benign_pixels, "RGB")
+                adversarial_image = Image.fromarray(adversarial_pixels, "RGB")
+                benign_image.save(
+                    os.path.join(
+                        self.output_dir, folder, f"frame_{n_frame:04d}_benign.png"
+                    )
+                )
+                adversarial_image.save(
+                    os.path.join(
+                        self.output_dir, folder, f"frame_{n_frame:04d}_adversarial.png"
+                    )
                 )
 
+                benign_process.stdin.write(benign_pixels.tobytes())
+                adversarial_process.stdin.write(adversarial_pixels.tobytes())
+
+            benign_process.stdin.close()
+            benign_process.wait()
             adversarial_process.stdin.close()
             adversarial_process.wait()
             self.saved_samples += 1
