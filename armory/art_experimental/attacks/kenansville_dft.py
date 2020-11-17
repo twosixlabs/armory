@@ -101,7 +101,7 @@ class KenansvilleDFT:
                 # split input into multiple segments and attack each with some probability
                 x_adv = np.zeros_like(x_example)
                 seg_len = self.attack_len
-                for j in range(np.ceil(len(x_example) // seg_len)):
+                for j in range(int(np.ceil(len(x_example) / seg_len))):
                     xs = x_example[seg_len * j : min((j + 1) * seg_len, len(x_example))]
                     if np.random.rand(1) < self.attack_prob:
                         xs = self._attack(xs)
