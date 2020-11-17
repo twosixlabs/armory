@@ -6,9 +6,17 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
+            "decrease_factor_alpha": 0.5,
             "global_max_length": 562480,
-            "max_iter_1st_stage": 30,
-            "max_iter_2nd_stage": 125
+            "increase_factor_alpha": 2.0,
+            "initial_eps": 0.0075,
+            "initial_rescale": 1.0,
+            "learning_rate_1st_stage": 0.0001,
+            "learning_rate_2nd_stage": 1e-07,
+            "max_iter_1st_stage": 400,
+            "max_iter_2nd_stage": 100,
+            "num_iter_decrease_alpha": 50,
+            "rescale_factor": 0.5
         },
         "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
         "name": "ImperceptibleASRPytorch",
