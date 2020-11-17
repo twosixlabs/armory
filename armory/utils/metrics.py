@@ -82,7 +82,11 @@ def norm(x, x_adv, ord):
     x = np.asarray(x)
     x_adv = np.asarray(x_adv)
     # cast to float first to prevent overflow errors
-    diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
+    assert not (np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)), "x and x_adv mix real/complex types"
+    if np.iscomplexobj(x):
+        diff = (x.astype(complex) - x_adv.astype(complex)).reshape(x.shape[0], -1)
+    else:
+        diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
     values = np.linalg.norm(diff, ord=ord, axis=1)
     # normalize l0 norm by number of elements in array
     if ord == 0:
