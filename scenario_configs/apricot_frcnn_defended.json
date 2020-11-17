@@ -1,0 +1,67 @@
+{
+    "_description": "APRICOT object detection, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1
+        },
+        "module": "armory.data.adversarial_datasets",
+        "name": "apricot_dev_adversarial",
+        "type": "preloaded",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "eval_split": "adversarial",
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "apricot_dev_adversarial"
+    },
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channel_index": 3,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 10
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_normalized",
+        "name": "JpegCompressionNormalized",
+        "type": "Preprocessor"
+    },
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": false,
+        "task": [
+            "apricot_patch_targeted_AP_per_class",
+            "object_detection_AP_per_class"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.tf_graph.mscoco_frcnn",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.object_detection",
+        "name": "ObjectDetectionTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.13.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}
