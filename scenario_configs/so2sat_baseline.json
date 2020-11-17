@@ -45,7 +45,10 @@
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": [
+            "linf",
+            "snr_db"
+        ],
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
@@ -69,7 +72,7 @@
     },
     "scenario": {
         "kwargs": {
-            "attack_modality": "both"
+            "attack_modality": "sar"
         },
         "module": "armory.scenarios.multimodal_so2sat_scenario",
         "name": "So2SatClassification"

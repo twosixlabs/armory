@@ -60,8 +60,8 @@ class So2SatClassification(Scenario):
             assert np.all(np.array(attack_mask[4:]) == 0), f"Selected SAR-only attack modality, but non-zero mask on EO channels"
         elif attack_modality == "eo":
             assert np.all(np.array(attack_mask[:4]) == 0), f"Selected EO-only attack modality, but non-zero mask on SAR channels"
-        else:
-            assert np.any(np.array(attack_mask) == 1), f"Attack mask is all zero. No perturbation can be applied"
+        elif attack_modality == "both":
+            assert np.any(np.array(attack_mask[:4]) == 1) and np.any(np.array(attack_mask[4:] == 1)), f"Specified attack on SAR and EO modalities, but mask does not permit this"
 
         if model_config["fit"]:
             try:
@@ -150,19 +150,23 @@ class So2SatClassification(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        sar_perturbation_logger = metrics.MetricsLogger.from_config(
-            perturbation_metrics,
-            skip_benign=True,
-            skip_attack=False,
-            targeted=targeted,
-        )
+        if attack_modality in ("sar", "both"):
+            sar_perturbation_logger = metrics.MetricsLogger.from_config(
+                perturbation_metrics,
+                skip_benign=True,
+                skip_attack=False,
+                targeted=targeted,
+            )
+        else:
+            sar_perturbation_logger = None
 
-        eo_perturbation_logger = metrics.MetricsLogger.from_config(
-            perturbation_metrics,
-            skip_benign=True,
-            skip_attack=False,
-            targeted=targeted,
-        )
+        if attack_modality in ("eo", "both"):
+            eo_perturbation_logger = metrics.MetricsLogger.from_config(
+                perturbation_metrics,
+                skip_benign=True,
+                skip_attack=False,
+                targeted=targeted,
+            )
 
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
@@ -228,8 +232,10 @@ class So2SatClassification(Scenario):
             x_adv_sar = np.stack((x_adv[..., 0] + 1j * x_adv[..., 1], x_adv[..., 2] + 1j * x_adv[..., 3]), axis=3)
             x_eo = x[..., 4:]
             x_adv_eo = x_adv[..., 4:]
-            sar_perturbation_logger.update_perturbation(x_sar, x_adv_sar)
-            eo_perturbation_logger.update_perturbation(x_eo, x_adv_eo)
+            if sar_perturbation_logger is not None:
+                sar_perturbation_logger.update_perturbation(x_sar, x_adv_sar)
+            if eo_perturbation_logger is not None:
+                eo_perturbation_logger.update_perturbation(x_eo, x_adv_eo)
 
         performance_logger.log_task(adversarial=True)
         if targeted:
@@ -237,7 +243,8 @@ class So2SatClassification(Scenario):
 
         # Merge performance, SAR, EO results
         combined_results = performance_logger.results()
-        combined_results.update({f"sar_{k}": v for k, v in sar_perturbation_logger.results().items()})
-        combined_results.update({f"eo_{k}": v for k, v in eo_perturbation_logger.results().items()})
-        import pdb; pdb.set_trace()
+        if sar_perturbation_logger is not None:
+            combined_results.update({f"sar_{k}": v for k, v in sar_perturbation_logger.results().items()})
+        if eo_perturbation_logger is not None:
+            combined_results.update({f"eo_{k}": v for k, v in eo_perturbation_logger.results().items()})
         return combined_results

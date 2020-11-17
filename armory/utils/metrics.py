@@ -81,7 +81,7 @@ def norm(x, x_adv, ord):
     """
     x = np.asarray(x)
     x_adv = np.asarray(x_adv)
-    # cast to float first to prevent overflow errors
+    # elevate to 64-bit types first to prevent overflow errors
     assert not (np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)), "x and x_adv mix real/complex types"
     if np.iscomplexobj(x):
         diff = (x.astype(complex) - x_adv.astype(complex)).reshape(x.shape[0], -1)
@@ -133,14 +133,14 @@ def l0(x, x_adv):
 
 
 def _snr(x_i, x_adv_i):
-    x_i = np.asarray(x_i, dtype=float)
-    x_adv_i = np.asarray(x_adv_i, dtype=float)
+    assert not (np.iscomplexobj(x_i) ^ np.iscomplexobj(x_adv_i)), "x_i and x_adv_i mix real/complex types"
+    dtype = complex if np.iscomplexobj(x_i) else float
+    x_i = np.asarray(x_i, dtype=dtype)
+    x_adv_i = np.asarray(x_adv_i, dtype=dtype)
     if x_i.shape != x_adv_i.shape:
         raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    elif x_i.ndim != 1:
-        raise ValueError("_snr input must be single dimensional (not multichannel)")
-    signal_power = (x_i ** 2).mean()
-    noise_power = ((x_i - x_adv_i) ** 2).mean()
+    signal_power = (np.abs(x_i) ** 2).mean()
+    noise_power = (np.abs(x_i - x_adv_i) ** 2).mean()
     return signal_power / noise_power
 
 
