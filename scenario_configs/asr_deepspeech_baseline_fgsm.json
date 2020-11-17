@@ -52,6 +52,10 @@
         },
         "weights_file": null,
         "wrapper_kwargs": {
+            "clip_values": [
+                -1,
+                1
+            ],
             "pretrained_model": "librispeech"
         }
     },
