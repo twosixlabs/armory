@@ -234,7 +234,8 @@ def load_label_targeter(config):
         return labels.MatchedTranscriptLengthTargeter(transcripts)
     elif scheme == "object_detection_fixed":
         value = config.get("value")
-        return labels.ObjectDetectionFixedLabelTargeteer(value)
+        score = config.get("score", 1.0)
+        return labels.ObjectDetectionFixedLabelTargeteer(value, score)
     else:
         raise ValueError(
             f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'
