@@ -67,6 +67,7 @@ class ArmoryDataGenerator(DataGenerator):
         label_preprocessing_fn=None,
         variable_length=False,
         variable_y=False,
+        context=None,
     ):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
@@ -87,6 +88,8 @@ class ArmoryDataGenerator(DataGenerator):
             self.current = 0
         elif self.variable_y:
             raise NotImplementedError("variable_y=True requires variable_length=True")
+
+        self.context = context
 
     @staticmethod
     def np_1D_object_array(x_list):
@@ -187,6 +190,7 @@ class EvalGenerator(DataGenerator):
         # This attr is only used by ucf video scenarios that involve finetuning. It
         # must be set to enable check runs.
         self.batches_per_epoch = 1
+        self.context = armory_generator.context
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
         if self.batches_processed == self.num_eval_batches:
@@ -282,6 +286,7 @@ def _generator_from_tfds(
     cache_dataset: bool = True,
     framework: str = "numpy",
     lambda_map: Callable = None,
+    context=None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -385,6 +390,7 @@ def _generator_from_tfds(
             label_preprocessing_fn=label_preprocessing_fn,
             variable_length=bool(variable_length and batch_size > 1),
             variable_y=bool(variable_y and batch_size > 1),
+            context=context,
         )
 
     elif framework == "tf":
@@ -640,6 +646,7 @@ def mnist(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=mnist_context,
     )
 
 
@@ -670,6 +677,7 @@ def cifar10(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=cifar10_context,
     )
 
 
@@ -701,6 +709,7 @@ def digit(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=digit_context,
     )
 
 
@@ -732,6 +741,7 @@ def imagenette(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=imagenette_context,
     )
 
 
@@ -759,6 +769,7 @@ def german_traffic_sign(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=gtsrb_context,
     )
 
 
@@ -801,6 +812,7 @@ def librispeech_dev_clean(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=librispeech_dev_clean_context,
     )
 
 
@@ -844,6 +856,7 @@ def librispeech(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=librispeech_context,
     )
 
 
@@ -888,6 +901,7 @@ def librispeech_dev_clean_asr(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=librispeech_dev_clean_context,
     )
 
 
@@ -929,6 +943,7 @@ def resisc45(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=resisc45_context,
     )
 
 
@@ -962,6 +977,7 @@ def ucf101(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=ucf101_context,
     )
 
 
@@ -1026,6 +1042,7 @@ def xview(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=xview_context,
     )
 
 
@@ -1100,6 +1117,7 @@ def so2sat(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=so2sat_context,
     )
 
 

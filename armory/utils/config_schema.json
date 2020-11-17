@@ -23,9 +23,6 @@
                 "name": {
                     "type": "string"
                 },
-                "samples_to_save": {
-                    "type": "integer"
-                },
                 "use_label": {
                     "type": "boolean"
                 }
@@ -184,6 +181,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "export_samples": {
+                    "type": "integer"
                 }
             },
             "required": [

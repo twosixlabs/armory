@@ -128,14 +128,6 @@ class AudioClassificationTask(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        samples_to_save = config["attack"].get("samples_to_save")
-        if samples_to_save is not None and samples_to_save > 0:
-            sample_exporter = SampleExporter(
-                self.scenario_output_dir, "audio", samples_to_save
-            )
-        else:
-            sample_exporter = None
-
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -161,6 +153,15 @@ class AudioClassificationTask(Scenario):
             )
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
+
+        export_samples = config["scenario"].get("export_samples")
+        if export_samples is not None and export_samples > 0:
+            sample_exporter = SampleExporter(
+                self.scenario_output_dir, test_data.context, export_samples
+            )
+        else:
+            sample_exporter = None
+
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
                 name="Attack",

@@ -133,19 +133,6 @@ class ImageClassificationTask(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
-        samples_to_save = config["attack"].get("samples_to_save")
-        if samples_to_save is not None and samples_to_save > 0:
-            if config["dataset"].get("name") == "so2sat":
-                sample_exporter = SampleExporter(
-                    self.scenario_output_dir, "so2sat", samples_to_save
-                )
-            else:
-                sample_exporter = SampleExporter(
-                    self.scenario_output_dir, "image", samples_to_save
-                )
-        else:
-            sample_exporter = None
-
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -171,6 +158,15 @@ class ImageClassificationTask(Scenario):
             )
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
+
+        export_samples = config["scenario"].get("export_samples")
+        if export_samples is not None and export_samples > 0:
+            sample_exporter = SampleExporter(
+                self.scenario_output_dir, test_data.context, export_samples
+            )
+        else:
+            sample_exporter = None
+
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
                 name="Attack",

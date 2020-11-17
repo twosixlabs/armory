@@ -1,4 +1,3 @@
-import math
 import os
 import logging
 import numpy as np
@@ -8,25 +7,33 @@ from PIL import Image
 from shutil import rmtree
 from scipy.io import wavfile
 
+from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
+
 
 logger = logging.getLogger(__name__)
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, domain, num_samples=math.inf):
+    def __init__(self, base_output_dir, context, num_samples):
         self.base_output_dir = base_output_dir
-        self.domain = domain
+        self.context = context
         self.num_samples = num_samples
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
 
-        assert self.domain in (
-            "image",
-            "so2sat",
-            "audio",
-            "video",
-        ), f"Unsupported domain: {self.domain}"
+        if isinstance(self.context, VideoContext):
+            self.export_fn = self._export_video
+        elif isinstance(self.context, ImageContext):
+            self.export_fn = self._export_images
+        elif isinstance(self.context, AudioContext):
+            self.export_fn = self._export_audio
+        elif isinstance(self.context, So2SatContext):
+            self.export_fn = self._export_so2sat
+        else:
+            raise TypeError(
+                f"Expected VideoContext, ImageContext, AudioContext, or So2SatContext, got {type(self.context)}"
+            )
         self._make_output_dir()
 
     def export(self, x, x_adv, y, y_adv):
@@ -34,19 +41,7 @@ class SampleExporter:
         if self.saved_samples < self.num_samples:
 
             self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_adv}
-
-            if self.domain == "image":
-                self._export_images(x, x_adv)
-            elif self.domain == "so2sat":
-                self._export_so2sat(x, x_adv)
-            elif self.domain == "audio":
-                self._export_audio(x, x_adv)
-            elif self.domain == "video":
-                self._export_video(x, x_adv)
-            else:
-                raise ValueError(
-                    f'Expected domain in ("image", "audio", "video"), found {self.domain}'
-                )
+            self.export_fn(x, x_adv)
 
             if self.saved_samples == self.num_samples:
                 with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
@@ -102,6 +97,7 @@ class SampleExporter:
 
     def _export_so2sat(self, x, x_adv):
         for x_i, x_adv_i in zip(x, x_adv):
+
             if self.saved_samples == self.num_samples:
                 break
 
@@ -226,12 +222,12 @@ class SampleExporter:
 
             wavfile.write(
                 os.path.join(self.output_dir, f"{self.saved_samples}_benign.wav"),
-                rate=16000,
+                rate=self.context.sample_rate,
                 data=np.clip(x_i, -1.0, 1.0),
             )
             wavfile.write(
                 os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.wav"),
-                rate=16000,
+                rate=self.context.sample_rate,
                 data=np.clip(x_adv_i, -1.0, 1.0),
             )
 
@@ -267,7 +263,7 @@ class SampleExporter:
                     os.path.join(self.output_dir, folder, "video_benign.mp4"),
                     pix_fmt="yuv420p",
                     vcodec="libx264",
-                    r=25,
+                    r=self.context.frame_rate,
                 )
                 .overwrite_output()
                 .run_async(pipe_stdin=True, quiet=True)
@@ -284,7 +280,7 @@ class SampleExporter:
                     os.path.join(self.output_dir, folder, "video_adversarial.mp4"),
                     pix_fmt="yuv420p",
                     vcodec="libx264",
-                    r=24,
+                    r=self.context.frame_rate,
                 )
                 .overwrite_output()
                 .run_async(pipe_stdin=True, quiet=True)
