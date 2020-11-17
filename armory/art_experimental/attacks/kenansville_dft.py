@@ -35,11 +35,11 @@ class KenansvilleDFT:
         self.attack_len = attack_len
         self.attack_prob = attack_prob
 
-        if targeted == True:
+        if targeted:
             raise Warning("'targeted' argument is not used in Kenansville attack")
 
         if snr_db < 0:
-            raise Error("Negative SNR is not allowed")
+            raise ValueError("Negative SNR is not allowed")
 
     def _attack(self, x):
         x_len = len(x)
@@ -64,7 +64,7 @@ class KenansvilleDFT:
         noise_db = 10 * np.log10(noise)
         while signal_db - noise_db > self.snr_db:
             id *= 2
-            noise = np.sum(x_psd[x_psd_ind[:min(id, x_len)]])
+            noise = np.sum(x_psd[x_psd_ind[: min(id, x_len)]])
             noise_db = 10 * np.log10(noise)
 
         if id == 2:
@@ -76,17 +76,19 @@ class KenansvilleDFT:
         noise_db = 10 * np.log10(noise)
         while signal_db - noise_db > self.snr_db:
             id += 2
-            noise = np.sum(x_psd[x_psd_ind[:min(id, x_len)]])
+            noise = np.sum(x_psd[x_psd_ind[: min(id, x_len)]])
             noise_db = 10 * np.log10(noise)
 
         id -= 2
 
         # make sure the only non-paired frequencies are DC and, if x is even, x_len/2
-        if (dc_ind in x_psd_ind[:id]) ^ (x_len % 2 == 0 and x_len / 2 in x_psd_ind[:id]):
+        if (dc_ind in x_psd_ind[:id]) ^ (
+            x_len % 2 == 0 and x_len / 2 in x_psd_ind[:id]
+        ):
             id -= 1
 
         # zero out low power frequencies
-        x_fft[x_psd_ind[: id]] = 0
+        x_fft[x_psd_ind[:id]] = 0
 
         x_ifft = np.fft.ifft(x_fft)
 
@@ -99,7 +101,7 @@ class KenansvilleDFT:
                 # split input into multiple segments and attack each with some probability
                 x_adv = np.zeros_like(x_example)
                 seg_len = self.attack_len
-                for j in range(ceil(len(x_example) // seg_len)):
+                for j in range(np.ceil(len(x_example) // seg_len)):
                     xs = x_example[seg_len * j : min((j + 1) * seg_len, len(x_example))]
                     if np.random.rand(1) < self.attack_prob:
                         xs = self._attack(xs)

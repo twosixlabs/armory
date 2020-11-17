@@ -24,10 +24,10 @@
     },
     "defense": {
         "kwargs": {
-            "sample_rate": 16000,
-            "channels_first": false,
             "apply_fit": false,
             "apply_predict": true,
+            "channels_first": false,
+            "sample_rate": 16000,
             "verbose": false
         },
         "module": "art.defences.preprocessor",
