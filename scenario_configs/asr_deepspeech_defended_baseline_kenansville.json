@@ -24,10 +24,14 @@
     },
     "defense": {
         "kwargs": {
-            "sample_rate": 16000
+            "sample_rate": 16000,
+            "channels_first": false,
+            "apply_fit": false,
+            "apply_predict": true,
+            "verbose": false
         },
-        "module": "armory.art_experimental.defences.mp3_compression_channelized",
-        "name": "Mp3CompressionChannelized",
+        "module": "art.defences.preprocessor",
+        "name": "Mp3Compression",
         "type": "Preprocessor"
     },
     "metric": {

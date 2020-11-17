@@ -35,11 +35,19 @@ class KenansvilleDFT:
         self.attack_len = attack_len
         self.attack_prob = attack_prob
 
+        if targeted == True:
+            raise Warning("'targeted' argument is not used in Kenansville attack")
+
+        if snr_db < 0:
+            raise Error("Negative SNR is not allowed")
+
     def _attack(self, x):
+        x_len = len(x)
         x_fft = np.fft.fft(x)
         x_psd = np.abs(x_fft) ** 2
         # sort by frequencies with increasing power
         x_psd_ind = np.argsort(x_psd)
+        dc_ind = np.where(x_psd_ind == 0)[0][0]
         signal_db = 10 * np.log10(np.sum(x_psd))
 
         """
@@ -51,13 +59,16 @@ class KenansvilleDFT:
         be replaced with binary search for faster convergence.
         """
         # coarse search
-        id = 2  # real signals have symmetry in positive and negative frequencies
+        id = 2
         noise = np.sum(x_psd[x_psd_ind[:id]])
         noise_db = 10 * np.log10(noise)
         while signal_db - noise_db > self.snr_db:
             id *= 2
-            noise = np.sum(x_psd[x_psd_ind[:id]])
+            noise = np.sum(x_psd[x_psd_ind[:min(id, x_len)]])
             noise_db = 10 * np.log10(noise)
+
+        if id == 2:
+            return x
 
         # fine search
         id = int(id / 2)
@@ -65,11 +76,18 @@ class KenansvilleDFT:
         noise_db = 10 * np.log10(noise)
         while signal_db - noise_db > self.snr_db:
             id += 2
-            noise = np.sum(x_psd[x_psd_ind[:id]])
+            noise = np.sum(x_psd[x_psd_ind[:min(id, x_len)]])
             noise_db = 10 * np.log10(noise)
 
+        id -= 2
+
+        # make sure the only non-paired frequencies are DC and, if x is even, x_len/2
+        if (dc_ind in x_psd_ind[:id]) ^ (x_len % 2 == 0 and x_len / 2 in x_psd_ind[:id]):
+            id -= 1
+
         # zero out low power frequencies
-        x_fft[x_psd_ind[: id - 2]] = 0
+        x_fft[x_psd_ind[: id]] = 0
+
         x_ifft = np.fft.ifft(x_fft)
 
         return np.real(x_ifft).astype(np.float32)
@@ -81,7 +99,7 @@ class KenansvilleDFT:
                 # split input into multiple segments and attack each with some probability
                 x_adv = np.zeros_like(x_example)
                 seg_len = self.attack_len
-                for j in range(len(x_example) // seg_len + 1):
+                for j in range(ceil(len(x_example) // seg_len)):
                     xs = x_example[seg_len * j : min((j + 1) * seg_len, len(x_example))]
                     if np.random.rand(1) < self.attack_prob:
                         xs = self._attack(xs)
