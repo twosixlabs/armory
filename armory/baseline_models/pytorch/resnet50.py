@@ -26,12 +26,15 @@ class OuterModel(torch.nn.Module):
             checkpoint = torch.load(weights_path, map_location=DEVICE)
             self.inner_model.load_state_dict(checkpoint)
 
-        self.imagenet_means = torch.tensor([0.485, 0.456, 0.406], device=DEVICE)
-        self.imagenet_stdev = torch.tensor([0.229, 0.224, 0.225], device=DEVICE)
+        self.imagenet_means = torch.tensor(
+            [0.485, 0.456, 0.406], dtype=torch.float32, device=DEVICE
+        )
+        self.imagenet_stdev = torch.tensor(
+            [0.229, 0.224, 0.225], dtype=torch.float32, device=DEVICE
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-
-        x_norm = ((x - self.imagenet_means) / self.imagenet_stdev).permute(0, 3, 2, 1)
+        x_norm = ((x - self.imagenet_means) / self.imagenet_stdev).permute(0, 3, 1, 2)
         output = self.inner_model(x_norm)
 
         return output
