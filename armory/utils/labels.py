@@ -90,21 +90,25 @@ class ObjectDetectionFixedLabelTargeteer:
     the number of boxes or location of boxes.
     """
 
-    def __init__(self, value):
+    def __init__(self, value, score=1.0):
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"value {value} must be a nonnegative int")
         self.value = value
+        self.score = score
 
     def generate(self, y):
-        if y["boxes"].dtype == np.object:
-            raise NotImplementedError(
-                "Batch size > 1 not yet implemented for attacks on object detectors"
+        targeted_y = []
+        for y_i in y:
+            target_y_i = y_i.copy()
+            target_y_i["labels"] = (
+                np.ones_like(y_i["labels"]).reshape((-1,)) * self.value
             )
-        target_y = y.copy()
-        target_y["labels"] = np.ones_like(y["labels"]).reshape((-1,)) * self.value
-        target_y["scores"] = np.ones_like(y["labels"]).reshape((-1,))
-        target_y["boxes"] = y["boxes"].reshape((-1, 4))
-        return [target_y]
+            target_y_i["scores"] = (
+                np.ones_like(y_i["labels"]).reshape((-1,)) * self.score
+            )
+            target_y_i["boxes"] = y_i["boxes"].reshape((-1, 4))
+            targeted_y.append(target_y_i)
+        return targeted_y
 
 
 class MatchedTranscriptLengthTargeter:
