@@ -55,7 +55,7 @@
     },
     "scenario": {
         "kwargs": {
-            "attack_modality": "both"
+            "attack_modality": "sar"
         },
         "module": "armory.scenarios.multimodal_so2sat_scenario",
         "name": "So2SatClassification"
