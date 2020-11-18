@@ -133,8 +133,6 @@ def _snr(x_i, x_adv_i):
     x_adv_i = np.asarray(x_adv_i, dtype=float)
     if x_i.shape != x_adv_i.shape:
         raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    elif x_i.ndim != 1:
-        raise ValueError("_snr input must be single dimensional (not multichannel)")
     signal_power = (x_i ** 2).mean()
     noise_power = ((x_i - x_adv_i) ** 2).mean()
     return signal_power / noise_power
