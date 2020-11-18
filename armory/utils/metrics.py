@@ -499,13 +499,13 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
             global_img_idx = (batch_size * batch_idx) + img_idx
             img_labels = y[img_idx]["labels"].flatten()
             img_boxes = y[img_idx]["boxes"].reshape((-1, 4))
-            for gt_box_idx in range(img_labels.size):
+            for gt_box_idx in range(img_labels.flatten().shape[0]):
                 label = img_labels[gt_box_idx]
                 box = img_boxes[gt_box_idx]
                 gt_box_dict = {"img_idx": global_img_idx, "label": label, "box": box}
                 gt_boxes_list.append(gt_box_dict)
 
-            for pred_box_idx in range(y_pred[img_idx]["labels"].size):
+            for pred_box_idx in range(y_pred[img_idx]["labels"].flatten().shape[0]):
                 pred_label = y_pred[img_idx]["labels"][pred_box_idx]
                 pred_box = y_pred[img_idx]["boxes"][pred_box_idx]
                 pred_score = y_pred[img_idx]["scores"][pred_box_idx]

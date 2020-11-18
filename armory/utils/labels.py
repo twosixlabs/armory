@@ -84,6 +84,33 @@ class IdentityTargeter:
         return y.copy().astype(int)
 
 
+class ObjectDetectionFixedLabelTargeteer:
+    """
+    Replaces the ground truth labels with the specified value. Does not modify
+    the number of boxes or location of boxes.
+    """
+
+    def __init__(self, value, score=1.0):
+        if not isinstance(value, int) or value < 0:
+            raise ValueError(f"value {value} must be a nonnegative int")
+        self.value = value
+        self.score = score
+
+    def generate(self, y):
+        targeted_y = []
+        for y_i in y:
+            target_y_i = y_i.copy()
+            target_y_i["labels"] = (
+                np.ones_like(y_i["labels"]).reshape((-1,)) * self.value
+            )
+            target_y_i["scores"] = (
+                np.ones_like(y_i["labels"]).reshape((-1,)) * self.score
+            ).astype(np.float32)
+            target_y_i["boxes"] = y_i["boxes"].reshape((-1, 4))
+            targeted_y.append(target_y_i)
+        return targeted_y
+
+
 class MatchedTranscriptLengthTargeter:
     """
     Targets labels of a length close to the true label
