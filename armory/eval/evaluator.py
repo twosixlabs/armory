@@ -130,7 +130,6 @@ class Evaluator(object):
         else:
             torch_home = paths.DockerPaths().pytorch_dir
         self.extra_env_vars["TORCH_HOME"] = torch_home
-        print(f"TORCH HOME = {self.extra_env_vars['TORCH_HOME']}")
 
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
