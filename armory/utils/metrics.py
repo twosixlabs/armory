@@ -85,10 +85,8 @@ def norm(x, x_adv, ord):
     assert not (
         np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)
     ), "x and x_adv mix real/complex types"
-    if np.iscomplexobj(x):
-        diff = (x.astype(complex) - x_adv.astype(complex)).reshape(x.shape[0], -1)
-    else:
-        diff = (x.astype(float) - x_adv.astype(float)).reshape(x.shape[0], -1)
+    dtype = complex if np.iscomplexobj(x) else float
+    diff = (x.astype(dtype) - x_adv.astype(dtype)).reshape(x.shape[0], -1)
     values = np.linalg.norm(diff, ord=ord, axis=1)
     # normalize l0 norm by number of elements in array
     if ord == 0:
