@@ -41,7 +41,8 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
-            "max_frames": 512
+            "max_frames": 512,
+            "model_status": "ucf101_trained"
         },
         "module": "armory.baseline_models.pytorch.ucf101_mars",
         "name": "get_art_model",
