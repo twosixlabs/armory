@@ -153,8 +153,9 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Baseline Attacked (Patch) Top-1 Accuracy: 24%
   * Baseline Attacked (Patch) Top-5 Accuracy: 97%
 * **Baseline Defense Performance: (results obtained using Armory < v0.10)**
-Baseline defense is art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
-apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0]) - see ucf101_baseline_adversarial.json for example usage.
+Baseline defense is `art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
+apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0])`
+see ucf101_baseline_adversarial.json for example usage.
 Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
   * Baseline Clean Top-1 Accuracy: 88%
   * Baseline Clean Top-5 Accuracy: 98%
