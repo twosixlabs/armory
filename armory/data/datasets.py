@@ -127,10 +127,8 @@ class ArmoryDataGenerator(DataGenerator):
 
             if self.variable_y:
                 if isinstance(y_list[0], dict):
-                    # Translate a list of dicts into a dict of arrays
-                    y = {}
-                    for k in y_list[0].keys():
-                        y[k] = self.np_1D_object_array([y_i[k] for y_i in y_list])
+                    # Store y as a list of dicts
+                    y = y_list
                 elif isinstance(y_list[0], tuple):
                     # Translate a list of tuples into a tuple of arrays
                     y = tuple(self.np_1D_object_array(i) for i in zip(*y_list))
@@ -967,29 +965,27 @@ def ucf101(
     )
 
 
-def tf_to_pytorch_box_conversion(x, y):
+def xview_label_preprocessing(x, y):
     """
     Converts boxes from TF format to PyTorch format
     TF format: [y1/height, x1/width, y2/height, x2/width]
     PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
     """
-    orig_boxes = y["boxes"]
-    if orig_boxes.dtype == np.object:
-        converted_boxes = np.empty(orig_boxes.shape, dtype=object)
-        for i, (x_i, orig_boxes_i) in enumerate(zip(x, orig_boxes)):
-            height, width = x_i.shape[:2]
-            converted_boxes[i] = orig_boxes_i[:, [1, 0, 3, 2]] * [
-                width,
-                height,
-                width,
-                height,
-            ]
-    else:
-        converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
-        height, width = x.shape[1:3]
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict["boxes"].reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[:2]
         converted_boxes *= [width, height, width, height]
-    y["boxes"] = converted_boxes
-    return y
+        label_dict["boxes"] = converted_boxes
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
 
 
 def xview(
@@ -999,7 +995,7 @@ def xview(
     dataset_dir: str = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    label_preprocessing_fn: Callable = tf_to_pytorch_box_conversion,
+    label_preprocessing_fn: Callable = xview_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,

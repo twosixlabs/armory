@@ -497,23 +497,23 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
         for img_idx in range(len(y_pred)):
             global_img_idx = (batch_size * batch_idx) + img_idx
-            for gt_box_idx in range(y["labels"][img_idx].size):
-                label = y["labels"][img_idx][gt_box_idx]
-                box = y["boxes"][img_idx][gt_box_idx]
-
+            img_labels = y[img_idx]["labels"].flatten()
+            img_boxes = y[img_idx]["boxes"].reshape((-1, 4))
+            for gt_box_idx in range(img_labels.size):
+                label = img_labels[gt_box_idx]
+                box = img_boxes[gt_box_idx]
                 gt_box_dict = {"img_idx": global_img_idx, "label": label, "box": box}
                 gt_boxes_list.append(gt_box_dict)
 
             for pred_box_idx in range(y_pred[img_idx]["labels"].size):
-                label = y_pred[img_idx]["labels"][pred_box_idx]
-                box = y_pred[img_idx]["boxes"][pred_box_idx]
-                score = y_pred[img_idx]["scores"][pred_box_idx]
-
+                pred_label = y_pred[img_idx]["labels"][pred_box_idx]
+                pred_box = y_pred[img_idx]["boxes"][pred_box_idx]
+                pred_score = y_pred[img_idx]["scores"][pred_box_idx]
                 pred_box_dict = {
                     "img_idx": global_img_idx,
-                    "label": label,
-                    "box": box,
-                    "score": score,
+                    "label": pred_label,
+                    "box": pred_box,
+                    "score": pred_score,
                 }
                 pred_boxes_list.append(pred_box_dict)
 
@@ -677,10 +677,10 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
         for img_idx in range(len(y_pred)):
             global_img_idx = (batch_size * batch_idx) + img_idx
             idx_of_patch = np.where(
-                y["labels"][img_idx] == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+                y[img_idx]["labels"].flatten() == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
             )[0]
-            patch_box = y["boxes"][img_idx][idx_of_patch].flatten()
-            patch_id = int(y["patch_id"][img_idx][idx_of_patch])
+            patch_box = y[img_idx]["boxes"].reshape((-1, 4))[idx_of_patch].flatten()
+            patch_id = int(y[img_idx]["patch_id"].flatten()[idx_of_patch])
             patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
             patch_box_dict = {
                 "img_idx": global_img_idx,

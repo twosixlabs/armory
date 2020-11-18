@@ -292,12 +292,23 @@ def gtsrb_poison(
     )
 
 
+def apricot_label_preprocessing(x, y):
+    """
+    Convert labels to list of dicts. If batch_size > 1, this will already be the case,
+    and y will simply be returned without modification.
+    """
+    if isinstance(y, dict):
+        y = [y]
+    return y
+
+
 def apricot_dev_adversarial(
     split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = apricot_canonical_preprocessing,
+    label_preprocessing_fn: Callable = apricot_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
@@ -328,6 +339,7 @@ def apricot_dev_adversarial(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         shuffle_files=shuffle_files,
