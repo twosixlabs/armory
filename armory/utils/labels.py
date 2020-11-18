@@ -105,7 +105,7 @@ class ObjectDetectionFixedLabelTargeteer:
             )
             target_y_i["scores"] = (
                 np.ones_like(y_i["labels"]).reshape((-1,)) * self.score
-            )
+            ).astype(np.float32)
             target_y_i["boxes"] = y_i["boxes"].reshape((-1, 4))
             targeted_y.append(target_y_i)
         return targeted_y
