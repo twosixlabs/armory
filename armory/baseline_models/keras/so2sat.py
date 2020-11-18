@@ -1,5 +1,7 @@
 from typing import Optional
 
+import numpy as np
+from copy import deepcopy
 from tensorflow import slice
 from tensorflow.keras import Sequential, Model
 from tensorflow.keras.layers import Dense, Flatten, Conv2D
@@ -66,5 +68,10 @@ def get_art_model(
     if weights_path:
         model.load_weights(weights_path)
 
-    wrapped_model = KerasClassifier(model=model, **wrapper_kwargs)
+    wrapper_kwargs2 = deepcopy(wrapper_kwargs)
+    if "clip_values" in wrapper_kwargs:
+        if isinstance(wrapper_kwargs["clip_values"], list):
+            wrapper_kwargs2["clip_values"] = np.array(wrapper_kwargs2["clip_values"])
+
+    wrapped_model = KerasClassifier(model=model, **wrapper_kwargs2)
     return wrapped_model

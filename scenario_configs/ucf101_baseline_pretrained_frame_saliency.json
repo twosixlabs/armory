@@ -1,0 +1,65 @@
+{
+    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "inner_config": {
+                "kwargs": {
+                    "batch_size": 1,
+                    "eps": 0.2,
+                    "eps_step": 0.1,
+                    "minimal": false,
+                    "num_random_init": 0,
+                    "targeted": false
+                },
+                "module": "art.attacks.evasion",
+                "name": "FastGradientMethod"
+            },
+            "method": "iterative_saliency"
+        },
+        "module": "armory.art_experimental.attacks.frame",
+        "name": "get_frame_saliency",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "ucf101"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {
+            "max_frames": 512,
+            "model_status": "ucf101_trained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
+        "name": "get_art_model",
+        "weights_file": "mars_ucf101_v1.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.video_ucf101_scenario",
+        "name": "Ucf101"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.13.0-dev",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

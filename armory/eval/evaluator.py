@@ -123,11 +123,16 @@ class Evaluator(object):
         if self.config["sysconfig"].get("set_pythonhashseed"):
             self.extra_env_vars["PYTHONHASHSEED"] = "0"
 
-        # Because we may want to allow specification of ARMORY_TORCH_HOME
-        # this constant path is placed here among the other imports
-        self.extra_env_vars["TORCH_HOME"] = paths.runtime_paths().pytorch_dir
         if not self.no_docker:
             self.extra_env_vars["HOME"] = "/tmp"
+
+        # Because we may want to allow specification of ARMORY_TORCH_HOME
+        # this constant path is placed here among the other imports
+        if self.no_docker:
+            torch_home = paths.HostPaths().pytorch_dir
+        else:
+            torch_home = paths.DockerPaths().pytorch_dir
+        self.extra_env_vars["TORCH_HOME"] = torch_home
 
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
