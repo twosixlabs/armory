@@ -126,6 +126,8 @@ class Evaluator(object):
         # Because we may want to allow specification of ARMORY_TORCH_HOME
         # this constant path is placed here among the other imports
         self.extra_env_vars["TORCH_HOME"] = paths.runtime_paths().pytorch_dir
+        if not self.no_docker:
+            self.extra_env_vars["HOME"] = "/tmp"
 
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
@@ -372,8 +374,8 @@ class Evaluator(object):
         ]
         logger.info("\n".join(lines))
         runner.exec_cmd(
-            f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser --allow-root",
-            user="root",
+            f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser",
+            user=user_group_id,
             expect_sentinel=False,
         )
 
