@@ -30,7 +30,7 @@ class So2SatClassification(Scenario):
         config: dict,
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
-        skip_attack: Optional[bool]
+        skip_attack: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -45,35 +45,44 @@ class So2SatClassification(Scenario):
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to estimator")
             estimator = load_defense_internal(config["defense"], estimator)
-        
+
         attack_modality = self.kwargs.get("attack_modality").lower()
         if attack_modality is None or attack_modality not in ("sar", "eo", "both"):
-            raise ValueError(f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}")
-    
-        attack_config = config["attack"]
-        attack_mask = attack_config.get("generate_kwargs", {}).get("mask")
+            raise ValueError(
+                f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
+            )
 
-        if attack_mask is None:
+        attack_config = config["attack"]
+        attack_channels = attack_config.get("generate_kwargs", {}).get("channels")
+
+        if attack_channels is None:
             if attack_modality == "sar":
                 logger.info("No mask configured. Attacking all SAR channels")
-                attack_mask = np.concatenate((np.ones(4, dtype=int), np.zeros(10, dtype=int)))
+                attack_channels = range(4)
             elif attack_modality == "eo":
                 logger.info("No mask configured. Attacking all EO channels")
-                attack_mask = np.concatenate((np.zeros(4, dtype=int), np.ones(10, dtype=int)))
+                attack_channels = range(4, 14)
             elif attack_modality == "both":
                 logger.info("No mask configured. Attacking all SAR and EO channels")
-                attack_mask = np.ones(14, dtype=int)
+                attack_channels = range(14)
 
         else:
-            assert isinstance(attack_mask, list) and len(attack_mask) == 14, "Mask is specified, but incorrect format. Expected length-14 list"
-            attack_mask = np.array(attack_mask)
+            assert isinstance(
+                attack_channels, list
+            ), "Mask is specified, but incorrect format. Expected list"
+            attack_channels = np.array(attack_channels)
             if attack_modality == "sar":
-                assert np.all(np.array(attack_mask[4:]) == 0), f"Selected SAR-only attack modality, but non-zero mask on EO channels"
+                assert np.all(
+                    np.logical_and(attack_channels >= 0, attack_channels < 4)
+                ), "Selected SAR-only attack modality, but specify non-SAR channels"
             elif attack_modality == "eo":
-                assert np.all(np.array(attack_mask[:4]) == 0), f"Selected EO-only attack modality, but non-zero mask on SAR channels"
+                assert np.all(
+                    np.logical_and(attack_channels >= 4, attack_channels < 14)
+                ), "Selected EO-only attack modality, but specify non-EO channels"
             elif attack_modality == "both":
-                assert np.any(np.array(attack_mask[:4]) == 1) and np.any(np.array(attack_mask[4:] == 1)), f"Specified attack on SAR and EO modalities, but mask does not permit this"
-            assert np.all(np.logical_or(attack_mask == 0, attack_mask == 1)), "Detected non-binary mask"
+                assert np.all(
+                    np.logical_and(attack_channels >= 0, attack_channels < 14)
+                ), "Selected channels are out-of-bounds"
 
         if model_config["fit"]:
             try:
@@ -120,7 +129,7 @@ class So2SatClassification(Scenario):
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
 
         performance_metrics = deepcopy(config["metric"])
-        perturbation_metrics = {"perturbation": performance_metrics.pop("perturbation")}
+        performance_metrics.pop("perturbation")
         performance_logger = metrics.MetricsLogger.from_config(
             performance_metrics,
             skip_benign=skip_benign,
@@ -162,6 +171,8 @@ class So2SatClassification(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
+        perturbation_metrics = deepcopy(config["metric"])
+        perturbation_metrics.pop("task")
         if attack_modality in ("sar", "both"):
             sar_perturbation_logger = metrics.MetricsLogger.from_config(
                 perturbation_metrics,
@@ -214,7 +225,9 @@ class So2SatClassification(Scenario):
                 computational_resource_dict=performance_logger.computational_resource_dict,
             ):
                 if attack_type == "preloaded":
-                    logger.warning(f"Specified preloaded attack. Ignoring attack_modality parameter")
+                    logger.warning(
+                        "Specified preloaded attack. Ignoring attack_modality parameter"
+                    )
                     if len(x) == 2:
                         x, x_adv = x
                     else:
@@ -223,7 +236,7 @@ class So2SatClassification(Scenario):
                         y, y_target = y
                 else:
                     generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
-                    generate_kwargs["mask"] = attack_mask
+                    generate_kwargs["mask"] = attack_channels
                     if attack_config.get("use_label"):
                         generate_kwargs["y"] = y
                     elif targeted:
@@ -241,8 +254,16 @@ class So2SatClassification(Scenario):
                 )
 
             # Update perturbation metrics for SAR/EO separately
-            x_sar = np.stack((x[..., 0] + 1j * x[..., 1], x[..., 2] + 1j * x[..., 3]), axis=3)
-            x_adv_sar = np.stack((x_adv[..., 0] + 1j * x_adv[..., 1], x_adv[..., 2] + 1j * x_adv[..., 3]), axis=3)
+            x_sar = np.stack(
+                (x[..., 0] + 1j * x[..., 1], x[..., 2] + 1j * x[..., 3]), axis=3
+            )
+            x_adv_sar = np.stack(
+                (
+                    x_adv[..., 0] + 1j * x_adv[..., 1],
+                    x_adv[..., 2] + 1j * x_adv[..., 3],
+                ),
+                axis=3,
+            )
             x_eo = x[..., 4:]
             x_adv_eo = x_adv[..., 4:]
             if sar_perturbation_logger is not None:
@@ -257,7 +278,11 @@ class So2SatClassification(Scenario):
         # Merge performance, SAR, EO results
         combined_results = performance_logger.results()
         if sar_perturbation_logger is not None:
-            combined_results.update({f"sar_{k}": v for k, v in sar_perturbation_logger.results().items()})
+            combined_results.update(
+                {f"sar_{k}": v for k, v in sar_perturbation_logger.results().items()}
+            )
         if eo_perturbation_logger is not None:
-            combined_results.update({f"eo_{k}": v for k, v in eo_perturbation_logger.results().items()})
+            combined_results.update(
+                {f"eo_{k}": v for k, v in eo_perturbation_logger.results().items()}
+            )
         return combined_results

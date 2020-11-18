@@ -82,7 +82,9 @@ def norm(x, x_adv, ord):
     x = np.asarray(x)
     x_adv = np.asarray(x_adv)
     # elevate to 64-bit types first to prevent overflow errors
-    assert not (np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)), "x and x_adv mix real/complex types"
+    assert not (
+        np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)
+    ), "x and x_adv mix real/complex types"
     if np.iscomplexobj(x):
         diff = (x.astype(complex) - x_adv.astype(complex)).reshape(x.shape[0], -1)
     else:
@@ -133,7 +135,9 @@ def l0(x, x_adv):
 
 
 def _snr(x_i, x_adv_i):
-    assert not (np.iscomplexobj(x_i) ^ np.iscomplexobj(x_adv_i)), "x_i and x_adv_i mix real/complex types"
+    assert not (
+        np.iscomplexobj(x_i) ^ np.iscomplexobj(x_adv_i)
+    ), "x_i and x_adv_i mix real/complex types"
     dtype = complex if np.iscomplexobj(x_i) else float
     x_i = np.asarray(x_i, dtype=dtype)
     x_adv_i = np.asarray(x_adv_i, dtype=dtype)
