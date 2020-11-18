@@ -47,21 +47,33 @@ class So2SatClassification(Scenario):
             estimator = load_defense_internal(config["defense"], estimator)
         
         attack_modality = self.kwargs.get("attack_modality").lower()
-        if attack_modality is None or not isinstance(attack_modality, str) or attack_modality not in ("sar", "eo", "both"):
+        if attack_modality is None or attack_modality not in ("sar", "eo", "both"):
             raise ValueError(f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}")
     
         attack_config = config["attack"]
         attack_mask = attack_config.get("generate_kwargs", {}).get("mask")
 
         if attack_mask is None:
-            assert attack_modality == "both", f"No attack mask configured, but attack_modality set to {attack_modality} only"
+            if attack_modality == "sar":
+                logger.info("No mask configured. Attacking all SAR channels")
+                attack_mask = np.concatenate((np.ones(4, dtype=int), np.zeros(10, dtype=int)))
+            elif attack_modality == "eo":
+                logger.info("No mask configured. Attacking all EO channels")
+                attack_mask = np.concatenate((np.zeros(4, dtype=int), np.ones(10, dtype=int)))
+            elif attack_modality == "both":
+                logger.info("No mask configured. Attacking all SAR and EO channels")
+                attack_mask = np.ones(14, dtype=int)
 
-        if attack_modality == "sar":
-            assert np.all(np.array(attack_mask[4:]) == 0), f"Selected SAR-only attack modality, but non-zero mask on EO channels"
-        elif attack_modality == "eo":
-            assert np.all(np.array(attack_mask[:4]) == 0), f"Selected EO-only attack modality, but non-zero mask on SAR channels"
-        elif attack_modality == "both":
-            assert np.any(np.array(attack_mask[:4]) == 1) and np.any(np.array(attack_mask[4:] == 1)), f"Specified attack on SAR and EO modalities, but mask does not permit this"
+        else:
+            assert isinstance(attack_mask, list) and len(attack_mask) == 14, "Mask is specified, but incorrect format. Expected length-14 list"
+            attack_mask = np.array(attack_mask)
+            if attack_modality == "sar":
+                assert np.all(np.array(attack_mask[4:]) == 0), f"Selected SAR-only attack modality, but non-zero mask on EO channels"
+            elif attack_modality == "eo":
+                assert np.all(np.array(attack_mask[:4]) == 0), f"Selected EO-only attack modality, but non-zero mask on SAR channels"
+            elif attack_modality == "both":
+                assert np.any(np.array(attack_mask[:4]) == 1) and np.any(np.array(attack_mask[4:] == 1)), f"Specified attack on SAR and EO modalities, but mask does not permit this"
+            assert np.all(np.logical_or(attack_mask == 0, attack_mask == 1)), "Detected non-binary mask"
 
         if model_config["fit"]:
             try:
@@ -167,6 +179,8 @@ class So2SatClassification(Scenario):
                 skip_attack=False,
                 targeted=targeted,
             )
+        else:
+            eo_perturbation_logger = None
 
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
@@ -200,6 +214,7 @@ class So2SatClassification(Scenario):
                 computational_resource_dict=performance_logger.computational_resource_dict,
             ):
                 if attack_type == "preloaded":
+                    logger.warning(f"Specified preloaded attack. Ignoring attack_modality parameter")
                     if len(x) == 2:
                         x, x_adv = x
                     else:
@@ -208,9 +223,7 @@ class So2SatClassification(Scenario):
                         y, y_target = y
                 else:
                     generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
-                    # Temporary workaround for ART code requirement of ndarray mask
-                    if "mask" in generate_kwargs:
-                        generate_kwargs["mask"] = np.array(generate_kwargs["mask"])
+                    generate_kwargs["mask"] = attack_mask
                     if attack_config.get("use_label"):
                         generate_kwargs["y"] = y
                     elif targeted:
