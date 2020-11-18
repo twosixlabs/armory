@@ -68,9 +68,9 @@ def get_art_model(
     if weights_path:
         model.load_weights(weights_path)
 
+    wrapper_kwargs2 = deepcopy(wrapper_kwargs)
     if "clip_values" in wrapper_kwargs:
         if isinstance(wrapper_kwargs["clip_values"], list):
-            wrapper_kwargs2 = deepcopy(wrapper_kwargs)
             wrapper_kwargs2["clip_values"] = np.array(wrapper_kwargs2["clip_values"])
 
     wrapped_model = KerasClassifier(model=model, **wrapper_kwargs2)
