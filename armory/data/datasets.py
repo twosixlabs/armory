@@ -996,6 +996,7 @@ def ucf101_clean(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=ucf101_context,
     )
 
 
