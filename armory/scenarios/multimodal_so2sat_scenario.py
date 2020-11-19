@@ -25,6 +25,20 @@ logger = logging.getLogger(__name__)
 
 
 class So2SatClassification(Scenario):
+    def __init__(self, **kwargs):
+        if "attack_modality" not in kwargs.keys():
+            raise ValueError("`attack_modality` must be defined for So2Sat scenario")
+        if kwargs["attack_modality"] is None or kwargs["attack_modality"] not in (
+            "sar",
+            "eo",
+            "both",
+        ):
+            raise ValueError(
+                f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
+            )
+        self.attack_modality = kwargs["attack_modality"].lower()
+        super().__init__()
+
     def _evaluate(
         self,
         config: dict,
@@ -46,23 +60,17 @@ class So2SatClassification(Scenario):
             logger.info(f"Applying internal {defense_type} defense to estimator")
             estimator = load_defense_internal(config["defense"], estimator)
 
-        attack_modality = self.kwargs.get("attack_modality").lower()
-        if attack_modality is None or attack_modality not in ("sar", "eo", "both"):
-            raise ValueError(
-                f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
-            )
-
         attack_config = config["attack"]
         attack_channels = attack_config.get("generate_kwargs", {}).get("channels")
 
         if attack_channels is None:
-            if attack_modality == "sar":
+            if self.attack_modality == "sar":
                 logger.info("No mask configured. Attacking all SAR channels")
                 attack_channels = range(4)
-            elif attack_modality == "eo":
+            elif self.attack_modality == "eo":
                 logger.info("No mask configured. Attacking all EO channels")
                 attack_channels = range(4, 14)
-            elif attack_modality == "both":
+            elif self.attack_modality == "both":
                 logger.info("No mask configured. Attacking all SAR and EO channels")
                 attack_channels = range(14)
 
@@ -71,15 +79,15 @@ class So2SatClassification(Scenario):
                 attack_channels, list
             ), "Mask is specified, but incorrect format. Expected list"
             attack_channels = np.array(attack_channels)
-            if attack_modality == "sar":
+            if self.attack_modality == "sar":
                 assert np.all(
                     np.logical_and(attack_channels >= 0, attack_channels < 4)
                 ), "Selected SAR-only attack modality, but specify non-SAR channels"
-            elif attack_modality == "eo":
+            elif self.attack_modality == "eo":
                 assert np.all(
                     np.logical_and(attack_channels >= 4, attack_channels < 14)
                 ), "Selected EO-only attack modality, but specify non-EO channels"
-            elif attack_modality == "both":
+            elif self.attack_modality == "both":
                 assert np.all(
                     np.logical_and(attack_channels >= 0, attack_channels < 14)
                 ), "Selected channels are out-of-bounds"
@@ -173,7 +181,7 @@ class So2SatClassification(Scenario):
 
         perturbation_metrics = deepcopy(config["metric"])
         perturbation_metrics.pop("task")
-        if attack_modality in ("sar", "both"):
+        if self.attack_modality in ("sar", "both"):
             sar_perturbation_logger = metrics.MetricsLogger.from_config(
                 perturbation_metrics,
                 skip_benign=True,
@@ -183,7 +191,7 @@ class So2SatClassification(Scenario):
         else:
             sar_perturbation_logger = None
 
-        if attack_modality in ("eo", "both"):
+        if self.attack_modality in ("eo", "both"):
             eo_perturbation_logger = metrics.MetricsLogger.from_config(
                 perturbation_metrics,
                 skip_benign=True,
@@ -226,7 +234,7 @@ class So2SatClassification(Scenario):
             ):
                 if attack_type == "preloaded":
                     logger.warning(
-                        "Specified preloaded attack. Ignoring attack_modality parameter"
+                        "Specified preloaded attack. Ignoring `attack_modality` parameter"
                     )
                     if len(x) == 2:
                         x, x_adv = x

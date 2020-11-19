@@ -46,9 +46,8 @@ MONGO_COLLECTION = "scenario_results"
 
 
 class Scenario(abc.ABC):
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.check_run = False
-        self.kwargs = kwargs
 
     def evaluate(
         self,
