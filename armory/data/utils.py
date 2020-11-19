@@ -100,9 +100,17 @@ def maybe_download_weights_from_s3(
                             f" Weights files submitted as tarballs must expand into a subdirectory."
                         )
                     )
-                logger.info(f"Auto-unpacking model weights from {weights_file}")
-                tar.extractall(path=saved_model_dir)
-            filepath = subdir
+                full_path = os.path.join(saved_model_dir, commonpath)
+                if os.path.exists(full_path):
+                    logger.warning(
+                        f"Model weights folder {commonpath} from {weights_file} already exists"
+                    )
+                    logger.warning(f"Skipping auto-unpacking of {weights_file}")
+                    logger.warning(f"Delete {commonpath} manually to force unpacking")
+                else:
+                    logger.info(f"Auto-unpacking model weights from {weights_file}")
+                    tar.extractall(path=saved_model_dir)
+            filepath = commonpath
 
     return filepath
 
