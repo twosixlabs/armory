@@ -17,6 +17,8 @@ from tensorflow.keras.utils import to_categorical
 from tqdm import tqdm
 from PIL import ImageOps, Image
 
+from art.defences.trainer import AdversarialTrainerMadryPGD
+
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
@@ -147,18 +149,34 @@ class GTSRB_CLBD(Scenario):
 
         if poison_dataset_flag:
             y_train_all_categorical = to_categorical(y_train_all)
-            logger.info("Fitting proxy classifier...")
             attack_train_epochs = train_epochs
-            proxy_classifier.fit(
-                x_train_all,
-                y_train_all,
-                batch_size=fit_batch_size,
-                nb_epochs=attack_train_epochs,
-                verbose=False,
-                shuffle=True,
-            )
             attack_config = deepcopy(config["attack"])
-            attack_config["kwargs"]["proxy_classifier"] = proxy_classifier
+            use_adversarial_trainer_flag = attack_config.get(
+                "use_adversarial_trainer", False
+            )
+
+            proxy_classifier_fit_kwargs = {
+                "batch_size": fit_batch_size,
+                "nb_epochs": attack_train_epochs,
+            }
+            logger.info("Fitting proxy classifier...")
+            if use_adversarial_trainer_flag:
+                logger.info("Using adversarial trainer...")
+                proxy_classifier = AdversarialTrainerMadryPGD(
+                    proxy_classifier, **proxy_classifier_fit_kwargs
+                )
+                proxy_classifier.fit(x_train_all, y_train_all)
+                attack_config["kwargs"][
+                    "proxy_classifier"
+                ] = proxy_classifier.get_classifier()
+            else:
+                proxy_classifier_fit_kwargs["verbose"] = False
+                proxy_classifier_fit_kwargs["shuffle"] = True
+                proxy_classifier.fit(
+                    x_train_all, y_train_all, **proxy_classifier_fit_kwargs
+                )
+                attack_config["kwargs"]["proxy_classifier"] = proxy_classifier
+
             attack, backdoor = load(attack_config)
 
             x_train_all, y_train_all_categorical = attack.poison(
@@ -167,7 +185,7 @@ class GTSRB_CLBD(Scenario):
             y_train_all = np.argmax(y_train_all_categorical, axis=1)
 
         if use_poison_filtering_defense:
-            y_train_defense = y_train_all
+            y_train_defense = to_categorical(y_train_all)
 
             defense_config = config["defense"]
             detection_kwargs = config_adhoc.get("detection_kwargs", dict())
