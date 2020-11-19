@@ -28,7 +28,7 @@ class So2SatClassification(Scenario):
     def __init__(self, **kwargs):
         if "attack_modality" not in kwargs.keys():
             raise ValueError("`attack_modality` must be defined for So2Sat scenario")
-        if kwargs["attack_modality"] is None or kwargs["attack_modality"] not in (
+        if kwargs["attack_modality"] is None or kwargs["attack_modality"].lower() not in (
             "sar",
             "eo",
             "both",
