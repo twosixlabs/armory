@@ -3,18 +3,6 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "channels": [
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10,
-                11,
-                12,
-                13
-            ],
             "patch_ratio": 0.05,
             "xmin": 0,
             "ymin": 0
@@ -22,8 +10,8 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 1.0,
-            "eps_step": 0.02,
+            "eps": 2.0,
+            "eps_step": 0.03,
             "max_iter": 100,
             "num_random_init": 0,
             "random_eps": false,
@@ -143,9 +131,11 @@
         }
     },
     "scenario": {
-        "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "kwargs": {
+            "attack_modality": "sar"
+        },
+        "module": "armory.scenarios.multimodal_so2sat_scenario",
+        "name": "So2SatClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0-dev",

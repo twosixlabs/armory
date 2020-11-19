@@ -3,12 +3,6 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "channels": [
-                0,
-                1,
-                2,
-                3
-            ],
             "patch_ratio": 0.05,
             "xmin": 0,
             "ymin": 0
@@ -91,9 +85,11 @@
         }
     },
     "scenario": {
-        "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "kwargs": {
+            "attack_modality": "sar"
+        },
+        "module": "armory.scenarios.multimodal_so2sat_scenario",
+        "name": "So2SatClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0-dev",
