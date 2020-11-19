@@ -162,8 +162,13 @@ class GTSRB_CLBD(Scenario):
             logger.info("Fitting proxy classifier...")
             if use_adversarial_trainer_flag:
                 logger.info("Using adversarial trainer...")
+                adversarial_trainer_kwargs = attack_config.pop(
+                    "adversarial_trainer_kwargs", {}
+                )
+                for k, v in proxy_classifier_fit_kwargs.items():
+                    adversarial_trainer_kwargs[k] = v
                 proxy_classifier = AdversarialTrainerMadryPGD(
-                    proxy_classifier, **proxy_classifier_fit_kwargs
+                    proxy_classifier, **adversarial_trainer_kwargs
                 )
                 proxy_classifier.fit(x_train_all, y_train_all)
                 attack_config["kwargs"][
