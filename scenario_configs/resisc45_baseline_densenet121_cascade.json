@@ -4,21 +4,35 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "boundary_kwargs": {
-                "max_iter": 1000
-            },
-            "cw_kwargs": {
-                "confidence": 0.9,
-                "eps": 0.2,
-                "max_iter": 10
-            },
-            "pgd_kwargs": {
-                "eps": 0.2,
-                "eps_step": 0.1,
-                "max_iter": 100,
-                "num_random_init": 0
-            },
+            "inner_configs": [
+                {
+                    "kwargs": {
+                        "eps": 0.2,
+                        "eps_step": 0.1,
+                        "max_iter": 100,
+                        "num_random_init": 0
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "ProjectedGradientDescent"
+                },
+                {
+                    "kwargs": {
+                        "batch_size": 1,
+                        "confidence": 0.9,
+                        "eps": 0.2,
+                        "max_iter": 10
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "CarliniLInfMethod"
+                },
+                {
+                    "kwargs": {
+                        "max_iter": 1000
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "BoundaryAttack"
+                }
+            ],
             "targeted": false
         },
         "module": "armory.art_experimental.attacks.cascading_attack",

@@ -1,30 +1,24 @@
-from art.attacks.evasion import (
-    ProjectedGradientDescent,
-    CarliniLInfMethod,
-    BoundaryAttack,
-    AutoAttack,
-)
+from art.attacks.evasion import AutoAttack
+from armory.utils.config_loading import load_attack
 
 
 class CascadingAttack(AutoAttack):
-    """
-    Cascading attack that first tries a PGD attack, then CW, then boundary attack.
-    """
-
     def __init__(self, estimator, **kwargs):
-        attack_kwargs = {
-            "targeted": kwargs["targeted"],
-            "batch_size": kwargs["batch_size"],
-        }
-        pgd_kwargs = {**attack_kwargs, **kwargs["pgd_kwargs"]}
-        self.pgd_attack = ProjectedGradientDescent(estimator, **pgd_kwargs)
+        self._check_kwargs(kwargs)
+        self.targeted = kwargs.get("targeted", False)
+        self.attacks = []
+        for inner_config in kwargs["inner_configs"]:
+            inner_config["kwargs"]["targeted"] = self.targeted
+            self.attacks.append(load_attack(inner_config, estimator))
+        super().__init__(estimator=estimator, attacks=self.attacks)
 
-        cw_kwargs = {**attack_kwargs, **kwargs["cw_kwargs"]}
-        self.cw_attack = CarliniLInfMethod(estimator, **cw_kwargs)
-
-        boundary_kwargs = {**attack_kwargs, **kwargs["boundary_kwargs"]}
-        del boundary_kwargs["batch_size"]
-        self.boundary_attack = BoundaryAttack(estimator, **boundary_kwargs)
-
-        self.attacks = [self.pgd_attack, self.cw_attack, self.boundary_attack]
-        super().__init__(estimator=estimator, attacks=self.attacks, **attack_kwargs)
+    def _check_kwargs(self, kwargs):
+        if "inner_configs" not in kwargs:
+            raise ValueError("Missing 'inner_configs' key in attack kwargs")
+        if not isinstance(kwargs["inner_configs"], (list, tuple)):
+            raise ValueError("`inner_configs` key must map to a tuple or list")
+        for i, config in enumerate(kwargs["inner_configs"]):
+            if "module" not in config:
+                raise ValueError(f"Missing 'module' key in inner_configs[{i}]")
+            if "name" not in config:
+                raise ValueError(f"Missing 'name' key in inner_configs[{i}]")
