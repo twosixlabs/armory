@@ -173,6 +173,9 @@
         },
         "scenario": {
             "properties": {
+                "export_samples": {
+                    "type": "integer"
+                },
                 "kwargs": {
                     "type": "object"
                 },
