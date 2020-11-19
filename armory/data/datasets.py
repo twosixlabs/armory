@@ -36,6 +36,7 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
@@ -996,6 +997,40 @@ def ucf101(
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("video", "label"),
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=ucf101_context,
+    )
+
+
+def ucf101_clean(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = ucf101_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    """
+    UCF 101 Action Recognition Dataset with high quality MPEG extraction
+        https://www.crcv.ucf.edu/data/UCF101.php
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "ucf101_clean/ucf101_1:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

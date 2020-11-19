@@ -1,0 +1,1 @@
+armory-public-data ucf101/ucf101_clean.tar.gz 31827610914 aaa9945ca7dcf8c6f999e14d036429e12caf77ed6986e9f58b4338eeb3698fbe
