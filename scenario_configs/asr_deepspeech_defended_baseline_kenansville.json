@@ -6,34 +6,37 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
-            "num_random_init": 0,
-            "targeted": true
+            "partial_attack": false,
+            "snr_db": 30,
+            "targeted": false
         },
-        "module": "art.attacks.evasion",
-        "name": "FastGradientMethod",
-        "targeted": true,
-        "targeted_labels": {
-            "scheme": "string",
-            "value": "TEST STRING"
-        },
+        "module": "armory.art_experimental.attacks.kenansville_dft",
+        "name": "KenansvilleDFT",
         "use_label": false
     },
     "dataset": {
-        "batch_size": 1,
+        "batch_size": 8,
         "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech",
         "train_split": "train_clean100"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "sample_rate": 16000,
+            "verbose": false
+        },
+        "module": "art.defences.preprocessor",
+        "name": "Mp3Compression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": false,
-        "perturbation": "linf",
+        "perturbation": "snr_db",
         "record_metric_per_sample": true,
         "task": [
             "word_error_rate"
@@ -52,10 +55,6 @@
         },
         "weights_file": null,
         "wrapper_kwargs": {
-            "clip_values": [
-                -1,
-                1
-            ],
             "pretrained_model": "librispeech"
         }
     },

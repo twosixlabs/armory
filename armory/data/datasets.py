@@ -34,6 +34,7 @@ from armory.data.utils import (
 )
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
+from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
@@ -127,10 +128,8 @@ class ArmoryDataGenerator(DataGenerator):
 
             if self.variable_y:
                 if isinstance(y_list[0], dict):
-                    # Translate a list of dicts into a dict of arrays
-                    y = {}
-                    for k in y_list[0].keys():
-                        y[k] = self.np_1D_object_array([y_i[k] for y_i in y_list])
+                    # Store y as a list of dicts
+                    y = y_list
                 elif isinstance(y_list[0], tuple):
                     # Translate a list of tuples into a tuple of arrays
                     y = tuple(self.np_1D_object_array(i) for i in zip(*y_list))
@@ -806,6 +805,33 @@ def librispeech_dev_clean(
     )
 
 
+def librispeech_full(
+    split: str = "train_clean360",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = librispeech_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "librispeech_full/plain_text:1.1.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def librispeech(
     split: str = "train_clean100",
     epochs: int = 1,
@@ -831,7 +857,8 @@ def librispeech(
         #     See: https://www.tensorflow.org/datasets/splits
         if not any(x in split for x in CACHED_SPLITS):
             raise ValueError(
-                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}"
+                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}."
+                f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
 
     return _generator_from_tfds(
@@ -967,29 +994,27 @@ def ucf101(
     )
 
 
-def tf_to_pytorch_box_conversion(x, y):
+def xview_label_preprocessing(x, y):
     """
     Converts boxes from TF format to PyTorch format
     TF format: [y1/height, x1/width, y2/height, x2/width]
     PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
     """
-    orig_boxes = y["boxes"]
-    if orig_boxes.dtype == np.object:
-        converted_boxes = np.empty(orig_boxes.shape, dtype=object)
-        for i, (x_i, orig_boxes_i) in enumerate(zip(x, orig_boxes)):
-            height, width = x_i.shape[:2]
-            converted_boxes[i] = orig_boxes_i[:, [1, 0, 3, 2]] * [
-                width,
-                height,
-                width,
-                height,
-            ]
-    else:
-        converted_boxes = orig_boxes[:, :, [1, 0, 3, 2]]
-        height, width = x.shape[1:3]
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict["boxes"].reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[:2]
         converted_boxes *= [width, height, width, height]
-    y["boxes"] = converted_boxes
-    return y
+        label_dict["boxes"] = converted_boxes
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
 
 
 def xview(
@@ -999,7 +1024,7 @@ def xview(
     dataset_dir: str = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    label_preprocessing_fn: Callable = tf_to_pytorch_box_conversion,
+    label_preprocessing_fn: Callable = xview_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,

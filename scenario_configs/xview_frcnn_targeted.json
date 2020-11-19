@@ -1,0 +1,67 @@
+{
+    "_description": "XView object detection, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "generate_kwargs": {
+            "patch_height": 50,
+            "patch_width": 50,
+            "xmin": 0,
+            "ymin": 0
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "eps": 1.0,
+            "eps_step": 0.01,
+            "max_iter": 200,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": true,
+            "verbose": true
+        },
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
+        "targeted_labels": {
+            "scheme": "object_detection_fixed",
+            "value": 2
+        },
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "xview"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "l0",
+        "record_metric_per_sample": false,
+        "task": [
+            "object_detection_AP_per_class"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.xview_frcnn",
+        "name": "get_art_model",
+        "weights_file": "xview_model_state_dict_epoch_99_loss_0p67",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.object_detection",
+        "name": "ObjectDetectionTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.13.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

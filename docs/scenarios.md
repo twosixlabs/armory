@@ -256,6 +256,7 @@ may also be loaded by the model.
   * Baseline Untargeted Attack (SNR = 20dB) WER: 27.28% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 30dB) WER: 11.14% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 40dB) WER: 9.92% (1000 test examples)
+  * Baseline Attack (Imperceptible ASR attack) WER: 1.67%, SNR: 29.9 dB (5 examples)
 * **Baseline Defense Performance: (results obtained using Armory v0.12.2)**\
 Baseline defense is art_experimental.defences.mp3_compression_channelized()\
 Baseline defense performance is evaluated for both black-box (untargeted) and white-box (targeted) attacks.
@@ -263,6 +264,7 @@ Baseline defense performance is evaluated for both black-box (untargeted) and wh
   * Baseline Untargeted Attack (SNR = 20dB) WER: 35.58% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 30dB) WER: 16.71% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 40dB) WER: 13.73% (1000 test examples)
+  * Baseline Attack (Imperceptible ASR attack) To be added
 
 ### so2sat multimodal image classification
 

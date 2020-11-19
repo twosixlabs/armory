@@ -31,9 +31,12 @@ These tfrecord files will be pulled from S3 if not available on your
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:-------: |:------: |
 | [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 | 8 kHz | train, test |
 | [librispeech](http://www.openslr.org/12/) | Librispeech dataset for automatic speech recognition  | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, train_clean100 |
+| [librispeech-full](http://www.openslr.org/12/) | Full Librispeech dataset for automatic speech recognition | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, train_clean100, train_clean360, train_other500 |
 | [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | float32 | (N,)  | int64 | 16 kHz | train, validation, test |
 | [librispeech_dev_clean_asr](http://www.openslr.org/12) | Librispeech dev dataset for automatic speech recognition | (N, variable_length) | float32 | (N,) | bytes | 16 kHz | train, validation, test |
 
+NOTE: because the Librispeech dataset is over 300 GB with all splits, the ```librispeech_full``` dataset has
+all splits, whereas the ```librispeech``` dataset does not have the train_clean360 or train_other500 splits.
 <br>
 
 ### Video Datasets
