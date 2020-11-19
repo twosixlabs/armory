@@ -92,11 +92,8 @@ def maybe_download_weights_from_s3(
                 # check if the tarfile contains a directory containing all its members
                 # ie if the tarfile expands out entirely into a subdirectory
                 dirs = [fi.name for fi in tar.getmembers() if fi.isdir()]
-                for d in dirs:
-                    if all(name.startswith(d) for name in tar.getnames()):
-                        subdir = d
-                        break
-                else:
+                commonpath = os.path.commonpath(tar.getnames())
+                if not commonpath or commonpath not in dirs:
                     raise PermissionError(
                         (
                             f"{weights_file} does not expand into a subdirectory."
