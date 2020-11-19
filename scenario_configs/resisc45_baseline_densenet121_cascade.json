@@ -33,7 +33,8 @@
                     "name": "BoundaryAttack"
                 }
             ],
-            "targeted": false
+            "targeted": false,
+            "eps": 0.2
         },
         "module": "armory.art_experimental.attacks.cascading_attack",
         "name": "CascadingAttack",

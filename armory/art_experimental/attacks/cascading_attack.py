@@ -10,7 +10,8 @@ class CascadingAttack(AutoAttack):
         for inner_config in kwargs["inner_configs"]:
             inner_config["kwargs"]["targeted"] = self.targeted
             self.attacks.append(load_attack(inner_config, estimator))
-        super().__init__(estimator=estimator, attacks=self.attacks)
+        kwargs.pop("inner_configs")
+        super().__init__(estimator=estimator, attacks=self.attacks, **kwargs)
 
     def _check_kwargs(self, kwargs):
         if "inner_configs" not in kwargs:
