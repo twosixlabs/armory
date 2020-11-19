@@ -80,11 +80,22 @@ class SampleExporter:
                     "Adversarial image out of expected range. Clipping to [0, 1]."
                 )
 
+            if x_i.shape[-1] == 1:
+                mode = "L"
+                x_i_mode = np.squeeze(x_i, axis=2)
+                x_adv_i_mode = np.squeeze(x_adv_i, axis=2)
+            elif x_i.shape[-1] == 3:
+                mode = "RGB"
+                x_i_mode = x_i
+                x_adv_i_mode = x_adv_i
+            else:
+                raise ValueError(f"Expected 1 or 3 channels, found {x_i.shape[-1]}")
+
             benign_image = Image.fromarray(
-                np.uint8(np.clip(x_i, 0.0, 1.0) * 255.0), "RGB"
+                np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
             )
             adversarial_image = Image.fromarray(
-                np.uint8(np.clip(x_adv_i, 0.0, 1.0) * 255.0), "RGB"
+                np.uint8(np.clip(x_adv_i_mode, 0.0, 1.0) * 255.0), mode
             )
             benign_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_benign.png")
