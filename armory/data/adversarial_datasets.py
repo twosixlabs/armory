@@ -95,6 +95,7 @@ def imagenet_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        context=imagenet_adversarial_context,
     )
 
 
@@ -142,6 +143,7 @@ def librispeech_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        context=librispeech_adversarial_context,
     )
 
 
@@ -197,6 +199,7 @@ def resisc45_adversarial_224x224(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
+        context=resisc45_adversarial_context,
     )
 
 
@@ -254,6 +257,7 @@ def ucf101_adversarial_112x112(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
+        context=ucf101_adversarial_context,
     )
 
 
@@ -351,4 +355,5 @@ def apricot_dev_adversarial(
                 y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
             ),
         ),
+        context=apricot_adversarial_context,
     )

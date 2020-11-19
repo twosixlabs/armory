@@ -433,3 +433,6 @@ An [example of doing this](https://github.com/twosixlabs/armory-example/blob/mas
 
 ## Derivative metrics
 ![alt text](https://user-images.githubusercontent.com/18154355/80718651-691fb780-8ac8-11ea-8dc6-94d35164d494.png "Derivative Metrics")
+
+## Exporting Samples
+Scenarios can be configured to export benign and adversarial image, video, and audio samples.  This feature is enabled by setting the `export_samples` field under `scenario` in the configuration file to a non-zero integer.  The specified number of samples will be saved in the output directory for this evaluation, along with a pickle file which stores the ground truth and model output for each sample.  For video files, samples are saved both in a compressed video format and frame-by-frame.
