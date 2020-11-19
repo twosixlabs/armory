@@ -3,8 +3,8 @@ import logging
 import numpy as np
 import ffmpeg
 import pickle
+import time
 from PIL import Image
-from shutil import rmtree
 from scipy.io import wavfile
 
 from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
@@ -57,9 +57,11 @@ class SampleExporter:
         self.output_dir = os.path.join(self.base_output_dir, "saved_samples")
         if os.path.exists(self.output_dir):
             logger.warning(
-                f"Sample output directory {self.output_dir} already exists. Removing"
+                f"Sample output directory {self.output_dir} already exists. Creating new directory"
             )
-            rmtree(self.output_dir)
+            self.output_dir = os.path.join(
+                self.base_output_dir, f"saved_samples_{time.time()}"
+            )
         os.mkdir(self.output_dir)
 
     def _export_images(self, x, x_adv):
