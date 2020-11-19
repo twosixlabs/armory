@@ -225,7 +225,7 @@ class So2SatClassification(Scenario):
             )
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
-        
+
         export_samples = config["scenario"].get("export_samples")
         if export_samples is not None and export_samples > 0:
             sample_exporter = SampleExporter(
