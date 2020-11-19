@@ -34,6 +34,7 @@ from armory.data.utils import (
 )
 from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
+from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
@@ -804,6 +805,33 @@ def librispeech_dev_clean(
     )
 
 
+def librispeech_full(
+    split: str = "train_clean360",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = librispeech_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+) -> ArmoryDataGenerator:
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "librispeech_full/plain_text:1.1.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+    )
+
+
 def librispeech(
     split: str = "train_clean100",
     epochs: int = 1,
@@ -829,7 +857,8 @@ def librispeech(
         #     See: https://www.tensorflow.org/datasets/splits
         if not any(x in split for x in CACHED_SPLITS):
             raise ValueError(
-                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}"
+                f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}."
+                f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
 
     return _generator_from_tfds(
