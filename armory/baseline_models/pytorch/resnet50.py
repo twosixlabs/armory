@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 
 from art.classifiers import PyTorchClassifier
-import numpy as np
 import torch
 from torchvision import models
 
@@ -14,35 +13,39 @@ logger = logging.getLogger(__name__)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-IMAGENET_MEANS = [0.485, 0.456, 0.406]
-IMAGENET_STDEV = [0.229, 0.224, 0.225]
 
+class OuterModel(torch.nn.Module):
+    def __init__(
+        self, weights_path: Optional[str], **model_kwargs,
+    ):
+        super().__init__()
+        self.inner_model = models.resnet50(**model_kwargs)
+        self.inner_model.to(DEVICE)
 
-def preprocessing_fn(img: np.ndarray):
-    """
-    Standardize, then normalize imagenet images
-    """
-    # Standardize images to [0, 1]
-    img /= 255.0
+        if weights_path:
+            checkpoint = torch.load(weights_path, map_location=DEVICE)
+            self.inner_model.load_state_dict(checkpoint)
 
-    # Normalize images ImageNet means
-    for i, (mean, std) in enumerate(zip(IMAGENET_MEANS, IMAGENET_STDEV)):
-        img[i] -= mean
-        img[i] /= std
+        self.imagenet_means = torch.tensor(
+            [0.485, 0.456, 0.406], dtype=torch.float32, device=DEVICE
+        )
+        self.imagenet_stdev = torch.tensor(
+            [0.229, 0.224, 0.225], dtype=torch.float32, device=DEVICE
+        )
 
-    return img
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_norm = ((x - self.imagenet_means) / self.imagenet_stdev).permute(0, 3, 1, 2)
+        output = self.inner_model(x_norm)
+
+        return output
 
 
 # NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
 def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchClassifier:
-    model = models.resnet50(**model_kwargs)
-    model.to(DEVICE)
 
-    if weights_path:
-        checkpoint = torch.load(weights_path, map_location=DEVICE)
-        model.load_state_dict(checkpoint)
+    model = OuterModel(weights_path=weights_path, **model_kwargs)
 
     wrapped_model = PyTorchClassifier(
         model,
@@ -50,21 +53,6 @@ def get_art_model(
         optimizer=torch.optim.Adam(model.parameters(), lr=0.003),
         input_shape=(224, 224, 3),
         **wrapper_kwargs,
-        clip_values=(
-            np.array(
-                [
-                    0.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
-                    0.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
-                    0.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
-                ]
-            ),
-            np.array(
-                [
-                    1.0 - IMAGENET_MEANS[0] / IMAGENET_STDEV[0],
-                    1.0 - IMAGENET_MEANS[1] / IMAGENET_STDEV[1],
-                    1.0 - IMAGENET_MEANS[2] / IMAGENET_STDEV[2],
-                ]
-            ),
-        ),
+        clip_values=(0.0, 1.0),
     )
     return wrapped_model

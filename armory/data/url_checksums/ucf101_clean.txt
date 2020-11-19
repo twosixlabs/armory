@@ -1,0 +1,1 @@
+https://storage.googleapis.com/thumos14_files/UCF101_videos.zip 6960400115 dabf56f573cd19c79e096563529fec8126a2a34e18e10c72eb621dd687532b0d

@@ -69,6 +69,10 @@ jobs:
           docker push twosixarmory/tf1:${version}
           docker tag twosixarmory/tf1:${version} twosixarmory/tf1:latest
           docker push twosixarmory/tf1:latest
+          bash docker/build-poison.sh tf1-poison
+          docker push twosixarmory/tf1-poison:${version}
+          docker tag twosixarmory/tf1-poison:${version} twosixarmory/tf1-poison:latest
+          docker push twosixarmory/tf1-poison:latest
   release-tf2-docker:
     name: Build and release tf2 docker image
     needs: [release-wheel, release-armory-docker]
@@ -92,6 +96,10 @@ jobs:
           docker push twosixarmory/tf2:${version}
           docker tag twosixarmory/tf2:${version} twosixarmory/tf2:latest
           docker push twosixarmory/tf2:latest
+          bash docker/build-poison.sh tf2-poison
+          docker push twosixarmory/tf2-poison:${version}
+          docker tag twosixarmory/tf2-poison:${version} twosixarmory/tf2-poison:latest
+          docker push twosixarmory/tf2-poison:latest
   release-pytorch-docker:
     name: Build and release pytorch and pytorch-deepspeech docker images
     needs: [release-wheel, release-armory-docker]
@@ -115,6 +123,11 @@ jobs:
           docker push twosixarmory/pytorch:${version}
           docker tag twosixarmory/pytorch:${version} twosixarmory/pytorch:latest
           docker push twosixarmory/pytorch:latest
+          bash docker/build.sh pytorch-deepspeech
           docker push twosixarmory/pytorch-deepspeech:${version}
           docker tag twosixarmory/pytorch-deepspeech:${version} twosixarmory/pytorch-deepspeech:latest
           docker push twosixarmory/pytorch-deepspeech:latest
+          bash docker/build-poison.sh pytorch-poison
+          docker push twosixarmory/pytorch-poison:${version}
+          docker tag twosixarmory/pytorch-poison:${version} twosixarmory/pytorch-poison:latest
+          docker push twosixarmory/pytorch-poison:latest
