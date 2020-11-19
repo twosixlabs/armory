@@ -20,6 +20,7 @@ from armory.utils.config_loading import (
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
+from armory.utils.export import SampleExporter
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +225,15 @@ class So2SatClassification(Scenario):
             )
             if targeted:
                 label_targeter = load_label_targeter(attack_config["targeted_labels"])
+
+        export_samples = config["scenario"].get("export_samples")
+        if export_samples is not None and export_samples > 0:
+            sample_exporter = SampleExporter(
+                self.scenario_output_dir, test_data.context, export_samples
+            )
+        else:
+            sample_exporter = None
+
         for x, y in tqdm(test_data, desc="Attack"):
             with metrics.resource_context(
                 name="Attack",
@@ -276,6 +286,9 @@ class So2SatClassification(Scenario):
                 sar_perturbation_logger.update_perturbation(x_sar, x_adv_sar)
             if eo_perturbation_logger is not None:
                 eo_perturbation_logger.update_perturbation(x_eo, x_adv_eo)
+
+            if sample_exporter is not None:
+                sample_exporter.export(x, x_adv, y, y_pred_adv)
 
         performance_logger.log_task(adversarial=True)
         if targeted:

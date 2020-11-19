@@ -841,6 +841,7 @@ def librispeech_full(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
+        context=librispeech_context,
     )
 
 
