@@ -31,7 +31,19 @@
         "module": "armory.data.datasets",
         "name": "ucf101"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "constant_rate_factor": 28,
+            "verbose": false,
+            "video_format": "avi"
+        },
+        "module": "armory.art_experimental.defences.video_compression_normalized",
+        "name": "VideoCompressionNormalized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": [
