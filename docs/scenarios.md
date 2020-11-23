@@ -161,7 +161,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-1 Accuracy: 95% (100 test examples)
 * **Baseline Defense Performance: (Perturbation and Patch results obtained using Armory < v0.10;
   Frame Saliency results obtained using Armory v0.12.2)**
-Baseline defense is `art_experimental.defences.(apply_fit=false, apply_predict=true,
+Baseline defense is `art_experimental.defences.video_compression_normalized(apply_fit=false, apply_predict=true,
 channels_first=false, constant_rate_factor=28, video_format="avi")`
 Perturbation and Patch baseline defense performance is evaluated for a grey-box attack: 
 adversarial examples generated on undefended baseline model evaluated on defended model.
