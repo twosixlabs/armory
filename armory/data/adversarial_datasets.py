@@ -95,6 +95,7 @@ def imagenet_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        context=imagenet_adversarial_context,
     )
 
 
@@ -142,6 +143,7 @@ def librispeech_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
+        context=librispeech_adversarial_context,
     )
 
 
@@ -197,6 +199,7 @@ def resisc45_adversarial_224x224(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
+        context=resisc45_adversarial_context,
     )
 
 
@@ -254,6 +257,7 @@ def ucf101_adversarial_112x112(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda_map,
+        context=ucf101_adversarial_context,
     )
 
 
@@ -292,12 +296,23 @@ def gtsrb_poison(
     )
 
 
+def apricot_label_preprocessing(x, y):
+    """
+    Convert labels to list of dicts. If batch_size > 1, this will already be the case,
+    and y will simply be returned without modification.
+    """
+    if isinstance(y, dict):
+        y = [y]
+    return y
+
+
 def apricot_dev_adversarial(
     split: str = "adversarial",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = apricot_canonical_preprocessing,
+    label_preprocessing_fn: Callable = apricot_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
@@ -328,6 +343,7 @@ def apricot_dev_adversarial(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         shuffle_files=shuffle_files,
@@ -339,4 +355,5 @@ def apricot_dev_adversarial(
                 y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
             ),
         ),
+        context=apricot_adversarial_context,
     )

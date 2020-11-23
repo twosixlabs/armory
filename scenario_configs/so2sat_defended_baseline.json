@@ -3,40 +3,27 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "mask": [
-                1,
-                1,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ]
+            "patch_ratio": 0.05,
+            "xmin": 0,
+            "ymin": 0
         },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.031,
-            "eps_step": 0.007,
-            "max_iter": 20,
-            "num_random_init": 1,
+            "eps": 2.0,
+            "eps_step": 0.03,
+            "max_iter": 100,
+            "num_random_init": 0,
             "random_eps": false,
             "targeted": false,
             "verbose": false
         },
-        "module": "art.attacks.evasion",
-        "name": "ProjectedGradientDescent",
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
         "use_label": true
     },
     "dataset": {
-        "batch_size": 64,
+        "batch_size": 8,
         "eval_split": "validation",
         "framework": "numpy",
         "module": "armory.data.datasets",
@@ -46,7 +33,7 @@
         "kwargs": {
             "apply_fit": false,
             "apply_predict": true,
-            "channel_index": 3,
+            "channels_first": false,
             "clip_values": [
                 0.0,
                 1.0
@@ -67,7 +54,7 @@
                 0.0,
                 0.0
             ],
-            "quality": 50,
+            "quality": 95,
             "ranges": [
                 2.0,
                 2.0,
@@ -91,7 +78,7 @@
     },
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
@@ -108,15 +95,47 @@
         "weights_file": "multimodal_baseline_weights.h5",
         "wrapper_kwargs": {
             "clip_values": [
-                -1,
-                1
+                [
+                    -1,
+                    -1,
+                    -1,
+                    -1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
+                ]
             ]
         }
     },
     "scenario": {
-        "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "kwargs": {
+            "attack_modality": "sar"
+        },
+        "module": "armory.scenarios.multimodal_so2sat_scenario",
+        "name": "So2SatClassification"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0-dev",

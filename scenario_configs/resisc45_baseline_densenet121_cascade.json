@@ -1,0 +1,80 @@
+{
+    "_description": "Resisc45 image classification, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "eps": 0.2,
+            "inner_configs": [
+                {
+                    "kwargs": {
+                        "eps": 0.2,
+                        "eps_step": 0.1,
+                        "max_iter": 100,
+                        "num_random_init": 0
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "ProjectedGradientDescent"
+                },
+                {
+                    "kwargs": {
+                        "batch_size": 1,
+                        "confidence": 0.9,
+                        "eps": 0.2,
+                        "max_iter": 10
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "CarliniLInfMethod"
+                },
+                {
+                    "kwargs": {
+                        "max_iter": 1000
+                    },
+                    "module": "art.attacks.evasion",
+                    "name": "BoundaryAttack"
+                }
+            ],
+            "targeted": false
+        },
+        "module": "armory.art_experimental.attacks.cascading_attack",
+        "name": "CascadingAttack",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 16,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "resisc45"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.densenet121_resisc45",
+        "name": "get_art_model",
+        "weights_file": "densenet121_resisc45_v1.h5",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.image_classification",
+        "name": "ImageClassificationTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.13.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

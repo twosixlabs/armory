@@ -14,7 +14,7 @@ class JpegCompressionMultiChannelImage(JpegCompression):
         self,
         clip_values,
         quality=50,
-        channel_index=3,
+        channels_first=False,
         apply_fit=True,
         apply_predict=False,
         mins=None,
@@ -25,7 +25,7 @@ class JpegCompressionMultiChannelImage(JpegCompression):
         super().__init__(
             clip_values,
             quality=quality,
-            channel_index=channel_index,
+            channels_first=channels_first,
             apply_fit=apply_fit,
             apply_predict=apply_predict,
         )
@@ -46,6 +46,6 @@ class JpegCompressionMultiChannelImage(JpegCompression):
         x = np.transpose(x, (0, 3, 1, 2))  # Change from nhwc to nchw
         x = np.expand_dims(x, axis=-1)
         x, _ = super().__call__(x)
-        x = x * self.ranges + self.mins
         x = np.transpose(x[..., 0], (0, 2, 3, 1))
+        x = x * self.ranges + self.mins
         return x, y

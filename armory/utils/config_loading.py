@@ -77,9 +77,14 @@ def load_model(model_config):
     model_fn = getattr(model_module, model_config["name"])
     weights_file = model_config.get("weights_file", None)
     if isinstance(weights_file, str):
-        weights_path = maybe_download_weights_from_s3(weights_file)
+        weights_path = maybe_download_weights_from_s3(
+            weights_file, auto_expand_tars=True
+        )
     elif isinstance(weights_file, list):
-        weights_path = [maybe_download_weights_from_s3(w) for w in weights_file]
+        weights_path = [
+            maybe_download_weights_from_s3(w, auto_expand_tars=True)
+            for w in weights_file
+        ]
     elif isinstance(weights_file, dict):
         weights_path = {
             k: maybe_download_weights_from_s3(v) for k, v in weights_file.items()
@@ -232,6 +237,10 @@ def load_label_targeter(config):
     elif scheme == "matched length":
         transcripts = config.get("transcripts")
         return labels.MatchedTranscriptLengthTargeter(transcripts)
+    elif scheme == "object_detection_fixed":
+        value = config.get("value")
+        score = config.get("score", 1.0)
+        return labels.ObjectDetectionFixedLabelTargeteer(value, score)
     else:
         raise ValueError(
             f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'

@@ -3,7 +3,6 @@ ResNet50 CNN model for 244x244x3 image classification
 """
 from typing import Optional
 
-import numpy as np
 import tensorflow as tf
 from art.classifiers import KerasClassifier
 from tensorflow.keras.applications.resnet50 import ResNet50
@@ -38,24 +37,5 @@ def get_art_model(
     if weights_path:
         model.load_weights(weights_path)
 
-    wrapped_model = KerasClassifier(
-        model,
-        clip_values=(
-            np.array(
-                [
-                    0.0 - IMAGENET_MEANS[0],
-                    0.0 - IMAGENET_MEANS[1],
-                    0.0 - IMAGENET_MEANS[2],
-                ]
-            ),
-            np.array(
-                [
-                    255.0 - IMAGENET_MEANS[0],
-                    255.0 - IMAGENET_MEANS[1],
-                    255.0 - IMAGENET_MEANS[2],
-                ]
-            ),
-        ),
-        **wrapper_kwargs,
-    )
+    wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs,)
     return wrapped_model

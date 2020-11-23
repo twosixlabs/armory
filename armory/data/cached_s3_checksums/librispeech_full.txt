@@ -1,0 +1,1 @@
+armory-public-data librispeech/librispeech_full_1.1.0_cached.tar.gz 107515352340 9475acfa652fa3151edafb43d32cd2580dbba71c602ff4c8fe1b6aa86ee62124

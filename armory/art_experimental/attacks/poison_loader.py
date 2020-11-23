@@ -11,12 +11,12 @@ def poison_loader_GTSRB(**kwargs):
     if poison_type == "pattern":
 
         def mod(x):
-            return perturbations.add_pattern_bd(x, pixel_value=255)
+            return perturbations.add_pattern_bd(x, pixel_value=1)
 
     elif poison_type == "pixel":
 
         def mod(x):
-            return perturbations.add_single_bd(x, pixel_value=255)
+            return perturbations.add_single_bd(x, pixel_value=1)
 
     elif poison_type == "image":
         backdoor_path = kwargs.get("backdoor_path")
