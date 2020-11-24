@@ -256,7 +256,12 @@ may also be loaded by the model.
   * Baseline Untargeted Attack (SNR = 20dB) WER: 27.28% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 30dB) WER: 11.14% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 40dB) WER: 9.92% (1000 test examples)
-  * Baseline Attack (Imperceptible ASR attack) WER: 1.67%, SNR: 29.9 dB (5 examples)
+  * Baseline Attack (Imperceptible ASR attack, max_iter_1st_stage = 100) WER: 62.54%, SNR: 30.45 dB (320 examples)
+  * Baseline Attack (Imperceptible ASR attack, max_iter_1st_stage = 250) WER: 20.17%, SNR: 29.14 dB (320 examples)
+  * Baseline Attack (Imperceptible ASR attack, max_iter_1st_stage = 400) WER: 11.36%, SNR: 29.48 dB (320 examples)
+  * Baseline FGSM Attack (SNR = 20dB) WER: 30.78% (2620 test examples)
+  * Baseline FGSM Attack (SNR = 30dB) WER: 20.87% (2620 test examples)
+  * Baseline FGSM Attack (SNR = 40dB) WER: 16.07% (2620 test examples)
 * **Baseline Defense Performance: (results obtained using Armory v0.12.2)**\
 Baseline defense is art_experimental.defences.mp3_compression_channelized()\
 Baseline defense performance is evaluated for both black-box (untargeted) and white-box (targeted) attacks.
@@ -265,6 +270,9 @@ Baseline defense performance is evaluated for both black-box (untargeted) and wh
   * Baseline Untargeted Attack (SNR = 30dB) WER: 16.71% (1000 test examples)
   * Baseline Untargeted Attack (SNR = 40dB) WER: 13.73% (1000 test examples)
   * Baseline Attack (Imperceptible ASR attack) To be added
+  * Baseline FGSM Attack (SNR = 20dB) WER: 33.16% (2620 test examples)
+  * Baseline FGSM Attack (SNR = 30dB) WER: 23.32% (2620 test examples)
+  * Baseline FGSM Attack (SNR = 40dB) WER: 18.62% (2620 test examples)
 
 ### so2sat multimodal image classification
 
