@@ -166,8 +166,8 @@ channels_first=false, constant_rate_factor=28, video_format="avi")`
 Perturbation and Patch baseline defense performance is evaluated for a grey-box attack: 
 adversarial examples generated on undefended baseline model evaluated on defended model.
 Frame Saliency baseline defense performance is evaluated for a white-box attack.
-  * Baseline Clean Top-1 Accuracy: 88% (all test examples)
-  * Baseline Clean Top-5 Accuracy: 98% (all test examples)
+  * Baseline Clean Top-1 Accuracy: 88% (all test examples)\*
+  * Baseline Clean Top-5 Accuracy: 98% (all test examples)\*
   * Baseline Attacked (Perturbation, Linf eps=10/255) Top-1 Accuracy: 65% (all test examples)\*
   * Baseline Attacked (Perturbation, Linf eps=10/255) Top-5 Accuracy: 96% (all test examples)\*
   * Baseline Attacked (Patch, area=10%) Top-1 Accuracy: 86% (all test examples)\*
@@ -177,7 +177,7 @@ Frame Saliency baseline defense performance is evaluated for a white-box attack.
   * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-1 Accuracy: 67% (100 test examples)
   * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-5 Accuracy: 100% (100 test examples)
   * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-1 Accuracy: 82% (100 test examples)
-  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-5 Accuracy: 100% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-5 Accuracy: 100% (100 test examples)\
 \* Defended results were obtained prior to the implementation of video compression and 
 used JPEG compression (quality=50) on each frame.
 
