@@ -265,14 +265,11 @@ def make_model(
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self,
-        weights_path: Optional[str],
-        max_frames: Optional[int] = None,
-        **model_kwargs,
+        self, weights_path: Optional[str], max_frames: int = 0, **model_kwargs,
     ):
         """
         Max frames is the maximum number of input frames.
-            If max_frames == 0, False, or None, no clipping is done
+            If max_frames == 0, no clipping is done
             Else if max_frames > 0, frames are clipped to that number.
             This can be helpful for smaller memory cards.
         """
