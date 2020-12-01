@@ -60,35 +60,42 @@ class So2SatClassification(Scenario):
             estimator = load_defense_internal(config["defense"], estimator)
 
         attack_config = config["attack"]
-        attack_channels = attack_config.get("generate_kwargs", {}).get("channels")
+        attack_channels = attack_config.get("generate_kwargs", {}).get("mask")
 
         if attack_channels is None:
             if self.attack_modality == "sar":
                 logger.info("No mask configured. Attacking all SAR channels")
-                attack_channels = range(4)
+                attack_channels = np.concatenate(
+                    (np.ones(4, dtype=np.float32), np.zeros(10, dtype=np.float32)),
+                    axis=0,
+                )
             elif self.attack_modality == "eo":
                 logger.info("No mask configured. Attacking all EO channels")
-                attack_channels = range(4, 14)
+                attack_channels = np.concatenate(
+                    (np.zeros(4, dtype=np.float32), np.ones(10, dtype=np.float32)),
+                    axis=0,
+                )
             elif self.attack_modality == "both":
                 logger.info("No mask configured. Attacking all SAR and EO channels")
-                attack_channels = range(14)
+                attack_channels = np.ones(14, dtype=np.float32)
 
         else:
             assert isinstance(
                 attack_channels, list
             ), "Mask is specified, but incorrect format. Expected list"
             attack_channels = np.array(attack_channels)
+            where_mask = np.where(attack_channels)[0]
             if self.attack_modality == "sar":
                 assert np.all(
-                    np.logical_and(attack_channels >= 0, attack_channels < 4)
+                    np.logical_and(where_mask >= 0, where_mask < 4)
                 ), "Selected SAR-only attack modality, but specify non-SAR channels"
             elif self.attack_modality == "eo":
                 assert np.all(
-                    np.logical_and(attack_channels >= 4, attack_channels < 14)
+                    np.logical_and(where_mask >= 4, where_mask < 14)
                 ), "Selected EO-only attack modality, but specify non-EO channels"
             elif self.attack_modality == "both":
                 assert np.all(
-                    np.logical_and(attack_channels >= 0, attack_channels < 14)
+                    np.logical_and(where_mask >= 0, where_mask < 14)
                 ), "Selected channels are out-of-bounds"
 
         if model_config["fit"]:
