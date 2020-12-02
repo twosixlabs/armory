@@ -97,6 +97,12 @@ class So2SatClassification(Scenario):
                 assert np.all(
                     np.logical_and(where_mask >= 0, where_mask < 14)
                 ), "Selected channels are out-of-bounds"
+        assert (
+            len(attack_channels_mask) == 14
+        ), f"Expected channel mask of length 14, found length {len(attack_channels_mask)}"
+        assert np.all(
+            np.logical_or(attack_channels_mask == 0, attack_channels_mask == 1)
+        ), "Expected binary attack channel mask, but found values outside {0,1}"
 
         if model_config["fit"]:
             try:
