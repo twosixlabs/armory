@@ -60,31 +60,31 @@ class So2SatClassification(Scenario):
             estimator = load_defense_internal(config["defense"], estimator)
 
         attack_config = config["attack"]
-        attack_channels = attack_config.get("generate_kwargs", {}).get("mask")
+        attack_channels_mask = attack_config.get("generate_kwargs", {}).get("mask")
 
-        if attack_channels is None:
+        if attack_channels_mask is None:
             if self.attack_modality == "sar":
                 logger.info("No mask configured. Attacking all SAR channels")
-                attack_channels = np.concatenate(
+                attack_channels_mask = np.concatenate(
                     (np.ones(4, dtype=np.float32), np.zeros(10, dtype=np.float32)),
                     axis=0,
                 )
             elif self.attack_modality == "eo":
                 logger.info("No mask configured. Attacking all EO channels")
-                attack_channels = np.concatenate(
+                attack_channels_mask = np.concatenate(
                     (np.zeros(4, dtype=np.float32), np.ones(10, dtype=np.float32)),
                     axis=0,
                 )
             elif self.attack_modality == "both":
                 logger.info("No mask configured. Attacking all SAR and EO channels")
-                attack_channels = np.ones(14, dtype=np.float32)
+                attack_channels_mask = np.ones(14, dtype=np.float32)
 
         else:
             assert isinstance(
-                attack_channels, list
+                attack_channels_mask, list
             ), "Mask is specified, but incorrect format. Expected list"
-            attack_channels = np.array(attack_channels)
-            where_mask = np.where(attack_channels)[0]
+            attack_channels_mask = np.array(attack_channels_mask)
+            where_mask = np.where(attack_channels_mask)[0]
             if self.attack_modality == "sar":
                 assert np.all(
                     np.logical_and(where_mask >= 0, where_mask < 4)
@@ -259,7 +259,7 @@ class So2SatClassification(Scenario):
                         y, y_target = y
                 else:
                     generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
-                    generate_kwargs["mask"] = attack_channels
+                    generate_kwargs["mask"] = attack_channels_mask
                     if attack_config.get("use_label"):
                         generate_kwargs["y"] = y
                     elif targeted:

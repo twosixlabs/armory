@@ -21,8 +21,10 @@ class PGDPatch(ProjectedGradientDescent):
             raise ValueError("generate_kwargs did not define 'xmin'")
 
         assert x.ndim == 4, "This attack is designed for images (i.e. 4 dimensions)"
-        channels = generate_kwargs.get("mask", np.ones(x.shape[3], dtype=np.float32))
-        channels = np.where(channels)[0]
+        channels_mask = generate_kwargs.get(
+            "mask", np.ones(x.shape[3], dtype=np.float32)
+        )
+        channels = np.where(channels_mask)[0]
 
         mask = np.zeros(shape=x.shape[1:], dtype=np.float32)
         if "patch_ratio" in generate_kwargs:
