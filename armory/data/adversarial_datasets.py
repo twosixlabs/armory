@@ -307,7 +307,7 @@ def apricot_label_preprocessing(x, y):
 
 
 def apricot_dev_adversarial(
-    split: str = "adversarial",
+    split: str = "frcnn",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -337,7 +337,7 @@ def apricot_dev_adversarial(
         return data
 
     return datasets._generator_from_tfds(
-        "apricot_dev:1.0.1",
+        "apricot_dev:1.0.2",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

@@ -136,10 +136,13 @@ class ImageClassificationTask(Scenario):
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
+            preloaded_split = attack_config.get("kwargs", {}).get(
+                "split", "adversarial"
+            )
             test_data = load_adversarial_dataset(
                 attack_config,
                 epochs=1,
-                split="adversarial",
+                split=preloaded_split,
                 num_batches=num_eval_batches,
                 shuffle_files=False,
             )
