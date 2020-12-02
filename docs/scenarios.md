@@ -143,26 +143,43 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
 * **Baseline Attacks:**
   * PGD (Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a single input)
   * Adversarial Patch (size <20% of video area)
-  * [Frame Saliency](https://arxiv.org/abs/1811.11875)
+  * [Frame Saliency](https://arxiv.org/abs/1811.11875) (Linf (eps <= 4/255))
 * **Baseline Defense**: Video Compression
-* **Baseline Model Performance: (results obtained using Armory < v0.10)**
-  * Baseline Clean Top-1 Accuracy: 93%
-  * Baseline Clean Top-5 Accuracy: 99%
-  * Baseline Attacked (Perturbation) Top-1 Accuracy: 4%
-  * Baseline Attacked (Perturbation) Top-5 Accuracy: 35%
-  * Baseline Attacked (Patch) Top-1 Accuracy: 24%
-  * Baseline Attacked (Patch) Top-5 Accuracy: 97%
-* **Baseline Defense Performance: (results obtained using Armory < v0.10)**
-Baseline defense is `art_experimental.defences.JpegCompression5D(clip_values=(0.0, 255.0), quality=50, channel_index=3, apply_fit=False,
-apply_predict=True, means=[114.7748, 107.7354, 99.475], transpose=[1, 2, 3, 0])`
-see ucf101_baseline_adversarial.json for example usage.
-Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
-  * Baseline Clean Top-1 Accuracy: 88%
-  * Baseline Clean Top-5 Accuracy: 98%
-  * Baseline Attacked (Perturbation) Top-1 Accuracy: 65%
-  * Baseline Attacked (Perturbation) Top-5 Accuracy: 96%
-  * Baseline Attacked (Patch) Top-1 Accuracy: 86%
-  * Baseline Attacked (Patch) Top-5 Accuracy: 97%
+* **Baseline Model Performance: (Perturbation and Patch results obtained using Armory < v0.10; 
+  Frame Saliency results obtained using Armory v0.12.2)**
+  * Baseline Clean Top-1 Accuracy: 93% (all test examples)
+  * Baseline Clean Top-5 Accuracy: 99% (all test examples)
+  * Baseline Attacked (Perturbation, Linf eps=10/255) Top-1 Accuracy: 4% (all test examples)
+  * Baseline Attacked (Perturbation, Linf eps=10/255) Top-5 Accuracy: 35% (all test examples)
+  * Baseline Attacked (Patch, area=10%) Top-1 Accuracy: 24% (all test examples)
+  * Baseline Attacked (Patch, area=10%) Top-5 Accuracy: 97% (all test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.015) Top-1 Accuracy: 0% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.015) Top-5 Accuracy: 95% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-1 Accuracy: 0.1% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-5 Accuracy: 95% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-1 Accuracy: 0.3% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-5 Accuracy: 95% (100 test examples)
+* **Baseline Defense Performance: (Perturbation and Patch results obtained using Armory < v0.10;
+  Frame Saliency results obtained using Armory v0.12.2)**
+Baseline defense is `art_experimental.defences.video_compression_normalized(apply_fit=false, apply_predict=true,
+channels_first=false, constant_rate_factor=28, video_format="avi")`
+Perturbation and Patch baseline defense performance is evaluated for a grey-box attack: 
+adversarial examples generated on undefended baseline model evaluated on defended model.
+Frame Saliency baseline defense performance is evaluated for a white-box attack.
+  * Baseline Clean Top-1 Accuracy: 88% (all test examples)\*
+  * Baseline Clean Top-5 Accuracy: 98% (all test examples)\*
+  * Baseline Attacked (Perturbation, Linf eps=10/255) Top-1 Accuracy: 65% (all test examples)\*
+  * Baseline Attacked (Perturbation, Linf eps=10/255) Top-5 Accuracy: 96% (all test examples)\*
+  * Baseline Attacked (Patch, area=10%) Top-1 Accuracy: 86% (all test examples)\*
+  * Baseline Attacked (Patch, area=10%) Top-5 Accuracy: 97% (all test examples)\*
+  * Baseline Attacked (Frame Saliency, Linf eps=0.015) Top-1 Accuracy: 38% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.015) Top-5 Accuracy: 99% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-1 Accuracy: 67% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.008) Top-5 Accuracy: 100% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-1 Accuracy: 82% (100 test examples)
+  * Baseline Attacked (Frame Saliency, Linf eps=0.004) Top-5 Accuracy: 100% (100 test examples)\
+\* Defended results were obtained prior to the implementation of video compression and 
+used JPEG compression (quality=50) on each frame.
 
 ### German traffic sign poisoned image classification
 
