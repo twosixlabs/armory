@@ -12,7 +12,7 @@ from armory.utils.metrics import (
 
 DATASET_DIR = paths.runtime_paths().dataset_dir
 
-
+"""
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_tf1_mnist():
     classifier_module = import_module("armory.baseline_models.tf_graph.mnist")
@@ -37,6 +37,8 @@ def test_tf1_mnist():
         accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
     assert (accuracy / test_dataset.batches_per_epoch) > 0.9
 
+"""
+
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_tf1_apricot():
@@ -45,7 +47,7 @@ def test_tf1_apricot():
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
     test_dataset = adversarial_datasets.apricot_dev_adversarial(
-        split="adversarial",
+        split="frcnn+ssd+retinanet",
         epochs=1,
         batch_size=1,
         dataset_dir=DATASET_DIR,
