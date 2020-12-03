@@ -22,7 +22,7 @@ import time
 from typing import Optional
 import sys
 import pytest
-import importlib
+import importlib.resources
 
 import coloredlogs
 import pymongo
