@@ -74,7 +74,7 @@ def test_tf1_apricot():
         1: 0.18,
         17: 0.18,
         27: 0.27,
-        33: 0.51,
+        33: 0.55,
         44: 0.14,
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
