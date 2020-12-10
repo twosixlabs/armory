@@ -805,8 +805,12 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
         # Total number of patch boxes with a label of class_id
         total_patch_boxes = len(class_patch_boxes)
 
-        recalls = tp_cumulative_sum / (total_patch_boxes + 1e-6)
-        precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-6)
+        if total_patch_boxes > 0:
+            recalls = tp_cumulative_sum / total_patch_boxes
+        else:
+            recalls = np.zeros_like(tp_cumulative_sum)
+
+        precisions = tp_cumulative_sum / (tp_cumulative_sum + fp_cumulative_sum + 1e-8)
 
         interpolated_precisions = np.zeros(len(RECALL_POINTS))
         # Interpolate the precision at each recall level by taking the max precision for which
