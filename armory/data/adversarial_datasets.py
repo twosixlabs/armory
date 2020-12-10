@@ -307,7 +307,7 @@ def apricot_label_preprocessing(x, y):
 
 
 def apricot_dev_adversarial(
-    split: str = "frcnn",
+    split: str = "frcnn+ssd+retinanet",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
