@@ -45,7 +45,7 @@ def test_tf1_apricot():
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
     test_dataset = adversarial_datasets.apricot_dev_adversarial(
-        split="adversarial",
+        split="frcnn+ssd+retinanet",
         epochs=1,
         batch_size=1,
         dataset_dir=DATASET_DIR,

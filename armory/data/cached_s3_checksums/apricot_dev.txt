@@ -1,1 +1,1 @@
-armory-public-data adversarial-datasets/cached/apricot_dev_adversarial_1.0.1_cached.tar.gz 591007151 beaeaf39fa17b7e473935b3ef423f31561fc0c94ed2bbe54aa2db5554da35e96
+armory-public-data adversarial-datasets/cached/apricot_dev_adversarial_1.0.2_cached.tar.gz 591005420 8a24c33dbb0e8cd9ec061c7acada47564405ea0f63a5adfcce2d827ab767d82c
