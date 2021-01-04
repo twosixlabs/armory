@@ -11,9 +11,6 @@ class PGDPatch(ProjectedGradientDescent):
 
     def __init__(self, estimator, **kwargs):
         super().__init__(estimator=estimator, **kwargs)
-        assert (
-            not self.estimator.channels_first
-        ), "This attack currently only supports channels last format"
 
     def generate(self, x, y=None, **generate_kwargs):
         video_input = generate_kwargs.get("video_input", False)
