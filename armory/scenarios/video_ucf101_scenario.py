@@ -6,6 +6,7 @@ Scenario Contributor: MITRE Corporation
 
 import logging
 from typing import Optional
+from copy import deepcopy
 
 from tqdm import tqdm
 
@@ -181,7 +182,7 @@ class Ucf101(Scenario):
                     if targeted:
                         y, y_target = y
                 else:
-                    generate_kwargs = {}
+                    generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
                     if attack_config.get("use_label"):
                         generate_kwargs["y"] = y
                     elif targeted:
