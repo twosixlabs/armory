@@ -45,7 +45,7 @@ def test_tf1_apricot():
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
     test_dataset = adversarial_datasets.apricot_dev_adversarial(
-        split="adversarial",
+        split="frcnn+ssd+retinanet",
         epochs=1,
         batch_size=1,
         dataset_dir=DATASET_DIR,
@@ -74,7 +74,7 @@ def test_tf1_apricot():
         1: 0.18,
         17: 0.18,
         27: 0.27,
-        33: 0.51,
+        33: 0.55,
         44: 0.14,
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():

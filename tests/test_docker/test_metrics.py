@@ -141,3 +141,17 @@ def test_metrics_logger():
     assert results["benign_categorical_accuracy"] == [1, 1, 1, 0]
     assert results["adversarial_categorical_accuracy"] == [0, 0, 0, 1]
     assert results["perturbation_l1"] == [2]
+
+
+def test_mAP():
+    labels = {"labels": np.array([2]), "boxes": np.array([[0.1, 0.1, 0.7, 0.7]])}
+
+    preds = {
+        "labels": np.array([2, 9]),
+        "boxes": np.array([[0.1, 0.1, 0.7, 0.7], [0.5, 0.4, 0.9, 0.9]]),
+        "scores": np.array([0.8, 0.8]),
+    }
+
+    ap_per_class = metrics.object_detection_AP_per_class([[labels]], [[preds]])
+    assert ap_per_class[9] == 0
+    assert ap_per_class[2] >= 0.99
