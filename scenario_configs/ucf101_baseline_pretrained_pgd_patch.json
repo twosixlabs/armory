@@ -1,0 +1,73 @@
+{
+    "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "generate_kwargs": {
+            "patch_ratio": 0.1,
+            "video_input": true,
+            "xmin": 0,
+            "ymin": 0
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "eps": 1.0,
+            "eps_step": 0.02,
+            "max_iter": 100,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
+        },
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
+        "use_label": true
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "ucf101"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": [
+            "l0"
+        ],
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 10
+        },
+        "model_kwargs": {
+            "max_frames": 512,
+            "model_status": "ucf101_trained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
+        "name": "get_art_model",
+        "weights_file": "mars_ucf101_v1.pth",
+        "wrapper_kwargs": {
+            "channels_first": false
+        }
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.video_ucf101_scenario",
+        "name": "Ucf101"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.13.0-dev",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}
