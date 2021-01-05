@@ -1,1 +1,1 @@
-/armory/datasets/APRICOTv1.1.zip 4223468737 b26d859bea359047ce968bf47a2392d07d5ddba8b46b08bbc4189643acce9d71
+https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_test.tar.gz 4222259840 721f11c2fb6f8df7c663f77b049c0387c9e92350e13e45b51fe00597f5a64d9e

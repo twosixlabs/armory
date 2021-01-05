@@ -90,8 +90,7 @@ public release; distribution unlimited.  Case #19-3440.
 
 _URL = "https://arxiv.org/abs/1912.08166"
 
-_URLS = "/armory/datasets/APRICOTv1.1.zip"
-
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_test.tar.gz"
 
 class ApricotTest(tfds.core.GeneratorBasedBuilder):
     """APRICOT Test dataset."""
