@@ -39,12 +39,12 @@ def test_tf1_mnist():
 
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
-def test_tf1_apricot_dev():
+def test_tf1_apricot():
     detector_module = import_module("armory.baseline_models.tf_graph.mscoco_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
-    test_dataset = adversarial_datasets.apricot_dev_adversarial(
+    dev_dataset = adversarial_datasets.apricot_dev_adversarial(
         split="frcnn+ssd+retinanet",
         epochs=1,
         batch_size=1,
@@ -54,7 +54,7 @@ def test_tf1_apricot_dev():
 
     list_of_ys = []
     list_of_ypreds = []
-    for x, y in test_dataset:
+    for x, y in dev_dataset:
         y_pred = detector.predict(x)
         list_of_ys.append(y)
         list_of_ypreds.append(y_pred)
@@ -79,13 +79,6 @@ def test_tf1_apricot_dev():
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
         assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
-
-
-@pytest.mark.usefixtures("ensure_armory_dirs")
-def test_tf1_apricot_test():
-    detector_module = import_module("armory.baseline_models.tf_graph.mscoco_frcnn")
-    detector_fn = getattr(detector_module, "get_art_model")
-    detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
     test_dataset = adversarial_datasets.apricot_test_adversarial(
         split="frcnn",
