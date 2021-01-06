@@ -7,6 +7,8 @@ import os
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets.public_api as tfds
 
+from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES, APRICOT_MODELS
+
 _CITATION = """
 @misc{braunegg2020apricot,
       title={APRICOT: A Dataset of Physical Adversarial Attacks on Object Detection},
@@ -169,12 +171,13 @@ class ApricotTest(tfds.core.GeneratorBasedBuilder):
         paths = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name="adversarial",
-                gen_kwargs={"path": os.path.join(paths, "APRICOT"),},
+                name=split,
+                gen_kwargs={"path": os.path.join(paths, "APRICOT"), "model": split},
             )
+            for split in ["retinanet", "frcnn", "ssd"]
         ]
 
-    def _generate_examples(self, path):
+    def _generate_examples(self, path, model):
         """yield examples"""
         annotation_path = os.path.join(
             path, "Annotations/apricot_test_all_annotations.json"
@@ -215,7 +218,16 @@ class ApricotTest(tfds.core.GeneratorBasedBuilder):
                     for anno in annotations
                 ],
             }
-            yield image_info["id"], example
+
+            patch_id = [
+                i["patch_id"] for i in example["objects"] if i["patch_id"] != -1
+            ][0]
+            adv_model_id = APRICOT_PATCHES[patch_id]["adv_model"]
+            model_name = [
+                i["model"] for i in APRICOT_MODELS if i["id"] == adv_model_id
+            ][0]
+            if model_name == model:
+                yield image_info["id"], example
 
 
 class ApricotAnnotation(object):

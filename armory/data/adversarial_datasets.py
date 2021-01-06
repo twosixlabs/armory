@@ -384,6 +384,9 @@ def apricot_test_adversarial(
     # another dataset
     raw_adv_patch_category_id = 12
 
+    if split == "adversarial":
+        split = "frcnn+ssd+retinanet"
+
     def replace_magic_val(data, raw_val, transformed_val, sub_key):
         rhs = data[sub_key]
         data[sub_key] = tf.where(
