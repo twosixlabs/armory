@@ -94,6 +94,7 @@ _URL = "https://arxiv.org/abs/1912.08166"
 
 _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_test.tar.gz"
 
+
 class ApricotTest(tfds.core.GeneratorBasedBuilder):
     """APRICOT Test dataset."""
 

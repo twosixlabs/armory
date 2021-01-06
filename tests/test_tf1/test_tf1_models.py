@@ -12,6 +12,7 @@ from armory.utils.metrics import (
 
 DATASET_DIR = paths.runtime_paths().dataset_dir
 
+
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_tf1_mnist():
     classifier_module = import_module("armory.baseline_models.tf_graph.mnist")
@@ -79,6 +80,7 @@ def test_tf1_apricot_dev():
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
         assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
 
+
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_tf1_apricot_test():
     detector_module = import_module("armory.baseline_models.tf_graph.mscoco_frcnn")
@@ -117,7 +119,7 @@ def test_tf1_apricot_test():
         27: 0.4,
         44: 0.09,
         53: 0.27,
-        85: 0.43
+        85: 0.43,
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
         assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
