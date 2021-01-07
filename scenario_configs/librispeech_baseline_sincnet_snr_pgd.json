@@ -5,9 +5,9 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 5,
+            "eps": 10,
             "eps_step": 0.5,
-            "max_iter": 3,
+            "max_iter": 10,
             "norm": "snr",
             "num_random_init": 0,
             "targeted": false
@@ -25,8 +25,11 @@
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
-        "record_metric_per_sample": false,
+        "perturbation": [
+            "snr",
+            "snr_db"
+        ],
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]

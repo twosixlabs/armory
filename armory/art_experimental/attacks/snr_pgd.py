@@ -13,8 +13,7 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
 
     norm - snr or snr_db
     eps - the lower bound on allowable SNR and SNR_DB
-    eps_step - float value in (0, 2] that is the ratio of max L2 distance per step
-        A value of 2 is the diameter of the epsilon ball.
+    eps_step - float value in (0, 1] that is the ratio of max L2 distance per step
         NOTE: this is different from original PGD because SNR is not additive
 
     SNR measures the original signal power to adversarial perturbation power
@@ -36,9 +35,9 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
         # Map to SNR domain
         eps = float(eps)
         if norm == "snr":
-            snr = 10 ** (eps / 10)
-        elif norm == "snr_db":
             snr = eps
+        elif norm == "snr_db":
+            snr = 10 ** (eps / 10)
         else:
             raise ValueError(f"norm must be 'snr' (default) or 'snr_db', not {norm}")
 
@@ -53,8 +52,8 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
 
         eps_step = float(eps_step)
 
-        if not (0 < eps_step <= 2):
-            raise ValueError(f"eps_step must be in (0, 2], not {eps_step}")
+        if not (0 < eps_step <= 1):
+            raise ValueError(f"eps_step must be in (0, 1], not {eps_step}")
         self.step_fraction = eps_step
 
     def generate(self, x, y=None, **kwargs):
