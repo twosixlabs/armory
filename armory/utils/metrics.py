@@ -143,6 +143,8 @@ def _snr(x_i, x_adv_i):
         raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
     signal_power = (np.abs(x_i) ** 2).mean()
     noise_power = (np.abs(x_i - x_adv_i) ** 2).mean()
+    if noise_power == 0:
+        return np.inf
     return signal_power / noise_power
 
 
