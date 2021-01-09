@@ -1,4 +1,7 @@
-from art.attacks.evasion import ProjectedGradientDescentPyTorch
+from art.attacks.evasion import (
+    ProjectedGradientDescentPyTorch,
+    ProjectedGradientDescentNumpy,
+)
 import numpy as np
 
 import logging
@@ -170,6 +173,66 @@ class SNR_PGDRange2:
 
         logger.info(f"Returning best attack with eps {eps_best}")
         return x_best
+
+
+class SNR_PGD_Linf:
+    """
+    Applies Linf PGD to signal based on an SNR bound defined by norm 'snr' or 'snr_db'.
+
+    The highest signal power Linf signal is a sine wave at the Nyquist frequency
+        This is used to calculate the SNR bound for Linf
+
+    In particular, the max(linf epsilon) = L2(x) / (sqrt(n) * sqrt(min(SNR epsilon))
+        This is equivalent to the RMS of the signal divided by sqrt(min(SNR epsilon))
+    """
+
+    # TODO
+
+
+class SNR_PGD_Numpy(ProjectedGradientDescentNumpy):
+    def __init__(
+        self, estimator, norm="snr", eps=10, eps_step=0.5, batch_size=1, **kwargs
+    ):
+        if batch_size != 1:
+            raise NotImplementedError("only batch_size 1 supported")
+        super().__init__(estimator, norm=2, batch_size=1, **kwargs)
+
+        # Map to SNR domain
+        eps = float(eps)
+        if norm == "snr":
+            snr = eps
+        elif norm == "snr_db":
+            snr = 10 ** (eps / 10)
+        else:
+            raise ValueError(f"norm must be 'snr' (default) or 'snr_db', not {norm}")
+
+        if snr < 0:
+            raise ValueError(f"snr must be nonnegative, not {snr}")
+        elif snr == 0:
+            self.snr_sqrt_reciprocal = np.inf
+        elif snr == np.inf:
+            self.snr_sqrt_reciprocal = 0
+        else:
+            self.snr_sqrt_reciprocal = 1 / np.sqrt(snr)
+
+        eps_step = float(eps_step)
+
+        if not (0 < eps_step <= 1):
+            raise ValueError(f"eps_step must be in (0, 1], not {eps_step}")
+        self.step_fraction = eps_step
+
+    def generate(self, x, y=None, **kwargs):
+        x_l2 = np.linalg.norm(x, ord=2)
+        if x_l2 == 0:
+            logger.warning("Input all 0. Not making any change.")
+            return x
+        elif self.snr_sqrt_reciprocal == 0:
+            return x
+
+        eps = x_l2 * self.snr_sqrt_reciprocal
+        eps_step = eps * self.step_fraction
+        self.set_params(eps=eps, eps_step=eps_step)
+        return super().generate(x, y=y, **kwargs)
 
 
 class SNR_PGD(ProjectedGradientDescentPyTorch):

@@ -7,15 +7,15 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "max_iter": 2,
-            "norm": 2,
+            "eps": 10,
+            "eps_step": 0.5,
+            "max_iter": 10,
+            "norm": "snr",
             "num_random_init": 0,
             "targeted": true
         },
-        "module": "art.attacks.evasion",
-        "name": "ProjectedGradientDescentNumpy",
+        "module": "armory.art_experimental.attacks.snr_pgd",
+        "name": "SNR_PGD_Numpy",
         "targeted": true,
         "targeted_labels": {
             "scheme": "string",

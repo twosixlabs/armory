@@ -8,12 +8,16 @@
             "eps": 10,
             "eps_step": 0.5,
             "max_iter": 10,
-            "norm": "snr",
-            "num_random_init": 0,
-            "targeted": false
+            "num_random_init": 2,
+            "targeted": true,
+            "verbose": false
         },
-        "module": "armory.art_experimental.attacks.snr_pgd",
-        "name": "SNR_PGD",
+        "module": "art.attacks.evasion",
+        "name": "ProjectedGradientDescentNumpy",
+        "targeted_labels": {
+            "num_classes": 40,
+            "scheme": "round-robin"
+        },
         "use_label": false
     },
     "dataset": {
