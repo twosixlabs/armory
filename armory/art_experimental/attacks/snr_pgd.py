@@ -105,7 +105,9 @@ class SNR_PGDRange2:
         }
     """
 
-    def __init__(self, estimator, eps_min=10, eps_max=50, tolerance=1, **kwargs):
+    def __init__(
+        self, estimator, attack="l2", eps_min=10, eps_max=50, tolerance=1, **kwargs
+    ):
         if eps_min > eps_max:
             raise ValueError(f"eps_min {eps_min} > eps_max {eps_max}")
         if "eps" in kwargs:
@@ -113,8 +115,15 @@ class SNR_PGDRange2:
         if eps_min == -np.inf or eps_max == np.inf:
             # needed due to bisection approach
             raise ValueError(f"eps_min {eps_min} and eps_max {eps_max} must be finite")
-        self.min_attack = SNR_PGD(estimator, eps=eps_min, **kwargs)
-        self.max_attack = SNR_PGD(estimator, eps=eps_max, **kwargs)
+
+        if attack == "l2":
+            self.Attack = SNR_PGD
+        elif attack == "linf":
+            self.Attack = SNR_PGD_Linf
+        else:
+            raise ValueError(f'attack {attack} not in ("l2", "linf")')
+        self.min_attack = self.Attack(estimator, eps=eps_min, **kwargs)
+        self.max_attack = self.Attack(estimator, eps=eps_max, **kwargs)
         self.eps_min = eps_min
         self.eps_max = eps_max
         self.estimator = estimator
@@ -160,7 +169,7 @@ class SNR_PGDRange2:
             if mid_eps == lower_eps or mid_eps == upper_eps:
                 logger.info("Reached floating point tolerance limit")
                 break
-            attack = SNR_PGD(self.estimator, eps=mid_eps, **self.kwargs)
+            attack = self.Attack(self.estimator, eps=mid_eps, **self.kwargs)
             x_adv = attack.generate(x, y, **kwargs)
             if self.estimator.predict(x_adv).argmax() != y:
                 logger.info(f"Success at eps = {mid_eps}")
@@ -173,20 +182,6 @@ class SNR_PGDRange2:
 
         logger.info(f"Returning best attack with eps {eps_best}")
         return x_best
-
-
-class SNR_PGD_Linf:
-    """
-    Applies Linf PGD to signal based on an SNR bound defined by norm 'snr' or 'snr_db'.
-
-    The highest signal power Linf signal is a sine wave at the Nyquist frequency
-        This is used to calculate the SNR bound for Linf
-
-    In particular, the max(linf epsilon) = L2(x) / (sqrt(n) * sqrt(min(SNR epsilon))
-        This is equivalent to the RMS of the signal divided by sqrt(min(SNR epsilon))
-    """
-
-    # TODO
 
 
 class SNR_PGD_Numpy(ProjectedGradientDescentNumpy):
@@ -286,6 +281,10 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
         self.step_fraction = eps_step
 
     def generate(self, x, y=None, **kwargs):
+        if x.shape[1] == 0:
+            logger.warning("Length 0 signal. Returning original.")
+            return x
+
         x_l2 = np.linalg.norm(x, ord=2)
         if x_l2 == 0:
             logger.warning("Input all 0. Not making any change.")
@@ -373,3 +372,63 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
             )
 
         return x
+
+
+class SNR_PGD_Linf(ProjectedGradientDescentPyTorch):
+    """
+    Applies Linf PGD to signal based on an SNR bound defined by norm 'snr' or 'snr_db'.
+
+    The highest signal power Linf signal is a sine wave at the Nyquist frequency
+        This is used to calculate the SNR bound for Linf
+
+    In particular, the max(linf epsilon) = L2(x) / (sqrt(n) * sqrt(min(SNR epsilon))
+        This is equivalent to the RMS of the signal divided by sqrt(min(SNR epsilon))
+    """
+
+    def __init__(
+        self, estimator, norm="snr", eps=10, eps_step=0.5, batch_size=1, **kwargs
+    ):
+        if batch_size != 1:
+            raise NotImplementedError("only batch_size 1 supported")
+        super().__init__(estimator, norm=np.inf, batch_size=1, **kwargs)
+
+        # Map to SNR domain
+        eps = float(eps)
+        if norm == "snr":
+            snr = eps
+        elif norm == "snr_db":
+            snr = 10 ** (eps / 10)
+        else:
+            raise ValueError(f"norm must be 'snr' (default) or 'snr_db', not {norm}")
+
+        if snr < 0:
+            raise ValueError(f"snr must be nonnegative, not {snr}")
+        elif snr == 0:
+            self.snr_sqrt_reciprocal = np.inf
+        elif snr == np.inf:
+            self.snr_sqrt_reciprocal = 0
+        else:
+            self.snr_sqrt_reciprocal = 1 / np.sqrt(snr)
+
+        eps_step = float(eps_step)
+
+        if not (0 < eps_step <= 1):
+            raise ValueError(f"eps_step must be in (0, 1], not {eps_step}")
+        self.step_fraction = eps_step
+
+    def generate(self, x, y=None, **kwargs):
+        if x.shape[1] == 0:
+            logger.warning("Length 0 signal. Returning original.")
+            return x
+
+        x_rms = np.linalg.norm(x, ord=2) / np.sqrt(x.shape[1])
+        if x_rms == 0:
+            logger.warning("Input all 0. Not making any change.")
+            return x
+        elif self.snr_sqrt_reciprocal == 0:
+            return x
+
+        eps = x_rms * self.snr_sqrt_reciprocal
+        eps_step = eps * self.step_fraction
+        self.set_params(eps=eps, eps_step=eps_step)
+        return super().generate(x, y=y, **kwargs)
