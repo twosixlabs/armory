@@ -62,6 +62,9 @@ def as_batch(element_metric):
             y = np.array(y, dtype=object)
         return y
 
+    if wrapper.__doc__ is None:
+        logger.warning(f"{element_metric.__name__} has no doc string")
+        wrapper.__doc__ = ""
     wrapper.__doc__ = "Batch version of:\n" + wrapper.__doc__
     wrapper.__name__ = "batch_" + wrapper.__name__
     # TODO: fix repr(wrapper), which defaults to the element_metric, not __name__
@@ -222,10 +225,9 @@ def image_rectangular_patch_area(x, x_adv):
     raise NotImplementedError("not completed")
 
 
+@elementwise
+@numpy
 def image_circle_patch_diameter(x, x_adv):
-    raise NotImplementedError("Needs to be updated")
-    if x.shape != x_adv.shape:
-        raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
     img_shape = x.shape
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x has shape {x.shape}")
