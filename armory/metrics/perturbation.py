@@ -228,6 +228,9 @@ def image_rectangular_patch_area(x, x_adv):
 @elementwise
 @numpy
 def image_circle_patch_diameter(x, x_adv):
+    """
+    Return the diameter of the smallest circular patch over the modified pixels
+    """
     img_shape = x.shape
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x has shape {x.shape}")
@@ -269,7 +272,10 @@ def image_circle_patch_diameter(x, x_adv):
 
 
 # TODO: FIX
-def video_metric(metric, frame_average="mean"):
+def generate_video_metric(metric, frame_average="mean"):
+    """
+    Helper function to create video metrics from existing image metrics
+    """
     mapping = {
         "mean": np.mean,
         "max": np.max,
@@ -279,6 +285,7 @@ def video_metric(metric, frame_average="mean"):
         raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
     frame_average_func = mapping[frame_average]
 
+    @numpy
     def func(x, x_adv):
         results = []
         for x_sample, x_adv_sample in zip(x, x_adv):
@@ -296,6 +303,6 @@ def video_metric(metric, frame_average="mean"):
 #        new_metric_name = prefix + "_" + metric_name
 #        if new_metric_name in SUPPORTED_METRICS:
 #            raise ValueError(f"Duplicate metric {new_metric_name} in SUPPORTED_METRICS")
-#        new_metric = video_metric(metric, frame_average=prefix)
+#        new_metric = generate_video_metric(metric, frame_average=prefix)
 #        SUPPORTED_METRICS[new_metric_name] = new_metric
 #
