@@ -1,0 +1,74 @@
+{
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "adhoc": {
+        "detection_kwargs": {
+            "nb_clusters": 2,
+            "nb_dims": 43,
+            "reduce": "PCA"
+        },
+        "experiment_id": 0,
+        "poison_dataset": true,
+        "source_class": 1,
+        "split_id": 0,
+        "target_class": 2,
+        "train_epochs": 20,
+        "use_poison_filtering_defense": false
+    },
+    "attack": {
+        "knowledge": "black",
+        "kwargs": {
+            "backdoor_kwargs": {
+                "backdoor_path": "./armory/utils/triggers/bullet_holes.png",
+                "poison_module": "art.attacks.poisoning.perturbations",
+                "poison_type": "image",
+                "size": [
+                    17,
+                    15
+                ]
+            },
+            "eps": 0.03,
+            "eps_step": 0.001,
+            "max_iter": 100,
+            "n_classes": 43,
+            "norm": "inf",
+            "num_random_init": 2,
+            "pp_poison": 0.5,
+            "target": 2
+        },
+        "module": "armory.art_experimental.attacks.poison_loader_clbd",
+        "name": "poison_loader_clbd",
+        "type": "clbd",
+        "use_adversarial_trainer": false
+    },
+    "dataset": {
+        "batch_size": 512,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "german_traffic_sign"
+    },
+    "defense": null,
+    "metric": null,
+    "model": {
+        "fit": true,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.poisoning_gtsrb_clbd",
+        "name": "GTSRB_CLBD"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1-poison:0.13.0-dev",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "set_pythonhashseed": true,
+        "use_gpu": false
+    }
+}
