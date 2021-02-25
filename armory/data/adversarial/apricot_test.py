@@ -1,4 +1,4 @@
-"""apricot_dev dataset."""
+"""apricot_test dataset."""
 
 import collections
 import json
@@ -72,7 +72,7 @@ DATASET PARTITIONS
 ------------------
 The APRICOT dataset is divided into two partitions, a development partition
 (dev) for validation and a testing partition (test) for reporting results.
-For dataset herein, only the development partition is provided.
+For dataset herein, only the test partition is provided.
 
 These files are provided as a convenience to help with different types of
 experiments. For example, experiments which aim to detect patches directly
@@ -92,13 +92,13 @@ public release; distribution unlimited.  Case #19-3440.
 
 _URL = "https://arxiv.org/abs/1912.08166"
 
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_dev.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_test.tar.gz"
 
 
-class ApricotDev(tfds.core.GeneratorBasedBuilder):
-    """APRICOT Dev dataset."""
+class ApricotTest(tfds.core.GeneratorBasedBuilder):
+    """APRICOT Test dataset."""
 
-    VERSION = tfds.core.Version("1.0.2")
+    VERSION = tfds.core.Version("1.0.0")
 
     def _info(self):
         features = {
@@ -181,7 +181,7 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, path, model):
         """yield examples"""
         annotation_path = os.path.join(
-            path, "Annotations/apricot_dev_all_annotations.json"
+            path, "Annotations/apricot_test_all_annotations.json"
         )
         apricot = ApricotAnnotation(annotation_path)
         images = apricot.images()
@@ -199,7 +199,7 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
                 )
 
             example = {
-                "image": os.path.join(path, "Images/dev", image_info["file_name"]),
+                "image": os.path.join(path, "Images/test", image_info["file_name"]),
                 "images": apricot.images(),
                 "categories": apricot.categories(),
                 "models": apricot.models(),

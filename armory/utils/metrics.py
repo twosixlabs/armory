@@ -17,7 +17,7 @@ import cProfile
 import pstats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-from armory.data.adversarial.apricot_dev_metadata import APRICOT_PATCHES
+from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 
 
 logger = logging.getLogger(__name__)
@@ -143,6 +143,8 @@ def _snr(x_i, x_adv_i):
         raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
     signal_power = (np.abs(x_i) ** 2).mean()
     noise_power = (np.abs(x_i - x_adv_i) ** 2).mean()
+    if noise_power == 0:
+        return np.inf
     return signal_power / noise_power
 
 

@@ -44,7 +44,7 @@ def test_tf1_apricot():
     detector_fn = getattr(detector_module, "get_art_model")
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
 
-    test_dataset = adversarial_datasets.apricot_dev_adversarial(
+    dev_dataset = adversarial_datasets.apricot_dev_adversarial(
         split="frcnn+ssd+retinanet",
         epochs=1,
         batch_size=1,
@@ -54,7 +54,7 @@ def test_tf1_apricot():
 
     list_of_ys = []
     list_of_ypreds = []
-    for x, y in test_dataset:
+    for x, y in dev_dataset:
         y_pred = detector.predict(x)
         list_of_ys.append(y)
         list_of_ypreds.append(y_pred)
@@ -76,6 +76,43 @@ def test_tf1_apricot():
         27: 0.27,
         33: 0.55,
         44: 0.14,
+    }
+    for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
+        assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
+
+    test_dataset = adversarial_datasets.apricot_test_adversarial(
+        split="frcnn",
+        epochs=1,
+        batch_size=1,
+        dataset_dir=DATASET_DIR,
+        shuffle_files=False,
+    )
+
+    list_of_ys = []
+    list_of_ypreds = []
+    for x, y in test_dataset:
+        y_pred = detector.predict(x)
+        list_of_ys.append(y)
+        list_of_ypreds.append(y_pred)
+
+    average_precision_by_class = object_detection_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    mAP = np.fromiter(average_precision_by_class.values(), dtype=float).mean()
+    for class_id in [2, 3, 4, 6, 15, 72, 76]:
+        assert average_precision_by_class[class_id] > 0.3
+    assert mAP > 0.08
+
+    patch_targeted_AP_by_class = apricot_patch_targeted_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    expected_patch_targeted_AP_by_class = {
+        1: 0.22,
+        17: 0.18,
+        27: 0.4,
+        44: 0.09,
+        53: 0.27,
+        85: 0.43,
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
         assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03

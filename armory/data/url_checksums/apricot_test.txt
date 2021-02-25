@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/apricot_test.tar.gz 4222259840 721f11c2fb6f8df7c663f77b049c0387c9e92350e13e45b51fe00597f5a64d9e
