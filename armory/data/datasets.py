@@ -287,6 +287,7 @@ def _generator_from_tfds(
     framework: str = "numpy",
     lambda_map: Callable = None,
     context=None,
+    index=None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -362,6 +363,18 @@ def _generator_from_tfds(
             ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
         ds = ds.map(lambda_map)
+
+    # Add index-based filtering
+    if index is not None:
+        # TODO: handle case when index is a string or slice (not a numeric list)
+        index_tensor = tf.constant(index, dtype=tf.int64)
+
+        def enum_index(i, x):
+            i = tf.expand_dims(i, 0)
+            out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
+            return tf.size(out) == 0
+
+        ds = ds.enumerate().filter(enum_index).map(lambda i, x: x)
 
     ds = ds.repeat(epochs)
     if shuffle_files:
@@ -631,6 +644,7 @@ def mnist(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -649,6 +663,7 @@ def mnist(
         framework=framework,
         shuffle_files=shuffle_files,
         context=mnist_context,
+        **kwargs,
     )
 
 
@@ -662,6 +677,7 @@ def cifar10(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -680,6 +696,7 @@ def cifar10(
         framework=framework,
         shuffle_files=shuffle_files,
         context=cifar10_context,
+        **kwargs,
     )
 
 
@@ -693,6 +710,7 @@ def digit(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -712,6 +730,7 @@ def digit(
         framework=framework,
         shuffle_files=shuffle_files,
         context=digit_context,
+        **kwargs,
     )
 
 
@@ -725,6 +744,7 @@ def imagenette(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -744,6 +764,7 @@ def imagenette(
         framework=framework,
         shuffle_files=shuffle_files,
         context=imagenette_context,
+        **kwargs,
     )
 
 
@@ -756,6 +777,7 @@ def german_traffic_sign(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -772,6 +794,7 @@ def german_traffic_sign(
         framework=framework,
         shuffle_files=shuffle_files,
         context=gtsrb_context,
+        **kwargs,
     )
 
 
@@ -785,6 +808,7 @@ def librispeech_dev_clean(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -815,6 +839,7 @@ def librispeech_dev_clean(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
     )
 
 
@@ -828,6 +853,7 @@ def librispeech_full(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
@@ -843,6 +869,7 @@ def librispeech_full(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_context,
+        **kwargs,
     )
 
 
@@ -856,6 +883,7 @@ def librispeech(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     flags = []
     dl_config = tfds.download.DownloadConfig(
@@ -888,6 +916,7 @@ def librispeech(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_context,
+        **kwargs,
     )
 
 
@@ -901,6 +930,7 @@ def librispeech_dev_clean_asr(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ):
     """
     Librispeech dev dataset with custom split used for automatic
@@ -933,6 +963,7 @@ def librispeech_dev_clean_asr(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
     )
 
 
@@ -946,6 +977,7 @@ def resisc45(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -975,6 +1007,7 @@ def resisc45(
         framework=framework,
         shuffle_files=shuffle_files,
         context=resisc45_context,
+        **kwargs,
     )
 
 
@@ -988,6 +1021,7 @@ def ucf101(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
@@ -1009,6 +1043,7 @@ def ucf101(
         framework=framework,
         shuffle_files=shuffle_files,
         context=ucf101_context,
+        **kwargs,
     )
 
 
@@ -1022,6 +1057,7 @@ def ucf101_clean(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset with high quality MPEG extraction
@@ -1043,6 +1079,7 @@ def ucf101_clean(
         framework=framework,
         shuffle_files=shuffle_files,
         context=ucf101_context,
+        **kwargs,
     )
 
 
@@ -1080,6 +1117,7 @@ def xview(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     split - one of ("train", "test")
@@ -1106,6 +1144,7 @@ def xview(
         framework=framework,
         shuffle_files=shuffle_files,
         context=xview_context,
+        **kwargs,
     )
 
 
@@ -1161,6 +1200,7 @@ def so2sat(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Multimodal SAR / EO image dataset
@@ -1181,6 +1221,7 @@ def so2sat(
         framework=framework,
         shuffle_files=shuffle_files,
         context=so2sat_context,
+        **kwargs,
     )
 
 
