@@ -269,6 +269,72 @@ def parse_split_index(split: str):
     return "+".join(output_tokens)
 
 
+def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
+    """
+    index must be a list or iterable of integer values
+
+    returns the dataset and the indexed size
+    """
+    dataset_size = int(dataset_size)
+    index = sorted([int(x) for x in set(index) if int(x) < dataset_size])
+    indexed_size = len(index)
+    if indexed_size == 0:
+        raise ValueError("index must have at least one value")
+    elif index[0] < 0:
+        raise ValueError("index values must be nonnegative")
+
+    index_tensor = tf.constant(index, dtype=tf.int64)
+
+    def enum_index(i, x):
+        i = tf.expand_dims(i, 0)
+        out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
+        return tf.size(out) == 0
+
+    return dataset.enumerate().filter(enum_index).map(lambda i, x: x), indexed_size
+
+
+def parse_str_slice(index: str):
+    """
+    Parse simple slice from string
+    """
+    index = (
+        index.strip().lstrip("[").rstrip("]").strip()
+    )  # remove brackets and white space
+    tokens = index.split(":")
+    if len(tokens) != 2:
+        raise ValueError("Slice needs a single ':' character. No fancy slicing.")
+
+    lower, upper = [int(x.strip()) if x.strip() else None for x in tokens]
+    if lower is not None and lower < 0:
+        raise ValueError(f"slice lower {lower} must be nonnegative")
+    if upper is not None and lower is not None and upper <= lower:
+        raise ValueError(
+            f"slice upper {upper} must be strictly greater than lower {lower}"
+        )
+    return lower, upper
+
+
+def filter_by_str_slice(dataset: "tf.data.Dataset", index: str, dataset_size: int):
+    """
+    returns the dataset and the indexed size
+    """
+    lower, upper = parse_str_slice(index)
+    if lower is None:
+        lower = 0
+    if upper is None:
+        upper = dataset_size
+    if lower >= dataset_size:
+        raise ValueError(f"lower {lower} must be less than dataset_size {dataset_size}")
+    if upper > dataset_size:
+        upper = dataset_size
+    indexed_size = upper - lower
+
+    def slice_index(i, x):
+        return (i >= lower) & (i < upper)
+
+    return dataset.enumerate().filter(slice_index).map(lambda i, x: x), indexed_size
+
+
 def _generator_from_tfds(
     dataset_name: str,
     split: str,
@@ -365,16 +431,13 @@ def _generator_from_tfds(
         ds = ds.map(lambda_map)
 
     # Add index-based filtering
-    if index is not None:
-        # TODO: handle case when index is a string or slice (not a numeric list)
-        index_tensor = tf.constant(index, dtype=tf.int64)
-
-        def enum_index(i, x):
-            i = tf.expand_dims(i, 0)
-            out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
-            return tf.size(out) == 0
-
-        ds = ds.enumerate().filter(enum_index).map(lambda i, x: x)
+    dataset_size = ds_info.splits[split].num_examples
+    if isinstance(index, list):
+        ds, dataset_size = filter_by_index(ds, index, dataset_size)
+    elif isinstance(index, str):
+        ds, dataset_size = filter_by_str_slice(ds, index, dataset_size)
+    elif index is not None:
+        raise ValueError(f"index must be a list, str, or None, not {type(index)}")
 
     ds = ds.repeat(epochs)
     if shuffle_files:
@@ -396,7 +459,7 @@ def _generator_from_tfds(
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
             ds,
-            size=ds_info.splits[split].num_examples,
+            size=dataset_size,
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
