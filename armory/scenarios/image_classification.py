@@ -38,7 +38,9 @@ class ImageClassificationTask(Scenario):
         Evaluate the config and return a results dict
         """
         if skip_misclassified and sum([skip_benign, skip_attack]) > 0:
-            raise ValueError("Cannot pass skip_misclassified if skip_benign or skip_attack is also passed")
+            raise ValueError(
+                "Cannot pass skip_misclassified if skip_benign or skip_attack is also passed"
+            )
 
         model_config = config["model"]
         estimator, _ = load_model(model_config)
@@ -138,9 +140,13 @@ class ImageClassificationTask(Scenario):
 
         if skip_misclassified:
             try:
-                acc_task_idx = [i.name for i in metrics_logger.tasks].index("categorical_accuracy")
+                acc_task_idx = [i.name for i in metrics_logger.tasks].index(
+                    "categorical_accuracy"
+                )
             except ValueError:
-                raise ValueError("Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled")
+                raise ValueError(
+                    "Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled"
+                )
             benign_acc = metrics_logger.tasks[acc_task_idx].values()
 
         if targeted and attack_config.get("use_label"):
@@ -207,8 +213,10 @@ class ImageClassificationTask(Scenario):
                     if skip_misclassified:
                         batch_size = x.shape[0]
                         if batch_size > 1:
-                            logger.warning("Ignoring --skip-misclassified flag since batch_size is "
-                                           "greater than 1.")
+                            logger.warning(
+                                "Ignoring --skip-misclassified flag since batch_size is "
+                                "greater than 1."
+                            )
                             x_adv = attack.generate(x=x, **generate_kwargs)
                         else:
                             if benign_acc[batch_idx] == 0:

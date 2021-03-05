@@ -393,7 +393,13 @@ class Evaluator(object):
         )
 
     def _build_options(
-        self, check_run, num_eval_batches, skip_benign, skip_attack, skip_misclassified, validate_config
+        self,
+        check_run,
+        num_eval_batches,
+        skip_benign,
+        skip_attack,
+        skip_misclassified,
+        validate_config,
     ):
         options = ""
         if self.no_docker:

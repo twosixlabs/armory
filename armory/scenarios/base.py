@@ -75,7 +75,9 @@ class Scenario(abc.ABC):
                 config["adhoc"]["train_epochs"] = 1
 
         try:
-            results = self._evaluate(config, num_eval_batches, skip_benign, skip_attack, skip_misclassified)
+            results = self._evaluate(
+                config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+            )
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 logger.exception(
@@ -264,7 +266,14 @@ def run_config(
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign, skip_attack, skip_misclassified)
+    scenario.evaluate(
+        config,
+        mongo_host,
+        num_eval_batches,
+        skip_benign,
+        skip_attack,
+        skip_misclassified,
+    )
 
 
 def init_interactive(config_json, from_file=True):
