@@ -28,6 +28,7 @@ All configuration files are verified against the jsonschema definition at run ti
     framework: [String] Framework to return Tensors in. <`tf`|`pytorch`|`numpy`>. `numpy` by default.
     train_split: [Optional String] Training split in dataset. Typically defaults to `train`. Can use fancy slicing via [TFDS slicing API](https://www.tensorflow.org/datasets/splits#slicing_api)
     eval_split: [Optional String] Eval split in dataset. Typically defaults to `test`. Can use fancy slicing via [TFDS slicing API](https://www.tensorflow.org/datasets/splits#slicing_api)
+    index: [Optional String or Object] Index into the post-sorted eval dataset. Can use a numeric list like [1, 5, 7] or a simple slice as a string, like "[3:6]" or ":100".
   }
 `defense`: [Object or null]
   {

@@ -52,6 +52,78 @@ def test_parse_split_index():
         datasets.parse_split_index("test[10:20:2]")
 
 
+def test_parse_str_slice():
+    for x, y in [
+        ("[2:5]", (2, 5)),
+        ("[:5]", (None, 5)),
+        ("[6:]", (6, None)),
+        ("[[5: 7] ", (5, 7)),
+        (":3", (None, 3)),
+        ("4:5", (4, 5)),
+    ]:
+        assert datasets.parse_str_slice(x) == y
+
+    for x in ("[::3]", "[5:-1]", "-10:", "3:3", "4:3"):
+        with pytest.raises(ValueError):
+            datasets.parse_str_slice(x)
+
+
+def test_filter_by_index():
+    ds = datasets.mnist(
+        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
+    )
+    dataset_size = 10000
+
+    for index in ([], [-4, 5, 6], ["1:3"]):
+        with pytest.raises(ValueError):
+            datasets.filter_by_index(ds, index, dataset_size)
+
+    ds = datasets.mnist("test", shuffle_files=False, preprocessing_fn=None)
+    assert ds.size == dataset_size
+    ys = np.hstack([next(ds)[1] for i in range(10)])  # first 10 labels
+
+    for index in (
+        [1, 3, 6, 5],
+        [0],
+        [6, 7, 8, 9, 9, 8, 7, 6],
+        list(range(10)),
+    ):
+        ds = datasets.mnist(
+            "test", shuffle_files=False, preprocessing_fn=None, index=index
+        )
+        index = sorted(set(index))
+        assert ds.size == len(index)
+        ys_index = np.hstack([y for (x, y) in ds])
+        # ys_index = np.hstack([next(ds)[1] for i in range(len(index))])
+        assert (ys[index] == ys_index).all()
+
+
+def test_filter_by_str_slice():
+    ds = datasets.mnist(
+        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
+    )
+    dataset_size = 10000
+
+    with pytest.raises(ValueError):
+        datasets.filter_by_str_slice(ds, "[10000:]", dataset_size)
+
+    ds = datasets.mnist("test", shuffle_files=False, preprocessing_fn=None)
+    assert ds.size == dataset_size
+    ys = np.hstack([next(ds)[1] for i in range(10)])  # first 10 labels
+
+    for index, target in (
+        ("[:5]", ys[:5]),
+        ("[3:8]", ys[3:8]),
+        ("[0:5]", ys[0:5]),
+    ):
+        ds = datasets.mnist(
+            "test", shuffle_files=False, preprocessing_fn=None, index=index
+        )
+        assert ds.size == len(target)
+        ys_index = np.hstack([y for (x, y) in ds])
+        assert (target == ys_index).all()
+
+
 def test_parse_split_index_ordering():
     """
     Ensure that output order is deterministic for multiple splits
