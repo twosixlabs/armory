@@ -288,7 +288,7 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
     def enum_index(i, x):
         i = tf.expand_dims(i, 0)
         out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
-        return tf.size(out) == 0
+        return tf.equal(tf.size(out), 0)
 
     return dataset.enumerate().filter(enum_index).map(lambda i, x: x), indexed_size
 
