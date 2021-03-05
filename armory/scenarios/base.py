@@ -57,6 +57,7 @@ class Scenario(abc.ABC):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ):
         """
         Evaluate a config for robustness against attack.
@@ -74,7 +75,7 @@ class Scenario(abc.ABC):
                 config["adhoc"]["train_epochs"] = 1
 
         try:
-            results = self._evaluate(config, num_eval_batches, skip_benign, skip_attack)
+            results = self._evaluate(config, num_eval_batches, skip_benign, skip_attack, skip_misclassified)
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 logger.exception(
@@ -106,6 +107,7 @@ class Scenario(abc.ABC):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -253,6 +255,7 @@ def run_config(
     num_eval_batches=None,
     skip_benign=None,
     skip_attack=None,
+    skip_misclassified=None,
 ):
     config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
@@ -261,7 +264,7 @@ def run_config(
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign, skip_attack)
+    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign, skip_attack, skip_misclassified)
 
 
 def init_interactive(config_json, from_file=True):
@@ -330,6 +333,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Validate model configuration against several checks",
     )
+    parser.add_argument(
+        "--skip-misclassified",
+        action="store_true",
+        help="Skip attack attacking of inputs that are already misclassified",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
@@ -360,5 +368,6 @@ if __name__ == "__main__":
             args.num_eval_batches,
             args.skip_benign,
             args.skip_attack,
+            args.skip_misclassified,
         )
     print(END_SENTINEL)  # indicates to host that the scenario finished w/out error

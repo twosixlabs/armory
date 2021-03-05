@@ -160,6 +160,7 @@ class Evaluator(object):
         num_eval_batches=None,
         skip_benign=None,
         skip_attack=None,
+        skip_misclassified=None,
         validate_config=None,
     ) -> int:
         exit_code = 0
@@ -176,6 +177,7 @@ class Evaluator(object):
                     num_eval_batches=num_eval_batches,
                     skip_benign=skip_benign,
                     skip_attack=skip_attack,
+                    skip_misclassified=skip_misclassified,
                     validate_config=validate_config,
                 )
             except KeyboardInterrupt:
@@ -213,6 +215,7 @@ class Evaluator(object):
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
                         skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
                 elif command:
@@ -224,6 +227,7 @@ class Evaluator(object):
                         num_eval_batches=num_eval_batches,
                         skip_benign=skip_benign,
                         skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
             except KeyboardInterrupt:
@@ -263,6 +267,7 @@ class Evaluator(object):
         num_eval_batches=None,
         skip_benign=None,
         skip_attack=None,
+        skip_misclassified=None,
         validate_config=None,
     ) -> int:
         logger.info(bold(red("Running evaluation script")))
@@ -273,6 +278,7 @@ class Evaluator(object):
             num_eval_batches=num_eval_batches,
             skip_benign=skip_benign,
             skip_attack=skip_attack,
+            skip_misclassified=skip_misclassified,
             validate_config=validate_config,
         )
         if self.no_docker:
@@ -294,7 +300,7 @@ class Evaluator(object):
         Return uid, gid
         """
         # Windows docker does not require synchronizing file and
-        # directoriy permissions via uid and gid.
+        # directory permissions via uid and gid.
         if os.name == "nt" or self.root:
             user_id = 0
             group_id = 0
@@ -310,6 +316,7 @@ class Evaluator(object):
         num_eval_batches=None,
         skip_benign=None,
         skip_attack=None,
+        skip_misclassified=None,
         validate_config=None,
     ) -> None:
         user_group_id = self.get_id()
@@ -330,6 +337,7 @@ class Evaluator(object):
                 num_eval_batches=num_eval_batches,
                 skip_benign=skip_benign,
                 skip_attack=skip_attack,
+                skip_misclassified=skip_misclassified,
                 validate_config=validate_config,
             )
             tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
@@ -385,7 +393,7 @@ class Evaluator(object):
         )
 
     def _build_options(
-        self, check_run, num_eval_batches, skip_benign, skip_attack, validate_config
+        self, check_run, num_eval_batches, skip_benign, skip_attack, skip_misclassified, validate_config
     ):
         options = ""
         if self.no_docker:
@@ -400,6 +408,8 @@ class Evaluator(object):
             options += " --skip-benign"
         if skip_attack:
             options += " --skip-attack"
+        if skip_misclassified:
+            options += " --skip-misclassified"
         if validate_config:
             options += " --validate-config"
         return options
