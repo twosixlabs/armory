@@ -17,7 +17,6 @@ import sys
 
 import coloredlogs
 import docker
-from docker.errors import ImageNotFound
 from jsonschema import ValidationError
 
 import armory

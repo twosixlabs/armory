@@ -30,10 +30,6 @@ def parse_version(tag):
     """
     if not isinstance(tag, str):
         raise ValueError(f"tag is a {type(tag)}, not a str")
-    #if tag.endswith(armory.DEV):
-    #    numeric_tag = tag[: -len(armory.DEV)]
-    #else:
-    #numeric_tag = tag
     if len(tag.split(".")) != 3:
         raise ValueError(f"tag {tag} must be of form 'major.minor.patch'")
     version = pkg_resources.parse_version(tag)
