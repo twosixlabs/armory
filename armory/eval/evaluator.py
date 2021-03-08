@@ -12,7 +12,6 @@ import sys
 
 import docker
 import requests
-from docker.errors import ImageNotFound
 
 import armory
 from armory.configuration import load_global_config
@@ -80,7 +79,9 @@ class Evaluator(object):
                 docker_api.pull_verbose(docker_client, image_name)
             except docker.errors.NotFound:
                 if image_name in images.ALL:
-                    name = image_name.lstrip(f"{images.USER}/").rstrip(f":{armory.__version__}")
+                    name = image_name.lstrip(f"{images.USER}/").rstrip(
+                        f":{armory.__version__}"
+                    )
                     raise ValueError(
                         "You are attempting to pull an unpublished armory docker image.\n"
                         "This is likely because you're running armory from a dev branch. "
