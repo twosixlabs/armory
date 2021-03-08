@@ -48,19 +48,16 @@ class Command(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
-DOCKER_IMAGES = {"tf1": images.TF1, "tf2": images.TF2, "pytorch": images.PYTORCH}
-
-
 class DockerImage(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         if values in images.ALL:
             setattr(namespace, self.dest, values)
-        elif values.lower() in DOCKER_IMAGES:
-            setattr(namespace, self.dest, DOCKER_IMAGES[values])
+        elif values.lower() in images.IMAGE_MAP:
+            setattr(namespace, self.dest, images.IMAGE_MAP[values])
         else:
             print(
                 f"WARNING: {values} not in "
-                f"{list(DOCKER_IMAGES.keys()) + list(DOCKER_IMAGES.values())}. "
+                f"{list(images.IMAGE_MAP.keys()) + list(images.IMAGE_MAP.values())}. "
                 "Attempting to load custom Docker image."
             )
             setattr(namespace, self.dest, values)
@@ -329,13 +326,17 @@ def _pull_docker_images(docker_client=None):
     for image in images.ALL:
         try:
             docker_client.images.get(image)
-        except ImageNotFound:
-            if armory.is_dev():
-                raise ValueError(
-                    "For '-dev', please run 'docker/build-dev.sh' locally before running armory"
+        except docker.errors.ImageNotFound:
+            try:
+                logger.info(f"Image {image} was not found. Downloading...")
+                docker_api.pull_verbose(docker_client, image)
+            except docker.errors.NotFound:
+                logger.exception(
+                    f"Docker image {image} does not exist for this version. "
+                    f"Please run 'bash docker/build.sh {image}'"
+                    "or 'bash docker/build.sh all' before running armory"
                 )
-            logger.info(f"Image {image} was not found. Downloading...")
-            docker_api.pull_verbose(docker_client, image)
+                raise ValueError(f"Docker image {image} not built")
 
 
 def download(command_args, prog, description):
@@ -378,8 +379,6 @@ def download(command_args, prog, description):
 
     if args.skip_docker_images:
         logger.info("Skipping docker image downloads...")
-    elif armory.is_dev():
-        logger.info("Dev version. Must build docker images locally with build-dev.sh")
     else:
         logger.info("Downloading all docker images...")
         _pull_docker_images()
