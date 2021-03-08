@@ -1,6 +1,6 @@
 ########## ARMORY Base #################
 
-FROM nvidia/cuda:10.0-cudnn7-runtime-ubuntu18.04 AS armory
+FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory
 
 # Temporary fix for broken nvidia package checksum
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
@@ -22,13 +22,13 @@ ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
-    jupyterlab==1.2.6 \
-    boto3==1.11.13 \
-    Pillow==7.1.2 \
+    jupyterlab==3.0.9 \
+    boto3==1.17.20 \
+    Pillow==8.1.1 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
-    pytest==5.3.5
+    pytest==6.2.2
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all

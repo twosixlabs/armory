@@ -2,8 +2,9 @@
 
 ARG armory_version
 FROM twosixarmory/armory:${armory_version} AS armory-tf2-base
-RUN /opt/conda/bin/conda install tensorflow-gpu==2.2.0 && \
+RUN /opt/conda/bin/conda install protobuf==3.14.0 && \
     /opt/conda/bin/conda clean --all
+RUN /opt/conda/bin/pip install tensorflow-gpu==2.4.1 --no-cache-dir
 WORKDIR /tmp
 RUN git clone https://github.com/tensorflow/models.git && cd models/research && git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182
 WORKDIR /tmp/models/research
@@ -18,5 +19,5 @@ FROM armory-tf2-base AS armory-tf2
 ARG armory_version
 RUN /opt/conda/bin/pip install --no-cache-dir \ 
     armory-testbed==${armory_version} \
-    adversarial-robustness-toolbox==1.4.2
+    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
 CMD tail -f /dev/null
