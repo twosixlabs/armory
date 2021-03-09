@@ -25,11 +25,12 @@ if [[ $version == *"-dev" ]]; then
     echo "ERROR: Armory version $version ends in '-dev'. This is no longer supported as of 0.13.0"
     exit 1
 fi
+echo "Armory version $version"
 
 # Build images
 for framework in "tf1" "tf2" "pytorch" "pytorch-deepspeech"; do
     if [[ "$1" == "$framework" || "$1" == "all" ]]; then
-        echo "\n\n\n"
+        echo ""
         echo "------------------------------------------------"
         echo "Building docker image for framework: $framework"
         docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} .
