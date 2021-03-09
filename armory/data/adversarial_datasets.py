@@ -68,6 +68,7 @@ def imagenet_adversarial(
     adversarial_key: str = "adversarial",
     targeted: bool = False,
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     """
     ILSVRC12 adversarial image dataset for ResNet50
@@ -97,6 +98,7 @@ def imagenet_adversarial(
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
         context=imagenet_adversarial_context,
+        **kwargs,
     )
 
 
@@ -112,6 +114,7 @@ def librispeech_adversarial(
     adversarial_key: str = "adversarial_perturbation",
     targeted: bool = False,
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     """
     Adversarial dataset based on Librispeech-dev-clean including clean,
@@ -145,6 +148,7 @@ def librispeech_adversarial(
         framework=framework,
         lambda_map=lambda x, y: ((x[clean_key], x[adversarial_key]), y),
         context=librispeech_adversarial_context,
+        **kwargs,
     )
 
 
@@ -160,6 +164,7 @@ def resisc45_adversarial_224x224(
     adversarial_key: str = "adversarial_univperturbation",
     targeted: bool = False,
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     """
     resisc45 Adversarial Dataset of size (224, 224, 3),
@@ -201,6 +206,7 @@ def resisc45_adversarial_224x224(
         framework=framework,
         lambda_map=lambda_map,
         context=resisc45_adversarial_context,
+        **kwargs,
     )
 
 
@@ -216,6 +222,7 @@ def ucf101_adversarial_112x112(
     adversarial_key: str = "adversarial_perturbation",
     targeted: bool = False,
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     """
     UCF 101 Adversarial Dataset of size (112, 112, 3),
@@ -259,6 +266,7 @@ def ucf101_adversarial_112x112(
         framework=framework,
         lambda_map=lambda_map,
         context=ucf101_adversarial_context,
+        **kwargs,
     )
 
 
@@ -273,6 +281,7 @@ def gtsrb_poison(
     clean_key: str = None,
     adversarial_key: str = None,
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     """
     German traffic sign poison dataset of size (48, 48, 3),
@@ -294,6 +303,7 @@ def gtsrb_poison(
         cache_dataset=cache_dataset,
         framework=framework,
         lambda_map=lambda x, y: (x, y),
+        **kwargs,
     )
 
 
@@ -317,6 +327,7 @@ def apricot_dev_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
@@ -360,6 +371,7 @@ def apricot_dev_adversarial(
             ),
         ),
         context=apricot_adversarial_context,
+        **kwargs,
     )
 
 
@@ -373,6 +385,7 @@ def apricot_test_adversarial(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
+    **kwargs,
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
@@ -416,4 +429,5 @@ def apricot_test_adversarial(
             ),
         ),
         context=apricot_adversarial_context,
+        **kwargs,
     )
