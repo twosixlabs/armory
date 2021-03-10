@@ -108,7 +108,7 @@ jobs:
           version=$(python -c "import armory; print(armory.__version__)")
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/pytorch-deepspeech:latest
-          bash docker/build.sh pytorch
+          bash docker/build.sh pytorch-deepspeech
           docker push twosixarmory/pytorch-deepspeech:${version}
           docker tag twosixarmory/pytorch-deepspeech:${version} twosixarmory/pytorch-deepspeech:latest
           docker push twosixarmory/pytorch-deepspeech:latest
