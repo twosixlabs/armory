@@ -44,6 +44,5 @@ for framework in "tf1" "tf2" "pytorch" "pytorch-deepspeech"; do
         echo "------------------------------------------------"
         echo "Building docker image for framework: $framework"
         docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
-        #echo docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework} -t twosixarmory/${framework}:${version} $dev_arg .
     fi
 done
