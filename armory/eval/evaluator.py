@@ -91,10 +91,13 @@ class Evaluator(object):
                         "If you'd like to continue working on the developer image please "
                         "build it from source on your machine as described here:\n"
                         "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                        f"bash docker/build.sh {name}\n"
+                        f"bash docker/build.sh {name} dev\n"
                         "OR\n"
-                        "bash docker/build.sh all"
+                        "bash docker/build.sh all dev"
                     )
+                else:
+                    logger.error(f"Image {image_name} could not be downloaded")
+                    raise
         except requests.exceptions.ConnectionError:
             logger.error("Docker connection refused. Is Docker Daemon running?")
             raise
