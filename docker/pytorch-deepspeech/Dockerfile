@@ -79,8 +79,7 @@ CMD tail -f /dev/null
 FROM armory-pytorch-deepspeech-base as armory-pytorch-deepspeech
 ARG armory_version
 
-RUN /opt/conda/bin/pip install --no-cache-dir \ 
-    armory-testbed==${armory_version} \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
 
+WORKDIR /workspace
 CMD tail -f /dev/null
