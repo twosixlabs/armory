@@ -18,7 +18,7 @@ Armory launches containers based on the `__version__` string found in `armory.__
 
 Only release versions will be published to Dockerhub, so development branch images much be built locally:
 ```
-bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all>
+bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all> dev
 ```
 
 ## Test Cases
