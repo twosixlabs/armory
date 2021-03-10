@@ -48,13 +48,27 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf1/setup.py .
 RUN /opt/conda/bin/pip install .
+RUN /opt/conda/bin/pip install --no-cache-dir git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0
+
 WORKDIR /workspace
+
+########## TF 1 Dev #################
+
+FROM armory-tf1-base AS armory-tf1-dev
+ARG armory_version
+
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
+
+WORKDIR /workspace
+CMD tail -f /dev/null
 
 ########## TF 1 Release #################
 
 FROM armory-tf1-base AS armory-tf1
 ARG armory_version
-RUN /opt/conda/bin/pip install --no-cache-dir \ 
-    armory-testbed==${armory_version} \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
+
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+
+WORKDIR /workspace
 CMD tail -f /dev/null

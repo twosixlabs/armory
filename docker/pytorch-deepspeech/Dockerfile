@@ -59,13 +59,28 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.6 \
   --ignore-installed llvmlite==0.35.0 \
   soundfile \
   sox \
-  warpctc-pytorch==0.2.1+torch16.cuda100
+  warpctc-pytorch==0.2.1+torch16.cuda100 \
+  git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
+
+
+########## PyTorch 1 Deep Speech Dev #################
+
+FROM armory-pytorch-deepspeech-base AS armory-pytorch-deepspeech-dev
+ARG armory_version
+
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir 
+
+WORKDIR /workspace
+CMD tail -f /dev/null
 
 ########## PyTorch 1 Deep Speech Release #################
 
 FROM armory-pytorch-deepspeech-base as armory-pytorch-deepspeech
 ARG armory_version
+
 RUN /opt/conda/bin/pip install --no-cache-dir \ 
     armory-testbed==${armory_version} \
     git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
+
 CMD tail -f /dev/null

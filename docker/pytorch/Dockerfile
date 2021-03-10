@@ -44,15 +44,27 @@ RUN /opt/conda/bin/conda install pytorch==1.7 \
    torchvision==0.8.0 \ 
    cudatoolkit=11.0 -c pytorch -c conda-forge && \
    /opt/conda/bin/conda clean --all
-RUN /opt/conda/bin/pip install tensorflow-gpu==2.4.1 --no-cache-dir
+RUN /opt/conda/bin/pip install --no-cache-dir \
+   tensorflow-gpu==2.4.1 \
+   git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0
+
+########## PyTorch 1 Dev #################
+
+FROM armory-pytorch-base AS armory-pytorch-dev
+ARG armory_version
+
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir 
+
+WORKDIR /workspace
+CMD tail -f /dev/null
 
 ########## PyTorch 1 Release #################
 
 FROM armory-pytorch-base AS armory-pytorch
 ARG armory_version
 
-RUN /opt/conda/bin/pip install --no-cache-dir \ 
-    armory-testbed==${armory_version} \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
 
+WORKDIR /workspace
 CMD tail -f /dev/null

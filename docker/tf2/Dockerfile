@@ -39,6 +39,7 @@ WORKDIR /workspace
 
 ARG armory_version
 FROM armory AS armory-tf2-base
+
 RUN /opt/conda/bin/conda install protobuf==3.14.0 && \
     /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install tensorflow-gpu==2.4.1 --no-cache-dir
@@ -48,13 +49,27 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
 RUN /opt/conda/bin/pip install .
+RUN /opt/conda/bin/pip install --no-cache-dir git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0
+
 WORKDIR /workspace
+
+########## TF 2 Dev #################
+
+FROM armory-tf2-base AS armory-tf2-dev
+ARG armory_version
+
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
+
+WORKDIR /workspace
+CMD tail -f /dev/null
 
 ########## TF 2 Release #################
 
 FROM armory-tf2-base AS armory-tf2
 ARG armory_version
-RUN /opt/conda/bin/pip install --no-cache-dir \ 
-    armory-testbed==${armory_version} \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0 --no-cache-dir
+
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+
+WORKDIR /workspace
 CMD tail -f /dev/null
