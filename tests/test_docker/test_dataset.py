@@ -113,21 +113,15 @@ def test_filter_by_class():
 
 
 def test_filter_by_class_and_index():
-    ds = datasets.cifar10(
-        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
+    ds_filtered_by_class = datasets.cifar10(
+        "test",
+        shuffle_files=False,
+        preprocessing_fn=None,
+        framework="numpy",
+        class_ids=[3],
     )
-    ds_filtered_by_class, dataset_size = datasets.filter_by_class(ds, class_ids=[3])
-
-    xs = []
     num_examples = 10
-    i = 0
-    for x, y in ds_filtered_by_class:
-        xs.append(x)
-        i += 1
-        if i == num_examples:
-            break
-
-    xs = np.vstack(xs)
+    xs = np.vstack([next(ds_filtered_by_class)[0] for i in range(10)])
 
     for index in (
         [1, 3, 6, 5],
