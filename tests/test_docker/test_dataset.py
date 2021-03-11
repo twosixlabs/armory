@@ -100,7 +100,7 @@ def test_filter_by_index():
 
 def test_filter_by_class():
     with pytest.raises(ValueError):
-        ds = datasets.cifar10("test", shuffle_files=False, class_ids=[])
+        datasets.cifar10("test", shuffle_files=False, class_ids=[])
 
     ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[3])
     assert len(list(ds_filtered)) == 1000
