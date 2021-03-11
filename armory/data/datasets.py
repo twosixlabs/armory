@@ -275,13 +275,24 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
 
     returns the dataset and the indexed size
     """
+    logger.info(f"Filtering dataset to the following indices: {index}")
     dataset_size = int(dataset_size)
-    index = sorted([int(x) for x in set(index) if int(x) < dataset_size])
-    indexed_size = len(index)
-    if indexed_size == 0:
-        raise ValueError("index must have at least one value")
+    if len(index) == 0:
+        raise ValueError(
+            "The specified dataset 'index' param must have at least one value"
+        )
+    valid_indices = sorted([int(x) for x in set(index) if int(x) < dataset_size])
+    num_valid_indices = len(valid_indices)
+    if num_valid_indices == 0:
+        raise ValueError(
+            f"The specified dataset 'index' param values all exceed dataset size of {dataset_size}"
+        )
     elif index[0] < 0:
-        raise ValueError("index values must be nonnegative")
+        raise ValueError("The specified dataset 'index' values must be nonnegative")
+    elif num_valid_indices != len(index):
+        logger.warning(
+            f"All dataset 'index' values exceeding dataset size of {dataset_size} are being ignored"
+        )
 
     index_tensor = tf.constant(index, dtype=tf.int64)
 
@@ -290,7 +301,39 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
         out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
         return tf.equal(tf.size(out), 0)
 
-    return dataset.enumerate().filter(enum_index).map(lambda i, x: x), indexed_size
+    return dataset.enumerate().filter(enum_index).map(lambda i, x: x), num_valid_indices
+
+
+def filter_by_class(dataset: "tf.data.Dataset", class_ids: Union[list, int]):
+    """
+    class_ids must be an int or list of ints
+
+    returns the dataset filtered by class id, keeping elements with label in class_ids
+    """
+    logger.info(f"Filtering dataset to the following class IDs: {class_ids}")
+    if len(class_ids) == 0:
+        raise ValueError(
+            "The specified dataset 'class_ids' param must have at least one value"
+        )
+
+    def _filter_by_class(x, y, classes_to_keep=tf.constant(class_ids, dtype=tf.int64)):
+        isallowed_array = tf.equal(classes_to_keep, tf.cast(y, tf.int64))
+        isallowed = tf.reduce_sum(tf.cast(isallowed_array, tf.int64))
+        return tf.greater(isallowed, tf.constant(0, dtype=tf.int64))
+
+    filtered_ds = dataset.filter(_filter_by_class)
+
+    if tf.executing_eagerly():
+        filtered_ds_size = int(filtered_ds.reduce(0, lambda x, _: x + 1).numpy())
+    else:
+        filtered_ds_size = len(list(tfds.as_numpy(filtered_ds)))
+
+    if filtered_ds_size == 0:
+        raise ValueError(
+            "All elements of dataset were removed. Please ensure the specified class IDs appear in the dataset"
+        )
+
+    return filtered_ds, filtered_ds_size
 
 
 def parse_str_slice(index: str):
@@ -353,6 +396,7 @@ def _generator_from_tfds(
     framework: str = "numpy",
     lambda_map: Callable = None,
     context=None,
+    class_ids=None,
     index=None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
@@ -430,8 +474,19 @@ def _generator_from_tfds(
     if lambda_map is not None:
         ds = ds.map(lambda_map)
 
-    # Add index-based filtering
     dataset_size = ds_info.splits[split].num_examples
+
+    # Add class-based filtering
+    if isinstance(class_ids, list):
+        ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
+    elif isinstance(class_ids, int):
+        ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
+    elif class_ids is not None:
+        raise ValueError(
+            f"class_ids must be a list, int, or None, not {type(class_ids)}"
+        )
+
+    # Add index-based filtering
     if isinstance(index, list):
         ds, dataset_size = filter_by_index(ds, index, dataset_size)
     elif isinstance(index, str):
@@ -918,6 +973,10 @@ def librispeech_full(
     shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech_full dataset"
+        )
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -948,6 +1007,10 @@ def librispeech(
     shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech dataset"
+        )
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -1004,6 +1067,10 @@ def librispeech_dev_clean_asr(
     returns:
         Generator
     """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech_dev_clean_asr dataset"
+        )
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -1189,6 +1256,8 @@ def xview(
     where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
     See https://pytorch.org/docs/stable/torchvision/models.html#faster-r-cnn.
     """
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the xView dataset")
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(

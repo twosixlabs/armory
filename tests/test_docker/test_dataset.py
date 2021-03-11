@@ -98,6 +98,56 @@ def test_filter_by_index():
         assert (ys[index] == ys_index).all()
 
 
+def test_filter_by_class():
+    with pytest.raises(ValueError):
+        ds = datasets.cifar10("test", shuffle_files=False, class_ids=[])
+
+    ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[3])
+    assert len(list(ds_filtered)) == 1000
+    for x, y in ds_filtered:
+        assert int(y) == 3
+
+    ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[2, 7])
+    for x, y in ds_filtered:
+        assert int(y) in [2, 7]
+
+
+def test_filter_by_class_and_index():
+    ds = datasets.cifar10(
+        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
+    )
+    ds_filtered_by_class, dataset_size = datasets.filter_by_class(ds, class_ids=[3])
+
+    xs = []
+    num_examples = 10
+    i = 0
+    for x, y in ds_filtered_by_class:
+        xs.append(x)
+        i += 1
+        if i == num_examples:
+            break
+
+    xs = np.vstack(xs)
+
+    for index in (
+        [1, 3, 6, 5],
+        [0],
+        [6, 7, 8, 9, 9, 8, 7, 6],
+        list(range(num_examples)),
+    ):
+        ds_filtered_by_class_and_idx = datasets.cifar10(
+            "test",
+            shuffle_files=False,
+            preprocessing_fn=None,
+            class_ids=[3],
+            index=index,
+        )
+        index = sorted(set(index))
+        assert ds_filtered_by_class_and_idx.size == len(index)
+        xs_index = np.vstack([x for (x, y) in ds_filtered_by_class_and_idx])
+        assert (xs[index] == xs_index).all()
+
+
 def test_filter_by_str_slice():
     ds = datasets.mnist(
         "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
