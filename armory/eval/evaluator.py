@@ -12,10 +12,10 @@ import sys
 
 import docker
 import requests
-from docker.errors import ImageNotFound
 
 import armory
 from armory.configuration import load_global_config
+from armory.docker import images
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
@@ -73,23 +73,31 @@ class Evaluator(object):
         docker_client = docker.from_env()
         try:
             docker_client.images.get(kwargs["image_name"])
-        except ImageNotFound:
+        except docker.errors.ImageNotFound:
             logger.info(f"Image {image_name} was not found. Downloading...")
-            if "twosixarmory" in image_name and "-dev" in image_name:
-                raise ValueError(
-                    (
-                        "You are attempting to pull an armory developer "
-                        "docker image; however, these are not published. This "
-                        "is likely because you're running armory from its "
-                        "master branch. If you want a stable release with "
-                        "published docker images try pip installing 'armory-testbed' "
-                        "or checking out one of the stable branches on the git repository. "
-                        "If you'd like to continue working on the developer image please "
-                        "build it from source on your machine as described here: "
-                        "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers"
+            try:
+                docker_api.pull_verbose(docker_client, image_name)
+            except docker.errors.NotFound:
+                if image_name in images.ALL:
+                    name = image_name.lstrip(f"{images.USER}/").rstrip(
+                        f":{armory.__version__}"
                     )
-                )
-            docker_api.pull_verbose(docker_client, image_name)
+                    raise ValueError(
+                        "You are attempting to pull an unpublished armory docker image.\n"
+                        "This is likely because you're running armory from a dev branch. "
+                        "If you want a stable release with "
+                        "published docker images try pip installing 'armory-testbed' "
+                        "or using out one of the release branches on the git repository. "
+                        "If you'd like to continue working on the developer image please "
+                        "build it from source on your machine as described here:\n"
+                        "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
+                        f"bash docker/build.sh {name} dev\n"
+                        "OR\n"
+                        "bash docker/build.sh all dev"
+                    )
+                else:
+                    logger.error(f"Image {image_name} could not be downloaded")
+                    raise
         except requests.exceptions.ConnectionError:
             logger.error("Docker connection refused. Is Docker Daemon running?")
             raise
