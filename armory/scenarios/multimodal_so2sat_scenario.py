@@ -31,7 +31,11 @@ class So2SatClassification(Scenario):
             raise ValueError("`attack_modality` must be defined for So2Sat scenario")
         if kwargs["attack_modality"] is None or kwargs[
             "attack_modality"
-        ].lower() not in ("sar", "eo", "both",):
+        ].lower() not in (
+            "sar",
+            "eo",
+            "both",
+        ):
             raise ValueError(
                 f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
             )
@@ -106,7 +110,6 @@ class So2SatClassification(Scenario):
 
         if model_config["fit"]:
             try:
-                estimator.set_learning_phase(True)
                 logger.info(
                     f"Fitting model {model_config['module']}.{model_config['name']}..."
                 )
@@ -136,14 +139,6 @@ class So2SatClassification(Scenario):
             logger.info(f"Transforming estimator with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], estimator)
             estimator = defense()
-
-        try:
-            estimator.set_learning_phase(False)
-        except NotImplementedError:
-            logger.warning(
-                "Unable to set estimator's learning phase. As of ART 1.4.1, "
-                "this is not yet supported for object detectors."
-            )
 
         attack_type = attack_config.get("type")
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))

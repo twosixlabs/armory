@@ -54,7 +54,6 @@ class Ucf101(Scenario):
             classifier = load_defense_internal(config["defense"], classifier)
 
         if model_config["fit"]:
-            classifier.set_learning_phase(True)
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
@@ -86,8 +85,6 @@ class Ucf101(Scenario):
             logger.info(f"Transforming classifier with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], classifier)
             classifier = defense()
-
-        classifier.set_learning_phase(False)
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")

@@ -49,7 +49,6 @@ class ImageClassificationTask(Scenario):
 
         if model_config["fit"]:
             try:
-                estimator.set_learning_phase(True)
                 logger.info(
                     f"Fitting model {model_config['module']}.{model_config['name']}..."
                 )
@@ -79,14 +78,6 @@ class ImageClassificationTask(Scenario):
             logger.info(f"Transforming estimator with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], estimator)
             estimator = defense()
-
-        try:
-            estimator.set_learning_phase(False)
-        except NotImplementedError:
-            logger.warning(
-                "Unable to set estimator's learning phase. As of ART 1.4.1, "
-                "this is not yet supported for object detectors."
-            )
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")

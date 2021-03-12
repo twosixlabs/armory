@@ -45,11 +45,6 @@ class AutomaticSpeechRecognition(Scenario):
             estimator = load_defense_internal(config["defense"], estimator)
 
         if model_config["fit"]:
-            try:
-                estimator.set_learning_phase(True)
-            except NotImplementedError:
-                logger.exception("set_learning_phase error; training may not work.")
-
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
@@ -81,14 +76,6 @@ class AutomaticSpeechRecognition(Scenario):
             logger.info(f"Transforming estimator with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], estimator)
             estimator = defense()
-
-        try:
-            estimator.set_learning_phase(False)
-        except NotImplementedError:
-            logger.warning(
-                "Unable to set estimator's learning phase. As of ART 1.4.1, "
-                "this is not yet supported for speech recognition models."
-            )
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
@@ -199,7 +186,10 @@ class AutomaticSpeechRecognition(Scenario):
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             if targeted:
                 metrics_logger.update_task(
-                    y_target, y_pred_adv, adversarial=True, targeted=True,
+                    y_target,
+                    y_pred_adv,
+                    adversarial=True,
+                    targeted=True,
                 )
             metrics_logger.update_perturbation(x, x_adv)
             if sample_exporter is not None:
