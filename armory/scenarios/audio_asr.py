@@ -186,10 +186,7 @@ class AutomaticSpeechRecognition(Scenario):
             metrics_logger.update_task(y, y_pred_adv, adversarial=True)
             if targeted:
                 metrics_logger.update_task(
-                    y_target,
-                    y_pred_adv,
-                    adversarial=True,
-                    targeted=True,
+                    y_target, y_pred_adv, adversarial=True, targeted=True,
                 )
             metrics_logger.update_perturbation(x, x_adv)
             if sample_exporter is not None:

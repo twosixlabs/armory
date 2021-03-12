@@ -31,11 +31,7 @@ class So2SatClassification(Scenario):
             raise ValueError("`attack_modality` must be defined for So2Sat scenario")
         if kwargs["attack_modality"] is None or kwargs[
             "attack_modality"
-        ].lower() not in (
-            "sar",
-            "eo",
-            "both",
-        ):
+        ].lower() not in ("sar", "eo", "both",):
             raise ValueError(
                 f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
             )
