@@ -80,6 +80,7 @@ class GTSRB_CLBD(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate a config file for classification robustness against attack.
@@ -95,6 +96,10 @@ class GTSRB_CLBD(Scenario):
             raise ValueError("skip_benign shouldn't be set for poisoning scenario")
         if skip_attack:
             raise ValueError("skip_attack shouldn't be set for poisoning scenario")
+        if skip_misclassified:
+            raise ValueError(
+                "skip_misclassified shouldn't be set for poisoning scenario"
+            )
 
         model_config = config["model"]
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
