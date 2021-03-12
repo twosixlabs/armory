@@ -75,6 +75,9 @@ class Scenario(abc.ABC):
                 config["adhoc"]["train_epochs"] = 1
 
         try:
+            self._check_config_and_cli_args(
+                config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+            )
             results = self._evaluate(
                 config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
             )
@@ -178,6 +181,28 @@ class Scenario(abc.ABC):
         self.scenario_output_dir = os.path.join(
             runtime_paths.output_dir, config["eval_id"]
         )
+
+    def _check_config_and_cli_args(
+        self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+    ):
+        if skip_misclassified:
+            if skip_attack or skip_benign:
+                raise ValueError(
+                    "Cannot pass skip_misclassified if skip_benign or skip_attack is also passed"
+                )
+            elif config["metric"].get("record_metric_per_sample") is not True:
+                raise ValueError(
+                    "To enable skip_misclassified, 'record_metric_per_sample' must be set to True in"
+                    " the 'metric' config"
+                )
+            elif "categorical_accuracy" not in config["metric"].get("task"):
+                raise ValueError(
+                    "Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled"
+                )
+            elif config["dataset"].get("batch_size") != 1:
+                raise ValueError(
+                    "To enable skip_misclassified, 'batch_size' must be set to 1"
+                )
 
 
 def parse_config(config_path):
