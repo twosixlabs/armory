@@ -6,6 +6,11 @@ import logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
+
+# Semantic Version
+__version__ = "0.13.0"
+
+
 # Submodule imports
 try:
     import coloredlogs
@@ -24,12 +29,3 @@ except ImportError as e:
     print(f"ERROR: cannot import '{module}' module")
     print("    Please run: $ pip install -r requirements.txt")
     raise
-
-
-# Semantic Version
-__version__ = "0.13.0-dev"
-DEV = "-dev"
-
-
-def is_dev():
-    return __version__.endswith(DEV)

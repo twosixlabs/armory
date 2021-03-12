@@ -1,4 +1,5 @@
 from importlib import import_module
+import os
 
 import numpy as np
 import pytest
@@ -40,6 +41,9 @@ def test_tf1_mnist():
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_tf1_apricot():
+    if not os.path.isdir(os.path.join(DATASET_DIR, "apricot_dev", "1.0.1")):
+        pytest.skip("apricot dataset not locally available.")
+
     detector_module = import_module("armory.baseline_models.tf_graph.mscoco_frcnn")
     detector_fn = getattr(detector_module, "get_art_model")
     detector = detector_fn(model_kwargs={}, wrapper_kwargs={})

@@ -15,13 +15,10 @@ minor, then feel free to make them without discussion.
 
 ## Development Docker Containers
 Armory launches containers based on the `__version__` string found in `armory.__init__`.
-This means that containers launched from the master branch will have different docker 
-images from the released versions since they are suffixed with `-dev`.
 
-These dev versions will not be published to Dockerhub, and so the images 
-must be build locally:
+Only release versions will be published to Dockerhub, so development branch images much be built locally:
 ```
-bash docker/build-dev.sh <tf1|tf2|pytorch|all>
+bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all> dev
 ```
 
 ## Test Cases
