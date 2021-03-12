@@ -370,7 +370,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--skip-misclassified",
         action="store_true",
-        help="Skip attack attacking of inputs that are already misclassified",
+        help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
