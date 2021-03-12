@@ -190,11 +190,6 @@ class Scenario(abc.ABC):
                 raise ValueError(
                     "Cannot pass skip_misclassified if skip_benign or skip_attack is also passed"
                 )
-            elif config["metric"].get("record_metric_per_sample") is not True:
-                raise ValueError(
-                    "To enable skip_misclassified, 'record_metric_per_sample' must be set to True in"
-                    " the 'metric' config"
-                )
             elif "categorical_accuracy" not in config["metric"].get("task"):
                 raise ValueError(
                     "Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled"
