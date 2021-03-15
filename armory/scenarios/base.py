@@ -22,6 +22,7 @@ import time
 from typing import Optional
 import sys
 import pytest
+import importlib.resources
 
 import coloredlogs
 import pymongo
@@ -35,6 +36,7 @@ from armory.utils import config_loading
 from armory.utils import external_repo
 from armory.utils.configuration import load_config
 from armory.scenarios import END_SENTINEL
+from armory import validation
 
 
 logger = logging.getLogger(__name__)
@@ -239,9 +241,9 @@ def run_validation(
     _scenario_setup(config)
     model_config = config.get("model")
     model_config = json.dumps(model_config)
-    return_val = pytest.main(
-        ["-x", "armory/validation/test_config/", "--model-config", model_config]
-    )
+    test_path_context = importlib.resources.path(validation, "test_config")
+    with test_path_context as test_path:
+        return_val = pytest.main(["-x", str(test_path), "--model-config", model_config])
     assert return_val == pytest.ExitCode.OK, "Model configuration validation failed"
 
 
