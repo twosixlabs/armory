@@ -330,7 +330,7 @@ def filter_by_class(dataset: "tf.data.Dataset", class_ids: Union[list, int]):
 
     if filtered_ds_size == 0:
         raise ValueError(
-            "All elements of dataset were removed. Please ensure the specified class IDs appear in the dataset"
+            "All elements of dataset were removed. Please ensure the specified class_ids appear in the dataset"
         )
 
     return filtered_ds, filtered_ds_size
