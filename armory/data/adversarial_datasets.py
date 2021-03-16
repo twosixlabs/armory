@@ -5,6 +5,7 @@ Adversarial datasets
 from typing import Callable
 
 import tensorflow as tf
+import numpy as np
 
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
@@ -15,6 +16,7 @@ from armory.data.adversarial import (  # noqa: F401
     gtsrb_bh_poison_micronnet,
     apricot_dev,
     apricot_test,
+    dapricot_dev,
 )
 
 
@@ -32,6 +34,7 @@ librispeech_adversarial_context = datasets.AudioContext(
 resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
+dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -54,6 +57,15 @@ def apricot_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
         apricot_adversarial_context, batch
     )
+
+
+def dapricot_canonical_preprocessing(batch):
+    batch_quantized = datasets.canonical_variable_image_preprocess(
+        dapricot_adversarial_context, batch
+    )
+    # DAPRICOT raw images are rotated by 90 deg and color channels are BGR, so the
+    # following line corrects for this
+    return np.transpose(batch_quantized, (0, 1, 3, 2, 4))[:, :, :, ::-1, ::-1]
 
 
 def imagenet_adversarial(
@@ -416,4 +428,38 @@ def apricot_test_adversarial(
             ),
         ),
         context=apricot_adversarial_context,
+    )
+
+
+def dapricot_dev_adversarial(
+    split: str = "large+medium+small",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = dapricot_canonical_preprocessing,
+    label_preprocessing_fn: Callable = apricot_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise NotImplementedError("Currently working only with batch size = 1")
+
+    if split == "adversarial":
+        split = "small+medium+large"
+
+    return datasets._generator_from_tfds(
+        "dapricot_dev:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        context=dapricot_adversarial_context,
     )
