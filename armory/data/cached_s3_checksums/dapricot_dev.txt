@@ -1,0 +1,1 @@
+armory-public-data adversarial-datasets/cached/dapricot_dev_adversarial_1.0.0_cached.tar.gz 38718466 6ef07218ffe77e984ea54f03b492197904d7f8f92b0b1a9ab73e80cc9a61fcf1
