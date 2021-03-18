@@ -477,14 +477,20 @@ def _generator_from_tfds(
     dataset_size = ds_info.splits[split].num_examples
 
     # Add class-based filtering
-    if isinstance(class_ids, list):
-        ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
-    elif isinstance(class_ids, int):
-        ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
-    elif class_ids is not None:
-        raise ValueError(
-            f"class_ids must be a list, int, or None, not {type(class_ids)}"
-        )
+    if class_ids is not None:
+        if split == "train":
+            logger.warning(
+                "Filtering by class entails iterating over the whole dataset and thus "
+                "can be very slow if using the 'train' split"
+            )
+        if isinstance(class_ids, list):
+            ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
+        elif isinstance(class_ids, int):
+            ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
+        else:
+            raise ValueError(
+                f"class_ids must be a list, int, or None, not {type(class_ids)}"
+            )
 
     # Add index-based filtering
     if isinstance(index, list):
