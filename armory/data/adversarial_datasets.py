@@ -331,6 +331,8 @@ def apricot_dev_adversarial(
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the APRICOT dataset")
 
     # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
     # meaningful categories for other datasets. This method is applied as a lambda_map to convert
@@ -389,6 +391,8 @@ def apricot_test_adversarial(
 ) -> datasets.ArmoryDataGenerator:
     if batch_size != 1:
         raise NotImplementedError("Currently working only with batch size = 1")
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the APRICOT dataset")
 
     # The apricot dataset uses 12 as the label for adversarial patches, which may be used for
     # meaningful categories for other datasets. This method is applied as a lambda_map to convert
