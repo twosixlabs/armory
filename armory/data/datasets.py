@@ -289,7 +289,7 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
         )
     elif index[0] < 0:
         raise ValueError("The specified dataset 'index' values must be nonnegative")
-    elif num_valid_indices != len(index):
+    elif num_valid_indices != len(set(index)):
         logger.warning(
             f"All dataset 'index' values exceeding dataset size of {dataset_size} are being ignored"
         )
