@@ -59,6 +59,7 @@ class Scenario(abc.ABC):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ):
         """
         Evaluate a config for robustness against attack.
@@ -76,7 +77,12 @@ class Scenario(abc.ABC):
                 config["adhoc"]["train_epochs"] = 1
 
         try:
-            results = self._evaluate(config, num_eval_batches, skip_benign, skip_attack)
+            self._check_config_and_cli_args(
+                config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+            )
+            results = self._evaluate(
+                config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+            )
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 logger.exception(
@@ -108,6 +114,7 @@ class Scenario(abc.ABC):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -176,6 +183,23 @@ class Scenario(abc.ABC):
         self.scenario_output_dir = os.path.join(
             runtime_paths.output_dir, config["eval_id"]
         )
+
+    def _check_config_and_cli_args(
+        self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
+    ):
+        if skip_misclassified:
+            if skip_attack or skip_benign:
+                raise ValueError(
+                    "Cannot pass skip_misclassified if skip_benign or skip_attack is also passed"
+                )
+            elif "categorical_accuracy" not in config["metric"].get("task"):
+                raise ValueError(
+                    "Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled"
+                )
+            elif config["dataset"].get("batch_size") != 1:
+                raise ValueError(
+                    "To enable skip_misclassified, 'batch_size' must be set to 1"
+                )
 
 
 def parse_config(config_path):
@@ -255,6 +279,7 @@ def run_config(
     num_eval_batches=None,
     skip_benign=None,
     skip_attack=None,
+    skip_misclassified=None,
 ):
     config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
@@ -263,7 +288,14 @@ def run_config(
     _scenario_setup(config)
     scenario = config_loading.load(scenario_config)
     scenario.set_check_run(check)
-    scenario.evaluate(config, mongo_host, num_eval_batches, skip_benign, skip_attack)
+    scenario.evaluate(
+        config,
+        mongo_host,
+        num_eval_batches,
+        skip_benign,
+        skip_attack,
+        skip_misclassified,
+    )
 
 
 def init_interactive(config_json, from_file=True):
@@ -332,6 +364,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Validate model configuration against several checks",
     )
+    parser.add_argument(
+        "--skip-misclassified",
+        action="store_true",
+        help="Skip attack of inputs that are already misclassified",
+    )
     args = parser.parse_args()
     coloredlogs.install(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
@@ -362,5 +399,6 @@ if __name__ == "__main__":
             args.num_eval_batches,
             args.skip_benign,
             args.skip_attack,
+            args.skip_misclassified,
         )
     print(END_SENTINEL)  # indicates to host that the scenario finished w/out error

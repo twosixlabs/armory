@@ -30,10 +30,13 @@ class AutomaticSpeechRecognition(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
         """
+        if skip_misclassified:
+            raise ValueError("skip_misclassified shouldn't be set for ASR scenario")
         model_config = config["model"]
         estimator, fit_preprocessing_fn = load_model(model_config)
 
