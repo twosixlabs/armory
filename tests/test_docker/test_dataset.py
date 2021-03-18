@@ -103,9 +103,9 @@ def test_filter_by_class():
         datasets.cifar10("test", shuffle_files=False, class_ids=[])
 
     ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[3])
-    assert len(list(ds_filtered)) == 1000
-    for x, y in ds_filtered:
+    for i, (x, y) in enumerate(ds_filtered):
         assert int(y) == 3
+    assert i + 1 == 1000
 
     ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[2, 7])
     for x, y in ds_filtered:
