@@ -123,11 +123,10 @@ class ObjectDetectionTask(Scenario):
                     computational_resource_dict=metrics_logger.computational_resource_dict,
                 ):
                     assert x.shape[0] == 1
-                    breakpoint()
-                    y_object, y_patch_metadata = y
                     image_triplet = x[0]
+                    breakpoint()
                     y_pred = estimator.predict(image_triplet)
-                    metrics_logger.update_task([y_object], y_pred)
+                    metrics_logger.update_task(y, y_pred)
 
             metrics_logger.log_task()
 
