@@ -122,11 +122,13 @@ class ObjectDetectionTask(Scenario):
                     profiler=config["metric"].get("profiler_type"),
                     computational_resource_dict=metrics_logger.computational_resource_dict,
                 ):
-                    assert x.shape[0] == 1
-                    image_triplet = x[0]
-                    breakpoint()
-                    y_pred = estimator.predict(image_triplet)
-                    metrics_logger.update_task(y, y_pred)
+                    if x.shape[0] != 1:
+                        raise ValueError("D-APRICOT batch size must be set to 1")
+                    # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
+                    images = x[0]
+                    y_object, y_patch_metadata = y
+                    y_pred = estimator.predict(images)
+                    metrics_logger.update_task(y_object, y_pred)
 
             metrics_logger.log_task()
 
@@ -139,17 +141,9 @@ class ObjectDetectionTask(Scenario):
 
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
+
         if attack_type == "preloaded":
-            preloaded_split = attack_config.get("kwargs", {}).get(
-                "split", "adversarial"
-            )
-            test_data = load_adversarial_dataset(
-                attack_config,
-                epochs=1,
-                split=preloaded_split,
-                num_batches=num_eval_batches,
-                shuffle_files=False,
-            )
+            raise ValueError("D-APRICOT scenario should not have preloaded set to True in attack config")
         else:
             attack = load_attack(attack_config, estimator)
             if targeted != getattr(attack, "targeted", False):
@@ -180,24 +174,22 @@ class ObjectDetectionTask(Scenario):
                 profiler=config["metric"].get("profiler_type"),
                 computational_resource_dict=metrics_logger.computational_resource_dict,
             ):
-                if attack_type == "preloaded":
-                    if len(x) == 2:
-                        x, x_adv = x
-                    else:
-                        x_adv = x
-                    if targeted:
-                        y, y_target = y
-                else:
-                    generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
-                    # Temporary workaround for ART code requirement of ndarray mask
-                    if "mask" in generate_kwargs:
-                        generate_kwargs["mask"] = np.array(generate_kwargs["mask"])
-                    if attack_config.get("use_label"):
-                        generate_kwargs["y"] = y
-                    elif targeted:
-                        y_target = label_targeter.generate(y)
-                        generate_kwargs["y"] = y_target
-                    x_adv = attack.generate(x=x, **generate_kwargs)
+
+                if x.shape[0] != 1:
+                    raise ValueError("D-APRICOT batch size must be set to 1")
+                # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
+                images = x[0]
+                y_object, y_patch_metadata = y
+
+                generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
+                generate_kwargs["y_object"] = y_object
+                generate_kwargs["y_patch_metadata"] = y_patch_metadata
+                if targeted:
+                    #y_target = label_targeter.generate(y_object)
+                    #generate_kwargs["y_object"] = y_target
+                    raise NotImplementedError("targeted attack still WIP for D-APRICOT scenario")
+
+                x_adv = attack.generate(x=images, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False

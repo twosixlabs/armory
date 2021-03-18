@@ -5,12 +5,18 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "split": "large+medium+small"
+            "eps": 0.031,
+            "eps_step": 0.007,
+            "max_iter": 20,
+            "num_random_init": 1,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
         },
-        "module": "armory.data.adversarial_datasets",
-        "name": "dapricot_dev_adversarial",
-        "type": "preloaded",
-        "use_label": false
+        "module": "armory.art_experimental.attacks.dapricot_pgd_patch",
+        "name": "DApricotPGDPatch",
+        "use_label": true,
+        "generate_kwargs": {"threat_model": "digital"}
     },
     "dataset": {
         "batch_size": 1,
