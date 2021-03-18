@@ -134,7 +134,7 @@ def test_pytorch_gtsrb():
 
     train_dataset = datasets.german_traffic_sign(
         split="train",
-        epochs=1,
+        epochs=5,
         batch_size=128,
         dataset_dir=DATASET_DIR,
         preprocessing_fn=preprocessing_fn,

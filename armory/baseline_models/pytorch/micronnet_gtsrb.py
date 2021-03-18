@@ -1,13 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from PIL import ImageOps, Image
 from art.classifiers import PyTorchClassifier
 import numpy as np
 
 nclasses = 43  # GTSRB has 43 classes
 
-# TODO update
+
 def preprocessing_fn(batch):
     img_size = 48
     img_out = []
@@ -84,7 +83,7 @@ def Net():
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# NOTE: PyTorchClassifier expects numpy input, not torch.Tensor input
+
 def get_art_model_wrapper(model, model_kwargs, wrapper_kwargs, weights_path=None):
     model.to(DEVICE)
 
