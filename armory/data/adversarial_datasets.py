@@ -60,12 +60,12 @@ def apricot_canonical_preprocessing(batch):
 
 
 def dapricot_canonical_preprocessing(batch):
-    batch_quantized = datasets.canonical_variable_image_preprocess(
-        dapricot_adversarial_context, batch
-    )
     # DAPRICOT raw images are rotated by 90 deg and color channels are BGR, so the
     # following line corrects for this
-    return np.transpose(batch_quantized, (0, 1, 3, 2, 4))[:, :, :, ::-1, ::-1]
+    batch_rotated_rgb = np.transpose(batch, (0, 1, 3, 2, 4))[:, :, :, ::-1, ::-1]
+    return datasets.canonical_variable_image_preprocess(
+        dapricot_adversarial_context, batch_rotated_rgb
+    )
 
 
 def imagenet_adversarial(
@@ -438,7 +438,7 @@ def dapricot_dev_adversarial(
     dataset_dir: str = None,
     preprocessing_fn: Callable = dapricot_canonical_preprocessing,
     label_preprocessing_fn: Callable = apricot_label_preprocessing,
-    cache_dataset: bool = True,
+    cache_dataset: bool = False,
     framework: str = "numpy",
     shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
