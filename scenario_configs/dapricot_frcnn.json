@@ -13,8 +13,8 @@
             "targeted": false,
             "verbose": false
         },
-        "module": "armory.art_experimental.attacks.dapricot_pgd_patch",
-        "name": "DApricotPGDPatch",
+        "module": "armory.art_experimental.attacks.dapricot_patch",
+        "name": "DApricotPatch",
         "use_label": true,
         "generate_kwargs": {"threat_model": "digital"}
     },
