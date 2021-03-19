@@ -40,6 +40,9 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
             ),
         )
 
+    def compute_loss(self, x, y):
+        raise NotImplementedError
+
     def predict(self, x):
         list_of_zero_indexed_pred_dicts = super(
             TensorFlowFasterRCNNOneIndexed, self
