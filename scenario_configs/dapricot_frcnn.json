@@ -2,16 +2,22 @@
     "_description": "DAPRICOT object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
+        "generate_kwargs": {
+            "threat_model": "digital"
+        },
         "knowledge": "white",
         "kwargs": {
-	        "patch_shape": [500, 500, 3],
             "max_iter": 20,
+            "patch_shape": [
+                500,
+                500,
+                3
+            ],
             "targeted": false
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotPatch",
-        "use_label": true,
-        "generate_kwargs": {"threat_model": "digital"}
+        "use_label": true
     },
     "dataset": {
         "batch_size": 1,
