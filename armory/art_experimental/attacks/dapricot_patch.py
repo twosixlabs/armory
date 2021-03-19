@@ -1,10 +1,12 @@
-
 import numpy as np
 import cv2
 
 from art.attacks.evasion import RobustDPatch, ProjectedGradientDescent
-from armory.art_experimental.utils.dapricot_patch_utils import insert_patch, shape_coords, create_mask
-
+from armory.art_experimental.utils.dapricot_patch_utils import (
+    insert_patch,
+    shape_coords,
+    create_mask,
+)
 
 
 class DApricotPatch(RobustDPatch):
@@ -101,10 +103,16 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
                 # shape = y_patch_metadata[0]["shape"]
                 shape = "diamond"  # temporary, having trouble parsing "shape" key
-                img_mask = self._compute_image_mask(x[i], y_object[i]["area"], gs_coords, shape)
-                img_with_patch = super().generate(np.expand_dims(x[i], axis=0), mask=img_mask)
+                img_mask = self._compute_image_mask(
+                    x[i], y_object[i]["area"], gs_coords, shape
+                )
+                img_with_patch = super().generate(
+                    np.expand_dims(x[i], axis=0), mask=img_mask
+                )
 
-                img_with_patch_pil = Image.fromarray(np.uint8(img_with_patch[0] * 255.0))
+                img_with_patch_pil = Image.fromarray(
+                    np.uint8(img_with_patch[0] * 255.0)
+                )
                 img_with_patch_pil.save(f"image_with_patch_{i}.jpg")
 
         else:
@@ -112,11 +120,12 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
 
         return np.array(attacked_images)
 
-
     def _compute_image_mask(self, x, gs_area, gs_coords, shape):
         gs_size = int(np.sqrt(gs_area))
         patch_coords = shape_coords(gs_size, gs_size, shape)
         h, status = cv2.findHomography(patch_coords, gs_coords)
         inscribed_patch_mask = create_mask(shape, gs_size, gs_size)
-        img_mask = cv2.warpPerspective(inscribed_patch_mask, h, (x.shape[1], x.shape[0]), cv2.INTER_CUBIC)
+        img_mask = cv2.warpPerspective(
+            inscribed_patch_mask, h, (x.shape[1], x.shape[0]), cv2.INTER_CUBIC
+        )
         return img_mask

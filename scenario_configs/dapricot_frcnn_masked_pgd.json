@@ -7,9 +7,9 @@
         },
         "knowledge": "white",
         "kwargs": {
-	    "eps": 1.0,
-	    "eps_step": 0.1,
-	    "batch_size": 1,
+            "batch_size": 1,
+            "eps": 1.0,
+            "eps_step": 0.1,
             "max_iter": 10
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
