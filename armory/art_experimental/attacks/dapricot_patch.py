@@ -36,11 +36,11 @@ class DApricotPatch(ProjectedGradientDescent):
         breakpoint()
         if threat_model == "digital":
             for i in range(num_imgs):
-                gs_coords = y_patch_metadata[0]["gs_coords"]
+                gs_coords = y_patch_metadata[i]["gs_coords"]
                 # shape = y_patch_metadata[0]["shape"]
                 shape = "diamond"  # temporary, having trouble parsing "shape" key
-                cc_gt = y_patch_metadata[0]["cc_ground_truth"]
-                cc_scene = y_patch_metadata[0]["cc_scene"]
+                cc_gt = y_patch_metadata[i]["cc_ground_truth"]
+                cc_scene = y_patch_metadata[i]["cc_scene"]
 
                 # testing insertion of random patch
                 patch = np.random.randint(
