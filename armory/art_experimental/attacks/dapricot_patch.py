@@ -3,7 +3,7 @@ from armory.art_experimental.utils.dapricot_patch_utils import insert_patch
 import numpy as np
 
 
-class DApricotPatch(ProjectedGradientDescent):
+class DApricotPatch(RobustDPatch):
     """
     Apply Masked PGD to image and video inputs,
     where images are assumed to have shape (NHWC)
@@ -31,9 +31,8 @@ class DApricotPatch(ProjectedGradientDescent):
         num_imgs = x.shape[0]
         attacked_images = []
 
-        from PIL import Image  # temporary
+        from PIL import Image  # temporary so we can view outputs, see bottom of loop below
 
-        breakpoint()
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
@@ -42,10 +41,7 @@ class DApricotPatch(ProjectedGradientDescent):
                 cc_gt = y_patch_metadata[i]["cc_ground_truth"]
                 cc_scene = y_patch_metadata[i]["cc_scene"]
 
-                # testing insertion of random patch
-                patch = np.random.randint(
-                    low=0, high=255, size=(500, 500, 3)
-                )  # TODO: generate patch using ART attack
+                patch = super().generate(np.expand_dims(x[i], axis=0))
 
                 img_with_patch = insert_patch(
                     gs_coords,
@@ -62,6 +58,6 @@ class DApricotPatch(ProjectedGradientDescent):
                 img_with_patch_pil.save(f"image_with_patch_{i}.jpg")
 
         else:
-            pass  # threat_model is physical
+            pass  # TODO: threat_model is physical. Generate patch universal across the 3 cameras
 
         return np.array(attacked_images)
