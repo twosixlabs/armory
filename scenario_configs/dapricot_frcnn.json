@@ -4,14 +4,9 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "eps": 0.031,
-            "eps_step": 0.007,
+	        "patch_shape": [500, 500, 3],
             "max_iter": 20,
-            "num_random_init": 1,
-            "random_eps": false,
-            "targeted": false,
-            "verbose": false
+            "targeted": false
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotPatch",
