@@ -31,7 +31,9 @@ class DApricotPatch(RobustDPatch):
         num_imgs = x.shape[0]
         attacked_images = []
 
-        from PIL import Image  # temporary so we can view outputs, see bottom of loop below
+        from PIL import (
+            Image,
+        )  # temporary so we can view outputs, see bottom of loop below
 
         if threat_model == "digital":
             for i in range(num_imgs):

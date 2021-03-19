@@ -327,17 +327,21 @@ def dapricot_label_preprocessing(x, y):
     y_patch_metadata_list = []
     # each example contains images from N cameras, i.e. N=3
     num_imgs_per_ex = y_object["id"].flat_values.size
-    y_patch_metadata['gs_coords']  = y_patch_metadata['gs_coords'].flat_values.reshape((num_imgs_per_ex, -1, 2))
-    y_patch_metadata['shape']  = y_patch_metadata['shape'].reshape((num_imgs_per_ex,))
-    y_patch_metadata['cc_scene']  = y_patch_metadata['cc_scene'][0]
-    y_patch_metadata['cc_ground_truth']  = y_patch_metadata['cc_ground_truth'][0]
+    y_patch_metadata["gs_coords"] = y_patch_metadata["gs_coords"].flat_values.reshape(
+        (num_imgs_per_ex, -1, 2)
+    )
+    y_patch_metadata["shape"] = y_patch_metadata["shape"].reshape((num_imgs_per_ex,))
+    y_patch_metadata["cc_scene"] = y_patch_metadata["cc_scene"][0]
+    y_patch_metadata["cc_ground_truth"] = y_patch_metadata["cc_ground_truth"][0]
     for i in range(num_imgs_per_ex):
         y_object_img = {}
-        for k,v in y_object.items():
+        for k, v in y_object.items():
             y_object_img[k] = np.array(y_object[k].flat_values[i])
         y_object_list.append(y_object_img)
 
-        y_patch_metadata_img = {k: np.array(y_patch_metadata[k][i]) for k,v in y_patch_metadata.items()}
+        y_patch_metadata_img = {
+            k: np.array(y_patch_metadata[k][i]) for k, v in y_patch_metadata.items()
+        }
         y_patch_metadata_list.append(y_patch_metadata_img)
 
     return (y_object_list, y_patch_metadata_list)
