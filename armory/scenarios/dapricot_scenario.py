@@ -7,13 +7,11 @@ from typing import Optional
 from copy import deepcopy
 
 from tqdm import tqdm
-import numpy as np
 
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load_attack,
-    load_adversarial_dataset,
     load_defense_wrapper,
     load_defense_internal,
     load_label_targeter,
@@ -178,11 +176,9 @@ class ObjectDetectionTask(Scenario):
                 generate_kwargs["y_object"] = y_object
                 generate_kwargs["y_patch_metadata"] = y_patch_metadata
                 if targeted:
-                    # y_target = label_targeter.generate(y_object)
-                    # generate_kwargs["y_object"] = y_target
-                    raise NotImplementedError(
-                        "targeted attack still WIP for D-APRICOT scenario"
-                    )
+                    # TODO: test targeted attack
+                    y_target = label_targeter.generate(y_object)
+                    generate_kwargs["y_object"] = y_target
 
                 x_adv = attack.generate(x=images, **generate_kwargs)
 

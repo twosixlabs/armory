@@ -1,4 +1,4 @@
-from art.attacks.evasion import RobustDPatch, ProjectedGradientDescent
+from art.attacks.evasion import RobustDPatch
 from armory.art_experimental.utils.dapricot_patch_utils import insert_patch
 import numpy as np
 
