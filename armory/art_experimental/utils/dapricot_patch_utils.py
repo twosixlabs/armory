@@ -301,7 +301,6 @@ def insert_transformed_patch(patch, image, gs_shape, patch_coords=[], image_coor
     """
 
     # if no patch coords are given, just use whole image
-    breakpoint()
     if patch_coords == []:
         patch_coords = shape_coords(patch.shape[0], patch.shape[1], gs_shape)
 
@@ -401,6 +400,6 @@ def insert_patch(
     )
 
     if apply_realistic_effects:
-        return image_physical[:, :, ::-1]
+        return image_physical
     else:
-        return image_digital[:, :, ::-1]
+        return image_digital
