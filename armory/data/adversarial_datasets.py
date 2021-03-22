@@ -466,7 +466,7 @@ def dapricot_dev_adversarial(
     dataset_dir: str = None,
     preprocessing_fn: Callable = dapricot_canonical_preprocessing,
     label_preprocessing_fn: Callable = dapricot_label_preprocessing,
-    cache_dataset: bool = False,
+    cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
 ) -> datasets.ArmoryDataGenerator:
