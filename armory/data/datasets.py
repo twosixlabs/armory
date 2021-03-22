@@ -344,20 +344,30 @@ def _generator_from_tfds(
                 f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
                 f" tuple, not {supervised_xy_keys}"
             )
-        if not (isinstance(x_key, str) or isinstance(x_key, tuple)) or not isinstance(
-            y_key, str
-        ):
-            raise ValueError(
-                f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
-                f" not {type(x_key), type(y_key)}"
-            )
+        for key in [x_key, y_key]:
+            if not (isinstance(key, str) or isinstance(key, tuple)):
+                raise ValueError(
+                    f"supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
+                    f" not {type(x_key), type(y_key)}"
+                )
         if isinstance(x_key, tuple):
+            if isinstance(y_key, tuple):
+                raise ValueError(
+                    "Only one of (x_key, y_key) can be a tuple while the other must be a string."
+                )
             for k in x_key:
                 if not (isinstance(k, str)):
                     raise ValueError(
-                        "supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                        "supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
                     )
             ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
+        elif isinstance(y_key, tuple):
+            for k in y_key:
+                if not (isinstance(k, str)):
+                    raise ValueError(
+                        "supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
+                    )
+            ds = ds.map(lambda x: (x[x_key], tuple(x[k] for k in y_key)))
         else:
             ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
