@@ -108,11 +108,10 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
                 )
                 img_with_patch = super().generate(
                     np.expand_dims(x[i], axis=0), mask=img_mask
-                )
+                )[0]
+                attacked_images.append(img_with_patch)
 
-                img_with_patch_pil = Image.fromarray(
-                    np.uint8(img_with_patch[0] * 255.0)
-                )
+                img_with_patch_pil = Image.fromarray(np.uint8(img_with_patch * 255.0))
                 img_with_patch_pil.save(f"image_with_patch_{i}.jpg")
 
         else:
