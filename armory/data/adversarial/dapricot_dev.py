@@ -24,9 +24,10 @@ _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datas
 class DapricotDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for dapricot_dev dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
+        "1.0.1": "Updated to access full dev dataset",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -51,7 +52,10 @@ class DapricotDev(tfds.core.GeneratorBasedBuilder):
             "categories": tfds.features.Sequence(
                 tfds.features.Sequence(
                     tfds.features.FeaturesDict(
-                        {"id": tf.int64, "name": tfds.features.Text()}
+                        {
+                            "id": tf.int64,  # {'octagon':12, 'diamond':26, 'rect':29}
+                            "name": tfds.features.Text(),
+                        }
                     )
                 ),
                 length=3,
@@ -112,7 +116,7 @@ class DapricotDev(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, path, size):
         """yield examples"""
 
-        scenes = ["01", "11"]  # TODO: update
+        scenes = ["01", "06", "14"]
 
         size_dist = {"small": "dist15", "medium": "dist10", "large": "dist5"}
 
@@ -126,16 +130,10 @@ class DapricotDev(tfds.core.GeneratorBasedBuilder):
                 path, "annotations/labels_scene_{}_camera_1.json".format(scene)
             )
             annotation_path_camera_2 = os.path.join(
-                path,
-                "annotations/labels_scene_{}_camera_1.json".format(
-                    scene
-                ),  # TODO: update camera #
+                path, "annotations/labels_scene_{}_camera_2.json".format(scene)
             )
             annotation_path_camera_3 = os.path.join(
-                path,
-                "annotations/labels_scene_{}_camera_1.json".format(
-                    scene
-                ),  # TODO: update camera #
+                path, "annotations/labels_scene_{}_camera_3.json".format(scene)
             )
 
             dapricot_camera_1 = DapricotAnnotation(annotation_path_camera_1)
@@ -245,9 +243,9 @@ class DapricotDev(tfds.core.GeneratorBasedBuilder):
                     "image": [
                         os.path.join(
                             path,
-                            "scene_{}/camera_{}".format(scene, 1),
+                            "scene_{}/camera_{}".format(scene, camera + 1),
                             im_cam["file_name"],
-                        )  # TODO: update camera #
+                        )
                         for camera, im_cam in enumerate(
                             [image_camera_1, image_camera_2, image_camera_3]
                         )
@@ -285,8 +283,8 @@ class DapricotDev(tfds.core.GeneratorBasedBuilder):
                                 "gs_coords": build_coords(*anno["segmentation"]),
                                 "cc_ground_truth": get_cc(),
                                 "cc_scene": get_cc(
-                                    ground_truth=False, scene=scene, camera=1
-                                ),  # TODO: update camera #
+                                    ground_truth=False, scene=scene, camera=camera + 1
+                                ),
                                 "shape": get_shape(
                                     im_info["file_name"].split("_")[4].lower()
                                 ),  # file_name has format "scene_#_camera_#_<SHAPE>_<HEIGHT>_<DIST>.JPG"
