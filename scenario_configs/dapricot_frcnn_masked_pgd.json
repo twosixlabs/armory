@@ -10,7 +10,7 @@
             "batch_size": 1,
             "eps": 1.0,
             "eps_step": 0.1,
-            "max_iter": 10
+            "max_iter": 1
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotMaskedPGD",
@@ -26,10 +26,10 @@
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_AP_per_class"
+            "dapricot_patch_targeted_AP_per_class"
         ]
     },
     "model": {

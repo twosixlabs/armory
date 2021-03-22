@@ -117,7 +117,10 @@ class ObjectDetectionTask(Scenario):
                     images = x[0]
                     y_object, y_patch_metadata = y
                     y_pred = estimator.predict(images)
-                    metrics_logger.update_task(y_object, y_pred)
+                    for img_idx in range(len(y_object)):
+                        y_i_object = y_object[img_idx]
+                        y_i_pred = y_pred[img_idx]
+                        metrics_logger.update_task([y_i_object], [y_i_pred])
 
             metrics_logger.log_task()
 
@@ -185,10 +188,10 @@ class ObjectDetectionTask(Scenario):
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
             y_pred_adv = estimator.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+            metrics_logger.update_task(y_object, y_pred_adv, adversarial=True)
             if targeted:
                 metrics_logger.update_task(
-                    y_target, y_pred_adv, adversarial=True, targeted=True
+                    y_object, y_pred_adv, adversarial=True, targeted=True
                 )
             metrics_logger.update_perturbation(x, x_adv)
             if sample_exporter is not None:

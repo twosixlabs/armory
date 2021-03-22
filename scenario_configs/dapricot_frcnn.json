@@ -7,13 +7,12 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "max_iter": 20,
+            "max_iter": 1,
             "patch_shape": [
                 500,
                 500,
                 3
-            ],
-            "targeted": false
+            ]
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotPatch",
@@ -29,10 +28,10 @@
     "defense": null,
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_AP_per_class"
+            "dapricot_patch_targeted_AP_per_class"
         ]
     },
     "model": {
