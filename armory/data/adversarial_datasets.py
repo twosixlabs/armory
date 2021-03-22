@@ -62,7 +62,7 @@ def apricot_canonical_preprocessing(batch):
 def dapricot_canonical_preprocessing(batch):
     # DAPRICOT raw images are rotated by 90 deg and color channels are BGR, so the
     # following line corrects for this
-    batch_rotated_rgb = np.transpose(batch, (0, 1, 3, 2, 4))[:, :, :, ::-1, ::-1]
+    batch_rotated_rgb = np.transpose(batch, (0, 1, 3, 2, 4))[:, :, :, ::-1, :]
     return datasets.canonical_variable_image_preprocess(
         dapricot_adversarial_context, batch_rotated_rgb
     )
