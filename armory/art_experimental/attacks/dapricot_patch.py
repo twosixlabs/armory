@@ -34,18 +34,12 @@ class DApricotPatch(RobustDPatch):
         num_imgs = x.shape[0]
         attacked_images = []
 
-        from PIL import (
-            Image,
-        )  # temporary so we can view outputs, see bottom of loop below
-
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                # shape = y_patch_metadata[0]["shape"]
-                shape = "diamond"  # temporary, having trouble parsing "shape" key
+                shape = y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
                 cc_gt = y_patch_metadata[i]["cc_ground_truth"]
                 cc_scene = y_patch_metadata[i]["cc_scene"]
-                breakpoint()
 
                 patch = super().generate(np.expand_dims(x[i], axis=0))
 
@@ -59,10 +53,6 @@ class DApricotPatch(RobustDPatch):
                     apply_realistic_effects=True,
                 )
                 attacked_images.append(img_with_patch)
-
-                img_with_patch_pil = Image.fromarray(np.uint8(img_with_patch * 255.0))
-                img_with_patch_pil.save(f"image_with_patch_{i}.jpg")
-
         else:
             pass  # TODO: threat_model is physical. Generate patch universal across the 3 cameras
 
@@ -94,15 +84,10 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
         num_imgs = x.shape[0]
         attacked_images = []
 
-        from PIL import (
-            Image,
-        )  # temporary so we can view outputs, see bottom of loop below
-
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                # shape = y_patch_metadata[0]["shape"]
-                shape = "diamond"  # temporary, having trouble parsing "shape" key
+                shape = y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
                 img_mask = self._compute_image_mask(
                     x[i], y_object[i]["area"], gs_coords, shape
                 )
@@ -110,10 +95,6 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
                     np.expand_dims(x[i], axis=0), mask=img_mask
                 )[0]
                 attacked_images.append(img_with_patch)
-
-                img_with_patch_pil = Image.fromarray(np.uint8(img_with_patch * 255.0))
-                img_with_patch_pil.save(f"image_with_patch_{i}.jpg")
-
         else:
             pass  # TODO: threat_model is physical. Generate patch universal across the 3 cameras
 
