@@ -477,7 +477,7 @@ def dapricot_dev_adversarial(
         split = "small+medium+large"
 
     return datasets._generator_from_tfds(
-        "dapricot_dev:1.0.0",
+        "dapricot_dev:1.0.1",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
