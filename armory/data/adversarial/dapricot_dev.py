@@ -23,9 +23,10 @@ _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datas
 class DapricotDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for dapricot_dev dataset."""
 
-    VERSION = tfds.core.Version('1.0.0')
+    VERSION = tfds.core.Version('1.0.1')
     RELEASE_NOTES = {
         '1.0.0': 'Initial release.',
+        '1.0.1': 'Updated to access full dev dataset',
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
