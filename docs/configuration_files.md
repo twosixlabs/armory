@@ -148,3 +148,32 @@ field of the configuration file under the subfield "defense_model," with the num
 epochs of training under the subfield "defense_model_train_epochs." A concrete example
 of a configuration with this field is available in the armory-example
 [repo](https://github.com/twosixlabs/armory-example/tree/master/example_scenario_configs).
+
+### sysconfig and command line arguments
+
+Parameters specified in the "sysconfig" block will be treated as if they were passed
+as arguments to `armory` for example a configuration block like
+```json
+{
+  "sysconfig": {
+    "num_eval_batches": 5,
+    "skip_benign": true
+  }
+}
+```
+will cause armory to act as if you had run it as
+```
+armory run scenario.json --num-eval-batches 5 --skip-benign
+```
+However, arguments actually specified on the command line will take precedence,
+so if you execute, using the same configuration file
+```
+armory run scenario.json --num-eval-batches 100
+```
+Then the command line will override the sysconfig and 100 batches (not 5) will
+be run. In this example, `--skip-benign` will also be true because it is
+in the sysconfig block.
+
+No matter whether these attributes are specified on the command line, in sysconfig,
+or both, the output file will record the attributes as executed, so you have a
+record of how the evaluation ultimately ran.
