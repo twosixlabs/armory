@@ -336,10 +336,10 @@ def dapricot_label_preprocessing(x, y):
     y_object_list = []
     y_patch_metadata_list = []
     # each example contains images from N cameras, i.e. N=3
-    num_imgs_per_ex = y_object["id"].flat_values.size
-    y_patch_metadata["gs_coords"] = y_patch_metadata["gs_coords"].flat_values.reshape(
-        (num_imgs_per_ex, -1, 2)
-    )
+    num_imgs_per_ex = np.array(y_object["id"].flat_values).size
+    y_patch_metadata["gs_coords"] = np.array(
+        y_patch_metadata["gs_coords"].flat_values
+    ).reshape((num_imgs_per_ex, -1, 2))
     y_patch_metadata["shape"] = y_patch_metadata["shape"].reshape((num_imgs_per_ex,))
     y_patch_metadata["cc_scene"] = y_patch_metadata["cc_scene"][0]
     y_patch_metadata["cc_ground_truth"] = y_patch_metadata["cc_ground_truth"][0]
