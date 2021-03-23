@@ -30,10 +30,15 @@ class ObjectDetectionTask(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
         """
+        if skip_misclassified:
+            raise ValueError(
+                "skip_misclassified shouldn't be set for D-APRICOT scenario"
+            )
         if skip_attack:
             raise ValueError("--skip-attack should not be set for D-APRICOT scenario.")
         if skip_benign:
