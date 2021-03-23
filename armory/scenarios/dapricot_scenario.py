@@ -41,13 +41,6 @@ class ObjectDetectionTask(Scenario):
                 "--skip-benign is being ignored since the D-APRICOT"
                 " scenario doesn't include benign evaluation."
             )
-
-        model_config = config["model"]
-        estimator, _ = load_model(model_config)
-
-        defense_config = config.get("defense") or {}
-        defense_type = defense_config.get("type")
-
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
         if attack_type == "preloaded":
@@ -64,6 +57,12 @@ class ObjectDetectionTask(Scenario):
                 "The D-APRICOT scenario threat model is targeted, and"
                 " thus 'use_label' should be set to false."
             )
+
+        model_config = config["model"]
+        estimator, _ = load_model(model_config)
+
+        defense_config = config.get("defense") or {}
+        defense_type = defense_config.get("type")
 
         label_targeter = load_label_targeter(attack_config["targeted_labels"])
 
