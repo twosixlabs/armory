@@ -3,7 +3,7 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "threat_model": "digital"
+            "threat_model": "physical"
         },
         "knowledge": "white",
         "kwargs": {

@@ -37,7 +37,7 @@ class DApricotPatch(RobustDPatch):
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                shape = y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
+                shape = y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
                 cc_gt = y_patch_metadata[i]["cc_ground_truth"]
                 cc_scene = y_patch_metadata[i]["cc_scene"]
 
@@ -54,8 +54,24 @@ class DApricotPatch(RobustDPatch):
                 )
                 attacked_images.append(img_with_patch)
         else:
-            pass  # TODO: threat_model is physical. Generate patch universal across the 3 cameras
+            # generate patch using center image
+            patch = super().generate(np.expand_dims(x[1], axis=0))
+            for i in range(num_imgs):
+                gs_coords = y_patch_metadata[i]["gs_coords"]
+                shape = y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
+                cc_gt = y_patch_metadata[i]["cc_ground_truth"]
+                cc_scene = y_patch_metadata[i]["cc_scene"]
 
+                img_with_patch = insert_patch(
+                    gs_coords,
+                    x[i],
+                    patch,
+                    shape,
+                    cc_gt,
+                    cc_scene,
+                    apply_realistic_effects=True,
+                )
+                attacked_images.append(img_with_patch)
         return np.array(attacked_images)
 
 
@@ -87,7 +103,7 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                shape = y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
+                shape = y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
                 img_mask = self._compute_image_mask(
                     x[i], y_object[i]["area"], gs_coords, shape
                 )
@@ -96,7 +112,9 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
                 )[0]
                 attacked_images.append(img_with_patch)
         else:
-            pass  # TODO: threat_model is physical. Generate patch universal across the 3 cameras
+            raise NotImplementedError(
+                "physical threat model not available for masked PGD attack"
+            )
 
         return np.array(attacked_images)
 
