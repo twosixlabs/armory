@@ -39,4 +39,4 @@ def test_config_args_merge():
     assert args.num_eval_batches == 5
     assert args.skip_misclassified == True
     assert args.check == True
-    assert "skip_attack" not in args
+    assert args.skip_attack == False

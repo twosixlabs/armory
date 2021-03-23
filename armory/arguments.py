@@ -17,14 +17,6 @@ def merge_config_and_args(config, args):
 
     sysconfig = config["sysconfig"]
 
-    # TODO: this list will get out of sync as options are added; find a way
-    # to read them out of the argparse parser
-    names = (
-        "interactive jupyter port no_docker root output_dir "
-        "output_filename check num_eval_batches skip_benign skip_attack "
-        "skip_misclassified validate_config"
-    ).split()
-
     # the truth table is complicated because they are actually tri-states:
     # undef, defined but falsy, defined and truthy
     #
