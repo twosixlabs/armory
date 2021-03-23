@@ -6,7 +6,7 @@ FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
 RUN apt-get -y -qq update && \
-    apt-get install -y wget vim build-essential git curl libgl1-mesa-glx libglib2.0-0
+    DEBIAN_FRONTEND=noninteractive apt-get install -y wget vim build-essential git curl libgl1-mesa-glx libglib2.0-0
 
 # Install Conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh -O ~/miniconda.sh && \
