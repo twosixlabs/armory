@@ -103,7 +103,6 @@ def create_mask(mask_type, h, w):
     """
 
     mask = np.zeros((h, w, 3))
-    smallest_dim = min(h, w)
     coords = shape_coords(h, w, mask_type)
 
     for i in range(h):
