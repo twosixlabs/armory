@@ -1,0 +1,68 @@
+{
+    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "_description": "Placeholders for config validation only",
+        "knowledge": "black",
+        "kwargs": {},
+        "module": "na",
+        "name": "na"
+    },
+    "dataset": {
+        "batch_size": 512,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "german_traffic_sign"
+    },
+    "defense": null,
+    "metric": null,
+    "model": {
+        "args": [
+            {},
+            {}
+        ],
+        "fit": true,
+        "fit_kwargs": {
+            "nb_epochs": 20
+        },
+        "inner_model_kwargs": {
+            "module": "armory.baseline_models.pytorch.micronnet_gtsrb",
+            "name": "get_art_model"
+        },
+        "model_kwargs": {},
+        "module": "armory.art_experimental.defences.poison_art_training_no_defense",
+        "name": "get_defended_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "poison_attack": {
+        "knowledge": "black",
+        "kwargs": {
+            "endtoend": true,
+            "feature_layer": 19,
+            "max_iter": 4000
+        },
+        "module": "art.attacks.poisoning",
+        "n_poison": 50,
+        "name": "BullseyePolytopeAttackPyTorch",
+        "poison_class": 2,
+        "poison_dataset": true,
+        "target_class": 1
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.poisoning_clean_label_triggerless",
+        "name": "GTSRB_CLT",
+        "num_runs": 2,
+        "seed": 42
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.13.0",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "set_pythonhashseed": true,
+        "use_gpu": false
+    }
+}
