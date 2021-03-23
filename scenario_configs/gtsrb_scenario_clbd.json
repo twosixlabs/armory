@@ -58,7 +58,7 @@
         "name": "GTSRB_CLBD"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1-poison:0.13.0-dev",
+        "docker_image": "twosixarmory/tf1:0.13.0",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

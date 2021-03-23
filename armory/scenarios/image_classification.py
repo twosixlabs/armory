@@ -32,11 +32,11 @@ class ImageClassificationTask(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
         """
-
         model_config = config["model"]
         estimator, _ = load_model(model_config)
 
@@ -49,7 +49,6 @@ class ImageClassificationTask(Scenario):
 
         if model_config["fit"]:
             try:
-                estimator.set_learning_phase(True)
                 logger.info(
                     f"Fitting model {model_config['module']}.{model_config['name']}..."
                 )
@@ -79,14 +78,6 @@ class ImageClassificationTask(Scenario):
             logger.info(f"Transforming estimator with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], estimator)
             estimator = defense()
-
-        try:
-            estimator.set_learning_phase(False)
-        except NotImplementedError:
-            logger.warning(
-                "Unable to set estimator's learning phase. As of ART 1.4.1, "
-                "this is not yet supported for object detectors."
-            )
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
@@ -133,6 +124,12 @@ class ImageClassificationTask(Scenario):
         # Evaluate the ART estimator on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
+        if skip_misclassified:
+            acc_task_idx = [i.name for i in metrics_logger.tasks].index(
+                "categorical_accuracy"
+            )
+            benign_acc = metrics_logger.tasks[acc_task_idx].values()
+
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -170,7 +167,7 @@ class ImageClassificationTask(Scenario):
         else:
             sample_exporter = None
 
-        for x, y in tqdm(test_data, desc="Attack"):
+        for batch_idx, (x, y) in enumerate(tqdm(test_data, desc="Attack")):
             with metrics.resource_context(
                 name="Attack",
                 profiler=config["metric"].get("profiler_type"),
@@ -193,7 +190,11 @@ class ImageClassificationTask(Scenario):
                     elif targeted:
                         y_target = label_targeter.generate(y)
                         generate_kwargs["y"] = y_target
-                    x_adv = attack.generate(x=x, **generate_kwargs)
+
+                    if skip_misclassified and benign_acc[batch_idx] == 0:
+                        x_adv = x
+                    else:
+                        x_adv = attack.generate(x=x, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
