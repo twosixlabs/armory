@@ -130,13 +130,17 @@ def _port(parser):
 
 def _no_gpu(parser):
     parser.add_argument(
-        "--no-gpu", action="store_true", help="Whether to not use GPU(s)",
+        "--no-gpu",
+        action="store_true",
+        help="Whether to not use GPU(s)",
     )
 
 
 def _use_gpu(parser):
     parser.add_argument(
-        "--use-gpu", action="store_true", help="Whether to use GPU(s)",
+        "--use-gpu",
+        action="store_true",
+        help="Whether to use GPU(s)",
     )
 
 
@@ -187,7 +191,9 @@ def _no_docker(parser):
 
 def _root(parser):
     parser.add_argument(
-        "--root", action="store_true", help="Whether to run docker as root",
+        "--root",
+        action="store_true",
+        help="Whether to run docker as root",
     )
 
 
@@ -221,6 +227,62 @@ def _set_outputs(config, output_dir, output_filename):
         config["sysconfig"]["output_filename"] = output_filename
 
 
+def _merge_config_and_args(config, args):
+    """
+    Override members of config if specified as args. The config dict is mutated.
+    Members in config are percolated into args to act as if they were specified.
+    Members of args that are not in config are put there so that the output
+    accurately records what was run. The args namespace is mutated.
+    The precedence becomes defaults < config block < command args.
+    """
+
+    # TODO: this pierces the argparse.__dict__ member in order to fake a parsed
+    # command argument it can likely be made cleaner with more complexity
+
+    sysconfig = config["sysconfig"]
+    logger.debug("_merge_config_and_args sysconfig %s", sysconfig)
+    logger.debug("_merge_config_and_args args %s", args)
+
+    # TODO: this list will get out of sync as options are added; find a way
+    # to read them out of the argparse parser
+    names = (
+        "interactive jupyter port no_docker root output_dir "
+        "output_filename check num_eval_batches skip_benign skip_attack "
+        "skip_misclassified validate_config"
+    ).split()
+
+    # the truth table is complicated because they are actually tri-states:
+    # undef, defined but falsy, defined and truthy
+    #
+    # config    args    action
+    # u         u       nothing
+    # f         u       nothing
+    # d         u       args <- config
+    # u         f       nothing
+    # f         f       nothing
+    # d         f       args <- config
+    # u         d       config <- args
+    # f         d       config <- args
+    # d         d       config <- args
+
+    command = vars(args)  # a dict view of args namespace
+    for name in names:
+        if name in sysconfig:
+            logger.debug("sysconfig specifies %s %s", name, sysconfig[name])
+            if name not in command:
+                logger.debug("sysconfig faking arg %s %s", name, sysconfig[name])
+                args.__dict__[name] = sysconfig[name]
+        if name in command and command[name]:
+            logger.debug("command line overrides %s %s", name, command[name])
+            sysconfig[name] = command[name]
+        else:
+            # it is completely legal for name to be in neither
+            pass
+
+    logger.debug("sysconfig is now %s", sysconfig)
+    logger.debug("args is now %s", args)
+
+
 # Commands
 
 
@@ -242,7 +304,9 @@ def run(command_args, prog, description):
     _no_docker(parser)
     _root(parser)
     parser.add_argument(
-        "--output-dir", type=str, help="Override of default output directory prefix",
+        "--output-dir",
+        type=str,
+        help="Override of default output directory prefix",
     )
     parser.add_argument(
         "--output-filename",
@@ -309,6 +373,7 @@ def run(command_args, prog, description):
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
+    _merge_config_and_args(config, args)
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(
@@ -612,6 +677,7 @@ def launch(command_args, prog, description):
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
+    _merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(
@@ -655,6 +721,7 @@ def exec(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     # Config
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
+    _merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(command=command)
@@ -708,7 +775,11 @@ def main():
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
     parser.add_argument(
-        "command", metavar="<command>", type=str, help="armory command", action=Command,
+        "command",
+        metavar="<command>",
+        type=str,
+        help="armory command",
+        action=Command,
     )
     args = parser.parse_args(sys.argv[1:2])
 
