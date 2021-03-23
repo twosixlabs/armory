@@ -1,9 +1,5 @@
 import argparse
-import sys
 
-import pytest
-
-from armory import __version__
 from armory import arguments
 
 
@@ -30,13 +26,13 @@ def test_config_args_merge():
     assert sysconfig["output_dir"] == "output-dir"
     assert sysconfig["output_filename"] == "file.out"
     assert sysconfig["num_eval_batches"] == 5
-    assert sysconfig["skip_misclassified"] == True
-    assert sysconfig["check"] == True
+    assert sysconfig["skip_misclassified"]
+    assert sysconfig["check"]
     assert "skip_attack" not in sysconfig
 
     assert args.output_dir == "output-dir"
     assert args.output_filename == "file.out"
     assert args.num_eval_batches == 5
-    assert args.skip_misclassified == True
-    assert args.check == True
-    assert args.skip_attack == False
+    assert args.skip_misclassified
+    assert args.check
+    assert args.skip_attack is False
