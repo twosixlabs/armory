@@ -56,8 +56,9 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
     batch_size = dataset_config["batch_size"]
-    if "index" not in kwargs and "index" in dataset_config:
-        kwargs["index"] = dataset_config["index"]
+    for ds_kwarg in ["index", "class_ids"]:
+        if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
+            kwargs[ds_kwarg] = dataset_config[ds_kwarg]
     framework = dataset_config.get("framework", "numpy")
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
