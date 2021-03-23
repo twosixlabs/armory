@@ -7,7 +7,6 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "max_iter": 1,
             "patch_shape": [
                 500,
                 500,
