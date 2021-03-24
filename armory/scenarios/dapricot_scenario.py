@@ -63,6 +63,9 @@ class ObjectDetectionTask(Scenario):
                 " thus 'use_label' should be set to false."
             )
 
+        if config["data"].get("batch_size") != 1:
+            raise ValueError("batch_size of 1 is required for D-APRICOT scenario")
+
         model_config = config["model"]
         estimator, _ = load_model(model_config)
 
