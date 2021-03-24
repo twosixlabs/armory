@@ -146,7 +146,7 @@ class ObjectDetectionTask(Scenario):
                 if x.shape[0] != 1:
                     raise ValueError("D-APRICOT batch size must be set to 1")
                 # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
-                images = x[0]
+                x = x[0]
                 y_object, y_patch_metadata = y
 
                 generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
@@ -154,7 +154,7 @@ class ObjectDetectionTask(Scenario):
                 y_target = label_targeter.generate(y_object)
                 generate_kwargs["y_object"] = y_target
 
-                x_adv = attack.generate(x=images, **generate_kwargs)
+                x_adv = attack.generate(x=x, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
@@ -168,7 +168,7 @@ class ObjectDetectionTask(Scenario):
 
             metrics_logger.update_perturbation(x, x_adv)
             if sample_exporter is not None:
-                sample_exporter.export(x, x_adv, y, y_pred_adv)
+                sample_exporter.export(x, x_adv, y_object, y_pred_adv)
 
         metrics_logger.log_task(adversarial=True, targeted=True)
         return metrics_logger.results()
