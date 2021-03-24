@@ -21,6 +21,7 @@ from jsonschema import ValidationError
 
 import armory
 from armory import paths
+from armory import arguments
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
@@ -309,6 +310,9 @@ def run(command_args, prog, description):
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
+    logging.debug("unifying sysconfig %s and args %s", config["sysconfig"], args)
+    (config, args) = arguments.merge_config_and_args(config, args)
+    logging.debug("unified sysconfig %s and args %s", config["sysconfig"], args)
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(
@@ -612,6 +616,7 @@ def launch(command_args, prog, description):
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
+    (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(
@@ -655,6 +660,7 @@ def exec(command_args, prog, description):
     config = {"sysconfig": {"docker_image": args.docker_image}}
     # Config
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
+    (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
     exit_code = rig.run(command=command)

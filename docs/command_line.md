@@ -106,3 +106,13 @@ benign sample rather than running an attack. Note: the following criteria must b
 ```
 armory run scenario_configs/mnist_baseline.json --skip-misclassified
 ```
+
+## command line arguments and sysconfig
+
+For convenience, command line control arguments can be specified in the "sysconfig"
+block of an evaluation configuration. Adding control to the configuration is
+described in [Configuration Files][conf]. Command line arguments will override
+sysconfig specifications.
+
+
+  [conf]: configuration_files.md#sysconfig-and-command-line-arguments
