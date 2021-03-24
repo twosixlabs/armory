@@ -37,20 +37,72 @@ class DApricotPatch(RobustDPatch):
         if threat_model == "digital":
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                shape = y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
+                patch_x, patch_y = gs_coords[0]  # upper left coordinates of patch
+                self.patch_location = (patch_x, patch_y)
+                patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
+                patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
+                self.patch_shape = (patch_height, patch_width, 3)
+
+                # self._patch needs to be re-initialized with the correct shape
+                if self.estimator.clip_values is None:
+                    self._patch = np.zeros(shape=self.patch_shape)
+                else:
+                    self._patch = (
+                        np.random.randint(0, 255, size=self.patch_shape)
+                        / 255
+                        * (
+                            self.estimator.clip_values[1]
+                            - self.estimator.clip_values[0]
+                        )
+                        + self.estimator.clip_values[0]
+                    )
 
                 patch = super().generate(np.expand_dims(x[i], axis=0))
 
-                img_with_patch = insert_patch(gs_coords, x[i], patch, shape,)
+                patch_geometric_shape = (
+                    y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
+                )
+                img_with_patch = insert_patch(
+                    gs_coords, x[i], patch, patch_geometric_shape,
+                )
                 attacked_images.append(img_with_patch)
         else:
             # generate patch using center image
+            gs_coords_center_img = y_patch_metadata[1]["gs_coords"]
+            patch_x, patch_y = gs_coords_center_img[
+                0
+            ]  # upper left coordinates of patch
+            self.patch_location = (patch_x, patch_y)
+            patch_width = np.max(gs_coords_center_img[:, 0]) - np.min(
+                gs_coords_center_img[:, 0]
+            )
+            patch_height = np.max(gs_coords_center_img[:, 1]) - np.min(
+                gs_coords_center_img[:, 1]
+            )
+            self.patch_shape = (patch_height, patch_width, 3)
+
+            # self._patch needs to be re-initialized with the correct shape
+            if self.estimator.clip_values is None:
+                self._patch = np.zeros(shape=self.patch_shape)
+            else:
+                self._patch = (
+                    np.random.randint(0, 255, size=self.patch_shape)
+                    / 255
+                    * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
+                    + self.estimator.clip_values[0]
+                )
+
             patch = super().generate(np.expand_dims(x[1], axis=0))
+
             for i in range(num_imgs):
                 gs_coords = y_patch_metadata[i]["gs_coords"]
-                shape = y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
+                patch_geometric_shape = (
+                    y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
+                )
 
-                img_with_patch = insert_patch(gs_coords, x[i], patch, shape,)
+                img_with_patch = insert_patch(
+                    gs_coords, x[i], patch, patch_geometric_shape,
+                )
                 attacked_images.append(img_with_patch)
         return np.array(attacked_images)
 
