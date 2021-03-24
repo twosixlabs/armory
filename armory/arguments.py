@@ -15,20 +15,6 @@ def merge_config_and_args(config, args):
     The precedence becomes defaults < config block < command args.
     """
 
-    # the truth table is complicated because they are actually tri-states:
-    # undef, defined but falsy, defined and truthy
-    #
-    # config    args    action
-    # u         u       nothing
-    # f         u       nothing
-    # t         u       args <- config
-    # u         f       nothing
-    # f         f       nothing
-    # t         f       args <- config
-    # u         t       config <- args
-    # f         t       config <- args
-    # t         t       config <- args
-
     # find truthy sysconfig specifications
     sysconf = config["sysconfig"]
     new_spec = {name: sysconf[name] for name in sysconf if sysconf[name]}
