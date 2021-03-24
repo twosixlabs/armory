@@ -15,40 +15,35 @@ def merge_config_and_args(config, args):
     The precedence becomes defaults < config block < command args.
     """
 
-    sysconfig = config["sysconfig"]
-
     # the truth table is complicated because they are actually tri-states:
     # undef, defined but falsy, defined and truthy
     #
     # config    args    action
     # u         u       nothing
     # f         u       nothing
-    # d         u       args <- config
+    # t         u       args <- config
     # u         f       nothing
     # f         f       nothing
-    # d         f       args <- config
-    # u         d       config <- args
-    # f         d       config <- args
-    # d         d       config <- args
+    # t         f       args <- config
+    # u         t       config <- args
+    # f         t       config <- args
+    # t         t       config <- args
 
-    # find truthy config specifications
-    new_spec = {}
-    for name in sysconfig:
-        if sysconfig[name]:
-            new_spec[name] = sysconfig[name]
+    # find truthy sysconfig specifications
+    sysconf = config["sysconfig"]
+    new_spec = {name: sysconf[name] for name in sysconf if sysconf[name]}
 
     # find truthy args specifications, overwriting config if present
-    specified = vars(args)
-    for name in specified:
-        if specified[name]:
-            new_spec[name] = specified[name]
+    cmd = vars(args)
+    new_args = {name: cmd[name] for name in cmd if cmd[name]}
+    new_spec.update(new_args)
 
-    # sysconfig gets updated with prioritized union
-    sysconfig.update(new_spec)
+    # sysconfig gets updated with all truthy members of the prioritized union
+    sysconf.update(new_spec)
 
     # new_args now gets the original namespace and all truthy members of the prioritized
     # union
-    specified.update(new_spec)
-    new_args = argparse.Namespace(**specified)
+    cmd.update(new_spec)
+    new_args = argparse.Namespace(**cmd)
 
     return config, new_args
