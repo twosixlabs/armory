@@ -177,3 +177,7 @@ in the sysconfig block.
 No matter whether these attributes are specified on the command line, in sysconfig,
 or both, the output file will record the attributes as executed, so you have a
 record of how the evaluation ultimately ran.
+
+The [full specification of command line arguments][cmdline] is available.
+
+  [cmdline]: command_line.md
