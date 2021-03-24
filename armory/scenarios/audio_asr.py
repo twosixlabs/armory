@@ -40,6 +40,16 @@ class AutomaticSpeechRecognition(Scenario):
         model_config = config["model"]
         estimator, fit_preprocessing_fn = load_model(model_config)
 
+        # audio_channel = config.get("adhoc", {}).get("audio_channel")
+        # from art.preprocessing.audio import LFilterPyTorch
+
+        # if audio_channel is None:
+        #     pass
+        # else:
+        #     pass
+        # denominator_coef = np.zeros_like(numerator_coef)
+        # denominator_coef[0] = 1.0
+
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
 
