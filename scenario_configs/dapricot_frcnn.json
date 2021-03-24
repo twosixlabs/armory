@@ -6,8 +6,7 @@
             "threat_model": "physical"
         },
         "knowledge": "white",
-        "kwargs": {
-        },
+        "kwargs": {},
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotPatch",
         "targeted_labels": {
