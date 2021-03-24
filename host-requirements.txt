@@ -13,6 +13,7 @@ dill==0.3.1.1
 pytest==6.2.2
 ffmpeg==4.2.3
 pymongo==3.1.0
+opencv-python==4.5.1.48
 
 ### Begin TF1 required libraries
 tensorflow-gpu==1.15.0
