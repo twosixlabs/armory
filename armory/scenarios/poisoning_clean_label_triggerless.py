@@ -57,7 +57,8 @@ def split_train_target(
     # consists of all but the last n_target of the datapoints for each class (if there are n_targets
     # or fewer points, it consists of all data and the target is considered invalid). The
     # nontraining points of the chosen target class are returned as potential targets
-    target_class = int(target_class)
+    if target_class is not None:
+        target_class = int(target_class)
 
     total_count_by_class = defaultdict(int)
     curr_count_by_class = defaultdict(int)
@@ -65,7 +66,7 @@ def split_train_target(
     for y in ys:
         total_count_by_class[y] += 1
 
-    if total_count_by_class[target_class] <= n_targets:
+    if target_class is not None and total_count_by_class[target_class] <= n_targets:
         raise ValueError(
             f"target_class {target_class} is not a valid target class - fewer "
             f"than {n_targets} data points present"
@@ -165,11 +166,21 @@ class GTSRB_CLT(Scenario):
             preprocessing_fn=poison_scenario_preprocessing,
             shuffle_files=False,
         )
-        attack_config = config["poison_attack"]
-        train_no_attack = attack_config is None
+        attack_config = config.get("poison_attack")
 
-        if train_no_attack:
-            pass
+        # Note that the semantics of run_attack are slightly different than
+        # skip attack, because the scenario does not do benign training
+        # without poisons by default
+        run_attack = attack_config is not None
+
+        if not run_attack:
+            tgt_class = None
+            clean_train_data, _ = split_train_target(
+                load_in_memory(clean_train_data), n_targets=50, target_class=None
+            )
+            classifier, filtering_report = classifier_not_art2.defended_train(
+                clean_train_data, np.array([]), fit_kwargs
+            )
         else:
             tgt_class = attack_config["target_class"]
             poison_images_class = attack_config["poison_class"]
@@ -183,7 +194,7 @@ class GTSRB_CLT(Scenario):
             ]
             # Select, either the first or a random image from the valid targets class
             # target = find_target(clean_train_data, select_first=True)
-            poison_gen_classifier, filtering_report = classifier_not_art.defended_train(
+            poison_gen_classifier, _ = classifier_not_art.defended_train(
                 clean_train_data, None, fit_kwargs
             )
             attack_config["args"] = (poison_gen_classifier, target_image)
@@ -200,7 +211,7 @@ class GTSRB_CLT(Scenario):
             clean_train_data[0][poison_base_indices] = poison
 
             classifier, filtering_report = classifier_not_art2.defended_train(
-                clean_train_data, None, fit_kwargs
+                clean_train_data, poison_base_indices, fit_kwargs
             )
 
         logger.info("Validating on clean test data")
@@ -224,21 +235,24 @@ class GTSRB_CLT(Scenario):
         results = {
             "benign_validation_accuracy": benign_validation_metric.mean(),
         }
+        if filtering_report and isinstance(filtering_report, dict):
+            results["filtering_report"] = filtering_report
 
-        target_np = np.array([target_image])
-        # Ensure that input sample isn't overwritten by classifier
-        target_np.flags.writeable = False
-        y_pred = classifier.predict(target_np)
-        y_pred_lbl = np.argmax(y_pred)
-        attack_success = y_pred_lbl == poison_images_class
+        if run_attack:
+            target_np = np.array([target_image])
+            # Ensure that input sample isn't overwritten by classifier
+            target_np.flags.writeable = False
+            y_pred = classifier.predict(target_np)
+            y_pred_lbl = np.argmax(y_pred)
+            attack_success = y_pred_lbl == poison_images_class
 
-        logger.info(
-            f"Targeted image had label {y_pred_lbl} with true label {tgt_class} "
-            f"and the attacker's goal label of {poison_images_class}"
-        )
-        logger.info(f"Attack success: {attack_success}")
+            logger.info(
+                f"Targeted image had label {y_pred_lbl} with true label {tgt_class} "
+                f"and the attacker's goal label of {poison_images_class}"
+            )
+            logger.info(f"Attack success: {attack_success}")
 
-        results["attack_success"] = bool(attack_success)
-        results["target_pred_label"] = int(y_pred_lbl)
+            results["attack_success"] = bool(attack_success)
+            results["target_pred_label"] = int(y_pred_lbl)
 
         return results
