@@ -9,6 +9,7 @@ from tqdm import tqdm
 import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
 
+
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
@@ -85,14 +86,16 @@ class AutomaticSpeechRecognition(Scenario):
 
         audio_channel_config = config.get("adhoc", {}).get("audio_channel")
         if audio_channel_config is not None:
+            logger.error("loading audio channel")
             for k in "delay", "attenuation":
                 if k not in audio_channel_config:
                     raise ValueError(f"audio_channel must have key {k}")
             audio_channel = load_audio_channel(**audio_channel_config)
-            if estimator.preprocessing:
-                estimator.preprocessing.insert(0, audio_channel)
+            if estimator.preprocessing_defences:
+                estimator.preprocessing_defences.insert(0, audio_channel)
             else:
-                estimator.preprocessing = [audio_channel]
+                estimator.preprocessing_defences = [audio_channel]
+            estimator._update_preprocessing_operations()
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
@@ -100,6 +103,11 @@ class AutomaticSpeechRecognition(Scenario):
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to estimator")
             estimator = load_defense_internal(config["defense"], estimator)
+
+        logger.error(f"estimator.preprocessing: {estimator.preprocessing}")
+        logger.error(
+            f"estimator.preprocessing_defences: {estimator.preprocessing_defences}"
+        )
 
         if model_config["fit"]:
             logger.info(

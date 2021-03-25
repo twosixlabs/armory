@@ -2,7 +2,7 @@
     "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
     "adhoc": {
         "audio_channel": {
-            "attenuation": 0.5,
+            "attenuation": 0.3,
             "delay": 1600,
             "pytorch": true
         },
