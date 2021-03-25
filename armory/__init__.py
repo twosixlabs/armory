@@ -8,7 +8,7 @@ logger.addHandler(logging.NullHandler())
 
 
 # Semantic Version
-__version__ = "0.13.0"
+__version__ = "0.13.1"
 
 
 # Submodule imports
