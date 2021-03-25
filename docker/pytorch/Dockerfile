@@ -6,7 +6,7 @@ FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
 RUN apt-get -y -qq update && \
-    apt-get install -y wget vim build-essential git curl
+    DEBIAN_FRONTEND=noninteractive apt-get install -y wget vim build-essential git curl libgl1-mesa-glx libglib2.0-0
 
 # Install Conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh -O ~/miniconda.sh && \
@@ -28,7 +28,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
-    pytest==6.2.2 
+    pytest==6.2.2 \
+    opencv-python==4.5.1.48
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
@@ -46,7 +47,7 @@ RUN /opt/conda/bin/conda install pytorch==1.7 \
    /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install --no-cache-dir \
    tensorflow-gpu==2.4.1 \
-   git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@dev_1.6.0
+   adversarial-robustness-toolbox==1.6.0
 
 ########## PyTorch 1 Dev #################
 
