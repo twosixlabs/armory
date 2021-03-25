@@ -86,7 +86,7 @@ class AutomaticSpeechRecognition(Scenario):
 
         audio_channel_config = config.get("adhoc", {}).get("audio_channel")
         if audio_channel_config is not None:
-            logger.error("loading audio channel")
+            logger.info("loading audio channel")
             for k in "delay", "attenuation":
                 if k not in audio_channel_config:
                     raise ValueError(f"audio_channel must have key {k}")
@@ -103,11 +103,6 @@ class AutomaticSpeechRecognition(Scenario):
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to estimator")
             estimator = load_defense_internal(config["defense"], estimator)
-
-        logger.error(f"estimator.preprocessing: {estimator.preprocessing}")
-        logger.error(
-            f"estimator.preprocessing_defences: {estimator.preprocessing_defences}"
-        )
 
         if model_config["fit"]:
             logger.info(
