@@ -1,6 +1,6 @@
 ########## ARMORY Base #################
 
-FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory
+FROM nvidia/cuda:10.2-cudnn7-runtime-ubuntu18.04 AS armory
 
 # Temporary fix for broken nvidia package checksum
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
@@ -59,9 +59,8 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.6 \
   --ignore-installed llvmlite==0.35.0 \
   soundfile \
   sox \
-  warpctc-pytorch==0.2.1+torch16.cuda100 \
+  warpctc-pytorch==0.2.1+torch16.cuda102 \
   adversarial-robustness-toolbox==1.6.0 --no-cache-dir
-
 
 
 ########## PyTorch 1 Deep Speech Dev #################

@@ -199,16 +199,12 @@ def load_defense_internal(defense_config, classifier):
     defense_type = defense_config["type"]
     if defense_type == "Preprocessor":
         _check_defense_api(defense, Preprocessor)
-        if art.__version__ < "1.5":
-            if classifier.preprocessing_defences:
-                classifier.preprocessing_defences.append(defense)
-            else:
-                classifier.preprocessing_defences = [defense]
+        if classifier.preprocessing_defences:
+            classifier.preprocessing_defences.append(defense)
         else:
-            if classifier.preprocessing:
-                classifier.preprocessing.append(defense)
-            else:
-                classifier.preprocessing = [defense]
+            classifier.preprocessing_defences = [defense]
+        if art.__version__ >= "1.5":
+            classifier._update_preprocessing_operations()
     elif defense_type == "Postprocessor":
         _check_defense_api(defense, Postprocessor)
         if classifier.postprocessing_defences:

@@ -6,6 +6,9 @@ import logging
 from typing import Optional
 
 from tqdm import tqdm
+import numpy as np
+from art.preprocessing.audio import LFilter, LFilterPyTorch
+
 
 from armory.utils.config_loading import (
     load_dataset,
@@ -21,6 +24,47 @@ from armory.scenarios.base import Scenario
 from armory.utils.export import SampleExporter
 
 logger = logging.getLogger(__name__)
+
+
+def load_audio_channel(delay, attenuation, pytorch=True):
+    """
+    Return an art LFilter object for a simple delay (multipath) channel
+
+    If attenuation == 0 or delay == 0, return an identity channel
+        Otherwise, return a channel with length equal to delay + 1
+
+    NOTE: lfilter truncates the end of the echo, so output length equals input length
+    """
+    delay = int(delay)
+    attenuation = float(attenuation)
+    if delay < 0:
+        raise ValueError(f"delay {delay} must be a nonnegative number (of samples)")
+    if delay == 0 or attenuation == 0:
+        logger.warning("Using an identity channel")
+        numerator_coef = np.array([1.0])
+        denominator_coef = np.array([1.0])
+    else:
+        if not (-1 <= attenuation <= 1):
+            logger.warning(f"filter attenuation {attenuation} not in [-1, 1]")
+
+        # Simple FIR filter with a single multipath delay
+        numerator_coef = np.zeros(delay + 1)
+        numerator_coef[0] = 1.0
+        numerator_coef[delay] = attenuation
+
+        denominator_coef = np.zeros_like(numerator_coef)
+        denominator_coef[0] = 1.0
+
+    if pytorch:
+        try:
+            return LFilterPyTorch(
+                numerator_coef=numerator_coef, denominator_coef=denominator_coef
+            )
+        except ImportError:
+            logger.exception("PyTorch not available. Resorting to scipy filter")
+
+    logger.warning("Scipy LFilter does not currently implement proper gradients")
+    return LFilter(numerator_coef=numerator_coef, denominator_coef=denominator_coef)
 
 
 class AutomaticSpeechRecognition(Scenario):
@@ -39,6 +83,19 @@ class AutomaticSpeechRecognition(Scenario):
             raise ValueError("skip_misclassified shouldn't be set for ASR scenario")
         model_config = config["model"]
         estimator, fit_preprocessing_fn = load_model(model_config)
+
+        audio_channel_config = config.get("adhoc", {}).get("audio_channel")
+        if audio_channel_config is not None:
+            logger.info("loading audio channel")
+            for k in "delay", "attenuation":
+                if k not in audio_channel_config:
+                    raise ValueError(f"audio_channel must have key {k}")
+            audio_channel = load_audio_channel(**audio_channel_config)
+            if estimator.preprocessing_defences:
+                estimator.preprocessing_defences.insert(0, audio_channel)
+            else:
+                estimator.preprocessing_defences = [audio_channel]
+            estimator._update_preprocessing_operations()
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
