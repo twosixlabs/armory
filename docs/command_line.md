@@ -93,3 +93,26 @@ The `--skip-benign` and `--skip-attack` flags allow the user to skip, respective
 armory run scenario_configs/mnist_baseline.json --skip-benign
 armory run scenario_configs/mnist_baseline.json --skip-attack
 ```
+
+## Skipping Attack of Misclassified Samples
+When `--skip-misclassified` is enabled, for benign examples that yield a misclassification, Armory will simply reuse the 
+benign sample rather than running an attack. Note: the following criteria must be met when `--skip-misclassified` is enabled:
+
+1. The scenario must be a classification task (i.e. *not* object detection, ASR) with the 'categorical_accuracy' metric enabled in the config file.
+2. Batch size must be set to 1
+3. The `--skip-benign` and `--skip-attack` flags cannot also be enabled
+
+### Example Usage
+```
+armory run scenario_configs/mnist_baseline.json --skip-misclassified
+```
+
+## command line arguments and sysconfig
+
+For convenience, command line control arguments can be specified in the "sysconfig"
+block of an evaluation configuration. Adding control to the configuration is
+described in [Configuration Files][conf]. Command line arguments will override
+sysconfig specifications.
+
+
+  [conf]: configuration_files.md#sysconfig-and-command-line-arguments

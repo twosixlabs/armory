@@ -269,6 +269,115 @@ def parse_split_index(split: str):
     return "+".join(output_tokens)
 
 
+def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
+    """
+    index must be a list or iterable of integer values
+
+    returns the dataset and the indexed size
+    """
+    logger.info(f"Filtering dataset to the following indices: {index}")
+    dataset_size = int(dataset_size)
+    if len(index) == 0:
+        raise ValueError(
+            "The specified dataset 'index' param must have at least one value"
+        )
+    valid_indices = sorted([int(x) for x in set(index) if int(x) < dataset_size])
+    num_valid_indices = len(valid_indices)
+    if num_valid_indices == 0:
+        raise ValueError(
+            f"The specified dataset 'index' param values all exceed dataset size of {dataset_size}"
+        )
+    elif index[0] < 0:
+        raise ValueError("The specified dataset 'index' values must be nonnegative")
+    elif num_valid_indices != len(set(index)):
+        logger.warning(
+            f"All dataset 'index' values exceeding dataset size of {dataset_size} are being ignored"
+        )
+
+    index_tensor = tf.constant(index, dtype=tf.int64)
+
+    def enum_index(i, x):
+        i = tf.expand_dims(i, 0)
+        out, _ = tf.raw_ops.ListDiff(x=i, y=index_tensor, out_idx=tf.int64)
+        return tf.equal(tf.size(out), 0)
+
+    return dataset.enumerate().filter(enum_index).map(lambda i, x: x), num_valid_indices
+
+
+def filter_by_class(dataset: "tf.data.Dataset", class_ids: Union[list, int]):
+    """
+    class_ids must be an int or list of ints
+
+    returns the dataset filtered by class id, keeping elements with label in class_ids
+    """
+    logger.info(f"Filtering dataset to the following class IDs: {class_ids}")
+    if len(class_ids) == 0:
+        raise ValueError(
+            "The specified dataset 'class_ids' param must have at least one value"
+        )
+
+    def _filter_by_class(x, y, classes_to_keep=tf.constant(class_ids, dtype=tf.int64)):
+        isallowed_array = tf.equal(classes_to_keep, tf.cast(y, tf.int64))
+        isallowed = tf.reduce_sum(tf.cast(isallowed_array, tf.int64))
+        return tf.greater(isallowed, tf.constant(0, dtype=tf.int64))
+
+    filtered_ds = dataset.filter(_filter_by_class)
+
+    if tf.executing_eagerly():
+        filtered_ds_size = int(filtered_ds.reduce(0, lambda x, _: x + 1).numpy())
+    else:
+        filtered_ds_size = len(list(tfds.as_numpy(filtered_ds)))
+
+    if filtered_ds_size == 0:
+        raise ValueError(
+            "All elements of dataset were removed. Please ensure the specified class_ids appear in the dataset"
+        )
+
+    return filtered_ds, filtered_ds_size
+
+
+def parse_str_slice(index: str):
+    """
+    Parse simple slice from string
+    """
+    index = (
+        index.strip().lstrip("[").rstrip("]").strip()
+    )  # remove brackets and white space
+    tokens = index.split(":")
+    if len(tokens) != 2:
+        raise ValueError("Slice needs a single ':' character. No fancy slicing.")
+
+    lower, upper = [int(x.strip()) if x.strip() else None for x in tokens]
+    if lower is not None and lower < 0:
+        raise ValueError(f"slice lower {lower} must be nonnegative")
+    if upper is not None and lower is not None and upper <= lower:
+        raise ValueError(
+            f"slice upper {upper} must be strictly greater than lower {lower}"
+        )
+    return lower, upper
+
+
+def filter_by_str_slice(dataset: "tf.data.Dataset", index: str, dataset_size: int):
+    """
+    returns the dataset and the indexed size
+    """
+    lower, upper = parse_str_slice(index)
+    if lower is None:
+        lower = 0
+    if upper is None:
+        upper = dataset_size
+    if lower >= dataset_size:
+        raise ValueError(f"lower {lower} must be less than dataset_size {dataset_size}")
+    if upper > dataset_size:
+        upper = dataset_size
+    indexed_size = upper - lower
+
+    def slice_index(i, x):
+        return (i >= lower) & (i < upper)
+
+    return dataset.enumerate().filter(slice_index).map(lambda i, x: x), indexed_size
+
+
 def _generator_from_tfds(
     dataset_name: str,
     split: str,
@@ -287,6 +396,8 @@ def _generator_from_tfds(
     framework: str = "numpy",
     lambda_map: Callable = None,
     context=None,
+    class_ids=None,
+    index=None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
     """
     If as_supervised=False, must designate keys as a tuple in supervised_xy_keys:
@@ -344,24 +455,60 @@ def _generator_from_tfds(
                 f"When as_supervised=False, supervised_xy_keys must be a (x_key, y_key)"
                 f" tuple, not {supervised_xy_keys}"
             )
-        if not (isinstance(x_key, str) or isinstance(x_key, tuple)) or not isinstance(
-            y_key, str
-        ):
-            raise ValueError(
-                f"supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
-                f" not {type(x_key), type(y_key)}"
-            )
+        for key in [x_key, y_key]:
+            if not (isinstance(key, str) or isinstance(key, tuple)):
+                raise ValueError(
+                    f"supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
+                    f" not {type(x_key), type(y_key)}"
+                )
         if isinstance(x_key, tuple):
+            if isinstance(y_key, tuple):
+                raise ValueError(
+                    "Only one of (x_key, y_key) can be a tuple while the other must be a string."
+                )
             for k in x_key:
                 if not (isinstance(k, str)):
                     raise ValueError(
-                        "supervised_xy_keys must be a tuple of strings, or for x_key only, a tuple of tuple of strings"
+                        "supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
                     )
             ds = ds.map(lambda x: (tuple(x[k] for k in x_key), x[y_key]))
+        elif isinstance(y_key, tuple):
+            for k in y_key:
+                if not (isinstance(k, str)):
+                    raise ValueError(
+                        "supervised_xy_keys must be a tuple of strings or a tuple of tuple of strings"
+                    )
+            ds = ds.map(lambda x: (x[x_key], tuple(x[k] for k in y_key)))
         else:
             ds = ds.map(lambda x: (x[x_key], x[y_key]))
     if lambda_map is not None:
         ds = ds.map(lambda_map)
+
+    dataset_size = ds_info.splits[split].num_examples
+
+    # Add class-based filtering
+    if class_ids is not None:
+        if split == "train":
+            logger.warning(
+                "Filtering by class entails iterating over the whole dataset and thus "
+                "can be very slow if using the 'train' split"
+            )
+        if isinstance(class_ids, list):
+            ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
+        elif isinstance(class_ids, int):
+            ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
+        else:
+            raise ValueError(
+                f"class_ids must be a list, int, or None, not {type(class_ids)}"
+            )
+
+    # Add index-based filtering
+    if isinstance(index, list):
+        ds, dataset_size = filter_by_index(ds, index, dataset_size)
+    elif isinstance(index, str):
+        ds, dataset_size = filter_by_str_slice(ds, index, dataset_size)
+    elif index is not None:
+        raise ValueError(f"index must be a list, str, or None, not {type(index)}")
 
     ds = ds.repeat(epochs)
     if shuffle_files:
@@ -383,7 +530,7 @@ def _generator_from_tfds(
         ds = tfds.as_numpy(ds, graph=default_graph)
         generator = ArmoryDataGenerator(
             ds,
-            size=ds_info.splits[split].num_examples,
+            size=dataset_size,
             batch_size=batch_size,
             epochs=epochs,
             preprocessing_fn=preprocessing_fn,
@@ -631,6 +778,7 @@ def mnist(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
@@ -649,6 +797,7 @@ def mnist(
         framework=framework,
         shuffle_files=shuffle_files,
         context=mnist_context,
+        **kwargs,
     )
 
 
@@ -662,6 +811,7 @@ def cifar10(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
@@ -680,6 +830,7 @@ def cifar10(
         framework=framework,
         shuffle_files=shuffle_files,
         context=cifar10_context,
+        **kwargs,
     )
 
 
@@ -693,6 +844,7 @@ def digit(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
@@ -712,6 +864,7 @@ def digit(
         framework=framework,
         shuffle_files=shuffle_files,
         context=digit_context,
+        **kwargs,
     )
 
 
@@ -725,6 +878,7 @@ def imagenette(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
@@ -744,6 +898,7 @@ def imagenette(
         framework=framework,
         shuffle_files=shuffle_files,
         context=imagenette_context,
+        **kwargs,
     )
 
 
@@ -756,6 +911,7 @@ def german_traffic_sign(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
@@ -772,6 +928,7 @@ def german_traffic_sign(
         framework=framework,
         shuffle_files=shuffle_files,
         context=gtsrb_context,
+        **kwargs,
     )
 
 
@@ -785,6 +942,7 @@ def librispeech_dev_clean(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ):
     """
     Librispeech dev dataset with custom split used for speaker
@@ -815,6 +973,7 @@ def librispeech_dev_clean(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
     )
 
 
@@ -828,7 +987,12 @@ def librispeech_full(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech_full dataset"
+        )
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -843,6 +1007,7 @@ def librispeech_full(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_context,
+        **kwargs,
     )
 
 
@@ -856,7 +1021,12 @@ def librispeech(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech dataset"
+        )
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -888,6 +1058,7 @@ def librispeech(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_context,
+        **kwargs,
     )
 
 
@@ -901,6 +1072,7 @@ def librispeech_dev_clean_asr(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ):
     """
     Librispeech dev dataset with custom split used for automatic
@@ -911,6 +1083,10 @@ def librispeech_dev_clean_asr(
     returns:
         Generator
     """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the librispeech_dev_clean_asr dataset"
+        )
     flags = []
     dl_config = tfds.download.DownloadConfig(
         beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
@@ -933,6 +1109,7 @@ def librispeech_dev_clean_asr(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
     )
 
 
@@ -946,6 +1123,7 @@ def resisc45(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     REmote Sensing Image Scene Classification (RESISC) dataset
@@ -975,6 +1153,7 @@ def resisc45(
         framework=framework,
         shuffle_files=shuffle_files,
         context=resisc45_context,
+        **kwargs,
     )
 
 
@@ -988,6 +1167,7 @@ def ucf101(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
@@ -1009,6 +1189,7 @@ def ucf101(
         framework=framework,
         shuffle_files=shuffle_files,
         context=ucf101_context,
+        **kwargs,
     )
 
 
@@ -1022,6 +1203,7 @@ def ucf101_clean(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset with high quality MPEG extraction
@@ -1043,6 +1225,7 @@ def ucf101_clean(
         framework=framework,
         shuffle_files=shuffle_files,
         context=ucf101_context,
+        **kwargs,
     )
 
 
@@ -1080,6 +1263,7 @@ def xview(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     split - one of ("train", "test")
@@ -1088,6 +1272,8 @@ def xview(
     where x1/x2 range from 0 to image width, y1/y2 range from 0 to image height.
     See https://pytorch.org/docs/stable/torchvision/models.html#faster-r-cnn.
     """
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the xView dataset")
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1106,6 +1292,7 @@ def xview(
         framework=framework,
         shuffle_files=shuffle_files,
         context=xview_context,
+        **kwargs,
     )
 
 
@@ -1161,6 +1348,7 @@ def so2sat(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Multimodal SAR / EO image dataset
@@ -1181,6 +1369,7 @@ def so2sat(
         framework=framework,
         shuffle_files=shuffle_files,
         context=so2sat_context,
+        **kwargs,
     )
 
 

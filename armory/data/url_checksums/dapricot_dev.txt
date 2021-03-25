@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/dapricot_dev.tar.gz 79101937 f657cbb237878e28bee63ce7bcb15e9781d6c399a63e8487f7199ec84dae3956

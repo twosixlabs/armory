@@ -4,12 +4,13 @@ inside a docker container.
 
 
 ## Images
-There are three docker images that are published to dockerhub for every release of 
+There are four docker images that are currently published to dockerhub for every release of 
 the armory framework:
 
 1. `twosixarmory/tf1:<version>` 
 2. `twosixarmory/tf2:<version>` 
 3. `twosixarmory/pytorch:<version>` 
+4. `twosixarmory/pytorch-deepspeech:<version>` 
 
 When using `armory launch` or `armory exec` the framework specific arguments will 
 utilize one of these three images. 
@@ -60,7 +61,7 @@ the container.
 Once inside the container, you should be able to run or import armory as required:
 ```
 I have no name!@c10db6c70a81:/workspace$ armory version
-0.13.0-dev
+0.13.0
 I have no name!@c10db6c70a81:/workspace$ python
 Python 3.7.6 (default, Jan  8 2020, 19:59:22) 
 [GCC 7.3.0] :: Anaconda, Inc. on linux

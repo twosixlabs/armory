@@ -33,6 +33,7 @@ class Ucf101(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -54,7 +55,6 @@ class Ucf101(Scenario):
             classifier = load_defense_internal(config["defense"], classifier)
 
         if model_config["fit"]:
-            classifier.set_learning_phase(True)
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
@@ -86,8 +86,6 @@ class Ucf101(Scenario):
             logger.info(f"Transforming classifier with {defense_type} defense...")
             defense = load_defense_wrapper(config["defense"], classifier)
             classifier = defense()
-
-        classifier.set_learning_phase(False)
 
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
@@ -137,6 +135,12 @@ class Ucf101(Scenario):
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
 
+        if skip_misclassified:
+            acc_task_idx = [i.name for i in metrics_logger.tasks].index(
+                "categorical_accuracy"
+            )
+            benign_acc = metrics_logger.tasks[acc_task_idx].values()
+
         if targeted and attack_config.get("use_label"):
             raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
@@ -171,7 +175,7 @@ class Ucf101(Scenario):
         else:
             sample_exporter = None
 
-        for x, y in tqdm(test_data, desc="Attack"):
+        for batch_idx, (x, y) in enumerate(tqdm(test_data, desc="Attack")):
             with metrics.resource_context(
                 name="Attack",
                 profiler=config["metric"].get("profiler_type"),
@@ -188,7 +192,10 @@ class Ucf101(Scenario):
                     elif targeted:
                         y_target = label_targeter.generate(y)
                         generate_kwargs["y"] = y_target
-                    x_adv = attack.generate(x=x, **generate_kwargs)
+                    if skip_misclassified and benign_acc[batch_idx] == 0:
+                        x_adv = x
+                    else:
+                        x_adv = attack.generate(x=x, **generate_kwargs)
 
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False

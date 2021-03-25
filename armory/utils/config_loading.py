@@ -56,6 +56,9 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
     batch_size = dataset_config["batch_size"]
+    for ds_kwarg in ["index", "class_ids"]:
+        if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
+            kwargs[ds_kwarg] = dataset_config[ds_kwarg]
     framework = dataset_config.get("framework", "numpy")
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
@@ -196,16 +199,12 @@ def load_defense_internal(defense_config, classifier):
     defense_type = defense_config["type"]
     if defense_type == "Preprocessor":
         _check_defense_api(defense, Preprocessor)
-        if art.__version__ < "1.5":
-            if classifier.preprocessing_defences:
-                classifier.preprocessing_defences.append(defense)
-            else:
-                classifier.preprocessing_defences = [defense]
+        if classifier.preprocessing_defences:
+            classifier.preprocessing_defences.append(defense)
         else:
-            if classifier.preprocessing:
-                classifier.preprocessing.append(defense)
-            else:
-                classifier.preprocessing = [defense]
+            classifier.preprocessing_defences = [defense]
+        if art.__version__ >= "1.5":
+            classifier._update_preprocessing_operations()
     elif defense_type == "Postprocessor":
         _check_defense_api(defense, Postprocessor)
         if classifier.postprocessing_defences:

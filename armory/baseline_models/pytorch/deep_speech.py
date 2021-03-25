@@ -26,8 +26,23 @@ logger.warning(f"Saving art deep speech model weights to {ART_DATA_PATH}")
 
 from art.estimators.speech_recognition import PyTorchDeepSpeech
 
+# Workaround for ART 1.6.0, due to compute_loss issue
+# TODO: revert to commented code in ART 1.6.1
+# def get_art_model(
+#     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+# ) -> PyTorchDeepSpeech:
+#     return PyTorchDeepSpeech(**wrapper_kwargs)
+
+
+class PyTorchDeepSpeechModel(PyTorchDeepSpeech):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def compute_loss(self):
+        raise NotImplementedError
+
 
 def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchDeepSpeech:
-    return PyTorchDeepSpeech(**wrapper_kwargs)
+    return PyTorchDeepSpeechModel(**wrapper_kwargs)

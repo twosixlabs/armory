@@ -123,3 +123,37 @@ def test_pytorch_xview_pretrained():
     for class_id in [4, 23, 33, 39]:
         assert average_precision_by_class[class_id] > 0.9
     assert mAP > 0.25
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_pytorch_gtsrb():
+    classifier_module = import_module("armory.baseline_models.pytorch.micronnet_gtsrb")
+    classifier_fn = getattr(classifier_module, "get_art_model")
+    preprocessing_fn = getattr(classifier_module, "preprocessing_fn")
+    classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
+
+    train_dataset = datasets.german_traffic_sign(
+        split="train",
+        epochs=5,
+        batch_size=128,
+        dataset_dir=DATASET_DIR,
+        preprocessing_fn=preprocessing_fn,
+    )
+    test_dataset = datasets.german_traffic_sign(
+        split="test",
+        epochs=1,
+        batch_size=128,
+        dataset_dir=DATASET_DIR,
+        preprocessing_fn=preprocessing_fn,
+    )
+
+    classifier.fit_generator(
+        train_dataset, nb_epochs=5,
+    )
+
+    accuracy = 0
+    for _ in range(test_dataset.batches_per_epoch):
+        x, y = test_dataset.get_batch()
+        predictions = classifier.predict(x)
+        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+    assert (accuracy / test_dataset.batches_per_epoch) > 0.8

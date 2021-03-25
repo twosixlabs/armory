@@ -3,16 +3,19 @@ docker #To prevent import errors
 jsonschema
 requests
 tensorflow-datasets==3.2.0
-jupyterlab==1.2.6
-boto3==1.11.13
-adversarial-robustness-toolbox==1.4.2
+jupyterlab==3.0.9
+boto3==1.17.20
+adversarial-robustness-toolbox==1.6.0
 Pillow==8.1.1
 pydub==0.24.1
 apache-beam==2.22.0
 dill==0.3.1.1
-pytest==5.3.5
+pytest==6.2.2
 ffmpeg==4.2.3
 pymongo==3.1.0
+# install cv2
+opencv-python==4.5.1.48
+# apt-get update && apt-get install libgl1-mesa-glx libglib2.0-0
 
 ### Begin TF1 required libraries
 tensorflow-gpu==1.15.0
@@ -22,9 +25,9 @@ tensorflow-gpu==1.15.0
 ### End TF1 required libraries
 
 ### Begin Pytorch required libraries
-pytorch==1.6.0
-torchvision==0.7.0
-cudatoolkit==10.1
+pytorch==1.7.0
+torchvision==0.8.0
+cudatoolkit==11.0
 ### End Pytorch required libraries
 
 ### Begin TF2 required libraries

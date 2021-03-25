@@ -1,2 +1,3 @@
 recursive-include armory *.json
 recursive-include armory *.txt
+recursive-include armory *.ini

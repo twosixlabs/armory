@@ -40,10 +40,11 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
             ),
         )
 
-    def predict(self, x):
-        list_of_zero_indexed_pred_dicts = super(
-            TensorFlowFasterRCNNOneIndexed, self
-        ).predict(x)
+    def compute_loss(self, x, y):
+        raise NotImplementedError
+
+    def predict(self, x, **kwargs):
+        list_of_zero_indexed_pred_dicts = super().predict(x, **kwargs)
         list_of_one_indexed_pred_dicts = []
         for img_pred_dict in list_of_zero_indexed_pred_dicts:
             zero_indexed_pred_labels = img_pred_dict["labels"]
