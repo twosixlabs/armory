@@ -5,6 +5,7 @@ Adversarial datasets
 from typing import Callable
 
 import tensorflow as tf
+import numpy as np
 
 from armory.data import datasets
 from armory.data.adversarial import (  # noqa: F401
@@ -15,6 +16,7 @@ from armory.data.adversarial import (  # noqa: F401
     gtsrb_bh_poison_micronnet,
     apricot_dev,
     apricot_test,
+    dapricot_dev,
 )
 
 
@@ -32,6 +34,7 @@ librispeech_adversarial_context = datasets.AudioContext(
 resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
+dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -53,6 +56,15 @@ def ucf101_adversarial_canonical_preprocessing(batch):
 def apricot_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
         apricot_adversarial_context, batch
+    )
+
+
+def dapricot_canonical_preprocessing(batch):
+    # DAPRICOT raw images are rotated by 90 deg and color channels are BGR, so the
+    # following line corrects for this
+    batch_rotated_rgb = np.transpose(batch, (0, 1, 3, 2, 4))[:, :, :, ::-1, :]
+    return datasets.canonical_variable_image_preprocess(
+        dapricot_adversarial_context, batch_rotated_rgb
     )
 
 
@@ -317,6 +329,34 @@ def apricot_label_preprocessing(x, y):
     return y
 
 
+def dapricot_label_preprocessing(x, y):
+    """
+    """
+    y_object, y_patch_metadata = y
+    y_object_list = []
+    y_patch_metadata_list = []
+    # each example contains images from N cameras, i.e. N=3
+    num_imgs_per_ex = np.array(y_object["id"].flat_values).size
+    y_patch_metadata["gs_coords"] = np.array(
+        y_patch_metadata["gs_coords"].flat_values
+    ).reshape((num_imgs_per_ex, -1, 2))
+    y_patch_metadata["shape"] = y_patch_metadata["shape"].reshape((num_imgs_per_ex,))
+    y_patch_metadata["cc_scene"] = y_patch_metadata["cc_scene"][0]
+    y_patch_metadata["cc_ground_truth"] = y_patch_metadata["cc_ground_truth"][0]
+    for i in range(num_imgs_per_ex):
+        y_object_img = {}
+        for k, v in y_object.items():
+            y_object_img[k] = np.array(y_object[k].flat_values[i])
+        y_object_list.append(y_object_img)
+
+        y_patch_metadata_img = {
+            k: np.array(y_patch_metadata[k][i]) for k, v in y_patch_metadata.items()
+        }
+        y_patch_metadata_list.append(y_patch_metadata_img)
+
+    return (y_object_list, y_patch_metadata_list)
+
+
 def apricot_dev_adversarial(
     split: str = "frcnn+ssd+retinanet",
     epochs: int = 1,
@@ -434,4 +474,38 @@ def apricot_test_adversarial(
         ),
         context=apricot_adversarial_context,
         **kwargs,
+    )
+
+
+def dapricot_dev_adversarial(
+    split: str = "large+medium+small",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = dapricot_canonical_preprocessing,
+    label_preprocessing_fn: Callable = dapricot_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise ValueError("D-APRICOT batch size must be set to 1")
+
+    if split == "adversarial":
+        split = "small+medium+large"
+
+    return datasets._generator_from_tfds(
+        "dapricot_dev:1.0.1",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        context=dapricot_adversarial_context,
     )
