@@ -24,7 +24,7 @@ _CITATION = """
 }
 """
 
-_DL_URL = "/nfs/gard/ytan/armory/datasets/resisc_poison_64x64.tar.gz"
+_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc_poison_64x64.tar.gz"
 _LABELS = [
     "airplane",
     "airport",
