@@ -371,6 +371,24 @@ def test_resisc45():
         assert y.shape == (batch_size,)
 
 
+def test_resisc10():
+    for split, size in [("train", 5000), ("validation", 1000), ("test", 1000)]:
+        batch_size = 16
+        epochs = 1
+        dataset = datasets.resisc10(
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+        )
+        assert dataset.size == size
+        assert dataset.batch_size == batch_size
+        assert dataset.batches_per_epoch == (
+            size // batch_size + bool(size % batch_size)
+        )
+
+        x, y = dataset.get_batch()
+        assert x.shape == (batch_size, 64, 64, 3)
+        assert y.shape == (batch_size,)
+
+
 def test_librispeech_adversarial():
     if not os.path.exists(
         os.path.join(DATASET_DIR, "librispeech_adversarial", "1.0.0")
