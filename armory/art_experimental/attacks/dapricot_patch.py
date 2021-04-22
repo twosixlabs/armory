@@ -41,7 +41,10 @@ class DApricotPatch(RobustDPatch):
                 self.patch_location = (patch_x, patch_y)
                 patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
                 patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
-                self.patch_shape = (patch_height, patch_width, 3)
+                patch_dim = max(patch_height, patch_width)
+                # must be square for now, until it's determined why non-square
+                # patches fail to completely overlay green screen
+                self.patch_shape = (patch_dim, patch_dim, 3)
 
                 # self._patch needs to be re-initialized with the correct shape
                 if self.estimator.clip_values is None:
@@ -63,9 +66,9 @@ class DApricotPatch(RobustDPatch):
                     y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
                 )
                 img_with_patch = insert_patch(
-                    gs_coords, x[i], patch, patch_geometric_shape,
+                    gs_coords, x[i] * 255.0, patch * 255.0, patch_geometric_shape,
                 )
-                attacked_images.append(img_with_patch)
+                attacked_images.append(img_with_patch / 255.0)
         else:
             # generate patch using center image
             gs_coords_center_img = y_patch_metadata[1]["gs_coords"]
@@ -79,7 +82,10 @@ class DApricotPatch(RobustDPatch):
             patch_height = np.max(gs_coords_center_img[:, 1]) - np.min(
                 gs_coords_center_img[:, 1]
             )
-            self.patch_shape = (patch_height, patch_width, 3)
+            patch_dim = max(patch_height, patch_width)
+            # must be square for now, until it's determined why non-square
+            # patches fail to completely overlay green screen
+            self.patch_shape = (patch_dim, patch_dim, 3)
 
             # self._patch needs to be re-initialized with the correct shape
             if self.estimator.clip_values is None:
@@ -101,9 +107,9 @@ class DApricotPatch(RobustDPatch):
                 )
 
                 img_with_patch = insert_patch(
-                    gs_coords, x[i], patch, patch_geometric_shape,
+                    gs_coords, x[i] * 255.0, patch * 255.0, patch_geometric_shape,
                 )
-                attacked_images.append(img_with_patch)
+                attacked_images.append(img_with_patch / 255.0)
         return np.array(attacked_images)
 
 
