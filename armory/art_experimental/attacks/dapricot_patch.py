@@ -146,7 +146,7 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
                     x[i], y_object[i]["area"], gs_coords, shape
                 )
                 img_with_patch = super().generate(
-                    np.expand_dims(x[i], axis=0), mask=img_mask
+                    np.expand_dims(x[i], axis=0), y=[y_object[i]], mask=img_mask
                 )[0]
                 attacked_images.append(img_with_patch)
         else:

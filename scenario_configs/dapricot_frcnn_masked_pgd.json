@@ -10,7 +10,8 @@
             "batch_size": 1,
             "eps": 1.0,
             "eps_step": 0.02,
-            "max_iter": 100
+            "max_iter": 100,
+            "targeted": true
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotMaskedPGD",

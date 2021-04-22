@@ -48,7 +48,9 @@ class ObjectDetectionTask(Scenario):
             )
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
-        if attack_type == "preloaded":
+        if not attack_config.get("kwargs").get("targeted", False):
+            raise ValueError("Attack config's kwargs must set 'targeted' to True for D-APRICOT scenario")
+        elif attack_type == "preloaded":
             raise ValueError(
                 "D-APRICOT scenario should not have preloaded set to True in attack config"
             )
