@@ -44,12 +44,12 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
         raise NotImplementedError
 
     def loss_gradient(self, x, y, **kwargs):
-        y_one_indexed = []
+        y_zero_indexed = []
         for y_dict in y:
-            y_dict_one_indexed = y_dict.copy()
-            y_dict_one_indexed["labels"] = y_dict_one_indexed["labels"] + 1
-            y_one_indexed.append(y_dict_one_indexed)
-        return super().loss_gradient(x, y_one_indexed, **kwargs)
+            y_dict_zero_indexed = y_dict.copy()
+            y_dict_zero_indexed["labels"] = y_dict_zero_indexed["labels"] - 1
+            y_zero_indexed.append(y_dict_zero_indexed)
+        return super().loss_gradient(x, y_zero_indexed, **kwargs)
 
     def predict(self, x, **kwargs):
         list_of_zero_indexed_pred_dicts = super().predict(x, **kwargs)
