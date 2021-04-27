@@ -33,7 +33,7 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "dapricot_patch_targeted_AP_per_class"
+            "dapricot_patch_target_success"
         ]
     },
     "model": {
