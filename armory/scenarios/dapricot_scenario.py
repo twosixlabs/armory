@@ -118,6 +118,9 @@ class ObjectDetectionTask(Scenario):
             config["metric"], skip_benign=True, skip_attack=False, targeted=True,
         )
 
+        # The D-APRICOT scenario has no non-targeted tasks
+        metrics_logger.adversarial_tasks = []
+
         eval_split = config["dataset"].get("eval_split", "test")
 
         # Evaluate the ART estimator on adversarial test examples
