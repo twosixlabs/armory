@@ -1366,9 +1366,6 @@ class MetricsLogger:
                     continue
 
                 if metric.name == "dapricot_patch_targeted_AP_per_class":
-                    # there are no non-targeted adversarial metrics for D-APRICOT scenario
-                    if prefix == "adversarial":
-                        continue
                     dapricot_patch_targeted_AP_by_class = (
                         metric.dapricot_patch_targeted_AP_per_class()
                     )
