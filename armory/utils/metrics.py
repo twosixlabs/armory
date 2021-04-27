@@ -1028,8 +1028,6 @@ def dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=0
     "the patches will sometimes generate many small, overlapping predictions in the region
     of the attack"
     """
-    # target_class
-    # target_class_pred_idx = np.where(y_pred["labels"] == )
     return [
         _dapricot_patch_target_success(
             y_i, y_pred_i, iou_threshold=iou_threshold, conf_threshold=conf_threshold
