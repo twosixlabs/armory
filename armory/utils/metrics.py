@@ -484,7 +484,7 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
-def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
+def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5):
     """
     Mean average precision for object detection. This function returns a dictionary
     mapping each class to the average precision (AP) for the class. The mAP can be computed
@@ -492,8 +492,12 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
 
     This metric is computed over all evaluation samples, rather than on a per-sample basis.
     """
-
-    IOU_THRESHOLD = 0.5
+    if len(list_of_ys) != len(list_of_y_preds):
+        raise ValueError(
+            f"Received {len(list_of_ys)} labels but {len(list_of_y_preds)} predictions"
+        )
+    elif len(list_of_ys) == 0:
+        raise ValueError("Received no inputs")
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
 
@@ -502,30 +506,26 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     pred_boxes_list = []
     gt_boxes_list = []
-    # Each element in list_of_y_preds is a list with length equal to batch size
-    batch_size = len(list_of_y_preds[0])
-    for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        for img_idx in range(len(y_pred)):
-            global_img_idx = (batch_size * batch_idx) + img_idx
-            img_labels = y[img_idx]["labels"].flatten()
-            img_boxes = y[img_idx]["boxes"].reshape((-1, 4))
-            for gt_box_idx in range(img_labels.flatten().shape[0]):
-                label = img_labels[gt_box_idx]
-                box = img_boxes[gt_box_idx]
-                gt_box_dict = {"img_idx": global_img_idx, "label": label, "box": box}
-                gt_boxes_list.append(gt_box_dict)
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        img_labels = y["labels"].flatten()
+        img_boxes = y["boxes"].reshape((-1, 4))
+        for gt_box_idx in range(img_labels.flatten().shape[0]):
+            label = img_labels[gt_box_idx]
+            box = img_boxes[gt_box_idx]
+            gt_box_dict = {"img_idx": img_idx, "label": label, "box": box}
+            gt_boxes_list.append(gt_box_dict)
 
-            for pred_box_idx in range(y_pred[img_idx]["labels"].flatten().shape[0]):
-                pred_label = y_pred[img_idx]["labels"][pred_box_idx]
-                pred_box = y_pred[img_idx]["boxes"][pred_box_idx]
-                pred_score = y_pred[img_idx]["scores"][pred_box_idx]
-                pred_box_dict = {
-                    "img_idx": global_img_idx,
-                    "label": pred_label,
-                    "box": pred_box,
-                    "score": pred_score,
-                }
-                pred_boxes_list.append(pred_box_dict)
+        for pred_box_idx in range(y_pred["labels"].flatten().shape[0]):
+            pred_label = y_pred["labels"][pred_box_idx]
+            pred_box = y_pred["boxes"][pred_box_idx]
+            pred_score = y_pred["scores"][pred_box_idx]
+            pred_box_dict = {
+                "img_idx": img_idx,
+                "label": pred_label,
+                "box": pred_box,
+                "score": pred_score,
+            }
+            pred_boxes_list.append(pred_box_dict)
 
     # Union of (1) the set of all true classes and (2) the set of all predicted classes
     set_of_class_ids = set([i["label"] for i in gt_boxes_list]) | set(
@@ -596,7 +596,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
                     highest_iou = iou
                     highest_iou_gt_idx = gt_idx
 
-            if highest_iou > IOU_THRESHOLD:
+            if highest_iou > iou_threshold:
                 # If the gt box has not yet been covered
                 if (
                     img_idx_to_gtboxismatched_array[pred_box["img_idx"]][
@@ -1089,7 +1089,8 @@ class MetricList:
             raise ValueError(f"function must be callable or None, not {function}")
         self.name = name
         self._values = []
-        self._inputs = []
+        self._input_labels = []
+        self._input_preds = []
 
     def clear(self):
         self._values.clear()
@@ -1110,8 +1111,11 @@ class MetricList:
     def mean(self):
         return sum(float(x) for x in self._values) / len(self._values)
 
-    def append_inputs(self, *args):
-        self._inputs.append(args)
+    def append_input_label(self, label):
+        self._input_labels.extend(label)
+
+    def append_input_pred(self, pred):
+        self._input_preds.extend(pred)
 
     def total_wer(self):
         # checks if all values are tuples from the WER metric
@@ -1127,9 +1131,7 @@ class MetricList:
 
     def AP_per_class(self):
         # Computed at once across all samples
-        y_s = [i[0] for i in self._inputs]
-        y_preds = [i[1] for i in self._inputs]
-        return object_detection_AP_per_class(y_s, y_preds)
+        return object_detection_AP_per_class(self._input_labels, self._input_preds)
 
     def apricot_patch_targeted_AP_per_class(self):
         # Computed at once across all samples
@@ -1234,7 +1236,8 @@ class MetricsLogger:
                 "apricot_patch_targeted_AP_per_class",
                 "dapricot_patch_targeted_AP_per_class",
             ]:
-                metric.append_inputs(y, y_pred)
+                metric.append_input_label(y)
+                metric.append_input_pred(y_pred)
             else:
                 metric.append(y, y_pred)
 
