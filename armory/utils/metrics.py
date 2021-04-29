@@ -654,7 +654,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5
     return average_precisions_by_class
 
 
-def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
+def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.1):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -671,11 +671,10 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     It returns a dictionary mapping each class to the average precision (AP) for the class.
     The only classes with potentially nonzero AP's are the classes targeted by the patches
     (see above paragraph).
-    """
 
     # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
     # generate many small, overlapping predictions in the region of the attack"
-    IOU_THRESHOLD = 0.1
+    """
 
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
@@ -685,36 +684,32 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     patch_boxes_list = []
     overlappping_pred_boxes_list = []
-    # Each element in list_of_y_preds is a list with length equal to batch size
-    batch_size = len(list_of_y_preds[0])
-    for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        for img_idx in range(len(y_pred)):
-            global_img_idx = (batch_size * batch_idx) + img_idx
-            idx_of_patch = np.where(
-                y[img_idx]["labels"].flatten() == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-            )[0]
-            patch_box = y[img_idx]["boxes"].reshape((-1, 4))[idx_of_patch].flatten()
-            patch_id = int(y[img_idx]["patch_id"].flatten()[idx_of_patch])
-            patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
-            patch_box_dict = {
-                "img_idx": global_img_idx,
-                "label": patch_target_label,
-                "box": patch_box,
-            }
-            patch_boxes_list.append(patch_box_dict)
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        idx_of_patch = np.where(
+            y["labels"].flatten() == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+        )[0]
+        patch_box = y["boxes"].reshape((-1, 4))[idx_of_patch].flatten()
+        patch_id = int(y["patch_id"].flatten()[idx_of_patch])
+        patch_target_label = APRICOT_PATCHES[patch_id]["adv_target"]
+        patch_box_dict = {
+            "img_idx": img_idx,
+            "label": patch_target_label,
+            "box": patch_box,
+        }
+        patch_boxes_list.append(patch_box_dict)
 
-            for pred_box_idx in range(y_pred[img_idx]["labels"].size):
-                box = y_pred[img_idx]["boxes"][pred_box_idx]
-                if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
-                    label = y_pred[img_idx]["labels"][pred_box_idx]
-                    score = y_pred[img_idx]["scores"][pred_box_idx]
-                    pred_box_dict = {
-                        "img_idx": global_img_idx,
-                        "label": label,
-                        "box": box,
-                        "score": score,
-                    }
-                    overlappping_pred_boxes_list.append(pred_box_dict)
+        for pred_box_idx in range(y_pred["labels"].size):
+            box = y_pred["boxes"][pred_box_idx]
+            if _intersection_over_union(box, patch_box) > iou_threshold:
+                label = y_pred["labels"][pred_box_idx]
+                score = y_pred["scores"][pred_box_idx]
+                pred_box_dict = {
+                    "img_idx": img_idx,
+                    "label": label,
+                    "box": box,
+                    "score": score,
+                }
+                overlappping_pred_boxes_list.append(pred_box_dict)
 
     # Union of (1) the set of classes targeted by patches and (2) the set of all classes
     # predicted at a location that overlaps the patch in the image
@@ -835,7 +830,9 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     return average_precisions_by_class
 
 
-def dapricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
+def dapricot_patch_targeted_AP_per_class(
+    list_of_ys, list_of_y_preds, iou_threshold=0.1
+):
     """
     Average precision indicating how successfully the patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -856,11 +853,10 @@ def dapricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     Assumptions made for D-APRICOT dataset: each image has one ground truth box. This box corresponds
     to the patch and is assigned a label of whatever the attack's target label is. There are no ground-truth
     boxes of COCO objects.
-    """
 
     # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
     # generate many small, overlapping predictions in the region of the attack"
-    IOU_THRESHOLD = 0.1
+    """
 
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
@@ -870,32 +866,28 @@ def dapricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     patch_boxes_list = []
     overlappping_pred_boxes_list = []
-    # Each element in list_of_y_preds is a list with length equal to batch size
-    batch_size = len(list_of_y_preds[0])
-    for batch_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
-        for img_idx in range(len(y_pred)):
-            global_img_idx = (batch_size * batch_idx) + img_idx
-            patch_box = y[img_idx]["boxes"].flatten()
-            patch_target_label = int(y[img_idx]["labels"])
-            patch_box_dict = {
-                "img_idx": global_img_idx,
-                "label": patch_target_label,
-                "box": patch_box,
-            }
-            patch_boxes_list.append(patch_box_dict)
+    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+        patch_box = y["boxes"].flatten()
+        patch_target_label = int(y["labels"])
+        patch_box_dict = {
+            "img_idx": img_idx,
+            "label": patch_target_label,
+            "box": patch_box,
+        }
+        patch_boxes_list.append(patch_box_dict)
 
-            for pred_box_idx in range(y_pred[img_idx]["labels"].size):
-                box = y_pred[img_idx]["boxes"][pred_box_idx]
-                if _intersection_over_union(box, patch_box) > IOU_THRESHOLD:
-                    label = y_pred[img_idx]["labels"][pred_box_idx]
-                    score = y_pred[img_idx]["scores"][pred_box_idx]
-                    pred_box_dict = {
-                        "img_idx": global_img_idx,
-                        "label": label,
-                        "box": box,
-                        "score": score,
-                    }
-                    overlappping_pred_boxes_list.append(pred_box_dict)
+        for pred_box_idx in range(y_pred["labels"].size):
+            box = y_pred["boxes"][pred_box_idx]
+            if _intersection_over_union(box, patch_box) > iou_threshold:
+                label = y_pred["labels"][pred_box_idx]
+                score = y_pred["scores"][pred_box_idx]
+                pred_box_dict = {
+                    "img_idx": img_idx,
+                    "label": label,
+                    "box": box,
+                    "score": score,
+                }
+                overlappping_pred_boxes_list.append(pred_box_dict)
 
     # Only compute AP of classes targeted by patches. The D-APRICOT dataset in some
     # cases contains unlabeled COCO objects in the background
@@ -1135,15 +1127,15 @@ class MetricList:
 
     def apricot_patch_targeted_AP_per_class(self):
         # Computed at once across all samples
-        y_s = [i[0] for i in self._inputs]
-        y_preds = [i[1] for i in self._inputs]
-        return apricot_patch_targeted_AP_per_class(y_s, y_preds)
+        return apricot_patch_targeted_AP_per_class(
+            self._input_labels, self._input_preds
+        )
 
     def dapricot_patch_targeted_AP_per_class(self):
         # Computed at once across all samples
-        y_s = [i[0] for i in self._inputs]
-        y_preds = [i[1] for i in self._inputs]
-        return dapricot_patch_targeted_AP_per_class(y_s, y_preds)
+        return dapricot_patch_targeted_AP_per_class(
+            self._input_labels, self._input_preds
+        )
 
 
 class MetricsLogger:
