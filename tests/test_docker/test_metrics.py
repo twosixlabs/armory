@@ -152,6 +152,6 @@ def test_mAP():
         "scores": np.array([0.8, 0.8]),
     }
 
-    ap_per_class = metrics.object_detection_AP_per_class([[labels]], [[preds]])
+    ap_per_class = metrics.object_detection_AP_per_class([labels], [preds])
     assert ap_per_class[9] == 0
     assert ap_per_class[2] >= 0.99
