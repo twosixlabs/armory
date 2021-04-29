@@ -367,37 +367,36 @@ def image_circle_patch_diameter(x, x_adv):
     ]
 
 
-def _check_object_detection_input(y, y_pred):
+def _check_object_detection_input(y_list, y_pred_list):
     """
     Helper function to check that the object detection labels and predictions are in
     the expected format and contain the expected fields
     """
-    if not isinstance(y, dict):
-        raise TypeError("Expected y to be a dictionary")
+    if not isinstance(y_pred_list, list):
+        raise TypeError("Expected y_pred_list to be a list")
 
-    if not isinstance(y_pred, list):
-        raise TypeError("Expected y_pred to be a list")
+    if not isinstance(y_list, list):
+        raise TypeError("Expected y_list to be a list")
 
-    # Current object detection pipeline only supports batch_size of 1
-    if len(y_pred) != 1:
+    if len(y_list) != len(y_pred_list):
         raise ValueError(
-            f"Expected y_pred to be a list of length 1, found length of {len(y_pred)}"
+            f"Received {len(y_list)} labels but {len(y_pred_list)} predictions"
         )
-
-    y_pred = y_pred[0]
+    elif len(y_list) == 0:
+        raise ValueError("Received no labels or predictions")
 
     REQUIRED_LABEL_KEYS = ["labels", "boxes"]
     REQUIRED_PRED_KEYS = REQUIRED_LABEL_KEYS + ["scores"]
 
-    if not all(key in y for key in REQUIRED_LABEL_KEYS):
-        raise ValueError(
-            f"y must contain the following keys: {REQUIRED_LABEL_KEYS}. The following keys were found: {y.keys()}"
-        )
-
-    if not all(key in y_pred for key in REQUIRED_PRED_KEYS):
-        raise ValueError(
-            f"y_pred must contain the following keys: {REQUIRED_PRED_KEYS}. The following keys were found: {y_pred.keys()}"
-        )
+    for (y, y_pred) in zip(y_list, y_pred_list):
+        if not all(key in y for key in REQUIRED_LABEL_KEYS):
+            raise ValueError(
+                f"y must contain the following keys: {REQUIRED_LABEL_KEYS}. The following keys were found: {y.keys()}"
+            )
+        elif not all(key in y_pred for key in REQUIRED_PRED_KEYS):
+            raise ValueError(
+                f"y_pred must contain the following keys: {REQUIRED_PRED_KEYS}. The following keys were found: {y_pred.keys()}"
+            )
 
 
 def _intersection_over_union(box_1, box_2):
@@ -435,7 +434,7 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
-def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5):
+def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     """
     Mean average precision for object detection. This function returns a dictionary
     mapping each class to the average precision (AP) for the class. The mAP can be computed
@@ -443,12 +442,8 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5
 
     This metric is computed over all evaluation samples, rather than on a per-sample basis.
     """
-    if len(list_of_ys) != len(list_of_y_preds):
-        raise ValueError(
-            f"Received {len(list_of_ys)} labels but {len(list_of_y_preds)} predictions"
-        )
-    elif len(list_of_ys) == 0:
-        raise ValueError("Received no inputs")
+    _check_object_detection_input(y_list, y_pred_list)
+
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
 
@@ -457,7 +452,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     pred_boxes_list = []
     gt_boxes_list = []
-    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+    for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         img_labels = y["labels"].flatten()
         img_boxes = y["boxes"].reshape((-1, 4))
         for gt_box_idx in range(img_labels.flatten().shape[0]):
@@ -605,7 +600,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.5
     return average_precisions_by_class
 
 
-def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds, iou_threshold=0.1):
+def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -626,6 +621,7 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds, iou_thresho
     # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
     # generate many small, overlapping predictions in the region of the attack"
     """
+    _check_object_detection_input(y_list, y_pred_list)
 
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
@@ -635,7 +631,7 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds, iou_thresho
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     patch_boxes_list = []
     overlappping_pred_boxes_list = []
-    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+    for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         idx_of_patch = np.where(
             y["labels"].flatten() == ADV_PATCH_MAGIC_NUMBER_LABEL_ID
         )[0]
@@ -781,9 +777,7 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds, iou_thresho
     return average_precisions_by_class
 
 
-def dapricot_patch_targeted_AP_per_class(
-    list_of_ys, list_of_y_preds, iou_threshold=0.1
-):
+def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -808,6 +802,7 @@ def dapricot_patch_targeted_AP_per_class(
     # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
     # generate many small, overlapping predictions in the region of the attack"
     """
+    _check_object_detection_input(y_list, y_pred_list)
 
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
     RECALL_POINTS = np.linspace(0, 1, 11)
@@ -817,7 +812,7 @@ def dapricot_patch_targeted_AP_per_class(
     # has the following keys "img_idx", "label", "box", as well as "score" for predicted boxes
     patch_boxes_list = []
     overlappping_pred_boxes_list = []
-    for img_idx, (y, y_pred) in enumerate(zip(list_of_ys, list_of_y_preds)):
+    for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         patch_box = y["boxes"].flatten()
         patch_target_label = int(y["labels"])
         patch_box_dict = {
