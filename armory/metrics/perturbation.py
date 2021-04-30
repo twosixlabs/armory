@@ -271,8 +271,7 @@ def image_circle_patch_diameter(x, x_adv):
     return patch_diameter
 
 
-# TODO: FIX
-def generate_video_metric(metric, frame_average="mean"):
+def _generate_video_metric(metric, frame_average="mean", docstring=None):
     """
     Helper function to create video metrics from existing image metrics
     """
@@ -287,22 +286,26 @@ def generate_video_metric(metric, frame_average="mean"):
 
     @numpy
     def func(x, x_adv):
-        results = []
-        for x_sample, x_adv_sample in zip(x, x_adv):
-            frames = metric(x_sample, x_adv_sample)
-            results.append(frame_average_func(frames))
-        return results
+        frames = []
+        for x_frame, x_adv_frame in zip(x, x_adv):
+            frames.append(metric(x_frame, x_adv_frame))
+        return frame_average_func(frames)
 
+    func.__doc__ = docstring
     return func
 
 
-# TODO: FIX
-# for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
-#    metric = SUPPORTED_METRICS[metric_name]
-#    for prefix in "mean", "max":
-#        new_metric_name = prefix + "_" + metric_name
-#        if new_metric_name in SUPPORTED_METRICS:
-#            raise ValueError(f"Duplicate metric {new_metric_name} in SUPPORTED_METRICS")
-#        new_metric = generate_video_metric(metric, frame_average=prefix)
-#        SUPPORTED_METRICS[new_metric_name] = new_metric
-#
+# Convenience loop for video metrics across frames
+for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
+    docstring_format = "Return the {} over frames of the per-frame {} distances"
+    metric = getattr(element, metric_name)
+    for prefix in "mean", "max":
+        docstring = docstring_format.format(prefix, metric_name)
+        new_metric = _generate_video_metric(
+            metric, frame_average=prefix, docstring=docstring
+        )
+        new_metric_name = prefix + "_" + metric_name
+        if new_metric_name in globals():
+            logger.warning(f"{new_metric_name} already in globals. Ignore if reloading")
+        globals()[new_metric_name] = new_metric
+        elementwise(new_metric, name=new_metric_name)

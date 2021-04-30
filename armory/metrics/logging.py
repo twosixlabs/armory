@@ -13,6 +13,19 @@ from armory.metrics import (
 logger = logging.getLogger(__name__)
 
 
+# armory.probe("x", <np.array>)
+# armory.probe("x_adv", np.array)
+# armory.measure("l2", "x", "x_adv")
+# armory.measure(<metric>, <a>, <b>)
+# functools.partial
+
+
+# metrics_logger.log(x=x, x_adv=x_adv)
+# metrics_logger.update()  # sample? batch?
+# metrics_logger.finalize()  # any final updates
+# metrics_logger.results()
+
+
 class MetricList:
     """
     Keeps track of all results from a single metric
@@ -24,7 +37,7 @@ class MetricList:
                 # TODO: FIX
                 self.function = SUPPORTED_METRICS[name]
             except KeyError:
-                raise KeyError(f"{name} is not part of armory.utils.metrics")
+                raise KeyError(f"{name} is not a recognized function")
         elif callable(function):
             self.function = function
         else:

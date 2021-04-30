@@ -8,9 +8,6 @@ import logging
 
 import numpy as np
 
-# TODO: FIX (shouldn't have to import data module to import metrics)
-from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 from armory.metrics.perturbation import MetricNameSpace, as_batch
 
 
@@ -170,6 +167,8 @@ def _object_detection_get_tp_fp_fn(y, y_pred, score_threshold=0.5):
     Helper function to compute the number of true positives, false positives, and false
     negatives given a set of of object detection labels and predictions
     """
+    from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+
     ground_truth_set_of_classes = set(
         y["labels"][np.where(y["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID)]
         .flatten()
@@ -268,6 +267,7 @@ def object_detection_AP_per_class(list_of_ys, list_of_y_preds):
 
     This metric is computed over all evaluation samples, rather than on a per-sample basis.
     """
+    from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
     IOU_THRESHOLD = 0.5
     # Precision will be computed at recall points of 0, 0.1, 0.2, ..., 1
@@ -450,6 +450,8 @@ def apricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     The only classes with potentially nonzero AP's are the classes targeted by the patches
     (see above paragraph).
     """
+    from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
+    from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
     # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
     # generate many small, overlapping predictions in the region of the attack"
