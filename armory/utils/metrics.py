@@ -1045,7 +1045,7 @@ def dapricot_patch_target_success(y_list, y_pred_list, iou_threshold=0.1, conf_t
 
 def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=0.5):
     target_label = int(y["labels"])
-    target_box = y["boxes"]
+    target_box = y["boxes"].reshape((4,))
     pred_indices = np.where(y_pred["scores"] > conf_threshold)[0]
     for pred_idx in pred_indices:
         if y_pred["labels"][pred_idx] == target_label:
