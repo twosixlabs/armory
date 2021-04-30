@@ -1,0 +1,62 @@
+{
+    "_description": "armory run scenario_configs/librispeech_simple.json --num-eval-batches=5",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "eps": 0.2,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
+        },
+        "module": "art.attacks.evasion",
+        "name": "FastGradientMethod",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "librispeech_dev_clean"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "linf",
+        "record_metric_per_sample": true,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {
+            "predict_mode": "all"
+        },
+        "module": "armory.baseline_models.pytorch.sincnet",
+        "name": "get_art_model",
+        "weights_file": "sincnet_librispeech_v1.pth",
+        "wrapper_kwargs": {
+            "clip_values": [
+                -1.0,
+                1.0
+            ]
+        }
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.audio_classification_simple",
+        "name": "AudioClassificationUpdatedTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.13.0",
+        "external_github_repo": "hkakitani/SincNet",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

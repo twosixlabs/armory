@@ -23,6 +23,7 @@ class AudioClassificationUpdatedTask(Scenario):
         num_eval_batches: Optional[int],
         skip_benign: Optional[bool],
         skip_attack: Optional[bool],
+        skip_misclassified: Optional[bool],
     ) -> dict:
         """
         Evaluate the config and return a results dict
@@ -35,6 +36,8 @@ class AudioClassificationUpdatedTask(Scenario):
         if skip_benign:
             raise NotImplementedError
         if skip_attack:
+            raise NotImplementedError
+        if skip_misclassified:
             raise NotImplementedError
 
         logger.info("Loading everything for scenario evaluation")
