@@ -370,7 +370,14 @@ def image_circle_patch_diameter(x, x_adv):
 def _check_object_detection_input(y_list, y_pred_list):
     """
     Helper function to check that the object detection labels and predictions are in
-    the expected format and contain the expected fields
+    the expected format and contain the expected fields.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
     """
     if not isinstance(y_pred_list, list):
         raise TypeError("Expected y_pred_list to be a list")
@@ -438,9 +445,15 @@ def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     """
     Mean average precision for object detection. This function returns a dictionary
     mapping each class to the average precision (AP) for the class. The mAP can be computed
-    by taking the mean of the AP's across all classes.
+    by taking the mean of the AP's across all classes. This metric is computed over all
+    evaluation samples, rather than on a per-sample basis.
 
-    This metric is computed over all evaluation samples, rather than on a per-sample basis.
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -618,8 +631,15 @@ def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     The only classes with potentially nonzero AP's are the classes targeted by the patches
     (see above paragraph).
 
-    # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
-    # generate many small, overlapping predictions in the region of the attack"
+    From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
+    generate many small, overlapping predictions in the region of the attack"
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -796,11 +816,19 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
     (see above paragraph).
 
     Assumptions made for D-APRICOT dataset: each image has one ground truth box. This box corresponds
-    to the patch and is assigned a label of whatever the attack's target label is. There are no ground-truth
-    boxes of COCO objects.
+    to the patch and is assigned a label of whatever the attack's target label is. There are no
+    ground-truth boxes of COCO objects.
 
-    # From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
-    # generate many small, overlapping predictions in the region of the attack"
+    From https://arxiv.org/abs/1912.08166: use a low IOU since "the patches will sometimes
+    generate many small, overlapping predictions in the region of the attack"
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+
     """
     _check_object_detection_input(y_list, y_pred_list)
 
