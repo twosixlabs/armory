@@ -105,7 +105,7 @@ def get_xy(
         else:
             y.append(total - failed_benign - (epsilon >= e).sum())
 
-    x.append(max_value)
+    x.add_results(max_value)
     if ascending_attack:
         y.append(failed_attack)
     else:

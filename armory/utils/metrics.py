@@ -1031,7 +1031,7 @@ class MetricList:
     def clear(self):
         self._values.clear()
 
-    def append(self, *args, **kwargs):
+    def add_results(self, *args, **kwargs):
         value = self.function(*args, **kwargs)
         self._values.extend(value)
 
@@ -1065,21 +1065,8 @@ class MetricList:
         else:
             raise ValueError("total_wer() only for WER metric")
 
-    def AP_per_class(self):
-        # Computed at once across all samples
-        return object_detection_AP_per_class(self._input_labels, self._input_preds)
-
-    def apricot_patch_targeted_AP_per_class(self):
-        # Computed at once across all samples
-        return apricot_patch_targeted_AP_per_class(
-            self._input_labels, self._input_preds
-        )
-
-    def dapricot_patch_targeted_AP_per_class(self):
-        # Computed at once across all samples
-        return dapricot_patch_targeted_AP_per_class(
-            self._input_labels, self._input_preds
-        )
+    def compute_non_elementwise_metric(self):
+        return self.function(self._input_labels, self._input_preds)
 
 
 class MetricsLogger:
@@ -1132,6 +1119,9 @@ class MetricsLogger:
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = ["object_detection_AP_per_class", "apricot_patch_targeted_AP_per_class", "dapricot_patch_targeted_AP_per_class",]
+        self.mean_ap_metrics = ["object_detection_AP_per_class", "apricot_patch_targeted_AP_per_class", "dapricot_patch_targeted_AP_per_class",]
 
     def _generate_counters(self, names):
         if names is None:
@@ -1167,19 +1157,15 @@ class MetricsLogger:
             else self.tasks
         )
         for metric in tasks:
-            if metric.name in [
-                "object_detection_AP_per_class",
-                "apricot_patch_targeted_AP_per_class",
-                "dapricot_patch_targeted_AP_per_class",
-            ]:
+            if metric.name in self.non_elementwise_metrics:
                 metric.append_input_label(y)
                 metric.append_input_pred(y_pred)
             else:
-                metric.append(y, y_pred)
+                metric.add_results(y, y_pred)
 
     def update_perturbation(self, x, x_adv):
         for metric in self.perturbations:
-            metric.append(x, x_adv)
+            metric.add_results(x, x_adv)
 
     def log_task(self, adversarial=False, targeted=False):
         if targeted:
@@ -1205,31 +1191,17 @@ class MetricsLogger:
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
-            elif metric.name == "object_detection_AP_per_class":
-                average_precision_by_class = metric.AP_per_class()
+            elif metric.name in self.non_elementwise_metrics:
+                metric_result = metric.compute_non_elementwise_metric()
                 logger.info(
-                    f"object_detection_mAP on {task_type} examples relative to {wrt} labels: "
-                    f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
-                    f" object_detection_AP by class ID: {average_precision_by_class}"
+                    f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
+                    f"{metric_result}"
                 )
-            elif metric.name == "apricot_patch_targeted_AP_per_class":
-                apricot_patch_targeted_AP_by_class = (
-                    metric.apricot_patch_targeted_AP_per_class()
-                )
-                logger.info(
-                    f"apricot_patch_targeted_mAP on {task_type} examples: "
-                    f"{np.fromiter(apricot_patch_targeted_AP_by_class.values(), dtype=float).mean():.2%}."
-                    f" apricot_patch_targeted_AP by class ID: {apricot_patch_targeted_AP_by_class}"
-                )
-            elif metric.name == "dapricot_patch_targeted_AP_per_class":
-                dapricot_patch_targeted_AP_by_class = (
-                    metric.dapricot_patch_targeted_AP_per_class()
-                )
-                logger.info(
-                    f"dapricot_patch_targeted_mAP on {task_type} examples: "
-                    f"{np.fromiter(dapricot_patch_targeted_AP_by_class.values(), dtype=float).mean():.2%}."
-                    f" dapricot_patch_targeted_AP by class ID: {dapricot_patch_targeted_AP_by_class}"
-                )
+                if metric.name in self.mean_ap_metrics:
+                    logger.info(
+                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
+                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
+                    )
             else:
                 logger.info(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
@@ -1248,39 +1220,11 @@ class MetricsLogger:
             (self.perturbations, "perturbation"),
         ]:
             for metric in metrics:
-                if metric.name == "object_detection_AP_per_class":
-                    average_precision_by_class = metric.AP_per_class()
-                    results[f"{prefix}_object_detection_mAP"] = np.fromiter(
-                        average_precision_by_class.values(), dtype=float
-                    ).mean()
-                    results[f"{prefix}_{metric.name}"] = average_precision_by_class
-                    continue
-
-                if metric.name == "apricot_patch_targeted_AP_per_class":
-                    apricot_patch_targeted_AP_by_class = (
-                        metric.apricot_patch_targeted_AP_per_class()
-                    )
-                    results[f"{prefix}_apricot_patch_targeted_mAP"] = np.fromiter(
-                        apricot_patch_targeted_AP_by_class.values(), dtype=float
-                    ).mean()
-                    results[
-                        f"{prefix}_{metric.name}"
-                    ] = apricot_patch_targeted_AP_by_class
-                    continue
-
-                if metric.name == "dapricot_patch_targeted_AP_per_class":
-                    # there are no non-targeted adversarial metrics for D-APRICOT scenario
-                    if prefix == "adversarial":
-                        continue
-                    dapricot_patch_targeted_AP_by_class = (
-                        metric.dapricot_patch_targeted_AP_per_class()
-                    )
-                    results[f"{prefix}_dapricot_patch_targeted_mAP"] = np.fromiter(
-                        dapricot_patch_targeted_AP_by_class.values(), dtype=float
-                    ).mean()
-                    results[
-                        f"{prefix}_{metric.name}"
-                    ] = dapricot_patch_targeted_AP_by_class
+                if metric.name in self.non_elementwise_metrics:
+                    metric_result = metric.compute_non_elementwise_metric()
+                    results[f"{prefix}_{metric.name}"] = metric_result
+                    if metric.name in self.mean_ap_metrics:
+                        results[f"{prefix}_mean_{metric.name}"] = np.fromiter(metric_result.values(), dtype=float).mean()
                     continue
 
                 if self.full:

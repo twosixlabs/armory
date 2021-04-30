@@ -303,10 +303,10 @@ class GTSRB(Scenario):
             # Ensure that input sample isn't overwritten by classifier
             x.flags.writeable = False
             y_pred = classifier.predict(x)
-            benign_validation_metric.append(y, y_pred)
+            benign_validation_metric.add_results(y, y_pred)
             y_pred_tgt_class = y_pred[y == src_class]
             if len(y_pred_tgt_class):
-                target_class_benign_metric.append(
+                target_class_benign_metric.add_results(
                     [src_class] * len(y_pred_tgt_class), y_pred_tgt_class
                 )
         logger.info(
@@ -337,8 +337,8 @@ class GTSRB(Scenario):
                 x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float32)
                 y_pred = classifier.predict(x_poison_test)
                 y_true = [src_class] * len(y_pred)
-                poisoned_targeted_test_metric.append(y_poison_test, y_pred)
-                poisoned_test_metric.append(y_true, y_pred)
+                poisoned_targeted_test_metric.add_results(y_poison_test, y_pred)
+                poisoned_test_metric.add_results(y_true, y_pred)
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -351,7 +351,7 @@ class GTSRB(Scenario):
             ):
                 x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float32)
                 y_pred = classifier.predict(x_clean_test)
-                poisoned_test_metric.append(y_clean_test, y_pred)
+                poisoned_test_metric.add_results(y_clean_test, y_pred)
 
         elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
@@ -375,12 +375,12 @@ class GTSRB(Scenario):
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
-                poisoned_test_metric.append(y_test, y_pred)
+                poisoned_test_metric.add_results(y_test, y_pred)
 
                 y_pred_targeted = y_pred[y_test == src_class]
                 if not len(y_pred_targeted):
                     continue
-                poisoned_targeted_test_metric.append(
+                poisoned_targeted_test_metric.add_results(
                     [tgt_class] * len(y_pred_targeted), y_pred_targeted
                 )
 
