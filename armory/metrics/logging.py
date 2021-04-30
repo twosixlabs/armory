@@ -2,12 +2,7 @@ import logging
 
 import numpy as np
 
-# TODO: Fix
-from armory.metrics import (
-    SUPPORTED_METRICS,
-    apricot_patch_targeted_AP_per_class,
-    object_detection_AP_per_class,
-)
+from armory.metrics import task, query
 
 
 logger = logging.getLogger(__name__)
@@ -33,11 +28,9 @@ class MetricList:
 
     def __init__(self, name, function=None):
         if function is None:
-            try:
-                # TODO: FIX
-                self.function = SUPPORTED_METRICS[name]
-            except KeyError:
-                raise KeyError(f"{name} is not a recognized function")
+            self.function = query.get_metric(name)
+            if self.function is None:
+                raise KeyError(f"{name} is not a recognized metric function")
         elif callable(function):
             self.function = function
         else:
@@ -86,13 +79,13 @@ class MetricList:
         # Computed at once across all samples
         y_s = [i[0] for i in self._inputs]
         y_preds = [i[1] for i in self._inputs]
-        return object_detection_AP_per_class(y_s, y_preds)
+        return task.object_detection_AP_per_class(y_s, y_preds)
 
     def apricot_patch_targeted_AP_per_class(self):
         # Computed at once across all samples
         y_s = [i[0] for i in self._inputs]
         y_preds = [i[1] for i in self._inputs]
-        return apricot_patch_targeted_AP_per_class(y_s, y_preds)
+        return task.apricot_patch_targeted_AP_per_class(y_s, y_preds)
 
 
 class MetricsLogger:
