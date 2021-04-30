@@ -1120,8 +1120,16 @@ class MetricsLogger:
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
         # the following metrics must be computed at once after all predictions have been obtained
-        self.non_elementwise_metrics = ["object_detection_AP_per_class", "apricot_patch_targeted_AP_per_class", "dapricot_patch_targeted_AP_per_class",]
-        self.mean_ap_metrics = ["object_detection_AP_per_class", "apricot_patch_targeted_AP_per_class", "dapricot_patch_targeted_AP_per_class",]
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ]
 
     def _generate_counters(self, names):
         if names is None:
@@ -1224,7 +1232,9 @@ class MetricsLogger:
                     metric_result = metric.compute_non_elementwise_metric()
                     results[f"{prefix}_{metric.name}"] = metric_result
                     if metric.name in self.mean_ap_metrics:
-                        results[f"{prefix}_mean_{metric.name}"] = np.fromiter(metric_result.values(), dtype=float).mean()
+                        results[f"{prefix}_mean_{metric.name}"] = np.fromiter(
+                            metric_result.values(), dtype=float
+                        ).mean()
                     continue
 
                 if self.full:
