@@ -1014,7 +1014,7 @@ def dapricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     return average_precisions_by_class
 
 
-def dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=0.5):
+def dapricot_patch_target_success(y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5):
     """
     Binary metric that simply indicates whether or not the model predicted the targeted
     class at the location of the patch (given an IOU threshold which defaults to 0.1) with
@@ -1027,12 +1027,19 @@ def dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=0
     Note: from https://arxiv.org/abs/1912.08166: by default a low IOU threshold is used since
     "the patches will sometimes generate many small, overlapping predictions in the region
     of the attack"
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
     """
     return [
         _dapricot_patch_target_success(
-            y_i, y_pred_i, iou_threshold=iou_threshold, conf_threshold=conf_threshold
+            y, y_pred, iou_threshold=iou_threshold, conf_threshold=conf_threshold
         )
-        for y_i, y_pred_i in zip(y, y_pred)
+        for y, y_pred in zip(y_list, y_pred_list)
     ]
 
 
