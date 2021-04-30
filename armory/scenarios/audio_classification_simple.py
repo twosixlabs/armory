@@ -161,11 +161,17 @@ class AudioClassificationUpdatedTask(Scenario):
                     x, x_adv, y, y_pred_adv
                 )  # no reason we wouldn't want to also export y_pred or y_target
 
+            # NOTE: This could be an interesting place to stop / go interactive
+            #     It could be nice to have a user call next() or repeat()
+            #     and interate through the next data batch (or repeat on this batch)
+
         # Finalize logging results (typically statistics averaged across all samples)
+        # NOTE: a lot of gross stuff happens here
         metrics_logger.log_task()  # log benign task
         metrics_logger.log_task(adversarial=True)
         if targeted:
             metrics_logger.log_task(adversarial=True, targeted=True)
 
         # Output results dictionary as a JSON-able data structure
+        # NOTE: additional fun code here
         return metrics_logger.results()
