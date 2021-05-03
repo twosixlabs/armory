@@ -1014,7 +1014,9 @@ def dapricot_patch_targeted_AP_per_class(list_of_ys, list_of_y_preds):
     return average_precisions_by_class
 
 
-def dapricot_patch_target_success(y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5):
+def dapricot_patch_target_success(
+    y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5
+):
     """
     Binary metric that simply indicates whether or not the model predicted the targeted
     class at the location of the patch (given an IOU threshold which defaults to 0.1) with
