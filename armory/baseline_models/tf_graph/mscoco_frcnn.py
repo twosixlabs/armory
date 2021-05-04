@@ -62,6 +62,6 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    images = tf.placeholder(tf.float32, shape=(1, None, None, 3))
+    images = tf.placeholder(tf.float32, shape=(model_kwargs.get("num_images_per_patch", 1), None, None, 3))    
     model = TensorFlowFasterRCNNOneIndexed(images)
     return model

@@ -3,18 +3,19 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "threat_model": "digital"
+            "threat_model": "physical"
         },
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "eps": 1.0,
-            "eps_step": 0.02,
             "max_iter": 100,
-            "targeted": true
+            "learning_rate": 0.03,
+            "brightness_range": [0.75, 1.25],
+            "sample_size": 5,
+            "targeted": true,
+            "batch_size": 3     
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
-        "name": "DApricotMaskedPGD",
+        "name": "DApricotPatch",
         "targeted_labels": {
             "scheme": "object_detection_fixed",
             "value": 2
@@ -40,7 +41,9 @@
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {},
+        "model_kwargs": {
+            "num_images_per_patch": 3
+        },
         "module": "armory.baseline_models.tf_graph.mscoco_frcnn",
         "name": "get_art_model",
         "weights_file": null,
@@ -54,7 +57,7 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0",
-        "external_github_repo": "colour-science/colour",        
+        "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
