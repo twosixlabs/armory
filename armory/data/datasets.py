@@ -873,7 +873,7 @@ def cifar100(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=cifar10_context,
+        context=cifar100_context,
         **kwargs,
     )
 
