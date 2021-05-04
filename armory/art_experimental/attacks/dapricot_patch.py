@@ -44,7 +44,7 @@ def shape_coords(h, w, obj_shape):
             )
     elif obj_shape == "rect":
         # 0.8 w/h aspect ratio
-        if h > w:        
+        if h > w:
             coords = np.array(
                 [
                     [max(0, int(round(w / 2 - 0.4 * h))), 0],
@@ -382,12 +382,16 @@ class DApricotPatch(RobustDPatch):
     """
 
     def __init__(self, estimator, **kwargs):
-        # set batch_size to allow for calculating universal patch over all three cameras        
+        # set batch_size to allow for calculating universal patch over all three cameras
         super().__init__(estimator=estimator, **kwargs)
 
     def _check_params(self) -> None:
-        if not isinstance(self.patch_shape, (tuple, list)) or not all(isinstance(s, int) for s in self.patch_shape):
-            raise ValueError("The patch shape must be either a tuple or list of integers.")
+        if not isinstance(self.patch_shape, (tuple, list)) or not all(
+            isinstance(s, int) for s in self.patch_shape
+        ):
+            raise ValueError(
+                "The patch shape must be either a tuple or list of integers."
+            )
         if len(self.patch_shape) != 3:
             raise ValueError("The length of patch shape must be 3.")
 
@@ -412,25 +416,38 @@ class DApricotPatch(RobustDPatch):
         if not isinstance(self.patch_location, (tuple, list)) or not all(
             isinstance(s, int) for s in self.patch_location
         ):
-            raise ValueError("The patch location must be either a tuple or list of integers.")
+            raise ValueError(
+                "The patch location must be either a tuple or list of integers."
+            )
         if len(self.patch_location) != 2:
             raise ValueError("The length of patch location must be 2.")
 
-        if not isinstance(self.crop_range, (tuple, list)) or not all(isinstance(s, int) for s in self.crop_range):
-            raise ValueError("The crop range must be either a tuple or list of integers.")
+        if not isinstance(self.crop_range, (tuple, list)) or not all(
+            isinstance(s, int) for s in self.crop_range
+        ):
+            raise ValueError(
+                "The crop range must be either a tuple or list of integers."
+            )
         if len(self.crop_range) != 2:
             raise ValueError("The length of crop range must be 2.")
 
         if self.crop_range[0] > self.crop_range[1]:
-            raise ValueError("The first element of the crop range must be less or equal to the second one.")
+            raise ValueError(
+                "The first element of the crop range must be less or equal to the second one."
+            )
 
-        if self.patch_location[0] < self.crop_range[0] or self.patch_location[1] < self.crop_range[1]:
+        if (
+            self.patch_location[0] < self.crop_range[0]
+            or self.patch_location[1] < self.crop_range[1]
+        ):
             raise ValueError("The patch location must be outside the crop range.")
 
         if not isinstance(self.brightness_range, (tuple, list)) or not all(
             isinstance(s, float) for s in self.brightness_range
         ):
-            raise ValueError("The brightness range must be either a tuple or list of floats.")
+            raise ValueError(
+                "The brightness range must be either a tuple or list of floats."
+            )
         if len(self.brightness_range) != 2:
             raise ValueError("The length of brightness range must be 2.")
 
@@ -438,12 +455,16 @@ class DApricotPatch(RobustDPatch):
         #     raise ValueError("The brightness range must be between 0.0 and 1.0.")
 
         if self.brightness_range[0] > self.brightness_range[1]:
-            raise ValueError("The first element of the brightness range must be less or equal to the second one.")
+            raise ValueError(
+                "The first element of the brightness range must be less or equal to the second one."
+            )
 
         if not isinstance(self.rotation_weights, (tuple, list)) or not all(
             isinstance(s, (float, int)) for s in self.rotation_weights
         ):
-            raise ValueError("The rotation sampling weights must be provided as tuple or list of float or int values.")
+            raise ValueError(
+                "The rotation sampling weights must be provided as tuple or list of float or int values."
+            )
         if len(self.rotation_weights) != 4:
             raise ValueError("The number of rotation sampling weights must be 4.")
 
@@ -451,7 +472,9 @@ class DApricotPatch(RobustDPatch):
             raise ValueError("The rotation sampling weights must be non-negative.")
 
         if all(s == 0.0 for s in self.rotation_weights):
-            raise ValueError("At least one of the rotation sampling weights must be strictly greater than zero.")
+            raise ValueError(
+                "At least one of the rotation sampling weights must be strictly greater than zero."
+            )
 
         if not isinstance(self.sample_size, int):
             raise ValueError("The EOT sample size must be of type int.")
@@ -461,7 +484,7 @@ class DApricotPatch(RobustDPatch):
         if not isinstance(self.targeted, bool):
             raise ValueError("The argument `targeted` has to be of type bool.")
 
-    def _augment_images_with_patch(self, x, y, patch, channels_first):        
+    def _augment_images_with_patch(self, x, y, patch, channels_first):
         """
         Augment images with patch using perspective transform
         instead of inserting patch based on patch_location
@@ -473,9 +496,13 @@ class DApricotPatch(RobustDPatch):
         """
 
         if x.shape[0] != len(self.gs_coords):
-            raise ValueError('Number of images should be equal to the number of arrays of green screen coordinates')
+            raise ValueError(
+                "Number of images should be equal to the number of arrays of green screen coordinates"
+            )
         if y is not None and (x.shape[0] != len(y)):
-            raise ValueError('Number of images should be equal to the number of targets')
+            raise ValueError(
+                "Number of images should be equal to the number of targets"
+            )
 
         transformations = dict()
         x_copy = x.copy()
@@ -487,28 +514,28 @@ class DApricotPatch(RobustDPatch):
             x_patch = np.transpose(x_patch, (0, 2, 3, 1))
             patch_copy = np.transpose(patch_copy, (1, 2, 0))
 
-        # Apply patch:        
+        # Apply patch:
         x_patch = []
         for xi, gs_coords in zip(x_copy, self.gs_coords):
             img_with_patch = insert_patch(
                 gs_coords,
-                xi[:,:,::-1] * 255., # input image needs to be BGR
-                patch_copy * self.mask * 255.,
+                xi[:, :, ::-1] * 255.0,  # input image needs to be BGR
+                patch_copy * self.mask * 255.0,
                 self.patch_geometric_shape,
                 cc_gt=None,
                 cc_scene=None,
                 apply_realistic_effects=False,
             )
-            x_patch.append(img_with_patch[:,:,::-1] / 255.) # convert back to RGB
+            x_patch.append(img_with_patch[:, :, ::-1] / 255.0)  # convert back to RGB
         x_patch = np.asarray(x_patch)
 
         # 1) crop images: not used.
-        if self.crop_range[0] !=0 and self.crop_range[1] != 0:
-            print('Warning: crop_range argument not used.')
+        if self.crop_range[0] != 0 and self.crop_range[1] != 0:
+            print("Warning: crop_range argument not used.")
 
         # 2) rotate images:
         if sum(self.rotation_weights[1:]) > 0:
-            raise ValueError('Non-zero rotations not correctly supported at this time.')
+            raise ValueError("Non-zero rotations not correctly supported at this time.")
 
         rot90 = random.choices([0, 1, 2, 3], weights=self.rotation_weights)[0]
 
@@ -597,10 +624,7 @@ class DApricotPatch(RobustDPatch):
         return x_patch, patch_target, transformations
 
     def _untransform_gradients(
-        self,
-        gradients,
-        transforms,
-        channels_first,
+        self, gradients, transforms, channels_first,
     ):
         """
         Revert transformation on gradients using perspective transform
@@ -611,8 +635,8 @@ class DApricotPatch(RobustDPatch):
         """
         if gradients.shape[0] != len(self.gs_coords):
             raise ValueError(
-                'Number of gradient arrays should be equal to the number of arrays of green screen coordinates'
-                )        
+                "Number of gradient arrays should be equal to the number of arrays of green screen coordinates"
+            )
 
         if channels_first:
             gradients = np.transpose(gradients, (0, 2, 3, 1))
@@ -625,10 +649,12 @@ class DApricotPatch(RobustDPatch):
         gradients = np.rot90(gradients, rot90, (1, 2))
 
         # Undo perspective transform for gradients
-        patch_coords = shape_coords(self.patch_shape[0], self.patch_shape[1], self.patch_geometric_shape)  
+        patch_coords = shape_coords(
+            self.patch_shape[0], self.patch_shape[1], self.patch_geometric_shape
+        )
         gradients_tmp = []
         for grads, gs_coords in zip(gradients, self.gs_coords):
-            h, _ = cv2.findHomography(gs_coords, patch_coords)            
+            h, _ = cv2.findHomography(gs_coords, patch_coords)
             grads_tmp = cv2.warpPerspective(
                 grads, h, (self.mask.shape[1], self.mask.shape[0]), cv2.INTER_CUBIC
             )
@@ -659,10 +685,12 @@ class DApricotPatch(RobustDPatch):
 
         if threat_model == "digital":
             if self.batch_size != 1:
-                raise ValueError('DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 1 and model["model_kwargs"]["num_images_per_patch"] == 1')
+                raise ValueError(
+                    'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 1 and model["model_kwargs"]["num_images_per_patch"] == 1'
+                )
 
             for i in range(num_imgs):
-                gs_coords = y_patch_metadata[i]["gs_coords"]                
+                gs_coords = y_patch_metadata[i]["gs_coords"]
                 patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
                 patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
                 patch_dim = max(patch_height, patch_width)
@@ -674,7 +702,9 @@ class DApricotPatch(RobustDPatch):
                     y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
                 )
 
-                self.mask = create_mask(self.patch_geometric_shape, self.patch_shape[0], self.patch_shape[1])
+                self.mask = create_mask(
+                    self.patch_geometric_shape, self.patch_shape[0], self.patch_shape[1]
+                )
 
                 # self._patch needs to be re-initialized with the correct shape
                 if self.estimator.clip_values is None:
@@ -683,30 +713,35 @@ class DApricotPatch(RobustDPatch):
                     self._patch = (
                         np.random.randint(0, 255, size=self.patch_shape)
                         / 255
-                        * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
+                        * (
+                            self.estimator.clip_values[1]
+                            - self.estimator.clip_values[0]
+                        )
                         + self.estimator.clip_values[0]
                     )
-                self._patch = self._patch * self.mask                
-                
+                self._patch = self._patch * self.mask
+
                 self.gs_coords = [gs_coords]
 
                 patch = super().generate(np.expand_dims(x[i], axis=0), y=[y_object[i]])
-                
+
                 # apply patch using perspective transform only
                 img_with_patch = insert_patch(
                     self.gs_coords[0],
-                    x[i][:,:,::-1] * 255., # image needs to be BGR
-                    patch * self.mask * 255.,
+                    x[i][:, :, ::-1] * 255.0,  # image needs to be BGR
+                    patch * self.mask * 255.0,
                     self.patch_geometric_shape,
                     cc_gt=None,
                     cc_scene=None,
                     apply_realistic_effects=False,
                 )
-                attacked_images.append(img_with_patch[:,:,::-1] / 255.)
-                
+                attacked_images.append(img_with_patch[:, :, ::-1] / 255.0)
+
         else:
             if self.batch_size != 3:
-                raise ValueError('DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 3 and model["model_kwargs"]["num_images_per_patch"] == 3')
+                raise ValueError(
+                    'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 3 and model["model_kwargs"]["num_images_per_patch"] == 3'
+                )
 
             # generate universal patch for all three cameras
             gs_coords = [y_patch_metadata[i]["gs_coords"] for i in range(num_imgs)]
@@ -729,10 +764,12 @@ class DApricotPatch(RobustDPatch):
             self.patch_shape = (patch_dim, patch_dim, 3)
 
             self.patch_geometric_shape = (
-                    y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
+                y_patch_metadata[0]["shape"].tobytes().decode("utf-8")
             )
 
-            self.mask = create_mask(self.patch_geometric_shape, self.patch_shape[0], self.patch_shape[1])
+            self.mask = create_mask(
+                self.patch_geometric_shape, self.patch_shape[0], self.patch_shape[1]
+            )
 
             # self._patch needs to be re-initialized with the correct shape
             if self.estimator.clip_values is None:
@@ -744,8 +781,8 @@ class DApricotPatch(RobustDPatch):
                     * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
                     + self.estimator.clip_values[0]
                 )
-            self._patch = self._patch * self.mask            
-                
+            self._patch = self._patch * self.mask
+
             self.gs_coords = gs_coords
 
             patch = super().generate(x, y=[y_object[i] for i in range(num_imgs)])
@@ -756,14 +793,14 @@ class DApricotPatch(RobustDPatch):
                 cc_scene = y_patch_metadata[i]["cc_scene"]
                 img_with_patch = insert_patch(
                     self.gs_coords[i],
-                    x[i][:,:,::-1] * 255., # input must be BGR
-                    patch * self.mask * 255.,
+                    x[i][:, :, ::-1] * 255.0,  # input must be BGR
+                    patch * self.mask * 255.0,
                     self.patch_geometric_shape,
                     cc_gt=cc_gt,
                     cc_scene=cc_scene,
                     apply_realistic_effects=True,
                 )
-                attacked_images.append(img_with_patch[:,:,::-1] / 255.)
+                attacked_images.append(img_with_patch[:, :, ::-1] / 255.0)
         return np.array(attacked_images)
 
 

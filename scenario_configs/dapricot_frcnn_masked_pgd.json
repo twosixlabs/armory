@@ -47,14 +47,14 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
+        "export_samples": 30,
         "kwargs": {},
         "module": "armory.scenarios.dapricot_scenario",
-        "name": "ObjectDetectionTask",
-        "export_samples": 30
+        "name": "ObjectDetectionTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0",
-        "external_github_repo": "colour-science/colour",        
+        "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,

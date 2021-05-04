@@ -7,12 +7,15 @@
         },
         "knowledge": "white",
         "kwargs": {
-            "max_iter": 100,
+            "batch_size": 3,
+            "brightness_range": [
+                0.75,
+                1.25
+            ],
             "learning_rate": 0.03,
-            "brightness_range": [0.75, 1.25],
+            "max_iter": 100,
             "sample_size": 5,
-            "targeted": true,
-            "batch_size": 3     
+            "targeted": true
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotPatch",
@@ -50,10 +53,10 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
+        "export_samples": 30,
         "kwargs": {},
         "module": "armory.scenarios.dapricot_scenario",
-        "name": "ObjectDetectionTask",
-        "export_samples": 30
+        "name": "ObjectDetectionTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.13.0",
