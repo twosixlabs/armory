@@ -826,6 +826,7 @@ class DApricotPatch(RobustDPatchTargeted):
         attacked_images = []
 
         if threat_model == "digital":
+            # Each image in the D-APRICOT 3-tuple of images is attacked individually
             if self.batch_size != 1:
                 raise ValueError(
                     'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 1 and model["model_kwargs"]["num_images_per_patch"] == 1'
@@ -882,7 +883,7 @@ class DApricotPatch(RobustDPatchTargeted):
         else:
             if self.batch_size != 3:
                 raise ValueError(
-                    'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 3 and model["model_kwargs"]["num_images_per_patch"] == 3'
+                    'DApricotPatch physical attack requires attack["kwargs"]["batch_size"] == 3 and model["model_kwargs"]["num_images_per_patch"] == 3'
                 )
 
             # generate universal patch for all three cameras
