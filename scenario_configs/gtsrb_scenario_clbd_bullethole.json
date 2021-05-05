@@ -11,13 +11,14 @@
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 20,
+        "train_epochs": 50,
         "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
             "backdoor_kwargs": {
+                "backdoor_packaged_with_armory": true,
                 "backdoor_path": "./armory/utils/triggers/bullet_holes.png",
                 "poison_module": "art.attacks.poisoning.perturbations",
                 "poison_type": "image",
