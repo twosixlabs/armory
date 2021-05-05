@@ -64,7 +64,7 @@ class RobustDPatchTargeted(RobustDPatch):
         :param y: Target labels for object detector.
         :return: Adversarial patch.
         """
-        channel_index = 1 if self.estimator.channels_first else x.ndim - 1
+        channel_index = x.ndim - 1
         if x.shape[channel_index] != self.patch_shape[channel_index - 1]:
             raise ValueError("The color channel index of the images and the patch have to be identical.")
         if y is None and self.targeted:
@@ -74,11 +74,7 @@ class RobustDPatchTargeted(RobustDPatch):
         if x.ndim != 4:
             raise ValueError("The adversarial patch can only be applied to images.")
 
-        # Check whether patch fits into the cropped images:
-        if self.estimator.channels_first:
-            image_height, image_width = x.shape[2:4]
-        else:
-            image_height, image_width = x.shape[1:3]
+        image_height, image_width = x.shape[1:3]
 
         if y is not None:
             for i_image in range(x.shape[0]):
@@ -651,11 +647,6 @@ class DApricotPatch(RobustDPatchTargeted):
         patch_copy = patch.copy()
         x_patch = x.copy()
 
-        if channels_first:
-            x_copy = np.transpose(x_copy, (0, 2, 3, 1))
-            x_patch = np.transpose(x_patch, (0, 2, 3, 1))
-            patch_copy = np.transpose(patch_copy, (1, 2, 0))
-
         # Apply patch:
         x_patch = []
         for xi, gs_coords in zip(x_copy, self.gs_coords):
@@ -760,9 +751,6 @@ class DApricotPatch(RobustDPatchTargeted):
 
             patch_target.append(target_dict)
 
-        if channels_first:
-            x_patch = np.transpose(x_patch, (0, 3, 1, 2))
-
         return x_patch, patch_target, transformations
 
     def _untransform_gradients(
@@ -779,9 +767,6 @@ class DApricotPatch(RobustDPatchTargeted):
             raise ValueError(
                 "Number of gradient arrays should be equal to the number of arrays of green screen coordinates"
             )
-
-        if channels_first:
-            gradients = np.transpose(gradients, (0, 2, 3, 1))
 
         # Account for brightness adjustment:
         gradients = transforms["brightness"] * gradients
@@ -803,9 +788,6 @@ class DApricotPatch(RobustDPatchTargeted):
             gradients_tmp.append(grads_tmp)
         gradients = np.asarray(gradients_tmp)
         gradients = gradients * self.mask
-
-        if channels_first:
-            gradients = np.transpose(gradients, (0, 3, 1, 2))
 
         return gradients
 
