@@ -821,19 +821,9 @@ class DApricotPatch(RobustDPatchTargeted):
 
         return gradients
 
-    def generate(self, x, y_object=None, y_patch_metadata=None, **generate_kwargs):
-        if "threat_model" not in generate_kwargs:
-            raise ValueError(
-                "'threat_model' kwarg must be defined in attack config's"
-                "'generate_kwargs' as one of ('physical', 'digital')"
-            )
-        elif generate_kwargs["threat_model"].lower() not in ("physical", "digital"):
-            raise ValueError(
-                f"'threat_model must be set to one of ('physical', 'digital'), not {generate_kwargs['threat_model']}."
-            )
-        else:
-            threat_model = generate_kwargs["threat_model"].lower()
-
+    def generate(
+        self, x, y_object=None, y_patch_metadata=None, threat_model="physical"
+    ):
         num_imgs = x.shape[0]
         attacked_images = []
 
@@ -841,7 +831,7 @@ class DApricotPatch(RobustDPatchTargeted):
             # Each image in the D-APRICOT 3-tuple of images is attacked individually
             if self.batch_size != 1:
                 raise ValueError(
-                    'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 1 and model["model_kwargs"]["num_images_per_patch"] == 1'
+                    'DApricotPatch digital attack requires attack["kwargs"]["batch_size"] == 1'
                 )
 
             for i in range(num_imgs):
@@ -895,7 +885,7 @@ class DApricotPatch(RobustDPatchTargeted):
         else:
             if self.batch_size != 3:
                 raise ValueError(
-                    'DApricotPatch physical attack requires attack["kwargs"]["batch_size"] == 3 and model["model_kwargs"]["num_images_per_patch"] == 3'
+                    'DApricotPatch physical attack requires attack["kwargs"]["batch_size"] == 3'
                 )
 
             # generate universal patch for all three cameras
@@ -966,21 +956,7 @@ class DApricotMaskedPGD(ProjectedGradientDescent):
     def __init__(self, estimator, **kwargs):
         super().__init__(estimator=estimator, **kwargs)
 
-    def generate(self, x, y_object=None, y_patch_metadata=None, **generate_kwargs):
-
-        if "threat_model" not in generate_kwargs:
-            raise ValueError(
-                "'threat_model' kwarg must be defined in attack config's"
-                "'generate_kwargs' as one of ('physical', 'digital')"
-            )
-        elif generate_kwargs["threat_model"].lower() not in ("physical", "digital"):
-            raise ValueError(
-                f"'threat_model must be set to one of ('physical', 'digital'), not {generate_kwargs['threat_model']}."
-            )
-
-        else:
-            threat_model = generate_kwargs["threat_model"].lower()
-
+    def generate(self, x, y_object=None, y_patch_metadata=None, threat_model="digital"):
         num_imgs = x.shape[0]
         attacked_images = []
 

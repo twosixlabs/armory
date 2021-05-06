@@ -66,11 +66,24 @@ class ObjectDetectionTask(Scenario):
                 "The D-APRICOT scenario threat model is targeted, and"
                 " thus 'use_label' should be set to false."
             )
+        generate_kwargs = attack_config.get("generate_kwargs", {})
+        if "threat_model" not in generate_kwargs:
+            raise ValueError(
+                "D-APRICOT scenario requires attack['generate_kwargs']['threat_model'] to be set to"
+                " one of ('physical', 'digital')"
+            )
+        elif generate_kwargs["threat_model"].lower() not in ("physical", "digital"):
+            raise ValueError(
+                "D-APRICOT scenario requires attack['generate_kwargs']['threat_model'] to be set to"
+                f"' one of ('physical', 'digital'), not {generate_kwargs['threat_model']}."
+            )
 
         if config["dataset"].get("batch_size") != 1:
             raise ValueError("batch_size of 1 is required for D-APRICOT scenario")
 
         model_config = config["model"]
+        # Each DAPRICOT example consists of 3 images from different perspectives
+        model_config["model_kwargs"]["num_images_per_patch"] = 3
         estimator, _ = load_model(model_config)
 
         defense_config = config.get("defense") or {}
