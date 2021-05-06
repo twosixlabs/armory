@@ -45,7 +45,7 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
-            "num_images_per_patch": 3
+            "batch_size": 3
         },
         "module": "armory.baseline_models.tf_graph.mscoco_frcnn",
         "name": "get_art_model",

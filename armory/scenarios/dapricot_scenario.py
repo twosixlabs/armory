@@ -85,8 +85,6 @@ class ObjectDetectionTask(Scenario):
             )
 
         model_config = config["model"]
-        # Each DAPRICOT example consists of 3 images from different perspectives
-        model_config["model_kwargs"]["num_images_per_patch"] = 3
         estimator, _ = load_model(model_config)
 
         defense_config = config.get("defense") or {}
