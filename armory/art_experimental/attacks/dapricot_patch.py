@@ -312,7 +312,7 @@ def calculate_ccm(im_np, gt_np, gamma=2.2, Vandermonde=True, degree=1):
 
     # calculate matrix
     if Vandermonde:
-        ccm = colour.characterisation.colour_correction_matrix_Vandermonde(
+        ccm = colour.characterisation.matrix_colour_correction_Vandermonde(
             gt_lin, im_lin
         )
     else:
