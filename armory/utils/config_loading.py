@@ -30,7 +30,7 @@ from art.defences.trainer import Trainer
 from armory.art_experimental.attacks import patch
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.data.utils import maybe_download_weights_from_s3
-from armory.utils import labels
+from armory.utils import label_targeters
 
 
 def load(sub_config):
@@ -223,30 +223,30 @@ def load_label_targeter(config):
     scheme = config["scheme"].lower()
     if scheme == "fixed":
         value = config.get("value")
-        return labels.FixedLabelTargeter(value)
+        return label_targeters.FixedLabelTargeter(value)
     elif scheme == "string":
         value = config.get("value")
-        return labels.FixedStringTargeter(value)
+        return label_targeters.FixedStringTargeter(value)
     elif scheme == "random":
         num_classes = config.get("num_classes")
-        return labels.RandomLabelTargeter(num_classes)
+        return label_targeters.RandomLabelTargeter(num_classes)
     elif scheme == "round-robin":
         num_classes = config.get("num_classes")
         offset = config.get("offset", 1)
-        return labels.RoundRobinTargeter(num_classes, offset)
+        return label_targeters.RoundRobinTargeter(num_classes, offset)
     elif scheme == "manual":
         values = config.get("values")
         repeat = config.get("repeat", False)
-        return labels.ManualTargeter(values, repeat)
+        return label_targeters.ManualTargeter(values, repeat)
     elif scheme == "identity":
-        return labels.IdentityTargeter()
+        return label_targeters.IdentityTargeter()
     elif scheme == "matched length":
         transcripts = config.get("transcripts")
-        return labels.MatchedTranscriptLengthTargeter(transcripts)
+        return label_targeters.MatchedTranscriptLengthTargeter(transcripts)
     elif scheme == "object_detection_fixed":
         value = config.get("value")
         score = config.get("score", 1.0)
-        return labels.ObjectDetectionFixedLabelTargeteer(value, score)
+        return label_targeters.ObjectDetectionFixedLabelTargeteer(value, score)
     else:
         raise ValueError(
             f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'
