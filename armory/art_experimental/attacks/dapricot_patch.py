@@ -16,21 +16,24 @@ from art import config
 
 logger = logging.getLogger(__name__)
 
+
 class RobustDPatchTargeted(RobustDPatch):
     def __init__(
-            self,
-            estimator: "OBJECT_DETECTOR_TYPE",
-            patch_shape: Tuple[int, int, int] = (40, 40, 3),
-            patch_location: Tuple[int, int] = (0, 0),
-            crop_range: Tuple[int, int] = (0, 0),
-            brightness_range: Tuple[float, float] = (1.0, 1.0),
-            rotation_weights: Union[Tuple[float, float, float, float], Tuple[int, int, int, int]] = (1, 0, 0, 0),
-            sample_size: int = 1,
-            learning_rate: float = 5.0,
-            max_iter: int = 500,
-            batch_size: int = 16,
-            targeted: bool = True,
-            verbose: bool = True,
+        self,
+        estimator: "OBJECT_DETECTOR_TYPE",
+        patch_shape: Tuple[int, int, int] = (40, 40, 3),
+        patch_location: Tuple[int, int] = (0, 0),
+        crop_range: Tuple[int, int] = (0, 0),
+        brightness_range: Tuple[float, float] = (1.0, 1.0),
+        rotation_weights: Union[
+            Tuple[float, float, float, float], Tuple[int, int, int, int]
+        ] = (1, 0, 0, 0),
+        sample_size: int = 1,
+        learning_rate: float = 5.0,
+        max_iter: int = 500,
+        batch_size: int = 16,
+        targeted: bool = True,
+        verbose: bool = True,
     ):
         super(RobustDPatch, self).__init__(estimator=estimator)
 
@@ -42,10 +45,10 @@ class RobustDPatchTargeted(RobustDPatch):
             self._patch = np.zeros(shape=patch_shape, dtype=config.ART_NUMPY_DTYPE)
         else:
             self._patch = (
-                    np.random.randint(0, 255, size=patch_shape)
-                    / 255
-                    * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
-                    + self.estimator.clip_values[0]
+                np.random.randint(0, 255, size=patch_shape)
+                / 255
+                * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
+                + self.estimator.clip_values[0]
             ).astype(config.ART_NUMPY_DTYPE)
         self.verbose = verbose
         self.patch_location = patch_location
@@ -56,7 +59,9 @@ class RobustDPatchTargeted(RobustDPatch):
         self._targeted = targeted
         self._check_params()
 
-    def generate(self, x: np.ndarray, y: Optional[List[Dict[str, np.ndarray]]] = None, **kwargs) -> np.ndarray:
+    def generate(
+        self, x: np.ndarray, y: Optional[List[Dict[str, np.ndarray]]] = None, **kwargs
+    ) -> np.ndarray:
         """
         Generate RobustDPatch.
 
@@ -66,9 +71,13 @@ class RobustDPatchTargeted(RobustDPatch):
         """
         channel_index = x.ndim - 1
         if x.shape[channel_index] != self.patch_shape[channel_index - 1]:
-            raise ValueError("The color channel index of the images and the patch have to be identical.")
+            raise ValueError(
+                "The color channel index of the images and the patch have to be identical."
+            )
         if y is None and self.targeted:
-            raise ValueError("The targeted version of RobustDPatch attack requires target labels provided to `y`.")
+            raise ValueError(
+                "The targeted version of RobustDPatch attack requires target labels provided to `y`."
+            )
         if y is not None and not self.targeted:
             raise ValueError("The RobustDPatch attack does not use target labels.")
         if x.ndim != 4:
@@ -82,20 +91,26 @@ class RobustDPatchTargeted(RobustDPatch):
                 for i_box in range(y_i.shape[0]):
                     x_1, y_1, x_2, y_2 = y_i[i_box]
                     if (
-                            x_1 < self.crop_range[1]
-                            or y_1 < self.crop_range[0]
-                            or x_2 > image_width - self.crop_range[1] + 1
-                            or y_2 > image_height - self.crop_range[0] + 1
+                        x_1 < self.crop_range[1]
+                        or y_1 < self.crop_range[0]
+                        or x_2 > image_width - self.crop_range[1] + 1
+                        or y_2 > image_height - self.crop_range[0] + 1
                     ):
-                        raise ValueError("Cropping is intersecting with at least one box, reduce `crop_range`.")
+                        raise ValueError(
+                            "Cropping is intersecting with at least one box, reduce `crop_range`."
+                        )
 
         if (
-                self.patch_location[0] + self.patch_shape[0] > image_height - self.crop_range[0]
-                or self.patch_location[1] + self.patch_shape[1] > image_width - self.crop_range[1]
+            self.patch_location[0] + self.patch_shape[0]
+            > image_height - self.crop_range[0]
+            or self.patch_location[1] + self.patch_shape[1]
+            > image_width - self.crop_range[1]
         ):
             raise ValueError("The patch (partially) lies outside the cropped image.")
 
-        for i_step in trange(self.max_iter, desc="RobustDPatch iteration", disable=not self.verbose):
+        for i_step in trange(
+            self.max_iter, desc="RobustDPatch iteration", disable=not self.verbose
+        ):
             if i_step == 0 or (i_step + 1) % 100 == 0:
                 logger.info("Training Step: %i", i_step + 1)
 
@@ -116,28 +131,43 @@ class RobustDPatchTargeted(RobustDPatch):
                         y_batch = y[i_batch_start:i_batch_end]
 
                     # Sample and apply the random transformations:
-                    patched_images, patch_target, transforms = self._augment_images_with_patch(
-                        x[i_batch_start:i_batch_end], y_batch, self._patch, channels_first=self.estimator.channels_first
+                    (
+                        patched_images,
+                        patch_target,
+                        transforms,
+                    ) = self._augment_images_with_patch(
+                        x[i_batch_start:i_batch_end],
+                        y_batch,
+                        self._patch,
+                        channels_first=self.estimator.channels_first,
                     )
 
                     gradients = self.estimator.loss_gradient(
-                        x=patched_images,
-                        y=patch_target,
+                        x=patched_images, y=patch_target,
                     )
 
                     gradients = self._untransform_gradients(
-                        gradients, transforms, channels_first=self.estimator.channels_first
+                        gradients,
+                        transforms,
+                        channels_first=self.estimator.channels_first,
                     )
 
                     patch_gradients = patch_gradients_old + np.sum(gradients, axis=0)
                     logger.debug(
                         "Gradient percentage diff: %f)",
-                        np.mean(np.sign(patch_gradients) != np.sign(patch_gradients_old)),
+                        np.mean(
+                            np.sign(patch_gradients) != np.sign(patch_gradients_old)
+                        ),
                     )
 
                     patch_gradients_old = patch_gradients
 
-            self._patch = self._patch + np.sign(patch_gradients) * (1 - 2 * int(self.targeted)) * self.learning_rate
+            self._patch = (
+                self._patch
+                + np.sign(patch_gradients)
+                * (1 - 2 * int(self.targeted))
+                * self.learning_rate
+            )
 
             if self.estimator.clip_values is not None:
                 self._patch = np.clip(
