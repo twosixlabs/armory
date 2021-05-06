@@ -693,70 +693,11 @@ class DApricotPatch(RobustDPatchTargeted):
 
         # 1) crop images: not used.
         if self.crop_range[0] != 0 and self.crop_range[1] != 0:
-            print("Warning: crop_range argument not used.")
+            logger.warning("crop_range argument not used.")
 
         # 2) rotate images:
         if sum(self.rotation_weights[1:]) > 0:
             raise ValueError("Non-zero rotations not correctly supported at this time.")
-
-        rot90 = random.choices([0, 1, 2, 3], weights=self.rotation_weights)[0]
-
-        x_copy = np.rot90(x_copy, rot90, (1, 2))
-        x_patch = np.rot90(x_patch, rot90, (1, 2))
-
-        transformations.update({"rot90": rot90})
-
-        if y is not None:
-
-            y_copy = list()
-
-            for i_image in range(x_copy.shape[0]):
-                y_b = y[i_image]["boxes"].copy()
-                image_width = x.shape[2]
-                image_height = x.shape[1]
-                x_1_arr = y_b[:, 0]
-                y_1_arr = y_b[:, 1]
-                x_2_arr = y_b[:, 2]
-                y_2_arr = y_b[:, 3]
-                box_width = x_2_arr - x_1_arr
-                box_height = y_2_arr - y_1_arr
-
-                if rot90 == 0:
-                    x_1_new = x_1_arr
-                    y_1_new = y_1_arr
-                    x_2_new = x_2_arr
-                    y_2_new = y_2_arr
-
-                # TODO: fix for rot90 != 0. Pytorch object detection box annotation assumed.
-                if rot90 == 1:
-                    x_1_new = y_1_arr
-                    y_1_new = image_width - x_1_arr - box_width
-                    x_2_new = y_1_arr + box_height
-                    y_2_new = image_width - x_1_arr
-
-                if rot90 == 2:
-                    x_1_new = image_width - x_2_arr
-                    y_1_new = image_height - y_2_arr
-                    x_2_new = x_1_new + box_width
-                    y_2_new = y_1_new + box_height
-
-                if rot90 == 3:
-                    x_1_new = image_height - y_1_arr - box_height
-                    y_1_new = x_1_arr
-                    x_2_new = image_height - y_1_arr
-                    y_2_new = x_1_arr + box_width
-
-                y_i = dict()
-                y_i["boxes"] = np.zeros_like(y[i_image]["boxes"])
-                y_i["boxes"][:, 0] = x_1_new
-                y_i["boxes"][:, 1] = y_1_new
-                y_i["boxes"][:, 2] = x_2_new
-                y_i["boxes"][:, 3] = y_2_new
-
-                y_i["labels"] = y[i_image]["labels"]
-                y_i["scores"] = y[i_image]["scores"]
-
-                y_copy.append(y_i)
 
         # 3) adjust brightness:
         brightness = random.uniform(*self.brightness_range)
@@ -767,16 +708,11 @@ class DApricotPatch(RobustDPatchTargeted):
 
         patch_target = list()
 
-        if self.targeted:
-            predictions = y_copy
-        else:
-            predictions = self.estimator.predict(x=x_copy)
-
         for i_image in range(x_copy.shape[0]):
             target_dict = dict()
-            target_dict["boxes"] = predictions[i_image]["boxes"]
-            target_dict["labels"] = predictions[i_image]["labels"]
-            target_dict["scores"] = predictions[i_image]["scores"]
+            target_dict["boxes"] = y[i_image]["boxes"]
+            target_dict["labels"] = y[i_image]["labels"]
+            target_dict["scores"] = y[i_image]["scores"]
 
             patch_target.append(target_dict)
 
@@ -799,10 +735,6 @@ class DApricotPatch(RobustDPatchTargeted):
 
         # Account for brightness adjustment:
         gradients = transforms["brightness"] * gradients
-
-        # Undo rotations:
-        rot90 = (4 - transforms["rot90"]) % 4
-        gradients = np.rot90(gradients, rot90, (1, 2))
 
         # Undo perspective transform for gradients
         patch_coords = shape_coords(
