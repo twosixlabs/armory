@@ -619,8 +619,8 @@ class DApricotPatch(RobustDPatchTargeted):
         if len(self.brightness_range) != 2:
             raise ValueError("The length of brightness range must be 2.")
 
-        # if self.brightness_range[0] < 0.0 or self.brightness_range[1] > 1.0:
-        #     raise ValueError("The brightness range must be between 0.0 and 1.0.")
+        if self.brightness_range[0] < 0.0:
+            raise ValueError("The brightness range must be non-negative.")
 
         if self.brightness_range[0] > self.brightness_range[1]:
             raise ValueError(
