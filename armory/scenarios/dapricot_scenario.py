@@ -1,5 +1,5 @@
 """
-General image recognition scenario for image classification and object detection.
+D-APRICOT scenario for object detection in the presence of targeted adversarial patches.
 """
 
 import logging
@@ -85,6 +85,11 @@ class ObjectDetectionTask(Scenario):
             )
 
         model_config = config["model"]
+        if model_config["model_kwargs"].get("batch_size") != 3:
+            logger.warning(
+                "If using Armory's baseline mscoco frcnn model,"
+                " model['model_kwargs']['batch_size'] should be set to 3."
+            )
         estimator, _ = load_model(model_config)
 
         defense_config = config.get("defense") or {}
