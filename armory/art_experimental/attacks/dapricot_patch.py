@@ -675,7 +675,6 @@ class DApricotPatch(RobustDPatchTargeted):
         transformations = dict()
         x_copy = x.copy()
         patch_copy = patch.copy()
-        x_patch = x.copy()
 
         # Apply patch:
         x_patch = []
