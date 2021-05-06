@@ -50,21 +50,22 @@ class ObjectDetectionTask(Scenario):
         attack_type = attack_config.get("type")
         if not attack_config.get("kwargs").get("targeted", False):
             raise ValueError(
-                "Attack config's kwargs must set 'targeted' to True for D-APRICOT scenario"
+                "attack['kwargs']['targeted'] must be set to True for D-APRICOT scenario"
             )
         elif attack_type == "preloaded":
             raise ValueError(
-                "D-APRICOT scenario should not have preloaded set to True in attack config"
+                "attack['type'] should not be set to 'preloaded' for D-APRICOT scenario "
+                "and does not need to be specified."
             )
         elif "targeted_labels" not in attack_config:
             raise ValueError(
-                "Attack config must have 'targeted_labels' key, as the "
-                "D-APRICOT threat model is targeted."
+                "attack['targeted_labels'] must be specified, as the D-APRICOT"
+                " threat model is targeted."
             )
         elif attack_config.get("use_label"):
             raise ValueError(
                 "The D-APRICOT scenario threat model is targeted, and"
-                " thus 'use_label' should be set to false."
+                " thus attack['use_label'] should be set to false or unspecified."
             )
         generate_kwargs = attack_config.get("generate_kwargs", {})
         if "threat_model" not in generate_kwargs:
@@ -79,7 +80,9 @@ class ObjectDetectionTask(Scenario):
             )
 
         if config["dataset"].get("batch_size") != 1:
-            raise ValueError("batch_size of 1 is required for D-APRICOT scenario")
+            raise ValueError(
+                "dataset['batch_size'] must be set to 1 is for D-APRICOT scenario."
+            )
 
         model_config = config["model"]
         # Each DAPRICOT example consists of 3 images from different perspectives
