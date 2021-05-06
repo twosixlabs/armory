@@ -81,7 +81,7 @@ class ObjectDetectionTask(Scenario):
 
         if config["dataset"].get("batch_size") != 1:
             raise ValueError(
-                "dataset['batch_size'] must be set to 1 is for D-APRICOT scenario."
+                "dataset['batch_size'] must be set to 1 for D-APRICOT scenario."
             )
 
         model_config = config["model"]
