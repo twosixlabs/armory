@@ -85,10 +85,13 @@ class ObjectDetectionTask(Scenario):
             )
 
         model_config = config["model"]
-        if model_config["model_kwargs"].get("batch_size") != 3:
+        if (
+            model_config["model_kwargs"].get("batch_size") != 3
+            and generate_kwargs["threat_model"].lower() == "physical"
+        ):
             logger.warning(
                 "If using Armory's baseline mscoco frcnn model,"
-                " model['model_kwargs']['batch_size'] should be set to 3."
+                " model['model_kwargs']['batch_size'] should be set to 3 for physical attack."
             )
         estimator, _ = load_model(model_config)
 
