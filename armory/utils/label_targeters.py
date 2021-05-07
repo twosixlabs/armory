@@ -84,7 +84,7 @@ class IdentityTargeter:
         return y.copy().astype(int)
 
 
-class ObjectDetectionFixedLabelTargeteer:
+class ObjectDetectionFixedLabelTargeter:
     """
     Replaces the ground truth labels with the specified value. Does not modify
     the number of boxes or location of boxes.
@@ -109,6 +109,10 @@ class ObjectDetectionFixedLabelTargeteer:
             target_y_i["boxes"] = y_i["boxes"].reshape((-1, 4))
             targeted_y.append(target_y_i)
         return targeted_y
+
+
+class ObjectDetectionFixedLabelTargeteer(ObjectDetectionFixedLabelTargeter):
+    pass
 
 
 class MatchedTranscriptLengthTargeter:
