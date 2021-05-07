@@ -19,8 +19,11 @@
         "module": "art.attacks.evasion",
         "name": "AdversarialPatch",
         "targeted_labels": {
-            "num_classes": 45,
-            "scheme": "round-robin"
+            "args": {
+                "num_classes": 45
+            },
+            "module": "armory.utils.label_targeters",
+            "name": "RoundRobinTargeter"
         },
         "type": "patch",
         "use_label": false

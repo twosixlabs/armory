@@ -18,8 +18,11 @@
         "name": "SNR_PGD_Numpy",
         "targeted": true,
         "targeted_labels": {
-            "scheme": "string",
-            "value": "TEST STRING"
+            "args": {
+                "value": "TEST STRING"
+            },
+            "module": "armory.utils.label_targeters",
+            "name": "FixedStringTargeter"
         },
         "use_label": false
     },
