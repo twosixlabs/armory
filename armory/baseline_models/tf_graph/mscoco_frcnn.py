@@ -62,6 +62,10 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    images = tf.placeholder(tf.float32, shape=(1, None, None, 3))
+    # APRICOT inputs should have shape (1, None, None, 3) while DAPRICOT inputs have shape
+    # (3, None, None, 3)
+    images = tf.placeholder(
+        tf.float32, shape=(model_kwargs.get("batch_size", 1), None, None, 3)
+    )
     model = TensorFlowFasterRCNNOneIndexed(images)
     return model

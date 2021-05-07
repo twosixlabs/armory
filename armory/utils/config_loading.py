@@ -249,5 +249,5 @@ def load_label_targeter(config):
         return labels.ObjectDetectionFixedLabelTargeteer(value, score)
     else:
         raise ValueError(
-            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'
+            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length, "object_detection_fixed")'
         )
