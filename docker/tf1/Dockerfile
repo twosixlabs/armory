@@ -51,6 +51,9 @@ RUN cp object_detection/packages/tf1/setup.py .
 RUN /opt/conda/bin/pip install .
 RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.0
 
+# Note: this is necessary until the following ART issue is resolved: https://github.com/Trusted-AI/adversarial-robustness-toolbox/issues/1092
+RUN /opt/conda/bin/pip install --no-cache-dir numpy==1.19.2
+
 WORKDIR /workspace
 
 ########## TF 1 Dev #################
