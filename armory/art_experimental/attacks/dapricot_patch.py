@@ -2,7 +2,7 @@
 Copyright 2021 The MITRE Corporation. All rights reserved
 """
 import logging
-from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 from tqdm.auto import trange
 import cv2
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class RobustDPatchTargeted(RobustDPatch):
     def __init__(
         self,
-        estimator: "OBJECT_DETECTOR_TYPE",
+        estimator,
         patch_shape: Tuple[int, int, int] = (40, 40, 3),
         patch_location: Tuple[int, int] = (0, 0),
         crop_range: Tuple[int, int] = (0, 0),
