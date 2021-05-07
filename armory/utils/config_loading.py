@@ -220,34 +220,45 @@ def load_defense_internal(defense_config, classifier):
 
 
 def load_label_targeter(config):
-    scheme = config["scheme"].lower()
-    if scheme == "fixed":
-        value = config.get("value")
-        return label_targeters.FixedLabelTargeter(value)
-    elif scheme == "string":
-        value = config.get("value")
-        return label_targeters.FixedStringTargeter(value)
-    elif scheme == "random":
-        num_classes = config.get("num_classes")
-        return label_targeters.RandomLabelTargeter(num_classes)
-    elif scheme == "round-robin":
-        num_classes = config.get("num_classes")
-        offset = config.get("offset", 1)
-        return label_targeters.RoundRobinTargeter(num_classes, offset)
-    elif scheme == "manual":
-        values = config.get("values")
-        repeat = config.get("repeat", False)
-        return label_targeters.ManualTargeter(values, repeat)
-    elif scheme == "identity":
-        return label_targeters.IdentityTargeter()
-    elif scheme == "matched length":
-        transcripts = config.get("transcripts")
-        return label_targeters.MatchedTranscriptLengthTargeter(transcripts)
-    elif scheme == "object_detection_fixed":
-        value = config.get("value")
-        score = config.get("score", 1.0)
-        return label_targeters.ObjectDetectionFixedLabelTargeteer(value, score)
-    else:
-        raise ValueError(
-            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length")'
+    if config.get("scheme"):
+        scheme = config["scheme"].lower()
+        if scheme == "fixed":
+            value = config.get("value")
+            return label_targeters.FixedLabelTargeter(value)
+        elif scheme == "string":
+            value = config.get("value")
+            return label_targeters.FixedStringTargeter(value)
+        elif scheme == "random":
+            num_classes = config.get("num_classes")
+            return label_targeters.RandomLabelTargeter(num_classes)
+        elif scheme == "round-robin":
+            num_classes = config.get("num_classes")
+            offset = config.get("offset", 1)
+            return label_targeters.RoundRobinTargeter(num_classes, offset)
+        elif scheme == "manual":
+            values = config.get("values")
+            repeat = config.get("repeat", False)
+            return label_targeters.ManualTargeter(values, repeat)
+        elif scheme == "identity":
+            return label_targeters.IdentityTargeter()
+        elif scheme == "matched length":
+            transcripts = config.get("transcripts")
+            return label_targeters.MatchedTranscriptLengthTargeter(transcripts)
+        elif scheme == "object_detection_fixed":
+            value = config.get("value")
+            score = config.get("score", 1.0)
+            return label_targeters.ObjectDetectionFixedLabelTargeteer(value, score)
+        else:
+            raise ValueError(
+                f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length", "object_detection_fixed")'
+            )
+    label_targeter_module = import_module(config["module"])
+    label_targeter_class = getattr(label_targeter_module, config["name"])
+    label_targeter_args = config["args"]
+    label_targeter = label_targeter_class(**label_targeter_args)
+    if not callable(getattr(label_targeter, "generate", None)):
+        raise AttributeError(
+            f"label_targeter {label_targeter} must have a 'generate()' method"
+            f" which returns target labels."
         )
+    return label_targeter
