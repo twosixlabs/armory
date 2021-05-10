@@ -1,0 +1,1 @@
+armory-public-data cifar100/cifar100_3.0.2.tar.gz 133384060 35d669af5ccb78fb00e9f0d623d61cacabccb3c864872a06d67f2cbf4c902e7b

@@ -670,6 +670,7 @@ def canonical_variable_image_preprocess(context, batch):
 
 mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
+cifar100_context = ImageContext(x_shape=(32, 32, 3))
 gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
 resisc10_context = ImageContext(x_shape=(64, 64, 3))
@@ -684,6 +685,10 @@ def mnist_canonical_preprocessing(batch):
 
 def cifar10_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar10_context, batch)
+
+
+def cifar100_canonical_preprocessing(batch):
+    return canonical_image_preprocess(cifar100_context, batch)
 
 
 def gtsrb_canonical_preprocessing(batch):
@@ -836,6 +841,39 @@ def cifar10(
         framework=framework,
         shuffle_files=shuffle_files,
         context=cifar10_context,
+        **kwargs,
+    )
+
+
+def cifar100(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = cifar100_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    One hundred class image dataset:
+        https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "cifar100:3.0.2",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=cifar100_context,
         **kwargs,
     )
 
