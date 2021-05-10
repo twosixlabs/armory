@@ -1,14 +1,12 @@
 import logging
 
-import numpy as np
-
 from armory.metrics import task, query
 
 
 logger = logging.getLogger(__name__)
 
 
-# armory.probe("x", <np.array>)
+# armory.probe("x", <np.array>)  # TODO: register these probes
 # armory.probe("x_adv", np.array)
 # armory.measure("l2", "x", "x_adv")
 # armory.measure(<metric>, <a>, <b>)
@@ -20,265 +18,127 @@ logger = logging.getLogger(__name__)
 # metrics_logger.finalize()  # any final updates
 # metrics_logger.results()
 
-
-class MetricList:
-    """
-    Keeps track of all results from a single metric
-    """
-
-    def __init__(self, name, function=None):
-        if function is None:
-            self.function = query.get_metric(name)
-            if self.function is None:
-                raise KeyError(f"{name} is not a recognized metric function")
-        elif callable(function):
-            self.function = function
-        else:
-            raise ValueError(f"function must be callable or None, not {function}")
-        self.name = name
-        self._values = []
-        self._inputs = []
-
-    def clear(self):
-        self._values.clear()
-
-    def append(self, *args, **kwargs):
-        value = self.function(*args, **kwargs)
-        self._values.extend(value)
-
-    def __iter__(self):
-        return self._values.__iter__()
-
-    def __len__(self):
-        return len(self._values)
-
-    # TODO: functions should return json-able outputs?
-
-    def values(self):
-        return list(self._values)
-
-    def mean(self):
-        return sum(float(x) for x in self._values) / len(self._values)
-
-    def append_inputs(self, *args):
-        self._inputs.append(args)
-
-    def total_wer(self):
-        # checks if all values are tuples from the WER metric
-        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
-            total_edit_distance = 0
-            total_words = 0
-            for wer_tuple in self._values:
-                total_edit_distance += wer_tuple[0]
-                total_words += wer_tuple[1]
-            return float(total_edit_distance / total_words)
-        else:
-            raise ValueError("total_wer() only for WER metric")
-
-    def AP_per_class(self):
-        # Computed at once across all samples
-        y_s = [i[0] for i in self._inputs]
-        y_preds = [i[1] for i in self._inputs]
-        return task.object_detection_AP_per_class(y_s, y_preds)
-
-    def apricot_patch_targeted_AP_per_class(self):
-        # Computed at once across all samples
-        y_s = [i[0] for i in self._inputs]
-        y_preds = [i[1] for i in self._inputs]
-        return task.apricot_patch_targeted_AP_per_class(y_s, y_preds)
+# from armory import metrics
+# metrics_logger = metrics.logging.getMetricsLogger(__name__)
+# # ...
+# metrics_logger.probe(name, value, step=None)
 
 
-class MetricsLogger:
-    """
-    Uses the set of task and perturbation metrics given to it.
-    """
+class MetricsHandler:
+    def __init__(self, probes=("x", "y", "y_pred", "y_target", "x_adv", "y_pred_adv")):
+        """
+        These probes are defaults, but can be restricted when needed
+        """
+        self.probes = set()
+        self.add_probes(*probes)
+        self.values = {}
+        self.updated = False
+        self.metric_dict = {}
 
-    def __init__(
-        self,
-        task=None,
-        perturbation=None,
+    @classmethod
+    def from_config(cls, metrics_config):
+        return cls.from_kwargs(**metrics_config)
+
+    @classmethod
+    def from_kwargs(
+        cls,
         means=True,
-        record_metric_per_sample=False,
-        profiler_type=None,
-        computational_resource_dict=None,
+        perturbation="linf",
+        record_metric_per_sample=True,
+        task=("categorical_accuracy",),
         skip_benign=None,
         skip_attack=None,
         targeted=False,
-        **kwargs,
     ):
+        m = cls()
+        if isinstance(perturbation, str):
+            perturbation = [perturbation]
+        for metric in perturbation:
+            m.add_metric(metric, f"perturbation_{metric}", "x", "x_adv")
+        for metric in task:
+            if not skip_benign:
+                m.add_metric(metric, f"benign_{metric}", "y", "y_pred")
+            if not skip_attack:
+                m.add_metric(metric, f"adversarial_{metric}", "y", "y_pred_adv")
+                if targeted:
+                    m.add_metric(metric, f"targeted_{metric}", "y_target", "y_pred_adv")
+
+        return m
+
+    def add_probes(self, *names):
         """
-        task - single metric or list of metrics
-        perturbation - single metric or list of metrics
-        means - whether to return the mean value for each metric
-        record_metric_per_sample - whether to return metric values for each sample
+        Add probes with the following names
+            add_probes("model_layer_3", "model_logits")
         """
-        self.tasks = [] if skip_benign else self._generate_counters(task)
-        self.adversarial_tasks = [] if skip_attack else self._generate_counters(task)
-        self.targeted_tasks = (
-            self._generate_counters(task) if targeted and not skip_attack else []
-        )
-        self.perturbations = (
-            [] if skip_attack else self._generate_counters(perturbation)
-        )
-        self.means = bool(means)
-        self.full = bool(record_metric_per_sample)
-        self.computational_resource_dict = {}
-        if not self.means and not self.full:
-            logger.warning(
-                "No per-sample metric results will be produced. "
-                "To change this, set 'means' or 'record_metric_per_sample' to True."
-            )
-        if (
-            not self.tasks
-            and not self.perturbations
-            and not self.adversarial_tasks
-            and not self.targeted_tasks
-        ):
-            logger.warning(
-                "No metric results will be produced. "
-                "To change this, set one or more 'task' or 'perturbation' metrics"
-            )
+        if len(names) != len(set(names)):
+            raise ValueError(f"Names must be unique: {names}")
+        for n in names:
+            if n in self.probes:
+                raise ValueError(f"Probe {n} already set")
+        for n in names:
+            self.probes.add(n)
 
-    def _generate_counters(self, names):
-        if names is None:
-            names = []
-        elif isinstance(names, str):
-            names = [names]
-        elif not isinstance(names, list):
-            raise ValueError(
-                f"{names} must be one of (None, str, list), not {type(names)}"
-            )
-        return [MetricList(x) for x in names]
+    def add_metric(self, description, metric, *probe_names):
+        """
+        Add a metric. Example usage:
+            NewMetricsLogger.add_metric("benign_categorical_accuracy", "categorical_accuracy", "y", "y_pred")
+        """
+        for p in probe_names:
+            if p not in self.probes:
+                raise ValueError(f"Probe named {p} not defined")
+        if description in self.metric_dict:
+            raise ValueError(f"description {description} already added; must be unique")
+        if not isinstance(metric, MetricList):
+            metric = MetricList(metric)
+        self.metrics_dict[description] = (metric, probe_names)
 
-    @classmethod
-    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
-        if skip_benign:
-            config["skip_benign"] = skip_benign
-        if skip_attack:
-            config["skip_attack"] = skip_attack
-        return cls(**config, targeted=targeted)
+    def update(self, **sensor_values):
+        """
+        Update sensor values to the latest values
+        """
+        for k in sensor_values:
+            if k not in self.probes:
+                raise ValueError(f"{k} is not in probes {self.probes}")
+        for k, v in sensor_values.items():
+            # TODO: defensive copy?
+            self.values[k] = v
+        self.updated = True
 
-    def clear(self):
-        for metric in self.tasks + self.adversarial_tasks + self.perturbations:
-            metric.clear()
+    def measure(self):
+        """
+        Measure metrics with the current set of values
+        """
+        if not self.updated:
+            raise ValueError("Must call update before measuring again")
+        for _, probe_names in self.metrics_dict.values():
+            for p in probe_names:
+                if p not in self.values:
+                    raise ValueError(f"probe {p} has not been set")
 
-    def update_task(self, y, y_pred, adversarial=False, targeted=False):
-        if targeted and not adversarial:
-            raise ValueError("benign task cannot be targeted")
-        tasks = (
-            self.targeted_tasks
-            if targeted
-            else self.adversarial_tasks
-            if adversarial
-            else self.tasks
-        )
-        for metric in tasks:
-            if metric.name in [
-                "object_detection_AP_per_class",
-                "apricot_patch_targeted_AP_per_class",
-            ]:
-                metric.append_inputs(y, y_pred)
-            else:
-                metric.append(y, y_pred)
+        for metric, probe_names in self.metrics_dict.values():
+            metric.update(*[self.values[x] for x in probe_names])
 
-    def update_perturbation(self, x, x_adv):
-        for metric in self.perturbations:
-            metric.append(x, x_adv)
+        self.updated = False
 
-    def log_task(self, adversarial=False, targeted=False):
-        if targeted:
-            if adversarial:
-                metrics = self.targeted_tasks
-                wrt = "target"
-                task_type = "adversarial"
-            else:
-                raise ValueError("benign task cannot be targeted")
-        elif adversarial:
-            metrics = self.adversarial_tasks
-            wrt = "ground truth"
-            task_type = "adversarial"
-        else:
-            metrics = self.tasks
-            wrt = "ground truth"
-            task_type = "benign"
-
-        for metric in metrics:
-            # Do not calculate mean WER, calcuate total WER
-            if metric.name == "word_error_rate":
-                logger.info(
-                    f"Word error rate on {task_type} examples relative to {wrt} labels: "
-                    f"{metric.total_wer():.2%}"
-                )
-            elif metric.name == "object_detection_AP_per_class":
-                average_precision_by_class = metric.AP_per_class()
-                logger.info(
-                    f"object_detection_mAP on {task_type} examples relative to {wrt} labels: "
-                    f"{np.fromiter(average_precision_by_class.values(), dtype=float).mean():.2%}."
-                    f" object_detection_AP by class ID: {average_precision_by_class}"
-                )
-            elif metric.name == "apricot_patch_targeted_AP_per_class":
-                apricot_patch_targeted_AP_by_class = (
-                    metric.apricot_patch_targeted_AP_per_class()
-                )
-                logger.info(
-                    f"apricot_patch_targeted_mAP on {task_type} examples: "
-                    f"{np.fromiter(apricot_patch_targeted_AP_by_class.values(), dtype=float).mean():.2%}."
-                    f" apricot_patch_targeted_AP by class ID: {apricot_patch_targeted_AP_by_class}"
-                )
-            else:
-                logger.info(
-                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric.mean():.2%}"
-                )
+    def finalize(self):
+        """
+        Finalize all metric computations
+        """
+        for metric, _ in self.metrics_dict.values():
+            metric.finalize()
 
     def results(self):
         """
-        Return dict of results
+        Return a dictionary of results
         """
         results = {}
-        for metrics, prefix in [
-            (self.tasks, "benign"),
-            (self.adversarial_tasks, "adversarial"),
-            (self.targeted_tasks, "targeted"),
-            (self.perturbations, "perturbation"),
-        ]:
-            for metric in metrics:
-                if metric.name == "object_detection_AP_per_class":
-                    average_precision_by_class = metric.AP_per_class()
-                    results[f"{prefix}_object_detection_mAP"] = np.fromiter(
-                        average_precision_by_class.values(), dtype=float
-                    ).mean()
-                    results[f"{prefix}_{metric.name}"] = average_precision_by_class
-                    continue
-
-                if metric.name == "apricot_patch_targeted_AP_per_class":
-                    apricot_patch_targeted_AP_by_class = (
-                        metric.apricot_patch_targeted_AP_per_class()
-                    )
-                    results[f"{prefix}_apricot_patch_targeted_mAP"] = np.fromiter(
-                        apricot_patch_targeted_AP_by_class.values(), dtype=float
-                    ).mean()
-                    results[
-                        f"{prefix}_{metric.name}"
-                    ] = apricot_patch_targeted_AP_by_class
-                    continue
-
-                if self.full:
-                    results[f"{prefix}_{metric.name}"] = metric.values()
-                if self.means:
-                    try:
-                        results[f"{prefix}_mean_{metric.name}"] = metric.mean()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate mean in {prefix}_{metric.name}"
-                        )
-                if metric.name == "word_error_rate":
-                    try:
-                        results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate WER in {prefix}_{metric.name}"
-                        )
+        for description, (metric, _) in self.metrics_dict.items():
+            sub_results = metric.results()
+            if not results.keys().isdisjoint(sub_results):
+                raise ValueError(
+                    f"Duplicate keys in {list(results)} and {list(sub_results)}"
+                )
+            results.update(sub_results)
 
         for name in self.computational_resource_dict:
             entry = self.computational_resource_dict[name]
@@ -295,3 +155,66 @@ class MetricsLogger:
             if "stats" in entry:
                 results[f"{name} profiler stats"] = entry["stats"]
         return results
+
+
+class MetricList:
+    """
+    Keeps track of all results from a single metric
+    """
+
+    def __init__(self, name, function=None, elementwise=True, aggregator="mean"):
+        if function is None:
+            self.function = query.get_metric(name)
+            if self.function is None:
+                raise KeyError(f"{name} is not a recognized metric function")
+        elif callable(function):
+            self.function = function
+        else:
+            raise ValueError(f"function must be callable or None, not {function}")
+
+        self.name = name
+        self.elementwise = bool(elementwise)
+        if not self.elementwise and aggregator == "mean":
+            raise ValueError("Cannot use 'mean' with non-elementwise metric")
+        if name == "word_error_rate":
+            self.aggregator = task.aggregrate.total_wer
+            self.aggregator_name = "total_wer"
+        elif name in (
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ):
+            self.aggregator = task.aggregate.mean_ap
+            self.aggregator_name = "mean_" + self.name
+        elif aggregator == "mean":
+            self.aggregator = task.aggregrate.mean
+            self.aggregator_name = "mean_" + self.name
+        elif not aggregator:
+            self.aggregator = None
+        else:
+            raise ValueError(f"Aggregator {aggregator} not recognized")
+
+        self._values = []
+        self._results = {}
+
+    def update(self, *probes):
+        # TODO: handle sample-wise vs batch-wise inputs
+        if self.elementwise:
+            self._values(self.function(*probes))
+        else:
+            self._values.append(probes)  # NOTE: no intermediate values
+
+    def finalize(self):
+        if self.elementwise:
+            r = {self.name: list(self._values)}
+            if self.aggregator is not None:
+                r[self.aggregator_name] = self.aggregator(self._values)
+        else:
+            r_dict = self.function(self._values)  # NOTE: may need unzipping
+            r = {self.name: r_dict}
+            if self.aggregator is not None:
+                r[self.aggregator_name] = self.aggregator(r_dict)
+        self._results = r
+
+    def results(self):
+        return self._results

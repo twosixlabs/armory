@@ -130,7 +130,7 @@ def test_metrics_logger():
         x_adv=[[0, 0, 1, 1]],
         y=[0, 1, 2, 3],
         y_pred=[0, 1, 2, 2],
-        y_pred_adv=[3, 2, 1, 3]
+        y_pred_adv=[3, 2, 1, 3],
     )
     metrics_logger.measure()
     metrics_logger.finalize()
