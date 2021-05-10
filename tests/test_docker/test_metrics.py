@@ -124,12 +124,25 @@ def test_metrics_logger():
         "task": ["categorical_accuracy"],
     }
     metrics_logger = metrics.MetricsLogger.from_config(metrics_config)
+    # NEW
+    metrics_logger.update(
+        x=[[0, 0, 0, 0]],
+        x_adv=[[0, 0, 1, 1]],
+        y=[0, 1, 2, 3],
+        y_pred=[0, 1, 2, 2],
+        y_pred_adv=[3, 2, 1, 3]
+    )
+    metrics_logger.measure()
+    metrics_logger.finalize()
+
+    # OLD
     metrics_logger.clear()
     metrics_logger.update_task([0, 1, 2, 3], [0, 1, 2, 2])
     metrics_logger.update_task([0, 1, 2, 3], [3, 2, 1, 3], adversarial=True)
     metrics_logger.update_perturbation([[0, 0, 0, 0]], [[0, 0, 1, 1]])
     metrics_logger.log_task()
     metrics_logger.log_task(adversarial=False)
+    # END OLD
     results = metrics_logger.results()
 
     # ensure that results are a json encodable dict
