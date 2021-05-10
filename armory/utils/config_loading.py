@@ -221,6 +221,11 @@ def load_defense_internal(defense_config, classifier):
 
 def load_label_targeter(config):
     if config.get("scheme"):
+        logger.warning(
+            "The use of a 'scheme' key in attack['targeted_labels'] has been deprecated. "
+            "The supported means of configuring label targeters is to include 'module' "
+            "and 'name' keys in attack['targeted_labels'] pointing to the targeter object. "
+        )
         scheme = config["scheme"].lower()
         if scheme == "fixed":
             value = config.get("value")
