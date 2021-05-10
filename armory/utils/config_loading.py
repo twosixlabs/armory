@@ -205,6 +205,7 @@ def load_defense_internal(defense_config, classifier):
             classifier.preprocessing_defences = [defense]
         if art.__version__ >= "1.5":
             classifier._update_preprocessing_operations()
+            classifier.set_params()
     elif defense_type == "Postprocessor":
         _check_defense_api(defense, Postprocessor)
         if classifier.postprocessing_defences:
