@@ -111,10 +111,6 @@ class ObjectDetectionFixedLabelTargeter:
         return targeted_y
 
 
-class ObjectDetectionFixedLabelTargeteer(ObjectDetectionFixedLabelTargeter):
-    pass
-
-
 class MatchedTranscriptLengthTargeter:
     """
     Targets labels of a length close to the true label
