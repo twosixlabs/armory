@@ -22,7 +22,7 @@
             "args": {
                 "num_classes": 45
             },
-            "module": "armory.utils.label_targeters",
+            "module": "armory.utils.labels",
             "name": "RoundRobinTargeter"
         },
         "type": "patch",

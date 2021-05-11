@@ -29,7 +29,7 @@
                     "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
                 ]
             },
-            "module": "armory.utils.label_targeters",
+            "module": "armory.utils.labels",
             "name": "MatchedTranscriptLengthTargeter"
         },
         "use_label": false

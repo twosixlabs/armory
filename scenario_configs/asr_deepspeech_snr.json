@@ -21,7 +21,7 @@
             "args": {
                 "value": "TEST STRING"
             },
-            "module": "armory.utils.label_targeters",
+            "module": "armory.utils.labels",
             "name": "FixedStringTargeter"
         },
         "use_label": false
