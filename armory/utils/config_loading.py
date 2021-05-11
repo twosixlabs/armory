@@ -220,34 +220,51 @@ def load_defense_internal(defense_config, classifier):
 
 
 def load_label_targeter(config):
-    scheme = config["scheme"].lower()
-    if scheme == "fixed":
-        value = config.get("value")
-        return labels.FixedLabelTargeter(value)
-    elif scheme == "string":
-        value = config.get("value")
-        return labels.FixedStringTargeter(value)
-    elif scheme == "random":
-        num_classes = config.get("num_classes")
-        return labels.RandomLabelTargeter(num_classes)
-    elif scheme == "round-robin":
-        num_classes = config.get("num_classes")
-        offset = config.get("offset", 1)
-        return labels.RoundRobinTargeter(num_classes, offset)
-    elif scheme == "manual":
-        values = config.get("values")
-        repeat = config.get("repeat", False)
-        return labels.ManualTargeter(values, repeat)
-    elif scheme == "identity":
-        return labels.IdentityTargeter()
-    elif scheme == "matched length":
-        transcripts = config.get("transcripts")
-        return labels.MatchedTranscriptLengthTargeter(transcripts)
-    elif scheme == "object_detection_fixed":
-        value = config.get("value")
-        score = config.get("score", 1.0)
-        return labels.ObjectDetectionFixedLabelTargeteer(value, score)
-    else:
-        raise ValueError(
-            f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length, "object_detection_fixed")'
+    if config.get("scheme"):
+        logger.warning(
+            "The use of a 'scheme' key in attack['targeted_labels'] has been deprecated. "
+            "The supported means of configuring label targeters is to include 'module' "
+            "and 'name' keys in attack['targeted_labels'] pointing to the targeter object. "
         )
+        scheme = config["scheme"].lower()
+        if scheme == "fixed":
+            value = config.get("value")
+            return labels.FixedLabelTargeter(value=value)
+        elif scheme == "string":
+            value = config.get("value")
+            return labels.FixedStringTargeter(value=value)
+        elif scheme == "random":
+            num_classes = config.get("num_classes")
+            return labels.RandomLabelTargeter(num_classes=num_classes)
+        elif scheme == "round-robin":
+            num_classes = config.get("num_classes")
+            offset = config.get("offset", 1)
+            return labels.RoundRobinTargeter(num_classes=num_classes, offset=offset)
+        elif scheme == "manual":
+            values = config.get("values")
+            repeat = config.get("repeat", False)
+            return labels.ManualTargeter(values=values, repeat=repeat)
+        elif scheme == "identity":
+            return labels.IdentityTargeter()
+        elif scheme == "matched length":
+            transcripts = config.get("transcripts")
+            return labels.MatchedTranscriptLengthTargeter(transcripts=transcripts)
+        elif scheme == "object_detection_fixed":
+            value = config.get("value")
+            score = config.get("score", 1.0)
+            return labels.ObjectDetectionFixedLabelTargeter(value=value, score=score)
+        else:
+            raise ValueError(
+                f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", '
+                f'"matched length", "object_detection_fixed")'
+            )
+    label_targeter_module = import_module(config["module"])
+    label_targeter_class = getattr(label_targeter_module, config["name"])
+    label_targeter_kwargs = config["kwargs"]
+    label_targeter = label_targeter_class(**label_targeter_kwargs)
+    if not callable(getattr(label_targeter, "generate", None)):
+        raise AttributeError(
+            f"label_targeter {label_targeter} must have a 'generate()' method"
+            f" which returns target labels."
+        )
+    return label_targeter

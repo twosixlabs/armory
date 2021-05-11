@@ -225,6 +225,23 @@ def test_cifar():
         assert y.shape == (batch_size,)
 
 
+def test_cifar100():
+    batch_size = 500
+    for split, size in [("train", 50000), ("test", 10000)]:
+        dataset = datasets.cifar100(
+            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+        )
+        assert dataset.size == size
+        assert dataset.batch_size == batch_size
+        assert dataset.batches_per_epoch == (
+            size // batch_size + bool(size % batch_size)
+        )
+
+        x, y = dataset.get_batch()
+        assert x.shape == (batch_size, 32, 32, 3)
+        assert y.shape == (batch_size,)
+
+
 def test_digit():
     epochs = 1
     batch_size = 1
@@ -368,6 +385,24 @@ def test_resisc45():
 
         x, y = dataset.get_batch()
         assert x.shape == (batch_size, 256, 256, 3)
+        assert y.shape == (batch_size,)
+
+
+def test_resisc10():
+    for split, size in [("train", 5000), ("validation", 1000), ("test", 1000)]:
+        batch_size = 16
+        epochs = 1
+        dataset = datasets.resisc10(
+            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+        )
+        assert dataset.size == size
+        assert dataset.batch_size == batch_size
+        assert dataset.batches_per_epoch == (
+            size // batch_size + bool(size % batch_size)
+        )
+
+        x, y = dataset.get_batch()
+        assert x.shape == (batch_size, 64, 64, 3)
         assert y.shape == (batch_size,)
 
 
