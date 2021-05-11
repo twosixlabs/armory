@@ -73,7 +73,7 @@ def download_and_extract_repo(
         org_repo_name, branch = external_repo_name.split("@")
     else:
         org_repo_name = external_repo_name
-        branch = "master"
+        branch = ""
     repo_name = org_repo_name.split("/")[-1]
 
     if "ARMORY_GITHUB_TOKEN" in os.environ and os.getenv("ARMORY_GITHUB_TOKEN") != "":
