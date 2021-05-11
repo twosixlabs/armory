@@ -60,7 +60,7 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.6 \
   soundfile \
   sox \
   warpctc-pytorch==0.2.1+torch16.cuda102 \
-  adversarial-robustness-toolbox==1.6.0 --no-cache-dir
+  adversarial-robustness-toolbox==1.6.1 --no-cache-dir
 
 
 ########## PyTorch 1 Deep Speech Dev #################
