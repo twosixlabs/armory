@@ -13,7 +13,6 @@ try:
     import torch  # noqa: F401
 except ImportError:
     pass
-import art
 from art.attacks import Attack
 
 try:
@@ -199,18 +198,21 @@ def load_defense_internal(defense_config, classifier):
     defense_type = defense_config["type"]
     if defense_type == "Preprocessor":
         _check_defense_api(defense, Preprocessor)
-        if classifier.preprocessing_defences:
-            classifier.preprocessing_defences.append(defense)
+        preprocessing_defences = classifier.get_params().get("preprocessing_defences")
+        if preprocessing_defences:
+            preprocessing_defences.append(defense)
         else:
-            classifier.preprocessing_defences = [defense]
-        if art.__version__ >= "1.5":
-            classifier._update_preprocessing_operations()
+            preprocessing_defences = [defense]
+        classifier.set_params(preprocessing_defences=preprocessing_defences)
+
     elif defense_type == "Postprocessor":
         _check_defense_api(defense, Postprocessor)
-        if classifier.postprocessing_defences:
-            classifier.postprocessing_defences.append(defense)
+        postprocessing_defences = classifier.get_params().get("postprocessing_defences")
+        if postprocessing_defences:
+            postprocessing_defences.append(defense)
         else:
-            classifier.postprocessing_defences = [defense]
+            postprocessing_defences = [defense]
+        classifier.set_params(postprocessing_defences=postprocessing_defences)
     else:
         raise ValueError(
             f"Internal defenses must be of either type [Preprocessor, Postprocessor], found {defense_type}"
