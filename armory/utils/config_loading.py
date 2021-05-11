@@ -13,7 +13,6 @@ try:
     import torch  # noqa: F401
 except ImportError:
     pass
-import art
 from art.attacks import Attack
 
 try:
