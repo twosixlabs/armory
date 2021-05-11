@@ -9,7 +9,7 @@ import numpy as np
 
 
 class FixedLabelTargeter:
-    def __init__(self, value):
+    def __init__(self, *, value):
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"value {value} must be a nonnegative int")
         self.value = value
@@ -19,7 +19,7 @@ class FixedLabelTargeter:
 
 
 class FixedStringTargeter:
-    def __init__(self, value):
+    def __init__(self, *, value):
         if not isinstance(value, str):
             raise ValueError(f"target value {value} is not a string")
         self.value = value
@@ -29,7 +29,7 @@ class FixedStringTargeter:
 
 
 class RandomLabelTargeter:
-    def __init__(self, num_classes):
+    def __init__(self, *, num_classes):
         if not isinstance(num_classes, int) or num_classes < 2:
             raise ValueError(f"num_classes {num_classes} must be an int >= 2")
         self.num_classes = num_classes
@@ -40,7 +40,7 @@ class RandomLabelTargeter:
 
 
 class RoundRobinTargeter:
-    def __init__(self, num_classes, offset=1):
+    def __init__(self, *, num_classes, offset=1):
         if not isinstance(num_classes, int) or num_classes < 1:
             raise ValueError(f"num_classes {num_classes} must be a positive int")
         if not isinstance(offset, int) or offset % num_classes == 0:
@@ -54,7 +54,7 @@ class RoundRobinTargeter:
 
 
 class ManualTargeter:
-    def __init__(self, values, repeat=False):
+    def __init__(self, *, values, repeat=False):
         if not values:
             raise ValueError('"values" cannot be an empty list')
         self.values = values
@@ -84,13 +84,13 @@ class IdentityTargeter:
         return y.copy().astype(int)
 
 
-class ObjectDetectionFixedLabelTargeteer:
+class ObjectDetectionFixedLabelTargeter:
     """
     Replaces the ground truth labels with the specified value. Does not modify
     the number of boxes or location of boxes.
     """
 
-    def __init__(self, value, score=1.0):
+    def __init__(self, *, value, score=1.0):
         if not isinstance(value, int) or value < 0:
             raise ValueError(f"value {value} must be a nonnegative int")
         self.value = value
@@ -118,7 +118,7 @@ class MatchedTranscriptLengthTargeter:
     If two labels are tied in length, then it pseudorandomly picks one.
     """
 
-    def __init__(self, transcripts):
+    def __init__(self, *, transcripts):
         if not transcripts:
             raise ValueError('"transcripts" cannot be None or an empty list')
         for t in transcripts:
