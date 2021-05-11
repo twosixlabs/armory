@@ -14,7 +14,7 @@
         "module": "art.attacks.evasion",
         "name": "FastGradientMethod",
         "targeted_labels": {
-            "args": {
+            "kwargs": {
                 "num_classes": 40
             },
             "module": "armory.utils.labels",

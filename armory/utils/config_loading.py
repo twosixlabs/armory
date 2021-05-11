@@ -229,38 +229,39 @@ def load_label_targeter(config):
         scheme = config["scheme"].lower()
         if scheme == "fixed":
             value = config.get("value")
-            return labels.FixedLabelTargeter(value)
+            return labels.FixedLabelTargeter(value=value)
         elif scheme == "string":
             value = config.get("value")
-            return labels.FixedStringTargeter(value)
+            return labels.FixedStringTargeter(value=value)
         elif scheme == "random":
             num_classes = config.get("num_classes")
-            return labels.RandomLabelTargeter(num_classes)
+            return labels.RandomLabelTargeter(num_classes=num_classes)
         elif scheme == "round-robin":
             num_classes = config.get("num_classes")
             offset = config.get("offset", 1)
-            return labels.RoundRobinTargeter(num_classes, offset)
+            return labels.RoundRobinTargeter(num_classes=num_classes, offset=offset)
         elif scheme == "manual":
             values = config.get("values")
             repeat = config.get("repeat", False)
-            return labels.ManualTargeter(values, repeat)
+            return labels.ManualTargeter(values=values, repeat=repeat)
         elif scheme == "identity":
             return labels.IdentityTargeter()
         elif scheme == "matched length":
             transcripts = config.get("transcripts")
-            return labels.MatchedTranscriptLengthTargeter(transcripts)
+            return labels.MatchedTranscriptLengthTargeter(transcripts=transcripts)
         elif scheme == "object_detection_fixed":
             value = config.get("value")
             score = config.get("score", 1.0)
-            return labels.ObjectDetectionFixedLabelTargeter(value, score)
+            return labels.ObjectDetectionFixedLabelTargeter(value=value, score=score)
         else:
             raise ValueError(
-                f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", "matched length", "object_detection_fixed")'
+                f'scheme {scheme} not in ("fixed", "random", "round-robin", "manual", "identity", '
+                f'"matched length", "object_detection_fixed")'
             )
     label_targeter_module = import_module(config["module"])
     label_targeter_class = getattr(label_targeter_module, config["name"])
-    label_targeter_args = config["args"]
-    label_targeter = label_targeter_class(**label_targeter_args)
+    label_targeter_kwargs = config["kwargs"]
+    label_targeter = label_targeter_class(**label_targeter_kwargs)
     if not callable(getattr(label_targeter, "generate", None)):
         raise AttributeError(
             f"label_targeter {label_targeter} must have a 'generate()' method"

@@ -22,7 +22,7 @@
         "module": "armory.art_experimental.attacks.pgd_patch",
         "name": "PGDPatch",
         "targeted_labels": {
-            "args": {
+            "kwargs": {
                 "value": 2
             },
             "module": "armory.utils.labels",

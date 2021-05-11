@@ -17,7 +17,7 @@
         "name": "FastGradientMethod",
         "targeted": true,
         "targeted_labels": {
-            "args": {
+            "kwargs": {
                 "value": "TEST STRING"
             },
             "module": "armory.utils.labels",

@@ -22,7 +22,7 @@
         "name": "ImperceptibleASRPytorch",
         "targeted": true,
         "targeted_labels": {
-            "args": {
+            "kwargs": {
                 "transcripts": [
                     "REALLY SHORT TEST STRING",
                     "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",

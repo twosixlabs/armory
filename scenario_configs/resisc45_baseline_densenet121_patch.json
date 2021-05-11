@@ -19,7 +19,7 @@
         "module": "art.attacks.evasion",
         "name": "AdversarialPatch",
         "targeted_labels": {
-            "args": {
+            "kwargs": {
                 "num_classes": 45
             },
             "module": "armory.utils.labels",
