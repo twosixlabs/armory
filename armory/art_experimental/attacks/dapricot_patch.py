@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 import math
 
-from art.attacks.evasion import RobustDPatch, ProjectedGradientDescent
+from art.attacks.evasion import ProjectedGradientDescent
 
 logger = logging.getLogger(__name__)
 
