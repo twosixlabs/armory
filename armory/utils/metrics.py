@@ -980,7 +980,53 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
     return average_precisions_by_class
 
 
+def dapricot_patch_target_success(
+    y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5
+):
+    """
+    Binary metric that simply indicates whether or not the model predicted the targeted
+    class at the location of the patch (given an IOU threshold which defaults to 0.1) with
+    confidence >= a confidence threshold which defaults to 0.5.
+
+    Assumptions made for D-APRICOT dataset: each image has one ground truth box. This box
+    corresponds to the patch and is assigned a label of whatever the attack's target label is.
+    There are no ground-truth boxes of COCO objects.
+
+    Note: from https://arxiv.org/abs/1912.08166: by default a low IOU threshold is used since
+    "the patches will sometimes generate many small, overlapping predictions in the region
+    of the attack"
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    """
+    return [
+        _dapricot_patch_target_success(
+            y, y_pred, iou_threshold=iou_threshold, conf_threshold=conf_threshold
+        )
+        for y, y_pred in zip(y_list, y_pred_list)
+    ]
+
+
+def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=0.5):
+    target_label = int(y["labels"])
+    target_box = y["boxes"].reshape((4,))
+    pred_indices = np.where(y_pred["scores"] > conf_threshold)[0]
+    for pred_idx in pred_indices:
+        if y_pred["labels"][pred_idx] == target_label:
+            if (
+                _intersection_over_union(y_pred["boxes"][pred_idx], target_box)
+                > iou_threshold
+            ):
+                return 1
+    return 0
+
+
 SUPPORTED_METRICS = {
+    "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
     "categorical_accuracy": categorical_accuracy,

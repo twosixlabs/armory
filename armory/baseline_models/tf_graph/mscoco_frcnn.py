@@ -43,6 +43,14 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
     def compute_loss(self, x, y):
         raise NotImplementedError
 
+    def loss_gradient(self, x, y, **kwargs):
+        y_zero_indexed = []
+        for y_dict in y:
+            y_dict_zero_indexed = y_dict.copy()
+            y_dict_zero_indexed["labels"] = y_dict_zero_indexed["labels"] - 1
+            y_zero_indexed.append(y_dict_zero_indexed)
+        return super().loss_gradient(x, y_zero_indexed, **kwargs)
+
     def predict(self, x, **kwargs):
         list_of_zero_indexed_pred_dicts = super().predict(x, **kwargs)
         list_of_one_indexed_pred_dicts = []
@@ -54,6 +62,10 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
-    images = tf.placeholder(tf.float32, shape=(1, None, None, 3))
+    # APRICOT inputs should have shape (1, None, None, 3) while DAPRICOT inputs have shape
+    # (3, None, None, 3)
+    images = tf.placeholder(
+        tf.float32, shape=(model_kwargs.get("batch_size", 1), None, None, 3)
+    )
     model = TensorFlowFasterRCNNOneIndexed(images)
     return model
