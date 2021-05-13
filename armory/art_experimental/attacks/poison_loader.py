@@ -5,6 +5,7 @@ import os
 
 from art.attacks.poisoning import PoisoningAttackBackdoor
 from art.attacks.poisoning import perturbations
+import armory
 
 
 def poison_loader_GTSRB(**kwargs):
@@ -31,9 +32,7 @@ def poison_loader_GTSRB(**kwargs):
         if backdoor_packaged_with_armory:
             backdoor_path = os.path.join(
                 # Get base directory where armory is pip installed
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                ),
+                os.path.dirname(os.path.dirname(armory.__file__)),
                 backdoor_path,
             )
         size = kwargs.get("size")
