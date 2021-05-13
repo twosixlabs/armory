@@ -23,7 +23,7 @@
             "base_img_size_x": 64,
             "base_img_size_y": 64,
             "blend": 0.8,
-            "channels_first": true,
+            "channels_first": false,
             "mode": "RGB",
             "poison_module": "art.attacks.poisoning.perturbations",
             "poison_type": "image",

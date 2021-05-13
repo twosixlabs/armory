@@ -28,19 +28,14 @@ logger = logging.getLogger(__name__)
 def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
     # In this example, all images of "src" class have a trigger
     # added and re-labeled as "tgt" class
-    # NOTE: currently art.attacks.PoisonAttackBackdoor only supports
-    #   black-white images.  One way to generate poisoned examples
-    #   is to convert each batch of multi-channel images of shape
-    #   (N,W,H,C) to N separate (C,W,H)-tuple, where C would be
-    #   interpreted by PoisonAttackBackdoor as the batch size,
-    #   and each channel would have a backdoor trigger added
     poison_x = []
     poison_y = []
     for idx in range(ds_size):
         if src_lbls[idx] == src and idx in poisoned_indices:
-            src_img = np.transpose(src_imgs[idx], (2, 0, 1))
+            src_img = src_imgs[idx]
             p_img, p_label = attack.poison(src_img, [tgt])
-            poison_x.append(np.transpose(p_img, (1, 2, 0)))
+            p_img = p_img.astype(np.float32)
+            poison_x.append(p_img)
             poison_y.append(p_label)
         else:
             poison_x.append(src_imgs[idx])
