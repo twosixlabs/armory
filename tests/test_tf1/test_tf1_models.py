@@ -60,8 +60,8 @@ def test_tf1_apricot():
     list_of_ypreds = []
     for x, y in dev_dataset:
         y_pred = detector.predict(x)
-        list_of_ys.append(y)
-        list_of_ypreds.append(y_pred)
+        list_of_ys.extend(y)
+        list_of_ypreds.extend(y_pred)
 
     average_precision_by_class = object_detection_AP_per_class(
         list_of_ys, list_of_ypreds
@@ -96,8 +96,8 @@ def test_tf1_apricot():
     list_of_ypreds = []
     for x, y in test_dataset:
         y_pred = detector.predict(x)
-        list_of_ys.append(y)
-        list_of_ypreds.append(y_pred)
+        list_of_ys.extend(y)
+        list_of_ypreds.extend(y_pred)
 
     average_precision_by_class = object_detection_AP_per_class(
         list_of_ys, list_of_ypreds

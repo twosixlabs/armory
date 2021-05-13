@@ -110,8 +110,8 @@ def test_snr_spectrogram():
 
 def test_metric_list():
     metric_list = metrics.MetricList("categorical_accuracy")
-    metric_list.append([1], [1])
-    metric_list.append([1, 2, 3], [1, 0, 2])
+    metric_list.add_results([1], [1])
+    metric_list.add_results([1, 2, 3], [1, 0, 2])
     assert metric_list.mean() == 0.5
     assert metric_list.values() == [1, 1, 0, 0]
 
@@ -152,6 +152,6 @@ def test_mAP():
         "scores": np.array([0.8, 0.8]),
     }
 
-    ap_per_class = metrics.object_detection_AP_per_class([[labels]], [[preds]])
+    ap_per_class = metrics.object_detection_AP_per_class([labels], [preds])
     assert ap_per_class[9] == 0
     assert ap_per_class[2] >= 0.99

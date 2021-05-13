@@ -1,5 +1,5 @@
 """
-General image recognition scenario for image classification and object detection.
+D-APRICOT scenario for object detection in the presence of targeted adversarial patches.
 """
 
 import logging
@@ -48,25 +48,51 @@ class ObjectDetectionTask(Scenario):
             )
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
-        if attack_type == "preloaded":
+        if not attack_config.get("kwargs").get("targeted", False):
             raise ValueError(
-                "D-APRICOT scenario should not have preloaded set to True in attack config"
+                "attack['kwargs']['targeted'] must be set to True for D-APRICOT scenario"
+            )
+        elif attack_type == "preloaded":
+            raise ValueError(
+                "attack['type'] should not be set to 'preloaded' for D-APRICOT scenario "
+                "and does not need to be specified."
             )
         elif "targeted_labels" not in attack_config:
             raise ValueError(
-                "Attack config must have 'targeted_labels' key, as the "
-                "D-APRICOT threat model is targeted."
+                "attack['targeted_labels'] must be specified, as the D-APRICOT"
+                " threat model is targeted."
             )
         elif attack_config.get("use_label"):
             raise ValueError(
                 "The D-APRICOT scenario threat model is targeted, and"
-                " thus 'use_label' should be set to false."
+                " thus attack['use_label'] should be set to false or unspecified."
+            )
+        generate_kwargs = attack_config.get("generate_kwargs", {})
+        if "threat_model" not in generate_kwargs:
+            raise ValueError(
+                "D-APRICOT scenario requires attack['generate_kwargs']['threat_model'] to be set to"
+                " one of ('physical', 'digital')"
+            )
+        elif generate_kwargs["threat_model"].lower() not in ("physical", "digital"):
+            raise ValueError(
+                "D-APRICOT scenario requires attack['generate_kwargs']['threat_model'] to be set to"
+                f"' one of ('physical', 'digital'), not {generate_kwargs['threat_model']}."
             )
 
         if config["dataset"].get("batch_size") != 1:
-            raise ValueError("batch_size of 1 is required for D-APRICOT scenario")
+            raise ValueError(
+                "dataset['batch_size'] must be set to 1 for D-APRICOT scenario."
+            )
 
         model_config = config["model"]
+        if (
+            model_config["model_kwargs"].get("batch_size") != 3
+            and generate_kwargs["threat_model"].lower() == "physical"
+        ):
+            logger.warning(
+                "If using Armory's baseline mscoco frcnn model,"
+                " model['model_kwargs']['batch_size'] should be set to 3 for physical attack."
+            )
         estimator, _ = load_model(model_config)
 
         defense_config = config.get("defense") or {}
@@ -113,6 +139,9 @@ class ObjectDetectionTask(Scenario):
         metrics_logger = metrics.MetricsLogger.from_config(
             config["metric"], skip_benign=True, skip_attack=False, targeted=True,
         )
+
+        # The D-APRICOT scenario has no non-targeted tasks
+        metrics_logger.adversarial_tasks = []
 
         eval_split = config["dataset"].get("eval_split", "test")
 

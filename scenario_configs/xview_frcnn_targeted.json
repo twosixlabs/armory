@@ -22,8 +22,11 @@
         "module": "armory.art_experimental.attacks.pgd_patch",
         "name": "PGDPatch",
         "targeted_labels": {
-            "scheme": "object_detection_fixed",
-            "value": 2
+            "kwargs": {
+                "value": 2
+            },
+            "module": "armory.utils.labels",
+            "name": "ObjectDetectionFixedLabelTargeter"
         },
         "use_label": false
     },
@@ -57,7 +60,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.13.0",
+        "docker_image": "twosixarmory/pytorch:0.13.1",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

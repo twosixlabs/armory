@@ -14,8 +14,11 @@
         "module": "art.attacks.evasion",
         "name": "FastGradientMethod",
         "targeted_labels": {
-            "num_classes": 40,
-            "scheme": "round-robin"
+            "kwargs": {
+                "num_classes": 40
+            },
+            "module": "armory.utils.labels",
+            "name": "RoundRobinTargeter"
         },
         "use_label": false
     },
@@ -59,7 +62,7 @@
         "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.13.0",
+        "docker_image": "twosixarmory/pytorch:0.13.1",
         "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
         "output_dir": null,

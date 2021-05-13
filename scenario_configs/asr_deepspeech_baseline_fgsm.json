@@ -17,8 +17,11 @@
         "name": "FastGradientMethod",
         "targeted": true,
         "targeted_labels": {
-            "scheme": "string",
-            "value": "TEST STRING"
+            "kwargs": {
+                "value": "TEST STRING"
+            },
+            "module": "armory.utils.labels",
+            "name": "FixedStringTargeter"
         },
         "use_label": false
     },
@@ -65,7 +68,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.0",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.1",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,

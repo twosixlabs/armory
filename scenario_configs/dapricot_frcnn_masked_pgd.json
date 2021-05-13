@@ -10,7 +10,8 @@
             "batch_size": 1,
             "eps": 1.0,
             "eps_step": 0.02,
-            "max_iter": 100
+            "max_iter": 100,
+            "targeted": true
         },
         "module": "armory.art_experimental.attacks.dapricot_patch",
         "name": "DApricotMaskedPGD",
@@ -32,7 +33,8 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "dapricot_patch_targeted_AP_per_class"
+            "dapricot_patch_targeted_AP_per_class",
+            "dapricot_patch_target_success"
         ]
     },
     "model": {
@@ -45,13 +47,14 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
+        "export_samples": 30,
         "kwargs": {},
         "module": "armory.scenarios.dapricot_scenario",
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.0",
-        "external_github_repo": null,
+        "docker_image": "twosixarmory/tf1:0.13.1",
+        "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,

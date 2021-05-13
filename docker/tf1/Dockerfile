@@ -49,7 +49,10 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf1/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.0
+RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.1
+
+# Note: this is necessary until the following TF issue is resolved: https://github.com/tensorflow/models/issues/9706
+RUN /opt/conda/bin/pip install --no-cache-dir numpy==1.19.2
 
 WORKDIR /workspace
 
