@@ -10,45 +10,19 @@ import os
 import random
 
 import numpy as np
-from tensorflow import set_random_seed, ConfigProto, Session
-from tensorflow.keras.backend import set_session
-from tensorflow.keras.utils import to_categorical
 from tqdm import tqdm
-from PIL import ImageOps, Image
 
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load,
     load_fn,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
-
-
-def poison_scenario_preprocessing(batch):
-    img_size = 48
-    img_out = []
-    quantization = 255.0
-    for im in batch:
-        img_eq = ImageOps.equalize(Image.fromarray(im))
-        width, height = img_eq.size
-        min_side = min(img_eq.size)
-        center = width // 2, height // 2
-
-        left = center[0] - min_side // 2
-        top = center[1] - min_side // 2
-        right = center[0] + min_side // 2
-        bottom = center[1] + min_side // 2
-
-        img_eq = img_eq.crop((left, top, right, bottom))
-        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
-
-        img_out.append(img_eq)
-
-    return np.array(img_out, dtype=np.float32)
 
 
 def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
@@ -60,7 +34,8 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
         if src_lbls[idx] == src and idx in poisoned_indices:
             src_img = src_imgs[idx]
             p_img, p_label = attack.poison(src_img, [tgt])
-            poison_x.append(p_img.astype(np.float32))
+            p_img = p_img.astype(np.float32)
+            poison_x.append(p_img)
             poison_y.append(p_label)
         else:
             poison_x.append(src_imgs[idx])
@@ -71,7 +46,7 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
     return poison_x, poison_y
 
 
-class GTSRB(Scenario):
+class RESISC10(Scenario):
     def _evaluate(
         self,
         config: dict,
@@ -103,6 +78,16 @@ class GTSRB(Scenario):
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
         classifier, _ = load_model(model_config)
 
+        defense_config = config.get("defense") or {}
+        if "data_augmentation" in defense_config:
+            for data_aug_config in defense_config["data_augmentation"].values():
+                classifier = load_defense_internal(data_aug_config, classifier)
+        logger.info(
+            "classifier.preprocessing_defences: {}".format(
+                classifier.preprocessing_defences
+            )
+        )
+
         config_adhoc = config.get("adhoc") or {}
         train_epochs = config_adhoc["train_epochs"]
         src_class = config_adhoc["source_class"]
@@ -112,12 +97,12 @@ class GTSRB(Scenario):
         )
 
         if not config["sysconfig"].get("use_gpu"):
-            conf = ConfigProto(intra_op_parallelism_threads=1)
-            set_session(Session(config=conf))
+            pass  # is this needed for Pytorch?
+            # conf = ConfigProto(intra_op_parallelism_threads=1)
+            # set_session(Session(config=conf))
 
         # Set random seed due to large variance in attack and defense success
         np.random.seed(config_adhoc["split_id"])
-        set_random_seed(config_adhoc["split_id"])
         random.seed(config_adhoc["split_id"])
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
@@ -132,7 +117,6 @@ class GTSRB(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("train_split", "train"),
-            preprocessing_fn=poison_scenario_preprocessing,
             shuffle_files=False,
         )
 
@@ -210,7 +194,7 @@ class GTSRB(Scenario):
                     poisoned_indices,
                 )
 
-        y_train_all_categorical = to_categorical(y_train_all)
+        y_train_all_categorical = y_train_all
 
         # Flag to determine whether defense_classifier is trained directly
         #     (default API) or is trained as part of detect_poisons method
@@ -229,6 +213,7 @@ class GTSRB(Scenario):
                 y_train_defense = y_train_all
 
             defense_config = config["defense"]
+            defense_config.pop("data_augmentation")
             detection_kwargs = config_adhoc.get("detection_kwargs", dict())
 
             defense_model_config = config_adhoc.get("defense_model", model_config)
@@ -283,17 +268,16 @@ class GTSRB(Scenario):
         else:
             logger.warning("All data points filtered by defense. Skipping training")
 
-        logger.info("Validating on clean test data")
-        test_data = load_dataset(
+        logger.info("Validating on clean validation data")
+        val_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split=config["dataset"].get("eval_split", "test"),
-            preprocessing_fn=poison_scenario_preprocessing,
+            split=config["dataset"].get("eval_split", "validation"),
             shuffle_files=False,
         )
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
-        for x, y in tqdm(test_data, desc="Testing"):
+        for x, y in tqdm(val_data, desc="Testing"):
             # Ensure that input sample isn't overwritten by classifier
             x.flags.writeable = False
             y_pred = classifier.predict(x)
@@ -337,7 +321,6 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
-                preprocessing_fn=poison_scenario_preprocessing,
                 shuffle_files=False,
             )
             for x_clean_test, y_clean_test in tqdm(
@@ -353,7 +336,6 @@ class GTSRB(Scenario):
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
-                preprocessing_fn=poison_scenario_preprocessing,
                 shuffle_files=False,
             )
             for x_test, y_test in tqdm(test_data, desc="Testing"):

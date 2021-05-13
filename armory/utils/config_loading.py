@@ -37,6 +37,8 @@ def load(sub_config):
     fn = getattr(module, sub_config["name"])
     args = sub_config.get("args", [])
     kwargs = sub_config.get("kwargs", {})
+    if "clip_values" in kwargs:
+        kwargs["clip_values"] = tuple(kwargs["clip_values"])
     return fn(*args, **kwargs)
 
 
