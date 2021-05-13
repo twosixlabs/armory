@@ -11,9 +11,22 @@ import random
 from copy import deepcopy
 
 import numpy as np
-from tensorflow import set_random_seed, ConfigProto, Session
-from tensorflow.keras.backend import set_session
-from tensorflow.keras.utils import to_categorical
+
+try:
+    from tensorflow import set_random_seed, ConfigProto, Session
+    from tensorflow.keras.backend import set_session
+    from tensorflow.keras.utils import to_categorical
+except ImportError:
+    from tensorflow.compat.v1 import (
+        set_random_seed,
+        ConfigProto,
+        Session,
+        disable_v2_behavior,
+    )
+    from tensorflow.compat.v1.keras.backend import set_session
+    from tensorflow.compat.v1.keras.utils import to_categorical
+
+    disable_v2_behavior()
 from tqdm import tqdm
 from PIL import ImageOps, Image
 
