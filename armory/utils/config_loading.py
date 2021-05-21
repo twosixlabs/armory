@@ -27,6 +27,7 @@ from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
 from armory.art_experimental.attacks import patch
+from armory.art_experimental.attacks.sweep import SweepAttack
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
@@ -140,6 +141,15 @@ def load_attack(attack_config, classifier):
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
     attack = attack_fn(classifier, **attack_config["kwargs"])
+
+    if attack_config.get("type") == "sweep":
+        attack = SweepAttack(
+            classifier,
+            attack_fn,
+            attack_config.get("sweep_params"),
+            **attack_config.get("kwargs"),
+        )
+
     if not isinstance(attack, Attack):
         logger.warning(
             f"attack {attack} is not an instance of {Attack}."
