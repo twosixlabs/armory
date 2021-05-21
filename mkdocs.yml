@@ -6,6 +6,7 @@ nav:
   - Configuration Files: configuration_files.md
   - Baseline Models: baseline_models.md
   - Datasets: datasets.md
+  - Integrating TFDS Datasets: integrate_tensorflow_datasets.md
   - Adversarial Datasets: adversarial_datasets.md
   - Dataset Licensing: dataset_licensing.md
   - Docker: docker.md
