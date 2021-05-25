@@ -132,8 +132,9 @@ All configuration files are verified against the jsonschema definition at run ti
 ```
 
 ### attack config "type" field
-The supported values for the`"type"` field in attack configs are as follows: 
-<`preloaded`|`patch`|`sweep`>. 
+The supported values for the `"type"` field in attack configs are as follows: 
+<`preloaded`|`patch`|`sweep`>. If none of the cases below apply, the field 
+does not need to be included.
 
 1. `"preloaded"`: This value is specified when using an adversarial dataset (e.g. APRICOT) where no 
 perturbations should be applied to the inputs.
