@@ -128,6 +128,7 @@ def load_model(model_config):
 
 
 def load_attack(attack_config, classifier):
+    SUPPORTED_TYPES = ["preloaded", "patch", "sweep", None]
     if attack_config.get("type") == "patch":
         original_kwargs = attack_config.pop("kwargs")
         kwargs = original_kwargs.copy()
@@ -137,6 +138,13 @@ def load_attack(attack_config, classifier):
         if targeted:
             logger.warning("Patch attack generation may ignore 'targeted' set to True")
         attack_config["kwargs"] = kwargs
+    else:
+        if attack_config.get("type") not in SUPPORTED_TYPES:
+            logger.warning(
+                f"attack_config['type'] of {attack_config.get('type')} was not "
+                f"recognized and isn't being used. Supported attack types "
+                f"are as follows: {SUPPORTED_TYPES}."
+            )
 
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
