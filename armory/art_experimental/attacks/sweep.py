@@ -89,7 +89,11 @@ class SweepAttack(EvasionAttack):
 
         y_pred = self._estimator.predict(x)
         if not self._is_robust(y, y_pred):
-            logger.info("Estimator is not robust to original x. Returning original x.")
+            logger.info(
+                f"Estimator is not robust to original x as measured with metric "
+                f"function {self.metric_fn.__name__} and threshold "
+                f"{self.metric_threshold}. Returning original x."
+            )
             return x
 
         i_min = 0
@@ -186,6 +190,11 @@ class SweepAttack(EvasionAttack):
             # by default use categorical accuracy to measure attack success
             from armory.utils.metrics import categorical_accuracy
 
+            logger.info(
+                "Using default categorical accuracy to measure attack success "
+                "since attack_config['sweep_params']['metric']['module'] is "
+                "unspecified."
+            )
             self.metric_fn = categorical_accuracy
             self.metric_threshold = (
                 0.5  # for binary metric, any x s.t. 0 < x < 1 suffices
