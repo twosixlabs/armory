@@ -134,19 +134,29 @@ class SweepAttack(EvasionAttack):
             return x_best
 
     def _is_robust(self, y, y_pred):
-        if y.dtype == np.object:
-            metric_result = self.metric_fn([y[0]], y_pred)
-            if isinstance(metric_result, dict):
-                metric_result = np.fromiter(metric_result.values(), dtype=float).mean()
-            else:
-                metric_result = metric_result[0]
-        else:
-            metric_result = self.metric_fn(y, y_pred)[0]
-
+        metric_result = self._get_metric_result(y, y_pred)
         if self.targeted:
             return metric_result < self.metric_threshold
         else:
             return metric_result > self.metric_threshold
+
+    def _get_metric_result(self, y, y_pred):
+        if y.dtype == np.object:
+            # convert np object array to list of dicts
+            metric_result = self.metric_fn([y[0]], y_pred)
+        else:
+            metric_result = self.metric_fn(y, y_pred)
+        if isinstance(metric_result, list):
+            if len(metric_result) > 1:
+                raise ValueError(
+                    f"Expected metric function to return one value, not {len(metric_result)}."
+                )
+            metric_result = metric_result[0]
+        if not isinstance(metric_result, (float, int)):
+            raise TypeError(
+                f"Expected metric function to return float or int, not type {type(metric_result)}."
+            )
+        return metric_result
 
     def _check_kwargs(self, kwargs):
         if not isinstance(kwargs, dict):
