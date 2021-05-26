@@ -75,3 +75,13 @@ positional arguments `y` and `y_pred` as such: `f(y, y_pred)` and returns a scal
 `"threshold"` must also be specified indicating at what metric value that attack is 
 considered successful. For non-targeted attacks, if the value is *below* the threshold we 
 consider the attack successful, while the opposite is true for targeted attacks.
+
+### Additional Configuration Settings
+Sweep attacks require access to either ground-truth or target labels `y`. If the attack 
+is untargeted, set `attack_config["use_label"]` to `true`.
+
+
+To ensure that metrics are saved on a per-example basis, set 
+`metric_config["record_metric_per_sample"]` to `true`.
+
+
