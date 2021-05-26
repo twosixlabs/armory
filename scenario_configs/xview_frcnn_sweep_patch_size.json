@@ -11,7 +11,7 @@
             "batch_size": 1,
             "eps": 1.0,
             "eps_step": 0.01,
-            "max_iter": 1,
+            "max_iter": 100,
             "num_random_init": 0,
             "random_eps": false,
             "targeted": true,
@@ -51,8 +51,8 @@
             "kwargs": {},
             "metric": {
                 "module": "armory.utils.metrics",
-                "name": "object_detection_AP_per_class",
-                "threshold": 0.3
+                "name": "object_detection_mAP",
+                "threshold": 0.1
             }
         },
         "targeted_labels": {
