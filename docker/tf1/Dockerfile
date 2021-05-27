@@ -53,12 +53,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.
 
 # Note: this is necessary until the following TF issue is resolved: https://github.com/tensorflow/models/issues/9706
 RUN /opt/conda/bin/pip install --no-cache-dir numpy==1.19.2
+RUN /opt/conda/bin/pip install "h5py<3.0.0"
 
 WORKDIR /workspace
-
-RUN python -c 'import h5py; print(f"Initial h5py version: {h5py.__version__}")'
-RUN /opt/conda/bin/pip install "h5py<3.0.0"
-RUN python -c 'import h5py; print(f"New h5py version: {h5py.__version__}")'
 
 ########## TF 1 Dev #################
 
