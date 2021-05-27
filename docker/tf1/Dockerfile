@@ -56,6 +56,10 @@ RUN /opt/conda/bin/pip install --no-cache-dir numpy==1.19.2
 
 WORKDIR /workspace
 
+RUN python -c 'import h5py; print(f"Initial h5py version: {h5py.__version__}")'
+RUN /opt/conda/bin/pip install "h5py<3.0.0"
+RUN python -c 'import h5py; print(f"New h5py version: {h5py.__version__}")'
+
 ########## TF 1 Dev #################
 
 FROM armory-tf1-base AS armory-tf1-dev
