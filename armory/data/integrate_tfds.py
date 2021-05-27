@@ -8,8 +8,7 @@ import tensorflow_datasets as tfds
 
 from armory import paths
 from armory.data.datasets import _parse_dataset_name, CACHED_CHECKSUMS_DIR
-from armory.data.utils import sha256
-from armory.utils.upload_file import upload_file_to_s3
+from armory.data.utils import sha256, upload_file_to_s3
 from armory.data.template_boilerplate import fn_template
 
 
