@@ -16,7 +16,9 @@ from armory.utils.config_loading import (
     load_defense_internal,
     load_label_targeter,
 )
-from armory.utils import metrics
+from armory.metrics import instrument, computation
+probe = instrument.get_probe()
+
 from armory.scenarios.base import Scenario
 from armory.utils.export import SampleExporter
 
@@ -40,6 +42,10 @@ class AudioClassificationTask(Scenario):
 
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
+
+        meter = instrument.MetricsMeter.from_config(config["metric"])
+        probe.add_meter(meter)
+        profiler = computation.profiler_from_config(config["metric"])
 
         if defense_type in ["Preprocessor", "Postprocessor"]:
             logger.info(f"Applying internal {defense_type} defense to classifier")
@@ -112,18 +118,17 @@ class AudioClassificationTask(Scenario):
             for x, y in tqdm(test_data, desc="Benign"):
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
-                with metrics.resource_context(
-                    name="Inference",
-                    profiler=config["metric"].get("profiler_type"),
-                    computational_resource_dict=metrics_logger.computational_resource_dict,
-                ):
+                with profiler.measure("Inference"):
                     y_pred = classifier.predict(x)
-                metrics_logger.update_task(y, y_pred)
-            metrics_logger.log_task()
+                probe.update(y=y, y_pred=y_pred)
+                meter.measure("benign_task")
 
         if skip_attack:
             logger.info("Skipping attack generation...")
-            return metrics_logger.results()
+            meter.finalize()
+            results = meter.results()
+            results.update(profiler.results())
+            return results
 
         # Evaluate the ART classifier on adversarial test examples
         logger.info("Generating or loading / testing adversarial examples...")
@@ -163,35 +168,30 @@ class AudioClassificationTask(Scenario):
             sample_exporter = None
 
         for x, y in tqdm(test_data, desc="Attack"):
-            with metrics.resource_context(
-                name="Attack",
-                profiler=config["metric"].get("profiler_type"),
-                computational_resource_dict=metrics_logger.computational_resource_dict,
-            ):
+            with profiler.measure("Attack"):
                 if attack_type == "preloaded":
                     x, x_adv = x
                     if targeted:
                         y, y_target = y
-                elif attack_config.get("use_label"):
-                    x_adv = attack.generate(x=x, y=y)
-                elif targeted:
-                    y_target = label_targeter.generate(y)
-                    x_adv = attack.generate(x=x, y=y_target)
+                    else:
+                        y_target = y
                 else:
-                    x_adv = attack.generate(x=x)
+                    if attack_config.get("use_label"):
+                        y_target = y
+                    elif targeted:
+                        y_target = label_targeter.generate(y)
+                    else:
+                        y_target = None  # y_target = y_pred?
+                    x_adv = attack.generate(x=x, y=y_target)
 
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
-            metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-            if targeted:
-                metrics_logger.update_task(
-                    y_target, y_pred_adv, adversarial=True, targeted=True
-                )
-            metrics_logger.update_perturbation(x, x_adv)
+            probe.update(y_target=y_target, x=x, x_adv=x_adv, y_pred_adv=y_pred_adv)
+            meter.measure("perturbation", "adversarial_task")
             if sample_exporter is not None:
                 sample_exporter.export(x, x_adv, y, y_pred_adv)
-        metrics_logger.log_task(adversarial=True)
-        if targeted:
-            metrics_logger.log_task(adversarial=True, targeted=True)
-        return metrics_logger.results()
+        meter.finalize()
+        results = meter.results()
+        results.update(profiler.results())
+        return results
