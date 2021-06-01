@@ -7,27 +7,29 @@
         "knowledge": "white",
         "kwargs": {
             "decrease_factor_alpha": 0.5,
+            "eps": 0.0075,
             "global_max_length": 562480,
             "increase_factor_alpha": 2.0,
-            "initial_eps": 0.0075,
-            "initial_rescale": 1.0,
-            "learning_rate_1st_stage": 0.0001,
-            "learning_rate_2nd_stage": 1e-07,
-            "max_iter_1st_stage": 400,
-            "max_iter_2nd_stage": 100,
-            "num_iter_decrease_alpha": 50,
-            "rescale_factor": 0.5
+            "initial_rescale": 0.5,
+            "learning_rate_1": 0.0001,
+            "learning_rate_2": 1e-07,
+            "max_iter_1": 400,
+            "max_iter_2": 100,
+            "num_iter_decrease_alpha": 50
         },
         "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
-        "name": "ImperceptibleASRPytorch",
+        "name": "ImperceptibleASRPyTorch",
         "targeted": true,
         "targeted_labels": {
-            "scheme": "matched length",
-            "transcripts": [
-                "REALLY SHORT TEST STRING",
-                "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
-                "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
-            ]
+            "kwargs": {
+                "transcripts": [
+                    "REALLY SHORT TEST STRING",
+                    "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
+                    "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
+                ]
+            },
+            "module": "armory.utils.labels",
+            "name": "MatchedTranscriptLengthTargeter"
         },
         "use_label": false
     },
@@ -74,7 +76,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.0",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.1",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,

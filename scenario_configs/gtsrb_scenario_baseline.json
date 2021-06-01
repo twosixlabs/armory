@@ -9,10 +9,10 @@
         "experiment_id": 0,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 5,
+        "source_class": 1,
         "split_id": 0,
-        "target_class": 42,
-        "train_epochs": 10,
+        "target_class": 2,
+        "train_epochs": 30,
         "use_poison_filtering_defense": true
     },
     "attack": {
@@ -58,7 +58,7 @@
         "name": "GTSRB"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.0",
+        "docker_image": "twosixarmory/tf1:0.13.1",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

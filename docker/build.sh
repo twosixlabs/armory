@@ -43,6 +43,12 @@ for framework in "tf1" "tf2" "pytorch" "pytorch-deepspeech"; do
         echo ""
         echo "------------------------------------------------"
         echo "Building docker image for framework: $framework"
+        echo docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
         docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
+        if [[ $dev == "-dev" ]]; then
+            echo "Tagging docker image as latest"
+            echo docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
+            docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
+        fi
     fi
 done

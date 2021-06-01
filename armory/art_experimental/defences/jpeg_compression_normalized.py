@@ -12,7 +12,6 @@ class JpegCompressionNormalized(JpegCompression):
         self,
         clip_values,
         quality=50,
-        channel_index=3,
         apply_fit=True,
         apply_predict=False,
         means=None,
@@ -22,7 +21,6 @@ class JpegCompressionNormalized(JpegCompression):
         super().__init__(
             clip_values,
             quality=quality,
-            channel_index=channel_index,
             apply_fit=apply_fit,
             apply_predict=apply_predict,
         )

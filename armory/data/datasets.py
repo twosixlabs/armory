@@ -36,6 +36,7 @@ from armory import paths
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.resisc10 import resisc10_poison  # noqa: F401
 from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
@@ -669,8 +670,10 @@ def canonical_variable_image_preprocess(context, batch):
 
 mnist_context = ImageContext(x_shape=(28, 28, 1))
 cifar10_context = ImageContext(x_shape=(32, 32, 3))
+cifar100_context = ImageContext(x_shape=(32, 32, 3))
 gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
+resisc10_context = ImageContext(x_shape=(64, 64, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
@@ -684,12 +687,20 @@ def cifar10_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar10_context, batch)
 
 
+def cifar100_canonical_preprocessing(batch):
+    return canonical_image_preprocess(cifar100_context, batch)
+
+
 def gtsrb_canonical_preprocessing(batch):
     return canonical_variable_image_preprocess(gtsrb_context, batch)
 
 
 def resisc45_canonical_preprocessing(batch):
     return canonical_image_preprocess(resisc45_context, batch)
+
+
+def resisc10_canonical_preprocessing(batch):
+    return canonical_image_preprocess(resisc10_context, batch)
 
 
 def imagenette_canonical_preprocessing(batch):
@@ -830,6 +841,39 @@ def cifar10(
         framework=framework,
         shuffle_files=shuffle_files,
         context=cifar10_context,
+        **kwargs,
+    )
+
+
+def cifar100(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = cifar100_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    One hundred class image dataset:
+        https://www.cs.toronto.edu/~kriz/cifar.html
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "cifar100:3.0.2",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=cifar100_context,
         **kwargs,
     )
 
@@ -1153,6 +1197,47 @@ def resisc45(
         framework=framework,
         shuffle_files=shuffle_files,
         context=resisc45_context,
+        **kwargs,
+    )
+
+
+def resisc10(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = resisc10_canonical_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    REmote Sensing Image Scene Classification (RESISC) dataset
+        http://http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html
+
+    Contains 7000 images covering 10 scene classes with 700 images per class
+
+    Dimensions of X: (7000, 64, 64, 3) of uint8, ~ 0.8 GB in memory
+        Each sample is a 64 x 64 3-color (RGB) image
+    Dimensions of y: (7000,) of int, with values in range(10)
+
+    split - one of ("train", "validation", "test")
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "resisc10_poison:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=resisc10_context,
         **kwargs,
     )
 

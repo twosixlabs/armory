@@ -10,9 +10,22 @@ import os
 import random
 
 import numpy as np
-from tensorflow import set_random_seed, ConfigProto, Session
-from tensorflow.keras.backend import set_session
-from tensorflow.keras.utils import to_categorical
+
+try:
+    from tensorflow import set_random_seed, ConfigProto, Session
+    from tensorflow.keras.backend import set_session
+    from tensorflow.keras.utils import to_categorical
+except ImportError:
+    from tensorflow.compat.v1 import (
+        set_random_seed,
+        ConfigProto,
+        Session,
+        disable_v2_behavior,
+    )
+    from tensorflow.compat.v1.keras.backend import set_session
+    from tensorflow.compat.v1.keras.utils import to_categorical
+
+    disable_v2_behavior()
 from tqdm import tqdm
 from PIL import ImageOps, Image
 
@@ -54,19 +67,13 @@ def poison_scenario_preprocessing(batch):
 def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
     # In this example, all images of "src" class have a trigger
     # added and re-labeled as "tgt" class
-    # NOTE: currently art.attacks.PoisonAttackBackdoor only supports
-    #   black-white images.  One way to generate poisoned examples
-    #   is to convert each batch of multi-channel images of shape
-    #   (N,W,H,C) to N separate (C,W,H)-tuple, where C would be
-    #   interpreted by PoisonAttackBackdoor as the batch size,
-    #   and each channel would have a backdoor trigger added
     poison_x = []
     poison_y = []
     for idx in range(ds_size):
         if src_lbls[idx] == src and idx in poisoned_indices:
-            src_img = np.transpose(src_imgs[idx], (2, 0, 1))
+            src_img = src_imgs[idx]
             p_img, p_label = attack.poison(src_img, [tgt])
-            poison_x.append(np.transpose(p_img, (1, 2, 0)))
+            poison_x.append(p_img.astype(np.float32))
             poison_y.append(p_label)
         else:
             poison_x.append(src_imgs[idx])
@@ -303,10 +310,10 @@ class GTSRB(Scenario):
             # Ensure that input sample isn't overwritten by classifier
             x.flags.writeable = False
             y_pred = classifier.predict(x)
-            benign_validation_metric.append(y, y_pred)
+            benign_validation_metric.add_results(y, y_pred)
             y_pred_tgt_class = y_pred[y == src_class]
             if len(y_pred_tgt_class):
-                target_class_benign_metric.append(
+                target_class_benign_metric.add_results(
                     [src_class] * len(y_pred_tgt_class), y_pred_tgt_class
                 )
         logger.info(
@@ -337,8 +344,8 @@ class GTSRB(Scenario):
                 x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float32)
                 y_pred = classifier.predict(x_poison_test)
                 y_true = [src_class] * len(y_pred)
-                poisoned_targeted_test_metric.append(y_poison_test, y_pred)
-                poisoned_test_metric.append(y_true, y_pred)
+                poisoned_targeted_test_metric.add_results(y_poison_test, y_pred)
+                poisoned_test_metric.add_results(y_true, y_pred)
             test_data_clean = load_dataset(
                 config["dataset"],
                 epochs=1,
@@ -351,7 +358,7 @@ class GTSRB(Scenario):
             ):
                 x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float32)
                 y_pred = classifier.predict(x_clean_test)
-                poisoned_test_metric.append(y_clean_test, y_pred)
+                poisoned_test_metric.add_results(y_clean_test, y_pred)
 
         elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
@@ -375,12 +382,12 @@ class GTSRB(Scenario):
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
-                poisoned_test_metric.append(y_test, y_pred)
+                poisoned_test_metric.add_results(y_test, y_pred)
 
                 y_pred_targeted = y_pred[y_test == src_class]
                 if not len(y_pred_targeted):
                     continue
-                poisoned_targeted_test_metric.append(
+                poisoned_targeted_test_metric.add_results(
                     [tgt_class] * len(y_pred_targeted), y_pred_targeted
                 )
 
