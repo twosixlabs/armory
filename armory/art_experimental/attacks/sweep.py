@@ -125,11 +125,14 @@ class SweepAttack(EvasionAttack):
                 )
 
         if x_best is None:
-            logger.info("Attack failed. Returning original x.")
+            logger.info(
+                "Sweep attack concluded. Returning original x since attack failed at all sweep points."
+            )
             return x
         if x_best is not None:
             logger.info(
-                f"Returning best attack with kwargs {best_attack_kwargs} and generate_kwargs {best_generate_kwargs}"
+                f"Sweep attack concluded. Returning the weakest-strength successful attack with "
+                f"kwargs {best_attack_kwargs} and generate_kwargs {best_generate_kwargs}"
             )
             return x_best
 
