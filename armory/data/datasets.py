@@ -1419,9 +1419,7 @@ def coco2017(
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
     if "class_ids" in kwargs:
-        raise ValueError(
-            "Filtering by class is not supported for the coco2017 dataset"
-        )
+        raise ValueError("Filtering by class is not supported for the coco2017 dataset")
     return _generator_from_tfds(
         "coco/2017:1.1.0",
         split=split,
