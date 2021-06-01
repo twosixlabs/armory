@@ -2,7 +2,9 @@
 
 Armory supports running adversarial attacks which "sweep" over a range of values for specified 
 attack parameters (e.g. `"eps"`). This helps automate the process of determining at what 
-attack parameter values (i.e. perturbation budget) a defense is no longer robust.
+attack parameter values (i.e. perturbation budget) a defense is no longer robust. The attack
+returns the weakest-strength adversarial example that is successful, or the original input 
+if the attack fails at all values.
 
 To enable such an attack, set `attack_config["type"]` to `"sweep"`. 
 ```aidl
@@ -83,5 +85,3 @@ is untargeted, set `attack_config["use_label"]` to `true`.
 
 To ensure that metrics are saved on a per-example basis, set 
 `metric_config["record_metric_per_sample"]` to `true`.
-
-
