@@ -43,23 +43,6 @@ class TensorFlowFasterRCNNOneIndexed(TensorFlowFasterRCNN):
     def compute_loss(self, x, y):
         raise NotImplementedError
 
-    def loss_gradient(self, x, y, **kwargs):
-        y_zero_indexed = []
-        for y_dict in y:
-            y_dict_zero_indexed = y_dict.copy()
-            y_dict_zero_indexed["labels"] = y_dict_zero_indexed["labels"] - 1
-            y_zero_indexed.append(y_dict_zero_indexed)
-        return super().loss_gradient(x, y_zero_indexed, **kwargs)
-
-    def predict(self, x, **kwargs):
-        list_of_zero_indexed_pred_dicts = super().predict(x, **kwargs)
-        list_of_one_indexed_pred_dicts = []
-        for img_pred_dict in list_of_zero_indexed_pred_dicts:
-            zero_indexed_pred_labels = img_pred_dict["labels"]
-            img_pred_dict["labels"] = zero_indexed_pred_labels + 1
-            list_of_one_indexed_pred_dicts.append(img_pred_dict)
-        return list_of_one_indexed_pred_dicts
-
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
     # APRICOT inputs should have shape (1, None, None, 3) while DAPRICOT inputs have shape
