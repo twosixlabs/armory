@@ -50,6 +50,6 @@
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
-        "use_gpu": false
+        "use_gpu": true 
     }
 }
