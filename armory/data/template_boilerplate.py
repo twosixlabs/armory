@@ -15,8 +15,6 @@ def {name}(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
-    class_ids=None,  # May need to update value
-    index=None,  # May need to update value
     **kwargs,
 ) -> ArmoryDataGenerator:
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
