@@ -240,7 +240,8 @@
                 "mean_image_circle_patch_diameter",
                 "max_image_circle_patch_diameter",
                 "word_error_rate",
-                "object_detection_AP_per_class"
+                "object_detection_AP_per_class",
+                "object_detection_mAP"
             ]
         },
         "sysconfig": {

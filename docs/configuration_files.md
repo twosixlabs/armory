@@ -19,6 +19,7 @@ All configuration files are verified against the jsonschema definition at run ti
     use_label: [Bool] Default: False. Whether attack should use the true label when 
           attacking the model. Without this, it is not possible to drive the accuracy 
           down to 0% when the model has misclassifications.
+    type: [Optional String]: in <`preloaded`|`patch`|`sweep`>.
   }
 `dataset`: [Object]
   {
@@ -129,6 +130,21 @@ All configuration files are verified against the jsonschema definition at run ti
     }
 }
 ```
+
+### attack config "type" field
+The supported values for the `"type"` field in attack configs are as follows: 
+<`preloaded`|`patch`|`sweep`>. If none of the cases below apply, the field 
+does not need to be included.
+
+1. `"preloaded"`: This value is specified when using an adversarial dataset (e.g. APRICOT) where no 
+perturbations should be applied to the inputs.
+
+2. `"patch"`: Some ART attacks such as `"AdversarialPatch"`  or `"RobustDPatch"` have a `generate()` method
+which returns a patch rather than the input with patch. When using such an attack in an Armory scenario,
+setting `attack_config["type"]` to `"patch"` will enable an Armory wrapper class with an updated 
+`generate()` which applies the patch to the input.
+
+2. `"sweep"`: To enable "sweep" attacks, see the instructions in [sweep_attacks.md](sweep_attacks.md).
 
 ### Use with Custom Docker Image
 
