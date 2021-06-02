@@ -8,63 +8,21 @@ import logging
 from typing import Optional
 import os
 import random
-from copy import deepcopy
 
 import numpy as np
-
-try:
-    from tensorflow import set_random_seed, ConfigProto, Session
-    from tensorflow.keras.backend import set_session
-    from tensorflow.keras.utils import to_categorical
-except ImportError:
-    from tensorflow.compat.v1 import (
-        set_random_seed,
-        ConfigProto,
-        Session,
-        disable_v2_behavior,
-    )
-    from tensorflow.compat.v1.keras.backend import set_session
-    from tensorflow.compat.v1.keras.utils import to_categorical
-
-    disable_v2_behavior()
 from tqdm import tqdm
-from PIL import ImageOps, Image
-
-from art.defences.trainer import AdversarialTrainerMadryPGD
 
 from armory.utils.config_loading import (
     load_dataset,
     load_model,
     load,
     load_fn,
+    load_defense_internal,
 )
 from armory.utils import metrics
 from armory.scenarios.base import Scenario
 
 logger = logging.getLogger(__name__)
-
-
-def poison_scenario_preprocessing(batch):
-    img_size = 48
-    img_out = []
-    quantization = 255.0
-    for im in batch:
-        img_eq = ImageOps.equalize(Image.fromarray(im))
-        width, height = img_eq.size
-        min_side = min(img_eq.size)
-        center = width // 2, height // 2
-
-        left = center[0] - min_side // 2
-        top = center[1] - min_side // 2
-        right = center[0] + min_side // 2
-        bottom = center[1] + min_side // 2
-
-        img_eq = img_eq.crop((left, top, right, bottom))
-        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
-
-        img_out.append(img_eq)
-
-    return np.array(img_out, dtype=np.float32)
 
 
 def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indices):
@@ -76,17 +34,19 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
         if src_lbls[idx] == src and idx in poisoned_indices:
             src_img = src_imgs[idx]
             p_img, p_label = attack.poison(src_img, [tgt])
+            p_img = p_img.astype(np.float32)
             poison_x.append(p_img)
             poison_y.append(p_label)
         else:
             poison_x.append(src_imgs[idx])
             poison_y.append(src_lbls[idx])
+
     poison_x, poison_y = np.array(poison_x), np.array(poison_y)
 
     return poison_x, poison_y
 
 
-class GTSRB_CLBD(Scenario):
+class RESISC10(Scenario):
     def _evaluate(
         self,
         config: dict,
@@ -117,7 +77,16 @@ class GTSRB_CLBD(Scenario):
         model_config = config["model"]
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
         classifier, _ = load_model(model_config)
-        proxy_classifier, _ = load_model(model_config)
+
+        defense_config = config.get("defense") or {}
+        if "data_augmentation" in defense_config:
+            for data_aug_config in defense_config["data_augmentation"].values():
+                classifier = load_defense_internal(data_aug_config, classifier)
+        logger.info(
+            "classifier.preprocessing_defences: {}".format(
+                classifier.preprocessing_defences
+            )
+        )
 
         config_adhoc = config.get("adhoc") or {}
         train_epochs = config_adhoc["train_epochs"]
@@ -128,12 +97,12 @@ class GTSRB_CLBD(Scenario):
         )
 
         if not config["sysconfig"].get("use_gpu"):
-            conf = ConfigProto(intra_op_parallelism_threads=1)
-            set_session(Session(config=conf))
+            pass  # is this needed for Pytorch?
+            # conf = ConfigProto(intra_op_parallelism_threads=1)
+            # set_session(Session(config=conf))
 
         # Set random seed due to large variance in attack and defense success
         np.random.seed(config_adhoc["split_id"])
-        set_random_seed(config_adhoc["split_id"])
         random.seed(config_adhoc["split_id"])
         use_poison_filtering_defense = config_adhoc.get(
             "use_poison_filtering_defense", True
@@ -148,9 +117,13 @@ class GTSRB_CLBD(Scenario):
             config["dataset"],
             epochs=1,
             split=config["dataset"].get("train_split", "train"),
-            preprocessing_fn=poison_scenario_preprocessing,
             shuffle_files=False,
         )
+
+        attack_config = config["attack"]
+        attack_type = attack_config.get("type")
+
+        fraction_poisoned = config["adhoc"]["fraction_poisoned"]
         # Flag for whether to poison dataset -- used to evaluate
         #     performance of defense on clean data
         poison_dataset_flag = config["adhoc"]["poison_dataset"]
@@ -158,66 +131,111 @@ class GTSRB_CLBD(Scenario):
         #     therefore, make in memory dataset
         x_train_all, y_train_all = [], []
 
-        logger.info("Building in-memory dataset for poisoning detection and training")
-        for x_train, y_train in clean_data:
-            x_train_all.append(x_train)
-            y_train_all.append(y_train)
-        x_train_all = np.concatenate(x_train_all, axis=0)
-        y_train_all = np.concatenate(y_train_all, axis=0)
-
-        if poison_dataset_flag:
-            y_train_all_categorical = to_categorical(y_train_all)
-            attack_train_epochs = train_epochs
-            attack_config = deepcopy(config["attack"])
-            use_adversarial_trainer_flag = attack_config.get(
-                "use_adversarial_trainer", False
+        if attack_type == "preloaded":
+            # Number of datapoints in train split of target clasc
+            num_images_tgt_class = config_adhoc["num_images_target_class"]
+            logger.info(
+                f"Loading poison dataset {config_adhoc['poison_samples']['name']}..."
+            )
+            num_poisoned = int(config_adhoc["fraction_poisoned"] * num_images_tgt_class)
+            if num_poisoned == 0:
+                raise ValueError(
+                    "For the preloaded attack, fraction_poisoned must be set so that at least on data point is poisoned."
+                )
+            # Set batch size to number of poisons -- read only one batch of preloaded poisons
+            config_adhoc["poison_samples"]["batch_size"] = num_poisoned
+            poison_data = load_dataset(
+                config["adhoc"]["poison_samples"],
+                epochs=1,
+                split="poison",
+                preprocessing_fn=None,
             )
 
-            proxy_classifier_fit_kwargs = {
-                "batch_size": fit_batch_size,
-                "nb_epochs": attack_train_epochs,
-            }
-            logger.info("Fitting proxy classifier...")
-            if use_adversarial_trainer_flag:
-                logger.info("Using adversarial trainer...")
-                adversarial_trainer_kwargs = attack_config.pop(
-                    "adversarial_trainer_kwargs", {}
-                )
-                for k, v in proxy_classifier_fit_kwargs.items():
-                    adversarial_trainer_kwargs[k] = v
-                proxy_classifier = AdversarialTrainerMadryPGD(
-                    proxy_classifier, **adversarial_trainer_kwargs
-                )
-                proxy_classifier.fit(x_train_all, y_train_all)
-                attack_config["kwargs"][
-                    "proxy_classifier"
-                ] = proxy_classifier.get_classifier()
-            else:
-                proxy_classifier_fit_kwargs["verbose"] = False
-                proxy_classifier_fit_kwargs["shuffle"] = True
-                proxy_classifier.fit(
-                    x_train_all, y_train_all, **proxy_classifier_fit_kwargs
-                )
-                attack_config["kwargs"]["proxy_classifier"] = proxy_classifier
-
-            attack, backdoor = load(attack_config)
-
-            x_train_all, y_train_all_categorical = attack.poison(
-                x_train_all, y_train_all_categorical
+            logger.info(
+                "Building in-memory dataset for poisoning detection and training"
             )
-            y_train_all = np.argmax(y_train_all_categorical, axis=1)
+            for x_clean, y_clean in clean_data:
+                x_train_all.append(x_clean)
+                y_train_all.append(y_clean)
+            x_poison, y_poison = poison_data.get_batch()
+            x_poison = np.array([xp for xp in x_poison], dtype=np.float32)
+            x_train_all.append(x_poison)
+            y_train_all.append(y_poison)
+            x_train_all = np.concatenate(x_train_all, axis=0)
+            y_train_all = np.concatenate(y_train_all, axis=0)
+        else:
+            attack = load(attack_config)
+            logger.info(
+                "Building in-memory dataset for poisoning detection and training"
+            )
+            for x_train, y_train in clean_data:
+                x_train_all.append(x_train)
+                y_train_all.append(y_train)
+            x_train_all = np.concatenate(x_train_all, axis=0)
+            y_train_all = np.concatenate(y_train_all, axis=0)
+            if poison_dataset_flag:
+                total_count = np.bincount(y_train_all)[src_class]
+                poison_count = int(fraction_poisoned * total_count)
+                if poison_count == 0:
+                    logger.warning(
+                        f"No poisons generated with fraction_poisoned {fraction_poisoned} for class {src_class}."
+                    )
+                src_indices = np.where(y_train_all == src_class)[0]
+                poisoned_indices = np.sort(
+                    np.random.choice(src_indices, size=poison_count, replace=False)
+                )
+                x_train_all, y_train_all = poison_dataset(
+                    x_train_all,
+                    y_train_all,
+                    src_class,
+                    tgt_class,
+                    y_train_all.shape[0],
+                    attack,
+                    poisoned_indices,
+                )
 
+        y_train_all_categorical = y_train_all
+
+        # Flag to determine whether defense_classifier is trained directly
+        #     (default API) or is trained as part of detect_poisons method
+        fit_defense_classifier_outside_defense = config_adhoc.get(
+            "fit_defense_classifier_outside_defense", True
+        )
+        # Flag to determine whether defense_classifier uses sparse
+        #     or categorical labels
+        defense_categorical_labels = config_adhoc.get(
+            "defense_categorical_labels", True
+        )
         if use_poison_filtering_defense:
-            y_train_defense = to_categorical(y_train_all)
+            if defense_categorical_labels:
+                y_train_defense = y_train_all_categorical
+            else:
+                y_train_defense = y_train_all
 
             defense_config = config["defense"]
+            defense_config.pop("data_augmentation")
             detection_kwargs = config_adhoc.get("detection_kwargs", dict())
 
             defense_model_config = config_adhoc.get("defense_model", model_config)
+            defense_train_epochs = config_adhoc.get(
+                "defense_train_epochs", train_epochs
+            )
 
             # Assumes classifier_for_defense and classifier use same preprocessing function
             classifier_for_defense, _ = load_model(defense_model_config)
-            # ART/Armory API requires that classifier_for_defense trains inside defense_fn
+            logger.info(
+                f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
+                f"for defense {defense_config['name']}..."
+            )
+            if fit_defense_classifier_outside_defense:
+                classifier_for_defense.fit(
+                    x_train_all,
+                    y_train_defense,
+                    batch_size=fit_batch_size,
+                    nb_epochs=defense_train_epochs,
+                    verbose=False,
+                    shuffle=True,
+                )
             defense_fn = load_fn(defense_config)
             defense = defense_fn(classifier_for_defense, x_train_all, y_train_defense)
 
@@ -228,13 +246,13 @@ class GTSRB_CLBD(Scenario):
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = is_clean == 1
             x_train_final = x_train_all[indices_to_keep]
-            y_train_final = y_train_all[indices_to_keep]
+            y_train_final = y_train_all_categorical[indices_to_keep]
         else:
             logger.info(
                 "Defense does not require filtering. Model fitting will use all data."
             )
             x_train_final = x_train_all
-            y_train_final = y_train_all
+            y_train_final = y_train_all_categorical
         if len(x_train_final):
             logger.info(
                 f"Fitting model of {model_config['module']}.{model_config['name']}..."
@@ -250,17 +268,16 @@ class GTSRB_CLBD(Scenario):
         else:
             logger.warning("All data points filtered by defense. Skipping training")
 
-        logger.info("Validating on clean test data")
-        test_data = load_dataset(
+        logger.info("Validating on clean validation data")
+        val_data = load_dataset(
             config["dataset"],
             epochs=1,
-            split=config["dataset"].get("eval_split", "test"),
-            preprocessing_fn=poison_scenario_preprocessing,
+            split=config["dataset"].get("eval_split", "validation"),
             shuffle_files=False,
         )
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
-        for x, y in tqdm(test_data, desc="Testing"):
+        for x, y in tqdm(val_data, desc="Testing"):
             # Ensure that input sample isn't overwritten by classifier
             x.flags.writeable = False
             y_pred = classifier.predict(x)
@@ -284,13 +301,41 @@ class GTSRB_CLBD(Scenario):
         poisoned_test_metric = metrics.MetricList("categorical_accuracy")
         poisoned_targeted_test_metric = metrics.MetricList("categorical_accuracy")
 
-        if poison_dataset_flag:
+        logger.info("Testing on poisoned test data")
+        if attack_type == "preloaded":
+            test_data_poison = load_dataset(
+                config_adhoc["poison_samples"],
+                epochs=1,
+                split="poison_test",
+                preprocessing_fn=None,
+            )
+            for x_poison_test, y_poison_test in tqdm(
+                test_data_poison, desc="Testing poison"
+            ):
+                x_poison_test = np.array([xp for xp in x_poison_test], dtype=np.float32)
+                y_pred = classifier.predict(x_poison_test)
+                y_true = [src_class] * len(y_pred)
+                poisoned_targeted_test_metric.add_results(y_poison_test, y_pred)
+                poisoned_test_metric.add_results(y_true, y_pred)
+            test_data_clean = load_dataset(
+                config["dataset"],
+                epochs=1,
+                split=config["dataset"].get("eval_split", "test"),
+                shuffle_files=False,
+            )
+            for x_clean_test, y_clean_test in tqdm(
+                test_data_clean, desc="Testing clean"
+            ):
+                x_clean_test = np.array([xp for xp in x_clean_test], dtype=np.float32)
+                y_pred = classifier.predict(x_clean_test)
+                poisoned_test_metric.add_results(y_clean_test, y_pred)
+
+        elif poison_dataset_flag:
             logger.info("Testing on poisoned test data")
             test_data = load_dataset(
                 config["dataset"],
                 epochs=1,
                 split=config["dataset"].get("eval_split", "test"),
-                preprocessing_fn=poison_scenario_preprocessing,
                 shuffle_files=False,
             )
             for x_test, y_test in tqdm(test_data, desc="Testing"):
@@ -302,17 +347,20 @@ class GTSRB_CLBD(Scenario):
                     src_class,
                     tgt_class,
                     len(y_test),
-                    backdoor,
+                    attack,
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
                 poisoned_test_metric.add_results(y_test, y_pred)
 
                 y_pred_targeted = y_pred[y_test == src_class]
-                if len(y_pred_targeted):
-                    poisoned_targeted_test_metric.add_results(
-                        [tgt_class] * len(y_pred_targeted), y_pred_targeted
-                    )
+                if not len(y_pred_targeted):
+                    continue
+                poisoned_targeted_test_metric.add_results(
+                    [tgt_class] * len(y_pred_targeted), y_pred_targeted
+                )
+
+        if poison_dataset_flag or attack_type == "preloaded":
             results["poisoned_test_accuracy"] = poisoned_test_metric.mean()
             results[
                 "poisoned_targeted_misclassification_accuracy"
