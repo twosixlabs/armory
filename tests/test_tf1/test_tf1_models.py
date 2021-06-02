@@ -120,3 +120,29 @@ def test_tf1_apricot():
     }
     for class_id, expected_AP in expected_patch_targeted_AP_by_class.items():
         assert np.abs(patch_targeted_AP_by_class[class_id] - expected_AP) < 0.03
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_tf1_coco():
+    detector_module = import_module("armory.baseline_models.tf_graph.mscoco_frcnn")
+    detector_fn = getattr(detector_module, "get_art_model")
+    detector = detector_fn(model_kwargs={}, wrapper_kwargs={})
+
+    NUM_TEST_SAMPLES = 10
+    dataset = datasets.coco2017(split="validation", shuffle_files=False)
+
+    list_of_ys = []
+    list_of_ypreds = []
+    for _ in range(NUM_TEST_SAMPLES):
+        x, y = dataset.get_batch()
+        y_pred = detector.predict(x)
+        list_of_ys.extend(y)
+        list_of_ypreds.extend(y_pred)
+
+    average_precision_by_class = object_detection_AP_per_class(
+        list_of_ys, list_of_ypreds
+    )
+    mAP = np.fromiter(average_precision_by_class.values(), dtype=float).mean()
+    for class_id in [0, 2, 5, 9, 10]:
+        assert average_precision_by_class[class_id] > 0.6
+    assert mAP > 0.1
