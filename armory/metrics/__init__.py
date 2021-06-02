@@ -1,6 +1,9 @@
 from armory.metrics import (
     computation,
-    #    logging,
+    instrument,
     perturbation,
+    #    query,
     task,
 )
+
+from armory.metrics.query import get, supported, register

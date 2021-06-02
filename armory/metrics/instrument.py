@@ -7,36 +7,11 @@ with some key differences
 
 import logging
 
+from armory import metrics
+
 logger = logging.getLogger(__name__)
 
-# Workflow in a different module
-# from armory.metrics import logging as mlog
-
-#from armory.metrics import instrumentation
-#instrument = instrumentation.getInstrument()  # __name__
-#instrument.probe(a=x.detach().cpu().numpy(), b=y)
-# ...
-
-#from armory.metrics import instrumentation
-#meter = instrumentation.MetricsHandler()
-#instrument = instrumentation.getInstrument()  # gets root
-#instrument.add_meter(meter)
-
-# Instrument?
-
-# ...
-# mlog.update(**key_values)
-# Optional alternative:
-# mlogger = mlog.getLogger()
-# mlogger.update(**key_values)
-
 _PROBES = {}
-
-
-#from armory import metrics
-#probe = metrics.getProbe()
-#probe.measure(lambda x: x.detach().cpu().numpy(), a=layer_3_output)
-#probe.hook(convnet.layer1[0].conv2, input=None, output="b")
 
 
 class Probe:
@@ -52,7 +27,7 @@ class Probe:
     def update(self, *preprocessing, **named_values):
         """
         Measure values, applying preprocessing if a meter is available
-        
+
         Example: probe.measure(lambda x: x.detach().cpu().numpy(), a=layer_3_output)
         """
         self.measured.update(named_values)
@@ -60,14 +35,14 @@ class Probe:
             logger.warning("No Meter set up!")
             self._warned = True
             return
-        
+
         for name, value in named_values.items():
             if not any(meter.is_measuring(name) for meter in self.meters):
                 continue
 
             for p in preprocessing:
                 value = p(value)
-            
+
             for meter in self.meters:
                 if meter.is_measuring(name):
                     meter.update(**{name: value})
@@ -81,14 +56,20 @@ class Probe:
 
     def hook_tf(self, module, *preprocessing, input=None, output=None):
         raise NotImplementedError("hooking not ready for tensorflow")
-
-    # https://discuss.pytorch.org/t/get-the-activations-of-the-second-to-last-layer/55629/6
-# TensorFlow hooks
-# https://www.tensorflow.org/api_docs/python/tf/estimator/SessionRunHook
+        # NOTE:
+        # https://discuss.pytorch.org/t/get-the-activations-of-the-second-to-last-layer/55629/6
+        # TensorFlow hooks
+        # https://www.tensorflow.org/api_docs/python/tf/estimator/SessionRunHook
+        # https://github.com/tensorflow/tensorflow/issues/33478
+        # https://github.com/tensorflow/tensorflow/issues/33129
+        # https://stackoverflow.com/questions/48966281/get-intermediate-output-from-keras-tensorflow-during-prediction
+        # https://stackoverflow.com/questions/59493222/access-output-of-intermediate-layers-in-tensor-flow-2-0-in-eager-mode/60945216#60945216
 
     def hook_torch(self, module, *preprocessing, input=None, output=None):
         if not hasattr(module, "register_forward_hook"):
-            raise ValueError(f"module {module} does not have method 'register_forward_hook'. Is it a torch.nn.Module?")
+            raise ValueError(
+                f"module {module} does not have method 'register_forward_hook'. Is it a torch.nn.Module?"
+            )
         if input == "" or (input is not None and not isinstance(input, str)):
             raise ValueError(f"input {input} must be None or a non-empty string")
         if output == "" or (output is not None and not isinstance(output, str)):
@@ -104,7 +85,7 @@ class Probe:
             if input is not None:
                 key_values[input] = hook_input
             if output is not None:
-                key_values[output]= hook_output
+                key_values[output] = hook_output
             self.measure(*preprocessing, **key_values)
 
         hook = module.register_forward_hook(hook_fn)
@@ -120,23 +101,6 @@ class Probe:
             raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
         self._hooks.pop(module)
         self._hooks[module].remove()
-
-
-class MetricsLogger:
-    def __init__(self):
-        self.meters = []
-        self._warned = False
-
-    def add_handler(self, handler):
-        self.handlers.append(handler)
-
-    def update(self, **key_values):
-        if not self.handlers and not self._warned:
-            logger.warning("No MetricsHandler set up!")
-            self._warned = True
-
-        for handler in self.handlers:
-            handler.update(**key_values)
 
 
 class Meter:
@@ -163,33 +127,31 @@ class Meter:
 
 class NullMeter(Meter):
     """
-    Ensure preprocessing is all done, but otherwise do nothing.
+    Ensure probe preprocessing is all done, but otherwise do nothing.
     """
 
     def is_measuring(self, name):
         return True
 
 
-class PrintMeter(Meter):
-    def is_measuring(self, name):
-        return True
-
-    def update(self, **named_values):
-        for name, value in named_values.items():
-            print(f"PrintMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}")
-
-
-class HoldMeter(Meter):
+class LogMeter(Meter):
     """
-    Hold values as they come in
+    Log all probed values
     """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.values = {}
 
     def is_measuring(self, name):
         return True
 
     def update(self, **named_values):
         for name, value in named_values.items():
-            print(f"PrintMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}")
+            self.values[name] = value
+            logger.info(
+                f"PrintMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}"
+            )
 
 
 class MetricsMeter(Meter):
@@ -198,18 +160,74 @@ class MetricsMeter(Meter):
         self.probes = set()
         self.values = {}
         self.metrics_dict = {}
+        self.stages_mapping = {}
 
     @classmethod
     def from_config(cls, config, skip_benign=False, skip_attack=False, targeted=False):
-        return cls()  # TODO
+        return cls.from_kwargs(**config)
 
-    def with_stage(self, name):
-        if self.stage:
-            return self.stage + "_" + name
-        return name
+    @classmethod
+    def from_kwargs(
+        cls,
+        means=True,
+        perturbation="linf",
+        profiler_type=None,  # Ignored
+        record_metric_per_sample=True,
+        task=("categorical_accuracy",),
+        skip_benign=None,
+        skip_attack=None,
+        targeted=False,
+    ):
+        if not record_metric_per_sample:
+            logger.warning("record_metric_per_sample overridden to True")
+
+        m = cls()
+        kwargs = dict(aggregator="mean" if bool(means) else None,)
+
+        if isinstance(perturbation, str):
+            perturbation = [perturbation]
+        for metric in perturbation:
+            m.add_metric(
+                f"perturbation_{metric}",
+                metric,
+                "x",
+                "x_adv",
+                stages="perturbation",
+                **kwargs,
+            )
+        for metric in task:
+            if not skip_benign:
+                m.add_metric(
+                    f"benign_{metric}",
+                    metric,
+                    "y",
+                    "y_pred",
+                    stages="benign_task",
+                    **kwargs,
+                )
+            if not skip_attack:
+                m.add_metric(
+                    f"adversarial_{metric}",
+                    metric,
+                    "y",
+                    "y_pred_adv",
+                    stages="adversarial_task",
+                    **kwargs,
+                )
+                if targeted:
+                    m.add_metric(
+                        f"targeted_{metric}",
+                        metric,
+                        "y_target",
+                        "y_pred_adv",
+                        stages="adversarial_task",
+                        **kwargs,
+                    )
+
+        return m
 
     def is_measuring(self, name):
-        return self.with_stage(name) in self.probes
+        return name in self.probes
 
     def update(self, **probe_named_values):
         for probe_name in probe_named_values:
@@ -218,9 +236,18 @@ class MetricsMeter(Meter):
 
         for probe_name, value in probe_named_values.items():
             # NOTE: ignore step for now
-            self.values[self.with_stage(probe_name)] = value
+            self.values[probe_name] = value
 
-    def add_metric(self, description, metric, *probe_names):  # TODO: add name?
+    def add_metric(
+        self,
+        description,
+        metric,
+        *probe_names,
+        stages=None,
+        aggregator="mean",
+        record_metric_per_sample=True,
+        elementwise=True,
+    ):
         """
         Add a metric. Example usage:
             metrics_meter = MetricsMeter()
@@ -230,11 +257,30 @@ class MetricsMeter(Meter):
             metrics_meter.add_metric("l2 perturbation", metrics.perturbation.l2, "x", "adv_x")
             metrics_meter.add_metric("constant", lambda: 1)
         """
-        self.probes.update(probe_names)
         if description in self.metrics_dict:
-            raise ValueError(f"Metric {description} already exists with that name")
+            raise ValueError(f"Metric description '{description}' already exists")
+        if not isinstance(metric, MetricList):
+            if isinstance(metric, str):
+                name = metric
+                function = None
+            else:
+                name = description
+                function = metric
+            metric = MetricList(name, function=function, aggregator=aggregator,)
+
+        if stages is None:
+            stages = []
+        elif isinstance(stages, str):
+            stages = [stages]
+        else:
+            stages = list(stages)
+        stages.append(description)
+
+        self.probes.update(probe_names)
         self.metrics_dict[description] = (metric, probe_names)
-        
+        for stage in stages:
+            self.stages_mapping[stage] = description
+
     def measure(self, *names):
         """
         Measure the metrics based on the current values
@@ -244,32 +290,110 @@ class MetricsMeter(Meter):
         """
 
         if not names:
-            names = list(self.metrics_dict)
+            descriptions = list(self.metrics_dict)
             probes = self.probes
         else:
-            names = list(names)
+            descriptions = []
             probes = set()
             for name in names:
-                if name not in self.metrics_dict:
-                    raise ValueError(f"metric {name} has not been added")
-                _, probe_names = self.metrics_dict[name]
+                if name not in self.stages_mapping:
+                    raise ValueError(f"metric or stage {name} has not been added")
+                description = self.stages_mapping[name]
+                descriptions.append(description)
+                _, probe_names = self.metrics_dict[description]
                 probes.update(probe_names)
-            
+
         for p in probes:
             if p not in self.values:
                 raise ValueError(f"probe {p} value has not been set")
 
-        for name in names:
+        for name in descriptions:
             metric, probe_names = self.metrics_dict[name]
-            result = metric(*(self.values[x] for x in probe_names))
-            logger.info(f"result: step {self.step} - {name} {result}")
-            # TODO: store results
+            metric.update(*(self.values[x] for x in probe_names))
 
     def finalize(self):
-        raise NotImplementedError
+        """
+        Finalize all metric computations
+        """
+        for metric, _ in self.metrics_dict.values():
+            metric.finalize()
 
     def results(self):
-        raise NotImplementedError
+        results = {}
+        for description, (metric, _) in self.metrics_dict.items():
+            sub_results = metric.results()
+            if not results.keys().isdisjoint(sub_results):
+                logger.error(
+                    f"Overwritting duplicate keys in {list(results)} and {list(sub_results)}"
+                )
+            results.update(sub_results)
+        return results
+
+
+class MetricList:
+    """
+    Keeps track of all results from a single metric
+    """
+
+    def __init__(self, name, function=None, aggregator="mean"):
+        if function is None:
+            self.function = metrics.get(name)
+            if self.function is None:
+                raise KeyError(f"{name} is not a recognized metric function")
+        elif callable(function):
+            self.function = function
+        else:
+            raise ValueError(f"function must be callable or None, not {function}")
+
+        self.name = name
+        self.elementwise = True
+        if name == "word_error_rate":
+            self.aggregator = metrics.task.aggregrate.total_wer
+            self.aggregator_name = "total_wer"
+        elif name in (
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ):
+            self.aggregator = metrics.task.aggregate.mean_ap
+            self.aggregator_name = "mean_" + self.name
+            self.elementwise = False
+        elif aggregator == "mean":
+            self.aggregator = metrics.task.aggregrate.mean
+            self.aggregator_name = "mean_" + self.name
+        elif not aggregator:
+            self.aggregator = None
+        else:
+            raise ValueError(f"Aggregator {aggregator} not recognized")
+        self._values = []
+        self._results = {}
+
+    def update(self, *function_args):
+        if self.elementwise:
+            self._values.extend(self.function(*function_args))
+        else:
+            self._values.extend(zip(*function_args))
+
+    def finalize(self):
+        r = {}
+        if self.elementwise:
+            r[self.name] = list(self._values)
+            if self.aggregator is not None:
+                r[self.aggregator_name] = self.aggregator(self._values)
+        else:
+            computed_values = self.function(*zip(*self._values))
+            r[self.name] = computed_values
+            if self.aggregator is not None:
+                r[self.aggregator_name] = self.aggregator(computed_values)
+        self._results = r
+
+    def results(self):
+        return self._results
+
+    def results_keys(self):
+        if self.aggregator is None:
+            return set([self.name, self.aggregator_name])
+        return set([self.name])
 
 
 def get_probe(name=None):

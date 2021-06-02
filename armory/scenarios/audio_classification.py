@@ -17,6 +17,7 @@ from armory.utils.config_loading import (
     load_label_targeter,
 )
 from armory.metrics import instrument, computation
+
 probe = instrument.get_probe()
 
 from armory.scenarios.base import Scenario
@@ -43,7 +44,13 @@ class AudioClassificationTask(Scenario):
         defense_config = config.get("defense") or {}
         defense_type = defense_config.get("type")
 
-        meter = instrument.MetricsMeter.from_config(config["metric"])
+        targeted = bool(config["attack"].get("kwargs", {}).get("targeted"))
+        meter = instrument.MetricsMeter.from_config(
+            config["metric"],
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            targeted=targeted,
+        )
         probe.add_meter(meter)
         profiler = computation.profiler_from_config(config["metric"])
 
@@ -52,7 +59,7 @@ class AudioClassificationTask(Scenario):
             classifier = load_defense_internal(config["defense"], classifier)
 
         if model_config["fit"]:
-            classifier.set_learning_phase(True)
+            # classifier.set_learning_phase(True)
             logger.info(
                 f"Fitting model {model_config['module']}.{model_config['name']}..."
             )
@@ -85,17 +92,17 @@ class AudioClassificationTask(Scenario):
             defense = load_defense_wrapper(config["defense"], classifier)
             classifier = defense()
 
-        classifier.set_learning_phase(False)
+        # classifier.set_learning_phase(False)
         attack_config = config["attack"]
         attack_type = attack_config.get("type")
 
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
-        metrics_logger = metrics.MetricsLogger.from_config(
-            config["metric"],
-            skip_benign=skip_benign,
-            skip_attack=skip_attack,
-            targeted=targeted,
-        )
+        # metrics_logger = metrics.MetricsLogger.from_config(
+        #     config["metric"],
+        #     skip_benign=skip_benign,
+        #     skip_attack=skip_attack,
+        #     targeted=targeted,
+        # )
 
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
@@ -115,7 +122,9 @@ class AudioClassificationTask(Scenario):
             )
 
             logger.info("Running inference on benign examples...")
-            for x, y in tqdm(test_data, desc="Benign"):
+            for i, (x, y) in enumerate(tqdm(test_data, desc="Benign")):
+                meter.set_step(i)
+                meter.set_stage("")
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
                 with profiler.measure("Inference"):
@@ -167,7 +176,9 @@ class AudioClassificationTask(Scenario):
         else:
             sample_exporter = None
 
-        for x, y in tqdm(test_data, desc="Attack"):
+        for i, (x, y) in enumerate(tqdm(test_data, desc="Attack")):
+            meter.set_step(i)
+            meter.set_stage("attack")
             with profiler.measure("Attack"):
                 if attack_type == "preloaded":
                     x, x_adv = x
@@ -184,11 +195,19 @@ class AudioClassificationTask(Scenario):
                         y_target = None  # y_target = y_pred?
                     x_adv = attack.generate(x=x, y=y_target)
 
+            meter.set_state("adv")
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
             probe.update(y_target=y_target, x=x, x_adv=x_adv, y_pred_adv=y_pred_adv)
             meter.measure("perturbation", "adversarial_task")
+
+            probe.update(y=y, y_pred=y_pred)
+            meter.measure("benign_task")
+
+            # probe.update(y=y, y_pred=y_pred, y_target=y_target, x=x, x_adv=x_adv, y_pred_adv=y_pred_adv)
+            # meter.measure()
+
             if sample_exporter is not None:
                 sample_exporter.export(x, x_adv, y, y_pred_adv)
         meter.finalize()

@@ -25,7 +25,8 @@
     "metric": {
         "means": true,
         "perturbation": "linf",
-        "record_metric_per_sample": false,
+        "profiler_type": "Basic",
+        "record_metric_per_sample": true,
         "task": [
             "categorical_accuracy"
         ]
@@ -55,7 +56,7 @@
         "name": "AudioClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.13.0-dev",
+        "docker_image": "twosixarmory/pytorch:0.13.1",
         "external_github_repo": "hkakitani/SincNet",
         "gpus": "all",
         "output_dir": null,

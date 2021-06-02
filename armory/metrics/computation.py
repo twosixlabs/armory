@@ -19,14 +19,14 @@ class NullProfiler:
     """
     Measures computational resource use
     """
-    
+
     def __init__(self):
         self.measurement_dict = {}
 
     @contextlib.contextmanager
     def measure(self, name):
         yield
-    
+
     def results(self):
         return {}
 
@@ -46,12 +46,14 @@ class BasicProfiler(NullProfiler):
         comp = self.measurement_dict[name]
         comp["execution_count"] += 1
         comp["total_time"] += elapsedTime
-   
+
     def results(self):
         results = {}
         for name, entry in self.measurement_dict.items():
             if "execution_count" not in entry or "total_time" not in entry:
-                logger.warning("Computation resource dictionary entry {name} corrupted, missing data.")
+                logger.warning(
+                    "Computation resource dictionary entry {name} corrupted, missing data."
+                )
                 continue
             total_time = entry["total_time"]
             execution_count = entry["execution_count"]
@@ -98,7 +100,9 @@ class DeterministicProfiler(NullProfiler):
         results = {}
         for name, entry in self.measurement_dict.items():
             if any(x not in entry for x in ("execution_count", "total_time", "stats")):
-                logger.warning("Computation resource dictionary entry {name} corrupted, missing data.")
+                logger.warning(
+                    "Computation resource dictionary entry {name} corrupted, missing data."
+                )
                 continue
             total_time = entry["total_time"]
             execution_count = entry["execution_count"]

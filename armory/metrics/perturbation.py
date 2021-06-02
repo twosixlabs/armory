@@ -50,7 +50,7 @@ def as_batch(element_metric):
         x_adv_batch = list(x_adv_batch)
         if len(x_batch) != len(x_adv_batch):
             raise ValueError(
-                f"len(x_batch) {len(x_batch)} != len(x_adv_batch) {len(x_adv_batch)}"
+                f"len(a_batch) {len(x_batch)} != len(b_batch) {len(x_adv_batch)}"
             )
         y = []
         for x, x_adv in zip(x_batch, x_adv_batch):

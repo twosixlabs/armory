@@ -1,5 +1,74 @@
 # Metrics
 
+The `armory.metrics` module implements functionality to capture and measure
+a variety of metrics.
+
+## Usage
+
+The primary mechanisms are largely based off of the logging paradigm of
+loggers and handlers. Loggers here are referred to as probes, and 
+handlers are referred to as meters.
+
+To capture values anywhere, use probe:
+```
+from armoy.metrics import instrument
+probe = instrument.get_probe()
+# ...
+probe.update(name=value)
+```
+
+However, this will fall on the floor unless a meter is set up to record values.
+
+
+
+### Preprocessing
+
+Probes can perform preprocessing of the updating values. This involves
+specifying a function or sequence of functions to perform when a value is
+updated. However, this is done lazily - it is only performed if a meter is
+set up to record it.
+
+For instance, to extract a pytorch tensor `layer_3_output`, you could do:
+```
+probe.update(lambda x: x.detach().cpu().numpy(), a=layer_3_output)
+```
+Or in a longer form:
+```
+probe.update(lambda x: x.detach(), lambda x: x.cpu().numpy(), a=layer_3_output)
+```
+
+This can also apply to multiple inputs:
+
+```
+probe.update(lambda x: x.detach().cpu().numpy(), a=layer_3_output, b=layer_4_output)
+```
+
+### Hooking
+
+Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roadmap.
+
+To hook a model module, you can use the `hook` function. For instance, 
+```
+# probe.hook(module, *preprocessing, input=None, output=None)
+probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
+```
+
+## Meter
+
+To set up a meter, you need to add it to the probe. This can be done as follows:
+```
+from armory.metrics import instrument
+meter = instrument.MetricsMeter()
+probe.add_meter(meter)
+```
+
+To set one up (for scenarios) from a config, you can do:
+```
+instrument.MetricsMeter.from_config(config["metrics"])
+```
+
+# Metrics
+
 The `armory.utils.metrics` module implements functionality to measure both
 task and perturbation metrics. 
 
