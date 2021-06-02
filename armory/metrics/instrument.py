@@ -150,7 +150,7 @@ class LogMeter(Meter):
         for name, value in named_values.items():
             self.values[name] = value
             logger.info(
-                f"PrintMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}"
+                f"LogMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}"
             )
 
 
