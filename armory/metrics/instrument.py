@@ -348,7 +348,7 @@ class MetricList:
         self.name = name
         self.elementwise = True
         if name == "word_error_rate":
-            self.aggregator = metrics.task.aggregrate.total_wer
+            self.aggregator = metrics.task.aggregate.total_wer
             self.aggregator_name = "total_wer"
         elif name in (
             "object_detection_AP_per_class",
@@ -359,7 +359,7 @@ class MetricList:
             self.aggregator_name = "mean_" + self.name
             self.elementwise = False
         elif aggregator == "mean":
-            self.aggregator = metrics.task.aggregrate.mean
+            self.aggregator = metrics.task.aggregate.mean
             self.aggregator_name = "mean_" + self.name
         elif not aggregator:
             self.aggregator = None
