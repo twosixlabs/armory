@@ -86,7 +86,7 @@ class Probe:
                 key_values[input] = hook_input
             if output is not None:
                 key_values[output] = hook_output
-            self.measure(*preprocessing, **key_values)
+            self.update(*preprocessing, **key_values)
 
         hook = module.register_forward_hook(hook_fn)
         self._hooks[module] = (hook, "pytorch")
