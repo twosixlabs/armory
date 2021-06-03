@@ -260,13 +260,7 @@ class MetricsMeter(Meter):
         if description in self.metrics_dict:
             raise ValueError(f"Metric description '{description}' already exists")
         if not isinstance(metric, MetricList):
-            if isinstance(metric, str):
-                name = metric
-                function = None
-            else:
-                name = description
-                function = metric
-            metric = MetricList(name, function=function, aggregator=aggregator,)
+            metric = MetricList(description, function=metric, aggregator=aggregator,)
 
         if stages is None:
             stages = []
@@ -336,12 +330,12 @@ class MetricList:
     """
 
     def __init__(self, name, function=None, aggregator="mean"):
-        if function is None:
-            self.function = metrics.get(name)
-            if self.function is None:
-                raise KeyError(f"{name} is not a recognized metric function")
-        elif callable(function):
+        if callable(function):
             self.function = function
+        elif isinstance(function, str):
+            self.function = metrics.get(function)
+        elif function is None:
+            self.function = metrics.get(name)
         else:
             raise ValueError(f"function must be callable or None, not {function}")
 
