@@ -1,3 +1,8 @@
+# Tensorflow dataset integration script
+# For more details see docs/integrate_tensorflow_datasets.md
+# in the armory repo or the "Integrating TFDS Datasets" section on
+# armory.readthedocs.io
+
 import os
 import sys
 import subprocess
