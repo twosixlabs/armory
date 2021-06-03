@@ -322,10 +322,13 @@ def gtsrb_poison(
 def apricot_label_preprocessing(x, y):
     """
     Convert labels to list of dicts. If batch_size > 1, this will already be the case,
-    and y will simply be returned without modification.
+    and y will simply be returned without modification. Converts labels from shape
+    (1, num_boxes) to shape (num_boxes,).
     """
     if isinstance(y, dict):
         y = [y]
+    for label_dict in y:
+        label_dict["labels"] = label_dict["labels"].reshape((-1,))
     return y
 
 
