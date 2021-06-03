@@ -97,12 +97,6 @@ class AudioClassificationTask(Scenario):
         attack_type = attack_config.get("type")
 
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
-        # metrics_logger = metrics.MetricsLogger.from_config(
-        #     config["metric"],
-        #     skip_benign=skip_benign,
-        #     skip_attack=skip_attack,
-        #     targeted=targeted,
-        # )
 
         if config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
@@ -123,8 +117,6 @@ class AudioClassificationTask(Scenario):
 
             logger.info("Running inference on benign examples...")
             for i, (x, y) in enumerate(tqdm(test_data, desc="Benign")):
-                meter.set_step(i)
-                meter.set_stage("")
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
                 with profiler.measure("Inference"):
@@ -177,8 +169,6 @@ class AudioClassificationTask(Scenario):
             sample_exporter = None
 
         for i, (x, y) in enumerate(tqdm(test_data, desc="Attack")):
-            meter.set_step(i)
-            meter.set_stage("attack")
             with profiler.measure("Attack"):
                 if attack_type == "preloaded":
                     x, x_adv = x
@@ -195,18 +185,11 @@ class AudioClassificationTask(Scenario):
                         y_target = None  # y_target = y_pred?
                     x_adv = attack.generate(x=x, y=y_target)
 
-            meter.set_state("adv")
             # Ensure that input sample isn't overwritten by classifier
             x_adv.flags.writeable = False
             y_pred_adv = classifier.predict(x_adv)
             probe.update(y_target=y_target, x=x, x_adv=x_adv, y_pred_adv=y_pred_adv)
             meter.measure("perturbation", "adversarial_task")
-
-            probe.update(y=y, y_pred=y_pred)
-            meter.measure("benign_task")
-
-            # probe.update(y=y, y_pred=y_pred, y_target=y_target, x=x, x_adv=x_adv, y_pred_adv=y_pred_adv)
-            # meter.measure()
 
             if sample_exporter is not None:
                 sample_exporter.export(x, x_adv, y, y_pred_adv)

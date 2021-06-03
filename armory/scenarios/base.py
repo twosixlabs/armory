@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import time
 from typing import Optional
 import sys
@@ -26,7 +27,6 @@ import pytest
 import coloredlogs
 import pymongo
 import pymongo.errors
-import re
 
 import armory
 from armory import paths
@@ -43,6 +43,14 @@ logger = logging.getLogger(__name__)
 MONGO_PORT = 27017
 MONGO_DATABASE = "armory"
 MONGO_COLLECTION = "scenario_results"
+
+
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # if isinstance(obj, np.ndarray) or isinstance(obj, np.bool_):
+        if hasattr(obj, "dtype") and hasattr(obj, "tolist"):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 
 class Scenario(abc.ABC):
@@ -146,7 +154,10 @@ class Scenario(abc.ABC):
             f"inside container."
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
-            f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+            f.write(
+                json.dumps(output, sort_keys=True, indent=4, cls=NumpyArrayEncoder)
+                + "\n"
+            )
 
     def _send_to_mongo(self, mongo_host: str, output: dict):
         """
