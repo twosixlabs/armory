@@ -18,7 +18,7 @@ _CITATION = """
 Dataset is unpublished at this time.
 """
 
-_URLS = "armory/datasets/dapricot_test.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/dapricot_test.tar.gz"
 
 
 class DapricotTest(tfds.core.GeneratorBasedBuilder):
