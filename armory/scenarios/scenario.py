@@ -306,15 +306,16 @@ class Scenario:
             x_adv.flags.writeable = False
             y_pred_adv = self.estimator.predict(x_adv, **self.predict_kwargs)
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
-
         self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         if self.targeted:
             self.metrics_logger.update_task(
                 y_target, y_pred_adv, adversarial=True, targeted=True
             )
         self.metrics_logger.update_perturbation(x, x_adv)
+
+        if self.sample_exporter is not None:
+            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
+
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def evaluate_current(self):
