@@ -53,9 +53,7 @@
         "module": "armory.baseline_models.pytorch.ucf101_mars",
         "name": "get_art_model",
         "weights_file": "mars_ucf101_v1.pth",
-        "wrapper_kwargs": {
-            "channels_first": false
-        }
+        "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
