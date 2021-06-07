@@ -296,7 +296,7 @@ class Evaluator(object):
             kwargs = {"user": self.get_id()}
             python = "python"
 
-        cmd = f"{python} -m armory.scenarios.base {b64_config}{options}"
+        cmd = f"{python} -m armory.scenarios.main {b64_config}{options} --base64"
         return runner.exec_cmd(cmd, **kwargs)
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> int:
@@ -331,11 +331,11 @@ class Evaluator(object):
         lines = [
             "Container ready for interactive use.",
             bold(
-                "*** In a new terminal, run the following to attach to the container:"
+                "    # In a new terminal, run the following to attach to the container:"
             ),
             bold(
                 red(
-                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
+                    f"docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
                 )
             ),
         ]
@@ -348,6 +348,14 @@ class Evaluator(object):
                 skip_misclassified=skip_misclassified,
                 validate_config=validate_config,
             )
+            init_options = self._constructor_options(
+                check_run=check_run,
+                num_eval_batches=num_eval_batches,
+                skip_benign=skip_benign,
+                skip_attack=skip_attack,
+                skip_misclassified=skip_misclassified,
+            )
+
             tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
             os.makedirs(tmp_dir)
             self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
@@ -361,13 +369,22 @@ class Evaluator(object):
 
             lines.extend(
                 [
-                    bold("*** To run your scenario in the container:"),
+                    bold("    # To run your scenario in the container:"),
                     bold(
                         red(
-                            f"    python -m armory.scenarios.base {docker_config_path}{options} --load-config-from-file"
+                            f"python -m armory.scenarios.main {docker_config_path}{options}"
                         )
                     ),
-                    bold("*** To gracefully shut down container, press: Ctrl-C"),
+                    bold("    # To run your scenario interactively:"),
+                    bold(
+                        red(
+                            "python\n"
+                            "from armory import scenarios\n"
+                            f's = scenarios.get("{docker_config_path}"{init_options}).load()\n'
+                            "s.evaluate()"
+                        )
+                    ),
+                    bold("    # To gracefully shut down container, press: Ctrl-C"),
                     "",
                 ]
             )
@@ -426,4 +443,22 @@ class Evaluator(object):
             options += " --skip-misclassified"
         if validate_config:
             options += " --validate-config"
+        return options
+
+    def _constructor_options(
+        self,
+        check_run=False,
+        num_eval_batches=None,
+        skip_benign=None,
+        skip_attack=None,
+        skip_misclassified=None,
+    ):
+        kwargs = dict(
+            check_run=check_run,
+            num_eval_batches=num_eval_batches,
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            skip_misclassified=skip_misclassified,
+        )
+        options = "".join(f", {str(k)}={str(v)}" for k, v in kwargs.items() if v)
         return options
