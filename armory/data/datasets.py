@@ -1389,13 +1389,26 @@ def xview(
 def coco_label_preprocessing(x, y):
     """
     If batch_size is 1, this function converts the single y dictionary to a list of length 1.
+    This function converts COCO labels from a 0-79 range to the standard 0-89 with 10 unused indices
+    (see https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_label_map.pbtxt).
     """
     # This will be true only when batch_size is 1
     if isinstance(y, dict):
         y = [y]
+
+    # 80 COCO classes range from ID 0 through 89 with 10 unused values
+    NUM_COCO_CLASSES = 80
+    unused_indices = [11, 25, 28, 29, 44, 65, 67, 68, 70, 82]
+    coco_labels = list(range(NUM_COCO_CLASSES + len(unused_indices)))
+    for idx in unused_indices:
+        coco_labels.remove(idx)
+    label_map = {i: coco_labels[i] for i in range(NUM_COCO_CLASSES)}
+
     for label_dict in y:
         label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
-        label_dict["labels"] = label_dict.pop("label").reshape(-1,)
+        label_dict["labels"] = np.vectorize(label_map.__getitem__)(
+            label_dict.pop("label").reshape(-1,)
+        )
     return y
 
 
