@@ -2,7 +2,7 @@
 Primary class for scenario
 """
 
-from copy import deepcopy
+import copy
 import json
 import logging
 import os
@@ -176,7 +176,7 @@ class Scenario:
                 label_targeter = config_loading.load_label_targeter(
                     attack_config["targeted_labels"]
                 )
-        generate_kwargs = deepcopy(attack_config.get("generate_kwargs", {}))
+        generate_kwargs = copy.deepcopy(attack_config.get("generate_kwargs", {}))
 
         self.attack_type = attack_type
         self.targeted = targeted
