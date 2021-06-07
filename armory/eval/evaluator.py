@@ -215,7 +215,15 @@ class Evaluator(object):
             )
             try:
                 if jupyter:
-                    self._run_jupyter(runner, ports)
+                    self._run_jupyter(
+                        runner,
+                        ports,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
+                    )
                 elif interactive:
                     self._run_interactive_bash(
                         runner,
@@ -330,14 +338,13 @@ class Evaluator(object):
         user_group_id = self.get_id()
         lines = [
             "Container ready for interactive use.",
-            bold(
-                "    # In a new terminal, run the following to attach to the container:"
-            ),
+            bold("# In a new terminal, run the following to attach to the container:"),
             bold(
                 red(
                     f"docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
                 )
             ),
+            "",
         ]
         if self.config.get("scenario"):
             options = self._build_options(
@@ -369,13 +376,14 @@ class Evaluator(object):
 
             lines.extend(
                 [
-                    bold("    # To run your scenario in the container:"),
+                    bold("# To run your scenario in the container:"),
                     bold(
                         red(
                             f"python -m armory.scenarios.main {docker_config_path}{options}"
                         )
                     ),
-                    bold("    # To run your scenario interactively:"),
+                    "",
+                    bold("# To run your scenario interactively:"),
                     bold(
                         red(
                             "python\n"
@@ -384,7 +392,8 @@ class Evaluator(object):
                             "s.evaluate()"
                         )
                     ),
-                    bold("    # To gracefully shut down container, press: Ctrl-C"),
+                    "",
+                    bold("# To gracefully shut down container, press: Ctrl-C"),
                     "",
                 ]
             )
@@ -392,21 +401,57 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
-    def _run_jupyter(self, runner: ArmoryInstance, ports: dict) -> None:
+    def _run_jupyter(
+        self,
+        runner: ArmoryInstance,
+        ports: dict,
+        check_run=False,
+        num_eval_batches=None,
+        skip_benign=None,
+        skip_attack=None,
+        skip_misclassified=None,
+    ) -> None:
         if not self.root:
             logger.warning("Running Jupyter Lab as root inside the container.")
 
         user_group_id = self.get_id()
         port = list(ports.keys())[0]
+        tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
+        os.makedirs(tmp_dir)
+        self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
+        docker_config_path = os.path.join(
+            paths.runtime_paths().tmp_dir,
+            self.config["eval_id"],
+            "interactive-config.json",
+        )
+        with open(self.tmp_config, "w") as f:
+            f.write(json.dumps(self.config, sort_keys=True, indent=4) + "\n")
+        init_options = self._constructor_options(
+            check_run=check_run,
+            num_eval_batches=num_eval_batches,
+            skip_benign=skip_benign,
+            skip_attack=skip_attack,
+            skip_misclassified=skip_misclassified,
+        )
         lines = [
             "About to launch jupyter.",
-            bold("*** To connect on the command line as well, in a new terminal, run:"),
+            bold("# To connect on the command line as well, in a new terminal, run:"),
             bold(
                 red(
-                    f"    docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
+                    f"docker exec -it -u {user_group_id} {runner.docker_container.short_id} bash"
                 )
             ),
-            bold("*** To gracefully shut down container, press: Ctrl-C"),
+            "",
+            bold("# To run, inside of a notebook:"),
+            bold(
+                red(
+                    "from armory import scenarios\n"
+                    f's = scenarios.get("{docker_config_path}"{init_options}).load()\n'
+                    "s.evaluate()"
+                )
+            ),
+            "",
+            bold("# To gracefully shut down container, press: Ctrl-C"),
             "",
             "Jupyter notebook log:",
         ]
