@@ -10,6 +10,10 @@ logger.addHandler(logging.NullHandler())
 # Semantic Version
 __version__ = "0.14.0"
 
+# typedef for a widely used JSON-like configuration specification
+from typing import Dict, Any
+
+Config = Dict[str, Any]
 
 # Submodule imports
 try:
