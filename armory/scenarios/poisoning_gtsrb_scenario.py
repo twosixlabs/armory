@@ -36,7 +36,7 @@ from armory.utils.config_loading import (
     load_fn,
 )
 from armory.utils import metrics
-from armory.scenarios.base import Scenario
+from armory.scenarios.scenario import Scenario
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +113,7 @@ class GTSRB(Scenario):
         config = self.config
         if config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
+
         model_config = config["model"]
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
         classifier, _ = load_model(model_config)

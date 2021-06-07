@@ -8,7 +8,7 @@ import logging
 import numpy as np
 
 from armory.utils import metrics
-from armory.scenarios.base import Scenario
+from armory.scenarios.scenario import Scenario
 
 logger = logging.getLogger(__name__)
 
