@@ -6,7 +6,6 @@ import logging
 
 from armory.scenarios.scenario import Scenario
 
-
 logger = logging.getLogger(__name__)
 
 
