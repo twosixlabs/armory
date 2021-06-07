@@ -87,10 +87,15 @@ class Scenario:
                     "To enable skip_misclassified, 'batch_size' must be set to 1"
                 )
 
-    def load_model(self):
+    def _load_estimator(self):
         model_config = self.config["model"]
         estimator, _ = config_loading.load_model(model_config)
+        self.predict_kwargs = model_config.get("predict_kwargs", {})
+        # TODO: handle fit_preprocessing_fn ???
+        return estimator
 
+    def _load_defense(self, estimator, train_split_default="train"):
+        model_config = self.config["model"]
         defense_config = self.config.get("defense") or {}
         defense_type = defense_config.get("type")
 
@@ -110,7 +115,7 @@ class Scenario:
                 train_data = config_loading.load_dataset(
                     dataset_config,
                     epochs=fit_kwargs["nb_epochs"],
-                    split=dataset_config.get("train_split", "train"),
+                    split=dataset_config.get("train_split", train_split_default),
                     shuffle_files=True,
                 )
                 if defense_type == "Trainer":
@@ -133,7 +138,13 @@ class Scenario:
             defense = config_loading.load_defense_wrapper(defense_config, estimator)
             estimator = defense()
 
-        self.estimator = estimator
+        return estimator
+
+    def load_model(self, train_split_default="train"):
+        estimator = self._load_estimator()
+        self.estimator = self._load_defense(
+            estimator, train_split_default=train_split_default
+        )
 
     def load_attack(self):
         attack_config = self.config["attack"]
@@ -174,9 +185,9 @@ class Scenario:
         self.use_label = use_label
         self.generate_kwargs = generate_kwargs
 
-    def load_dataset(self):
+    def load_dataset(self, eval_split_default="test"):
         dataset_config = self.config["dataset"]
-        eval_split = dataset_config.get("eval_split", "test")
+        eval_split = dataset_config.get("eval_split", eval_split_default)
         # Evaluate the ART estimator on benign test examples
         logger.info(f"Loading test dataset {dataset_config['name']}...")
         test_data = config_loading.load_dataset(
@@ -246,7 +257,7 @@ class Scenario:
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
-            y_pred = self.estimator.predict(x)
+            y_pred = self.estimator.predict(x, **self.predict_kwargs)
         self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
@@ -293,7 +304,7 @@ class Scenario:
         else:
             # Ensure that input sample isn't overwritten by estimator
             x_adv.flags.writeable = False
-            y_pred_adv = self.estimator.predict(x_adv)
+            y_pred_adv = self.estimator.predict(x_adv, **self.predict_kwargs)
 
         if self.sample_exporter is not None:
             self.sample_exporter.export(x, x_adv, y, y_pred_adv)
