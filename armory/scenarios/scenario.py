@@ -149,6 +149,8 @@ class Scenario:
     def load_attack(self):
         attack_config = self.config["attack"]
         attack_type = attack_config.get("type")
+        if attack_type == "preloaded" and self.skip_misclassified:
+            raise ValueError("Cannot use skip_misclassified with preloaded dataset")
 
         targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
         use_label = bool(attack_config.get("use_label"))
@@ -272,6 +274,10 @@ class Scenario:
                     x_adv = x
                 if self.targeted:
                     y, y_target = y
+                else:
+                    y_target = None
+
+                misclassified = False
             else:
                 if self.use_label:
                     y_target = y
