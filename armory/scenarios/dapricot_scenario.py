@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ObjectDetectionTask(Scenario):
     def __init__(self, *args, skip_benign=None, **kwargs):
-        if self.skip_benign is False:
+        if skip_benign is False:
             logger.warning(
                 "--skip-benign=False is being ignored since the D-APRICOT"
                 " scenario doesn't include benign evaluation."
