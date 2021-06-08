@@ -322,11 +322,13 @@ def gtsrb_poison(
 
 def apricot_label_preprocessing(x, y):
     """
-    Convert labels to list of dicts. If batch_size > 1, this will already be the case,
-    and y will simply be returned without modification.
+    Convert labels to list of dicts. If batch_size > 1, this will already be the case.
+    Decrement labels of non-patch objects by 1 to be 0-indexed
     """
     if isinstance(y, dict):
         y = [y]
+    for y_dict in y:
+        y_dict["labels"] -= y_dict["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID
     return y
 
 
