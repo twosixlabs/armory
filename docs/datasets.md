@@ -25,6 +25,7 @@ These tfrecord files will be pulled from S3 if not available on your
 | [Coco2017](https://arxiv.org/abs/1405.0312) | Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | dict | train, validation, test | 
 | [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | dict | train, test | 
 
+NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 <br>
 
 ### Audio Datasets
