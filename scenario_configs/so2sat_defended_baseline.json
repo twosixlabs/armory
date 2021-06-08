@@ -138,7 +138,7 @@
         "name": "So2SatClassification"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.1",
+        "docker_image": "twosixarmory/tf1:0.13.2",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
