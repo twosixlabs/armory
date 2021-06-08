@@ -20,11 +20,12 @@ import logging
 import os
 import pytest
 import time
+from typing import Dict, Any
 
 import coloredlogs
 
 import armory
-from armory import environment, paths, validation
+from armory import environment, paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
 
@@ -32,7 +33,7 @@ from armory.utils.configuration import load_config
 logger = logging.getLogger(__name__)
 
 
-def _scenario_setup(config: dict):
+def _scenario_setup(config: Config) -> None:
     """
     Creates scenario specific tmp and output directiories.
 
@@ -44,7 +45,7 @@ def _scenario_setup(config: dict):
     if "eval_id" not in config:
         timestamp = time.time()
         logger.error(f"eval_id not in config. Inserting current timestamp {timestamp}")
-        config["eval_id"] = timestamp
+        config["eval_id"] = str(timestamp)
 
     scenario_output_dir = os.path.join(runtime_paths.output_dir, config["eval_id"])
     scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
@@ -75,7 +76,11 @@ def _scenario_setup(config: dict):
         external_repo.add_local_repo(local_path)
 
 
-def _get_config(config_json, from_file=False):
+def _get_config(config_json, from_file=False) -> Config:
+    """
+    Reads a config specification from json, dedcodes it, and returns the
+    resultant dict.
+    """
     if from_file:
         config = load_config(config_json)
     else:
@@ -86,7 +91,10 @@ def _get_config(config_json, from_file=False):
     return config
 
 
-def run_validation(config_json, from_file=False):
+def run_validation(config_json, from_file=False) -> None:
+    """
+    Test a configuration spec for jsonschema correctness. Fault on error.
+    """
     config = _get_config(config_json, from_file=from_file)
     _scenario_setup(config)
     model_config = json.dumps(config.get("model"))
@@ -108,7 +116,8 @@ def get(
     skip_misclassified=None,
 ):
     """
-    Init environment variables and initialize scenario class with config
+    Init environment variables and initialize scenario class with config;
+    returns a constructed Scenario subclass based on the config specification.
     """
     if set_logging_level not in (None, False):
         coloredlogs.install(level=set_logging_level)
@@ -151,7 +160,10 @@ def run_config(*args, **kwargs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="scenario", description="run armory scenario")
     parser.add_argument(
-        "config", metavar="<config json>", type=str, help="scenario config JSON",
+        "config",
+        metavar="<config json>",
+        type=str,
+        help="scenario config JSON",
     )
     parser.add_argument(
         "-d",

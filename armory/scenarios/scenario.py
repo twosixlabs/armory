@@ -13,7 +13,7 @@ from typing import Optional
 from tqdm import tqdm
 
 import armory
-from armory import paths
+from armory import Config, paths
 from armory.utils import config_loading, metrics
 from armory.utils.export import SampleExporter
 
@@ -22,9 +22,15 @@ logger = logging.getLogger(__name__)
 
 
 class Scenario:
+    """
+    Contains the configuration and helper classes needed to execute an Amory evaluation.
+    This is the base class of specific tasks like ImageClassificationTask and
+    provides significant common processing.
+    """
+
     def __init__(
         self,
-        config: dict,
+        config: Config,
         num_eval_batches: Optional[int] = None,
         skip_benign: Optional[bool] = False,
         skip_attack: Optional[bool] = False,
@@ -64,7 +70,7 @@ class Scenario:
         if self.mongo_host is not None:  # fail fast if pymongo is not installed
             from armory.scenarios import mongo  # noqa: F401
 
-    def _set_output_dir(self, config):
+    def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
         self.scenario_output_dir = os.path.join(
             runtime_paths.output_dir, config["eval_id"]
