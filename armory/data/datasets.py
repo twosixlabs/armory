@@ -1391,22 +1391,96 @@ def coco_label_preprocessing(x, y):
     If batch_size is 1, this function converts the single y dictionary to a list of length 1.
     This function converts COCO labels from a 0-79 range to the standard 0-89 with 10 unused indices
     (see https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_label_map.pbtxt).
+    The label map used matches the link above, with the note that labels start from 0 rather than 1.
     """
     # This will be true only when batch_size is 1
     if isinstance(y, dict):
         y = [y]
-
-    # 80 COCO classes range from ID 0 through 89 with 10 unused values
-    NUM_COCO_CLASSES = 80
-    unused_indices = [11, 25, 28, 29, 44, 65, 67, 68, 70, 82]
-    coco_labels = list(range(NUM_COCO_CLASSES + len(unused_indices)))
-    for idx in unused_indices:
-        coco_labels.remove(idx)
-    label_map = {i: coco_labels[i] for i in range(NUM_COCO_CLASSES)}
-
+    idx_map = {
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 12,
+        12: 13,
+        13: 14,
+        14: 15,
+        15: 16,
+        16: 17,
+        17: 18,
+        18: 19,
+        19: 20,
+        20: 21,
+        21: 22,
+        22: 23,
+        23: 24,
+        24: 26,
+        25: 27,
+        26: 30,
+        27: 31,
+        28: 32,
+        29: 33,
+        30: 34,
+        31: 35,
+        32: 36,
+        33: 37,
+        34: 38,
+        35: 39,
+        36: 40,
+        37: 41,
+        38: 42,
+        39: 43,
+        40: 45,
+        41: 46,
+        42: 47,
+        43: 48,
+        44: 49,
+        45: 50,
+        46: 51,
+        47: 52,
+        48: 53,
+        49: 54,
+        50: 55,
+        51: 56,
+        52: 57,
+        53: 58,
+        54: 59,
+        55: 60,
+        56: 61,
+        57: 62,
+        58: 63,
+        59: 64,
+        60: 66,
+        61: 69,
+        62: 71,
+        63: 72,
+        64: 73,
+        65: 74,
+        66: 75,
+        67: 76,
+        68: 77,
+        69: 78,
+        70: 79,
+        71: 80,
+        72: 81,
+        73: 83,
+        74: 84,
+        75: 85,
+        76: 86,
+        77: 87,
+        78: 88,
+        79: 89,
+    }
     for label_dict in y:
         label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
-        label_dict["labels"] = np.vectorize(label_map.__getitem__)(
+        label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
             label_dict.pop("label").reshape(-1,)
         )
     return y
