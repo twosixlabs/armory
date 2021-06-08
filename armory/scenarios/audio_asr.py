@@ -104,4 +104,4 @@ class AutomaticSpeechRecognition(Scenario):
     def load_dataset(self, eval_split_default="test_clean"):
         if self.config["dataset"]["batch_size"] != 1:
             logger.warning("Evaluation batch_size != 1 may not be supported.")
-        super().load_dataset(self, eval_split_default=eval_split_default)
+        super().load_dataset(eval_split_default=eval_split_default)
