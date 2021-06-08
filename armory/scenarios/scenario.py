@@ -272,6 +272,7 @@ class Scenario:
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.attack_type == "preloaded":
+                misclassified = False
                 if len(x) == 2:
                     x, x_adv = x
                 else:
