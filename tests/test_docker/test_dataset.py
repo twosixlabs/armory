@@ -461,6 +461,27 @@ def test_resisc45_adversarial_224x224():
         assert y.shape == (batch_size,)
 
 
+def test_coco2017():
+    if not os.path.exists(os.path.join(DATASET_DIR, "coco", "2017", "1.1.0")):
+        pytest.skip("coco2017 dataset not downloaded.")
+
+    split_size = 5000
+    split = "validation"
+    dataset = datasets.coco2017(split=split,)
+    assert dataset.size == split_size
+
+    for i in range(8):
+        x, y = dataset.get_batch()
+        assert x.shape[0] == 1
+        assert x.shape[-1] == 3
+        assert isinstance(y, list)
+        assert len(y) == 1
+        y_dict = y[0]
+        assert isinstance(y_dict, dict)
+        for obj_key in ["labels", "boxes", "area"]:
+            assert obj_key in y_dict
+
+
 def test_dapricot_dev():
     split_size = 27
     split = "small"
