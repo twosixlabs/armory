@@ -76,7 +76,7 @@ class So2SatClassification(Scenario):
         super().load_metrics()
 
         # Overwrite standard metrics_logger
-        metrics_config = self.config["metrics"]
+        metrics_config = self.config["metric"]
         performance_metrics = copy.deepcopy(metrics_config)
         performance_metrics.pop("perturbation")
         metrics_logger = metrics.MetricsLogger.from_config(
@@ -89,7 +89,7 @@ class So2SatClassification(Scenario):
             "computational_resource_dict"
         ] = metrics_logger.computational_resource_dict
 
-        perturbation_metrics = copy.deepcopy(self.config["metrics"])
+        perturbation_metrics = copy.deepcopy(self.config["metric"])
         perturbation_metrics.pop("task")
         if self.attack_modality in ("sar", "both"):
             sar_perturbation_logger = metrics.MetricsLogger.from_config(
