@@ -25,7 +25,7 @@
         "eval_split": "large+medium+small",
         "framework": "numpy",
         "module": "armory.data.adversarial_datasets",
-        "name": "dapricot_dev_adversarial"
+        "name": "dapricot_test_adversarial"
     },
     "defense": null,
     "metric": {
@@ -53,7 +53,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.1",
+        "docker_image": "twosixarmory/tf1:0.13.2",
         "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
