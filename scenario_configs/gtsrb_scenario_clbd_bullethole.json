@@ -38,6 +38,7 @@
         },
         "module": "armory.art_experimental.attacks.poison_loader_clbd",
         "name": "poison_loader_clbd",
+        "type": "clbd",
         "use_adversarial_trainer": false
     },
     "dataset": {
@@ -63,7 +64,7 @@
         "name": "GTSRB_CLBD"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.14.0",
+        "docker_image": "twosixarmory/tf1:0.13.2",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

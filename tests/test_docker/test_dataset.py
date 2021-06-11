@@ -461,10 +461,52 @@ def test_resisc45_adversarial_224x224():
         assert y.shape == (batch_size,)
 
 
-def test_dapricot():
+def test_coco2017():
+    if not os.path.exists(os.path.join(DATASET_DIR, "coco", "2017", "1.1.0")):
+        pytest.skip("coco2017 dataset not downloaded.")
+
+    split_size = 5000
+    split = "validation"
+    dataset = datasets.coco2017(split=split,)
+    assert dataset.size == split_size
+
+    for i in range(8):
+        x, y = dataset.get_batch()
+        assert x.shape[0] == 1
+        assert x.shape[-1] == 3
+        assert isinstance(y, list)
+        assert len(y) == 1
+        y_dict = y[0]
+        assert isinstance(y_dict, dict)
+        for obj_key in ["labels", "boxes", "area"]:
+            assert obj_key in y_dict
+
+
+def test_dapricot_dev():
     split_size = 27
     split = "small"
     dataset = adversarial_datasets.dapricot_dev_adversarial(split=split,)
+    assert dataset.size == split_size
+
+    x, y = dataset.get_batch()
+    for i in range(2):
+        assert x.shape == (1, 3, 1008, 756, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        y_object, y_patch_metadata = y
+        assert len(y_object) == 3  # 3 images per example
+        for obj_key in ["labels", "boxes", "area"]:
+            for k in range(3):
+                assert obj_key in y_object[k]
+        for patch_metadata_key in ["cc_scene", "cc_ground_truth", "gs_coords", "shape"]:
+            for k in range(3):
+                assert patch_metadata_key in y_patch_metadata[k]
+
+
+def test_dapricot_test():
+    split_size = 108
+    split = "small"
+    dataset = adversarial_datasets.dapricot_test_adversarial(split=split,)
     assert dataset.size == split_size
 
     x, y = dataset.get_batch()

@@ -613,25 +613,6 @@ def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     return average_precisions_by_class
 
 
-def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5):
-    """
-    Mean average precision for object detection. This function returns a scalar value.
-
-    y_list (list): of length equal to the number of input examples. Each element in the list
-        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
-        shape (N,) and (N, 4) respectively where N = number of boxes.
-    y_pred_list (list): of length equal to the number of input examples. Each element in the
-        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
-        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
-
-    """
-    _check_object_detection_input(y_list, y_pred_list)
-    ap_per_class = object_detection_AP_per_class(
-        y_list, y_pred_list, iou_threshold=iou_threshold
-    )
-    return np.fromiter(ap_per_class.values(), dtype=float).mean()
-
-
 def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
@@ -1066,7 +1047,6 @@ SUPPORTED_METRICS = {
     "mars_mean_patch": mars_mean_patch,
     "word_error_rate": word_error_rate,
     "object_detection_AP_per_class": object_detection_AP_per_class,
-    "object_detection_mAP": object_detection_mAP,
 }
 
 # Image-based metrics applied to video
