@@ -2,13 +2,13 @@
 
 The `armory.data.adversarial_datasets` module implements functionality to return adversarial datasets of 
 various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which 
-implements the methods needed  by the ART framework. Specifically `get_batch` will 
-return a tuple of `((data_clean, data_adversarial), label_clean)` for a specified batch size in numpy format,
-where 'data_clean' and 'label_clean' represent a clean example and its true label, and 'data_adversarial'
-represents the corresponding adversarially attacked example. The lone exception to this is the [APRICOT](https://arxiv.org/abs/1912.08166)
-dataset, which contains physical adversarial patches and returns a tuple of `(data_adversarial, label_adversarial)` for each batch.
-Each adversarial dataset contains adversarial examples generated using one or more attacks.
+implements the methods needed  by the ART framework. 
 
+For most adversarial datasets, `get_batch()` returns a tuple of `((data_clean, data_adversarial), label_clean)` for a 
+specified batch size in numpy format, where `data_clean` and `label_clean` represent a clean example and its true 
+label, and `data_adversarial` represents the corresponding adversarially attacked example. The 
+[APRICOT](https://arxiv.org/abs/1912.08166) and DAPRICOT datasets differ in that `get_batch()` returns a tuple 
+of `(data_adversarial, label_adversarial)`.
 
 
 
@@ -57,6 +57,7 @@ Note: the APRICOT dataset contains splits for ["frcnn", "ssd", "retinanet"] rath
 | "apricot_dev_adversarial"      | ["adversarial", frcnn", "ssd", "retinanet"] *                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | dev          | (nb, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
 | "apricot_test_adversarial"     | ["adversarial", frcnn", "ssd", "retinanet"] *                  | Physical Adversarial Attacks on Object Detection| Targeted, universal patch    | test          | (nb, variable_height, variable_width, 3) | uint8 | n/a | dict | 873 images |
 | "dapricot_dev_adversarial"     | ["small", medium", "large"] **                  | Physical Adversarial Attacks on Object Detection| Targeted patch    | dev          | (nb, 3, 1008, 756, 3) | uint8 | n/a | 2-tuple |  81 examples (3 images per example) |
+| "dapricot_test_adversarial"     | ["small", medium", "large"] **                  | Physical Adversarial Attacks on Object Detection| Targeted patch    | test          | (nb, 3, 1008, 756, 3) | uint8 | n/a | 2-tuple |  324 examples (3 images per example) |
 | "imagenet_adversarial"         | "adversarial"                  | ILSVRC12 adversarial image dataset for ResNet50  | Targeted, universal perturbation   |     test         | (nb, 224, 224, 3) |uint8   | (N,)    | int64  | 1000 images    |
 | "resisc45_adversarial_224x224" |     "adversarial_univpatch"    | REmote Sensing Image Scene Classification |      Targeted, universal patch     |     test     | (nb, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (nb, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
@@ -67,11 +68,12 @@ Note: the APRICOT dataset contains splits for ["frcnn", "ssd", "retinanet"] rath
 Note: the APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches. 
 The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in 
 [armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial 
-patch and a varying number of COCO objects (in some cases zero).
+patch and a varying number of COCO objects (in some cases zero). COCO object class labels are one-indexed (start from 1)
+in Armory <= 0.13.1 and zero-indexed in Armory > 0.13.1.
 
 The D-APRICOT dataset does NOT contain labels/bounding boxes for COCO objects, which may occasionally appear in the 
 background (e.g. car). Each image contains one green screen intended for patch insertion. The green screen shapes vary
-between diamond, rectangle, and octagon. Each example in the dataset consists of three images, each of a different camera
+between diamond, rectangle, and octagon. A dataset example consists of three images, each of a different camera
  angle of the same scene and green screen.
 
 

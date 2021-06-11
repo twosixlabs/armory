@@ -17,6 +17,7 @@ from armory.data.adversarial import (  # noqa: F401
     apricot_dev,
     apricot_test,
     dapricot_dev,
+    dapricot_test,
 )
 
 
@@ -321,11 +322,13 @@ def gtsrb_poison(
 
 def apricot_label_preprocessing(x, y):
     """
-    Convert labels to list of dicts. If batch_size > 1, this will already be the case,
-    and y will simply be returned without modification.
+    Convert labels to list of dicts. If batch_size > 1, this will already be the case.
+    Decrement labels of non-patch objects by 1 to be 0-indexed
     """
     if isinstance(y, dict):
         y = [y]
+    for y_dict in y:
+        y_dict["labels"] -= y_dict["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID
     return y
 
 
@@ -496,6 +499,40 @@ def dapricot_dev_adversarial(
 
     return datasets._generator_from_tfds(
         "dapricot_dev:1.0.1",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        shuffle_files=shuffle_files,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        context=dapricot_adversarial_context,
+    )
+
+
+def dapricot_test_adversarial(
+    split: str = "large+medium+small",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = dapricot_canonical_preprocessing,
+    label_preprocessing_fn: Callable = dapricot_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+) -> datasets.ArmoryDataGenerator:
+    if batch_size != 1:
+        raise ValueError("D-APRICOT batch size must be set to 1")
+
+    if split == "adversarial":
+        split = "small+medium+large"
+
+    return datasets._generator_from_tfds(
+        "dapricot_test:1.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
