@@ -1338,6 +1338,7 @@ def xview_label_preprocessing(x, y):
         height, width = x[i].shape[:2]
         converted_boxes *= [width, height, width, height]
         label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict["labels"].reshape((-1,))
         y_preprocessed.append(label_dict)
     return y_preprocessed
 
