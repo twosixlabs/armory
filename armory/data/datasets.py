@@ -676,6 +676,7 @@ resisc45_context = ImageContext(x_shape=(256, 256, 3))
 resisc10_context = ImageContext(x_shape=(64, 64, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
+coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
 
 
@@ -709,6 +710,10 @@ def imagenette_canonical_preprocessing(batch):
 
 def xview_canonical_preprocessing(batch):
     return canonical_variable_image_preprocess(xview_context, batch)
+
+
+def coco_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(coco_context, batch)
 
 
 def ucf101_canonical_preprocessing(batch):
@@ -1377,6 +1382,147 @@ def xview(
         framework=framework,
         shuffle_files=shuffle_files,
         context=xview_context,
+        **kwargs,
+    )
+
+
+def coco_label_preprocessing(x, y):
+    """
+    If batch_size is 1, this function converts the single y dictionary to a list of length 1.
+    This function converts COCO labels from a 0-79 range to the standard 0-89 with 10 unused indices
+    (see https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_label_map.pbtxt).
+    The label map used matches the link above, with the note that labels start from 0 rather than 1.
+    """
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    idx_map = {
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 12,
+        12: 13,
+        13: 14,
+        14: 15,
+        15: 16,
+        16: 17,
+        17: 18,
+        18: 19,
+        19: 20,
+        20: 21,
+        21: 22,
+        22: 23,
+        23: 24,
+        24: 26,
+        25: 27,
+        26: 30,
+        27: 31,
+        28: 32,
+        29: 33,
+        30: 34,
+        31: 35,
+        32: 36,
+        33: 37,
+        34: 38,
+        35: 39,
+        36: 40,
+        37: 41,
+        38: 42,
+        39: 43,
+        40: 45,
+        41: 46,
+        42: 47,
+        43: 48,
+        44: 49,
+        45: 50,
+        46: 51,
+        47: 52,
+        48: 53,
+        49: 54,
+        50: 55,
+        51: 56,
+        52: 57,
+        53: 58,
+        54: 59,
+        55: 60,
+        56: 61,
+        57: 62,
+        58: 63,
+        59: 64,
+        60: 66,
+        61: 69,
+        62: 71,
+        63: 72,
+        64: 73,
+        65: 74,
+        66: 75,
+        67: 76,
+        68: 77,
+        69: 78,
+        70: 79,
+        71: 80,
+        72: 81,
+        73: 83,
+        74: 84,
+        75: 85,
+        76: 86,
+        77: 87,
+        78: 88,
+        79: 89,
+    }
+    for label_dict in y:
+        label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
+        label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
+            label_dict.pop("label").reshape(-1,)
+        )
+    return y
+
+
+def coco2017(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = coco_canonical_preprocessing,
+    label_preprocessing_fn: Callable = coco_label_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    split - one of ("train", "validation", "test")
+
+    Note: images from the "test" split are not annotated.
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the coco2017 dataset")
+    return _generator_from_tfds(
+        "coco/2017:1.1.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        variable_length=bool(batch_size > 1),
+        variable_y=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=coco_context,
         **kwargs,
     )
 
