@@ -72,7 +72,7 @@ class DatasetPoisoner:
         poison_x, poison_y = np.array(poison_x), np.array(poison_y)
 
         if return_index:
-            poison_x, poison_y, return_index
+            poison_x, poison_y, poison_index
         return poison_x, poison_y
 
 
