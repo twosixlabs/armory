@@ -28,7 +28,10 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
-    pytest==6.2.2 
+    pytest==6.2.2 \
+    pandas==1.2.4 \
+    ffmpeg-python==0.2.0
+
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
@@ -60,7 +63,7 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.6 \
   soundfile \
   sox \
   warpctc-pytorch==0.2.1+torch16.cuda102 \
-  adversarial-robustness-toolbox==1.6.1 --no-cache-dir
+  adversarial-robustness-toolbox==1.6.2 --no-cache-dir
 
 
 ########## PyTorch 1 Deep Speech Dev #################
