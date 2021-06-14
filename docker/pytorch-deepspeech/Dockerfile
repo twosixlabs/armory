@@ -29,7 +29,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
     pytest==6.2.2 \
-    pandas==1.2.4
+    pandas==1.2.4 \
+    ffmpeg-python==0.2.0
+
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
