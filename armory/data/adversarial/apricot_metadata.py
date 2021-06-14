@@ -22,7 +22,7 @@ APRICOT_MODELS = [
 APRICOT_PATCHES = {
     0: {
         "adv_model": 0,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 0,
         "is_circle": True,
         "is_square": False,
@@ -30,7 +30,7 @@ APRICOT_PATCHES = {
     },
     1: {
         "adv_model": 0,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 1,
         "is_circle": True,
         "is_square": False,
@@ -38,7 +38,7 @@ APRICOT_PATCHES = {
     },
     2: {
         "adv_model": 0,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 2,
         "is_circle": True,
         "is_square": False,
@@ -46,7 +46,7 @@ APRICOT_PATCHES = {
     },
     3: {
         "adv_model": 0,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 3,
         "is_circle": True,
         "is_square": False,
@@ -54,7 +54,7 @@ APRICOT_PATCHES = {
     },
     4: {
         "adv_model": 0,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 4,
         "is_circle": True,
         "is_square": False,
@@ -62,7 +62,7 @@ APRICOT_PATCHES = {
     },
     5: {
         "adv_model": 0,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 5,
         "is_circle": True,
         "is_square": False,
@@ -70,7 +70,7 @@ APRICOT_PATCHES = {
     },
     6: {
         "adv_model": 0,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 6,
         "is_circle": True,
         "is_square": False,
@@ -78,7 +78,7 @@ APRICOT_PATCHES = {
     },
     7: {
         "adv_model": 0,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 7,
         "is_circle": True,
         "is_square": False,
@@ -86,7 +86,7 @@ APRICOT_PATCHES = {
     },
     8: {
         "adv_model": 0,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 8,
         "is_circle": True,
         "is_square": False,
@@ -94,7 +94,7 @@ APRICOT_PATCHES = {
     },
     9: {
         "adv_model": 0,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 9,
         "is_circle": True,
         "is_square": False,
@@ -102,7 +102,7 @@ APRICOT_PATCHES = {
     },
     10: {
         "adv_model": 0,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 10,
         "is_circle": False,
         "is_square": True,
@@ -110,7 +110,7 @@ APRICOT_PATCHES = {
     },
     11: {
         "adv_model": 0,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 11,
         "is_circle": False,
         "is_square": True,
@@ -118,7 +118,7 @@ APRICOT_PATCHES = {
     },
     12: {
         "adv_model": 0,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 12,
         "is_circle": False,
         "is_square": True,
@@ -126,7 +126,7 @@ APRICOT_PATCHES = {
     },
     13: {
         "adv_model": 0,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 13,
         "is_circle": False,
         "is_square": True,
@@ -134,7 +134,7 @@ APRICOT_PATCHES = {
     },
     14: {
         "adv_model": 0,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 14,
         "is_circle": False,
         "is_square": True,
@@ -142,7 +142,7 @@ APRICOT_PATCHES = {
     },
     15: {
         "adv_model": 0,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 15,
         "is_circle": False,
         "is_square": True,
@@ -150,7 +150,7 @@ APRICOT_PATCHES = {
     },
     16: {
         "adv_model": 0,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 16,
         "is_circle": False,
         "is_square": True,
@@ -158,7 +158,7 @@ APRICOT_PATCHES = {
     },
     17: {
         "adv_model": 0,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 17,
         "is_circle": False,
         "is_square": True,
@@ -166,7 +166,7 @@ APRICOT_PATCHES = {
     },
     18: {
         "adv_model": 0,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 18,
         "is_circle": False,
         "is_square": True,
@@ -174,7 +174,7 @@ APRICOT_PATCHES = {
     },
     19: {
         "adv_model": 0,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 19,
         "is_circle": False,
         "is_square": True,
@@ -182,7 +182,7 @@ APRICOT_PATCHES = {
     },
     20: {
         "adv_model": 1,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 20,
         "is_circle": True,
         "is_square": False,
@@ -190,7 +190,7 @@ APRICOT_PATCHES = {
     },
     21: {
         "adv_model": 1,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 21,
         "is_circle": True,
         "is_square": False,
@@ -198,7 +198,7 @@ APRICOT_PATCHES = {
     },
     22: {
         "adv_model": 1,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 22,
         "is_circle": True,
         "is_square": False,
@@ -206,7 +206,7 @@ APRICOT_PATCHES = {
     },
     23: {
         "adv_model": 1,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 23,
         "is_circle": True,
         "is_square": False,
@@ -214,7 +214,7 @@ APRICOT_PATCHES = {
     },
     24: {
         "adv_model": 1,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 24,
         "is_circle": True,
         "is_square": False,
@@ -222,7 +222,7 @@ APRICOT_PATCHES = {
     },
     25: {
         "adv_model": 1,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 25,
         "is_circle": True,
         "is_square": False,
@@ -230,7 +230,7 @@ APRICOT_PATCHES = {
     },
     26: {
         "adv_model": 1,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 26,
         "is_circle": True,
         "is_square": False,
@@ -238,7 +238,7 @@ APRICOT_PATCHES = {
     },
     27: {
         "adv_model": 1,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 27,
         "is_circle": True,
         "is_square": False,
@@ -246,7 +246,7 @@ APRICOT_PATCHES = {
     },
     28: {
         "adv_model": 1,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 28,
         "is_circle": True,
         "is_square": False,
@@ -254,7 +254,7 @@ APRICOT_PATCHES = {
     },
     29: {
         "adv_model": 1,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 29,
         "is_circle": True,
         "is_square": False,
@@ -262,7 +262,7 @@ APRICOT_PATCHES = {
     },
     30: {
         "adv_model": 1,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 30,
         "is_circle": False,
         "is_square": True,
@@ -270,7 +270,7 @@ APRICOT_PATCHES = {
     },
     31: {
         "adv_model": 1,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 31,
         "is_circle": False,
         "is_square": True,
@@ -278,7 +278,7 @@ APRICOT_PATCHES = {
     },
     32: {
         "adv_model": 1,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 32,
         "is_circle": False,
         "is_square": True,
@@ -286,7 +286,7 @@ APRICOT_PATCHES = {
     },
     33: {
         "adv_model": 1,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 33,
         "is_circle": False,
         "is_square": True,
@@ -294,7 +294,7 @@ APRICOT_PATCHES = {
     },
     34: {
         "adv_model": 1,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 34,
         "is_circle": False,
         "is_square": True,
@@ -302,7 +302,7 @@ APRICOT_PATCHES = {
     },
     35: {
         "adv_model": 1,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 35,
         "is_circle": False,
         "is_square": True,
@@ -310,7 +310,7 @@ APRICOT_PATCHES = {
     },
     36: {
         "adv_model": 1,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 36,
         "is_circle": False,
         "is_square": True,
@@ -318,7 +318,7 @@ APRICOT_PATCHES = {
     },
     37: {
         "adv_model": 1,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 37,
         "is_circle": False,
         "is_square": True,
@@ -326,7 +326,7 @@ APRICOT_PATCHES = {
     },
     38: {
         "adv_model": 1,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 38,
         "is_circle": False,
         "is_square": True,
@@ -334,7 +334,7 @@ APRICOT_PATCHES = {
     },
     39: {
         "adv_model": 1,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 39,
         "is_circle": False,
         "is_square": True,
@@ -342,7 +342,7 @@ APRICOT_PATCHES = {
     },
     40: {
         "adv_model": 2,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 40,
         "is_circle": True,
         "is_square": False,
@@ -350,7 +350,7 @@ APRICOT_PATCHES = {
     },
     41: {
         "adv_model": 2,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 41,
         "is_circle": True,
         "is_square": False,
@@ -358,7 +358,7 @@ APRICOT_PATCHES = {
     },
     42: {
         "adv_model": 2,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 42,
         "is_circle": True,
         "is_square": False,
@@ -366,7 +366,7 @@ APRICOT_PATCHES = {
     },
     43: {
         "adv_model": 2,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 43,
         "is_circle": True,
         "is_square": False,
@@ -374,7 +374,7 @@ APRICOT_PATCHES = {
     },
     44: {
         "adv_model": 2,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 44,
         "is_circle": True,
         "is_square": False,
@@ -382,7 +382,7 @@ APRICOT_PATCHES = {
     },
     45: {
         "adv_model": 2,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 45,
         "is_circle": True,
         "is_square": False,
@@ -390,7 +390,7 @@ APRICOT_PATCHES = {
     },
     46: {
         "adv_model": 2,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 46,
         "is_circle": True,
         "is_square": False,
@@ -398,7 +398,7 @@ APRICOT_PATCHES = {
     },
     47: {
         "adv_model": 2,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 47,
         "is_circle": True,
         "is_square": False,
@@ -406,7 +406,7 @@ APRICOT_PATCHES = {
     },
     48: {
         "adv_model": 2,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 48,
         "is_circle": True,
         "is_square": False,
@@ -414,7 +414,7 @@ APRICOT_PATCHES = {
     },
     49: {
         "adv_model": 2,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 49,
         "is_circle": True,
         "is_square": False,
@@ -422,7 +422,7 @@ APRICOT_PATCHES = {
     },
     50: {
         "adv_model": 2,
-        "adv_target": 53,
+        "adv_target": 52,
         "id": 50,
         "is_circle": False,
         "is_square": True,
@@ -430,7 +430,7 @@ APRICOT_PATCHES = {
     },
     51: {
         "adv_model": 2,
-        "adv_target": 27,
+        "adv_target": 26,
         "id": 51,
         "is_circle": False,
         "is_square": True,
@@ -438,7 +438,7 @@ APRICOT_PATCHES = {
     },
     52: {
         "adv_model": 2,
-        "adv_target": 44,
+        "adv_target": 43,
         "id": 52,
         "is_circle": False,
         "is_square": True,
@@ -446,7 +446,7 @@ APRICOT_PATCHES = {
     },
     53: {
         "adv_model": 2,
-        "adv_target": 17,
+        "adv_target": 16,
         "id": 53,
         "is_circle": False,
         "is_square": True,
@@ -454,7 +454,7 @@ APRICOT_PATCHES = {
     },
     54: {
         "adv_model": 2,
-        "adv_target": 85,
+        "adv_target": 84,
         "id": 54,
         "is_circle": False,
         "is_square": True,
@@ -462,7 +462,7 @@ APRICOT_PATCHES = {
     },
     55: {
         "adv_model": 2,
-        "adv_target": 73,
+        "adv_target": 72,
         "id": 55,
         "is_circle": False,
         "is_square": True,
@@ -470,7 +470,7 @@ APRICOT_PATCHES = {
     },
     56: {
         "adv_model": 2,
-        "adv_target": 78,
+        "adv_target": 77,
         "id": 56,
         "is_circle": False,
         "is_square": True,
@@ -478,7 +478,7 @@ APRICOT_PATCHES = {
     },
     57: {
         "adv_model": 2,
-        "adv_target": 1,
+        "adv_target": 0,
         "id": 57,
         "is_circle": False,
         "is_square": True,
@@ -486,7 +486,7 @@ APRICOT_PATCHES = {
     },
     58: {
         "adv_model": 2,
-        "adv_target": 64,
+        "adv_target": 63,
         "id": 58,
         "is_circle": False,
         "is_square": True,
@@ -494,7 +494,7 @@ APRICOT_PATCHES = {
     },
     59: {
         "adv_model": 2,
-        "adv_target": 33,
+        "adv_target": 32,
         "id": 59,
         "is_circle": False,
         "is_square": True,
