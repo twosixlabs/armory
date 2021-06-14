@@ -6,24 +6,32 @@ import numpy as np
 from armory.utils import config_loading
 from armory.scenarios.poison import DatasetPoisoner
 from armory.scenarios.poisoning_gtsrb_scenario import GTSRB
+from armory.scenarios.utils import to_categorical, from_categorical
 
 logger = logging.getLogger(__name__)
 
 
 class CleanDatasetPoisoner:
-    def __init__(self, attack):
+    def __init__(self, attack, categorical=True):
         self.attack = attack
+        self.categorical = bool(categorical)
 
     def poison_dataset(self, x, y, return_index=False):
+        if self.categorical:
+            y = to_categorical(y)
+
         x_poison, y_poison = self.attack.poison(x, y)
+
+        if self.categorical:
+            y_poison = from_categorical(y_poison)
 
         if return_index:
             logger.warning("return_index not currently implemeneted. Returning []")
-            x_poison, y_poison, np.array([])
+            return x_poison, y_poison, np.array([])
         return x_poison, y_poison
 
 
-class CleanGTSRB(GTSRB):
+class GTSRB_CLBD(GTSRB):
     def load_attack(self):
         adhoc_config = self.config["adhoc"]
         attack_config = copy.deepcopy(self.config["attack"])

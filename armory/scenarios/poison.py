@@ -13,18 +13,10 @@ import numpy as np
 from tqdm import tqdm
 
 from armory.scenarios.scenario import Scenario
+from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
 
 logger = logging.getLogger(__name__)
-
-
-def to_categorical(y, num_classes=None, dtype=np.float32):
-    y = np.asarray(y, dtype="int")
-    if y.ndim != 1:
-        raise ValueError("y is not a 1D array")
-    if not num_classes:
-        num_classes = np.max(y) + 1
-    return np.eye(num_classes, dtype=dtype)[y]
 
 
 class DatasetPoisoner:
@@ -72,7 +64,7 @@ class DatasetPoisoner:
         poison_x, poison_y = np.array(poison_x), np.array(poison_y)
 
         if return_index:
-            poison_x, poison_y, poison_index
+            return poison_x, poison_y, poison_index
         return poison_x, poison_y
 
 
@@ -168,7 +160,11 @@ class Poison(Scenario):
 
     def poison_dataset(self):
         if self.use_poison:
-            self.x_poison, self.y_poison, self.poison_index = self.poisoner.poison(
+            (
+                self.x_poison,
+                self.y_poison,
+                self.poison_index,
+            ) = self.poisoner.poison_datset(
                 self.x_clean, self.y_clean, return_index=True
             )
         else:
@@ -283,7 +279,7 @@ class Poison(Scenario):
                 self.config["dataset"], split=self.test_split, **self.dataset_kwargs
             )
             for x, y in tqdm(test_data, desc="Testing"):
-                x, _ = self.test_poisoner.poison(x, y, fraction=1.0)
+                x, _ = self.test_poisoner.poison_dataset(x, y, fraction=1.0)
                 # Ensure that input sample isn't overwritten by classifier
                 x.flags.writeable = False
                 y_pred = self.estimator.predict(x)
@@ -324,6 +320,7 @@ class Poison(Scenario):
         self.set_random_seed()
         self.load_model()
         self.load_defense()
+        self.load_attack()
         self.load_train_dataset()
         self.poison_dataset()
         self.filter_dataset()
