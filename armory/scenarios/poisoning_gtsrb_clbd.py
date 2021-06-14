@@ -26,8 +26,17 @@ class CleanDatasetPoisoner:
             y_poison = from_categorical(y_poison)
 
         if return_index:
-            logger.warning("return_index not currently implemeneted. Returning []")
-            return x_poison, y_poison, np.array([])
+            poison_index = []
+            if len(x_poison) == len(x):
+                for i, (x_i, x_poison_i) in enumerate(zip(x_poison, x)):
+                    if (x_i != x_poison_i).any():
+                        poison_index.append(i)
+            else:
+                logger.warning(
+                    f"len(x_poison) {len(x_poison)} != len(x) {len(x)}. Returning []"
+                )
+            poison_index = np.array(poison_index)
+            return x_poison, y_poison, poison_index
         return x_poison, y_poison
 
 
