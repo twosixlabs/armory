@@ -164,7 +164,7 @@ class Poison(Scenario):
                 self.x_poison,
                 self.y_poison,
                 self.poison_index,
-            ) = self.poisoner.poison_datset(
+            ) = self.poisoner.poison_dataset(
                 self.x_clean, self.y_clean, return_index=True
             )
         else:
