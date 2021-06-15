@@ -29,7 +29,10 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
     pytest==6.2.2 \
-    opencv-python==4.5.1.48
+    opencv-python==4.5.1.48 \
+    pandas==1.2.4 \
+    ffmpeg-python==0.2.0
+
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
@@ -50,7 +53,7 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.1
+RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.2
 
 WORKDIR /workspace
 

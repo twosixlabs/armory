@@ -329,6 +329,7 @@ def apricot_label_preprocessing(x, y):
         y = [y]
     for y_dict in y:
         y_dict["labels"] -= y_dict["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+        y_dict["labels"] = y_dict["labels"].reshape((-1,))
     return y
 
 
