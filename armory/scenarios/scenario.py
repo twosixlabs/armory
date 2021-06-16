@@ -324,14 +324,13 @@ class Scenario:
         if not self.skip_attack:
             self.run_attack()
 
-    def finalize_results(self) -> dict:
+    def finalize_results(self):
         metrics_logger = self.metrics_logger
         metrics_logger.log_task()
         metrics_logger.log_task(adversarial=True)
         if self.targeted:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
-        return self.results
 
     def _evaluate(self) -> dict:
         """
