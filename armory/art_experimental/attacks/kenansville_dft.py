@@ -42,7 +42,7 @@ class KenansvilleDFT:
 
     def _attack(self, x):
         # Scale the threshold based on the target SNR
-        threshold = 10**(-self.snr_db / 10)
+        threshold = 10 ** (-self.snr_db / 10)
         x_fft = np.fft.fft(x)
         x_psd = np.abs(x_fft) ** 2
         # Scale the threshold based on the strenght of the signal
