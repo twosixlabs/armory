@@ -91,10 +91,10 @@ class ObjectDetectionTask(Scenario):
         # The D-APRICOT scenario has no non-targeted tasks
         self.metrics_logger.adversarial_tasks = []
 
-    def benign(self):
-        raise NotImplementedError("D-APRICOT has not benign task")
+    def run_benign(self):
+        raise NotImplementedError("D-APRICOT has no benign task")
 
-    def adversary(self):
+    def run_attack(self):
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -128,6 +128,6 @@ class ObjectDetectionTask(Scenario):
             self.sample_exporter.export(x, x_adv, y_object, y_pred_adv)
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def finalize(self):
+    def finalize_results(self):
         self.metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = self.metrics_logger.results()

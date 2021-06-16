@@ -153,7 +153,7 @@ class Scenario:
             preloaded_split = attack_config.get("kwargs", {}).get(
                 "split", "adversarial"
             )
-            self.test_data = config_loading.load_adversarial_dataset(
+            self.test_dataset = config_loading.load_adversarial_dataset(
                 attack_config,
                 epochs=1,
                 split=preloaded_split,
@@ -185,15 +185,13 @@ class Scenario:
         eval_split = dataset_config.get("eval_split", eval_split_default)
         # Evaluate the ART model on benign test examples
         logger.info(f"Loading test dataset {dataset_config['name']}...")
-        test_data = config_loading.load_dataset(
+        self.test_dataset = config_loading.load_dataset(
             dataset_config,
             epochs=1,
             split=eval_split,
             num_batches=self.num_eval_batches,
             shuffle_files=False,
         )
-
-        self.test_data = test_data
         self.i = -1
 
     def load_metrics(self):
@@ -221,7 +219,7 @@ class Scenario:
         export_samples = self.config["scenario"].get("export_samples")
         if export_samples is not None and export_samples > 0:
             sample_exporter = SampleExporter(
-                self.scenario_output_dir, self.test_data.context, export_samples
+                self.scenario_output_dir, self.test_dataset.context, export_samples
             )
         else:
             sample_exporter = None
@@ -241,17 +239,17 @@ class Scenario:
 
     def evaluate_all(self):
         logger.info("Running inference on benign and adversarial examples")
-        for _ in tqdm(range(len(self.test_data)), desc="Evaluation"):
+        for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
             self.next()
             self.evaluate_current()
 
     def next(self):
-        x, y = next(self.test_data)
+        x, y = next(self.test_dataset)
         i = self.i + 1
         self.i, self.x, self.y = i, x, y
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
-    def benign(self):
+    def run_benign(self):
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
@@ -259,7 +257,7 @@ class Scenario:
         self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
-    def adversary(self):
+    def run_attack(self):
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -322,17 +320,18 @@ class Scenario:
 
     def evaluate_current(self):
         if not self.skip_benign:
-            self.benign()
+            self.run_benign()
         if not self.skip_attack:
-            self.adversary()
+            self.run_attack()
 
-    def finalize(self):
+    def finalize_results(self) -> dict:
         metrics_logger = self.metrics_logger
         metrics_logger.log_task()
         metrics_logger.log_task(adversarial=True)
         if self.targeted:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
+        return self.results
 
     def _evaluate(self) -> dict:
         """
@@ -340,7 +339,7 @@ class Scenario:
         """
         self.load()
         self.evaluate_all()
-        self.finalize()
+        self.finalize_results()
         return self.results
 
     def evaluate(self):

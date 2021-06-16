@@ -115,7 +115,7 @@ class So2SatClassification(Scenario):
         self.sar_perturbation_logger = sar_perturbation_logger
         self.eo_perturbation_logger = eo_perturbation_logger
 
-    def adversary(self):
+    def run_attack(self):
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -193,7 +193,7 @@ class So2SatClassification(Scenario):
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def finalize(self):
+    def finalize_results(self):
         metrics_logger = self.metrics_logger
         metrics_logger.log_task()
         metrics_logger.log_task(adversarial=True)
