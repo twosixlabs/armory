@@ -18,7 +18,6 @@ class KenansvilleDFT:
         in the input. The attack implemented here assumes complete blackbox knowledge,
         so the only options are: 1) modified the whole input or 2) modified subsequences
         of the input with some probability.
-
         param sample_rate: sample rate in Hz of inputs
         param estimator: not used but necessary for interoperability with Armory/ART
         param snr_db: the minimum SNR (in dB) to maintain
@@ -42,56 +41,26 @@ class KenansvilleDFT:
             raise ValueError("Negative SNR is not allowed")
 
     def _attack(self, x):
-        x_len = len(x)
+        # Scale the threshold based on the target SNR
+        threshold = 10**(-self.snr_db / 10)
         x_fft = np.fft.fft(x)
         x_psd = np.abs(x_fft) ** 2
-        # sort by frequencies with increasing power
+        # Scale the threshold based on the strenght of the signal
+        threshold *= np.sum(x_psd)
+        # Sort frequencies by amplitude
         x_psd_ind = np.argsort(x_psd)
         dc_ind = np.where(x_psd_ind == 0)[0][0]
-        signal_db = 10 * np.log10(np.sum(x_psd))
-
-        """
-        The goal of the following search is to find all the
-        low power frequencies that can be discarded while
-        maintaining a minimum SNR.
-
-        If desired, the following coarse and fine search could
-        be replaced with binary search for faster convergence.
-        """
-        # coarse search
-        id = 2
-        noise = np.sum(x_psd[x_psd_ind[:id]])
-        noise_db = 10 * np.log10(noise)
-        while signal_db - noise_db > self.snr_db:
-            id *= 2
-            noise = np.sum(x_psd[x_psd_ind[: min(id, x_len)]])
-            noise_db = 10 * np.log10(noise)
-
-        if id == 2:
-            return x
-
-        # fine search
-        id = int(id / 2)
-        noise = np.sum(x_psd[x_psd_ind[:id]])
-        noise_db = 10 * np.log10(noise)
-        while signal_db - noise_db > self.snr_db:
-            id += 2
-            noise = np.sum(x_psd[x_psd_ind[: min(id, x_len)]])
-            noise_db = 10 * np.log10(noise)
-
-        id -= 2
-
+        reordered = x_psd[x_psd_ind]
+        # Compute the cumulative perturbation size induced by zeroing frequencies up to index ix
+        # Then searching the first one that is below the threshold
+        id = np.searchsorted(np.cumsum(reordered), threshold)
+        id -= id % 2
         # make sure the only non-paired frequencies are DC and, if x is even, x_len/2
-        if (dc_ind in x_psd_ind[:id]) ^ (
-            x_len % 2 == 0 and x_len / 2 in x_psd_ind[:id]
-        ):
+        if (dc_ind < id) ^ (len(x) % 2 == 0 and len(x) / 2 < id):
             id -= 1
-
         # zero out low power frequencies
         x_fft[x_psd_ind[:id]] = 0
-
         x_ifft = np.fft.ifft(x_fft)
-
         return np.real(x_ifft).astype(np.float32)
 
     def generate(self, x):
