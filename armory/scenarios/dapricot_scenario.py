@@ -68,7 +68,7 @@ class ObjectDetectionTask(Scenario):
             )
         super().load_dataset()
 
-    def load_model(self):
+    def load_model(self, defended=True):
         model_config = self.config["model"]
         generate_kwargs = self.config["attack"]["generate_kwargs"]
         if (
@@ -79,7 +79,12 @@ class ObjectDetectionTask(Scenario):
                 "If using Armory's baseline mscoco frcnn model,"
                 " model['model_kwargs']['batch_size'] should be set to 3 for physical attack."
             )
-        super().load_model()
+        super().load_model(defended=defended)
+
+    def fit(self, train_split_default="train"):
+        raise NotImplementedError(
+            "Training has not yet been implemented for object detectors"
+        )
 
     def load_metrics(self):
         super().load_metrics()

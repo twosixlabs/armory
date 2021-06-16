@@ -87,19 +87,18 @@ class AutomaticSpeechRecognition(Scenario):
         audio_channel = load_audio_channel(**audio_channel_config)
         return audio_channel
 
-    def load_model(self, train_split_default="train_clean100"):
-        estimator = self._load_estimator()
+    def load_model(self, defended=True):
         audio_channel = self.get_audio_channel()
+        super().load_model(defended=defended)
         if audio_channel:
-            if estimator.preprocessing_defences:
-                estimator.preprocessing_defences.insert(0, audio_channel)
+            if self.estimator.preprocessing_defences:
+                self.estimator.preprocessing_defences.insert(0, audio_channel)
             else:
-                estimator.preprocessing_defences = [audio_channel]
-            estimator._update_preprocessing_operations()  # TODO: FIX? ART Interface for 1.6.2?
+                self.estimator.preprocessing_defences = [audio_channel]
+            self.estimator._update_preprocessing_operations()  # TODO: FIX? ART Interface for 1.6.2?
 
-        self.estimator = self._load_defense(
-            estimator, train_split_default=train_split_default
-        )
+    def load_train_dataset(self, train_split_default="train_clean100"):
+        return super().load_train_dataset(train_split_default=train_split_default)
 
     def load_dataset(self, eval_split_default="test_clean"):
         if self.config["dataset"]["batch_size"] != 1:

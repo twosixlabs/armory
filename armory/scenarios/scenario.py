@@ -93,64 +93,53 @@ class Scenario:
                     "To enable skip_misclassified, 'batch_size' must be set to 1"
                 )
 
-    def _load_estimator(self):
+    def load_model(self, defended=True):
         model_config = self.config["model"]
+        model_name = f"{model_config['module']}.{model_config['name']}"
         estimator, _ = config_loading.load_model(model_config)
+
+        if defended:
+            defense_config = self.config.get("defense") or {}
+            defense_type = defense_config.get("type")
+            if defense_type in ["Preprocessor", "Postprocessor"]:
+                logger.info(f"Applying internal {defense_type} defense to estimator")
+                estimator = config_loading.load_defense_internal(
+                    defense_config, estimator
+                )
+            elif defense_type == "Trainer":
+                self.trainer = config_loading.load_defense_wrapper(
+                    defense_config, estimator
+                )
+            elif defense_type is not None:
+                raise ValueError(f"{defense_type} not currently supported")
+        else:
+            logger.info("Not loading any defenses for model")
+            defense_type = None
+
+        self.estimator = estimator
+        self.model_name = model_name
+        self.use_fit = bool(model_config["fit"])
+        self.fit_kwargs = model_config.get("fit_kwargs", {})
         self.predict_kwargs = model_config.get("predict_kwargs", {})
-        # TODO: handle fit_preprocessing_fn ???
-        return estimator
+        self.defense_type = defense_type
 
-    def _load_defense(self, estimator, train_split_default="train"):
-        model_config = self.config["model"]
-        defense_config = self.config.get("defense") or {}
-        defense_type = defense_config.get("type")
-
-        if defense_type in ["Preprocessor", "Postprocessor"]:
-            logger.info(f"Applying internal {defense_type} defense to estimator")
-            estimator = config_loading.load_defense_internal(defense_config, estimator)
-
-        if model_config["fit"]:
-            try:
-                dataset_config = self.config["dataset"]
-                logger.info(
-                    f"Fitting model {model_config['module']}.{model_config['name']}..."
-                )
-                fit_kwargs = model_config["fit_kwargs"]
-
-                logger.info(f"Loading train dataset {dataset_config['name']}...")
-                train_data = config_loading.load_dataset(
-                    dataset_config,
-                    epochs=fit_kwargs["nb_epochs"],
-                    split=dataset_config.get("train_split", train_split_default),
-                    shuffle_files=True,
-                )
-                if defense_type == "Trainer":
-                    logger.info(f"Training with {defense_type} defense...")
-                    defense = config_loading.load_defense_wrapper(
-                        defense_config, estimator
-                    )
-                    defense.fit_generator(train_data, **fit_kwargs)
-                else:
-                    logger.info("Fitting estimator on clean train dataset...")
-                    estimator.fit_generator(train_data, **fit_kwargs)
-            except NotImplementedError:
-                raise NotImplementedError(
-                    "Training has not yet been implemented for object detectors"
-                )
-
-        if defense_type == "Transform":
-            # NOTE: Transform currently not supported
-            logger.info(f"Transforming estimator with {defense_type} defense...")
-            defense = config_loading.load_defense_wrapper(defense_config, estimator)
-            estimator = defense()
-
-        return estimator
-
-    def load_model(self, train_split_default="train"):
-        estimator = self._load_estimator()
-        self.estimator = self._load_defense(
-            estimator, train_split_default=train_split_default
+    def load_train_dataset(self, train_split_default="train"):
+        dataset_config = self.config["dataset"]
+        logger.info(f"Loading train dataset {dataset_config['name']}...")
+        self.train_data = config_loading.load_dataset(
+            dataset_config,
+            epochs=self.fit_kwargs["nb_epochs"],
+            split=dataset_config.get("train_split", train_split_default),
+            shuffle_files=True,
         )
+
+    def fit(self):
+        if self.defense_type == "Trainer":
+            logger.info(f"Training with {type(self.trainer)} Trainer defense...")
+            self.trainer.fit_generator(self.train_data, **self.fit_kwargs)
+        else:
+            logger.info(f"Fitting model {self.model_name}...")
+            self.estimator.fit_generator(self.train_data, **self.fit_kwargs)
 
     def load_attack(self):
         attack_config = self.config["attack"]
@@ -244,6 +233,9 @@ class Scenario:
 
     def load(self):
         self.load_model()
+        if self.use_fit:
+            self.load_training_dataset()
+            self.fit()
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
