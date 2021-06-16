@@ -234,7 +234,7 @@ class Scenario:
     def load(self):
         self.load_model()
         if self.use_fit:
-            self.load_training_dataset()
+            self.load_train_dataset()
             self.fit()
         self.load_attack()
         self.load_dataset()
