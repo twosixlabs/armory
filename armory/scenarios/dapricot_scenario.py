@@ -112,9 +112,9 @@ class ObjectDetectionTask(Scenario):
 
             x_adv = self.attack.generate(x=x, **generate_kwargs)
 
-        # Ensure that input sample isn't overwritten by estimator
+        # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
-        y_pred_adv = self.estimator.predict(x_adv)
+        y_pred_adv = self.model.predict(x_adv)
         for img_idx in range(len(y_object)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]

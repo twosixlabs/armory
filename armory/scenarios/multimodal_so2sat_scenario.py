@@ -129,13 +129,17 @@ class So2SatClassification(Scenario):
                     x_adv = x
                 if self.targeted:
                     y, y_target = y
+                else:
+                    y_target = None
+
+                misclassified = False
             else:
                 if self.use_label:
                     y_target = y
                 elif self.targeted:
                     y_target = self.label_targeter.generate(y)
                 elif self.skip_benign:
-                    y_target = None  # most attacks will call self.estimator.predict(x)
+                    y_target = None  # most attacks will call self.model.predict(x)
                 else:
                     y_target = y_pred
 
@@ -159,9 +163,10 @@ class So2SatClassification(Scenario):
         if misclassified:
             y_pred_adv = y_pred
         else:
-            # Ensure that input sample isn't overwritten by estimator
+            # Ensure that input sample isn't overwritten by model
             x_adv.flags.writeable = False
-            y_pred_adv = self.estimator.predict(x_adv, **self.predict_kwargs)
+            y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
+
         self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         if self.targeted:
             self.metrics_logger.update_task(

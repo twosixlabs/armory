@@ -96,19 +96,17 @@ class Scenario:
     def load_model(self, defended=True):
         model_config = self.config["model"]
         model_name = f"{model_config['module']}.{model_config['name']}"
-        estimator, _ = config_loading.load_model(model_config)
+        model, _ = config_loading.load_model(model_config)
 
         if defended:
             defense_config = self.config.get("defense") or {}
             defense_type = defense_config.get("type")
             if defense_type in ["Preprocessor", "Postprocessor"]:
-                logger.info(f"Applying internal {defense_type} defense to estimator")
-                estimator = config_loading.load_defense_internal(
-                    defense_config, estimator
-                )
+                logger.info(f"Applying internal {defense_type} defense to model")
+                model = config_loading.load_defense_internal(defense_config, model)
             elif defense_type == "Trainer":
                 self.trainer = config_loading.load_defense_wrapper(
-                    defense_config, estimator
+                    defense_config, model
                 )
             elif defense_type is not None:
                 raise ValueError(f"{defense_type} not currently supported")
@@ -116,7 +114,7 @@ class Scenario:
             logger.info("Not loading any defenses for model")
             defense_type = None
 
-        self.estimator = estimator
+        self.model = model
         self.model_name = model_name
         self.use_fit = bool(model_config["fit"])
         self.fit_kwargs = model_config.get("fit_kwargs", {})
@@ -126,7 +124,7 @@ class Scenario:
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
         logger.info(f"Loading train dataset {dataset_config['name']}...")
-        self.train_data = config_loading.load_dataset(
+        self.train_dataset = config_loading.load_dataset(
             dataset_config,
             epochs=self.fit_kwargs["nb_epochs"],
             split=dataset_config.get("train_split", train_split_default),
@@ -136,10 +134,10 @@ class Scenario:
     def fit(self):
         if self.defense_type == "Trainer":
             logger.info(f"Training with {type(self.trainer)} Trainer defense...")
-            self.trainer.fit_generator(self.train_data, **self.fit_kwargs)
+            self.trainer.fit_generator(self.train_dataset, **self.fit_kwargs)
         else:
             logger.info(f"Fitting model {self.model_name}...")
-            self.estimator.fit_generator(self.train_data, **self.fit_kwargs)
+            self.model.fit_generator(self.train_dataset, **self.fit_kwargs)
 
     def load_attack(self):
         attack_config = self.config["attack"]
@@ -163,7 +161,7 @@ class Scenario:
                 shuffle_files=False,
             )
         else:
-            attack = config_loading.load_attack(attack_config, self.estimator)
+            attack = config_loading.load_attack(attack_config, self.model)
             if targeted != getattr(attack, "targeted", False):
                 logger.warning(
                     f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
@@ -185,7 +183,7 @@ class Scenario:
     def load_dataset(self, eval_split_default="test"):
         dataset_config = self.config["dataset"]
         eval_split = dataset_config.get("eval_split", eval_split_default)
-        # Evaluate the ART estimator on benign test examples
+        # Evaluate the ART model on benign test examples
         logger.info(f"Loading test dataset {dataset_config['name']}...")
         test_data = config_loading.load_dataset(
             dataset_config,
@@ -257,7 +255,7 @@ class Scenario:
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
-            y_pred = self.estimator.predict(x, **self.predict_kwargs)
+            y_pred = self.model.predict(x, **self.predict_kwargs)
         self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
@@ -266,7 +264,6 @@ class Scenario:
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.attack_type == "preloaded":
-                misclassified = False
                 if len(x) == 2:
                     x, x_adv = x
                 else:
@@ -283,7 +280,7 @@ class Scenario:
                 elif self.targeted:
                     y_target = self.label_targeter.generate(y)
                 elif self.skip_benign:
-                    y_target = None  # most attacks will call self.estimator.predict(x)
+                    y_target = None  # most attacks will call self.model.predict(x)
                 else:
                     y_target = y_pred
 
@@ -307,9 +304,9 @@ class Scenario:
         if misclassified:
             y_pred_adv = y_pred
         else:
-            # Ensure that input sample isn't overwritten by estimator
+            # Ensure that input sample isn't overwritten by model
             x_adv.flags.writeable = False
-            y_pred_adv = self.estimator.predict(x_adv, **self.predict_kwargs)
+            y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
         self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         if self.targeted:
