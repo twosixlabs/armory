@@ -6,16 +6,33 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "partial_attack": false,
-            "snr_db": 30,
-            "targeted": false
+            "decrease_factor_alpha": 0.5,
+            "decrease_factor_eps": 0.5,
+            "eps": 0.0075,
+            "global_max_length": 562480,
+            "increase_factor_alpha": 2.0,
+            "initial_rescale": 1.0,
+            "learning_rate_1": 0.0001,
+            "learning_rate_2": 1e-07,
+            "max_iter_1": 400,
+            "max_iter_2": 100,
+            "num_iter_decrease_alpha": 50
         },
-        "module": "armory.art_experimental.attacks.kenansville_dft",
-        "name": "KenansvilleDFT",
+        "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
+        "name": "ImperceptibleASRPyTorch",
+        "targeted": true,
+        "targeted_labels": {
+            "scheme": "matched length",
+            "transcripts": [
+                "REALLY SHORT TEST STRING",
+                "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
+                "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEAKS OF A SENATOR FROM NEW JERSEY"
+            ]
+        },
         "use_label": false
     },
     "dataset": {
-        "batch_size": 8,
+        "batch_size": 1,
         "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
