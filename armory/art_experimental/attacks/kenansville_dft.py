@@ -46,7 +46,7 @@ class KenansvilleDFT:
             raise ValueError("Input must be real")
         if not len(x):
             return np.copy(x)
-        
+
         # Determine power spectral density using real FFT
         #     Double power spectral density for paired frequencies (non-DC, non-nyquist)
         x_rfft = np.fft.rfft(x)
@@ -57,14 +57,14 @@ class KenansvilleDFT:
             x_psd[1:-1] *= 2
 
         # Scale the threshold based on the power of the signal
-        # Find frequencies in order with cumulative perturbation less than threshold 
+        # Find frequencies in order with cumulative perturbation less than threshold
         #     Sort frequencies by power density in ascending order
         x_psd_index = np.argsort(x_psd)
         reordered = x_psd[x_psd_index]
         cumulative = np.cumsum(reordered)
         norm_threshold = self.threshold * cumulative[-1]
         i = np.searchsorted(cumulative, norm_threshold, side="right")
-        
+
         # Zero out low power frequencies and invert to time domain
         x_rfft[x_psd_index[:i]] = 0
         return np.fft.irfft(x_rfft).astype(x.dtype)
