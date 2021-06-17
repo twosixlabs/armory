@@ -6,23 +6,41 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "partial_attack": false,
-            "snr_db": 30,
-            "targeted": false
+            "batch_size": 1,
+            "eps": 1.5,
+            "eps_step": 0.05,
+            "max_iter": 100,
+            "norm": 2,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
         },
-        "module": "armory.art_experimental.attacks.kenansville_dft",
-        "name": "KenansvilleDFT",
+        "module": "art.attacks.evasion",
+        "name": "ProjectedGradientDescent",
+        "targeted": false,
         "use_label": false
     },
     "dataset": {
-        "batch_size": 8,
+        "batch_size": 1,
         "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "librispeech",
         "train_split": "train_clean100"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "sample_rate": 16000,
+            "verbose": false
+        },
+        "module": "art.defences.preprocessor",
+        "name": "Mp3Compression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": false,
         "perturbation": "snr_db",
@@ -44,6 +62,10 @@
         },
         "weights_file": null,
         "wrapper_kwargs": {
+            "clip_values": [
+                -1,
+                1
+            ],
             "pretrained_model": "librispeech"
         }
     },
@@ -53,7 +75,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.14.0",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.3",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,
