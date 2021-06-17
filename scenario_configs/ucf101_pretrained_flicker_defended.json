@@ -4,25 +4,17 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_size": 1,
-            "frame_index": 1,
-            "inner_config": {
-                "kwargs": {
-                    "batch_size": 1,
-                    "eps": 0.015,
-                    "eps_step": 0.005,
-                    "max_iter": 10,
-                    "targeted": false,
-                    "verbose": false
-                },
-                "module": "art.attacks.evasion",
-                "name": "ProjectedGradientDescent"
-            },
-            "method": "iterative_saliency",
-            "verbose": false
+            "targeted": false,
+            "eps_step": 0.02,
+            "max_iter": 100,
+            "beta_0": 1.0,
+            "beta_1": 0.5,
+            "beta_2": 0.5,
+            "loss_margin": 0.05,
+            "start_frame_index": 0
         },
-        "module": "armory.art_experimental.attacks.frame",
-        "name": "get_frame_saliency",
+        "module": "art.attacks.evasion.over_the_air_flickering.over_the_air_flickering_pytorch",
+        "name": "OverTheAirFlickeringPyTorch",
         "use_label": true
     },
     "dataset": {
@@ -47,10 +39,9 @@
     "metric": {
         "means": true,
         "perturbation": [
-            "l0",
-            "linf"
+            "l0"
         ],
-        "record_metric_per_sample": true,
+        "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy",
             "top_5_categorical_accuracy"
