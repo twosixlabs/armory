@@ -29,6 +29,7 @@ class KenansvilleDFT:
         """
         self.sample_rate = sample_rate
         self.snr_db = snr_db
+        self.threshold = 10 ** (-self.snr_db / 10)
         self.targeted = targeted
         self.partial_attack = partial_attack
         self.attack_len = attack_len
@@ -38,30 +39,35 @@ class KenansvilleDFT:
             raise Warning("'targeted' argument is not used in Kenansville attack")
 
         if snr_db < 0:
-            raise ValueError("Negative SNR is not allowed")
+            raise ValueError("Negative SNR (dB) is not allowed")
 
     def _attack(self, x):
-        # Scale the threshold based on the target SNR
-        threshold = 10 ** (-self.snr_db / 10)
-        x_fft = np.fft.fft(x)
-        x_psd = np.abs(x_fft) ** 2
-        # Scale the threshold based on the strenght of the signal
-        threshold *= np.sum(x_psd)
-        # Sort frequencies by amplitude
-        x_psd_ind = np.argsort(x_psd)
-        dc_ind = np.where(x_psd_ind == 0)[0][0]
-        reordered = x_psd[x_psd_ind]
-        # Compute the cumulative perturbation size induced by zeroing frequencies up to index ix
-        # Then searching the first one that is below the threshold
-        id = np.searchsorted(np.cumsum(reordered), threshold)
-        id -= id % 2
-        # make sure the only non-paired frequencies are DC and, if x is even, x_len/2
-        if (dc_ind < id) ^ (len(x) % 2 == 0 and len(x) / 2 < id):
-            id -= 1
-        # zero out low power frequencies
-        x_fft[x_psd_ind[:id]] = 0
-        x_ifft = np.fft.ifft(x_fft)
-        return np.real(x_ifft).astype(np.float32)
+        if not np.isreal(x).all():
+            raise ValueError("Input must be real")
+        if not len(x):
+            return np.copy(x)
+        
+        # Determine power spectral density using real FFT
+        #     Double power spectral density for paired frequencies (non-DC, non-nyquist)
+        x_rfft = np.fft.rfft(x)
+        x_psd = np.abs(x_rfft) ** 2
+        if len(x) % 2:  # odd: DC frequency
+            x_psd[1:] *= 2
+        else:  # even: DC and Nyquist frequencies
+            x_psd[1:-1] *= 2
+
+        # Scale the threshold based on the power of the signal
+        # Find frequencies in order with cumulative perturbation less than threshold 
+        #     Sort frequencies by power density in ascending order
+        x_psd_index = np.argsort(x_psd)
+        reordered = x_psd[x_psd_index]
+        cumulative = np.cumsum(reordered)
+        norm_threshold = self.threshold * cumulative[-1]
+        i = np.searchsorted(cumulative, norm_threshold, side="right")
+        
+        # Zero out low power frequencies and invert to time domain
+        x_rfft[x_psd_index[:i]] = 0
+        return np.fft.irfft(x_rfft).astype(x.dtype)
 
     def generate(self, x):
         x_out = np.empty((len(x),), dtype=object)
