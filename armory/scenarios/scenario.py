@@ -84,14 +84,16 @@ class Scenario:
                 raise ValueError(
                     "Cannot pass skip_misclassified if skip_benign or skip_attack is also passed"
                 )
-            elif "categorical_accuracy" not in config["metric"].get("task"):
+            if "categorical_accuracy" not in config["metric"].get("task"):
                 raise ValueError(
                     "Cannot pass skip_misclassified if 'categorical_accuracy' metric isn't enabled"
                 )
-            elif config["dataset"].get("batch_size") != 1:
+            if config["dataset"].get("batch_size") != 1:
                 raise ValueError(
                     "To enable skip_misclassified, 'batch_size' must be set to 1"
                 )
+            if config["attack"].get("kwargs", {}).get("targeted"):
+                raise ValueError("skip_misclassified only works for untargeted attacks")
 
     def load_model(self, defended=True):
         model_config = self.config["model"]
@@ -257,21 +259,27 @@ class Scenario:
         self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
+        if self.skip_misclassified:
+            self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
+
     def run_attack(self):
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
-            if self.attack_type == "preloaded":
-                if len(x) == 2:
-                    x, x_adv = x
-                else:
-                    x_adv = x
+            if self.skip_misclassified and self.misclassified:
+                y_target = None
+
+                x_adv = x
+            elif self.attack_type == "preloaded":
                 if self.targeted:
                     y, y_target = y
                 else:
                     y_target = None
 
-                misclassified = False
+                if len(x) == 2:
+                    x, x_adv = x
+                else:
+                    x_adv = x
             else:
                 if self.use_label:
                     y_target = y
@@ -282,24 +290,9 @@ class Scenario:
                 else:
                     y_target = y_pred
 
-                if self.skip_misclassified:
-                    if self.targeted:
-                        misclassified = all(
-                            metrics.categorical_accuracy(y_target, y_pred)
-                        )
-                    else:
-                        misclassified = not any(metrics.categorical_accuracy(y, y_pred))
-                else:
-                    misclassified = False
+                x_adv = self.attack.generate(x=x, y=y_target, **self.generate_kwargs)
 
-                if misclassified:
-                    x_adv = x
-                else:
-                    x_adv = self.attack.generate(
-                        x=x, y=y_target, **self.generate_kwargs
-                    )
-
-        if misclassified:
+        if self.skip_misclassified and self.misclassified:
             y_pred_adv = y_pred
         else:
             # Ensure that input sample isn't overwritten by model
