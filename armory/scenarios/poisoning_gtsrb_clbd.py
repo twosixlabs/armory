@@ -39,7 +39,7 @@ from armory.utils.config_loading import (
     load_fn,
 )
 from armory.utils import metrics
-from armory.scenarios.base import Scenario
+from armory.scenarios.scenario import Scenario
 
 logger = logging.getLogger(__name__)
 
@@ -87,22 +87,15 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
 
 
 class GTSRB_CLBD(Scenario):
-    def _evaluate(
+    def __init__(
         self,
         config: dict,
-        num_eval_batches: Optional[int],
-        skip_benign: Optional[bool],
-        skip_attack: Optional[bool],
-        skip_misclassified: Optional[bool],
-    ) -> dict:
-        """
-        Evaluate a config file for classification robustness against attack.
-
-        Note: num_eval_batches shouldn't be set for poisoning scenario and will raise an
-        error if it is
-        """
-        if config["sysconfig"].get("use_gpu"):
-            os.environ["TF_CUDNN_DETERMINISM"] = "1"
+        num_eval_batches: Optional[int] = None,
+        skip_benign: Optional[bool] = False,
+        skip_attack: Optional[bool] = False,
+        skip_misclassified: Optional[bool] = False,
+        **kwargs,
+    ):
         if num_eval_batches:
             raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
         if skip_benign:
@@ -113,6 +106,15 @@ class GTSRB_CLBD(Scenario):
             raise ValueError(
                 "skip_misclassified shouldn't be set for poisoning scenario"
             )
+        super().__init__(config, **kwargs)
+
+    def _evaluate(self) -> dict:
+        """
+        Evaluate a config file for classification robustness against attack.
+        """
+        config = self.config
+        if config["sysconfig"].get("use_gpu"):
+            os.environ["TF_CUDNN_DETERMINISM"] = "1"
 
         model_config = config["model"]
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
