@@ -96,7 +96,7 @@ class Poison(Scenario):
         np.random.seed(self.seed)
         random.seed(self.seed)
 
-    def load_model(self):
+    def load_model(self, defended=True):
         if self.config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
 
@@ -118,9 +118,6 @@ class Poison(Scenario):
         else:
             self.label_function = lambda y: y
 
-    def load_defense(self):
-        pass
-
     def set_dataset_kwargs(self):
         dataset_config = self.config["dataset"]
         self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
@@ -128,11 +125,15 @@ class Poison(Scenario):
         self.validation_split = dataset_config.get("eval_split", "test")
         self.test_split = dataset_config.get("eval_split", "test")
 
-    def load_train_dataset(self):
+    def load_train_dataset(self, train_split_default=None):
         """
         Load and create in memory dataset
             detect_poison does not currently support data generators
         """
+        if train_split_default is not None:
+            raise ValueError(
+                "train_split_default not used in this loading method for poison"
+            )
         dataset_config = self.config["dataset"]
         self.set_dataset_kwargs()
         logger.info(f"Loading dataset {dataset_config['name']}...")
@@ -141,7 +142,7 @@ class Poison(Scenario):
         )
         self.x_clean, self.y_clean = (np.concatenate(z, axis=0) for z in zip(*list(ds)))
 
-    def load_attack(self):
+    def load_poisoner(self):
         adhoc_config = self.config["adhoc"]
         attack_config = self.config["attack"]
         if attack_config.get("type") == "preloaded":
@@ -233,7 +234,7 @@ class Poison(Scenario):
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
 
-    def fit_model(self):
+    def fit(self):
         if len(self.x_train):
             logger.info("Fitting model")
             self.estimator.fit(
@@ -291,7 +292,7 @@ class Poison(Scenario):
                         [self.target_class] * len(y_pred_targeted), y_pred_targeted
                     )
 
-    def finalize(self):
+    def finalize_results(self):
         logger.info(
             f"Unpoisoned validation accuracy: {self.benign_validation_metric.mean():.2%}"
         )
@@ -319,27 +320,23 @@ class Poison(Scenario):
         """
         self.set_random_seed()
         self.load_model()
-        self.load_defense()
         self.load_train_dataset()
-        self.load_attack()
+        self.load_poisoner()
         self.poison_dataset()
         self.filter_dataset()
         self.load_metrics()
-        self.fit_model()
+        self.fit()
         self.validate()
         self.test()
-        self.finalize()
+        self.finalize_results()
         return self.results
 
     def load(self):
-        pass
+        logger.warning("load method a no-op for poisoning")
 
     # TODO: perhaps it would be better to create a simpler common base class?
 
-    def _load_estimator(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def _load_defense(self, estimator, train_split_default="train"):
+    def load_attack(self):
         raise NotImplementedError("Not implemented for poisoning scenario")
 
     def load_dataset(self):
@@ -351,10 +348,10 @@ class Poison(Scenario):
     def next(self):
         raise NotImplementedError("Not implemented for poisoning scenario")
 
-    def benign(self):
+    def run_benign(self):
         raise NotImplementedError("Not implemented for poisoning scenario")
 
-    def adversary(self):
+    def run_attack(self):
         raise NotImplementedError("Not implemented for poisoning scenario")
 
     def evaluate_current(self):

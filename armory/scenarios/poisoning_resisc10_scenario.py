@@ -18,7 +18,8 @@ class RESISC10(Poison):
         dataset_config = self.config["dataset"]
         self.validation_split = dataset_config.get("eval_split", "validation")
 
-    def load_defense(self):
+    def load_model(self, defended=True):
+        super().load_model(defended=defended)
         defense_config = self.config.get("defense") or {}
         if "data_augmentation" in defense_config:
             for data_aug_config in defense_config["data_augmentation"].values():

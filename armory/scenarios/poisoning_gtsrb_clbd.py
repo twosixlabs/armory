@@ -41,7 +41,7 @@ class CleanDatasetPoisoner:
 
 
 class GTSRB_CLBD(GTSRB):
-    def load_attack(self):
+    def load_poisoner(self):
         adhoc_config = self.config["adhoc"]
         attack_config = copy.deepcopy(self.config["attack"])
         if attack_config.get("type") == "preloaded":
