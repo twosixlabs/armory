@@ -27,7 +27,7 @@ class CleanDatasetPoisoner:
 
         if return_index:
             poison_index = []
-            if len(x_poison) == len(x):
+            if len(x) == len(x_poison):
                 for i, (x_i, x_poison_i) in enumerate(zip(x, x_poison)):
                     if (x_i != x_poison_i).any():
                         poison_index.append(i)
