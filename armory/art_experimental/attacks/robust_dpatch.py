@@ -6,6 +6,7 @@ class RobustDPatch(RobustDPatch):
     """
     Generate and apply patch
     """
+
     def __init__(self, estimator, **kwargs):
         # allows for random patch location
         if "patch_location" not in kwargs:
@@ -18,7 +19,7 @@ class RobustDPatch(RobustDPatch):
         if self.random_location:
             self.patch_location = (
                 np.random.randint(int(x.shape[-3] - self.patch_shape[0])),
-                np.random.randint(int(x.shape[-2] - self.patch_shape[1]))
+                np.random.randint(int(x.shape[-2] - self.patch_shape[1])),
             )
-        patch = super().generate(x, y=y, **generate_kwargs)
+        super().generate(x, y=y, **generate_kwargs)
         return super().apply_patch(x)

@@ -28,7 +28,7 @@ class PGDPatch(ProjectedGradientDescent):
             )
 
         if "ymin" in generate_kwargs:
-            ymin = generate_kwargs["ymin"]                                
+            ymin = generate_kwargs["ymin"]
         else:
             ymin = np.random.randint(int(x.shape[-3] - patch_height))
 
@@ -48,14 +48,12 @@ class PGDPatch(ProjectedGradientDescent):
         channels = np.where(channels_mask)[0]
 
         mask = np.zeros(shape=x.shape[1:], dtype=np.float32)
-        
+
         if video_input:
             mask[
                 :, ymin : ymin + patch_height, xmin : xmin + patch_width, channels
             ] = 1.0
         else:
-            mask[
-                ymin : ymin + patch_height, xmin : xmin + patch_width, channels
-            ] = 1.0
-            
+            mask[ymin : ymin + patch_height, xmin : xmin + patch_width, channels] = 1.0
+
         return super().generate(x, y=y, mask=mask)

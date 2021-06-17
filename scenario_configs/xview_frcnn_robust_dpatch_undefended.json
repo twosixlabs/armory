@@ -4,13 +4,20 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "patch_shape": [50,50,3],
+            "batch_size": 1,
+            "brightness_range": [
+                0.8,
+                1.0
+            ],
             "learning_rate": 0.01,
             "max_iter": 200,
-            "batch_size": 1,
-            "verbose": false,
-            "brightness_range": [0.8, 1.0],
-            "sample_size": 10
+            "patch_shape": [
+                50,
+                50,
+                3
+            ],
+            "sample_size": 10,
+            "verbose": false
         },
         "module": "armory.art_experimental.attacks.robust_dpatch",
         "name": "RobustDPatch",

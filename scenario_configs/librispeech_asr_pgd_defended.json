@@ -40,7 +40,7 @@
         "module": "art.defences.preprocessor",
         "name": "Mp3Compression",
         "type": "Preprocessor"
-  },
+    },
     "metric": {
         "means": false,
         "perturbation": "snr_db",

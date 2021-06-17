@@ -25,7 +25,7 @@
         "name": "ProjectedGradientDescent",
         "targeted": false,
         "use_label": false
-  },
+    },
     "dataset": {
         "batch_size": 1,
         "eval_split": "test_clean",
