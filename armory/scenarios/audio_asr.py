@@ -91,11 +91,14 @@ class AutomaticSpeechRecognition(Scenario):
         audio_channel = self.get_audio_channel()
         super().load_model(defended=defended)
         if audio_channel:
-            if self.model.preprocessing_defences:
-                self.model.preprocessing_defences.insert(0, audio_channel)
+            preprocessing_defences = self.model.get_params().get(
+                "preprocessing_defences"
+            )
+            if preprocessing_defences:
+                preprocessing_defences.insert(0, audio_channel)
             else:
-                self.model.preprocessing_defences = [audio_channel]
-            self.model._update_preprocessing_operations()  # TODO: FIX? ART Interface for 1.6.2?
+                preprocessing_defences = [audio_channel]
+            self.model.set_params(preprocessing_defences=preprocessing_defences)
 
     def load_train_dataset(self, train_split_default="train_clean100"):
         return super().load_train_dataset(train_split_default=train_split_default)
