@@ -67,7 +67,7 @@ class KenansvilleDFT:
 
         # Zero out low power frequencies and invert to time domain
         x_rfft[x_psd_index[:i]] = 0
-        return np.fft.irfft(x_rfft).astype(x.dtype)
+        return np.fft.irfft(x_rfft, len(x)).astype(x.dtype)
 
     def generate(self, x):
         x_out = np.empty((len(x),), dtype=object)
