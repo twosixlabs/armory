@@ -10,8 +10,6 @@ import random
 
 import numpy as np
 
-from tqdm import tqdm
-
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
@@ -76,6 +74,7 @@ class Poison(Scenario):
         skip_benign: Optional[bool] = False,
         skip_attack: Optional[bool] = False,
         skip_misclassified: Optional[bool] = False,
+        triggered: Optional[bool] = True,
         **kwargs,
     ):
         if num_eval_batches:
@@ -89,41 +88,37 @@ class Poison(Scenario):
                 "skip_misclassified shouldn't be set for poisoning scenario"
             )
         super().__init__(config, **kwargs)
+        if triggered is None:
+            triggered = True
+        else:
+            triggered = bool(triggered)
+        if not triggered:
+            raise NotImplementedError("triggered=False attacks are not implemented")
+        self.triggered = triggered
 
     def set_random_seed(self):
         # Set random seed due to large variance in attack and defense success
         self.seed = self.config["adhoc"]["split_id"]
         np.random.seed(self.seed)
         random.seed(self.seed)
-
-    def load_model(self, defended=True):
         if self.config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
 
-        config_adhoc = self.config.get("adhoc") or {}
-        self.source_class = config_adhoc["source_class"]
-        self.target_class = config_adhoc["target_class"]
-        self.train_epochs = config_adhoc["train_epochs"]
-        self.fit_batch_size = config_adhoc.get(
-            "fit_batch_size", self.config["dataset"]["batch_size"]
-        )
-
+    def load_model(self, defended=True):
         # Scenario assumes canonical preprocessing_fn is used makes images all same size
-        self.estimator, _ = config_loading.load_model(self.config["model"])
+        model_config = self.config["model"]
+        model, _ = config_loading.load_model(model_config)
 
-        # Flag to determine whether training uses categorical or sparse labels
-        self.categorical_labels = config_adhoc.get("defense_categorical_labels", True)
-        if self.categorical_labels:
-            self.label_function = to_categorical
-        else:
-            self.label_function = lambda y: y
-
-    def set_dataset_kwargs(self):
-        dataset_config = self.config["dataset"]
-        self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
-        self.train_split = dataset_config.get("train_split", "train")
-        self.validation_split = dataset_config.get("eval_split", "test")
-        self.test_split = dataset_config.get("eval_split", "test")
+        if defended:
+            defense_config = self.config.get("defense") or {}
+            if "data_augmentation" in defense_config:
+                for data_aug_config in defense_config["data_augmentation"].values():
+                    model = config_loading.load_defense_internal(data_aug_config, model)
+                logger.info(
+                    f"model.preprocessing_defences: {model.preprocessing_defences}"
+                )
+        self.model = model
+        self.predict_kwargs = model_config.get("predict_kwargs", {})
 
     def load_train_dataset(self, train_split_default=None):
         """
@@ -134,21 +129,38 @@ class Poison(Scenario):
             raise ValueError(
                 "train_split_default not used in this loading method for poison"
             )
+        adhoc_config = self.config.get("adhoc") or {}
+        self.train_epochs = adhoc_config["train_epochs"]
+        self.fit_batch_size = adhoc_config.get(
+            "fit_batch_size", self.config["dataset"]["batch_size"]
+        )
+
+        # Flag to determine whether training uses categorical or sparse labels
+        self.categorical_labels = adhoc_config.get("defense_categorical_labels", True)
+        if self.categorical_labels:
+            self.label_function = to_categorical
+        else:
+            self.label_function = lambda y: y
+
         dataset_config = self.config["dataset"]
-        self.set_dataset_kwargs()
         logger.info(f"Loading dataset {dataset_config['name']}...")
         ds = config_loading.load_dataset(
-            dataset_config, split=self.train_split, **self.dataset_kwargs
+            dataset_config,
+            split=dataset_config.get("train_split", "train"),
+            epochs=1,
+            shuffle_files=False,
         )
         self.x_clean, self.y_clean = (np.concatenate(z, axis=0) for z in zip(*list(ds)))
 
     def load_poisoner(self):
-        adhoc_config = self.config["adhoc"]
+        adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
         if attack_config.get("type") == "preloaded":
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
         self.use_poison = bool(adhoc_config["poison_dataset"])
+        self.source_class = adhoc_config["source_class"]
+        self.target_class = adhoc_config["target_class"]
         if self.use_poison:
             attack = config_loading.load(attack_config)
             self.poisoner = DatasetPoisoner(
@@ -176,10 +188,10 @@ class Poison(Scenario):
             )
 
     def filter_dataset(self):
-        config_adhoc = self.config["adhoc"]
+        adhoc_config = self.config["adhoc"]
         # filtering defense requires more than a single batch to run properly
         if (
-            config_adhoc.get("use_poison_filtering_defense", True)
+            adhoc_config.get("use_poison_filtering_defense", True)
             and not self.check_run
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
@@ -187,7 +199,7 @@ class Poison(Scenario):
                 defense_config.pop("data_augmentation")  # NOTE: RESISC10 ONLY
 
             # Assumes classifier_for_defense and classifier use same preprocessing function
-            defense_model_config = config_adhoc.get(
+            defense_model_config = adhoc_config.get(
                 "defense_model", self.config["model"]
             )
             classifier_for_defense, _ = config_loading.load_model(defense_model_config)
@@ -197,12 +209,12 @@ class Poison(Scenario):
             )
             # Flag to determine whether defense_classifier is trained directly
             #     (default API) or is trained as part of detect_poisons method
-            if config_adhoc.get("fit_defense_classifier_outside_defense", True):
+            if adhoc_config.get("fit_defense_classifier_outside_defense", True):
                 classifier_for_defense.fit(
                     self.x_poison,
                     self.label_function(self.y_poison),
                     batch_size=self.fit_batch_size,
-                    nb_epochs=config_adhoc.get(
+                    nb_epochs=adhoc_config.get(
                         "defense_train_epochs", self.train_epochs
                     ),
                     verbose=False,
@@ -215,7 +227,7 @@ class Poison(Scenario):
                 self.label_function(self.y_poison),
             )
 
-            detection_kwargs = config_adhoc.get("detection_kwargs", {})
+            detection_kwargs = adhoc_config.get("detection_kwargs", {})
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             logger.info(f"Total clean data points: {np.sum(is_clean)}")
@@ -237,7 +249,7 @@ class Poison(Scenario):
     def fit(self):
         if len(self.x_train):
             logger.info("Fitting model")
-            self.estimator.fit(
+            self.model.fit(
                 self.x_train,
                 self.label_function(self.y_train),
                 batch_size=self.fit_batch_size,
@@ -248,6 +260,11 @@ class Poison(Scenario):
         else:
             logger.warning("All data points filtered by defense. Skipping training")
 
+    def load_attack(self):
+        raise NotImplementedError(
+            "Not implemented for poisoning scenario. Use load_poisoner"
+        )
+
     def load_metrics(self):
         self.benign_validation_metric = metrics.MetricList("categorical_accuracy")
         self.target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -257,40 +274,54 @@ class Poison(Scenario):
                 "categorical_accuracy"
             )
 
-    def validate(self):
-        logger.info("Validating on clean validation data")
-        val_data = config_loading.load_dataset(
-            self.config["dataset"], split=self.validation_split, **self.dataset_kwargs
-        )
-        for x, y in tqdm(val_data, desc="Validation"):
-            # Ensure that input sample isn't overwritten by classifier
-            x.flags.writeable = False
-            y_pred = self.estimator.predict(x)
-            self.benign_validation_metric.add_results(y, y_pred)
-            y_pred_target_class = y_pred[y == self.source_class]
-            if len(y_pred_target_class):
-                self.target_class_benign_metric.add_results(
-                    [self.source_class] * len(y_pred_target_class), y_pred_target_class
-                )
+    def load(self):
+        self.set_random_seed()
+        self.load_model()
+        self.load_train_dataset()
+        self.load_poisoner()
+        self.load_metrics()
+        self.poison_dataset()
+        self.filter_dataset()
+        self.fit()
+        self.load_dataset()
 
-    def test(self):
-        if self.use_poison:
-            logger.info("Testing on poisoned test data")
-            test_data = config_loading.load_dataset(
-                self.config["dataset"], split=self.test_split, **self.dataset_kwargs
+    def run_benign(self):
+        x, y = self.x, self.y
+
+        x.flags.writeable = False
+        y_pred = self.model.predict(x, **self.predict_kwargs)
+
+        self.benign_validation_metric.add_results(y, y_pred)
+        source = y == self.source_class
+        # NOTE: uses source->target trigger
+        if source.any():
+            self.target_class_benign_metric.add_results(y[source], y_pred[source])
+
+        self.y_pred = y_pred
+        self.source = source
+
+    def run_attack(self):
+        x, y = self.x, self.y
+        source = self.source
+
+        x_adv, _ = self.test_poisoner.poison_dataset(x, y, fraction=1.0)
+        x_adv.flags.writeable = False
+        y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
+
+        self.poisoned_test_metric.add_results(y, y_pred_adv)
+        # NOTE: uses source->target trigger
+        if source.any():
+            self.poisoned_targeted_test_metric.add_results(
+                [self.target_class] * source.sum(), y_pred_adv[source]
             )
-            for x, y in tqdm(test_data, desc="Testing"):
-                x, _ = self.test_poisoner.poison_dataset(x, y, fraction=1.0)
-                # Ensure that input sample isn't overwritten by classifier
-                x.flags.writeable = False
-                y_pred = self.estimator.predict(x)
-                self.poisoned_test_metric.add_results(y, y_pred)
 
-                y_pred_targeted = y_pred[y == self.source_class]
-                if len(y_pred_targeted):
-                    self.poisoned_targeted_test_metric.add_results(
-                        [self.target_class] * len(y_pred_targeted), y_pred_targeted
-                    )
+        self.x_adv = x_adv
+        self.y_pred_adv = y_pred_adv
+
+    def evaluate_current(self):
+        self.run_benign()
+        if not self.use_poison:
+            self.run_attack()
 
     def finalize_results(self):
         logger.info(
@@ -313,46 +344,3 @@ class Poison(Scenario):
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
         self.results = results
-
-    def _evaluate(self) -> dict:
-        """
-        Evaluate a config file for classification robustness against attack.
-        """
-        self.set_random_seed()
-        self.load_model()
-        self.load_train_dataset()
-        self.load_poisoner()
-        self.poison_dataset()
-        self.filter_dataset()
-        self.load_metrics()
-        self.fit()
-        self.validate()
-        self.test()
-        self.finalize_results()
-        return self.results
-
-    def load(self):
-        logger.warning("load method a no-op for poisoning")
-
-    # TODO: perhaps it would be better to create a simpler common base class?
-
-    def load_attack(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def load_dataset(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def evaluate_all(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def next(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def run_benign(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def run_attack(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")
-
-    def evaluate_current(self):
-        raise NotImplementedError("Not implemented for poisoning scenario")

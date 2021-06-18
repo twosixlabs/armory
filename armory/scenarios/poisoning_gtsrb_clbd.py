@@ -42,12 +42,14 @@ class CleanDatasetPoisoner:
 
 class GTSRB_CLBD(GTSRB):
     def load_poisoner(self):
-        adhoc_config = self.config["adhoc"]
+        adhoc_config = self.config.get("adhoc") or {}
         attack_config = copy.deepcopy(self.config["attack"])
         if attack_config.get("type") == "preloaded":
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
         self.use_poison = bool(adhoc_config["poison_dataset"])
+        self.source_class = adhoc_config["source_class"]
+        self.target_class = adhoc_config["target_class"]
         if self.use_poison:
             proxy, _ = config_loading.load_model(self.config["model"])
 
