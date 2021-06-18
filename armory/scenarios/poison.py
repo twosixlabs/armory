@@ -320,7 +320,7 @@ class Poison(Scenario):
 
     def evaluate_current(self):
         self.run_benign()
-        if not self.use_poison:
+        if self.use_poison:
             self.run_attack()
 
     def finalize_results(self):
