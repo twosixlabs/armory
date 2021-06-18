@@ -120,6 +120,9 @@ class Poison(Scenario):
         self.model = model
         self.predict_kwargs = model_config.get("predict_kwargs", {})
 
+    def set_dataset_kwargs(self):
+        self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
+
     def load_train_dataset(self, train_split_default=None):
         """
         Load and create in memory dataset
@@ -147,8 +150,7 @@ class Poison(Scenario):
         ds = config_loading.load_dataset(
             dataset_config,
             split=dataset_config.get("train_split", "train"),
-            epochs=1,
-            shuffle_files=False,
+            **self.dataset_kwargs,
         )
         self.x_clean, self.y_clean = (np.concatenate(z, axis=0) for z in zip(*list(ds)))
 
@@ -265,6 +267,19 @@ class Poison(Scenario):
             "Not implemented for poisoning scenario. Use load_poisoner"
         )
 
+    def load_dataset(self, eval_split_default="test"):
+        dataset_config = self.config["dataset"]
+        eval_split = dataset_config.get("eval_split", eval_split_default)
+        # Evaluate the ART model on benign test examples
+        logger.info(f"Loading test dataset {dataset_config['name']}...")
+        self.test_dataset = config_loading.load_dataset(
+            dataset_config,
+            split=eval_split,
+            num_batches=self.num_eval_batches,
+            **self.dataset_kwargs,
+        )
+        self.i = -1
+
     def load_metrics(self):
         self.benign_validation_metric = metrics.MetricList("categorical_accuracy")
         self.target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -276,6 +291,7 @@ class Poison(Scenario):
 
     def load(self):
         self.set_random_seed()
+        self.set_dataset_kwargs()
         self.load_model()
         self.load_train_dataset()
         self.load_poisoner()
