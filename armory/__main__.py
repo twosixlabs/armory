@@ -347,12 +347,10 @@ def run(command_args, prog, description):
 
     if args.num_eval_batches and args.eval_index:
         raise ValueError("Cannot have --num-eval-batches and --eval-index")
-
+    if args.eval_index and config["dataset"].get("eval_index"):
+        logging.info("Overriding eval_index in config with command line argument")
     if args.eval_index:
         config["dataset"]["eval_index"] = args.eval_index
-
-    print(args.eval_index)
-    sys.exit()
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(

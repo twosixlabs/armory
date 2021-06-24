@@ -48,7 +48,7 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
-def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
+def load_dataset(dataset_config, *args, num_batches=None, eval_index=None, **kwargs):
     """
     Loads a dataset from configuration file
 
@@ -66,9 +66,11 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if dataset_config.get("check_run"):
-        return EvalGenerator(dataset, num_eval_batches=1)
-    if num_batches:
-        return EvalGenerator(dataset, num_eval_batches=num_batches)
+        num_batches = 1
+    if num_batches or eval_index is not None:
+        return EvalGenerator(
+            dataset, num_eval_batches=num_batches, eval_index=eval_index
+        )
     return dataset
 
 

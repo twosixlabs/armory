@@ -66,6 +66,7 @@ class ArmoryDataGenerator(DataGenerator):
         size,
         epochs,
         batch_size,
+        index=None,
         preprocessing_fn=None,
         label_preprocessing_fn=None,
         variable_length=False,
@@ -78,6 +79,15 @@ class ArmoryDataGenerator(DataGenerator):
         self.generator = generator
 
         self.epochs = epochs
+        eval_index = 1
+        if eval_index:
+            self.eval_index = sorted(int(x) for x in eval_index)
+            if any(x < 0 for x in self.eval_index):
+                raise ValueError(
+                    "eval_index must be None or a list of nonnegative ints"
+                )
+        else:
+            self.eval_index = None
         self.samples_per_epoch = size
 
         # drop_remainder is False
@@ -175,6 +185,39 @@ class ArmoryDataGenerator(DataGenerator):
         return self.batches_per_epoch * self.epochs
 
 
+class IndexGenerator(DataGenerator):
+    """
+    Wraps the ArmoryDataGenerator and implements subsetting
+    """
+
+    def __init__(self, eval_index, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if eval_index:
+            self.eval_index = sorted(int(x) for x in eval_index)
+            if any(x < 0 for x in self.eval_index):
+                raise ValueError(
+                    "eval_index must be None or a list of nonnegative ints"
+                )
+        else:
+            self.eval_index = None
+        # drop_remainder is False
+
+        # size = 5
+        batch_size = 1
+        # size = self.samples_per_epoch
+
+        self.batches_per_epoch = self.samples_per_epoch // batch_size + bool(
+            self.samples_per_epoch % batch_size
+        )
+
+    def get_batch(self):
+        pass
+
+    def __len__(self):
+        return self.batches_per_epoch * self.epochs
+
+
 class EvalGenerator(DataGenerator):
     """
     Wraps a specified number of batches in a DataGenerator to allow for evaluating on
@@ -196,6 +239,7 @@ class EvalGenerator(DataGenerator):
     def get_batch(self) -> (np.ndarray, np.ndarray):
         if self.batches_processed == self.num_eval_batches:
             raise StopIteration()
+
         batch = self.armory_generator.get_batch()
         self.batches_processed += 1
         return batch
