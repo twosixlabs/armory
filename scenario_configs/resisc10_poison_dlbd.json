@@ -114,7 +114,7 @@
         "name": "RESISC10"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.13.3",
+        "docker_image": "twosixarmory/pytorch:0.13.4",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
