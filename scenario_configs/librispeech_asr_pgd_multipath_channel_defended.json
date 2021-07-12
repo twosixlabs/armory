@@ -2,8 +2,8 @@
     "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
     "adhoc": {
         "audio_channel": {
-            "attenuation": 0.3,
-            "delay": 1600,
+            "attenuation": 0.5,
+            "delay": 300,
             "pytorch": true
         },
         "skip_adversarial": false
@@ -12,22 +12,18 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
+            "eps": 1.5,
+            "eps_step": 0.05,
+            "max_iter": 100,
+            "norm": 2,
             "num_random_init": 0,
-            "targeted": true
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
         },
         "module": "art.attacks.evasion",
-        "name": "FastGradientMethod",
-        "targeted": true,
-        "targeted_labels": {
-            "kwargs": {
-                "value": "TEST STRING"
-            },
-            "module": "armory.utils.labels",
-            "name": "FixedStringTargeter"
-        },
+        "name": "ProjectedGradientDescent",
+        "targeted": false,
         "use_label": false
     },
     "dataset": {
@@ -38,10 +34,21 @@
         "name": "librispeech",
         "train_split": "train_clean100"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "sample_rate": 16000,
+            "verbose": false
+        },
+        "module": "art.defences.preprocessor",
+        "name": "Mp3Compression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": false,
-        "perturbation": "linf",
+        "perturbation": "snr_db",
         "record_metric_per_sample": true,
         "task": [
             "word_error_rate"
@@ -73,7 +80,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.3",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.4",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,

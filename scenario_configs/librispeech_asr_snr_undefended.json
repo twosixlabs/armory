@@ -6,16 +6,28 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "partial_attack": false,
-            "snr_db": 30,
-            "targeted": false
+            "batch_size": 1,
+            "eps": 10,
+            "eps_step": 0.5,
+            "max_iter": 10,
+            "norm": "snr",
+            "num_random_init": 0,
+            "targeted": true
         },
-        "module": "armory.art_experimental.attacks.kenansville_dft",
-        "name": "KenansvilleDFT",
+        "module": "armory.art_experimental.attacks.snr_pgd",
+        "name": "SNR_PGD_Numpy",
+        "targeted": true,
+        "targeted_labels": {
+            "kwargs": {
+                "value": "TEST STRING"
+            },
+            "module": "armory.utils.labels",
+            "name": "FixedStringTargeter"
+        },
         "use_label": false
     },
     "dataset": {
-        "batch_size": 8,
+        "batch_size": 1,
         "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
@@ -25,7 +37,7 @@
     "defense": null,
     "metric": {
         "means": false,
-        "perturbation": "snr_db",
+        "perturbation": "linf",
         "record_metric_per_sample": true,
         "task": [
             "word_error_rate"
@@ -44,6 +56,10 @@
         },
         "weights_file": null,
         "wrapper_kwargs": {
+            "clip_values": [
+                -1,
+                1
+            ],
             "pretrained_model": "librispeech"
         }
     },
@@ -53,7 +69,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.3",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.4",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,

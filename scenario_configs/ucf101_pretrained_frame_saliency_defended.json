@@ -5,22 +5,25 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
-            "num_random_init": 0,
-            "targeted": true
-        },
-        "module": "art.attacks.evasion",
-        "name": "FastGradientMethod",
-        "targeted_labels": {
-            "kwargs": {
-                "num_classes": 101
+            "frame_index": 1,
+            "inner_config": {
+                "kwargs": {
+                    "batch_size": 1,
+                    "eps": 0.015,
+                    "eps_step": 0.001,
+                    "max_iter": 100,
+                    "targeted": false,
+                    "verbose": false
+                },
+                "module": "art.attacks.evasion",
+                "name": "ProjectedGradientDescent"
             },
-            "module": "armory.utils.labels",
-            "name": "RoundRobinTargeter"
+            "method": "iterative_saliency",
+            "verbose": false
         },
-        "use_label": false
+        "module": "armory.art_experimental.attacks.frame",
+        "name": "get_frame_saliency",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 1,
@@ -28,10 +31,25 @@
         "module": "armory.data.datasets",
         "name": "ucf101"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "constant_rate_factor": 28,
+            "verbose": false,
+            "video_format": "avi"
+        },
+        "module": "armory.art_experimental.defences.video_compression_normalized",
+        "name": "VideoCompressionNormalized",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
-        "perturbation": "linf",
+        "perturbation": [
+            "l0",
+            "linf"
+        ],
         "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy",
