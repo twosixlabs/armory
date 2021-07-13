@@ -40,6 +40,7 @@ class VideoCompressionNormalized(VideoCompression):
         x = x.astype(self.dtype)
         return x, y
 
+
 class VideoCompressionNormalizedPytorch(VideoCompressionPyTorch):
     """
     Convert x from [0,1] to [0, 255] and back, if necessary
@@ -54,7 +55,7 @@ class VideoCompressionNormalizedPytorch(VideoCompressionPyTorch):
         apply_predict=True,
         verbose=False,
         dtype=np.float32,
-    ):        
+    ):
         super().__init__(
             video_format=video_format,
             constant_rate_factor=constant_rate_factor,
@@ -65,18 +66,18 @@ class VideoCompressionNormalizedPytorch(VideoCompressionPyTorch):
         )
         self.dtype = dtype
 
-    def forward(self, x,  y=None):
+    def forward(self, x, y=None):
         """
         Apply video compression to sample `x`.
 
         :param x: Sample to compress of shape NCFHW or NFHWC. `x` values are expected to be in the data range [0, 255].
         :param y: Labels of the sample `x`. This function does not affect them in any way.
         :return: Compressed sample.
-        """        
+        """
         scale = 1
         if x.min() >= 0 and x.max() <= 1.0:
             scale = 255
-    
+
         x = x * scale
         x_compressed = self._compression_pytorch_numpy.apply(x)
         x_compressed = x_compressed / scale
