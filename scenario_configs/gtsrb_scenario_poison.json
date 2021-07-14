@@ -48,7 +48,7 @@
         "name": "GTSRB"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.3",
+        "docker_image": "twosixarmory/tf1:0.13.4",
         "external_github_repo": null,
         "gpus": "all",
         "use_gpu": false

@@ -7,7 +7,7 @@
         "knowledge": "white",
         "kwargs": {
             "partial_attack": false,
-            "snr_db": 30,
+            "snr_db": 20,
             "targeted": false
         },
         "module": "armory.art_experimental.attacks.kenansville_dft",
@@ -64,7 +64,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.3",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.4",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,
