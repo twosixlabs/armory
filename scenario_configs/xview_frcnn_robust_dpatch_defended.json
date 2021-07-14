@@ -2,26 +2,26 @@
     "_description": "XView object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "generate_kwargs": {
-            "patch_height": 50,
-            "patch_width": 50,
-            "xmin": 0,
-            "ymin": 0
-        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 1.0,
-            "eps_step": 0.01,
+            "brightness_range": [
+                0.8,
+                1.0
+            ],
+            "learning_rate": 0.01,
             "max_iter": 200,
-            "num_random_init": 0,
-            "random_eps": false,
-            "targeted": false,
-            "verbose": true
+            "patch_shape": [
+                50,
+                50,
+                3
+            ],
+            "sample_size": 10,
+            "verbose": false
         },
-        "module": "armory.art_experimental.attacks.pgd_patch",
-        "name": "PGDPatch",
-        "use_label": true
+        "module": "armory.art_experimental.attacks.robust_dpatch",
+        "name": "RobustDPatch",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 1,
@@ -29,7 +29,20 @@
         "module": "armory.data.datasets",
         "name": "xview"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 50
+        },
+        "module": "art.defences.preprocessor",
+        "name": "JpegCompression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "l0",
@@ -53,7 +66,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.13.3",
+        "docker_image": "twosixarmory/pytorch:0.13.4",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

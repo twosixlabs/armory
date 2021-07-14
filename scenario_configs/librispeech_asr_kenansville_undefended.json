@@ -6,35 +6,16 @@
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "decrease_factor_alpha": 0.5,
-            "eps": 0.0075,
-            "global_max_length": 562480,
-            "increase_factor_alpha": 2.0,
-            "initial_rescale": 0.5,
-            "learning_rate_1": 0.0001,
-            "learning_rate_2": 1e-07,
-            "max_iter_1": 400,
-            "max_iter_2": 100,
-            "num_iter_decrease_alpha": 50
+            "partial_attack": false,
+            "snr_db": 20,
+            "targeted": false
         },
-        "module": "art.attacks.evasion.imperceptible_asr.imperceptible_asr_pytorch",
-        "name": "ImperceptibleASRPyTorch",
-        "targeted": true,
-        "targeted_labels": {
-            "kwargs": {
-                "transcripts": [
-                    "REALLY SHORT TEST STRING",
-                    "THE TEST STRING HAS A LENGTH EQUAL TO THE MEDIAN OF THE CLEAN TEST TRANSCRIPT LENGTHS",
-                    "THIS IS AN EXCEEDINGLY LONG TEST STRING BUT NOT REALLY AS THE LONGEST STRING HAS OVER FIVE HUNDRED CHARACTERS IN ITS TRANSCRIPT AND INCLUDES A LIST OF PEOPLE AND SPEASKS OF A SENATOR FROM NEW JERSEY"
-                ]
-            },
-            "module": "armory.utils.labels",
-            "name": "MatchedTranscriptLengthTargeter"
-        },
+        "module": "armory.art_experimental.attacks.kenansville_dft",
+        "name": "KenansvilleDFT",
         "use_label": false
     },
     "dataset": {
-        "batch_size": 1,
+        "batch_size": 8,
         "eval_split": "test_clean",
         "framework": "numpy",
         "module": "armory.data.datasets",
@@ -44,7 +25,7 @@
     "defense": null,
     "metric": {
         "means": false,
-        "perturbation": "linf",
+        "perturbation": "snr_db",
         "record_metric_per_sample": true,
         "task": [
             "word_error_rate"
@@ -63,10 +44,6 @@
         },
         "weights_file": null,
         "wrapper_kwargs": {
-            "clip_values": [
-                -1,
-                1
-            ],
             "pretrained_model": "librispeech"
         }
     },
@@ -76,7 +53,7 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.3",
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.13.4",
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,
