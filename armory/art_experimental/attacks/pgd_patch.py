@@ -1,10 +1,5 @@
-import logging
-
 from art.attacks.evasion import ProjectedGradientDescent
 import numpy as np
-
-
-logger = logging.getLogger(__name__)
 
 
 class PGDPatch(ProjectedGradientDescent):
@@ -20,29 +15,15 @@ class PGDPatch(ProjectedGradientDescent):
     def generate(self, x, y=None, **generate_kwargs):
         video_input = generate_kwargs.get("video_input", False)
 
-        if "patch_ratio" in generate_kwargs:
-            patch_ratio = generate_kwargs["patch_ratio"]
-            patch_height = int(x.shape[-3] * patch_ratio ** 0.5)
-            patch_width = int(x.shape[-2] * patch_ratio ** 0.5)
-        elif "patch_height" in generate_kwargs and "patch_width" in generate_kwargs:
-            patch_height = generate_kwargs["patch_height"]
-            patch_width = generate_kwargs["patch_width"]
-        else:
-            raise ValueError(
-                "generate_kwargs did not define 'patch_ratio', or it did not define 'patch_height' and 'patch_width"
-            )
-
         if "ymin" in generate_kwargs:
             ymin = generate_kwargs["ymin"]
         else:
-            logger.info("Selecting random value for patch ymin coordinate.")
-            ymin = np.random.randint(int(x.shape[-3] - patch_height))
+            raise ValueError("generate_kwargs did not define 'ymin'")
 
         if "xmin" in generate_kwargs:
             xmin = generate_kwargs["xmin"]
         else:
-            logger.info("Selecting random value for patch xmin coordinate.")
-            xmin = np.random.randint(int(x.shape[-2] - patch_width))
+            raise ValueError("generate_kwargs did not define 'xmin'")
 
         assert x.ndim in [
             4,
@@ -55,12 +36,27 @@ class PGDPatch(ProjectedGradientDescent):
         channels = np.where(channels_mask)[0]
 
         mask = np.zeros(shape=x.shape[1:], dtype=np.float32)
-
-        if video_input:
-            mask[
-                :, ymin : ymin + patch_height, xmin : xmin + patch_width, channels
-            ] = 1.0
+        if "patch_ratio" in generate_kwargs:
+            patch_ratio = generate_kwargs["patch_ratio"]
+            ymax = ymin + int(x.shape[-3] * patch_ratio ** 0.5)
+            xmax = xmin + int(x.shape[-2] * patch_ratio ** 0.5)
+            if video_input:
+                mask[:, ymin:ymax, xmin:xmax, channels] = 1.0
+            else:
+                mask[ymin:ymax, xmin:xmax, channels] = 1.0
+        elif "patch_height" in generate_kwargs and "patch_width" in generate_kwargs:
+            patch_height = generate_kwargs["patch_height"]
+            patch_width = generate_kwargs["patch_width"]
+            if video_input:
+                mask[
+                    :, ymin : ymin + patch_height, xmin : xmin + patch_width, channels
+                ] = 1.0
+            else:
+                mask[
+                    ymin : ymin + patch_height, xmin : xmin + patch_width, channels
+                ] = 1.0
         else:
-            mask[ymin : ymin + patch_height, xmin : xmin + patch_width, channels] = 1.0
-
+            raise ValueError(
+                "generate_kwargs did not define 'patch_ratio', or it did not define 'patch_height' and 'patch_width'"
+            )
         return super().generate(x, y=y, mask=mask)

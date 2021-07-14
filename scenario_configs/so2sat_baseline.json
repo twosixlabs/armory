@@ -3,14 +3,16 @@
     "adhoc": null,
     "attack": {
         "generate_kwargs": {
-            "patch_ratio": 0.05
+            "patch_ratio": 0.05,
+            "xmin": 0,
+            "ymin": 0
         },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
             "eps": 2.0,
-            "eps_step": 0.01,
-            "max_iter": 300,
+            "eps_step": 0.03,
+            "max_iter": 100,
             "num_random_init": 0,
             "random_eps": false,
             "targeted": false,
@@ -27,53 +29,7 @@
         "module": "armory.data.datasets",
         "name": "so2sat"
     },
-    "defense": {
-        "kwargs": {
-            "apply_fit": false,
-            "apply_predict": true,
-            "channels_first": false,
-            "clip_values": [
-                0.0,
-                1.0
-            ],
-            "mins": [
-                -0.22,
-                -0.26,
-                -0.73,
-                -0.75,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            "quality": 95,
-            "ranges": [
-                0.46,
-                0.48,
-                1.52,
-                1.11,
-                0.7,
-                0.7,
-                0.7,
-                0.61,
-                0.7,
-                0.7,
-                0.7,
-                0.7,
-                0.62,
-                0.54
-            ]
-        },
-        "module": "armory.art_experimental.defences.jpeg_compression_multichannel_image",
-        "name": "JpegCompressionMultiChannelImage",
-        "type": "Preprocessor"
-    },
+    "defense": null,
     "metric": {
         "means": true,
         "perturbation": "l0",
@@ -94,10 +50,10 @@
         "wrapper_kwargs": {
             "clip_values": [
                 [
-                    -0.22,
-                    -0.26,
-                    -0.73,
-                    -0.75,
+                    -1,
+                    -1,
+                    -1,
+                    -1,
                     0,
                     0,
                     0,
@@ -110,20 +66,20 @@
                     0
                 ],
                 [
-                    0.24,
-                    0.22,
-                    0.79,
-                    0.36,
-                    0.7,
-                    0.7,
-                    0.7,
-                    0.61,
-                    0.7,
-                    0.7,
-                    0.7,
-                    0.7,
-                    0.62,
-                    0.54
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1
                 ]
             ]
         }
@@ -136,7 +92,7 @@
         "name": "So2SatClassification"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.13.4",
+        "docker_image": "twosixarmory/tf1:0.13.3",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
