@@ -35,6 +35,7 @@ def poison_dataset(src_imgs, src_lbls, src, tgt, ds_size, attack, poisoned_indic
             src_img = src_imgs[idx]
             p_img, p_label = attack.poison(src_img, [tgt])
             p_img = p_img.astype(np.float32)
+            p_label = int(p_label)
             poison_x.append(p_img)
             poison_y.append(p_label)
         else:
