@@ -59,7 +59,7 @@ class DatasetPoisoner:
         for i in poison_index:
             poison_x_i, poison_y[i] = self.attack.poison(x[i], [self.target_class])
             poison_x[i] = np.asarray(poison_x_i, dtype=x[i].dtype)
-        poison_x, poison_y = np.array(poison_x), np.array(poison_y)
+        poison_x, poison_y = np.array(poison_x), np.array(poison_y, dtype=int)
 
         if return_index:
             return poison_x, poison_y, poison_index
