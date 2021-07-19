@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 
 def abstains(y, y_pred):
     """
-    Returns 1 if y_pred is all 0s (an abstention)
+    For each sample in y_pred:
+        return 1 for i if y_pred[i] is all 0s (an abstention), return 0 otherwise
+        returns a list of (0, 1) elements
     """
     del y
     y_pred = np.asarray(y_pred)
