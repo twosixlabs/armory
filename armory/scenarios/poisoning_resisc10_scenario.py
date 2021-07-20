@@ -398,6 +398,7 @@ class RESISC10(Scenario):
                 )
                 y_pred = classifier.predict(x_test)
                 poisoned_test_metric.add_results(y_test, y_pred)
+                poisoned_abstain.add_results(y_test, y_pred)
                 adversarial_actual.extend(y_test)
                 if y_pred.ndim == 1:
                     adversarial_predictions.extend(y_pred)
