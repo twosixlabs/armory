@@ -1134,7 +1134,7 @@ class MetricList:
 
     def mean(self):
         if not self._values:
-            return float('nan')
+            return float("nan")
         return sum(float(x) for x in self._values) / len(self._values)
 
     def append_input_label(self, label):
