@@ -12,7 +12,7 @@ which are saved into the armory `output_dir` upon  completion.
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
 
-### RESISC image classification (updated for Eval1)
+### RESISC image classification (updated June 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is assumed to be a real-time overhead imagery scene classification
@@ -61,7 +61,7 @@ Baseline defense performance is evaluated for a grey-box attack: adversarial exa
   * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 40%
   * Baseline Attacked (Universal Patch) Top-1 Accuracy: 21%
 
-### Librispeech speaker audio classification (updated for Eval1)
+### Librispeech speaker audio classification (updated for June 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is a speaker identification system that a human operator is either
@@ -102,7 +102,7 @@ To be added
 To be added
 
 
-### UCF101 video classification (Updated for Eval 3)
+### UCF101 video classification (Updated July 2021)
 
 * **Description:**
 In this scenario, the system under evaluation is a video action recognition system that a human operator is either
@@ -158,7 +158,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
 | Frame Saliency (one_shot)           | eps=0.015                        | 0.92/1.00                              | 0.00/0.20                                   | 0.93/1.00                            | 0.21/0.74                                 | 100       |
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
-### German traffic sign poisoned image classification
+### German traffic sign poisoned image classification (Updated December 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is a traffic sign recognition system that requires continuous
@@ -208,7 +208,7 @@ To be added
 * **Baseline Defense Performance:**
 To be added
 
-### Librispeech automatic speech recognition (To be updated)
+### Librispeech automatic speech recognition (Updated July 2021)
 
 * **Description:**
 In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
@@ -244,6 +244,7 @@ may also be loaded by the model.
   * [Kenansville attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/kenansville_dft.py)
 * **Baseline Defense**: [MP3 Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/mp3_compression.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+
 | Attack                  | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
 |-------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
 | Imperceptible ASR       | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
@@ -262,7 +263,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 * Missing defended baseline is due to currentl incompatibility of the attack and defense.
   
 
-### so2sat multimodal image classification (Updated for Eval 3)
+### so2sat multimodal image classification (Updated July 2021)
 
 * **Description:**
 In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral electro-optical (EO) images.
@@ -295,6 +296,7 @@ networks are fused to produce a single prediction output.
   * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
 * **Baseline Defense**: [JPEG Compression for Multi-Channel](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/defences/jpeg_compression_multichannel_image.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+
 | Attacked Modality | Patch Ratio | Benign Accuracy (Undefended) | Adversarial Accuracy (Undefended) | Benign Accuracy (Defended) | Adversarial mAP (Defended) | Test Size |
 |:-----------------:|:-----------:|:----------------------------:|:---------------------------------:|:--------------------------:|:--------------------------:|:---------:|
 | EO                | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
@@ -305,7 +307,7 @@ networks are fused to produce a single prediction output.
 | SAR               | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
-### xView object detection (updated for Eval3)
+### xView object detection (Updated July 2021)
 
 * **Description:**
 In this scenario, the system under evaluation is an object detector which localizes and identifies various classes from satellite imagery.
@@ -336,6 +338,7 @@ on MSCOCO objects and fine-tuned on xView.
   * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
 * **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+
 |     Attack    | Patch Size | Benign mAP (Undefended) | Adversarial mAP (Undefended) | Benign mAP (Defended) | Adversarial mAP (Defended) | Test Size |
 |:-------------:|:----------:|:-----------------------:|:----------------------------:|:---------------------:|:--------------------------:|:---------:|
 | Masked PGD    | 50x50      | 0.284                   | 0.142                        | 0.232                 | 0.139                      | 100       |
@@ -346,7 +349,7 @@ on MSCOCO objects and fine-tuned on xView.
 | Robust DPatch | 100x100    | 0.284                   | 0.173                        | 0.232                 | 0.165                      | 100       |
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
-### DAPRICOT object detection (updated for Eval 3)
+### DAPRICOT object detection (Updated July 2021)
 
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
@@ -371,6 +374,7 @@ The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/te
   * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
 * **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+
 | Attack        | Patch Size | Target Success (Undefended) | Target mAP (Undefended) | Target Success (Defended) | Target mAP (Defended) | Test Size |
 |---------------|------------|-----------------------------|-------------------------|---------------------------|-----------------------|-----------|
 | Masked PGD    | all        | 0.99                        | 0.91                    | 0.99                      | 0.91                  | 100       |
@@ -383,7 +387,7 @@ The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/te
 | Robust DPatch | large      | 0.55                        | 0.64                    | 0.63                      | 0.73                  | 100       |
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
   
-### APRICOT object detection (updated for Eval 2)
+### APRICOT object detection (Updated December 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
