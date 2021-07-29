@@ -139,6 +139,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
   * [Custom Frame Border attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/video_frame_border.py)
 * **Baseline Defense**: [Video Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/video_compression.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+
 |                Attack               |              Budget              | Benign Top1/Top5 Accuracy (Undefended) | Adversarial Top1/Top5 Accuracy (Undefended) | Benign Top1/Top5 Accuracy (Defended) | Adversarial Top1/Top5 Accuracy (Defended) | Test Size |
 |:-----------------------------------:|:--------------------------------:|:--------------------------------------:|:-------------------------------------------:|:------------------------------------:|:-----------------------------------------:|:---------:|
 | Flicker (low perceptibility)        | beta_0=4.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.51/1.00                                   | 0.92/1.00                            | 0.44/1.00                                 | 100       |
@@ -156,6 +157,7 @@ The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF1
 | Frame Saliency (one_shot)           | eps=0.004                        | 0.92/1.00                              | 0.00/0.26                                   | 0.93/1.00                            | 0.79/0.97                                 | 100       |
 | Frame Saliency (one_shot)           | eps=0.008                        | 0.92/1.00                              | 0.00/0.22                                   | 0.93/1.00                            | 0.46/0.89                                 | 100       |
 | Frame Saliency (one_shot)           | eps=0.015                        | 0.92/1.00                              | 0.00/0.20                                   | 0.93/1.00                            | 0.21/0.74                                 | 100       |
+
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
 ### German traffic sign poisoned image classification (Updated December 2020)
@@ -259,8 +261,9 @@ may also be loaded by the model.
 | PGD (multiple channels) | no       | snr=20dB       | 0.10                    | 0.86                         | 0.13                  | N/A                        | 60        |
 | PGD (multiple channels) | no       | snr=30dB       | 0.10                    | 0.87                         | 0.13                  | N/A                        | 60        |
 | PGD (multiple channels) | no       | snr=40dB       | 0.10                    | 0.74                         | 0.13                  | N/A                        | 60        |
+
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-* Missing defended baseline is due to currentl incompatibility of the attack and defense.
+* Missing defended baseline is due to current incompatibility of the attack and defense.
   
 
 ### so2sat multimodal image classification (Updated July 2021)
@@ -305,6 +308,7 @@ networks are fused to produce a single prediction output.
 | SAR               | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
 | SAR               | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
 | SAR               | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
+
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
 ### xView object detection (Updated July 2021)
@@ -347,6 +351,7 @@ on MSCOCO objects and fine-tuned on xView.
 | Robust DPatch | 50x50      | 0.284                   | 0.193                        | 0.232                 | 0.184                      | 100       |
 | Robust DPatch | 75x75      | 0.284                   | 0.184                        | 0.232                 | 0.146                      | 100       |
 | Robust DPatch | 100x100    | 0.284                   | 0.173                        | 0.232                 | 0.165                      | 100       |
+
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
 ### DAPRICOT object detection (Updated July 2021)
@@ -354,7 +359,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
 * **Dataset:**
-The dataset is the [Dynamic APRICOT (DAPRICOT) dataset 1](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_dev.py) and [Dynamic APRICOT (dataset 2](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py). It is similar to the APRICOT dataset (see below), but instead of pre-generated physical patches taken in the natural environment, the DAPRICOT dataset contains greenscreens and natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene as if they were physically printed. This dataset contains 15 scenes, where each scene contains 3 different greenscreen shapes, taken at 3 different distances and using 3 different camera angles, for a total of over 1000 images.
+The dataset is the [Dynamic APRICOT (DAPRICOT) dataset 1](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_dev.py) and [dataset 2](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py). It is similar to the APRICOT dataset (see below), but instead of pre-generated physical patches taken in the natural environment, the DAPRICOT dataset contains greenscreens and natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed. This dataset contains 15 scenes, where each scene contains 3 different greenscreen shapes, taken at 3 different distances, 3 different heights and using 3 different camera angles, for a total of over 1000 images.
 * **Baseline Model:**
 The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
 * **Threat Scenario:**
@@ -385,6 +390,7 @@ The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/te
 | Robust DPatch | small      | 0.51                        | 0.64                    | 0.60                      | 0.64                  | 100       |
 | Robust DPatch | medium     | 0.61                        | 0.64                    | 0.65                      | 0.73                  | 100       |
 | Robust DPatch | large      | 0.55                        | 0.64                    | 0.63                      | 0.73                  | 100       |
+
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
   
 ### APRICOT object detection (Updated December 2020)
