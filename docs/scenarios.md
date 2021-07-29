@@ -12,7 +12,7 @@ which are saved into the armory `output_dir` upon  completion.
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
 
-### RESISC image classification (updated June 2020)
+### RESISC image classification (Updated June 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is assumed to be a real-time overhead imagery scene classification
@@ -61,7 +61,7 @@ Baseline defense performance is evaluated for a grey-box attack: adversarial exa
   * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 40%
   * Baseline Attacked (Universal Patch) Top-1 Accuracy: 21%
 
-### Librispeech speaker audio classification (updated for June 2020)
+### Librispeech speaker audio classification (Updated June 2020)
 
 * **Description:**
 In this scenario, the system under evaluation is a speaker identification system that a human operator is either
@@ -119,7 +119,7 @@ which is a single-stream (RGB) 3D convolution architecture that simultaneously m
 The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF101.
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection    * 
+    * Untargeted - an adversary may simply wish to evade detection
   * Adversary Operating Environment:
     * Non-real time, digital evasion attack - we assume an adversary is the author of the video, so they could create an evasion attack offline
     before distributing the video.  Typically, a non real-time attack is "universal," but in this case, it is "per-example."
@@ -300,14 +300,14 @@ networks are fused to produce a single prediction output.
 * **Baseline Defense**: [JPEG Compression for Multi-Channel](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/defences/jpeg_compression_multichannel_image.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
 
-| Attacked Modality | Patch Ratio | Benign Accuracy (Undefended) | Adversarial Accuracy (Undefended) | Benign Accuracy (Defended) | Adversarial mAP (Defended) | Test Size |
-|:-----------------:|:-----------:|:----------------------------:|:---------------------------------:|:--------------------------:|:--------------------------:|:---------:|
-| EO                | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
-| EO                | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
-| EO                | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
-| SAR               | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
-| SAR               | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
-| SAR               | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                       | 1000      |
+| Attacked Modality | Patch Ratio | Benign Accuracy (Undefended) | Adversarial Accuracy (Undefended) | Benign Accuracy (Defended) | Adversarial Accuracy (Defended) | Test Size |
+|-------------------|-------------|------------------------------|-----------------------------------|----------------------------|---------------------------------|-----------|
+| EO                | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
+| EO                | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
+| EO                | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
+| SAR               | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
+| SAR               | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
+| SAR               | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 
