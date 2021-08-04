@@ -378,7 +378,7 @@ The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/te
   * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
   * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
 * **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+* **Baseline Model Performance: (results obtained using Armory v0.13.3 and [dev test data](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py))**
 
 | Attack        | Patch Size | Target Success (Undefended) | Target mAP (Undefended) | Target Success (Defended) | Target mAP (Defended) | Test Size |
 |---------------|------------|-----------------------------|-------------------------|---------------------------|-----------------------|-----------|
