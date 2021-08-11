@@ -32,6 +32,7 @@
         },
         "module": "armory.art_experimental.attacks.poison_loader_clbd",
         "name": "poison_loader_clbd",
+        "type": "clbd",
         "use_adversarial_trainer": false
     },
     "dataset": {

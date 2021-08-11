@@ -7,7 +7,7 @@
         "knowledge": "white",
         "kwargs": {
             "partial_attack": false,
-            "snr_db": 30,
+            "snr_db": 20,
             "targeted": false
         },
         "module": "armory.art_experimental.attacks.kenansville_dft",

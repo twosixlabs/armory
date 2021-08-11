@@ -1,0 +1,146 @@
+{
+    "_description": "Baseline so2sat classification",
+    "adhoc": null,
+    "attack": {
+        "generate_kwargs": {
+            "patch_ratio": 0.05
+        },
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "eps": 2.0,
+            "eps_step": 0.01,
+            "max_iter": 300,
+            "num_random_init": 0,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
+        },
+        "module": "armory.art_experimental.attacks.pgd_patch",
+        "name": "PGDPatch",
+        "use_label": true
+    },
+    "dataset": {
+        "batch_size": 8,
+        "eval_split": "validation",
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "so2sat"
+    },
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "mins": [
+                -0.22,
+                -0.26,
+                -0.73,
+                -0.75,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "quality": 95,
+            "ranges": [
+                0.46,
+                0.48,
+                1.52,
+                1.11,
+                0.7,
+                0.7,
+                0.7,
+                0.61,
+                0.7,
+                0.7,
+                0.7,
+                0.7,
+                0.62,
+                0.54
+            ]
+        },
+        "module": "armory.art_experimental.defences.jpeg_compression_multichannel_image",
+        "name": "JpegCompressionMultiChannelImage",
+        "type": "Preprocessor"
+    },
+    "metric": {
+        "means": true,
+        "perturbation": "l0",
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 20
+        },
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.so2sat",
+        "name": "get_art_model",
+        "weights_file": "multimodal_baseline_weights.h5",
+        "wrapper_kwargs": {
+            "clip_values": [
+                [
+                    -0.22,
+                    -0.26,
+                    -0.73,
+                    -0.75,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0.24,
+                    0.22,
+                    0.79,
+                    0.36,
+                    0.7,
+                    0.7,
+                    0.7,
+                    0.61,
+                    0.7,
+                    0.7,
+                    0.7,
+                    0.7,
+                    0.62,
+                    0.54
+                ]
+            ]
+        }
+    },
+    "scenario": {
+        "kwargs": {
+            "attack_modality": "sar"
+        },
+        "module": "armory.scenarios.multimodal_so2sat_scenario",
+        "name": "So2SatClassification"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1:0.14.0",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

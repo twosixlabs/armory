@@ -1,39 +1,29 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
-        "detection_kwargs": {
-            "nb_clusters": 2,
-            "nb_dims": 43,
-            "reduce": "PCA"
-        },
         "experiment_id": 0,
+        "fit_batch_size": 512,
+        "fraction_poisoned": 0.1,
+        "num_images_target_class": 2220,
         "poison_dataset": true,
+        "poison_samples": {
+            "batch_size": 220,
+            "framework": "numpy",
+            "module": "armory.data.adversarial_datasets",
+            "name": "gtsrb_poison"
+        },
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 20,
+        "train_epochs": 30,
         "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
-        "kwargs": {
-            "backdoor_kwargs": {
-                "poison_module": "art.attacks.poisoning.perturbations",
-                "poison_type": "pattern"
-            },
-            "eps": 2.6,
-            "eps_step": 0.1,
-            "max_iter": 100,
-            "n_classes": 43,
-            "norm": 2,
-            "num_random_init": 0,
-            "pp_poison": 0.1,
-            "target": 2
-        },
-        "module": "armory.art_experimental.attacks.poison_loader_clbd",
-        "name": "poison_loader_clbd",
-        "type": "clbd",
-        "use_adversarial_trainer": false
+        "kwargs": {},
+        "module": "na",
+        "name": "poison_loader_GTSRB",
+        "type": "preloaded"
     },
     "dataset": {
         "batch_size": 512,
@@ -54,16 +44,13 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_clbd",
-        "name": "GTSRB_CLBD"
+        "module": "armory.scenarios.poisoning_gtsrb_scenario",
+        "name": "GTSRB"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.14.0",
         "external_github_repo": null,
         "gpus": "all",
-        "output_dir": null,
-        "output_filename": null,
-        "set_pythonhashseed": true,
         "use_gpu": false
     }
 }

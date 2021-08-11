@@ -1,0 +1,77 @@
+{
+    "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "beta_0": 1.0,
+            "beta_1": 0.5,
+            "beta_2": 0.5,
+            "eps_step": 0.02,
+            "loss_margin": 0.05,
+            "max_iter": 100,
+            "start_frame_index": 0,
+            "targeted": false
+        },
+        "module": "art.attacks.evasion.over_the_air_flickering.over_the_air_flickering_pytorch",
+        "name": "OverTheAirFlickeringPyTorch",
+        "use_label": true
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "ucf101"
+    },
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "constant_rate_factor": 28,
+            "verbose": false,
+            "video_format": "avi"
+        },
+        "module": "armory.art_experimental.defences.video_compression_normalized",
+        "name": "VideoCompressionNormalized",
+        "type": "Preprocessor"
+    },
+    "metric": {
+        "means": true,
+        "perturbation": [
+            "l0"
+        ],
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 10
+        },
+        "model_kwargs": {
+            "max_frames": 512,
+            "model_status": "ucf101_trained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
+        "name": "get_art_model",
+        "weights_file": "mars_ucf101_v1.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.video_ucf101_scenario",
+        "name": "Ucf101"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch:0.14.0",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

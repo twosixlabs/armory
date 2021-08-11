@@ -29,7 +29,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
     pytest==6.2.2 \
-    opencv-python==4.5.1.48
+    opencv-python==4.5.1.48 \
+    pandas==1.2.4 \
+    ffmpeg-python==0.2.0
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
@@ -42,12 +44,12 @@ ARG armory_version
 FROM armory AS armory-pytorch-base
 
 RUN /opt/conda/bin/conda install pytorch==1.7 \
-   torchvision==0.8.0 \ 
-   cudatoolkit=11.0 -c pytorch -c conda-forge && \
-   /opt/conda/bin/conda clean --all
+    torchvision==0.8.0 \
+    cudatoolkit=11.0 -c pytorch -c conda-forge && \
+    /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install --no-cache-dir \
-   tensorflow-gpu==2.4.1 \
-   adversarial-robustness-toolbox==1.6.1
+    tensorflow-gpu==2.4.1 \
+    adversarial-robustness-toolbox==1.6.2
 
 ########## PyTorch 1 Dev #################
 
@@ -55,7 +57,7 @@ FROM armory-pytorch-base AS armory-pytorch-dev
 ARG armory_version
 
 COPY . /armory_dev/
-RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir 
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
 
 WORKDIR /workspace
 CMD tail -f /dev/null
