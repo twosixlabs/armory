@@ -208,7 +208,7 @@ class GTSRB_CLBD(Scenario):
             )
             y_train_all = np.argmax(y_train_all_categorical, axis=1)
             poisoned_indices = [
-                (x1 != x2).any() for (x1, x2) in zip(x_train_old, x_train)
+                (x1 != x2).any() for (x1, x2) in zip(x_train_old, x_train_all)
             ]
             del x_train_old
             poisoned_indices = [int(x) for x in np.where(poisoned_indices)[0]]
@@ -343,7 +343,7 @@ class GTSRB_CLBD(Scenario):
                     poisoned_indices,
                 )
                 y_pred = classifier.predict(x_test)
-                poisoned_targeted_test_metric.add_results(y_test, y_pred)
+                poisoned_test_metric.add_results(y_test, y_pred)
                 poisoned_abstain.add_results(y_test, y_pred)
                 adversarial_actual.extend(y_test)
                 if y_pred.ndim == 1:
