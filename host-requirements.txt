@@ -14,7 +14,7 @@ docker
 jsonschema
 requests
 tensorflow-datasets==3.2.0
-jupyterlab==3.0.9
+jupyterlab==3.0.17
 boto3==1.17.20
 adversarial-robustness-toolbox==1.6.2
 Pillow==8.1.1
@@ -25,7 +25,7 @@ pytest==6.2.2
 ffmpeg-python==0.2.0
 opencv-python==4.5.1.48
 tensorflow-datasets==3.2.0
-jupyterlab==3.0.9
+jupyterlab==3.0.17
 boto3==1.17.20
 Pillow==8.1.1
 pydub==0.24.1
