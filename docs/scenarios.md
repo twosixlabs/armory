@@ -247,20 +247,28 @@ may also be loaded by the model.
 * **Baseline Defense**: [MP3 Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/mp3_compression.py)
 * **Baseline Model Performance: (results obtained using Armory v0.13.3)**
 
-| Attack                  | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
-|-------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
-| Imperceptible ASR       | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
-| Imperceptible ASR       | yes      | max_iter_1=200 | 0.10                    | 0.20                         | 0.13                  | N/A                        | 320       |
-| Imperceptible ASR       | yes      | max_iter_1=400 | 0.10                    | 0.11                         | 0.13                  | N/A                        | 320       |
-| Kenansville             | no       | snr=20dB       | 0.10                    | 0.27                         | 0.13                  | 0.36                       | 1000      |
-| Kenansville             | no       | snr=30dB       | 0.10                    | 0.11                         | 0.13                  | 0.17                       | 1000      |
-| Kenansville             | no       | snr=40dB       | 0.10                    | 0.10                         | 0.13                  | 0.13                       | 1000      |
-| PGD (single channel)    | no       | snr=20dB       | 0.10                    | 0.46                         | 0.13                  | 0.53                       | 100       |
-| PGD (single channel)    | no       | snr=30dB       | 0.10                    | 0.46                         | 0.13                  | 0.50                       | 100       |
-| PGD (single channel)    | no       | snr=40dB       | 0.10                    | 0.33                         | 0.13                  | 0.36                       | 100       |
-| PGD (multiple channels) | no       | snr=20dB       | 0.10                    | 0.86                         | 0.13                  | N/A                        | 60        |
-| PGD (multiple channels) | no       | snr=30dB       | 0.10                    | 0.87                         | 0.13                  | N/A                        | 60        |
-| PGD (multiple channels) | no       | snr=40dB       | 0.10                    | 0.74                         | 0.13                  | N/A                        | 60        |
+| Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
+|--------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
+| Imperceptible ASR        | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
+| Imperceptible ASR        | yes      | max_iter_1=200 | 0.10                    | 0.20                         | 0.13                  | N/A                        | 320       |
+| Imperceptible ASR        | yes      | max_iter_1=400 | 0.10                    | 0.11                         | 0.13                  | N/A                        | 320       |
+| Kenansville              | no       | snr=20dB       | 0.10                    | 0.27                         | 0.13                  | 0.36                       | 1000      |
+| Kenansville              | no       | snr=30dB       | 0.10                    | 0.11                         | 0.13                  | 0.17                       | 1000      |
+| Kenansville              | no       | snr=40dB       | 0.10                    | 0.10                         | 0.13                  | 0.13                       | 1000      |
+| PGD (single channel)     | no       | snr=20dB       | 0.10                    | 0.46                         | 0.13                  | 0.53                       | 100       |
+| PGD (single channel)     | no       | snr=30dB       | 0.10                    | 0.46                         | 0.13                  | 0.50                       | 100       |
+| PGD (single channel)     | no       | snr=40dB       | 0.10                    | 0.33                         | 0.13                  | 0.36                       | 100       |
+| PGD (single channel)*    | yes      | snr=20dB       | 0.11                    | 1.03                         | 0.15                  | 1.01                       | 100       |
+| PGD (single channel)*    | yes      | snr=30dB       | 0.11                    | 1.02                         | 0.15                  | 0.99                       | 100       |
+| PGD (single channel)*    | yes      | snr=40dB       | 0.11                    | 0.88                         | 0.15                  | 0.84                       | 100       |
+| PGD (multiple channels)  | no       | snr=20dB       | 0.13                    | 0.96                         | N/A                   | N/A                        | 100       |
+| PGD (multiple channels)  | no       | snr=30dB       | 0.13                    | 0.59                         | N/A                   | N/A                        | 100       |
+| PGD (multiple channels)  | no       | snr=40dB       | 0.13                    | 0.38                         | N/A                   | N/A                        | 100       |
+| PGD (multiple channels)* | yes      | snr=20dB       | 0.13                    | 0.99                         | N/A                   | N/A                        | 100       |
+| PGD (multiple channels)* | yes      | snr=30dB       | 0.13                    | 0.92                         | N/A                   | N/A                        | 100       |
+| PGD (multiple channels)* | yes      | snr=40dB       | 0.13                    | 0.75                         | N/A                   | N/A                        | 100       |
+
+* \*Target attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 * Missing defended baseline is due to current incompatibility of the attack and defense.

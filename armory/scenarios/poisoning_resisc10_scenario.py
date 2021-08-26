@@ -10,6 +10,12 @@ import os
 import random
 
 import numpy as np
+
+try:
+    from tensorflow.keras.utils import to_categorical
+except ImportError:
+    from tensorflow.compat.v1.keras.utils import to_categorical
+
 from tqdm import tqdm
 
 from armory.utils.config_loading import (
@@ -194,7 +200,7 @@ class RESISC10(Scenario):
                     poisoned_indices,
                 )
 
-        y_train_all_categorical = y_train_all
+        y_train_all_categorical = to_categorical(y_train_all)
 
         # Flag to determine whether defense_classifier is trained directly
         #     (default API) or is trained as part of detect_poisons method
