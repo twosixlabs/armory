@@ -23,6 +23,19 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 logger = logging.getLogger(__name__)
 
 
+def abstains(y, y_pred):
+    """
+    For each sample in y_pred:
+        return 1 for i if y_pred[i] is all 0s (an abstention), return 0 otherwise
+        returns a list of (0, 1) elements
+    """
+    del y
+    y_pred = np.asarray(y_pred)
+    if y_pred.ndim != 2:
+        raise ValueError(f"y_pred {y_pred} is not 2-dimensional")
+    return [int(x) for x in (y_pred == 0.0).all(axis=1)]
+
+
 def categorical_accuracy(y, y_pred):
     """
     Return the categorical accuracy of the predictions
@@ -1026,6 +1039,7 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 SUPPORTED_METRICS = {
+    "abstains": abstains,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1119,6 +1133,8 @@ class MetricList:
         return list(self._values)
 
     def mean(self):
+        if not self._values:
+            return float("nan")
         return sum(float(x) for x in self._values) / len(self._values)
 
     def append_input_label(self, label):

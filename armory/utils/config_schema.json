@@ -210,6 +210,7 @@
         },
         "supported_metric_enum": {
             "enum": [
+                "abstains",
                 "dapricot_patch_target_success",
                 "dapricot_patch_targeted_AP_per_class",
                 "apricot_patch_targeted_AP_per_class",

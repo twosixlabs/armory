@@ -202,10 +202,18 @@ class GTSRB_CLBD(Scenario):
 
             attack, backdoor = load(attack_config)
 
+            x_train_old = x_train_all
             x_train_all, y_train_all_categorical = attack.poison(
                 x_train_all, y_train_all_categorical
             )
             y_train_all = np.argmax(y_train_all_categorical, axis=1)
+            poisoned_indices = [
+                (x1 != x2).any() for (x1, x2) in zip(x_train_old, x_train_all)
+            ]
+            del x_train_old
+            poisoned_indices = [int(x) for x in np.where(poisoned_indices)[0]]
+        else:
+            poisoned_indices = []
 
         if use_poison_filtering_defense:
             y_train_defense = to_categorical(y_train_all)
@@ -229,6 +237,7 @@ class GTSRB_CLBD(Scenario):
             indices_to_keep = is_clean == 1
             x_train_final = x_train_all[indices_to_keep]
             y_train_final = y_train_all[indices_to_keep]
+
         else:
             logger.info(
                 "Defense does not require filtering. Model fitting will use all data."
@@ -259,12 +268,21 @@ class GTSRB_CLBD(Scenario):
             shuffle_files=False,
         )
         benign_validation_metric = metrics.MetricList("categorical_accuracy")
+        benign_abstain = metrics.MetricList("abstains")
         target_class_benign_metric = metrics.MetricList("categorical_accuracy")
+        benign_actual = []
+        benign_predictions = []
         for x, y in tqdm(test_data, desc="Testing"):
             # Ensure that input sample isn't overwritten by classifier
             x.flags.writeable = False
             y_pred = classifier.predict(x)
+            benign_actual.extend(y)
+            if y_pred.ndim == 1:
+                benign_predictions.extend(y_pred)
+            else:
+                benign_predictions.extend(y_pred.argmax(axis=1))
             benign_validation_metric.add_results(y, y_pred)
+            benign_abstain.add_results(y, y_pred)
             y_pred_tgt_class = y_pred[y == src_class]
             if len(y_pred_tgt_class):
                 target_class_benign_metric.add_results(
@@ -277,12 +295,31 @@ class GTSRB_CLBD(Scenario):
             f"Unpoisoned validation accuracy on targeted class: {target_class_benign_metric.mean():.2%}"
         )
         results = {
-            "benign_validation_accuracy": benign_validation_metric.mean(),
-            "benign_validation_accuracy_targeted_class": target_class_benign_metric.mean(),
+            "benign_categorical_accuracy": benign_validation_metric.values(),
+            "benign_mean_categorical_accuracy": benign_validation_metric.mean(),
+            "benign_abstains": benign_abstain.values(),
+            "benign_mean_abstains": benign_abstain.mean(),
+            "benign_categorical_accuracy_targeted_class": target_class_benign_metric.values(),
+            "benign_mean_categorical_accuracy_targeted_class": target_class_benign_metric.mean(),
+            "benign_y_true": [int(x) for x in benign_actual],
+            "benign_y_pred_class": [int(x) for x in benign_predictions],
+            "train_poisoned_indices": poisoned_indices,
         }
 
+        if use_poison_filtering_defense:
+            results["train_filtered_indices"] = sorted(
+                [int(x) for x in np.where(~indices_to_keep)[0]]
+            )
+        else:
+            results["train_filtered_indices"] = []
+
+        results["train_dataset_size"] = len(y_train_all)
+
         poisoned_test_metric = metrics.MetricList("categorical_accuracy")
+        poisoned_abstain = metrics.MetricList("abstains")
         poisoned_targeted_test_metric = metrics.MetricList("categorical_accuracy")
+        adversarial_actual = []
+        adversarial_predictions = []
 
         if poison_dataset_flag:
             logger.info("Testing on poisoned test data")
@@ -307,19 +344,34 @@ class GTSRB_CLBD(Scenario):
                 )
                 y_pred = classifier.predict(x_test)
                 poisoned_test_metric.add_results(y_test, y_pred)
+                poisoned_abstain.add_results(y_test, y_pred)
+                adversarial_actual.extend(y_test)
+                if y_pred.ndim == 1:
+                    adversarial_predictions.extend(y_pred)
+                else:
+                    adversarial_predictions.extend(y_pred.argmax(axis=1))
 
                 y_pred_targeted = y_pred[y_test == src_class]
                 if len(y_pred_targeted):
                     poisoned_targeted_test_metric.add_results(
                         [tgt_class] * len(y_pred_targeted), y_pred_targeted
                     )
-            results["poisoned_test_accuracy"] = poisoned_test_metric.mean()
-            results[
-                "poisoned_targeted_misclassification_accuracy"
-            ] = poisoned_targeted_test_metric.mean()
             logger.info(f"Test accuracy: {poisoned_test_metric.mean():.2%}")
             logger.info(
                 f"Test targeted misclassification accuracy: {poisoned_targeted_test_metric.mean():.2%}"
+            )
+
+            results.update(
+                {
+                    "poison_categorical_accuracy": poisoned_test_metric.values(),
+                    "poison_mean_categorical_accuracy": poisoned_test_metric.mean(),
+                    "poison_targeted_categorical_accuracy": poisoned_targeted_test_metric.values(),
+                    "poison_mean_targeted_categorical_accuracy": poisoned_targeted_test_metric.mean(),
+                    "poison_abstains": poisoned_abstain.values(),
+                    "poison_mean_abstains": poisoned_abstain.mean(),
+                    "poison_y_true": [int(x) for x in adversarial_actual],
+                    "poison_y_pred_class": [int(x) for x in adversarial_predictions],
+                }
             )
 
         return results
