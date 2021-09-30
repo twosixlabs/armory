@@ -19,7 +19,7 @@ repositories or from the baselines within this project.
 
 Our evaluations are created so that attacks and defenses may be 
 interchanged. To do this we standardize all attacks and defenses as subclasses of 
-their respective implementations in IBM's [adversarial-robustness-toolbox](https://github.com/IBM/adversarial-robustness-toolbox)
+their respective implementations in the [Adversarial Robustness Toolbox (ART)](https://github.com/Trusted-AI/adversarial-robustness-toolbox) hosted by the LF AI & Data Foundation (LFAI).
 
 
 # Installation & Configuration
