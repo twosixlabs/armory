@@ -45,7 +45,7 @@ class Resisc10Poison(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version("1.1.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
-        '1.1.0': 'Update dataset from 64x64 images to 256x256 images',
+        "1.1.0": "Update dataset from 64x64 images to 256x256 images",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
