@@ -1224,8 +1224,8 @@ def resisc10(
 
     Contains 7000 images covering 10 scene classes with 700 images per class
 
-    Dimensions of X: (7000, 64, 64, 3) of uint8, ~ 0.8 GB in memory
-        Each sample is a 64 x 64 3-color (RGB) image
+    Dimensions of X: (7000, 256, 256, 3) of uint8,
+        Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (7000,) of int, with values in range(10)
 
     split - one of ("train", "validation", "test")
