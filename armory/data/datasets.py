@@ -673,7 +673,7 @@ cifar10_context = ImageContext(x_shape=(32, 32, 3))
 cifar100_context = ImageContext(x_shape=(32, 32, 3))
 gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
-resisc10_context = ImageContext(x_shape=(64, 64, 3))
+resisc10_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
@@ -1224,8 +1224,8 @@ def resisc10(
 
     Contains 7000 images covering 10 scene classes with 700 images per class
 
-    Dimensions of X: (7000, 64, 64, 3) of uint8, ~ 0.8 GB in memory
-        Each sample is a 64 x 64 3-color (RGB) image
+    Dimensions of X: (7000, 256, 256, 3) of uint8,
+        Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (7000,) of int, with values in range(10)
 
     split - one of ("train", "validation", "test")
@@ -1233,7 +1233,7 @@ def resisc10(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "resisc10_poison:1.0.0",
+        "resisc10_poison:1.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

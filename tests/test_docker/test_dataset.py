@@ -402,7 +402,7 @@ def test_resisc10():
         )
 
         x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 64, 64, 3)
+        assert x.shape == (batch_size, 256, 256, 3)
         assert y.shape == (batch_size,)
 
 
