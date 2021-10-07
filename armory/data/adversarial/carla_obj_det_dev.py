@@ -110,7 +110,7 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         path = dl_manager.download_and_extract(_URLS)
 
         return {
-            "train": self._generate_examples(path / "dev"),
+            "dev": self._generate_examples(path / "dev"),
         }
 
     def _generate_examples(self, path):
