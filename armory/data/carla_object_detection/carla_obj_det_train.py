@@ -20,7 +20,7 @@ _CITATION = """
 }
 """
 
-_URLS = "/nfs/gard/ytan/Eval4/integration/datasets/carla_object_detection/carla_rgb_depth/carla_obj_det_train.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_train.tar.gz"
 
 
 class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
