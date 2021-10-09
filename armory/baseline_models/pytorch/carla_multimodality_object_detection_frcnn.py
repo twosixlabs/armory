@@ -2,14 +2,12 @@
 PyTorch Faster-RCNN Resnet50-FPN object detection model
 """
 import logging
-from typing import Optional, Union, Dict
+from typing import Optional
 
 from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
-from torchvision import models
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.faster_rcnn import FasterRCNN
-from torchvision.models.utils import load_state_dict_from_url
 
 from collections import OrderedDict
 
