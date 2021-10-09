@@ -1,15 +1,10 @@
 import logging
-from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
-from tqdm.auto import trange
 import cv2
-import math
 import colour
-from scipy.stats import norm
 import random
 
 from art.attacks.evasion import RobustDPatch
-from art import config
 
 logger = logging.getLogger(__name__)
 
@@ -398,7 +393,7 @@ class CARLADapricotPatch(RobustDPatch):
     def generate(self, x, y_object=None, y_patch_metadata=None):
         """
         param x: Sample images. For single-modality, shape=(NHW3). For multimodality, shape=(NHW6)
-        param y: [Optional] Sample labels. List of dictionaries, 
+        param y: [Optional] Sample labels. List of dictionaries,
             ith dictionary contains bounding boxes, class labels, and class scoares
         param y_patch_metadata: Patch metadata. List of N dictionaries, ith dictionary contains patch metadata for x[i]
         """
