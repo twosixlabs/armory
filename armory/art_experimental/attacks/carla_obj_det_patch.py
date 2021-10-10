@@ -397,6 +397,8 @@ class CARLADapricotPatch(RobustDPatch):
             ith dictionary contains bounding boxes, class labels, and class scoares
         param y_patch_metadata: Patch metadata. List of N dictionaries, ith dictionary contains patch metadata for x[i]
         """
+        if x.shape[0] > 1:
+            logger.info("To perform per-example patch attack, batch size must be 1")
         assert x.shape[-1] in [3, 6], "x must have either 3 or 6 color channels"
 
         num_imgs = x.shape[0]
