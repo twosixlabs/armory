@@ -1,1 +1,1 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_train_cached_1.0.0.tar.gz 3022287 c1888cda30354a78b068754d557110f7cb5ba89d08a77d38d24d21525a1bb3f3
+armory-public-data carla/carla_obj_det_train_cached_1.0.0.tar.gz 3022287 c1888cda30354a78b068754d557110f7cb5ba89d08a77d38d24d21525a1bb3f3
