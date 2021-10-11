@@ -76,7 +76,6 @@ _LABELS = [
 class LibrispeechConfig(tfds.core.BuilderConfig):
     """BuilderConfig for Librispeech."""
 
-    @tfds.core.disallow_positional_args
     def __init__(self, text_encoder_config=None, **kwargs):
         """Constructs a LibrispeechConfig.
 
@@ -115,14 +114,14 @@ def _make_builder_configs():
     """
     text_encoder_configs = [
         None,
-        tfds.features.text.TextEncoderConfig(
+        tfds.deprecated.text.TextEncoderConfig(
             name="subwords8k",
-            encoder_cls=tfds.features.text.SubwordTextEncoder,
+            encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
             vocab_size=2 ** 13,
         ),
-        tfds.features.text.TextEncoderConfig(
+        tfds.deprecated.text.TextEncoderConfig(
             name="subwords32k",
-            encoder_cls=tfds.features.text.SubwordTextEncoder,
+            encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
             vocab_size=2 ** 15,
         ),
     ]

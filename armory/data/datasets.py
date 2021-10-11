@@ -76,7 +76,7 @@ class ArmoryDataGenerator(DataGenerator):
         super().__init__(size, batch_size)
         self.preprocessing_fn = preprocessing_fn
         self.label_preprocessing_fn = label_preprocessing_fn
-        self.generator = generator
+        self.generator = iter(generator)
 
         self.epochs = epochs
         self.samples_per_epoch = size
@@ -417,8 +417,6 @@ def _generator_from_tfds(
             dataset_dir, dataset_name=dataset_name,
         )
 
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
-
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
 
@@ -529,7 +527,7 @@ def _generator_from_tfds(
         )
 
     if framework == "numpy":
-        ds = tfds.as_numpy(ds, graph=default_graph)
+        ds = tfds.as_numpy(ds)
         generator = ArmoryDataGenerator(
             ds,
             size=dataset_size,
