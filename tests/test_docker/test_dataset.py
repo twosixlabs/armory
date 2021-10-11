@@ -524,6 +524,11 @@ def test_dapricot_test():
                 assert patch_metadata_key in y_patch_metadata[k]
 
 
+def test_carla_obj_det_train():
+    dataset = datasets.carla_obj_det_train(split="train")
+    # TODO: check image shape, labels, etc.
+
+
 def test_ucf101_adversarial_112x112():
     if not os.path.isdir(
         os.path.join(
