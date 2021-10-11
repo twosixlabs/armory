@@ -41,7 +41,7 @@ from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
-from armory.data.carla_object_detection import carla_obj_det_train  # noqa: F401
+from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -677,7 +677,7 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_context = ImageContext(x_shape=(2, 600, 800, 3))
+carla_obj_det_context = ImageContext(x_shape=(2, 600, 800, 3))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -720,8 +720,8 @@ def ucf101_canonical_preprocessing(batch):
     return canonical_variable_image_preprocess(ucf101_context, batch)
 
 
-def carla_canonical_preprocessing(batch):
-    return canonical_image_preprocess(carla_context, batch)
+def carla_obj_det_canonical_preprocessing(batch):
+    return canonical_image_preprocess(carla_obj_det_context, batch)
 
 
 class AudioContext:
@@ -821,12 +821,12 @@ def mnist(
     )
 
 
-def carla_train(
+def carla_obj_det_train(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_canonical_preprocessing,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -834,7 +834,7 @@ def carla_train(
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
-    Descriptive comment
+    Training set for CARLA object detection dataset, containing RGB and depth channels.
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
@@ -848,7 +848,7 @@ def carla_train(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_context,
+        context=carla_obj_det_context,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         **kwargs,
