@@ -527,7 +527,17 @@ def test_dapricot_test():
 def test_carla_obj_det_train():
     dataset = datasets.carla_obj_det_train(split="train")
     assert dataset.size == 4
-    # TODO: check image shape, labels, etc.
+
+    # Testing batch_size > 1
+    batch_size = 2
+    ds_batch_size2 = datasets.carla_obj_det_train(split="train", batch_size=batch_size)
+    x, y = ds_batch_size2.get_batch()
+    assert x.shape == (batch_size, 2, 600, 800, 3)
+    assert len(y) == batch_size
+    for label_dict in y:
+        assert isinstance(label_dict, dict)
+        for obj_key in ["labels", "boxes", "area"]:
+            assert obj_key in label_dict
 
 
 def test_ucf101_adversarial_112x112():

@@ -88,10 +88,8 @@ class ArmoryDataGenerator(DataGenerator):
 
         self.variable_length = variable_length
         self.variable_y = variable_y
-        if self.variable_length:
+        if self.variable_length or self.variable_y:
             self.current = 0
-        elif self.variable_y:
-            raise NotImplementedError("variable_y=True requires variable_length=True")
 
         self.context = context
 
@@ -108,7 +106,7 @@ class ArmoryDataGenerator(DataGenerator):
         return x
 
     def get_batch(self) -> (np.ndarray, np.ndarray):
-        if self.variable_length:
+        if self.variable_length or self.variable_y:
             # build the batch
             x_list, y_list = [], []
             for i in range(self.batch_size):
@@ -121,16 +119,19 @@ class ArmoryDataGenerator(DataGenerator):
                     self.current = 0
                     break
 
-            if isinstance(x_list[0], dict):
-                # Translate a list of dicts into a dict of arrays
-                x = {}
-                for k in x_list[0].keys():
-                    x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
-            elif isinstance(x_list[0], tuple):
-                # Translate a list of tuples into a tuple of arrays
-                x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
+            if self.variable_length:
+                if isinstance(x_list[0], dict):
+                    # Translate a list of dicts into a dict of arrays
+                    x = {}
+                    for k in x_list[0].keys():
+                        x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
+                elif isinstance(x_list[0], tuple):
+                    # Translate a list of tuples into a tuple of arrays
+                    x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
+                else:
+                    x = self.np_1D_object_array(x_list)
             else:
-                x = self.np_1D_object_array(x_list)
+                x = np.vstack(x_list)
 
             if self.variable_y:
                 if isinstance(y_list[0], dict):
@@ -515,7 +516,7 @@ def _generator_from_tfds(
     ds = ds.repeat(epochs)
     if shuffle_files:
         ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
-    if variable_length and batch_size > 1:
+    if variable_length or variable_y and batch_size > 1:
         ds = ds.batch(1, drop_remainder=False)
     else:
         ds = ds.batch(batch_size, drop_remainder=False)
@@ -849,6 +850,8 @@ def carla_obj_det_train(
         preprocessing_fn=preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
+        variable_y=bool(batch_size > 1),
+        variable_length=False,
         shuffle_files=shuffle_files,
         context=carla_obj_det_context,
         as_supervised=False,
