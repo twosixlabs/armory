@@ -555,12 +555,20 @@ def dapricot_test_adversarial(
     )
 
 
+def carla_obj_det_dev_label_preprocessing(x, y):
+    y_object, y_patch_metadata = y
+    y_object = {k: np.squeeze(v, axis=0) for k, v in y_object.items()}
+    y_patch_metadata = {k: np.squeeze(v, axis=0) for k, v in y_patch_metadata.items()}
+    return (y_object, y_patch_metadata)
+
+
 def carla_obj_det_dev(
     split: str = "dev",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = carla_obj_det_dev_canonical_preprocessing,
+    label_preprocessing_fn=carla_obj_det_dev_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
@@ -580,6 +588,7 @@ def carla_obj_det_dev(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
