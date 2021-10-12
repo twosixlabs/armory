@@ -25,7 +25,7 @@ _CITATION = """
 }
 """
 
-_URLS = "/nfs/gard/ytan/Eval4/integration/datasets/carla_object_detection/carla_rgb_depth/carla_obj_det_dev.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_dev.tar.gz"
 
 
 class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
@@ -108,10 +108,11 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
         path = dl_manager.download_and_extract(_URLS)
-
-        return {
-            "dev": self._generate_examples(path / "dev"),
-        }
+        return [
+            tfds.core.SplitGenerator(
+                name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
+            )
+        ]
 
     def _generate_examples(self, path):
         """yield examples"""
