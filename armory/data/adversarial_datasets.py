@@ -18,6 +18,7 @@ from armory.data.adversarial import (  # noqa: F401
     apricot_test,
     dapricot_dev,
     dapricot_test,
+    carla_obj_det_dev,
 )
 
 
@@ -36,6 +37,7 @@ resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
+carla_obj_det_dev_context = datasets.ImageContext(x_shape=(2, 600, 800, 3))
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -67,6 +69,10 @@ def dapricot_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
         dapricot_adversarial_context, batch_rotated_rgb
     )
+
+
+def carla_obj_det_dev_canonical_preprocessing(batch):
+    return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)
 
 
 def imagenet_adversarial(
@@ -546,4 +552,37 @@ def dapricot_test_adversarial(
         cache_dataset=cache_dataset,
         framework=framework,
         context=dapricot_adversarial_context,
+    )
+
+
+def carla_obj_det_dev(
+    split: str = "dev",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_obj_det_dev_canonical_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+):
+    """
+    Dev set for CARLA object detection dataset, containing RGB and depth channels. The dev
+    set also contains green screens for adversarial patch insertion.
+    """
+
+    return datasets._generator_from_tfds(
+        "carla_obj_det_dev:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=carla_obj_det_dev_context,
+        as_supervised=False,
+        supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        **kwargs,
     )
