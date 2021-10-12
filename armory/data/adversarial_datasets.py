@@ -570,6 +570,8 @@ def carla_obj_det_dev(
     Dev set for CARLA object detection dataset, containing RGB and depth channels. The dev
     set also contains green screens for adversarial patch insertion.
     """
+    if batch_size != 1:
+        raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
         "carla_obj_det_dev:1.0.0",
