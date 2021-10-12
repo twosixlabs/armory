@@ -18,7 +18,7 @@ from armory.data.adversarial import (  # noqa: F401
     apricot_test,
     dapricot_dev,
     dapricot_test,
-    carla_obj_det_dev,
+    carla_obj_det_dev as codd,
 )
 
 
