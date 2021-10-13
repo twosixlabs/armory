@@ -29,7 +29,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
-        "1.0.1": "Correcting error to RGB and depth image pairing"
+        "1.0.1": "Correcting error to RGB and depth image pairing",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -102,7 +102,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
         images_rgb = (
             cocoanno.images()
         )  # list of dictionaries of RGB image id, height, width, file_name
-        
+
         # sort images alphabetically
         images_rgb = sorted(images_rgb, key=lambda x: x["file_name"].lower())
 
