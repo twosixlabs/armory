@@ -25,7 +25,7 @@ _CITATION = """
 }
 """
 
-_URLS = "carla_obj_det_dev.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_dev.tar.gz"
 
 
 class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
@@ -109,7 +109,6 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
         path = dl_manager.download_and_extract(_URLS)
-
         return [
             tfds.core.SplitGenerator(
                 name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
