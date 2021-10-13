@@ -22,7 +22,7 @@ ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
-    jupyterlab==3.0.9 \
+    jupyterlab==3.0.17 \
     boto3==1.17.20 \
     Pillow==8.3.2 \
     pydub==0.24.1 \
