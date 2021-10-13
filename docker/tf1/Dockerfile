@@ -24,7 +24,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
     jupyterlab==3.0.9 \
     boto3==1.17.20 \
-    Pillow==8.2.0 \
+    Pillow==8.3.2 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
