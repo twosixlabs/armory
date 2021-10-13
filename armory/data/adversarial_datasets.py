@@ -582,7 +582,7 @@ def carla_obj_det_dev(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_obj_det_dev:1.0.0",
+        "carla_obj_det_dev:1.0.1",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
