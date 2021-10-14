@@ -7,7 +7,7 @@ Adapted from: https://github.com/mravanelli/SincNet
 import logging
 from typing import Optional
 
-from art.classifiers import PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 import numpy as np
 import torch
 from torch import nn
