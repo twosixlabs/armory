@@ -49,7 +49,7 @@ RUN /opt/conda/bin/conda install pytorch==1.7 \
     /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-gpu==2.4.1 \
-    adversarial-robustness-toolbox==1.8.0
+    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
 
 ########## PyTorch 1 Dev #################
 
