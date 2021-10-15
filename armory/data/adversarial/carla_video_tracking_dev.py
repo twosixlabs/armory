@@ -23,7 +23,7 @@ _CITATION = """
 }
 """
 
-_URLS = "carla_video_tracking_dev.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_dev.tar.gz"
 
 
 class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
