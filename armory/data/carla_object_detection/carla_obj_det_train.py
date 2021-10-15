@@ -28,9 +28,10 @@ _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_tr
 class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_train dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
+        "1.0.1": "Correcting error to RGB and depth image pairing",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -103,23 +104,18 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
         images_rgb = (
             cocoanno.images()
         )  # list of dictionaries of RGB image id, height, width, file_name
-        images_depth = deepcopy(images_rgb)
-        for i in range(len(images_depth)):
-            fname, fext = images_depth[i]["file_name"].split(".")
-            images_depth[i]["file_name"] = (
-                fname + "_Depth." + fext
-            )  # depth image has a different file name
 
         # sort images alphabetically
         images_rgb = sorted(images_rgb, key=lambda x: x["file_name"].lower())
-        images_depth = sorted(images_depth, key=lambda x: x["file_name"].lower())
 
-        for image_rgb, image_depth in zip(images_rgb, images_depth):
+        for image_rgb in images_rgb:
 
             # verify RGB and depth are paired
             fname_rgb = image_rgb["file_name"]  # rgb image file
-            fname_depth = image_depth["file_name"]  # depth image file
-            assert fname_rgb.split(".")[-2] == fname_depth.split(".")[-2][:-6]
+            fname, fext = fname_rgb.split(".")
+            fname_depth = fname + "_Depth." + fext  # depth image file
+            image_depth = deepcopy(image_rgb)
+            image_depth["file_name"] = fname_depth
 
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
