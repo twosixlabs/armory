@@ -841,7 +841,7 @@ def carla_obj_det_train(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "carla_obj_det_train:1.0.0",
+        "carla_obj_det_train:1.0.1",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
