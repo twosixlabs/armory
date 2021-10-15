@@ -823,12 +823,38 @@ def mnist(
     )
 
 
+def carla_obj_det_label_preprocessing(x,y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
+    """
+    
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict["boxes"].reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[1:3] # shape is (2, 600, 800, 3)
+        converted_boxes *= [width, height, width, height]
+        label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict["labels"].reshape((-1,))
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
+
+
 def carla_obj_det_train(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -847,6 +873,7 @@ def carla_obj_det_train(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
