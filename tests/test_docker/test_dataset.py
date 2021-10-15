@@ -526,6 +526,7 @@ def test_dapricot_test():
 
 def test_carla_obj_det_train():
     dataset = datasets.carla_obj_det_train(split="train")
+
     assert dataset.size == 4727
 
 
