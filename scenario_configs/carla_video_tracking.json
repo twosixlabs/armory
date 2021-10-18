@@ -6,7 +6,7 @@
         "kwargs": {
             "batch_size": 1,
             "max_iter": 10,
-	    "step_size": 0.1,
+            "step_size": 0.1,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_adversarial_texture",
