@@ -411,18 +411,22 @@ def _check_video_tracking_input(y, y_pred):
     Helper function to check that video tracking labels and predictions are in
     the expected format.
 
-    y (np.array): numpy array of shape (num_frames, 4)
-    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
                   is a dict with "boxes" key mapping to (N, 4) numpy array. Boxes are
                   expected to be in [x1, y1, x2, y2] format.
+    y_pred (List[Dict, ...]): same as above
     """
-    assert isinstance(y, np.ndarray)
-    assert y.shape[1] == 4
-    assert isinstance(y_pred, list)
-    for y_i_pred in y_pred:
-        assert isinstance(y_i_pred, dict)
-        assert "boxes" in y_i_pred
-        assert y_i_pred["boxes"].shape == y.shape
+    for input in [y, y_pred]:
+        assert isinstance(input, list)
+        for input_dict_i in input:
+            assert isinstance(input_dict_i, dict)
+            assert "boxes" in input_dict_i
+    assert len(y) == len(y_pred)
+    for i in range(len(y)):
+        y_box_array_shape = y[i]["boxes"].shape
+        assert y_box_array_shape[1] == 4
+        y_pred_box_array_shape = y_pred[i]["boxes"].shape
+        assert y_box_array_shape == y_pred_box_array_shape
 
 
 def _intersection_over_union(box_1, box_2):
@@ -472,12 +476,22 @@ def video_tracking_mean_iou(y, y_pred):
     _check_video_tracking_input(y, y_pred)
     if len(y_pred) > 1:
         raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
-    y_pred_boxes = y_pred[0]["boxes"]
-    num_frames = y.shape[0]
-    ious = np.array(
-        [_intersection_over_union(y[i], y_pred_boxes[i]) for i in range(num_frames)]
-    )
-    return [ious.mean()]
+    mean_ious = []
+    for i in range(len(y)):
+        y_pred_boxes = y_pred[i]["boxes"]
+        y_boxes = y[i]["boxes"]
+        num_frames = y_pred_boxes.shape[0]
+        # begin with 2nd box to skip y_init in metric calculation
+        mean_ious.append(
+            np.array(
+                [
+                    _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+                    for i in range(1, num_frames)
+                ]
+            ).mean()
+        )
+
+    return mean_ious
 
 
 def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):

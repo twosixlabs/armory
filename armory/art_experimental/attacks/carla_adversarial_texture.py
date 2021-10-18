@@ -46,11 +46,11 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         self.y_patch_metadata = y_patch_metadata
 
         # this masked to embed patch into the background in the event of occlusion
-        foreground = y_patch_metadata[0]["masks"].numpy()
+        foreground = y_patch_metadata[0]["masks"]
         foreground = np.array([foreground])
 
         # green screen coordinates used for placement of a rectangular patch
-        gs_coords = y_patch_metadata[0]["gs_coords"].numpy()
+        gs_coords = y_patch_metadata[0]["gs_coords"]
 
         patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
         patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])

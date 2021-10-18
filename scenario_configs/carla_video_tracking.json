@@ -5,16 +5,12 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 1.0,
-            "eps_step": 0.004,
-            "max_iter": 500,
-            "num_random_init": 0,
-            "random_eps": false,
-            "targeted": false,
-            "verbose": false
+            "max_iter": 10,
+	    "step_size": 0.1,
+            "verbose": true
         },
-        "module": "armory.art_experimental.attacks.pgd_patch",
-        "name": "PGDPatch",
+        "module": "armory.art_experimental.attacks.carla_adversarial_texture",
+        "name": "AdversarialPhysicalTexture",
         "use_label": true
     },
     "dataset": {

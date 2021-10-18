@@ -611,7 +611,8 @@ def carla_obj_det_dev(
 
 def carla_video_tracking_dev_label_preprocessing(x, y):
     box_labels, patch_metadata = y
-    box_labels = np.squeeze(box_labels, axis=0)
+    box_array = np.squeeze(box_labels, axis=0)
+    box_labels = [{"boxes": box_array}]
     patch_metadata = {k: np.squeeze(v, axis=0) for k, v in patch_metadata.items()}
     return (box_labels, patch_metadata)
 
