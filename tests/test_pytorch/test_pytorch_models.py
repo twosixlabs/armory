@@ -181,8 +181,6 @@ def test_pytorch_carla_video_tracking():
         shuffle_files=False,
     )
 
-    list_of_ys = []
-    list_of_ypreds = []
     for x, y in dev_dataset:
         y_object, y_patch_metadata = y
         y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
