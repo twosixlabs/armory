@@ -539,8 +539,11 @@ def test_carla_video_tracking_dev():
         assert isinstance(y, tuple)
         assert len(y) == 2
         y_object, y_patch_metadata = y
-        assert isinstance(y_object, np.ndarray)
-        assert y_object.shape[1] == 4
+        assert isinstance(y_object, list)
+        assert len(y_object) == 1
+        assert isinstance(y_object[0], dict)
+        assert "boxes" in y_object[0]
+        assert y_object[0]["boxes"].shape[1] == 4
         assert isinstance(y_patch_metadata, dict)
         for key in ["cc_ground_truth", "cc_scene", "gs_coords", "masks"]:
             assert key in y_patch_metadata
