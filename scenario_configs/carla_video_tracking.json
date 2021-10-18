@@ -39,7 +39,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.carla_goturn",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "pytorch_goturn.pth.tar",
         "wrapper_kwargs": {}
     },
     "scenario": {

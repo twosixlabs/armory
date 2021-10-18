@@ -34,14 +34,5 @@ class CarlaVideoTracking(Scenario):
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
-
-        if len(y_pred) != 1:
-            raise ValueError(
-                "Expected y_pred to be a list of length 1, since batch_size of 1 "
-                "is enforced for carla_video_tracking scenario."
-            )
-
-        # ART PyTorchGoturn model outputs list of dicts with "boxes" key
-        y_pred = y_pred[0]["boxes"]
         self.metrics_logger.update_task(y_object, y_pred)
         self.y_pred = y_pred
