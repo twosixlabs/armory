@@ -7,7 +7,7 @@ from armory.data import datasets
 from armory.utils.config_loading import load_dataset
 from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
-from armory.utils.metrics import object_detection_AP_per_class
+from armory.utils.metrics import object_detection_AP_per_class, video_tracking_mean_iou
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
@@ -157,3 +157,35 @@ def test_pytorch_gtsrb():
         predictions = classifier.predict(x)
         accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
     assert (accuracy / test_dataset.batches_per_epoch) > 0.8
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_pytorch_carla_video_tracking():
+    tracker_module = import_module("armory.baseline_models.pytorch.carla_goturn")
+    tracker_fn = getattr(tracker_module, "get_art_model")
+    weights_path = maybe_download_weights_from_s3("pytorch_goturn.pth.tar")
+    tracker = tracker_fn(model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,)
+
+    NUM_TEST_SAMPLES = 10
+    dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_video_tracking_dev",
+    }
+    dev_dataset = load_dataset(
+        dataset_config,
+        epochs=1,
+        split="dev",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+
+    list_of_ys = []
+    list_of_ypreds = []
+    for x, y in dev_dataset:
+        y_object, y_patch_metadata = y
+        y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
+        y_pred = tracker.predict(x, y_init=y_init)
+        mean_iou = video_tracking_mean_iou(y_object, y_pred)[0]
+        assert mean_iou > 0.45
