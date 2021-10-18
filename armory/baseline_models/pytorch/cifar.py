@@ -6,7 +6,7 @@ from typing import Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from art.classifiers import PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -4,7 +4,7 @@ ResNet50 CNN model for 244x244x3 image classification
 import logging
 from typing import Optional
 
-from art.classifiers import PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 import torch
 from torchvision import models
 
