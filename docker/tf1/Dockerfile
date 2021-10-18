@@ -24,11 +24,11 @@ RUN /opt/conda/bin/conda install \
     tensorflow-gpu==1.15.0 \
     numpy==1.19.2 \
     h5py==2.10.0 \
-    pandas==1.2.4 \
-    jupyterlab==3.0.9 \
-    boto3==1.17.20 \
-    dill=0.3.1.1 \
-    pytest==6.2.2
+    pandas==1.3.3 \
+    jupyterlab==3.1.7 \
+    boto3==1.18.21 \
+    dill=0.3.4 \
+    pytest==6.2.4
 
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3
