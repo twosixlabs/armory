@@ -9,7 +9,7 @@ import tensorflow as tf
 from tensorflow.keras import Model, Input
 from tensorflow.keras.layers import Dense, Conv2D, Activation, Lambda
 from tensorflow.keras.layers import Flatten, BatchNormalization, MaxPooling2D
-from art.classifiers import KerasClassifier
+from art.estimators.classification import KerasClassifier
 
 
 def make_model(**kwargs) -> tf.keras.Model:
