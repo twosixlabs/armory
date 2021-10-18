@@ -5,7 +5,7 @@ Adapted from: https://github.com/craston/MARS
 import logging
 from typing import Union, Optional, Tuple
 
-from art.classifiers import PyTorchClassifier
+from art.estimators.classification import PyTorchClassifier
 import numpy as np
 from PIL import Image
 import torch
