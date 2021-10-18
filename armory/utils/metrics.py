@@ -406,6 +406,17 @@ def _check_object_detection_input(y_list, y_pred_list):
             )
 
 
+def _check_video_tracking_input(y, y_pred):
+    """
+    Helper function to check that video tracking labels and predictions are in
+    the expected format.
+
+    y (np.array): numpy array of shape (num_frames, 4)
+    """
+    # TODO: define video tracking y_pred format
+    pass
+
+
 def _intersection_over_union(box_1, box_2):
     """
     Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
@@ -439,6 +450,15 @@ def _intersection_over_union(box_1, box_2):
     assert iou >= 0
     assert iou <= 1
     return iou
+
+
+def video_tracking_mean_iou(y, y_pred):
+    _check_video_tracking_input(gt_boxes, pred_boxes)
+    num_frames = y.shape[0]
+    ious = np.array(
+        [_intersection_over_union(y[i], y_pred[i]) for i in range(num_frames)]
+    )
+    return ious.mean()
 
 
 def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
@@ -1057,6 +1077,7 @@ SUPPORTED_METRICS = {
     "l2": l2,
     "lp": lp,
     "linf": linf,
+    "video_tracking_mean_iou": video_tracking_mean_iou,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
