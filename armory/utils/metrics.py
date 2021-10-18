@@ -453,7 +453,7 @@ def _intersection_over_union(box_1, box_2):
 
 
 def video_tracking_mean_iou(y, y_pred):
-    _check_video_tracking_input(gt_boxes, pred_boxes)
+    _check_video_tracking_input(y, y_pred)
     num_frames = y.shape[0]
     ious = np.array(
         [_intersection_over_union(y[i], y_pred[i]) for i in range(num_frames)]
