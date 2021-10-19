@@ -857,15 +857,15 @@ class carla_obj_det_preprocessing:
 
     def __call__(self, batch):
         # Batch is just the x data not the labels
-        # shape: 1, 2, 600, 800, 3
+        # shape: batch_size, 2, 600, 800, 3
         batch = canonical_image_preprocess(carla_obj_det_context, batch)
         if self.modality == "rgb":
-            return batch[:, 0]  # strip out the depth channel (keeping batch dim)
+            return batch[:, 0]  # pull out the depth channel (keeping batch dim)
         elif self.modality == "depth":
             return batch[:, 1]
         elif self.modality == "both":
-            # TODO: we probably need to stack these into a 600 x 800 x 6 array
-            return batch
+            # stack into (batch_size, 600, 800, 6)
+            return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
         else:
             raise ValueError("Unknown modality {}".format(self.modality))
 
@@ -886,7 +886,7 @@ def carla_obj_det_train(
     """
     Training set for CARLA object detection dataset, containing RGB and depth channels.
     """
-    modality = kwargs.pop("modality")
+    modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
         raise ValueError(
             'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
