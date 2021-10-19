@@ -12,7 +12,7 @@ import logging
 import json
 import os
 import re
-from typing import Callable, Union
+from typing import Callable, Union, Tuple, List
 
 import numpy as np
 
@@ -105,7 +105,7 @@ class ArmoryDataGenerator(DataGenerator):
             x[i] = x_list[i][0]
         return x
 
-    def get_batch(self) -> (np.ndarray, np.ndarray):
+    def get_batch(self) -> Tuple[np.ndarray, Union[np.ndarray, List]]:
         if self.variable_length or self.variable_y:
             # build the batch
             x_list, y_list = [], []
