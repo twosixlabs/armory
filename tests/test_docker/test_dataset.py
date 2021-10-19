@@ -530,8 +530,14 @@ def test_carla_obj_det_train():
     # Testing batch_size > 1
     batch_size = 2
     for modality in ["rgb", "depth", "both"]:
-        expected_shape = (batch_size, 600, 800, 7) if modality == "both" else (batch_size, 600, 800, 3)
-        ds_batch_size2 = datasets.carla_obj_det_train(split="train", batch_size=batch_size, modality=modality)
+        expected_shape = (
+            (batch_size, 600, 800, 7)
+            if modality == "both"
+            else (batch_size, 600, 800, 3)
+        )
+        ds_batch_size2 = datasets.carla_obj_det_train(
+            split="train", batch_size=batch_size, modality=modality
+        )
         x, y = ds_batch_size2.get_batch()
         assert x.shape == expected_shape
         assert len(y) == batch_size
