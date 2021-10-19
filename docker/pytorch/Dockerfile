@@ -20,21 +20,30 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux
 
 ENV PATH=/opt/conda/bin:$PATH
 
+RUN /opt/conda/bin/conda install -c pytorch -c conda-forge \
+    pytorch==1.7 \
+    torchvision==0.8.0 \
+    cudatoolkit
+
+
+RUN conda install -c conda-forge \
+    jupyterlab \
+    boto3 \
+    dill \
+    pytest \
+    pandas \
+    && \
+    /opt/conda/bin/conda clean --all
+
 RUN /opt/conda/bin/pip install --no-cache-dir \
+    tensorflow-gpu==2.4.1 \
     tensorflow-datasets==3.2.0 \
-    jupyterlab==3.0.9 \
-    boto3==1.17.20 \
     Pillow==8.2.0 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
-    dill==0.3.1.1 \
-    pytest==6.2.2 \
     opencv-python==4.5.1.48 \
-    pandas==1.2.4 \
     ffmpeg-python==0.2.0
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
-    /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace
 
@@ -43,12 +52,7 @@ WORKDIR /workspace
 ARG armory_version
 FROM armory AS armory-pytorch-base
 
-RUN /opt/conda/bin/conda install pytorch==1.7 \
-    torchvision==0.8.0 \
-    cudatoolkit=11.0 -c pytorch -c conda-forge && \
-    /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-gpu==2.4.1 \
     git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
 
 ########## PyTorch 1 Dev #################
