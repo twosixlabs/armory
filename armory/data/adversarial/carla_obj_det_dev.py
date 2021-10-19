@@ -29,6 +29,7 @@ _CITATION = """
 _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev.tar.gz"
 # fmt: on
 
+
 class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_dev dataset."""
 
