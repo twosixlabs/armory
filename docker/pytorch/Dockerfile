@@ -9,7 +9,7 @@ RUN apt-get -y -qq update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y wget vim build-essential git curl libgl1-mesa-glx libglib2.0-0
 
 # Install Conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
     /opt/conda/bin/conda clean -tipsy && \
@@ -20,29 +20,27 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux
 
 ENV PATH=/opt/conda/bin:$PATH
 
-RUN /opt/conda/bin/conda install -c pytorch -c conda-forge \
-    pytorch==1.7 \
-    torchvision==0.8.0 \
-    cudatoolkit
-
-
-RUN conda install -c conda-forge \
-    jupyterlab \
-    boto3 \
+#RUN /opt/conda/bin/conda install -c pytorch -c conda-forge \
+RUN /opt/conda/bin/conda install \
+    'pytorch<=1.7' \
+    'torchvision<0.9' \
+    'tensorflow-gpu<2.5' \
+    'tensorflow-datasets==1.2' \
+    cudatoolkit \
     dill \
-    pytest \
+    Pillow \
+    boto3 \
     pandas \
-    && \
-    /opt/conda/bin/conda clean --all
+    jupyterlab \
+    pytest
+
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-gpu==2.4.1 \
-    tensorflow-datasets==3.2.0 \
-    Pillow==8.2.0 \
-    pydub==0.24.1 \
-    apache-beam==2.22.0 \
-    opencv-python==4.5.1.48 \
-    ffmpeg-python==0.2.0
+    Pillow \
+    pydub \
+    apache-beam \
+    opencv-python \
+    ffmpeg-python
 
 
 WORKDIR /workspace
