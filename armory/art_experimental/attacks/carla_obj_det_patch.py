@@ -390,11 +390,11 @@ class CARLADapricotPatch(RobustDPatch):
 
         return gradients
 
-    def generate(self, x, y_object=None, y_patch_metadata=None):
+    def generate(self, x, y=None, y_patch_metadata=None):
         """
         param x: Sample images. For single-modality, shape=(NHW3). For multimodality, shape=(NHW6)
         param y: [Optional] Sample labels. List of dictionaries,
-            ith dictionary contains bounding boxes, class labels, and class scoares
+            ith dictionary contains bounding boxes, class labels, and class scores
         param y_patch_metadata: Patch metadata. List of N dictionaries, ith dictionary contains patch metadata for x[i]
         """
         if x.shape[0] > 1:
@@ -412,7 +412,7 @@ class CARLADapricotPatch(RobustDPatch):
                 rgb_img = (x[i][:, :, :3] * 255.0).astype("float32")
                 depth_img = (x[i][:, :, 3:] * 255.0).astype("float32")
 
-            gs_coords = y_patch_metadata[i]["gs_coords"].numpy()
+            gs_coords = y_patch_metadata[i]["gs_coords"]
             patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
             patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
             patch_dim = max(patch_height, patch_width)
@@ -426,16 +426,14 @@ class CARLADapricotPatch(RobustDPatch):
             #             )
 
             # This may not work with Armory
-            self.patch_geometric_shape = str(
-                y_patch_metadata[i]["shape"].numpy(), "utf-8"
-            )
+            self.patch_geometric_shape = str(y_patch_metadata[i]["shape"])
 
             # this masked to embed patch into the background in the event of occlusion
-            self.binarized_patch_mask = y_patch_metadata[i]["mask"].numpy()
+            self.binarized_patch_mask = y_patch_metadata[i]["mask"]
 
             # get colorchecker information from ground truth and scene
-            self.cc_gt = y_patch_metadata[i]["cc_ground_truth"].numpy()
-            self.cc_scene = y_patch_metadata[i]["cc_scene"].numpy()
+            self.cc_gt = y_patch_metadata[i]["cc_ground_truth"]
+            self.cc_scene = y_patch_metadata[i]["cc_scene"]
 
             # self._patch needs to be re-initialized with the correct shape
             if self.estimator.clip_values is None:
@@ -450,20 +448,14 @@ class CARLADapricotPatch(RobustDPatch):
 
             self.gs_coords = [gs_coords]
 
-            if y_object is None:
+            if y is None:
                 patch = super().generate(
                     np.expand_dims(x[i], axis=0)
                 )  # untargeted attack
             else:
                 patch = super().generate(
-                    np.expand_dims(x[i], axis=0), y=[y_object[i]]
+                    np.expand_dims(x[i], axis=0), y=[y[i]]
                 )  # targeted attack
-
-            # TODO: remove!
-            import matplotlib.pyplot as plt
-
-            plt.figure()
-            plt.imshow(patch[:, :, :3])
 
             # apply patch using DAPRICOT transform to RGB channels only
             # insert_patch() uses BGR color ordering for input and output
