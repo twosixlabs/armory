@@ -539,6 +539,37 @@ def test_carla_obj_det_train():
             assert obj_key in label_dict
 
 
+def test_carla_obj_det_dev():
+    ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
+    ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
+    ds_multimodal = adversarial_datasets.carla_obj_det_dev(split="dev", modality="both")
+    for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
+        for x, y in ds:
+            if i == 0:
+                assert x.shape == (1, 600, 800, 6)
+            else:
+                assert x.shape == (1, 600, 800, 3)
+
+            y_object, y_patch_metadata = y
+            assert isinstance(y_object, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in y_object
+            assert isinstance(y_patch_metadata, dict)
+            for patch_key in [
+                "cc_ground_truth",
+                "cc_scene",
+                "gs_coords",
+                "mask",
+                "shape",
+            ]:
+                assert patch_key in y_patch_metadata
+
+    with pytest.raises(ValueError):
+        ds = adversarial_datasets.carla_obj_det_dev(
+            split="dev", modality="invalid_string"
+        )
+
+
 def test_ucf101_adversarial_112x112():
     if not os.path.isdir(
         os.path.join(
