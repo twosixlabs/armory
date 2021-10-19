@@ -25,6 +25,7 @@ _CITATION = """
 }
 """
 
+# fmt: off
 _URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev.tar.gz"
 
 
