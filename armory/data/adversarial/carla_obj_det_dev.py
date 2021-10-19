@@ -1,7 +1,12 @@
+"""carla_obj_det_dev dataset."""
+
 import collections
 import json
 import os
+import pandas
 from copy import deepcopy
+from PIL import Image
+import numpy as np
 
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
@@ -20,13 +25,11 @@ _CITATION = """
 }
 """
 
-# fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_train.tar.gz"
-# fmt: on
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_dev.tar.gz"
 
 
-class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
-    """DatasetBuilder for carla_obj_det_train dataset."""
+class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
+    """DatasetBuilder for carla_obj_det_dev dataset."""
 
     VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
@@ -73,6 +76,27 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
                     "is_crowd": tf.bool,
                 }
             ),
+            # these data only apply to the "green screen patch" objects, which both modalities share
+            "patch_metadata": tfds.features.FeaturesDict(
+                {
+                    "gs_coords": tfds.features.Sequence(
+                        tfds.features.Tensor(
+                            shape=[2], dtype=tf.int64
+                        ),  # green screen vertices in (x,y)
+                        length=4,  # always rectangle shape
+                    ),
+                    "cc_ground_truth": tfds.features.Tensor(
+                        shape=[24, 3], dtype=tf.float32
+                    ),  # colorchecker color ground truth
+                    "cc_scene": tfds.features.Tensor(
+                        shape=[24, 3], dtype=tf.float32
+                    ),  # colorchecker colors in a scene
+                    # binarized segmentation mask of patch.
+                    # mask[x,y] == 1 indicates patch pixel; 0 otherwise
+                    "mask": tfds.features.Tensor(shape=[600, 800, 3], dtype=tf.uint8),
+                    "shape": tfds.features.Text(),
+                }
+            ),
         }
 
         return tfds.core.DatasetInfo(
@@ -87,7 +111,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
         path = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name="train", gen_kwargs={"path": os.path.join(path, "train")},
+                name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
             )
         ]
 
@@ -96,6 +120,12 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
         # For each image, gets its annotations and yield relevant data
 
         yield_id = 0
+
+        patch_rgb = (
+            180,
+            130,
+            70,
+        )  # rgb values of patch object in semantic segmentation image
 
         annotation_path = os.path.join(path, "annotations/coco_annotations.json")
 
@@ -110,12 +140,20 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
 
         for image_rgb in images_rgb:
 
-            # verify RGB and depth are paired
+            # Pairing RGB and depth
             fname_rgb = image_rgb["file_name"]  # rgb image file
             fname, fext = fname_rgb.split(".")
             fname_depth = fname + "_Depth." + fext  # depth image file
             image_depth = deepcopy(image_rgb)
             image_depth["file_name"] = fname_depth
+
+            # get binarized patch mask
+            fname, fext = image_rgb["file_name"].split(".")
+            fname_ss = fname + "SS." + fext
+            img_ss = Image.open(os.path.join(path, fname_ss)).convert("RGB")
+            img_ss = np.array(img_ss)
+            mask = np.zeros_like(img_ss)
+            mask[np.all(img_ss == patch_rgb, axis=-1)] = 1
 
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
@@ -128,6 +166,44 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
                     ymax=(y + height) / image_rgb["height"],
                     xmax=(x + width) / image_rgb["width"],
                 )
+
+            # convert segmentation format of (x0,y0,x1,y1,...) to ( (x0, y0), (x1, y1), ... )
+            def build_coords(segmentation):
+                xs = segmentation[
+                    :-2:2
+                ]  # last two values are repeats of the first two values
+                ys = segmentation[1:-2:2]
+                coords = [[int(round(x)), int(round(y))] for (x, y) in zip(xs, ys)]
+                assert len(coords) == 4
+
+                return coords
+
+            # get colorchecker color box values. There are 24 color boxes, so output shape is (24, 3)
+            def get_cc(ground_truth=True):
+                if ground_truth:
+                    return (
+                        pandas.read_csv(
+                            os.path.join(
+                                path,
+                                "annotations",
+                                "xrite_passport_colors_sRGB-GMB-2005.csv",
+                            ),
+                            header=None,
+                        )
+                        .to_numpy()
+                        .astype("float32")
+                    )
+                else:
+                    return (
+                        pandas.read_csv(
+                            os.path.join(
+                                path, "annotations", fname_rgb.split(".")[-2] + ".csv",
+                            ),
+                            header=None,
+                        )
+                        .to_numpy()
+                        .astype("float32")
+                    )
 
             example = {
                 "image": [
@@ -147,6 +223,17 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
                     }
                     for anno in annotations
                 ],
+                "patch_metadata": [
+                    {
+                        "gs_coords": build_coords(*anno["segmentation"]),
+                        "cc_ground_truth": get_cc(),
+                        "cc_scene": get_cc(ground_truth=False),
+                        "mask": mask,
+                        "shape": "rect",
+                    }
+                    for anno in annotations
+                    if anno["category_id"] == 4  # is patch
+                ][0],
             }
 
             yield_id = yield_id + 1

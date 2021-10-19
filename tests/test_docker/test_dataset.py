@@ -526,8 +526,7 @@ def test_dapricot_test():
 
 def test_carla_obj_det_train():
     dataset = datasets.carla_obj_det_train(split="train")
-    assert dataset.size == 4
-
+    assert dataset.size == 4727
     # Testing batch_size > 1
     batch_size = 2
     ds_batch_size2 = datasets.carla_obj_det_train(split="train", batch_size=batch_size)
