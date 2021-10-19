@@ -71,10 +71,6 @@ def dapricot_canonical_preprocessing(batch):
     )
 
 
-def carla_obj_det_dev_canonical_preprocessing(batch):
-    return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)
-
-
 def imagenet_adversarial(
     split: str = "adversarial",
     epochs: int = 1,
@@ -567,11 +563,11 @@ def carla_obj_det_dev(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_obj_det_dev_canonical_preprocessing,
+    preprocessing_fn: Callable = None,
     label_preprocessing_fn=carla_obj_det_dev_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
-    shuffle_files: bool = True,
+    shuffle_files: bool = False,
     **kwargs,
 ):
     """
@@ -580,6 +576,32 @@ def carla_obj_det_dev(
     """
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)[
+            :, 0
+        ]
+
+    def depth_fn(batch):
+        return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)[
+            :, 1
+        ]
+
+    def both_fn(batch):
+        batch = datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+    if preprocessing_fn is None:
+        preprocessing_fn = func_dict[modality]
 
     return datasets._generator_from_tfds(
         "carla_obj_det_dev:1.0.1",
