@@ -57,13 +57,14 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     """
     dataset_module = import_module(dataset_config["module"])
     dataset_fn = getattr(dataset_module, dataset_config["name"])
-    dataset_kwargs = dataset_config["kwargs"]
+    dataset_kwargs = dataset_config.get("kwargs", None)
 
     batch_size = dataset_config["batch_size"]
     framework = dataset_config.get("framework", "numpy")
 
-    for kwarg in dataset_kwargs:
-        kwargs[kwarg] = dataset_kwargs[kwarg]
+    if dataset_kwargs is not None:
+        for kwarg in dataset_kwargs:
+            kwargs[kwarg] = dataset_kwargs[kwarg]
 
     for ds_kwarg in ["index", "class_ids"]:
         if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
