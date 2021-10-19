@@ -25,7 +25,7 @@ _CITATION = """
 }
 """
 
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_obj_det_dev.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev.tar.gz"
 
 
 class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
