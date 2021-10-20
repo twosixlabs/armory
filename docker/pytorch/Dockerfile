@@ -31,7 +31,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pytest==6.2.2 \
     opencv-python==4.5.1.48 \
     pandas==1.2.4 \
-    ffmpeg-python==0.2.0
+    ffmpeg-python==0.2.0 \
+    numba==0.53.1
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
