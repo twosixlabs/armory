@@ -42,7 +42,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     ffmpeg-python==0.2.0
 
 # shows the versions of all packages installed with conda and pip
-RUN pip insall pipdeptree && pipdeptree
+RUN pip install pipdeptree && pipdeptree
 
 # the numpy install was moved above in order to group conda installs together before pip installs
 # as recommended by https://www.anaconda.com/blog/using-pip-in-a-conda-environment
