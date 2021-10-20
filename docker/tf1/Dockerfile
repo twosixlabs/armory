@@ -41,6 +41,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     opencv-python==4.5.1.48 \
     ffmpeg-python==0.2.0
 
+# shows the versions of all packages installed with conda and pip
+RUN pip insall pipdeptree && pipdeptree
+
 # the numpy install was moved above in order to group conda installs together before pip installs
 # as recommended by https://www.anaconda.com/blog/using-pip-in-a-conda-environment
 # the numpy version is pinned until a TF issue is resolved https://github.com/tensorflow/models/issues/9706
