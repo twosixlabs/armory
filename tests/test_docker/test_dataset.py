@@ -531,7 +531,7 @@ def test_carla_obj_det_train():
     batch_size = 2
     for modality in ["rgb", "depth", "both"]:
         expected_shape = (
-            (batch_size, 600, 800, 7)
+            (batch_size, 600, 800, 6)
             if modality == "both"
             else (batch_size, 600, 800, 3)
         )
