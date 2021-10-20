@@ -6,8 +6,6 @@ Scenario Contributor: MITRE Corporation
 
 import logging
 
-import numpy as np
-
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
 
@@ -42,7 +40,7 @@ class CarlaObjectDetectionTask(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y, y_pred = self.x, self.y, self.y_pred
+        x, y = self.x, self.y
         y_object, y_patch_metadata = y
 
         # convert dict to List[dict] to comply with ART format
