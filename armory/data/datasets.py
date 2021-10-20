@@ -680,7 +680,8 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_obj_det_context = ImageContext(x_shape=(2, 600, 800, 3))
+carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -724,7 +725,12 @@ def ucf101_canonical_preprocessing(batch):
 
 
 def carla_obj_det_canonical_preprocessing(batch):
-    return canonical_image_preprocess(carla_obj_det_context, batch)
+    if batch.shape[-1] == 6:
+        context_fn = carla_obj_det_multimodal_context
+    else:
+        context_fn = carla_obj_det_single_modal_context
+
+    return canonical_image_preprocess(context_fn, batch)
 
 
 class AudioContext:
@@ -854,7 +860,7 @@ def carla_obj_det_train(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
     label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
@@ -874,19 +880,27 @@ def carla_obj_det_train(
         )
 
     def rgb_fn(batch):
-        return canonical_image_preprocess(carla_obj_det_context, batch)[:, 0]
+        return batch[:, 0]
 
     def depth_fn(batch):
-        return canonical_image_preprocess(carla_obj_det_context, batch)[:, 1]
+        return batch[:, 1]
 
     def both_fn(batch):
-        batch = canonical_image_preprocess(carla_obj_det_context, batch)
         return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
 
     func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
-    if preprocessing_fn is None:
-        preprocessing_fn = func_dict[modality]
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    mode_split_fn = func_dict[modality]
+
+    preprocessing_fn = preprocessing_chain(
+        mode_split_fn, preprocessing_fn, fit_preprocessing_fn
+    )
+
+    carla_context = (
+        carla_obj_det_multimodal_context
+        if modality == "both"
+        else carla_obj_det_single_modal_context
+    )
 
     return _generator_from_tfds(
         "carla_obj_det_train:1.0.1",
@@ -901,7 +915,7 @@ def carla_obj_det_train(
         variable_y=bool(batch_size > 1),
         variable_length=False,
         shuffle_files=shuffle_files,
-        context=carla_obj_det_context,
+        context=carla_context,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         **kwargs,
