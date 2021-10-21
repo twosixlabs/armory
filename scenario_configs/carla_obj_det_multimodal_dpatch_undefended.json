@@ -28,7 +28,11 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_AP_per_class"
+            "object_detection_AP_per_class",
+            "object_detection_disappearance_rate",
+            "object_detection_hallucination_rate",
+            "object_detection_misclassification_rate",
+            "object_detection_true_positive_rate"
         ]
     },
     "model": {
