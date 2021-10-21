@@ -252,7 +252,6 @@
                 "carla_od_hallucination_rate",
                 "carla_od_misclassification_rate",
                 "carla_od_true_positive_rate"
-
             ]
         },
         "sysconfig": {
