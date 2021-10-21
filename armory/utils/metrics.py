@@ -406,6 +406,29 @@ def _check_object_detection_input(y_list, y_pred_list):
             )
 
 
+def _check_video_tracking_input(y, y_pred):
+    """
+    Helper function to check that video tracking labels and predictions are in
+    the expected format.
+
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (N, 4) numpy array. Boxes are
+                  expected to be in [x1, y1, x2, y2] format.
+    y_pred (List[Dict, ...]): same as above
+    """
+    for input in [y, y_pred]:
+        assert isinstance(input, list)
+        for input_dict_i in input:
+            assert isinstance(input_dict_i, dict)
+            assert "boxes" in input_dict_i
+    assert len(y) == len(y_pred)
+    for i in range(len(y)):
+        y_box_array_shape = y[i]["boxes"].shape
+        assert y_box_array_shape[1] == 4
+        y_pred_box_array_shape = y_pred[i]["boxes"].shape
+        assert y_box_array_shape == y_pred_box_array_shape
+
+
 def _intersection_over_union(box_1, box_2):
     """
     Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
@@ -439,6 +462,36 @@ def _intersection_over_union(box_1, box_2):
     assert iou >= 0
     assert iou <= 1
     return iou
+
+
+def video_tracking_mean_iou(y, y_pred):
+    """
+    Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video.
+    This function expects to receive a single video's labels/prediction as input.
+
+    y (np.array): numpy array of shape (num_frames, 4)
+    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (N, 4) numpy array
+    """
+    _check_video_tracking_input(y, y_pred)
+    if len(y_pred) > 1:
+        raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
+    mean_ious = []
+    for i in range(len(y)):
+        y_pred_boxes = y_pred[i]["boxes"]
+        y_boxes = y[i]["boxes"]
+        num_frames = y_pred_boxes.shape[0]
+        # begin with 2nd box to skip y_init in metric calculation
+        mean_ious.append(
+            np.array(
+                [
+                    _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+                    for i in range(1, num_frames)
+                ]
+            ).mean()
+        )
+
+    return mean_ious
 
 
 def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
@@ -1057,6 +1110,7 @@ SUPPORTED_METRICS = {
     "l2": l2,
     "lp": lp,
     "linf": linf,
+    "video_tracking_mean_iou": video_tracking_mean_iou,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,

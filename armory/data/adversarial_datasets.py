@@ -19,6 +19,7 @@ from armory.data.adversarial import (  # noqa: F401
     dapricot_dev,
     dapricot_test,
     carla_obj_det_dev as codd,
+    carla_video_tracking_dev as cvtd,
 )
 
 
@@ -38,6 +39,9 @@ ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 carla_obj_det_dev_context = datasets.ImageContext(x_shape=(2, 600, 800, 3))
+carla_video_tracking_context = datasets.VideoContext(
+    x_shape=(None, 600, 800, 3), frame_rate=None
+)
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -73,6 +77,12 @@ def dapricot_canonical_preprocessing(batch):
 
 def carla_obj_det_dev_canonical_preprocessing(batch):
     return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)
+
+
+def carla_video_tracking_dev_canonical_preprocessing(batch):
+    return datasets.canonical_variable_image_preprocess(
+        carla_video_tracking_context, batch
+    )
 
 
 def imagenet_adversarial(
@@ -595,5 +605,50 @@ def carla_obj_det_dev(
         context=carla_obj_det_dev_context,
         as_supervised=False,
         supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        **kwargs,
+    )
+
+
+def carla_video_tracking_dev_label_preprocessing(x, y):
+    box_labels, patch_metadata = y
+    box_array = np.squeeze(box_labels, axis=0)
+    box_labels = [{"boxes": box_array}]
+    patch_metadata = {k: np.squeeze(v, axis=0) for k, v in patch_metadata.items()}
+    return (box_labels, patch_metadata)
+
+
+def carla_video_tracking_dev(
+    split: str = "dev",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
+    label_preprocessing_fn=carla_video_tracking_dev_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+    **kwargs,
+):
+    """
+    Dev set for CARLA video tracking dataset, The dev set also contains green screens
+    for adversarial patch insertion.
+    """
+    if batch_size != 1:
+        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    return datasets._generator_from_tfds(
+        "carla_video_tracking_dev:1.0.0",
+        split=split,
+        epochs=epochs,
+        batch_size=batch_size,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=carla_video_tracking_context,
+        as_supervised=False,
+        supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
         **kwargs,
     )

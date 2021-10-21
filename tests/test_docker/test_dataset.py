@@ -547,6 +547,25 @@ def test_carla_obj_det_train():
                 assert obj_key in label_dict
 
 
+def test_carla_video_tracking_dev():
+    dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
+    assert dataset.size == 20
+    for x, y in dataset:
+        assert x.shape[0] == 1
+        assert x.shape[2:] == (600, 800, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        y_object, y_patch_metadata = y
+        assert isinstance(y_object, list)
+        assert len(y_object) == 1
+        assert isinstance(y_object[0], dict)
+        assert "boxes" in y_object[0]
+        assert y_object[0]["boxes"].shape[1] == 4
+        assert isinstance(y_patch_metadata, dict)
+        for key in ["cc_ground_truth", "cc_scene", "gs_coords", "masks"]:
+            assert key in y_patch_metadata
+
+
 def test_ucf101_adversarial_112x112():
     if not os.path.isdir(
         os.path.join(
