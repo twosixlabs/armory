@@ -680,7 +680,8 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_obj_det_context = ImageContext(x_shape=(2, 600, 800, 3))
+carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -724,7 +725,12 @@ def ucf101_canonical_preprocessing(batch):
 
 
 def carla_obj_det_canonical_preprocessing(batch):
-    return canonical_image_preprocess(carla_obj_det_context, batch)
+    if batch.shape[-1] == 6:
+        context_fn = carla_obj_det_multimodal_context
+    else:
+        context_fn = carla_obj_det_single_modal_context
+
+    return canonical_image_preprocess(context_fn, batch)
 
 
 class AudioContext:
@@ -824,12 +830,38 @@ def mnist(
     )
 
 
+def carla_obj_det_label_preprocessing(x, y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
+    """
+
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict["boxes"].reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[1:3]  # shape is (2, 600, 800, 3)
+        converted_boxes *= [width, height, width, height]
+        label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict["labels"].reshape((-1,))
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
+
+
 def carla_obj_det_train(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -839,7 +871,36 @@ def carla_obj_det_train(
     """
     Training set for CARLA object detection dataset, containing RGB and depth channels.
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+
+    mode_split_fn = func_dict[modality]
+
+    preprocessing_fn = preprocessing_chain(
+        mode_split_fn, preprocessing_fn, fit_preprocessing_fn
+    )
+
+    carla_context = (
+        carla_obj_det_multimodal_context
+        if modality == "both"
+        else carla_obj_det_single_modal_context
+    )
 
     return _generator_from_tfds(
         "carla_obj_det_train:1.0.1",
@@ -848,12 +909,13 @@ def carla_obj_det_train(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
         cache_dataset=cache_dataset,
         framework=framework,
         variable_y=bool(batch_size > 1),
         variable_length=False,
         shuffle_files=shuffle_files,
-        context=carla_obj_det_context,
+        context=carla_context,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         **kwargs,

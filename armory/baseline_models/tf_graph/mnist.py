@@ -4,7 +4,7 @@ CNN model for 28x28x1 image classification
 import tarfile
 
 import tensorflow.compat.v1 as tf
-from art.classifiers import TFClassifier
+from art.estimators.classification import TFClassifier
 
 from armory import paths
 
