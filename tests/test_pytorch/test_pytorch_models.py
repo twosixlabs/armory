@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from armory.data import datasets
+from armory.utils import external_repo
 from armory.utils.config_loading import load_dataset
 from armory.data.utils import maybe_download_weights_from_s3
 from armory import paths
@@ -161,6 +162,11 @@ def test_pytorch_gtsrb():
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_carla_video_tracking():
+    runtime_paths = paths.runtime_paths()
+    external_repo_dir = runtime_paths.external_repo_dir
+    external_repo.download_and_extract_repos(
+        "amoudgl/pygoturn", external_repo_dir=external_repo_dir,
+    )
     tracker_module = import_module("armory.baseline_models.pytorch.carla_goturn")
     tracker_fn = getattr(tracker_module, "get_art_model")
     weights_path = maybe_download_weights_from_s3("pytorch_goturn.pth.tar")
