@@ -1440,6 +1440,15 @@ SUPPORTED_METRICS = {
     "word_error_rate": word_error_rate,
     "object_detection_AP_per_class": object_detection_AP_per_class,
     "object_detection_mAP": object_detection_mAP,
+    "object_detection_disappearance_rate": object_detection_disappearance_rate,
+    "object_detection_hallucination_rate": object_detection_hallucination_rate,
+    "object_detection_misclassification_rate": object_detection_misclassification_rate,
+    "object_detection_true_positive_rate": object_detection_true_positive_rate,
+    "carla_od_AP_per_class": carla_od_AP_per_class,
+    "carla_od_disappearance_rate": carla_od_disappearance_rate,
+    "carla_od_hallucination_rate": carla_od_hallucination_rate,
+    "carla_od_misclassification_rate": carla_od_misclassification_rate,
+    "carla_od_true_positive_rate": carla_od_true_positive_rate,
 }
 
 # Image-based metrics applied to video
