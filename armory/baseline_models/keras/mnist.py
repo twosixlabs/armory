@@ -6,7 +6,7 @@ from typing import Optional
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
-from art.classifiers import KerasClassifier
+from art.estimators.classification import KerasClassifier
 
 
 def make_mnist_model(**kwargs) -> tf.keras.Model:

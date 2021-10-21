@@ -21,7 +21,7 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_train.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_OD_train.tar.gz"
 # fmt: on
 
 
@@ -120,7 +120,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
 
-            # convert bbox to Pytorch format
+            # convert bbox to Tensorflow format
             def build_bbox(x, y, width, height):
                 return tfds.features.BBox(
                     ymin=y / image_rgb["height"],
