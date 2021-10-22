@@ -22,7 +22,6 @@ ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
-    jupyterlab==3.2.1 \
     boto3==1.17.20 \
     Pillow==8.2.0 \
     pydub==0.24.1 \
@@ -33,8 +32,10 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     ffmpeg-python==0.2.0
 
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
-    /opt/conda/bin/conda clean --all
+RUN /opt/conda/bin/conda install -c conda-forge \
+    ffmpeg==4.2.3 \
+    jupyterlab==3.2.1 \
+    && /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace
 

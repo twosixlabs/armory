@@ -25,13 +25,14 @@ RUN /opt/conda/bin/conda install \
     numpy==1.19.2 \
     h5py==2.10.0 \
     pandas==1.3.3 \
-    jupyterlab==3.2.1 \
     boto3==1.18.21 \
     dill=0.3.4 \
     pytest==6.2.4
 
 
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3
+RUN /opt/conda/bin/conda install -c conda-forge \
+    ffmpeg==4.2.3 \
+    jupyterlab==3.2.1
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
