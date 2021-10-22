@@ -48,7 +48,7 @@ class CarlaVideoTracking(Scenario):
             elif self.targeted:
                 y_target = self.label_targeter.generate(y_object)
             else:
-                y_target = None  # most attacks will call self.model.predict(x)
+                y_target = None
 
             x_adv = self.attack.generate(
                 x=x,
