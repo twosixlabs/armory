@@ -55,20 +55,17 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     If num_batches is None, this function will return a generator that iterates
     over the entire dataset.
     """
-    dataset_module = import_module(dataset_config["module"])
-    dataset_fn = getattr(dataset_module, dataset_config["name"])
-    dataset_kwargs = dataset_config.get("kwargs", None)
-
-    batch_size = dataset_config["batch_size"]
-    framework = dataset_config.get("framework", "numpy")
-
-    if dataset_kwargs is not None:
-        for kwarg in dataset_kwargs:
-            kwargs[kwarg] = dataset_kwargs[kwarg]
-
-    for ds_kwarg in ["index", "class_ids"]:
-        if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
-            kwargs[ds_kwarg] = dataset_config[ds_kwarg]
+    module = dataset_config.pop("module")
+    dataset_fn_name = dataset_config.pop("name")
+    batch_size = dataset_config.pop("batch_size", 1)
+    framework = dataset_config.pop("framework", "numpy")
+    eval_split = dataset_config.pop("eval_split") # Alread used by this function's caller. 
+                                                  # But we don't want to pass it on to dataset_fn.
+    dataset_module = import_module(module)
+    dataset_fn = getattr(dataset_module, dataset_fn_name)
+    
+    for remaining_kwarg in dataset_config:
+        kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
