@@ -227,7 +227,6 @@ def test_carla_od_rgb():
         y_pred = detector.predict(x)
         ys.extend(y)
         y_preds.extend(y_pred)
-    breakpoint()
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
