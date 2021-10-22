@@ -59,11 +59,13 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     dataset_fn_name = dataset_config.pop("name")
     batch_size = dataset_config.pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
-    eval_split = dataset_config.pop("eval_split") # Alread used by this function's caller. 
-                                                  # But we don't want to pass it on to dataset_fn.
+    eval_split = dataset_config.pop(
+        "eval_split"
+    )  # Already used by this function's caller.
+    # But we don't want to pass it on to dataset_fn.
     dataset_module = import_module(module)
     dataset_fn = getattr(dataset_module, dataset_fn_name)
-    
+
     for remaining_kwarg in dataset_config:
         kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
