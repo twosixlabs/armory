@@ -51,7 +51,6 @@ def load_fn(sub_config):
 def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     """
     Loads a dataset from configuration file
-
     If num_batches is None, this function will return a generator that iterates
     over the entire dataset.
     """
