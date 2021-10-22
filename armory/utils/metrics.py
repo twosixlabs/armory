@@ -701,14 +701,14 @@ def _object_detection_get_tpr_mr_dr_hr(
 ):
     """
     Helper function to compute true positive rate, disappearance rate, misclassification rate, and
-    hallucination rate as defined below:
+    hallucinations per image as defined below:
 
     true positive rate: the percent of ground-truth boxes which are predicted with iou > iou_threshold,
         score > score_threshold, and the correct label
     misclassification rate: the percent of ground-truth boxes which are predicted with iou > iou_threshold,
         score > score_threshold, and the incorrect label
     disappearance rate: 1 - true_positive_rate - misclassification rate
-    hallucination rate: the number of predicted boxes per image that have score > score_threshold and
+    hallucinations per image: the number of predicted boxes per image that have score > score_threshold and
         iou(predicted_box, ground_truth_box) < iou_threshold for each ground_truth_box
 
 
@@ -895,11 +895,11 @@ def object_detection_disappearance_rate(
     return disappearance_rate_per_img
 
 
-def object_detection_hallucination_rate(
+def object_detection_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
     """
-    Computes object detection hallucination rate: the number of predicted boxes per image
+    Computes object detection hallucinations per image: the number of predicted boxes per image
     that have score > score_threshold and an iou < iou_threshold with each ground-truth box.
 
     y_list (list): of length equal to the number of input examples. Each element in the list
@@ -915,17 +915,17 @@ def object_detection_hallucination_rate(
     """
 
     _check_object_detection_input(y_list, y_pred_list)
-    _, _, _, hallucination_rate_per_image = _object_detection_get_tpr_mr_dr_hr(
+    _, _, _, hallucinations_per_image = _object_detection_get_tpr_mr_dr_hr(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    return hallucination_rate_per_image
+    return hallucinations_per_image
 
 
-def carla_od_hallucination_rate(
+def carla_od_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
     """
@@ -933,7 +933,7 @@ def carla_od_hallucination_rate(
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    return object_detection_hallucination_rate(
+    return object_detection_hallucinations_per_image(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
@@ -1441,12 +1441,12 @@ SUPPORTED_METRICS = {
     "object_detection_AP_per_class": object_detection_AP_per_class,
     "object_detection_mAP": object_detection_mAP,
     "object_detection_disappearance_rate": object_detection_disappearance_rate,
-    "object_detection_hallucination_rate": object_detection_hallucination_rate,
+    "object_detection_hallucinations_per_image": object_detection_hallucinations_per_image,
     "object_detection_misclassification_rate": object_detection_misclassification_rate,
     "object_detection_true_positive_rate": object_detection_true_positive_rate,
     "carla_od_AP_per_class": carla_od_AP_per_class,
     "carla_od_disappearance_rate": carla_od_disappearance_rate,
-    "carla_od_hallucination_rate": carla_od_hallucination_rate,
+    "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
     "carla_od_misclassification_rate": carla_od_misclassification_rate,
     "carla_od_true_positive_rate": carla_od_true_positive_rate,
 }
@@ -1609,6 +1609,12 @@ class MetricsLogger:
             "carla_od_AP_per_class",
         ]
 
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
+
     def _generate_counters(self, names):
         if names is None:
             names = []
@@ -1688,6 +1694,12 @@ class MetricsLogger:
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
+            elif metric.name in self.quantity_metrics:
+                # Don't include % symbol
+                logger.info(
+                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
+                    f"{metric.mean():.2}"
+                )
             else:
                 logger.info(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
