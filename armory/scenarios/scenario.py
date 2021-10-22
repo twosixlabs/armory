@@ -45,7 +45,6 @@ class Scenario:
             if num_eval_batches:
                 raise ValueError("check_run and num_eval_batches are incompatible")
             # Modify dataset entries
-            config["dataset"]["check_run"] = True
             if config["model"]["fit"]:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
@@ -130,6 +129,7 @@ class Scenario:
             dataset_config,
             epochs=self.fit_kwargs["nb_epochs"],
             split=dataset_config.get("train_split", train_split_default),
+            check_run=self.check_run,
             shuffle_files=True,
         )
 
@@ -192,7 +192,8 @@ class Scenario:
             epochs=1,
             split=eval_split,
             num_batches=self.num_eval_batches,
-            shuffle_files=False,
+            check_run=self.check_run,
+            shuffle_files=False
         )
         self.i = -1
 
