@@ -24,7 +24,7 @@ pytest==6.2.2
 ffmpeg-python==0.2.0
 opencv-python==4.5.1.48
 tensorflow-datasets==3.2.0
-jupyterlab==3.0.17
+jupyterlab==3.2.1
 boto3==1.17.20
 pydub==0.24.1
 apache-beam==2.22.0
