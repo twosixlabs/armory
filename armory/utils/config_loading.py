@@ -31,6 +31,7 @@ from armory.art_experimental.attacks.sweep import SweepAttack
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
+import copy
 
 
 def load(sub_config):
@@ -54,20 +55,21 @@ def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
     If num_batches is None, this function will return a generator that iterates
     over the entire dataset.
     """
-    dataset_module = import_module(dataset_config["module"])
-    dataset_fn = getattr(dataset_module, dataset_config["name"])
-    dataset_kwargs = dataset_config.get("kwargs", None)
+    dataset_config = copy.deepcopy(
+        dataset_config
+    )  # Avoid modifying original dictionary
+    module = dataset_config.pop("module")
+    dataset_fn_name = dataset_config.pop("name")
+    batch_size = dataset_config.pop("batch_size", 1)
+    framework = dataset_config.pop("framework", "numpy")
+    dataset_module = import_module(module)
+    dataset_fn = getattr(dataset_module, dataset_fn_name)
 
-    batch_size = dataset_config["batch_size"]
-    framework = dataset_config.get("framework", "numpy")
-
-    if dataset_kwargs is not None:
-        for kwarg in dataset_kwargs:
-            kwargs[kwarg] = dataset_kwargs[kwarg]
-
-    for ds_kwarg in ["index", "class_ids"]:
-        if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
-            kwargs[ds_kwarg] = dataset_config[ds_kwarg]
+    # Add remaining dataset_config items to kwargs
+    for remaining_kwarg in dataset_config:
+        if remaining_kwarg == "eval_split":
+            continue
+        kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
