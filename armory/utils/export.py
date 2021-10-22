@@ -317,11 +317,23 @@ class SampleExporter:
                     )
                 )
 
+            try:
                 benign_process.stdin.write(benign_pixels.tobytes())
                 adversarial_process.stdin.write(adversarial_pixels.tobytes())
+            except BrokenPipeError:
+                # TODO: SIGPIPE is gnerated when the child process closes the pipe
+                # it either means
+                # 1. we are feeding bad input to the child which makes it close prematurely or
+                # 2. it has its own reasons for being done with the input.
+                # For example, the head command closes the pipe when it has copied
+                # the first n-lines of input generating a SIGPIPE
+                #
+                # but for now we'll just ignore it and see if it is case (1)
+                logger.warning("broken pipe error")
 
             benign_process.stdin.close()
-            benign_process.wait()
             adversarial_process.stdin.close()
+            benign_process.wait()
             adversarial_process.wait()
+
             self.saved_samples += 1
