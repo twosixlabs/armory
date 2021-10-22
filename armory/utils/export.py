@@ -90,6 +90,17 @@ class SampleExporter:
                 mode = "RGB"
                 x_i_mode = x_i
                 x_adv_i_mode = x_adv_i
+            elif x_i.shape[-1] == 6:
+                mode = "RGB"
+                x_i_mode = x_i[..., :3]
+                x_adv_i_mode = x_adv_i[..., :3]
+                x_i_depth = x_i[..., 3:]
+                depth_image = Image.fromarray(
+                    np.uint8(np.clip(x_i_depth, 0.0, 1.0) * 255.0), mode
+                )
+                depth_image.save(
+                    os.path.join(self.output_dir, f"{self.saved_samples}_depth.png")
+                )
             else:
                 raise ValueError(f"Expected 1 or 3 channels, found {x_i.shape[-1]}")
 
