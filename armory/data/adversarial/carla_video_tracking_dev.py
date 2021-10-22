@@ -4,7 +4,6 @@ import os
 import glob
 import numpy as np
 from PIL import Image
-import cv2
 import pandas
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
@@ -160,6 +159,9 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
                 of a vertex/corner. The points will be in the order of:
                     [Top/Left, Top/Right, Bottom/Right, Bottom/Left]
         """
+                # Importing cv2 inside function, since not all twosixarmory images contain cv2 package
+                import cv2
+
                 if mask.dtype is not np.uint8 or max.max() <= 1.0:
                     mask = (255 * mask).astype(np.uint8)
                 mask_area = np.sum(mask > 0)
