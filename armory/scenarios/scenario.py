@@ -193,7 +193,7 @@ class Scenario:
             split=eval_split,
             num_batches=self.num_eval_batches,
             check_run=self.check_run,
-            shuffle_files=False
+            shuffle_files=False,
         )
         self.i = -1
 
