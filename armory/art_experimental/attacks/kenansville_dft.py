@@ -69,7 +69,7 @@ class KenansvilleDFT:
         x_rfft[x_psd_index[:i]] = 0
         return np.fft.irfft(x_rfft, len(x)).astype(x.dtype)
 
-    def generate(self, x, y=None):
+    def generate(self, x):
         x_out = np.empty((len(x),), dtype=object)
         for i, x_example in enumerate(x):
             if self.partial_attack:
