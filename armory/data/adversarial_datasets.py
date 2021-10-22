@@ -38,7 +38,8 @@ resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
-carla_obj_det_dev_context = datasets.ImageContext(x_shape=(2, 600, 800, 3))
+carla_obj_det_dev_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
+carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
 carla_video_tracking_context = datasets.VideoContext(
     x_shape=(None, 600, 800, 3), frame_rate=None
 )
@@ -73,10 +74,6 @@ def dapricot_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
         dapricot_adversarial_context, batch_rotated_rgb
     )
-
-
-def carla_obj_det_dev_canonical_preprocessing(batch):
-    return datasets.canonical_image_preprocess(carla_obj_det_dev_context, batch)
 
 
 def carla_video_tracking_dev_canonical_preprocessing(batch):
@@ -569,7 +566,21 @@ def carla_obj_det_dev_label_preprocessing(x, y):
     y_object, y_patch_metadata = y
     y_object = {k: np.squeeze(v, axis=0) for k, v in y_object.items()}
     y_patch_metadata = {k: np.squeeze(v, axis=0) for k, v in y_patch_metadata.items()}
+
+    # convert TF format to PyTorch format of [x1, y1, x2, y2]
+    height, width = x.shape[2:4]
+    converted_boxes = y_object["boxes"][:, [1, 0, 3, 2]]
+    converted_boxes *= [width, height, width, height]
+    y_object["boxes"] = converted_boxes
     return (y_object, y_patch_metadata)
+
+
+def carla_obj_det_dev_canonical_preprocessing(batch):
+    if batch.shape[-1] == 6:
+        context = carla_obj_det_dev_multimodal_context
+    else:
+        context = carla_obj_det_dev_single_modal_context
+    return datasets.canonical_image_preprocess(context, batch)
 
 
 def carla_obj_det_dev(
@@ -581,7 +592,7 @@ def carla_obj_det_dev(
     label_preprocessing_fn=carla_obj_det_dev_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
-    shuffle_files: bool = True,
+    shuffle_files: bool = False,
     **kwargs,
 ):
     """
@@ -590,6 +601,33 @@ def carla_obj_det_dev(
     """
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+    mode_split_fn = func_dict[modality]
+    preprocessing_fn = datasets.preprocessing_chain(mode_split_fn, preprocessing_fn)
+
+    context = (
+        carla_obj_det_dev_multimodal_context
+        if modality == "both"
+        else carla_obj_det_dev_single_modal_context
+    )
 
     return datasets._generator_from_tfds(
         "carla_obj_det_dev:1.0.1",
@@ -602,7 +640,7 @@ def carla_obj_det_dev(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_obj_det_dev_context,
+        context=context,
         as_supervised=False,
         supervised_xy_keys=("image", ("objects", "patch_metadata")),
         **kwargs,

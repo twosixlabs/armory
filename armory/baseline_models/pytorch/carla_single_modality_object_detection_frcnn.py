@@ -19,19 +19,14 @@ def get_art_model(
 ) -> PyTorchFasterRCNN:
 
     if weights_path:
-        assert (
-            model_kwargs.get("num_classes", None) == 4
-        ), "model trained on CARLA data outputs predictions for 4 classes"
-        assert not model_kwargs.get(
-            "pretrained", False
-        ), "model trained on CARLA data should not use COCO-pretrained weights"
-    else:
-        assert (
-            model_kwargs.get("num_classes", None) == 91
-        ), "model without predefined weights should use COCO classes"
-        assert model_kwargs.get(
-            "pretrained", False
-        ), "model without predefined weights should use COCO-pretrained weights"
+        assert model_kwargs.get("num_classes", None) == 4, (
+            "model trained on CARLA data outputs predictions for 4 classes, "
+            "set model_kwargs['num_classes'] to 4."
+        )
+        assert not model_kwargs.get("pretrained", False), (
+            "model trained on CARLA data should not use COCO-pretrained weights, set "
+            "model_kwargs['pretrained'] to False."
+        )
 
     model = models.detection.fasterrcnn_resnet50_fpn(**model_kwargs)
     model.to(DEVICE)
