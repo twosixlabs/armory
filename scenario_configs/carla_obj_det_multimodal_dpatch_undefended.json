@@ -16,7 +16,9 @@
         "batch_size": 1,
         "eval_split": "dev",
         "framework": "numpy",
-        "modality": "both",
+        "kwargs": {
+            "modality": "both"
+        },
         "module": "armory.data.adversarial_datasets",
         "name": "carla_obj_det_dev"
     },
