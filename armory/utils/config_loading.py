@@ -67,7 +67,7 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
 
     # Add remaining dataset_config items to kwargs
     for remaining_kwarg in dataset_config:
-        if remaining_kwarg == "eval_split":
+        if remaining_kwarg in ["eval_split", "train_split"]:
             continue
         kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
