@@ -38,7 +38,7 @@ class CarlaVideoTracking(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y, y_pred = self.x, self.y, self.y_pred
+        x, y = self.x, self.y
         y_object, y_patch_metadata = y
         y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
 
@@ -47,10 +47,8 @@ class CarlaVideoTracking(Scenario):
                 y_target = y_object
             elif self.targeted:
                 y_target = self.label_targeter.generate(y_object)
-            elif self.skip_benign:
-                y_target = None  # most attacks will call self.model.predict(x)
             else:
-                y_target = y_pred
+                y_target = None
 
             x_adv = self.attack.generate(
                 x=x,

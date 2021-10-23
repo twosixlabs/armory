@@ -51,8 +51,6 @@ class CarlaObjectDetectionTask(Scenario):
                 y_target = [y_object]
             elif self.targeted:
                 y_target = self.label_targeter.generate(y_object)
-            elif self.skip_benign:
-                y_target = None  # most attacks will call self.model.predict(x)
             else:
                 y_target = None
 

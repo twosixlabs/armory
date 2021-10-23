@@ -286,10 +286,8 @@ class Scenario:
                     y_target = y
                 elif self.targeted:
                     y_target = self.label_targeter.generate(y)
-                elif self.skip_benign:
-                    y_target = None  # most attacks will call self.model.predict(x)
                 else:
-                    y_target = y_pred
+                    y_target = None
 
                 x_adv = self.attack.generate(x=x, y=y_target, **self.generate_kwargs)
 
