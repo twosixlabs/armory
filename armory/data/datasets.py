@@ -280,24 +280,18 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
     """
     logger.info(f"Filtering dataset to the following indices: {index}")
     dataset_size = int(dataset_size)
-    if len(index) == 0:
-        raise ValueError(
-            "The specified dataset 'index' param must have at least one value"
-        )
-    valid_indices = sorted([int(x) for x in set(index) if int(x) < dataset_size])
-    num_valid_indices = len(valid_indices)
-    if num_valid_indices == 0:
-        raise ValueError(
-            f"The specified dataset 'index' param values all exceed dataset size of {dataset_size}"
-        )
-    elif index[0] < 0:
+    sorted_index = sorted([int(x) for x in set(index)])
+    if len(sorted_index) == 0:
+        raise ValueError("The specified dataset 'index' param must be nonempty")
+    if sorted_index[0] < 0:
         raise ValueError("The specified dataset 'index' values must be nonnegative")
-    elif num_valid_indices != len(set(index)):
-        logger.warning(
-            f"All dataset 'index' values exceeding dataset size of {dataset_size} are being ignored"
+    if sorted_index[-1] >= dataset_size:
+        raise ValueError(
+            f"The specified dataset 'index' values exceed dataset size {dataset_size}"
         )
+    num_valid_indices = len(sorted_index)
 
-    index_tensor = tf.constant(index, dtype=tf.int64)
+    index_tensor = tf.constant(sorted_index, dtype=tf.int64)
 
     def enum_index(i, x):
         i = tf.expand_dims(i, 0)
