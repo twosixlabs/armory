@@ -38,7 +38,7 @@ class CarlaVideoTracking(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y, y_pred = self.x, self.y, self.y_pred
+        x, y = self.x, self.y
         y_object, y_patch_metadata = y
         y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
 
