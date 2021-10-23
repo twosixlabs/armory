@@ -599,6 +599,10 @@ def carla_obj_det_dev(
     Dev set for CARLA object detection dataset, containing RGB and depth channels. The dev
     set also contains green screens for adversarial patch insertion.
     """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_dev dataset"
+        )
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
@@ -671,6 +675,10 @@ def carla_video_tracking_dev(
     Dev set for CARLA video tracking dataset, The dev set also contains green screens
     for adversarial patch insertion.
     """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_video_tracking_dev dataset"
+        )
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
