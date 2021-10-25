@@ -166,8 +166,10 @@ class Scenario:
             attack = config_loading.load_attack(attack_config, self.model)
             if targeted != getattr(attack, "targeted", False):
                 logger.warning(
-                    f"targeted config {targeted} != attack field {getattr(attack, 'targeted', False)}"
+                    f"attack_config['kwargs']['targeted'] is either unspecified or set "
+                    f"to {targeted}, but attack.targeted is {getattr(attack, 'targeted', False)}."
                 )
+                targeted = getattr(attack, "targeted", False)
             self.attack = attack
             if targeted:
                 label_targeter = config_loading.load_label_targeter(
