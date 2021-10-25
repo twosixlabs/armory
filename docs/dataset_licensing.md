@@ -20,6 +20,8 @@ the Creative Commons 4.0 International ShareAlike license and are Copyright Two 
 | xView | [Creative Commons Attribution-Noncommercial-ShareAlike 4.0 International](https://arxiv.org/pdf/1802.07856) |
 | so2sat | [Creative Commons 4.0](https://mediatum.ub.tum.de/1454690) |
 | APRICOT | [Apache License Version 2.0](https://apricot.mitre.org/) |
+| DAPRICOT | Creative Commons 4.0 |
+| CARLA | MIT |
 
 ## Attributions
 
