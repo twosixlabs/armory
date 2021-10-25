@@ -151,6 +151,23 @@ setting `attack_config["type"]` to `"patch"` will enable an Armory wrapper class
 To run with a custom Docker image, replace the `["sys_config"]["docker_image"]` field
 to your custom docker image name `<your_image/name:your_tag>`.
 
+### Specifying kwargs for metric functions
+Some metric functions in [armory/utils/metrics.py](../armory/utils/metrics.py) receive kwargs, e.g.
+`iou_threshold` in the case of `object_detection_AP_per_class()`. To modify the kwarg, specify 
+`"task_kwargs"` in the `"metric"` portion of the config file as such:
+
+```json
+"metric":  {
+        "task": [
+            "object_detection_AP_per_class",
+            "object_detection_true_positive_rate"
+        ],
+        "task_kwargs": [{"iou_threshold": 0.3}, {}]
+}
+```
+Note that the length of `"task_kwargs"` should be equal to that of `"task"`, as `task_kwargs[i]` corresponds
+to `task[i]`.
+
 ### Additional configuration settings for poisoning scenario
 
 Some settings specific to the poisoning scenario are not applicable to the other 
