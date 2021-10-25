@@ -147,10 +147,6 @@ class Scenario:
         if attack_type == "preloaded" and self.skip_misclassified:
             raise ValueError("Cannot use skip_misclassified with preloaded dataset")
 
-        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
-        use_label = bool(attack_config.get("use_label"))
-        if targeted and use_label:
-            raise ValueError("Targeted attacks cannot have 'use_label'")
         if attack_type == "preloaded":
             preloaded_split = attack_config.get("kwargs", {}).get(
                 "split", "adversarial"
@@ -162,19 +158,19 @@ class Scenario:
                 num_batches=self.num_eval_batches,
                 shuffle_files=False,
             )
+            targeted = attack_config.get("targeted", False)
         else:
             attack = config_loading.load_attack(attack_config, self.model)
-            if targeted != getattr(attack, "targeted", False):
-                logger.warning(
-                    f"attack_config['kwargs']['targeted'] is either unspecified or set "
-                    f"to {targeted}, but attack.targeted is {getattr(attack, 'targeted', False)}."
-                )
-                targeted = getattr(attack, "targeted", False)
             self.attack = attack
+            targeted = getattr(attack, "targeted", False)
             if targeted:
                 label_targeter = config_loading.load_label_targeter(
                     attack_config["targeted_labels"]
                 )
+
+        use_label = bool(attack_config.get("use_label"))
+        if targeted and use_label:
+            raise ValueError("Targeted attacks cannot have 'use_label'")
         generate_kwargs = copy.deepcopy(attack_config.get("generate_kwargs", {}))
 
         self.attack_type = attack_type
