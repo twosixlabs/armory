@@ -7,7 +7,7 @@ import tensorflow as tf
 
 _DESCRIPTION = """
 Subset of NWPU-RESISC45 image dataset with 10 classes, each class containing 700 images,
-each image is 64 pixels by 64 pixels.
+each image is 256 pixels by 256 pixels.
 Train has 500 images, validation has 100 images, and test has 100 images.
 """
 
@@ -24,7 +24,7 @@ _CITATION = """
 }
 """
 
-_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc_poison_64x64.tar.gz"
+_DL_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc_poison_256x256.tar.gz"
 _LABELS = [
     "airplane",
     "airport",
@@ -42,9 +42,10 @@ _LABELS = [
 class Resisc10Poison(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for resisc10_poison dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.1.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
+        "1.1.0": "Update dataset from 64x64 images to 256x256 images",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -54,7 +55,7 @@ class Resisc10Poison(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=tfds.features.FeaturesDict(
                 {
-                    "image": tfds.features.Image(shape=(64, 64, 3)),
+                    "image": tfds.features.Image(shape=(256, 256, 3)),
                     "label": tfds.features.ClassLabel(names=_LABELS),
                 }
             ),
@@ -73,7 +74,7 @@ class Resisc10Poison(tfds.core.GeneratorBasedBuilder):
             splits.append(
                 tfds.core.SplitGenerator(
                     name=split,
-                    gen_kwargs={"path": os.path.join(path, "data_64x64", subdir)},
+                    gen_kwargs={"path": os.path.join(path, "data_original", subdir)},
                 )
             )
         return splits

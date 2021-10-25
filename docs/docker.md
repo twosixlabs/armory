@@ -80,7 +80,7 @@ When using a released version of armory, docker images will be pulled as needed 
 evaluations are ran. However if there are issues downloading the images (e.g. proxy) 
 they can be built from the release branch of the repo:
 ```
-git checkout -b r0.5
+git checkout -b r0.14.0
 bash docker/build.sh <tf1|tf2|pytorch|all>
 ```
 

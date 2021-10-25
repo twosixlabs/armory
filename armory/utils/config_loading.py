@@ -27,9 +27,11 @@ from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
 from armory.art_experimental.attacks import patch
+from armory.art_experimental.attacks.sweep import SweepAttack
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
+import copy
 
 
 def load(sub_config):
@@ -47,24 +49,32 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
-def load_dataset(dataset_config, *args, num_batches=None, **kwargs):
+def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwargs):
     """
     Loads a dataset from configuration file
-
     If num_batches is None, this function will return a generator that iterates
     over the entire dataset.
     """
-    dataset_module = import_module(dataset_config["module"])
-    dataset_fn = getattr(dataset_module, dataset_config["name"])
-    batch_size = dataset_config["batch_size"]
-    for ds_kwarg in ["index", "class_ids"]:
-        if ds_kwarg not in kwargs and ds_kwarg in dataset_config:
-            kwargs[ds_kwarg] = dataset_config[ds_kwarg]
-    framework = dataset_config.get("framework", "numpy")
+    dataset_config = copy.deepcopy(
+        dataset_config
+    )  # Avoid modifying original dictionary
+    module = dataset_config.pop("module")
+    dataset_fn_name = dataset_config.pop("name")
+    batch_size = dataset_config.pop("batch_size", 1)
+    framework = dataset_config.pop("framework", "numpy")
+    dataset_module = import_module(module)
+    dataset_fn = getattr(dataset_module, dataset_fn_name)
+
+    # Add remaining dataset_config items to kwargs
+    for remaining_kwarg in dataset_config:
+        if remaining_kwarg in ["eval_split", "train_split"]:
+            continue
+        kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
+
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
-    if dataset_config.get("check_run"):
+    if check_run:
         return EvalGenerator(dataset, num_eval_batches=1)
     if num_batches:
         return EvalGenerator(dataset, num_eval_batches=num_batches)
@@ -127,6 +137,7 @@ def load_model(model_config):
 
 
 def load_attack(attack_config, classifier):
+    SUPPORTED_TYPES = ["preloaded", "patch", "sweep", None]
     if attack_config.get("type") == "patch":
         original_kwargs = attack_config.pop("kwargs")
         kwargs = original_kwargs.copy()
@@ -136,10 +147,26 @@ def load_attack(attack_config, classifier):
         if targeted:
             logger.warning("Patch attack generation may ignore 'targeted' set to True")
         attack_config["kwargs"] = kwargs
+    else:
+        if attack_config.get("type") not in SUPPORTED_TYPES:
+            logger.warning(
+                f"attack_config['type'] of {attack_config.get('type')} was not "
+                f"recognized and isn't being used. Supported attack types "
+                f"are as follows: {SUPPORTED_TYPES}."
+            )
 
     attack_module = import_module(attack_config["module"])
     attack_fn = getattr(attack_module, attack_config["name"])
     attack = attack_fn(classifier, **attack_config["kwargs"])
+
+    if attack_config.get("type") == "sweep":
+        attack = SweepAttack(
+            classifier,
+            attack_fn,
+            attack_config.get("sweep_params"),
+            **attack_config.get("kwargs"),
+        )
+
     if not isinstance(attack, Attack):
         logger.warning(
             f"attack {attack} is not an instance of {Attack}."
@@ -151,7 +178,7 @@ def load_attack(attack_config, classifier):
     return attack
 
 
-def load_adversarial_dataset(config, num_batches=None, **kwargs):
+def load_adversarial_dataset(config, num_batches=None, check_run=False, **kwargs):
     if config.get("type") != "preloaded":
         raise ValueError(f"attack type must be 'preloaded', not {config.get('type')}")
     dataset_module = import_module(config["module"])
@@ -163,7 +190,7 @@ def load_adversarial_dataset(config, num_batches=None, **kwargs):
     dataset = dataset_fn(**dataset_kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
-    if config.get("check_run"):
+    if check_run:
         return EvalGenerator(dataset, num_eval_batches=1)
     if num_batches:
         return EvalGenerator(dataset, num_eval_batches=num_batches)

@@ -54,9 +54,11 @@ armory launch tf1 --gpus=1,4 --interactive
 armory exec pytorch --gpus=0 -- nvidia-smi
 ```
 
-## Check Runs and Number of Examples
+## Check Runs, Number of Example Batches, Indexing, and Class Filtering
 * `armory run <config> --check [...]`
 * `armory run <config> --num-eval-batches=X [...]`
+* `armory run <config> --index=a,b,c [...]`
+* `armory run <config> --classes=x,y,z [...]`
 Applies to `run` command.
 
 The `--check` flag will make every dataset return a single batch,
@@ -67,6 +69,17 @@ The `--num-eval-batches` argument will truncate the number of batches used in
 both benign and adversarial test sets.
 It is primarily designed for attack development iteration, where it is typically unhelpful
 to run more than 10-100 examples.
+
+The `--index` argument will only use samples from the comma-separated, non-negative list of numbers provided.
+Any duplicate numbers will be removed and the list will be sorted.
+If indices beyond the size of the dataset are provided, an error will result at runtime.
+Cannot be used with the `--num-eval-batches` argument.
+Currently, batch size must be set to 1.
+
+The `--classes` argument will only use samples from the comma-separated, non-negative list of numbers provided.
+Any duplicate numbers will be removed and the list will be sorted.
+If indices beyond the size of the dataset are provided, an error will result at runtime.
+Can be used with `--index` argument. In that case, indexing will be done after class filtering.
 
 NOTE: `--check` will take precedence over the `--num-eval-batches` argument.
 

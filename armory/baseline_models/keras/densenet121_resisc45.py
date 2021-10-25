@@ -5,7 +5,7 @@ Model contributed by: MITRE Corporation
 """
 from typing import Optional
 
-from art.classifiers import KerasClassifier
+from art.estimators.classification import KerasClassifier
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications.densenet import DenseNet121

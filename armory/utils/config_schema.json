@@ -210,7 +210,6 @@
         },
         "supported_metric_enum": {
             "enum": [
-                "abstains",
                 "dapricot_patch_target_success",
                 "dapricot_patch_targeted_AP_per_class",
                 "apricot_patch_targeted_AP_per_class",
@@ -238,10 +237,21 @@
                 "max_l2",
                 "mean_linf",
                 "max_linf",
+                "video_tracking_mean_iou",
                 "mean_image_circle_patch_diameter",
                 "max_image_circle_patch_diameter",
                 "word_error_rate",
-                "object_detection_AP_per_class"
+                "object_detection_AP_per_class",
+                "object_detection_mAP",
+                "object_detection_disappearance_rate",
+                "object_detection_hallucinations_per_image",
+                "object_detection_misclassification_rate",
+                "object_detection_true_positive_rate",
+                "carla_od_AP_per_class",
+                "carla_od_disappearance_rate",
+                "carla_od_hallucinations_per_image",
+                "carla_od_misclassification_rate",
+                "carla_od_true_positive_rate"
             ]
         },
         "sysconfig": {

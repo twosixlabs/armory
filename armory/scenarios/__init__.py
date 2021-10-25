@@ -2,4 +2,4 @@
 Evaluation scenarios for novel defenses
 """
 
-from armory.scenarios.common import END_SENTINEL
+from armory.scenarios.main import get

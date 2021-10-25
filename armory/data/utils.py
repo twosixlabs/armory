@@ -20,7 +20,7 @@ import requests
 from tqdm import tqdm
 
 from armory import paths
-from armory.data.progress_percentage import ProgressPercentage
+from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
 from armory.configuration import get_verify_ssl
 
 logger = logging.getLogger(__name__)
@@ -339,3 +339,29 @@ def _read_validate_scenario_config(config_filepath):
     if not isinstance(config["scenario"], dict):
         raise ValueError('config["scenario"] must be dictionary')
     return config
+
+
+def upload_file_to_s3(key: str, local_path: str, public: bool = False):
+    """
+    Uploads a file to S3 using credentials stored in ENV variables.
+    :param key: S3 File keyname
+    :param local_path: Local file path to download as
+    :param public: boolean to choose private or public bucket
+    """
+    client = boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("ARMORY_PRIVATE_S3_ID"),
+        aws_secret_access_key=os.getenv("ARMORY_PRIVATE_S3_KEY"),
+    )
+    logger.info("Uploading file to S3...")
+    if public:
+        client.upload_file(
+            local_path,
+            "armory-public-data",
+            key,
+            Callback=ProgressPercentageUpload(local_path),
+            ExtraArgs={"ACL": "public-read"},
+        )
+
+    else:
+        client.upload_file(local_path, "armory-private-data", key)

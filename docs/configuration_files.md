@@ -19,6 +19,7 @@ All configuration files are verified against the jsonschema definition at run ti
     use_label: [Bool] Default: False. Whether attack should use the true label when 
           attacking the model. Without this, it is not possible to drive the accuracy 
           down to 0% when the model has misclassifications.
+    type: [Optional String]: in <`preloaded`|`patch`|`sweep`>.
   }
 `dataset`: [Object]
   {
@@ -130,10 +131,42 @@ All configuration files are verified against the jsonschema definition at run ti
 }
 ```
 
+### attack config "type" field
+The supported values for the `"type"` field in attack configs are as follows: 
+<`preloaded`|`patch`|`sweep`>. If none of the cases below apply, the field 
+does not need to be included.
+
+1. `"preloaded"`: This value is specified when using an adversarial dataset (e.g. APRICOT) where no 
+perturbations should be applied to the inputs.
+
+2. `"patch"`: Some ART attacks such as `"AdversarialPatch"`  or `"RobustDPatch"` have a `generate()` method
+which returns a patch rather than the input with patch. When using such an attack in an Armory scenario,
+setting `attack_config["type"]` to `"patch"` will enable an Armory wrapper class with an updated 
+`generate()` which applies the patch to the input.
+
+2. `"sweep"`: To enable "sweep" attacks, see the instructions in [sweep_attacks.md](sweep_attacks.md).
+
 ### Use with Custom Docker Image
 
 To run with a custom Docker image, replace the `["sys_config"]["docker_image"]` field
 to your custom docker image name `<your_image/name:your_tag>`.
+
+### Specifying kwargs for metric functions
+Some metric functions in [armory/utils/metrics.py](../armory/utils/metrics.py) receive kwargs, e.g.
+`iou_threshold` in the case of `object_detection_AP_per_class()`. To modify the kwarg, specify 
+`"task_kwargs"` in the `"metric"` portion of the config file as such:
+
+```json
+"metric":  {
+        "task": [
+            "object_detection_AP_per_class",
+            "object_detection_true_positive_rate"
+        ],
+        "task_kwargs": [{"iou_threshold": 0.3}, {}]
+}
+```
+Note that the length of `"task_kwargs"` should be equal to that of `"task"`, as `task_kwargs[i]` corresponds
+to `task[i]`.
 
 ### Additional configuration settings for poisoning scenario
 

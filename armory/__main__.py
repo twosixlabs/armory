@@ -13,6 +13,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 
 import coloredlogs
@@ -36,6 +37,36 @@ class PortNumber(argparse.Action):
         if not 0 < values < 2 ** 16:
             raise argparse.ArgumentError(self, "port numbers must be in (0, 65535]")
         setattr(namespace, self.dest, values)
+
+
+def sorted_unique_nonnegative_numbers(values, warning_string):
+    if not isinstance(values, str):
+        raise ValueError(f"{values} invalid.\n Must be a string input.")
+
+    if not re.match(r"^\s*\d+(\s*,\s*\d+)*\s*$", values):
+        raise ValueError(
+            f"{values} invalid. Must be ','-separated nonnegative integers"
+        )
+
+    numbers = [int(x) for x in values.split(",")]
+    sorted_unique_numbers = sorted(set(numbers))
+    if numbers != sorted_unique_numbers:
+        print(
+            f"WARNING: {warning_string} sorted and made unique: {sorted_unique_numbers}"
+        )
+    return sorted_unique_numbers
+
+
+class Index(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        sorted_unique_numbers = sorted_unique_nonnegative_numbers(values, "--index")
+        setattr(namespace, self.dest, sorted_unique_numbers)
+
+
+class Classes(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        sorted_unique_numbers = sorted_unique_nonnegative_numbers(values, "--classes")
+        setattr(namespace, self.dest, sorted_unique_numbers)
 
 
 class Command(argparse.Action):
@@ -192,6 +223,26 @@ def _root(parser):
     )
 
 
+def _index(parser):
+    parser.add_argument(
+        "--index",
+        type=str,
+        help="Comma-separated nonnegative index for evaluation data point filtering"
+        "e.g.: `2` or ``1,3,7`",
+        action=Index,
+    )
+
+
+def _classes(parser):
+    parser.add_argument(
+        "--classes",
+        type=str,
+        help="Comma-separated nonnegative class ids for filtering"
+        "e.g.: `2` or ``1,3,7`",
+        action=Classes,
+    )
+
+
 # Config
 
 
@@ -242,6 +293,8 @@ def run(command_args, prog, description):
     _gpus(parser)
     _no_docker(parser)
     _root(parser)
+    _index(parser)
+    _classes(parser)
     parser.add_argument(
         "--output-dir", type=str, help="Override of default output directory prefix",
     )
@@ -313,6 +366,17 @@ def run(command_args, prog, description):
     logging.debug("unifying sysconfig %s and args %s", config["sysconfig"], args)
     (config, args) = arguments.merge_config_and_args(config, args)
     logging.debug("unified sysconfig %s and args %s", config["sysconfig"], args)
+
+    if args.num_eval_batches and args.index:
+        raise ValueError("Cannot have --num-eval-batches and --index")
+    if args.index and config["dataset"].get("index"):
+        logging.info("Overriding index in config with command line argument")
+    if args.index:
+        config["dataset"]["index"] = args.index
+    if args.classes and config["dataset"].get("class_ids"):
+        logging.info("Overriding class_ids in config with command line argument")
+    if args.classes:
+        config["dataset"]["class_ids"] = args.classes
 
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(
