@@ -1541,8 +1541,8 @@ class MetricList:
         else:
             raise ValueError("total_wer() only for WER metric")
 
-    def compute_non_elementwise_metric(self):
-        return self.function(self._input_labels, self._input_preds)
+    def compute_non_elementwise_metric(self, **kwargs):
+        return self.function(self._input_labels, self._input_preds, **kwargs)
 
 
 class MetricsLogger:
@@ -1561,6 +1561,7 @@ class MetricsLogger:
         skip_benign=None,
         skip_attack=None,
         targeted=False,
+        task_kwargs=None,
         **kwargs,
     ):
         """
@@ -1595,6 +1596,18 @@ class MetricsLogger:
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
+
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
         # the following metrics must be computed at once after all predictions have been obtained
         self.non_elementwise_metrics = [
             "object_detection_AP_per_class",
@@ -1648,12 +1661,15 @@ class MetricsLogger:
             if adversarial
             else self.tasks
         )
-        for metric in tasks:
+        for task_idx, metric in enumerate(tasks):
             if metric.name in self.non_elementwise_metrics:
                 metric.append_input_label(y)
                 metric.append_input_pred(y_pred)
             else:
-                metric.add_results(y, y_pred)
+                if self.task_kwargs:
+                    metric.add_results(y, y_pred, **self.task_kwargs[task_idx])
+                else:
+                    metric.add_results(y, y_pred)
 
     def update_perturbation(self, x, x_adv):
         for metric in self.perturbations:
@@ -1676,7 +1692,7 @@ class MetricsLogger:
             wrt = "ground truth"
             task_type = "benign"
 
-        for metric in metrics:
+        for task_idx, metric in enumerate(metrics):
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
                 logger.info(
@@ -1684,7 +1700,12 @@ class MetricsLogger:
                     f"{metric.total_wer():.2%}"
                 )
             elif metric.name in self.non_elementwise_metrics:
-                metric_result = metric.compute_non_elementwise_metric()
+                if self.task_kwargs:
+                    metric_result = metric.compute_non_elementwise_metric(
+                        **self.task_kwargs[task_idx]
+                    )
+                else:
+                    metric_result = metric.compute_non_elementwise_metric()
                 logger.info(
                     f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric_result}"
@@ -1717,9 +1738,14 @@ class MetricsLogger:
             (self.targeted_tasks, "targeted"),
             (self.perturbations, "perturbation"),
         ]:
-            for metric in metrics:
+            for task_idx, metric in enumerate(metrics):
                 if metric.name in self.non_elementwise_metrics:
-                    metric_result = metric.compute_non_elementwise_metric()
+                    if self.task_kwargs:
+                        metric_result = metric.compute_non_elementwise_metric(
+                            **self.task_kwargs[task_idx]
+                        )
+                    else:
+                        metric_result = metric.compute_non_elementwise_metric()
                     results[f"{prefix}_{metric.name}"] = metric_result
                     if metric.name in self.mean_ap_metrics:
                         results[f"{prefix}_mean_{metric.name}"] = np.fromiter(
