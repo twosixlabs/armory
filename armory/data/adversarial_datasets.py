@@ -41,7 +41,7 @@ dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 carla_obj_det_dev_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
 carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
 carla_video_tracking_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=None
+    x_shape=(None, 600, 800, 3), frame_rate=10
 )
 
 
