@@ -25,7 +25,6 @@ These tfrecord files will be pulled from S3 if not available on your
 | [Coco2017](https://arxiv.org/abs/1405.0312) | Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, validation, test | 
 | [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, test | 
 
-NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 <br>
 
 ### Multimodal Image Datasets
@@ -111,22 +110,3 @@ See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of Armor
 ### Dataset Licensing
 See [dataset_licensing.md](dataset_licensing.md) for details related to the licensing of datasets.
 
-
-<br>
-<style>
-    table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 50%;
-}
-table th:nth-of-type(3) {
-    width: 30%;
-}
-table th:nth-of-type(4) {
-    width: 10%;
-}
-table th:nth-of-type(5) {
-    width: 10%;
-}
-</style>

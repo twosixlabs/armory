@@ -18,8 +18,8 @@ green-screen, for which adversarial patches generated during an attack are inser
 
 
 Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
-These tfrecord files will be pulled from S3 if not available on your 
-`dataset_dir` directory.
+If the files are not already present locally in your `dataset_dir` directory, Armory will download them 
+from Two Six's public S3 dataset repository.
 
 
 
@@ -83,7 +83,6 @@ Example attack module for image classification scenario:
 | "resisc45_adversarial_224x224" | "adversarial_univperturbation" | REmote Sensing Image Scene Classification | Untargeted, universal perturbation |     test     | (nb, 224, 224, 3) |  uint8 |   (N,)  |  int64 | 5 images/class |
 | "apricot_dev_adversarial"      | ["adversarial", frcnn", "ssd", "retinanet"]                   | [Physical Adversarial Attacks on Object Detection](https://arxiv.org/abs/1912.08166)| Targeted, universal patch    | dev          | (nb, variable_height, variable_width, 3) | uint8 | n/a | dict | 138 images |
 | "apricot_test_adversarial"     | ["adversarial", frcnn", "ssd", "retinanet"]                   | [Physical Adversarial Attacks on Object Detection](https://arxiv.org/abs/1912.08166)| Targeted, universal patch    | test          | (nb, variable_height, variable_width, 3) | uint8 | n/a | dict | 873 images |
-|
 
 ##### APRICOT
 Note: the APRICOT dataset contains splits for ["frcnn", "ssd", "retinanet"] rather than adversarial keys. See example below.
