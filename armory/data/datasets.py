@@ -865,6 +865,10 @@ def carla_obj_det_train(
     """
     Training set for CARLA object detection dataset, containing RGB and depth channels.
     """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_train dataset"
+        )
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
         raise ValueError(
