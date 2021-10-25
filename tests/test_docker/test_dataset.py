@@ -402,7 +402,7 @@ def test_resisc10():
         )
 
         x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 64, 64, 3)
+        assert x.shape == (batch_size, 256, 256, 3)
         assert y.shape == (batch_size,)
 
 
@@ -522,6 +522,79 @@ def test_dapricot_test():
         for patch_metadata_key in ["cc_scene", "cc_ground_truth", "gs_coords", "shape"]:
             for k in range(3):
                 assert patch_metadata_key in y_patch_metadata[k]
+
+
+def test_carla_obj_det_train():
+    dataset = datasets.carla_obj_det_train(split="train")
+    assert dataset.size == 4727
+    # Testing batch_size > 1
+    batch_size = 2
+    for modality in ["rgb", "depth", "both"]:
+        expected_shape = (
+            (batch_size, 600, 800, 6)
+            if modality == "both"
+            else (batch_size, 600, 800, 3)
+        )
+        ds_batch_size2 = datasets.carla_obj_det_train(
+            split="train", batch_size=batch_size, modality=modality
+        )
+        x, y = ds_batch_size2.get_batch()
+        assert x.shape == expected_shape
+        assert len(y) == batch_size
+        for label_dict in y:
+            assert isinstance(label_dict, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in label_dict
+
+
+def test_carla_obj_det_dev():
+    ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
+    ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
+    ds_multimodal = adversarial_datasets.carla_obj_det_dev(split="dev", modality="both")
+    for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
+        for x, y in ds:
+            if i == 0:
+                assert x.shape == (1, 600, 800, 6)
+            else:
+                assert x.shape == (1, 600, 800, 3)
+
+            y_object, y_patch_metadata = y
+            assert isinstance(y_object, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in y_object
+            assert isinstance(y_patch_metadata, dict)
+            for patch_key in [
+                "cc_ground_truth",
+                "cc_scene",
+                "gs_coords",
+                "mask",
+                "shape",
+            ]:
+                assert patch_key in y_patch_metadata
+
+    with pytest.raises(ValueError):
+        ds = adversarial_datasets.carla_obj_det_dev(
+            split="dev", modality="invalid_string"
+        )
+
+
+def test_carla_video_tracking_dev():
+    dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
+    assert dataset.size == 20
+    for x, y in dataset:
+        assert x.shape[0] == 1
+        assert x.shape[2:] == (600, 800, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        y_object, y_patch_metadata = y
+        assert isinstance(y_object, list)
+        assert len(y_object) == 1
+        assert isinstance(y_object[0], dict)
+        assert "boxes" in y_object[0]
+        assert y_object[0]["boxes"].shape[1] == 4
+        assert isinstance(y_patch_metadata, dict)
+        for key in ["cc_ground_truth", "cc_scene", "gs_coords", "masks"]:
+            assert key in y_patch_metadata
 
 
 def test_ucf101_adversarial_112x112():

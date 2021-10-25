@@ -8,8 +8,12 @@ logger.addHandler(logging.NullHandler())
 
 
 # Semantic Version
-__version__ = "0.13.5"
+__version__ = "0.14.0"
 
+# typedef for a widely used JSON-like configuration specification
+from typing import Dict, Any
+
+Config = Dict[str, Any]
 
 # Submodule imports
 try:
@@ -21,7 +25,6 @@ try:
     from armory import docker
     from armory import eval
     from armory import paths
-    from armory import scenarios
     from armory import utils
     from armory import webapi
 except ImportError as e:
@@ -29,3 +32,5 @@ except ImportError as e:
     print(f"ERROR: cannot import '{module}' module")
     print("    Please run: $ pip install -r requirements.txt")
     raise
+
+END_SENTINEL = "Scenario has finished running cleanly"

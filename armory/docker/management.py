@@ -6,7 +6,8 @@ import logging
 
 import docker
 
-from armory import paths, scenarios
+import armory
+from armory import paths
 
 
 logger = logging.getLogger(__name__)
@@ -93,7 +94,7 @@ class ArmoryInstance(object):
                 if not inner_output:
                     continue
                 print(inner_output)
-                if inner_output == scenarios.END_SENTINEL:
+                if inner_output == armory.END_SENTINEL:
                     sentinel_found = True
 
         # if we're not running a config (eg armory exec or launch)

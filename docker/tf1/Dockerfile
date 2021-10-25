@@ -20,23 +20,33 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux
 
 ENV PATH=/opt/conda/bin:$PATH
 
+RUN /opt/conda/bin/conda install \
+    tensorflow-gpu==1.15.0 \
+    numpy==1.19.2 \
+    h5py==2.10.0 \
+    pandas==1.3.3 \
+    jupyterlab==3.1.7 \
+    boto3==1.18.21 \
+    dill=0.3.4 \
+    pytest==6.2.4
+
+
+RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3
+
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
-    jupyterlab==3.0.9 \
-    boto3==1.17.20 \
-    Pillow==8.1.1 \
+    Pillow==8.2.0 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
-    dill==0.3.1.1 \
-    pytest==6.2.2 \
     opencv-python==4.5.1.48 \
-    pandas==1.2.4 \
     ffmpeg-python==0.2.0
 
+# the numpy install was moved above in order to group conda installs together before pip installs
+# as recommended by https://www.anaconda.com/blog/using-pip-in-a-conda-environment
+# the numpy version is pinned until a TF issue is resolved https://github.com/tensorflow/models/issues/9706
+# pip packages that exist in conda have been moved to the conda install above to allow the
+# dependency resolution to cover as many packages as possible
 
-
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
-    /opt/conda/bin/conda clean --all
 
 WORKDIR /workspace
 
@@ -45,19 +55,15 @@ WORKDIR /workspace
 ARG armory_version
 FROM armory AS armory-tf1-base
 
-RUN /opt/conda/bin/conda install tensorflow-gpu==1.15.0 && \
-    /opt/conda/bin/conda clean --all
+
 WORKDIR /tmp
 RUN git clone https://github.com/tensorflow/models.git && cd models/research && git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182
 WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf1/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.2
+RUN /opt/conda/bin/pip install --no-cache-dir git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
 
-# Note: this is necessary until the following TF issue is resolved: https://github.com/tensorflow/models/issues/9706
-RUN /opt/conda/bin/pip install --no-cache-dir numpy==1.19.2
-RUN /opt/conda/bin/pip install "h5py<3.0.0"
 
 WORKDIR /workspace
 

@@ -1,0 +1,2 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_OD_train.tar.gz 3136721635 bb861d9d8b0a5d623f69b19be861a55a57ad6e8b9ca39dba947a8ae55ef1b95d
+
