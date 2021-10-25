@@ -22,11 +22,32 @@ These tfrecord files will be pulled from S3 if not available on your
 | [imagenette](https://github.com/fastai/imagenette) | Smaller subset of 10 classes from Imagenet | (N, variable_height, variable_width, 3) | uint8  | (N,) | int64 | train, validation |
 | [mnist](http://yann.lecun.com/exdb/mnist/) | MNIST hand written digit image dataset | (N, 28, 28, 1) | float32 | (N,) | int64 | train, test | 
 | [resisc45](https://arxiv.org/abs/1703.00121) | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | float32 | (N,) | int64 | train, validation, test | 
-| [Coco2017](https://arxiv.org/abs/1405.0312) | Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | dict | train, validation, test | 
-| [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | dict | train, test | 
+| [Coco2017](https://arxiv.org/abs/1405.0312) | Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, validation, test | 
+| [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, test | 
 
 NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 <br>
+
+### Multimodal Image Datasets
+| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | splits |
+|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:------: |
+| [so2sat](https://mediatum.ub.tum.de/1454690) | Co-registered synthetic aperture radar and multispectral optical images | (N, 32, 32, 14) | float32 | (N,) | int64 | train, validation |
+| [carla_obj_det_train](https://carla.org/) | CARLA Simulator Object Detection | (N, 600, 800, 3 or 6) | float32 | n/a | List[dict] | train | 
+<br>
+
+##### CARLA Object Detection
+The carla_obj_det_train dataset contains rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
+When using the dataset function imported from [armory.data.datasets](../armory/data/datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
+is specified in the dataset_config as such:
+```json
+ "dataset": {
+    "batch_size": 1,
+    "modality": "rgb",
+}
+```
+When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 600, 800, 6)` where `x[..., :3]` are 
+the rgb channels and `x[..., 3:]` the depth channels.
+
 
 ### Audio Datasets
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | sampling_rate | splits |
@@ -53,12 +74,6 @@ NOTE: The only difference between `ucf101` and `ucf101_clean` is that the latter
 
 <br>
 
-### Multimodal Datasets
-| Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | splits |
-|:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:------: |
-| [so2sat](https://mediatum.ub.tum.de/1454690) | Co-registered synthetic aperture radar and multispectral optical images | (N, 32, 32, 14) | float32 | (N,) | int64 | train, validation |
-
-<br>
 
 ### Preprocessing
 
@@ -77,7 +92,6 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
  dataset split follows the description of the original source of the 
  [dataset](https://github.com/Jakobovski/free-spoken-digit-dataset#usage). The following
  table describes datasets with custom splits in Armory.
-
 |        Dataset        |    Split   |               Description              |                   Split logic details                  |
 |:---------------------:|:----------:|:--------------------------------------:|:------------------------------------------------------:|
 |       resisc_45       |    train   |         First 5/7 of dataset           | See armory/data/resisc45/resisc45_dataset_partition.py |
@@ -86,35 +100,14 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 | librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
 |                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
 |                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
-| xView                 | train      | ~58k images                            |     see [xView arXiv](https://arxiv.org/abs/1802.07856)     |
-|                       | test       | ~18k images                            |                                                        |
 
 
 <br>
 
 
 ### Adversarial Datasets
-See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of adversarial examples created from some of the datasets listed here.
+See [adversarial_datasets.md](adversarial_datasets.md) for descriptions of Armory's adversarial datasets.
 
 ### Dataset Licensing
 See [dataset_licensing.md](dataset_licensing.md) for details related to the licensing of datasets.
 
-
-<br>
-<style>
-    table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 50%;
-}
-table th:nth-of-type(3) {
-    width: 30%;
-}
-table th:nth-of-type(4) {
-    width: 10%;
-}
-table th:nth-of-type(5) {
-    width: 10%;
-}
-</style>

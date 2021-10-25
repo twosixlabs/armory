@@ -437,6 +437,55 @@ Baseline defense performance is evaluated for a transfer attack.
   * Baseline MSCOCO Objects mAP: 7.83% (all test examples)
   * Baseline Targeted Patch mAP: 4.59% (all test examples)
 
+### CARLA object detection (Added October 2021)
+* **Description:**
+In this scenario, the system under evaluation is an object detector trained to identify vehicles, pedestrians, and traffic lights.
+* **Dataset:**
+The development dataset is the [CARLA Object Detection dataset](https://carla.org), which includes RGB and depth channels for 165 synthetic images of driving scenes, each of
+which contains a green-screen intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Single-modality: 
+    * Pretrained [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
+  * Multimodal:
+    * Pretrained multimodal [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_multimodality_object_detection_frcnn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of an object detector through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, digital and physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in each image. In the multimodal case, only RGB channels are to be perturbed.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mAP
+    * Disappearance rate
+    * Hallucinations per image
+    * Misclassification rate
+    * True positive rate
+
+
+### CARLA video tracking (Added October 2021)
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, digital and physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a constant patch across all frames in the video.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU 
+
+
 ## Academic Scenarios
 
 ### Cifar10 image classification

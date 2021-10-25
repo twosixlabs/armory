@@ -165,3 +165,49 @@ def test_mAP():
     ap_per_class = metrics.object_detection_AP_per_class([labels], [preds])
     assert ap_per_class[9] == 0
     assert ap_per_class[2] >= 0.99
+
+
+def test_object_detection_metrics():
+    y = [
+        {
+            "labels": np.array([2, 7, 6]),
+            "boxes": np.array(
+                [[0.1, 0.1, 0.7, 0.7], [0.3, 0.3, 0.4, 0.4], [0.05, 0.05, 0.15, 0.15]]
+            ),
+        }
+    ]
+
+    y_pred = [
+        {
+            "labels": np.array([2, 9, 3]),
+            "boxes": np.array(
+                [
+                    [0.12, 0.09, 0.68, 0.7],
+                    [0.5, 0.4, 0.9, 0.9],
+                    [0.05, 0.05, 0.15, 0.15],
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8]),
+        }
+    ]
+    score_threshold = 0.5
+    iou_threshold = 0.5
+    (
+        true_positive_rate_per_img,
+        misclassification_rate_per_img,
+        disappearance_rate_per_img,
+        hallucinations_per_img,
+    ) = metrics._object_detection_get_tpr_mr_dr_hr(
+        y, y_pred, score_threshold=score_threshold, iou_threshold=iou_threshold
+    )
+    for rate_per_img in [
+        true_positive_rate_per_img,
+        misclassification_rate_per_img,
+        disappearance_rate_per_img,
+    ]:
+        assert isinstance(rate_per_img, list)
+        assert len(rate_per_img) == 1
+        assert np.abs(rate_per_img[0] - 1.0 / 3.0) < 0.001  # all 3 rates should be 1/3
+    assert isinstance(hallucinations_per_img, list)
+    assert len(hallucinations_per_img) == 1
+    assert hallucinations_per_img[0] == 1

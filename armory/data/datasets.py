@@ -12,7 +12,7 @@ import logging
 import json
 import os
 import re
-from typing import Callable, Union
+from typing import Callable, Union, Tuple, List
 
 import numpy as np
 
@@ -41,6 +41,7 @@ from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
+from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -87,10 +88,8 @@ class ArmoryDataGenerator(DataGenerator):
 
         self.variable_length = variable_length
         self.variable_y = variable_y
-        if self.variable_length:
+        if self.variable_length or self.variable_y:
             self.current = 0
-        elif self.variable_y:
-            raise NotImplementedError("variable_y=True requires variable_length=True")
 
         self.context = context
 
@@ -106,8 +105,8 @@ class ArmoryDataGenerator(DataGenerator):
             x[i] = x_list[i][0]
         return x
 
-    def get_batch(self) -> (np.ndarray, np.ndarray):
-        if self.variable_length:
+    def get_batch(self) -> Tuple[np.ndarray, Union[np.ndarray, List]]:
+        if self.variable_length or self.variable_y:
             # build the batch
             x_list, y_list = [], []
             for i in range(self.batch_size):
@@ -120,16 +119,19 @@ class ArmoryDataGenerator(DataGenerator):
                     self.current = 0
                     break
 
-            if isinstance(x_list[0], dict):
-                # Translate a list of dicts into a dict of arrays
-                x = {}
-                for k in x_list[0].keys():
-                    x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
-            elif isinstance(x_list[0], tuple):
-                # Translate a list of tuples into a tuple of arrays
-                x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
+            if self.variable_length:
+                if isinstance(x_list[0], dict):
+                    # Translate a list of dicts into a dict of arrays
+                    x = {}
+                    for k in x_list[0].keys():
+                        x[k] = self.np_1D_object_array([x_i[k] for x_i in x_list])
+                elif isinstance(x_list[0], tuple):
+                    # Translate a list of tuples into a tuple of arrays
+                    x = tuple(self.np_1D_object_array(i) for i in zip(*x_list))
+                else:
+                    x = self.np_1D_object_array(x_list)
             else:
-                x = self.np_1D_object_array(x_list)
+                x = np.vstack(x_list)
 
             if self.variable_y:
                 if isinstance(y_list[0], dict):
@@ -278,24 +280,18 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
     """
     logger.info(f"Filtering dataset to the following indices: {index}")
     dataset_size = int(dataset_size)
-    if len(index) == 0:
-        raise ValueError(
-            "The specified dataset 'index' param must have at least one value"
-        )
-    valid_indices = sorted([int(x) for x in set(index) if int(x) < dataset_size])
-    num_valid_indices = len(valid_indices)
-    if num_valid_indices == 0:
-        raise ValueError(
-            f"The specified dataset 'index' param values all exceed dataset size of {dataset_size}"
-        )
-    elif index[0] < 0:
+    sorted_index = sorted([int(x) for x in set(index)])
+    if len(sorted_index) == 0:
+        raise ValueError("The specified dataset 'index' param must be nonempty")
+    if sorted_index[0] < 0:
         raise ValueError("The specified dataset 'index' values must be nonnegative")
-    elif num_valid_indices != len(set(index)):
-        logger.warning(
-            f"All dataset 'index' values exceeding dataset size of {dataset_size} are being ignored"
+    if sorted_index[-1] >= dataset_size:
+        raise ValueError(
+            f"The specified dataset 'index' values exceed dataset size {dataset_size}"
         )
+    num_valid_indices = len(sorted_index)
 
-    index_tensor = tf.constant(index, dtype=tf.int64)
+    index_tensor = tf.constant(sorted_index, dtype=tf.int64)
 
     def enum_index(i, x):
         i = tf.expand_dims(i, 0)
@@ -514,7 +510,7 @@ def _generator_from_tfds(
     ds = ds.repeat(epochs)
     if shuffle_files:
         ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
-    if variable_length and batch_size > 1:
+    if variable_length or variable_y and batch_size > 1:
         ds = ds.batch(1, drop_remainder=False)
     else:
         ds = ds.batch(batch_size, drop_remainder=False)
@@ -673,11 +669,13 @@ cifar10_context = ImageContext(x_shape=(32, 32, 3))
 cifar100_context = ImageContext(x_shape=(32, 32, 3))
 gtsrb_context = ImageContext(x_shape=(None, None, 3))
 resisc45_context = ImageContext(x_shape=(256, 256, 3))
-resisc10_context = ImageContext(x_shape=(64, 64, 3))
+resisc10_context = ImageContext(x_shape=(256, 256, 3))
 imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
+carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -718,6 +716,15 @@ def coco_canonical_preprocessing(batch):
 
 def ucf101_canonical_preprocessing(batch):
     return canonical_variable_image_preprocess(ucf101_context, batch)
+
+
+def carla_obj_det_canonical_preprocessing(batch):
+    if batch.shape[-1] == 6:
+        context_fn = carla_obj_det_multimodal_context
+    else:
+        context_fn = carla_obj_det_single_modal_context
+
+    return canonical_image_preprocess(context_fn, batch)
 
 
 class AudioContext:
@@ -813,6 +820,102 @@ def mnist(
         framework=framework,
         shuffle_files=shuffle_files,
         context=mnist_context,
+        **kwargs,
+    )
+
+
+def carla_obj_det_label_preprocessing(x, y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
+    """
+
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict["boxes"].reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[1:3]  # shape is (2, 600, 800, 3)
+        converted_boxes *= [width, height, width, height]
+        label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict["labels"].reshape((-1,))
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
+
+
+def carla_obj_det_train(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    Training set for CARLA object detection dataset, containing RGB and depth channels.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_train dataset"
+        )
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+
+    mode_split_fn = func_dict[modality]
+
+    preprocessing_fn = preprocessing_chain(
+        mode_split_fn, preprocessing_fn, fit_preprocessing_fn
+    )
+
+    carla_context = (
+        carla_obj_det_multimodal_context
+        if modality == "both"
+        else carla_obj_det_single_modal_context
+    )
+
+    return _generator_from_tfds(
+        "carla_obj_det_train:1.0.1",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        variable_y=bool(batch_size > 1),
+        variable_length=False,
+        shuffle_files=shuffle_files,
+        context=carla_context,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
         **kwargs,
     )
 
@@ -1224,8 +1327,8 @@ def resisc10(
 
     Contains 7000 images covering 10 scene classes with 700 images per class
 
-    Dimensions of X: (7000, 64, 64, 3) of uint8, ~ 0.8 GB in memory
-        Each sample is a 64 x 64 3-color (RGB) image
+    Dimensions of X: (7000, 256, 256, 3) of uint8,
+        Each sample is a 256 x 256 3-color (RGB) image
     Dimensions of y: (7000,) of int, with values in range(10)
 
     split - one of ("train", "validation", "test")
@@ -1233,7 +1336,7 @@ def resisc10(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "resisc10_poison:1.0.0",
+        "resisc10_poison:1.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

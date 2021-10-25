@@ -36,7 +36,7 @@ about what is available and what pretrained weights can be pulled from S3:
 [Baseline Model Docs](baseline_models.md)
 
 ## Running an evaluation
-Evaluations are typically run though the use of configuration files. See the 
+Evaluations are typically run through the use of configuration files. See the 
 [config file documentation](configuration_files.md) for information regarding the 
 schema and what the fields refer to.
 

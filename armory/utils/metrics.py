@@ -419,6 +419,29 @@ def _check_object_detection_input(y_list, y_pred_list):
             )
 
 
+def _check_video_tracking_input(y, y_pred):
+    """
+    Helper function to check that video tracking labels and predictions are in
+    the expected format.
+
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (N, 4) numpy array. Boxes are
+                  expected to be in [x1, y1, x2, y2] format.
+    y_pred (List[Dict, ...]): same as above
+    """
+    for input in [y, y_pred]:
+        assert isinstance(input, list)
+        for input_dict_i in input:
+            assert isinstance(input_dict_i, dict)
+            assert "boxes" in input_dict_i
+    assert len(y) == len(y_pred)
+    for i in range(len(y)):
+        y_box_array_shape = y[i]["boxes"].shape
+        assert y_box_array_shape[1] == 4
+        y_pred_box_array_shape = y_pred[i]["boxes"].shape
+        assert y_box_array_shape == y_pred_box_array_shape
+
+
 def _intersection_over_union(box_1, box_2):
     """
     Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
@@ -454,12 +477,43 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
-def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
+def video_tracking_mean_iou(y, y_pred):
     """
-    Mean average precision for object detection. This function returns a dictionary
-    mapping each class to the average precision (AP) for the class. The mAP can be computed
-    by taking the mean of the AP's across all classes. This metric is computed over all
-    evaluation samples, rather than on a per-sample basis.
+    Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video.
+    This function expects to receive a single video's labels/prediction as input.
+
+    y (np.array): numpy array of shape (num_frames, 4)
+    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (N, 4) numpy array
+    """
+    _check_video_tracking_input(y, y_pred)
+    if len(y_pred) > 1:
+        raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
+    mean_ious = []
+    for i in range(len(y)):
+        y_pred_boxes = y_pred[i]["boxes"]
+        y_boxes = y[i]["boxes"]
+        num_frames = y_pred_boxes.shape[0]
+        # begin with 2nd box to skip y_init in metric calculation
+        mean_ious.append(
+            np.array(
+                [
+                    _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+                    for i in range(1, num_frames)
+                ]
+            ).mean()
+        )
+
+    return mean_ious
+
+
+def object_detection_AP_per_class(
+    y_list, y_pred_list, iou_threshold=0.5, class_list=None
+):
+    """
+    Mean average precision for object detection. The mAP can be computed by taking the mean
+    of the AP's across all classes. This metric is computed over all evaluation samples,
+    rather than on a per-sample basis.
 
     y_list (list): of length equal to the number of input examples. Each element in the list
         should be a dict with "labels" and "boxes" keys mapping to a numpy array of
@@ -467,6 +521,10 @@ def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     y_pred_list (list): of length equal to the number of input examples. Each element in the
         list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
         array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a dictionary mapping each class to the average precision (AP) for the class.
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -503,6 +561,10 @@ def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     set_of_class_ids = set([i["label"] for i in gt_boxes_list]) | set(
         [i["label"] for i in pred_boxes_list]
     )
+
+    if class_list:
+        # Filter out classes not in class_list
+        set_of_class_ids = set(i for i in set_of_class_ids if i in class_list)
 
     # Remove the class ID that corresponds to a physical adversarial patch in APRICOT
     # dataset, if present
@@ -624,6 +686,335 @@ def object_detection_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
         )
 
     return average_precisions_by_class
+
+
+def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None):
+    """
+    Mean average precision for object detection.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a scalar value
+    """
+    ap_per_class = object_detection_AP_per_class(
+        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+    )
+    return np.fromiter(ap_per_class.values(), dtype=float).mean()
+
+
+def _object_detection_get_tpr_mr_dr_hr(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+):
+    """
+    Helper function to compute true positive rate, disappearance rate, misclassification rate, and
+    hallucinations per image as defined below:
+
+    true positive rate: the percent of ground-truth boxes which are predicted with iou > iou_threshold,
+        score > score_threshold, and the correct label
+    misclassification rate: the percent of ground-truth boxes which are predicted with iou > iou_threshold,
+        score > score_threshold, and the incorrect label
+    disappearance rate: 1 - true_positive_rate - misclassification rate
+    hallucinations per image: the number of predicted boxes per image that have score > score_threshold and
+        iou(predicted_box, ground_truth_box) < iou_threshold for each ground_truth_box
+
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions with labels and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a tuple of length 4 (TPR, MR, DR, HR) where each element is a list of length equal
+    to the number of images.
+    """
+
+    true_positive_rate_per_img = []
+    misclassification_rate_per_img = []
+    disappearance_rate_per_img = []
+    hallucinations_per_img = []
+    for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+        if class_list:
+            # Filter out ground-truth classes with labels not in class_list
+            indices_to_keep = np.where(np.isin(y["labels"], class_list))
+            gt_boxes = y["boxes"][indices_to_keep]
+            gt_labels = y["labels"][indices_to_keep]
+        else:
+            gt_boxes = y["boxes"]
+            gt_labels = y["labels"]
+
+        # initialize count of hallucinations
+        num_hallucinations = 0
+        num_gt_boxes = len(gt_boxes)
+
+        # Initialize arrays that will indicate whether each respective ground-truth
+        # box is a true positive or misclassified
+        true_positive_array = np.zeros((num_gt_boxes,))
+        misclassification_array = np.zeros((num_gt_boxes,))
+
+        # Only consider the model's confident predictions
+        conf_pred_indices = np.where(y_pred["scores"] > score_threshold)[0]
+        if class_list:
+            # Filter out predictions from classes not in class_list kwarg
+            conf_pred_indices = conf_pred_indices[
+                np.isin(y_pred["labels"][conf_pred_indices], class_list)
+            ]
+
+        # For each confident prediction
+        for y_pred_idx in conf_pred_indices:
+            y_pred_box = y_pred["boxes"][y_pred_idx]
+
+            # Compute the iou between the predicted box and the ground-truth boxes
+            ious = np.array([_intersection_over_union(y_pred_box, a) for a in gt_boxes])
+
+            # Determine which ground-truth boxes, if any, the predicted box overlaps with
+            overlap_indices = np.where(ious > iou_threshold)[0]
+
+            # If the predicted box doesn't overlap with any ground-truth boxes, increment
+            # the hallucination counter and move on to the next predicted box
+            if len(overlap_indices) == 0:
+                num_hallucinations += 1
+                continue
+
+            # For each ground-truth box that the prediction overlaps with
+            for y_idx in overlap_indices:
+                # If the predicted label is correct, mark that the ground-truth
+                # box has a true positive prediction
+                if gt_labels[y_idx] == y_pred["labels"][y_pred_idx]:
+                    true_positive_array[y_idx] = 1
+                else:
+                    # Otherwise mark that the ground-truth box has a misclassification
+                    misclassification_array[y_idx] = 1
+
+        # Convert these arrays to binary to avoid double-counting (i.e. when multiple
+        # predicted boxes overlap with a single ground-truth box)
+        true_positive_rate = (true_positive_array > 0).mean()
+        misclassification_rate = (misclassification_array > 0).mean()
+
+        # Any ground-truth box that had no overlapping predicted box is considered a
+        # disappearance
+        disappearance_rate = 1 - true_positive_rate - misclassification_rate
+
+        true_positive_rate_per_img.append(true_positive_rate)
+        misclassification_rate_per_img.append(misclassification_rate)
+        disappearance_rate_per_img.append(disappearance_rate)
+        hallucinations_per_img.append(num_hallucinations)
+
+    return (
+        true_positive_rate_per_img,
+        misclassification_rate_per_img,
+        disappearance_rate_per_img,
+        hallucinations_per_img,
+    )
+
+
+def object_detection_true_positive_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+):
+    """
+    Computes object detection true positive rate: the percent of ground-truth boxes which
+    are predicted with iou > iou_threshold, score > score_threshold, and the correct label.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a list of length equal to the number of images.
+    """
+
+    _check_object_detection_input(y_list, y_pred_list)
+    true_positive_rate_per_img, _, _, _ = _object_detection_get_tpr_mr_dr_hr(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+    return true_positive_rate_per_img
+
+
+def object_detection_misclassification_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+):
+    """
+    Computes object detection misclassification rate: the percent of ground-truth boxes which
+    are predicted with iou > iou_threshold, score > score_threshold, and an incorrect label.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a list of length equal to the number of images
+    """
+
+    _check_object_detection_input(y_list, y_pred_list)
+    _, misclassification_rate_per_image, _, _ = _object_detection_get_tpr_mr_dr_hr(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+    return misclassification_rate_per_image
+
+
+def object_detection_disappearance_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+):
+    """
+    Computes object detection disappearance rate: the percent of ground-truth boxes for which
+    not one predicted box with score > score_threshold has an iou > iou_threshold with the
+    ground-truth box.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a list of length equal to the number of images
+    """
+
+    _check_object_detection_input(y_list, y_pred_list)
+    _, _, disappearance_rate_per_img, _ = _object_detection_get_tpr_mr_dr_hr(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+    return disappearance_rate_per_img
+
+
+def object_detection_hallucinations_per_image(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+):
+    """
+    Computes object detection hallucinations per image: the number of predicted boxes per image
+    that have score > score_threshold and an iou < iou_threshold with each ground-truth box.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a list of length equal to the number of images
+    """
+
+    _check_object_detection_input(y_list, y_pred_list)
+    _, _, _, hallucinations_per_image = _object_detection_get_tpr_mr_dr_hr(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+    return hallucinations_per_image
+
+
+def carla_od_hallucinations_per_image(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+):
+    """
+    CARLA object detection datasets contains class labels 1-4, with class 4 representing
+    the green screen/patch itself, which should not be treated as an object class.
+    """
+    class_list = [1, 2, 3]
+    return object_detection_hallucinations_per_image(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+
+
+def carla_od_disappearance_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+):
+    """
+    CARLA object detection datasets contains class labels 1-4, with class 4 representing
+    the green screen/patch itself, which should not be treated as an object class.
+    """
+    class_list = [1, 2, 3]
+    return object_detection_disappearance_rate(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+
+
+def carla_od_true_positive_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+):
+    """
+    CARLA object detection datasets contains class labels 1-4, with class 4 representing
+    the green screen/patch itself, which should not be treated as an object class.
+    """
+    class_list = [1, 2, 3]
+    return object_detection_true_positive_rate(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+
+
+def carla_od_misclassification_rate(
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+):
+    """
+    CARLA object detection datasets contains class labels 1-4, with class 4 representing
+    the green screen/patch itself, which should not be treated as an object class.
+    """
+    class_list = [1, 2, 3]
+    return object_detection_misclassification_rate(
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        class_list=class_list,
+    )
+
+
+def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
+    class_list = [1, 2, 3]
+    """
+    CARLA object detection datasets contains class labels 1-4, with class 4 representing
+    the green screen/patch itself, which should not be treated as an object class.
+    """
+    return object_detection_AP_per_class(
+        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+    )
 
 
 def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
@@ -1039,7 +1430,6 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 SUPPORTED_METRICS = {
-    "abstains": abstains,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1052,6 +1442,7 @@ SUPPORTED_METRICS = {
     "l2": l2,
     "lp": lp,
     "linf": linf,
+    "video_tracking_mean_iou": video_tracking_mean_iou,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
@@ -1061,6 +1452,16 @@ SUPPORTED_METRICS = {
     "mars_mean_patch": mars_mean_patch,
     "word_error_rate": word_error_rate,
     "object_detection_AP_per_class": object_detection_AP_per_class,
+    "object_detection_mAP": object_detection_mAP,
+    "object_detection_disappearance_rate": object_detection_disappearance_rate,
+    "object_detection_hallucinations_per_image": object_detection_hallucinations_per_image,
+    "object_detection_misclassification_rate": object_detection_misclassification_rate,
+    "object_detection_true_positive_rate": object_detection_true_positive_rate,
+    "carla_od_AP_per_class": carla_od_AP_per_class,
+    "carla_od_disappearance_rate": carla_od_disappearance_rate,
+    "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
+    "carla_od_misclassification_rate": carla_od_misclassification_rate,
+    "carla_od_true_positive_rate": carla_od_true_positive_rate,
 }
 
 # Image-based metrics applied to video
@@ -1155,8 +1556,8 @@ class MetricList:
         else:
             raise ValueError("total_wer() only for WER metric")
 
-    def compute_non_elementwise_metric(self):
-        return self.function(self._input_labels, self._input_preds)
+    def compute_non_elementwise_metric(self, **kwargs):
+        return self.function(self._input_labels, self._input_preds, **kwargs)
 
 
 class MetricsLogger:
@@ -1175,6 +1576,7 @@ class MetricsLogger:
         skip_benign=None,
         skip_attack=None,
         targeted=False,
+        task_kwargs=None,
         **kwargs,
     ):
         """
@@ -1221,6 +1623,37 @@ class MetricsLogger:
             "dapricot_patch_targeted_AP_per_class",
         ]
 
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
+
     def _generate_counters(self, names):
         if names is None:
             names = []
@@ -1254,12 +1687,15 @@ class MetricsLogger:
             if adversarial
             else self.tasks
         )
-        for metric in tasks:
+        for task_idx, metric in enumerate(tasks):
             if metric.name in self.non_elementwise_metrics:
                 metric.append_input_label(y)
                 metric.append_input_pred(y_pred)
             else:
-                metric.add_results(y, y_pred)
+                if self.task_kwargs:
+                    metric.add_results(y, y_pred, **self.task_kwargs[task_idx])
+                else:
+                    metric.add_results(y, y_pred)
 
     def update_perturbation(self, x, x_adv):
         for metric in self.perturbations:
@@ -1282,7 +1718,7 @@ class MetricsLogger:
             wrt = "ground truth"
             task_type = "benign"
 
-        for metric in metrics:
+        for task_idx, metric in enumerate(metrics):
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
                 logger.info(
@@ -1290,10 +1726,26 @@ class MetricsLogger:
                     f"{metric.total_wer():.2%}"
                 )
             elif metric.name in self.non_elementwise_metrics:
-                metric_result = metric.compute_non_elementwise_metric()
+                if self.task_kwargs:
+                    metric_result = metric.compute_non_elementwise_metric(
+                        **self.task_kwargs[task_idx]
+                    )
+                else:
+                    metric_result = metric.compute_non_elementwise_metric()
                 logger.info(
                     f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric_result}"
+                )
+                if metric.name in self.mean_ap_metrics:
+                    logger.info(
+                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
+                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
+                    )
+            elif metric.name in self.quantity_metrics:
+                # Don't include % symbol
+                logger.info(
+                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
+                    f"{metric.mean():.2}"
                 )
                 if metric.name in self.mean_ap_metrics:
                     logger.info(
@@ -1317,9 +1769,14 @@ class MetricsLogger:
             (self.targeted_tasks, "targeted"),
             (self.perturbations, "perturbation"),
         ]:
-            for metric in metrics:
+            for task_idx, metric in enumerate(metrics):
                 if metric.name in self.non_elementwise_metrics:
-                    metric_result = metric.compute_non_elementwise_metric()
+                    if self.task_kwargs:
+                        metric_result = metric.compute_non_elementwise_metric(
+                            **self.task_kwargs[task_idx]
+                        )
+                    else:
+                        metric_result = metric.compute_non_elementwise_metric()
                     results[f"{prefix}_{metric.name}"] = metric_result
                     if metric.name in self.mean_ap_metrics:
                         results[f"{prefix}_mean_{metric.name}"] = np.fromiter(

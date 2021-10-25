@@ -24,7 +24,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
     jupyterlab==3.0.9 \
     boto3==1.17.20 \
-    Pillow==8.1.1 \
+    Pillow==8.2.0 \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     dill==0.3.1.1 \
@@ -53,7 +53,7 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.6.2
+RUN /opt/conda/bin/pip install --no-cache-dir git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
 
 WORKDIR /workspace
 
