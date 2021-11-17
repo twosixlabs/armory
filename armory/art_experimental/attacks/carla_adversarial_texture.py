@@ -55,8 +55,8 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
         patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
 
-        self.x_min = np.min(gs_coords[:, 0])
-        self.y_min = np.min(gs_coords[:, 1])
+        self.x_min = np.min(gs_coords[:, 1])
+        self.y_min = np.min(gs_coords[:, 0])
         self.patch_height = patch_height
         self.patch_width = patch_width
 
