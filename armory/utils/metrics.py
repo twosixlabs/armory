@@ -12,6 +12,7 @@ import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
+from typing import List
 
 import cProfile
 import pstats
@@ -21,6 +22,58 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 
 
 logger = logging.getLogger(__name__)
+
+
+def perplexity(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
+    """
+    Return the normalized p-to-q perplexity.
+    """
+    kl_div_pq = kl_div(p, q, eps)[0]
+    perplexity_pq = np.exp(-kl_div_pq)
+    return [perplexity_pq]
+
+
+def kl_div(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
+    """
+    Return the Kullback-Leibler divergence from p to q.
+    """
+    cross_entropy_pq = _cross_entropy(p, q, eps)
+    entropy_p = _cross_entropy(p, p, eps)
+    kl_div_pq = cross_entropy_pq - entropy_p
+    return [kl_div_pq]
+
+
+def _cross_entropy(p: np.array, q: np.array, eps: float = 1e-10) -> float:
+    """
+    Return the cross entropy from a distribution p to a distribution q.
+    """
+    p = np.asarray(p)
+    q = np.asarray(q)
+    if p.ndim > 2 or q.ndim > 2:
+        raise ValueError(
+            f"Not obvious how to reshape arrays: got shapes {p.shape} and {q.shape}."
+        )
+    elif (p.ndim == 2 and p.shape[0] > 1) or (q.ndim == 2 and q.shape[0] > 1):
+        raise ValueError(
+            f"Expected 2-dimensional arrays to have shape (1, *): got shapes \
+             {p.shape} and {q.shape}."
+        )
+    p = p.reshape(-1)
+    q = q.reshape(-1)
+    if p.shape[0] != q.shape[0]:
+        raise ValueError(
+            f"Expected arrays of the same length: got lengths {len(p)} and {len(q)}."
+        )
+    if np.any(p < 0) or np.any(q < 0):
+        raise ValueError("Arrays must both be non-negative.")
+    if np.isclose(p.sum(), 0) or np.isclose(q.sum(), 0):
+        raise ValueError("Arrays must both be non-zero.")
+    if not np.isclose(p.sum(), 1):
+        p /= p.sum()
+    if not np.isclose(q.sum(), 1):
+        q /= q.sum()
+    cross_entropy_pq = (-p * np.log(q + eps)).sum()
+    return cross_entropy_pq
 
 
 def categorical_accuracy(y, y_pred):
@@ -1449,6 +1502,8 @@ SUPPORTED_METRICS = {
     "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
     "carla_od_misclassification_rate": carla_od_misclassification_rate,
     "carla_od_true_positive_rate": carla_od_true_positive_rate,
+    "kl_div": kl_div,
+    "perplexity": perplexity
 }
 
 # Image-based metrics applied to video
