@@ -230,6 +230,52 @@ def test_carla_od_rgb():
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
+    dev_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_dev",
+    }
+    dev_dataset = load_dataset(
+        dev_dataset_config,
+        modality="rgb",
+        epochs=1,
+        split="dev",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in dev_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+    test_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_test",
+    }
+    test_dataset = load_dataset(
+        test_dataset_config,
+        modality="rgb",
+        epochs=1,
+        split="test",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in test_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_depth():
@@ -266,6 +312,52 @@ def test_carla_od_depth():
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
+    dev_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_dev",
+    }
+    dev_dataset = load_dataset(
+        dev_dataset_config,
+        modality="depth",
+        epochs=1,
+        split="dev",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in dev_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+    test_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_test",
+    }
+    test_dataset = load_dataset(
+        test_dataset_config,
+        modality="depth",
+        epochs=1,
+        split="test",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in test_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_multimodal():
@@ -298,6 +390,52 @@ def test_carla_od_multimodal():
     for x, y in train_dataset:
         y_pred = detector.predict(x)
         ys.extend(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+    dev_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_dev",
+    }
+    dev_dataset = load_dataset(
+        dev_dataset_config,
+        modality="both",
+        epochs=1,
+        split="dev",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in dev_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+    test_dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_test",
+    }
+    test_dataset = load_dataset(
+        test_dataset_config,
+        modality="both",
+        epochs=1,
+        split="test",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, (y, y_patch_metadata) in test_dataset:
+        y_pred = detector.predict(x)
+        ys.append(y)
         y_preds.extend(y_pred)
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
