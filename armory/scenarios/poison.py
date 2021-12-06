@@ -239,6 +239,15 @@ class Poison(Scenario):
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = (is_clean == 1)
 
+            # Compute the overall class distribution and the filtered class distribution.
+            # Then compute the "filter perplexity" metric on these distributions.
+            y_counts_all = np.bincount(self.y_clean)
+            y_counts_filtered = np.bincount(self.y_clean[self.indices_to_keep], 
+                                            minlength=len(y_counts_all))
+            y_dist_all = y_counts_all / y_counts_all.sum()
+            y_dist_filtered = y_counts_filtered / y_counts_filtered.sum()
+            self.filter_perplexity.add_results(y_dist_filtered, y_dist_all)
+
         else:
             logger.info(
                 "Defense does not require filtering. Model fitting will use all data."
@@ -249,16 +258,6 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
-
-        if hasattr(self, "filter_perplexity"):
-            # Compute the overall class distribution and the filtered class distribution.
-            y_counts_all = np.bincount(self.y_clean)
-            y_counts_filtered = np.bincount(self.y_clean[self.indices_to_keep], 
-                                            minlength=len(y_counts_all))
-            y_dist_all = y_counts_all / y_counts_all.sum()
-            y_dist_filtered = y_counts_filtered / y_counts_filtered.sum()
-            self.y_dist_all = y_dist_all
-            self.y_dist_filtered = y_dist_filtered
 
     def fit(self):
         if len(self.x_train):
@@ -300,7 +299,7 @@ class Poison(Scenario):
             self.poisoned_targeted_test_metric = metrics.MetricList(
                 "categorical_accuracy"
             )
-        if self.config["adhoc"].get("use_poison_filtering_defense", True):
+        if self.config["adhoc"].get("use_poison_filtering_defense", False):
             self.filter_perplexity = metrics.MetricList("perplexity")
 
     def load(self):
@@ -330,10 +329,6 @@ class Poison(Scenario):
         self.y_pred = y_pred
         self.source = source
 
-        if hasattr(self, "filter_perplexity"):
-            self.filter_perplexity.add_results(self.y_dist_filtered,
-                                               self.y_dist_all)
-
     def run_attack(self):
         x, y = self.x, self.y
         source = self.source
@@ -351,10 +346,6 @@ class Poison(Scenario):
 
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
-
-        if not hasattr(self, "filter_perplexity"):
-            self.filter_perplexity.add_results(self.y_dist_filtered, 
-                                               self.y_dist_all)
 
     def evaluate_current(self):
         self.run_benign()
