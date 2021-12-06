@@ -242,7 +242,7 @@ class Poison(Scenario):
             # Compute the overall class distribution and the filtered class distribution.
             # Then compute the "filter perplexity" metric on these distributions.
             y_counts_all = np.bincount(self.y_clean)
-            y_counts_filtered = np.bincount(self.y_clean[self.indices_to_keep], 
+            y_counts_filtered = np.bincount(self.y_clean[indices_to_keep], 
                                             minlength=len(y_counts_all))
             y_dist_all = y_counts_all / y_counts_all.sum()
             y_dist_filtered = y_counts_filtered / y_counts_filtered.sum()
