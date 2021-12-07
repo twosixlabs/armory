@@ -415,17 +415,12 @@ class CARLADapricotPatch(RobustDPatch):
             gs_coords = y_patch_metadata[i]["gs_coords"]
             patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
             patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
-            patch_dim = max(patch_height, patch_width)
-            # must be square for now, until it's determined why non-square patches
-            # fail to completely overlay green screen
-            self.patch_shape = (patch_dim, patch_dim, x.shape[-1])
+            self.patch_shape = (
+                patch_height,
+                patch_width,
+                x.shape[-1],
+            )
 
-            # This may work with Armory
-            #             self.patch_geometric_shape = (
-            #                 y_patch_metadata[i]["shape"].tobytes().decode("utf-8")
-            #             )
-
-            # This may not work with Armory
             self.patch_geometric_shape = str(y_patch_metadata[i]["shape"])
 
             # this masked to embed patch into the background in the event of occlusion
