@@ -439,3 +439,41 @@ def test_carla_od_multimodal():
         y_preds.extend(y_pred)
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+
+@pytest.mark.usefixtures("ensure_armory_dirs")
+def test_carla_od_multimodal_robust_fusion():
+    detector_module = import_module(
+        "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion"
+    )
+    detector_fn = getattr(detector_module, "get_art_model_mm_robust")
+    weights_path = maybe_download_weights_from_s3(
+        "carla_multimodal_robust_clw_1_weights.pt"
+    )
+    detector = detector_fn(
+        model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
+    )
+
+    NUM_TEST_SAMPLES = 10
+    dataset_config = {
+        "batch_size": 1,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "carla_obj_det_train",
+    }
+    train_dataset = load_dataset(
+        dataset_config,
+        modality="both",
+        epochs=1,
+        split="train",
+        num_batches=NUM_TEST_SAMPLES,
+        shuffle_files=False,
+    )
+    ys = []
+    y_preds = []
+    for x, y in train_dataset:
+        y_pred = detector.predict(x)
+        ys.extend(y)
+        y_preds.extend(y_pred)
+    ap_per_class = object_detection_AP_per_class(ys, y_preds)
+    assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
