@@ -31,6 +31,7 @@ from Two Six's public S3 dataset repository.
 |     "carla_obj_det_dev"     |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      | (nb=1, 600, 800, 3 or 6) | uint8 | 2-tuple |             165 images              |
 |    "carla_obj_det_test"     |   ["small", "medium", "large", "test"] **    | [CARLA Simulator Object Detection](https://carla.org) |     test     | (nb=1, 600, 800, 3 or 6) | uint8 | 2-tuple |              30 images              |
 | "carla_video_tracking_dev"  |                   ["dev"]                    | [CARLA Simulator Video Tracking](https://carla.org) |     dev      | (nb=1, num_frames, 600, 800, 3) | uint8 | 2-tuple |              20 videos              |
+| "carla_video_tracking_test" |                   ["test"]                   | [CARLA Simulator Video Tracking](https://carla.org) |     test     | (nb=1, num_frames, 600, 800, 3) | uint8 | 2-tuple |              20 videos              |
 
 \* the "small" split, for example, is the subset of images containing small patch green-screens. Using the "adversarial" split returns the entire dataset.
 
