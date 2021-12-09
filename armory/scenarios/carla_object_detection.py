@@ -5,6 +5,7 @@ Scenario Contributor: MITRE Corporation
 """
 
 import logging
+import copy
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
@@ -17,7 +18,12 @@ class CarlaObjectDetectionTask(Scenario):
         super().__init__(*args, **kwargs)
         if self.skip_misclassified:
             raise ValueError(
-                "skip_misclassified shouldn't be set for carla_video_tracking scenario"
+                "skip_misclassified shouldn't be set for carla_object_detection scenario"
+            )
+        if self.skip_benign:
+            raise ValueError(
+                "skip_benign shouldn't be set for carla_object_detection scenario, as "
+                "adversarial predictions are measured against benign predictions"
             )
 
     def load_dataset(self):
@@ -65,6 +71,9 @@ class CarlaObjectDetectionTask(Scenario):
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
         self.metrics_logger.update_task(y_object, y_pred_adv, adversarial=True)
+        self.metrics_logger_wrt_benign_preds.update_task(
+            self.y_pred, y_pred_adv, adversarial=True
+        )
         if self.targeted:
             self.metrics_logger.update_task(
                 y_target, y_pred_adv, adversarial=True, targeted=True
@@ -80,3 +89,31 @@ class CarlaObjectDetectionTask(Scenario):
             self.sample_exporter.export(x, x_adv, y, y_pred_adv)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
+
+    def finalize_results(self):
+        super(CarlaObjectDetectionTask, self).finalize_results()
+
+        self.metrics_logger_wrt_benign_preds.log_task(
+            adversarial=True, used_preds_as_labels=True
+        )
+        self.results_wrt_benign_preds = {
+            metric_name + "_wrt_benign_preds": result
+            for metric_name, result in self.metrics_logger_wrt_benign_preds.results().items()
+        }
+        self.results = {**self.results, **self.results_wrt_benign_preds}
+
+    def _evaluate(self) -> dict:
+        """
+        Evaluate the config and return a results dict
+        """
+        self.load()
+
+        # Add a MetricsLogger to measure adversarial results using benign predictions as labels
+        self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger()
+        self.metrics_logger_wrt_benign_preds.adversarial_tasks = copy.deepcopy(
+            self.metrics_logger.adversarial_tasks
+        )
+
+        self.evaluate_all()
+        self.finalize_results()
+        return self.results

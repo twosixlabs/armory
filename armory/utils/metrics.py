@@ -1675,7 +1675,11 @@ class MetricsLogger:
         for metric in self.perturbations:
             metric.add_results(x, x_adv)
 
-    def log_task(self, adversarial=False, targeted=False):
+    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
+        if used_preds_as_labels and not adversarial:
+            raise ValueError("benign task shouldn't use benign predictions as labels")
+        if used_preds_as_labels and targeted:
+            raise ValueError("targeted task shouldn't use benign predictions as labels")
         if targeted:
             if adversarial:
                 metrics = self.targeted_tasks
@@ -1685,7 +1689,10 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
         elif adversarial:
             metrics = self.adversarial_tasks
-            wrt = "ground truth"
+            if used_preds_as_labels:
+                wrt = "benign predictions as"
+            else:
+                wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
