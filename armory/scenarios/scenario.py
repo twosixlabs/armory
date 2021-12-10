@@ -153,14 +153,14 @@ class Scenario:
         if targeted and use_label:
             raise ValueError("Targeted attacks cannot have 'use_label'")
 
-        if "tensor_board" in attack_config.get("kwargs", {}):
-            tensor_board_kwarg = attack_config.get("kwargs").get("tensor_board")
-            if isinstance(tensor_board_kwarg, str):
+        if "summary_writer" in attack_config.get("kwargs", {}):
+            summary_writer_kwarg = attack_config.get("kwargs").get("summary_writer")
+            if isinstance(summary_writer_kwarg, str):
                 logger.warning(
-                    f"Overriding 'tensor_board' attack kwarg {tensor_board_kwarg} with {self.scenario_output_dir}."
+                    f"Overriding 'summary_writer' attack kwarg {summary_writer_kwarg} with {self.scenario_output_dir}."
                 )
             attack_config["kwargs"][
-                "tensor_board"
+                "summary_writer"
             ] = f"{self.scenario_output_dir}/tfevents_{self.time_stamp}"
         if attack_type == "preloaded":
             preloaded_split = attack_config.get("kwargs", {}).get(
