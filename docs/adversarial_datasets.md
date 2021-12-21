@@ -24,14 +24,18 @@ from Two Six's public S3 dataset repository.
 
 
 ### Green-screen Image Datasets
-|             `name`             |        `split`       |                Description                |       Source Split |      x_shape     | x_type | y_shape | Size      |
-|:------------------------------:|:------------------------------:|:-----------------------------------------:|:------------:|:----------------:|:------:|:-------:|:--------------:|
-| "dapricot_dev_adversarial"     | ["small", medium", "large", "adversarial"] *                  | Physical Adversarial Attacks on Object Detection| dev          | (nb, 3, 1008, 756, 3) | uint8 | 2-tuple |  81 examples (3 images per example) |
-| "dapricot_test_adversarial"     | ["small", medium", "large", "adversarial"] *                  | Physical Adversarial Attacks on Object Detection| test          | (nb, 3, 1008, 756, 3) | uint8 | 2-tuple |  324 examples (3 images per example) |
-| "carla_obj_det_dev"     | ["dev"]                   | [CARLA Simulator Object Detection](https://carla.org) | dev          | (nb=1, 600, 800, 3 or 6) | uint8 | 2-tuple |  165 images |
-| "carla_video_tracking_dev"     | ["dev"]                   | [CARLA Simulator Video Tracking](https://carla.org) | dev          | (nb=1, num_frames, 600, 800, 3) | uint8 | 2-tuple |  20 videos |
+|           `name`            |                   `split`                    |                Description                | Source Split |      x_shape     | x_type | y_shape |                Size                 |
+|:---------------------------:|:--------------------------------------------:|:-----------------------------------------:|:------------:|:----------------:|:------:|:-------:|:-----------------------------------:|
+| "dapricot_dev_adversarial"  | ["small", medium", "large", "adversarial"] * | Physical Adversarial Attacks on Object Detection|     dev      | (nb, 3, 1008, 756, 3) | uint8 | 2-tuple | 81 examples (3 images per example)  |
+| "dapricot_test_adversarial" | ["small", medium", "large", "adversarial"] * | Physical Adversarial Attacks on Object Detection|     test     | (nb, 3, 1008, 756, 3) | uint8 | 2-tuple | 324 examples (3 images per example) |
+|     "carla_obj_det_dev"     |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      | (nb=1, 600, 800, 3 or 6) | uint8 | 2-tuple |             165 images              |
+|    "carla_obj_det_test"     |   ["small", "medium", "large", "test"] **    | [CARLA Simulator Object Detection](https://carla.org) |     test     | (nb=1, 600, 800, 3 or 6) | uint8 | 2-tuple |              30 images              |
+| "carla_video_tracking_dev"  |                   ["dev"]                    | [CARLA Simulator Video Tracking](https://carla.org) |     dev      | (nb=1, num_frames, 600, 800, 3) | uint8 | 2-tuple |              20 videos              |
+| "carla_video_tracking_test" |                   ["test"]                   | [CARLA Simulator Video Tracking](https://carla.org) |     test     | (nb=1, num_frames, 600, 800, 3) | uint8 | 2-tuple |              20 videos              |
 
-\* Note: the "small" split, for example, is the subset of images containing small patch green-screens. Using the "adversarial" split returns the entire dataset.
+\* the "small" split, for example, is the subset of images containing small patch green-screens. Using the "adversarial" split returns the entire dataset.
+
+\** small is <= 0.5% patch ratio, medium is between 0.5% and 0.75%, and large is between 0.75% and 1%. The "test" split returns the entire dataset.
 
 
 ##### D-APRICOT
@@ -43,7 +47,7 @@ is meant to induce the model to predict a specific class at the location of the 
 
 
 ##### CARLA Object Detection
-The carla_obj_det_dev dataset contains rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
+The carla_obj_det_dev and carla_obj_det_test datasets contain rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
 When using the dataset function imported from [armory.data.adversarial_datasets](../armory/data/adversarial_datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
 is specified in the dataset_config as such:
 ```json

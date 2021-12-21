@@ -19,7 +19,9 @@ from armory.data.adversarial import (  # noqa: F401
     dapricot_dev,
     dapricot_test,
     carla_obj_det_dev as codd,
+    carla_obj_det_test as codt,
     carla_video_tracking_dev as cvtd,
+    carla_video_tracking_test as cvtt,
 )
 
 
@@ -38,8 +40,8 @@ resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
-carla_obj_det_dev_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
+carla_obj_det_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
 carla_video_tracking_context = datasets.VideoContext(
     x_shape=(None, 600, 800, 3), frame_rate=10
 )
@@ -76,7 +78,7 @@ def dapricot_canonical_preprocessing(batch):
     )
 
 
-def carla_video_tracking_dev_canonical_preprocessing(batch):
+def carla_video_tracking_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
         carla_video_tracking_context, batch
     )
@@ -562,7 +564,7 @@ def dapricot_test_adversarial(
     )
 
 
-def carla_obj_det_dev_label_preprocessing(x, y):
+def carla_obj_det_label_preprocessing(x, y):
     y_object, y_patch_metadata = y
     y_object = {k: np.squeeze(v, axis=0) for k, v in y_object.items()}
     y_patch_metadata = {k: np.squeeze(v, axis=0) for k, v in y_patch_metadata.items()}
@@ -575,11 +577,11 @@ def carla_obj_det_dev_label_preprocessing(x, y):
     return (y_object, y_patch_metadata)
 
 
-def carla_obj_det_dev_canonical_preprocessing(batch):
+def carla_obj_det_canonical_preprocessing(batch):
     if batch.shape[-1] == 6:
-        context = carla_obj_det_dev_multimodal_context
+        context = carla_obj_det_multimodal_context
     else:
-        context = carla_obj_det_dev_single_modal_context
+        context = carla_obj_det_single_modal_context
     return datasets.canonical_image_preprocess(context, batch)
 
 
@@ -588,8 +590,8 @@ def carla_obj_det_dev(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_obj_det_dev_canonical_preprocessing,
-    label_preprocessing_fn=carla_obj_det_dev_label_preprocessing,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn=carla_obj_det_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
@@ -628,9 +630,9 @@ def carla_obj_det_dev(
     preprocessing_fn = datasets.preprocessing_chain(mode_split_fn, preprocessing_fn)
 
     context = (
-        carla_obj_det_dev_multimodal_context
+        carla_obj_det_multimodal_context
         if modality == "both"
-        else carla_obj_det_dev_single_modal_context
+        else carla_obj_det_single_modal_context
     )
 
     return datasets._generator_from_tfds(
@@ -651,7 +653,78 @@ def carla_obj_det_dev(
     )
 
 
-def carla_video_tracking_dev_label_preprocessing(x, y):
+def carla_obj_det_test(
+    split: str = "large+medium+small",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn=carla_obj_det_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+    **kwargs,
+):
+    """
+    Test set for CARLA object detection dataset, containing RGB and depth channels. The test
+    set also contains green screens for adversarial patch insertion.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_test dataset"
+        )
+    if batch_size != 1:
+        raise ValueError("carla_obj_det_test batch size must be set to 1")
+
+    if split == "test":
+        split = "large+medium+small"
+
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+    mode_split_fn = func_dict[modality]
+    preprocessing_fn = datasets.preprocessing_chain(mode_split_fn, preprocessing_fn)
+
+    context = (
+        carla_obj_det_multimodal_context
+        if modality == "both"
+        else carla_obj_det_single_modal_context
+    )
+
+    return datasets._generator_from_tfds(
+        "carla_obj_det_test:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=context,
+        as_supervised=False,
+        supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        **kwargs,
+    )
+
+
+def carla_video_tracking_label_preprocessing(x, y):
     box_labels, patch_metadata = y
     box_array = np.squeeze(box_labels, axis=0)
     box_labels = [{"boxes": box_array}]
@@ -664,8 +737,8 @@ def carla_video_tracking_dev(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
-    label_preprocessing_fn=carla_video_tracking_dev_label_preprocessing,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
+    label_preprocessing_fn=carla_video_tracking_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
@@ -684,6 +757,47 @@ def carla_video_tracking_dev(
 
     return datasets._generator_from_tfds(
         "carla_video_tracking_dev:1.0.0",
+        split=split,
+        epochs=epochs,
+        batch_size=batch_size,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=carla_video_tracking_context,
+        as_supervised=False,
+        supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
+        **kwargs,
+    )
+
+
+def carla_video_tracking_test(
+    split: str = "test",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
+    label_preprocessing_fn=carla_video_tracking_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+    **kwargs,
+):
+    """
+    Test set for CARLA video tracking dataset, The test set also contains green screens
+    for adversarial patch insertion.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_video_tracking_dev dataset"
+        )
+    if batch_size != 1:
+        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    return datasets._generator_from_tfds(
+        "carla_video_tracking_test:1.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,
