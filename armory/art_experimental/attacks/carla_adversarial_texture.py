@@ -1,6 +1,5 @@
 import logging
 import numpy as np
-import torch
 
 from art.attacks.evasion import AdversarialTexturePyTorch
 
@@ -13,7 +12,8 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
     """
 
     def __init__(self, estimator, **kwargs):
-        super().__init__(estimator=estimator, **kwargs)
+        self.attack_kwargs = kwargs
+        super(AdversarialTexturePyTorch, self).__init__(estimator=estimator)
 
     def generate(self, x, y, y_patch_metadata=None, **kwargs):
         """
@@ -43,49 +43,32 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         if x.shape[0] > 1:
             raise ValueError("batch size must be 1")
 
-        self.y_patch_metadata = y_patch_metadata
+        # green screen coordinates used for placement of a rectangular patch
+        gs_coords = y_patch_metadata[0]["gs_coords"]
+        patch_width = int(np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0]))
+        patch_height = int(np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1]))
+
+        x_min = int(np.min(gs_coords[:, 1]))
+        y_min = int(np.min(gs_coords[:, 0]))
+
+        attack = AdversarialTexturePyTorch(
+            self.estimator,
+            patch_height=patch_height,
+            patch_width=patch_width,
+            x_min=x_min,
+            y_min=y_min,
+            **self.attack_kwargs
+        )
 
         # this masked to embed patch into the background in the event of occlusion
         foreground = y_patch_metadata[0]["masks"]
         foreground = np.array([foreground])
 
-        # green screen coordinates used for placement of a rectangular patch
-        gs_coords = y_patch_metadata[0]["gs_coords"]
-
-        patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
-        patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
-
-        self.x_min = np.min(gs_coords[:, 0])
-        self.y_min = np.min(gs_coords[:, 1])
-        self.patch_height = patch_height
-        self.patch_width = patch_width
-
-        # Re-initialize some internal parameters
-        self.patch_shape = (self.patch_height, self.patch_width, 3)
-
-        if not (
-            self.estimator.postprocessing_defences is None
-            or self.estimator.postprocessing_defences == []
-        ):
-            raise ValueError(
-                "Framework-specific implementation of Adversarial Patch attack does not yet support "
-                + "postprocessing defences."
-            )
-
-        mean_value = (
-            self.estimator.clip_values[1] - self.estimator.clip_values[0]
-        ) / 2.0 + self.estimator.clip_values[0]
-        self._initial_value = np.ones(self.patch_shape) * mean_value
-        self._patch = torch.tensor(
-            self._initial_value, requires_grad=True, device=self.estimator.device
-        )
-
-        attack_kwargs = {
+        generate_kwargs = {
             "y_init": y[0]["boxes"][0:1],
             "foreground": foreground,
             "shuffle": kwargs.get("shuffle", False),
         }
-
-        attacked_video = super().generate(x, y, **attack_kwargs)
-
+        generate_kwargs = {**generate_kwargs, **kwargs}
+        attacked_video = attack.generate(x, y, **generate_kwargs)
         return attacked_video

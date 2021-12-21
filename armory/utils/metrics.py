@@ -1654,6 +1654,37 @@ class MetricsLogger:
             "carla_od_hallucinations_per_image",
         ]
 
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
+
     def _generate_counters(self, names):
         if names is None:
             names = []
@@ -1701,7 +1732,11 @@ class MetricsLogger:
         for metric in self.perturbations:
             metric.add_results(x, x_adv)
 
-    def log_task(self, adversarial=False, targeted=False):
+    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
+        if used_preds_as_labels and not adversarial:
+            raise ValueError("benign task shouldn't use benign predictions as labels")
+        if used_preds_as_labels and targeted:
+            raise ValueError("targeted task shouldn't use benign predictions as labels")
         if targeted:
             if adversarial:
                 metrics = self.targeted_tasks
@@ -1711,7 +1746,10 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
         elif adversarial:
             metrics = self.adversarial_tasks
-            wrt = "ground truth"
+            if used_preds_as_labels:
+                wrt = "benign predictions as"
+            else:
+                wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
