@@ -48,7 +48,7 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
+        "docker_image": "twosixarmory/pytorch:0.14.1",
         "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
