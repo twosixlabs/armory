@@ -5,7 +5,8 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "max_iter": 10,
+            "learning_rate": 0.0196,
+            "max_iter": 1000,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_patch",
@@ -50,7 +51,7 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
+        "docker_image": "twosixarmory/pytorch:0.14.2",
         "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,

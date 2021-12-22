@@ -10,6 +10,16 @@ import numpy as np
 from armory.utils import metrics
 
 
+def test_abstains():
+    y = [0, 1, 2, 3, 4]
+    y_pred = np.zeros((5, 10))
+    y_pred[1, 1] = 1.0
+    assert metrics.abstains(y, y_pred) == [1, 0, 1, 1, 1]
+    for wrong_dim in np.zeros(5), np.zeros((5, 10, 10)):
+        with pytest.raises(ValueError):
+            metrics.abstains(y, np.zeros(5))
+
+
 def test_categorical_accuracy():
     y = [0, 1, 2, 3, 4]
     y_pred = [0, 1, 2, 2, 3]
