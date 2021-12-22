@@ -1,1 +1,0 @@
-armory-public-data mnist/mnist_3.0.1.tar.gz 16945059 a70303ee16328af3d1957645d8df6ec8846bea3651c6245075286614f6bf6c60

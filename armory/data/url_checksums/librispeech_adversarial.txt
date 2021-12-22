@@ -1,1 +1,0 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/LibriSpeech_SincNet_UnivPerturbation_and_PGD.tar.gz 16317904 3861848e4b6a2e2db96c9a5a404d192eb327f8a96cc384bdf0a81cebef107743

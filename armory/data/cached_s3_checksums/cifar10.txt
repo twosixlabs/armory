@@ -1,1 +1,0 @@
-armory-public-data cifar10/cifar10_3.0.2.tar.gz 135099033 ac10cd15bf22d55e52c482c990c472c6c33403f79f029676cf3f6d23fd899ee7

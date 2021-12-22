@@ -1,1 +1,0 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/adversarial-datasets/resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224_1.0.1.tar.gz 67076158 779a2aed3a5d10f4d62808e7e049e440b0d5691e438e29f7b47084d952a565e8

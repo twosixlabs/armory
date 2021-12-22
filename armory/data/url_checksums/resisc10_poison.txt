@@ -1,1 +1,0 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/resisc45/resisc_poison_256x256.tar.gz 164298507 0bea1bd6d3e78ff47f65184494605fa99c6678f56049353bbe966263ee48848e

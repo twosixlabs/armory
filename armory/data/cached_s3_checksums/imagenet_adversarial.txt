@@ -1,1 +1,0 @@
-armory-public-data adversarial-datasets/cached/imagenet_adversarial_1.1.0_cached.tar.gz 275704081 a4b618e850103cbd34fb5d7f714b7b16f257087648b4e9df66f02412c4f8154f
