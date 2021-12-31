@@ -28,10 +28,7 @@ RUN /opt/conda/bin/conda install \
     jupyterlab==3.1.7 \
     boto3==1.18.21 \
     dill=0.3.4 \
-    pytest==6.2.4 \
-    matplotlib==3.5.1 \
-    tensorboardX==2.4.1
-
+    pytest==6.2.4
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3
 
@@ -41,7 +38,11 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pydub==0.24.1 \
     apache-beam==2.22.0 \
     opencv-python==4.5.1.48 \
-    ffmpeg-python==0.2.0
+    ffmpeg-python==0.2.0 \
+    matplotlib==3.5.1 \
+    tensorboardX==2.4.1
+
+
 
 # the numpy install was moved above in order to group conda installs together before pip installs
 # as recommended by https://www.anaconda.com/blog/using-pip-in-a-conda-environment
