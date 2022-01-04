@@ -160,6 +160,7 @@ def test_pytorch_gtsrb():
     assert (accuracy / test_dataset.batches_per_epoch) > 0.8
 
 
+@pytest.mark.skip(reason="checking if splitting carla clears bug #1241")
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_carla_video_tracking():
     runtime_paths = paths.runtime_paths()
@@ -195,6 +196,7 @@ def test_pytorch_carla_video_tracking():
         assert mean_iou > 0.45
 
 
+@pytest.mark.skip(reason="checking if splitting carla clears bug #1241")
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_rgb():
     detector_module = import_module(
@@ -277,6 +279,7 @@ def test_carla_od_rgb():
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
 
+@pytest.mark.skip(reason="checking if splitting carla clears bug #1241")
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_depth():
     detector_module = import_module(
@@ -359,6 +362,7 @@ def test_carla_od_depth():
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
 
+@pytest.mark.skip(reason="checking if splitting carla clears bug #1241")
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_multimodal():
     detector_module = import_module(
@@ -441,6 +445,7 @@ def test_carla_od_multimodal():
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
 
 
+@pytest.mark.skip(reason="checking if splitting carla clears bug #1241")
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_carla_od_multimodal_robust_fusion():
     detector_module = import_module(
