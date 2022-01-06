@@ -481,6 +481,7 @@ Multimodality (RGB+depth) Object Detection
 | RGB                |    Small   |  0.51/0.48  |          0.35/0.35          |              0.0/0.3             |            0.05/0.05            |          0.61/0.61          |     0.48/0.48    |             0.36/0.35            |                1.2/3.1               |              0.08/0.05              |            0.56/0.61            |     10    |
 | RGB                |   Medium   |  0.58/0.59  |          0.34/0.34          |              0.5/0.8             |             0.0/0.2             |          0.66/0.64          |     0.56/0.58    |             0.34/0.34            |                1.7/1.4               |               0.0/0.02              |            0.66/0.64            |     10    |
 | RGB                |    Large   |  0.46/0.46  |          0.32/0.34          |              0.5/0.8             |            0.03/0.02            |          0.64/0.64          |     0.42/0.46    |             0.32/0.34            |                1.7/0.9               |              0.03/0.02              |            0.64/0.64            |     10    |
+
 \*a/b in the tables refer to undefended/defended performance results, respectively.
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
@@ -504,8 +505,16 @@ which contains a green-screen in all frames intended for adversarial patch inser
     * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a constant patch across all frames in the video.
 * **Metrics of Interest:**
   * Primary metrics:
-    * mean IOU 
+    * mean IOU
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/data/adversarial/carla_video_tracking_test.py))**
+| Benign Mean IoU (Undefended) | Benign Mean IoU (Defended) | Adversarial Mean IoU (Undefended) | Adversarial Mean IoU (Defended) | Test Size |
+|:----------------------------:|:--------------------------:|:---------------------------------:|:-------------------------------:|:---------:|
+|             0.59             |            0.50            |                0.18               |               0.18              |     20    |
 
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
 
 ## Academic Scenarios
 
