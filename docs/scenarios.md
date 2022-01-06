@@ -487,7 +487,7 @@ Multimodality (RGB+depth) Object Detection
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
 
 
-### CARLA video tracking (Added October 2021)
+### CARLA video tracking (Updated January 2022)
 * **Description:**
 In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
 * **Dataset:**
@@ -510,6 +510,7 @@ which contains a green-screen in all frames intended for adversarial patch inser
   * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
 * **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/defences/video_compression_normalized.py)
 * **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/data/adversarial/carla_video_tracking_test.py))**
+
 | Benign Mean IoU (Undefended) | Benign Mean IoU (Defended) | Adversarial Mean IoU (Undefended) | Adversarial Mean IoU (Defended) | Test Size |
 |:----------------------------:|:--------------------------:|:---------------------------------:|:-------------------------------:|:---------:|
 |             0.59             |            0.50            |                0.18               |               0.18              |     20    |
