@@ -66,6 +66,7 @@ class Scenario:
         if skip_attack:
             logger.info("Skipping attack generation...")
         self.mongo_host = mongo_host
+        self.time_stamp = time.time()
         if self.mongo_host is not None:  # fail fast if pymongo is not installed
             from armory.scenarios import mongo  # noqa: F401
 
@@ -147,6 +148,15 @@ class Scenario:
         if attack_type == "preloaded" and self.skip_misclassified:
             raise ValueError("Cannot use skip_misclassified with preloaded dataset")
 
+        if "summary_writer" in attack_config.get("kwargs", {}):
+            summary_writer_kwarg = attack_config.get("kwargs").get("summary_writer")
+            if isinstance(summary_writer_kwarg, str):
+                logger.warning(
+                    f"Overriding 'summary_writer' attack kwarg {summary_writer_kwarg} with {self.scenario_output_dir}."
+                )
+            attack_config["kwargs"][
+                "summary_writer"
+            ] = f"{self.scenario_output_dir}/tfevents_{self.time_stamp}"
         if attack_type == "preloaded":
             preloaded_split = attack_config.get("kwargs", {}).get(
                 "split", "adversarial"
@@ -365,12 +375,11 @@ class Scenario:
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
 
-        timestamp = int(time.time())
         output = {
             "armory_version": armory.__version__,
             "config": config,
             "results": results,
-            "timestamp": timestamp,
+            "timestamp": int(self.time_stamp),
         }
         return output
 
