@@ -148,11 +148,6 @@ class Scenario:
         if attack_type == "preloaded" and self.skip_misclassified:
             raise ValueError("Cannot use skip_misclassified with preloaded dataset")
 
-        targeted = bool(attack_config.get("kwargs", {}).get("targeted"))
-        use_label = bool(attack_config.get("use_label"))
-        if targeted and use_label:
-            raise ValueError("Targeted attacks cannot have 'use_label'")
-
         if "summary_writer" in attack_config.get("kwargs", {}):
             summary_writer_kwarg = attack_config.get("kwargs").get("summary_writer")
             if isinstance(summary_writer_kwarg, str):
