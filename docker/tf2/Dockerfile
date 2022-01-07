@@ -32,7 +32,6 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     opencv-python==4.5.1.48 \
     pandas==1.2.4 \
     ffmpeg-python==0.2.0 \
-    matplotlib==3.5.1 \
     tensorboardX==2.4.1
 
 
