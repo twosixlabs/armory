@@ -54,7 +54,7 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.9.0
+RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.9.1
 
 WORKDIR /workspace
 
