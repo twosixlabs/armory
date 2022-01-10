@@ -1634,51 +1634,6 @@ class MetricsLogger:
                     f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
                 )
 
-        # the following metrics must be computed at once after all predictions have been obtained
-        self.non_elementwise_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-        self.mean_ap_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-
-        # This designation only affects logging formatting
-        self.quantity_metrics = [
-            "object_detection_hallucinations_per_image",
-            "carla_od_hallucinations_per_image",
-        ]
-
-        self.task_kwargs = task_kwargs
-        if task_kwargs:
-            if not isinstance(task_kwargs, list):
-                raise TypeError(
-                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
-                )
-            if len(task_kwargs) != len(task):
-                raise ValueError(
-                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
-                )
-
-        # the following metrics must be computed at once after all predictions have been obtained
-        self.non_elementwise_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-        self.mean_ap_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-
         # This designation only affects logging formatting
         self.quantity_metrics = [
             "object_detection_hallucinations_per_image",
