@@ -64,7 +64,11 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
+<<<<<<< HEAD:scenario_configs/librispeech_asr_kenansville_defended.json
         "docker_image": "twosixarmory/pytorch-deepspeech:0.14.0",
+=======
+        "docker_image": "twosixarmory/pytorch-deepspeech:0.14.2",
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5:scenario_configs/librispeech_asr_kenansville_defended.json
         "external_github_repo": "hkakitani/deepspeech.pytorch",
         "gpus": "all",
         "local_repo_path": null,

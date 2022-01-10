@@ -1,6 +1,9 @@
 import logging
 import numpy as np
+<<<<<<< HEAD
 import torch
+=======
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
 from art.attacks.evasion import AdversarialTexturePyTorch
 
@@ -13,7 +16,12 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
     """
 
     def __init__(self, estimator, **kwargs):
+<<<<<<< HEAD
         super().__init__(estimator=estimator, **kwargs)
+=======
+        self.attack_kwargs = kwargs
+        super(AdversarialTexturePyTorch, self).__init__(estimator=estimator)
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
     def generate(self, x, y, y_patch_metadata=None, **kwargs):
         """
@@ -43,12 +51,32 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         if x.shape[0] > 1:
             raise ValueError("batch size must be 1")
 
+<<<<<<< HEAD
         self.y_patch_metadata = y_patch_metadata
+=======
+        # green screen coordinates used for placement of a rectangular patch
+        gs_coords = y_patch_metadata[0]["gs_coords"]
+        patch_width = int(np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0]))
+        patch_height = int(np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1]))
+
+        x_min = int(np.min(gs_coords[:, 1]))
+        y_min = int(np.min(gs_coords[:, 0]))
+
+        attack = AdversarialTexturePyTorch(
+            self.estimator,
+            patch_height=patch_height,
+            patch_width=patch_width,
+            x_min=x_min,
+            y_min=y_min,
+            **self.attack_kwargs
+        )
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
         # this masked to embed patch into the background in the event of occlusion
         foreground = y_patch_metadata[0]["masks"]
         foreground = np.array([foreground])
 
+<<<<<<< HEAD
         # green screen coordinates used for placement of a rectangular patch
         gs_coords = y_patch_metadata[0]["gs_coords"]
 
@@ -81,11 +109,19 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         )
 
         attack_kwargs = {
+=======
+        generate_kwargs = {
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
             "y_init": y[0]["boxes"][0:1],
             "foreground": foreground,
             "shuffle": kwargs.get("shuffle", False),
         }
+<<<<<<< HEAD
 
         attacked_video = super().generate(x, y, **attack_kwargs)
 
+=======
+        generate_kwargs = {**generate_kwargs, **kwargs}
+        attacked_video = attack.generate(x, y, **generate_kwargs)
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
         return attacked_video

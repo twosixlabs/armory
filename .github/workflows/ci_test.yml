@@ -5,12 +5,12 @@ on:
   push:
     branches:
       - master
-      - dev
+      - develop
 
   pull_request:
     branches:
       - master
-      - dev
+      - develop
 
   workflow_dispatch:
 
@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
-        python-version: ['3.6']
+        python-version: ['3.7']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory TF1 docker tests
         run: |
           pip install -r requirements.txt
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory TF1 scenarios
         run: |
           pip install -r requirements.txt
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory TF2 docker tests
         run: |
           pip install -r requirements.txt
@@ -85,20 +85,34 @@ jobs:
           docker run -w /armory_dev twosixarmory/tf2:${version} python \
           /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf2_test.py
   pytest-pytorch:
-    name: PyTest PyTorch
+    name: PyTest PyTorch non-carla
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory PyTorch docker tests
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
           bash docker/build.sh pytorch dev
           docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
-          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_pytorch
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -k "not carla" -s ./tests/test_pytorch
+  pytest-pytorch-carla:
+    name: PyTest PyTorch carla
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory PyTorch docker tests
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh pytorch dev
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -k carla -s ./tests/test_pytorch
   armory-pytorch:
     name: Armory run tests PyTorch
     runs-on: ubuntu-18.04
@@ -106,7 +120,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory Pytorch scenarios
         run: |
           pip install -r requirements.txt
@@ -119,7 +133,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.6'
+          python-version: '3.7'
       - name: Run armory test without docker
         run: |
           pip install -r requirements.txt

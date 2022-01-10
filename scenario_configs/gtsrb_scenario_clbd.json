@@ -58,7 +58,11 @@
         "name": "GTSRB_CLBD"
     },
     "sysconfig": {
+<<<<<<< HEAD
         "docker_image": "twosixarmory/tf1:0.14.0",
+=======
+        "docker_image": "twosixarmory/tf1:0.14.2",
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

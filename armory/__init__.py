@@ -8,7 +8,11 @@ logger.addHandler(logging.NullHandler())
 
 
 # Semantic Version
+<<<<<<< HEAD
 __version__ = "0.14.0"
+=======
+__version__ = "0.14.2"
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any

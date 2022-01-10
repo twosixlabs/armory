@@ -578,6 +578,42 @@ def test_carla_obj_det_dev():
         )
 
 
+<<<<<<< HEAD
+=======
+def test_carla_obj_det_test():
+    ds_rgb = adversarial_datasets.carla_obj_det_test(split="test", modality="rgb")
+    ds_depth = adversarial_datasets.carla_obj_det_test(split="test", modality="depth")
+    ds_multimodal = adversarial_datasets.carla_obj_det_test(
+        split="test", modality="both"
+    )
+    for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
+        for x, y in ds:
+            if i == 0:
+                assert x.shape == (1, 600, 800, 6)
+            else:
+                assert x.shape == (1, 600, 800, 3)
+
+            y_object, y_patch_metadata = y
+            assert isinstance(y_object, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in y_object
+            assert isinstance(y_patch_metadata, dict)
+            for patch_key in [
+                "cc_ground_truth",
+                "cc_scene",
+                "gs_coords",
+                "mask",
+                "shape",
+            ]:
+                assert patch_key in y_patch_metadata
+
+    with pytest.raises(ValueError):
+        ds = adversarial_datasets.carla_obj_det_dev(
+            split="dev", modality="invalid_string"
+        )
+
+
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 def test_carla_video_tracking_dev():
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
     assert dataset.size == 20
@@ -597,6 +633,28 @@ def test_carla_video_tracking_dev():
             assert key in y_patch_metadata
 
 
+<<<<<<< HEAD
+=======
+def test_carla_video_tracking_test():
+    dataset = adversarial_datasets.carla_video_tracking_test(split="test")
+    assert dataset.size == 20
+    for x, y in dataset:
+        assert x.shape[0] == 1
+        assert x.shape[2:] == (600, 800, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        y_object, y_patch_metadata = y
+        assert isinstance(y_object, list)
+        assert len(y_object) == 1
+        assert isinstance(y_object[0], dict)
+        assert "boxes" in y_object[0]
+        assert y_object[0]["boxes"].shape[1] == 4
+        assert isinstance(y_patch_metadata, dict)
+        for key in ["cc_ground_truth", "cc_scene", "gs_coords", "masks"]:
+            assert key in y_patch_metadata
+
+
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 def test_ucf101_adversarial_112x112():
     if not os.path.isdir(
         os.path.join(

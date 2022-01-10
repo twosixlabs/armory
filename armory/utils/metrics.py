@@ -24,6 +24,7 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 logger = logging.getLogger(__name__)
 
 
+<<<<<<< HEAD
 def perplexity(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
     """
     Return the normalized p-to-q perplexity.
@@ -74,6 +75,19 @@ def _cross_entropy(p: np.array, q: np.array, eps: float = 1e-10) -> float:
         q /= q.sum()
     cross_entropy_pq = (-p * np.log(q + eps)).sum()
     return cross_entropy_pq
+=======
+def abstains(y, y_pred):
+    """
+    For each sample in y_pred:
+        return 1 for i if y_pred[i] is all 0s (an abstention), return 0 otherwise
+        returns a list of (0, 1) elements
+    """
+    del y
+    y_pred = np.asarray(y_pred)
+    if y_pred.ndim != 2:
+        raise ValueError(f"y_pred {y_pred} is not 2-dimensional")
+    return [int(x) for x in (y_pred == 0.0).all(axis=1)]
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
 
 def categorical_accuracy(y, y_pred):
@@ -1502,8 +1516,11 @@ SUPPORTED_METRICS = {
     "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
     "carla_od_misclassification_rate": carla_od_misclassification_rate,
     "carla_od_true_positive_rate": carla_od_true_positive_rate,
+<<<<<<< HEAD
     "kl_div": kl_div,
     "perplexity": perplexity
+=======
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 }
 
 # Image-based metrics applied to video
@@ -1576,6 +1593,8 @@ class MetricList:
         return list(self._values)
 
     def mean(self):
+        if not self._values:
+            return float("nan")
         return sum(float(x) for x in self._values) / len(self._values)
 
     def append_input_label(self, label):
@@ -1651,6 +1670,79 @@ class MetricsLogger:
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+        ]
+
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
+
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
 
         self.task_kwargs = task_kwargs
         if task_kwargs:
@@ -1730,7 +1822,11 @@ class MetricsLogger:
         for metric in self.perturbations:
             metric.add_results(x, x_adv)
 
-    def log_task(self, adversarial=False, targeted=False):
+    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
+        if used_preds_as_labels and not adversarial:
+            raise ValueError("benign task shouldn't use benign predictions as labels")
+        if used_preds_as_labels and targeted:
+            raise ValueError("targeted task shouldn't use benign predictions as labels")
         if targeted:
             if adversarial:
                 metrics = self.targeted_tasks
@@ -1740,7 +1836,10 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
         elif adversarial:
             metrics = self.adversarial_tasks
-            wrt = "ground truth"
+            if used_preds_as_labels:
+                wrt = "benign predictions as"
+            else:
+                wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
@@ -1776,6 +1875,11 @@ class MetricsLogger:
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2}"
                 )
+                if metric.name in self.mean_ap_metrics:
+                    logger.info(
+                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
+                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
+                    )
             else:
                 logger.info(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "

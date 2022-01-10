@@ -51,7 +51,11 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
+<<<<<<< HEAD:scenario_configs/xview_frcnn_masked_pgd_undefended.json
         "docker_image": "twosixarmory/pytorch:0.14.0",
+=======
+        "docker_image": "twosixarmory/pytorch:0.14.2",
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5:scenario_configs/xview_frcnn_masked_pgd_undefended.json
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

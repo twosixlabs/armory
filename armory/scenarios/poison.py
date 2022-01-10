@@ -194,7 +194,11 @@ class Poison(Scenario):
         # filtering defense requires more than a single batch to run properly
         if (
             adhoc_config.get("use_poison_filtering_defense", True)
+<<<<<<< HEAD
             #and not self.check_run
+=======
+            and not self.check_run
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
             if "data_augmentation" in defense_config:
@@ -233,6 +237,7 @@ class Poison(Scenario):
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             logger.info(f"Total clean data points: {np.sum(is_clean)}")
+<<<<<<< HEAD
             is_dirty = (is_clean.astype(np.int64) == 0)
             logger.info(f"Total dirty data points: {np.sum(is_dirty)}")
 
@@ -247,6 +252,11 @@ class Poison(Scenario):
             y_dist_all = y_counts_all / y_counts_all.sum()
             y_dist_filtered = y_counts_filtered / y_counts_filtered.sum()
             self.filter_perplexity.add_results(y_dist_filtered, y_dist_all)
+=======
+
+            logger.info("Filtering out detected poisoned samples")
+            indices_to_keep = is_clean == 1  # TODO: redundant?
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
         else:
             logger.info(
@@ -299,8 +309,11 @@ class Poison(Scenario):
             self.poisoned_targeted_test_metric = metrics.MetricList(
                 "categorical_accuracy"
             )
+<<<<<<< HEAD
         if self.config["adhoc"].get("use_poison_filtering_defense", False):
             self.filter_perplexity = metrics.MetricList("perplexity")
+=======
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
 
     def load(self):
         self.set_random_seed()
@@ -372,7 +385,10 @@ class Poison(Scenario):
             logger.info(
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
+<<<<<<< HEAD
         if hasattr(self, "filter_perplexity"):
             results["filter_perplexity"] = self.filter_perplexity.mean()
             logger.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
+=======
+>>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
         self.results = results
