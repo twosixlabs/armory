@@ -1,12 +1,12 @@
 {
-    "_description": "CARLA multimodality object detection, contributed by MITRE Corporation",
+    "_description": "CARLA single modality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
             "learning_rate": 0.01,
-            "max_iter": 20000,
+            "max_iter": 10000,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_patch",
@@ -17,11 +17,24 @@
         "batch_size": 1,
         "eval_split": "dev",
         "framework": "numpy",
-        "modality": "both",
+        "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
         "name": "carla_obj_det_dev"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 50
+        },
+        "module": "art.defences.preprocessor",
+        "name": "JpegCompression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "l0",
@@ -37,10 +50,12 @@
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion",
-        "name": "get_art_model_mm_robust",
-        "weights_file": "carla_multimodal_robust_clw_1_weights.pt",
+        "model_kwargs": {
+            "num_classes": 4
+        },
+        "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
+        "name": "get_art_model",
+        "weights_file": "carla_rgb_weights.pt",
         "wrapper_kwargs": {}
     },
     "scenario": {

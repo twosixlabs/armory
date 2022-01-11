@@ -20,7 +20,19 @@
         "module": "armory.data.adversarial_datasets",
         "name": "carla_video_tracking_dev"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "constant_rate_factor": 28,
+            "verbose": false,
+            "video_format": "avi"
+        },
+        "module": "armory.art_experimental.defences.video_compression_normalized",
+        "name": "VideoCompressionNormalizedPytorch",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "l0",

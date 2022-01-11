@@ -1,12 +1,12 @@
 {
-    "_description": "XView object detection, contributed by MITRE Corporation",
+    "_description": "CARLA single modality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "learning_rate": 0.0196,
-            "max_iter": 1000,
+            "learning_rate": 0.01,
+            "max_iter": 10000,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_patch",
