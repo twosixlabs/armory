@@ -437,7 +437,7 @@ Baseline defense performance is evaluated for a transfer attack.
   * Baseline MSCOCO Objects mAP: 7.83% (all test examples)
   * Baseline Targeted Patch mAP: 4.59% (all test examples)
 
-### CARLA object detection (Added October 2021)
+### CARLA object detection (Updated January 2022)
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify vehicles, pedestrians, and traffic lights.
 * **Dataset:**
@@ -463,9 +463,31 @@ which contains a green-screen intended for adversarial patch insertion. The data
     * Hallucinations per image
     * Misclassification rate
     * True positive rate
+* **Baseline Attacks:**
+  * [Custom Robust DPatch with Input-Dependent Transformation and Color-Correction](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/attacks/carla_obj_det_patch.py)
+* **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
+* **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/master/armory/data/adversarial/carla_obj_det_test.py))**
+
+Single Modality (RGB) Object Detection
+| Patch Size | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|:----------:|:-----------:|:---------------------------:|:--------------------------------:|:-------------------------------:|:---------------------------:|:----------------:|:--------------------------------:|:------------------------------------:|:-----------------------------------:|:-------------------------------:|:---------:|
+|    Small   |  0.43/0.40  |          0.37/0.45          |              0.8/1.0             |            0.06/0.08            |          0.57/0.47          |     0.19/0.21    |             0.40/0.48            |                7.6/7.6               |              0.06/0.08              |            0.54/0.45            |     10    |
+|   Medium   |  0.48/0.37  |          0.39/0.50          |              1.2/1.3             |            0.01/0.01            |          0.60/0.49          |     0.24/0.16    |             0.39/0.51            |               12.4/6.8               |              0.01/0.01              |            0.61/0.48            |     10    |
+|    Large   |  0.38/0.31  |          0.36/0.43          |              1.0/1.0             |            0.05/0.02            |          0.59/0.55          |     0.17/0.14    |             0.37/0.34            |               10.3/10.2              |              0.05/0.02              |            0.57/0.55            |     10    |
+
+Multimodality (RGB+depth) Object Detection
+| Attacked  Modality | Patch Size | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|--------------------|:----------:|:-----------:|:---------------------------:|:--------------------------------:|:-------------------------------:|:---------------------------:|:----------------:|:--------------------------------:|:------------------------------------:|:-----------------------------------:|:-------------------------------:|:---------:|
+| RGB                |    Small   |  0.51/0.48  |          0.35/0.35          |              0.0/0.3             |            0.05/0.05            |          0.61/0.61          |     0.48/0.48    |             0.36/0.35            |                1.2/3.1               |              0.08/0.05              |            0.56/0.61            |     10    |
+| RGB                |   Medium   |  0.58/0.59  |          0.34/0.34          |              0.5/0.8             |             0.0/0.2             |          0.66/0.64          |     0.56/0.58    |             0.34/0.34            |                1.7/1.4               |               0.0/0.02              |            0.66/0.64            |     10    |
+| RGB                |    Large   |  0.46/0.46  |          0.32/0.34          |              0.5/0.8             |            0.03/0.02            |          0.64/0.64          |     0.42/0.46    |             0.32/0.34            |                1.7/0.9               |              0.03/0.02              |            0.64/0.64            |     10    |
+
+\*a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
 
 
-### CARLA video tracking (Added October 2021)
+### CARLA video tracking (Updated January 2022)
 * **Description:**
 In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
 * **Dataset:**
@@ -483,8 +505,17 @@ which contains a green-screen in all frames intended for adversarial patch inser
     * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a constant patch across all frames in the video.
 * **Metrics of Interest:**
   * Primary metrics:
-    * mean IOU 
+    * mean IOU
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/data/adversarial/carla_video_tracking_test.py))**
 
+| Benign Mean IoU (Undefended) | Benign Mean IoU (Defended) | Adversarial Mean IoU (Undefended) | Adversarial Mean IoU (Defended) | Test Size |
+|:----------------------------:|:--------------------------:|:---------------------------------:|:-------------------------------:|:---------:|
+|             0.59             |            0.50            |                0.18               |               0.18              |     20    |
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
 
 ## Academic Scenarios
 

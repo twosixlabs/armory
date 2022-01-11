@@ -31,7 +31,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pytest==6.2.2 \
     opencv-python==4.5.1.48 \
     pandas==1.2.4 \
-    ffmpeg-python==0.2.0
+    ffmpeg-python==0.2.0 \
+    tensorboardX==2.4.1
 
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
@@ -53,7 +54,7 @@ WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
 RUN /opt/conda/bin/pip install .
-RUN /opt/conda/bin/pip install --no-cache-dir git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
+RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.9.1
 
 WORKDIR /workspace
 

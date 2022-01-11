@@ -30,7 +30,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     dill==0.3.1.1 \
     pytest==6.2.2 \
     pandas==1.2.4 \
-    ffmpeg-python==0.2.0
+    ffmpeg-python==0.2.0 \
+    tensorboardX==2.4.1
 
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
@@ -63,7 +64,7 @@ RUN /opt/conda/bin/pip install hydra-core==1.0.6 \
     soundfile \
     sox \
     warpctc-pytorch==0.2.1+torch16.cuda102 \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack --no-cache-dir
+    adversarial-robustness-toolbox==1.9.1 --no-cache-dir
 
 
 ########## PyTorch 1 Deep Speech Dev #################

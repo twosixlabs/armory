@@ -32,7 +32,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     opencv-python==4.5.1.48 \
     pandas==1.2.4 \
     ffmpeg-python==0.2.0 \
-    numba==0.53.1
+    numba==0.53.1 \
+    tensorboardX==2.4.1
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
@@ -50,7 +51,7 @@ RUN /opt/conda/bin/conda install pytorch==1.7 \
     /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-gpu==2.4.1 \
-    git+https://github.com/Trusted-AI/adversarial-robustness-toolbox.git@development_object_tracking_attack
+    adversarial-robustness-toolbox==1.9.1
 
 ########## PyTorch 1 Dev #################
 

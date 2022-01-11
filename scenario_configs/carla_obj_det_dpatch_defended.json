@@ -1,31 +1,25 @@
 {
-    "_description": "XView object detection, contributed by MITRE Corporation",
+    "_description": "CARLA single modality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
-        "generate_kwargs": {
-            "patch_height": 50,
-            "patch_width": 50
-        },
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 1.0,
-            "eps_step": 0.004,
-            "max_iter": 500,
-            "num_random_init": 0,
-            "random_eps": false,
-            "targeted": false,
-            "verbose": false
+            "learning_rate": 0.01,
+            "max_iter": 10000,
+            "verbose": true
         },
-        "module": "armory.art_experimental.attacks.pgd_patch",
-        "name": "PGDPatch",
-        "use_label": true
+        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
+        "name": "CARLADapricotPatch",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 1,
+        "eval_split": "dev",
         "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "xview"
+        "modality": "rgb",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_obj_det_dev"
     },
     "defense": {
         "kwargs": {
@@ -46,26 +40,32 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "object_detection_AP_per_class"
+            "carla_od_AP_per_class",
+            "carla_od_disappearance_rate",
+            "carla_od_hallucinations_per_image",
+            "carla_od_misclassification_rate",
+            "carla_od_true_positive_rate"
         ]
     },
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.xview_frcnn",
+        "model_kwargs": {
+            "num_classes": 4
+        },
+        "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
         "name": "get_art_model",
-        "weights_file": "xview_model_state_dict_epoch_99_loss_0p67",
+        "weights_file": "carla_rgb_weights.pt",
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.object_detection",
-        "name": "ObjectDetectionTask"
+        "module": "armory.scenarios.carla_object_detection",
+        "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch:0.14.3",
-        "external_github_repo": null,
+        "external_github_repo": "colour-science/colour",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
