@@ -194,7 +194,7 @@ class Poison(Scenario):
         # filtering defense requires more than a single batch to run properly
         if (
             adhoc_config.get("use_poison_filtering_defense", True)
-            #and not self.check_run
+            # and not self.check_run
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
             if "data_augmentation" in defense_config:
@@ -233,20 +233,33 @@ class Poison(Scenario):
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             logger.info(f"Total clean data points: {np.sum(is_clean)}")
-            is_dirty = (is_clean.astype(np.int64) == 0)
+            is_dirty = is_clean.astype(np.int64) == 0
             logger.info(f"Total dirty data points: {np.sum(is_dirty)}")
 
             logger.info("Filtering out detected poisoned samples")
-            indices_to_keep = (is_clean == 1)
+            indices_to_keep = is_clean == 1
 
-            # Compute the overall class distribution and the filtered class distribution.
-            # Then compute the "filter perplexity" metric on these distributions.
-            y_counts_all = np.bincount(self.y_clean)
-            y_counts_filtered = np.bincount(self.y_clean[indices_to_keep], 
-                                            minlength=len(y_counts_all))
-            y_dist_all = y_counts_all / y_counts_all.sum()
-            y_dist_filtered = y_counts_filtered / y_counts_filtered.sum()
-            self.filter_perplexity.add_results(y_dist_filtered, y_dist_all)
+            # Measure *bias* by seeing how closely the distribution of false positives matches
+            # the distribution of unpoisoned data.  The intuition is that bias depends not on
+            # how much of the poison the filter finds, but only what the filter does to the rest of
+            # the data.  That is, if it removes clean data, it should do so in proportion to class
+            # frequency, removing roughly the same fraction of each class.
+
+            # convert poison_index to binary vector the same length as data
+            poison_inds = np.zeros_like(self.y_clean)
+            poison_inds[self.poison_index] = 1
+            # benign is here defined to be the class distribution of the unpoisoned part of the data
+            x_benign = self.y_clean[poison_inds == 0]
+            x_benign = np.bincount(x_benign, minlength=max(self.y_clean))
+            x_benign = x_benign / x_benign.sum()
+            # fps is false positives: clean data marked as poison by the filter
+            # (is_dirty is the filter's prediction)
+            fps_inds = (1 - poison_inds) & is_dirty
+            fps = self.y_clean[fps_inds == 1]
+            fps = np.bincount(fps, minlength=max(self.y_clean))
+            fps = fps / fps.sum()
+
+            self.filter_perplexity.add_results(fps, x_benign)
 
         else:
             logger.info(
@@ -374,5 +387,7 @@ class Poison(Scenario):
             )
         if hasattr(self, "filter_perplexity"):
             results["filter_perplexity"] = self.filter_perplexity.mean()
-            logger.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
+            logger.info(
+                f"Normalized filter perplexity: {self.filter_perplexity.mean()}"
+            )
         self.results = results
