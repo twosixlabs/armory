@@ -17,38 +17,44 @@ tensorflow-datasets==3.2.0
 jupyterlab==3.0.9
 boto3==1.17.20
 Pillow==8.2.0
-adversarial-robustness-toolbox==1.6.2
 pydub==0.24.1
 apache-beam==2.22.0
 dill==0.3.1.1
 pytest==6.2.2
-ffmpeg-python==0.2.0
 opencv-python==4.5.1.48
-tensorflow-datasets==3.2.0
-jupyterlab==3.0.9
-boto3==1.17.20
-Pillow==8.1.1
-pydub==0.24.1
-apache-beam==2.22.0
-dill==0.3.1.1
-pytest==6.2.2
 pandas==1.2.4
 ffmpeg-python==0.2.0
+tensorboardX==2.4.1
+adversarial-robustness-toolbox==1.9.1
 
-###
-### Begin Pytorch required libraries
+# NOTE: To use ffmpeg-python (e.g., ucf101 scenario), you need to install ffmpeg:
+#    conda install -c conda-forge ffmpeg==4.2.3
+
+### Begin standard Pytorch required libraries
 torch==1.7.0
-torchvision==0.8.1
-torchaudio==0.6.0
+torchvision==0.8.0
 cudatoolkit==11.0
-hydra-core~=1.0.6
-python-levenshtein~=0.12.2
-librosa
-sox
-matplotlib
+tensorflow-gpu==2.4.1
+###
+### End Pytorch required libraries
+###
+
+### Begin Pytorch Deep Speech required libraries
+# NOTE: due to deep speech dependencies, this uses older version of pytorch
 # The deepspeech asr processing requires warpctc-pytorch which is highly environment
-# dependent. If you are not useing that model or related, you don't need to import
-# waprctc-pytorch
+# dependent. If you are not using that model or related, you don't need to import
+# torch==1.6.0
+# torchvision==0.7.0
+# torchaudio==0.6.0
+# soundfile
+# numba==0.52.0
+# cudatoolkit==10.1
+# tensorflow-gpu==2.4.1
+# hydra-core~=1.0.6
+# python-levenshtein~=0.12.2
+# librosa
+# sox
+# warpctc-pytorch
 # warpctc-pytorch==0.2.1+torch16.cuda102
 ###
 ### End Pytorch required libraries
