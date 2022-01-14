@@ -12,7 +12,7 @@ import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
-from typing import List
+from typing import Dict, List
 
 import cProfile
 import pstats
@@ -24,7 +24,107 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 logger = logging.getLogger(__name__)
 
 
-def perplexity(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
+def compute_spds(y: np.ndarray, 
+                 y_pred: np.ndarray, 
+                 is_flagged: np.ndarray) -> Dict[int, float]:
+    """
+    Computes the per-class Statistical Parity Difference for each
+    class indicated by y and y_pred with parity indicated by is_flagged.
+    See _compute_spd.__doc__ and _make_contingency_tables.__doc__.
+    """
+    contingency_tables = _make_contingency_tables(y, y_pred, is_flagged)
+    spds = {label: _compute_spd(contingency_table)
+            for label, contingency_table in contingency_tables.items()}
+    return spds
+
+
+def _compute_spd(contingency_table: np.ndarray) -> float:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                 incorrectly_classified | correctly_classified
+                 ---------------------------------------------
+    not_flagged |           a           |          b         |
+                |---------------------------------------------
+        flagged |           c           |          d         |
+                 ---------------------------------------------
+
+    the Statistical Parity Difference computed by
+
+    SPD = a / (a + b) - c / (c + d)
+
+    is one measure of the impact being flagged has on classification.
+    """
+    if not hasattr(contingency_table, "shape"):
+        raise ValueError("Input has no 'shape' attribute. Is this an array?")
+    if not hasattr(contingency_table, "sum"):
+        raise ValueError("Input has no 'sum' method. Is this an array?")
+    if not callable(contingency_table.sum):
+        raise ValueError("Input has no 'sum' method. Is this an array?")
+    if not contingency_table.shape == (2, 2):
+        raise ValueError(f"Expected a 2-x-2 array: got shape {contingency_table.shape}.")
+    if np.any(contingency_table < 0):
+        raise ValueError("Expected a non-negative contingency table.")
+    if np.isclose(contingency_table.sum(), 0):
+        raise ValueError("Expected a non-zero contingency table.")
+    numerators = contingency_table[:, 0]
+    denominators = contingency_table.sum(1)
+    numerators[denominators == 0] = 0   # Handle division by zero:
+    denominators[denominators == 0] = 1 # 0/0 => 0/1.
+    fractions = numerators / denominators
+    spd = fractions[0] - fractions[1]
+    return spd
+
+
+def _make_contingency_tables(y: np.ndarray, 
+                             y_pred: np.ndarray, 
+                             is_flagged: np.ndarray) -> Dict[int, np.ndarray]:
+    """
+    Given true and predicted labels for some data and boolean flags for each
+    data sample (indicating some binary classification beyond the labels), for 
+    each class, produce the following 2-x-2 contingency table:
+
+                         incorrectly_classified | correctly_classified
+                         ---------------------------------------------
+    y_label_not_flagged |           a           |          b         |
+                        |---------------------------------------------
+        y_label_flagged |           c           |          d         |
+                         ---------------------------------------------
+
+    Args:
+        y (np.ndarray): The true labels.
+        y_pred (np.ndarray): The predicted labels.
+        is_flagged (np.ndarray): The boolean flags.
+
+    Returns:
+        A map (Dict[int, np.ndarray]) of the per-class contingency tables.
+    """
+    y = np.array(y).astype(np.int).flatten()
+    y_pred = np.array(y_pred).astype(np.int).flatten()
+    is_flagged = np.array(is_flagged).astype(np.bool_).flatten()
+    if len(y_pred) != len(y) or len(is_flagged) != len(y):
+        raise ValueError(
+            f"Expected arrays y, y_pred, and is_flagged of the same length: \
+            got {len(y)}, {len(y_pred)}, and {len(is_flagged)}."
+        )
+    contingency_tables = {}
+    for label in np.unique(y):
+        y_label_pred = y_pred[y == label]
+        y_label_flagged = is_flagged[y == label]
+        y_label_false = np.bincount(                                          # Consider each prediction of a true but unflagged instance
+            (y_label_pred[y_label_flagged == False] == label).astype(np.int), # of the 'label' class. How many are correct vs. incorrect?
+            minlength=2
+        )
+        y_label_true = np.bincount(                                          # Consider each prediction of a true and flagged instance
+            (y_label_pred[y_label_flagged == True] == label).astype(np.int), # of the 'label' class. How many are correct vs. incorrect?
+            minlength=2
+        )
+        contingency_table = np.stack([y_label_false, y_label_true], 0)
+        contingency_tables[label] = contingency_table
+    return contingency_tables
+
+
+def perplexity(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
     """
     Return the normalized p-to-q perplexity.
     """
@@ -33,7 +133,7 @@ def perplexity(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
     return [perplexity_pq]
 
 
-def kl_div(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
+def kl_div(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
     """
     Return the Kullback-Leibler divergence from p to q.
     """
@@ -43,7 +143,7 @@ def kl_div(p: np.array, q: np.array, eps: float = 1e-10) -> List[float]:
     return [kl_div_pq]
 
 
-def _cross_entropy(p: np.array, q: np.array, eps: float = 1e-10) -> float:
+def _cross_entropy(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
     """
     Return the cross entropy from a distribution p to a distribution q.
     """
