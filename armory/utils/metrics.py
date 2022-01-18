@@ -124,6 +124,46 @@ def _make_contingency_tables(y: np.ndarray,
     return contingency_tables
 
 
+def filter_perplexity_fps_benign(y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray) -> List[float]:
+    """
+    Measure one possible aspect of bias by seeing how closely the distribution of false 
+    positives matches the distribution of unpoisoned data.  The intuition is that bias 
+    depends not on how much of the poison the filter finds, but only what the filter does 
+    to the rest of the data.  That is, if it removes clean data, it should do so in 
+    proportion to class frequency, removing roughly the same fraction of each class.
+
+    In particular, we do not expect that _everything_ removed by the filter should match 
+    the original class distribution, because we do not expect that the poison was applied 
+    evenly to the whole dataset in the first place.  
+    
+    Args:
+        y_clean:            The class labels of the original dataset
+        poison_index:       The indices of elements in y_clean that were actually poisoned
+        poison_prediction:  What the filter thinks is poison.  1 for poison, 0 for clean
+
+    Returns:
+        Normalized perplexity from fps to benign, where fps is the class frequency distribution of false positives,
+        and benign is the class frequency distribution of the unpoisoned data
+
+    """
+
+    # convert poison_index to binary vector the same length as data
+    poison_inds = np.zeros_like(y_clean)
+    poison_inds[poison_index] = 1
+    # benign is here defined to be the class distribution of the unpoisoned part of the data
+    x_benign = y_clean[poison_inds == 0]
+    x_benign = np.bincount(x_benign, minlength=max(y_clean))
+    x_benign = x_benign / x_benign.sum()
+    # fps is false positives: clean data marked as poison by the filter
+    fp_inds = (1 - poison_inds) & poison_prediction
+    fp_labels = y_clean[fp_inds == 1]
+    fps = np.bincount(fp_labels, minlength=max(y_clean))
+    fps = fps / fps.sum()
+
+
+    return perplexity(fps, x_benign)
+
+
 def perplexity(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
     """
     Return the normalized p-to-q perplexity.
@@ -1603,7 +1643,8 @@ SUPPORTED_METRICS = {
     "carla_od_misclassification_rate": carla_od_misclassification_rate,
     "carla_od_true_positive_rate": carla_od_true_positive_rate,
     "kl_div": kl_div,
-    "perplexity": perplexity
+    "perplexity": perplexity,
+    "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
 }
 
 # Image-based metrics applied to video

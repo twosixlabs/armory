@@ -239,27 +239,8 @@ class Poison(Scenario):
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = is_clean == 1
 
-            # Measure *bias* by seeing how closely the distribution of false positives matches
-            # the distribution of unpoisoned data.  The intuition is that bias depends not on
-            # how much of the poison the filter finds, but only what the filter does to the rest of
-            # the data.  That is, if it removes clean data, it should do so in proportion to class
-            # frequency, removing roughly the same fraction of each class.
-
-            # convert poison_index to binary vector the same length as data
-            poison_inds = np.zeros_like(self.y_clean)
-            poison_inds[self.poison_index] = 1
-            # benign is here defined to be the class distribution of the unpoisoned part of the data
-            x_benign = self.y_clean[poison_inds == 0]
-            x_benign = np.bincount(x_benign, minlength=max(self.y_clean))
-            x_benign = x_benign / x_benign.sum()
-            # fps is false positives: clean data marked as poison by the filter
-            # (is_dirty is the filter's prediction)
-            fps_inds = (1 - poison_inds) & is_dirty
-            fps = self.y_clean[fps_inds == 1]
-            fps = np.bincount(fps, minlength=max(self.y_clean))
-            fps = fps / fps.sum()
-
-            self.filter_perplexity.add_results(fps, x_benign)
+            if self.config["adhoc"].get("use_poison_filtering_defense", False):
+                self.filter_perplexity.add_results(self.y_clean, self.poison_index, is_dirty)
 
         else:
             logger.info(
@@ -313,7 +294,7 @@ class Poison(Scenario):
                 "categorical_accuracy"
             )
         if self.config["adhoc"].get("use_poison_filtering_defense", False):
-            self.filter_perplexity = metrics.MetricList("perplexity")
+            self.filter_perplexity = metrics.MetricList("filter_perplexity_fps_benign")
 
     def load(self):
         self.set_random_seed()
