@@ -1616,11 +1616,13 @@ class MetricsLogger:
             "object_detection_AP_per_class",
             "apricot_patch_targeted_AP_per_class",
             "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
         ]
         self.mean_ap_metrics = [
             "object_detection_AP_per_class",
             "apricot_patch_targeted_AP_per_class",
             "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
         ]
 
         self.task_kwargs = task_kwargs
