@@ -56,7 +56,7 @@
         "name": "CarlaVideoTracking"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.3",
+        "docker_image": "twosixarmory/pytorch:0.14.4",
         "external_github_repo": "amoudgl/pygoturn",
         "gpus": "all",
         "output_dir": null,
