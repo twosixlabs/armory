@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 
 
 def compute_spds(y: np.ndarray, 
-                 y_pred: np.ndarray, 
-                 is_flagged: np.ndarray) -> Dict[int, float]:
+                 flagged_A: np.ndarray, 
+                 flagged_B: np.ndarray) -> Dict[int, float]:
     """
     Computes the per-class Statistical Parity Difference for each
-    class indicated by y and y_pred with parity indicated by is_flagged.
+    class indicated by y with parity indicated by (flagged_A, flagged_B) pairs.
     See _compute_spd.__doc__ and _make_contingency_tables.__doc__.
     """
-    contingency_tables = _make_contingency_tables(y, y_pred, is_flagged)
+    contingency_tables = _make_contingency_tables(y, flagged_A, flagged_B)
     spds = {label: _compute_spd(contingency_table)
             for label, contingency_table in contingency_tables.items()}
     return spds
