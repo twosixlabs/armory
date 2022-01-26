@@ -76,52 +76,60 @@ def _compute_spd(contingency_table: np.ndarray) -> float:
     return spd
 
 
-def _make_contingency_tables(y: np.ndarray, 
-                             y_pred: np.ndarray, 
-                             is_flagged: np.ndarray) -> Dict[int, np.ndarray]:
+def _make_contingency_tables(y: np.ndarray,
+                             flagged_A: np.ndarray,
+                             flagged_B: np.ndarray) -> Dict[int, np.ndarray]:
     """
-    Given true and predicted labels for some data and boolean flags for each
-    data sample (indicating some binary classification beyond the labels), for 
-    each class, produce the following 2-x-2 contingency table:
+    Given a list of class labels, and two arbitrary binary flags A and B: 
+    for each class, produce the following 2-x-2 contingency table:
 
-                         incorrectly_classified | correctly_classified
+                               not flagged by B | flagged by B
                          ---------------------------------------------
-    y_label_not_flagged |           a           |          b         |
+       not flagged by A |           a           |          b         |
                         |---------------------------------------------
-        y_label_flagged |           c           |          d         |
+           flagged by A |           c           |          d         |
                          ---------------------------------------------
+
+    For example, flag A can be whether this example was classified correctly,
+    while flag B reports some other binary characteristic of the data.
 
     Args:
-        y (np.ndarray): The true labels.
-        y_pred (np.ndarray): The predicted labels.
-        is_flagged (np.ndarray): The boolean flags.
+        y (np.ndarray): The true labels (not necessarily binary)
+        flagged_A (np.ndarray): The binary outputs of flag A
+        flagged_B (np.ndarray): The binary outputs of flag B
 
     Returns:
         A map (Dict[int, np.ndarray]) of the per-class contingency tables.
     """
+
     y = np.array(y).astype(np.int).flatten()
-    y_pred = np.array(y_pred).astype(np.int).flatten()
-    is_flagged = np.array(is_flagged).astype(np.bool_).flatten()
-    if len(y_pred) != len(y) or len(is_flagged) != len(y):
+    flagged_A = np.array(flagged_A).astype(np.bool_).flatten()
+    flagged_B = np.array(flagged_B).astype(np.bool_).flatten()
+
+    if len(flagged_A) != len(y) or len(flagged_B) != len(y):
         raise ValueError(
-            f"Expected arrays y, y_pred, and is_flagged of the same length: \
-            got {len(y)}, {len(y_pred)}, and {len(is_flagged)}."
+            f"Expected arrays y, flagged_A, and flagged_B of the same length: \
+            got {len(y)}, {len(flagged_A)}, and {len(flagged_B)}."
         )
+
     contingency_tables = {}
-    for label in np.unique(y):
-        y_label_pred = y_pred[y == label]
-        y_label_flagged = is_flagged[y == label]
-        y_label_false = np.bincount(                                          # Consider each prediction of a true but unflagged instance
-            (y_label_pred[y_label_flagged == False] == label).astype(np.int), # of the 'label' class. How many are correct vs. incorrect?
-            minlength=2
-        )
-        y_label_true = np.bincount(                                          # Consider each prediction of a true and flagged instance
-            (y_label_pred[y_label_flagged == True] == label).astype(np.int), # of the 'label' class. How many are correct vs. incorrect?
-            minlength=2
-        )
-        contingency_table = np.stack([y_label_false, y_label_true], 0)
-        contingency_tables[label] = contingency_table
+    for class_id in np.unique(y):
+
+        items_flagged_A = flagged_A[y == class_id]
+        items_flagged_B = flagged_B[y == class_id]
+
+        a = (~items_flagged_A & ~items_flagged_B).sum()
+        b = (~items_flagged_A & items_flagged_B).sum()
+        c = (items_flagged_A & ~items_flagged_B).sum()
+        d = (items_flagged_A & items_flagged_B).sum()
+
+        table = np.array([[a, b],
+                          [c, d]])
+        contingency_tables[class_id] = table
+    
     return contingency_tables
+
+
 
 
 def filter_perplexity_fps_benign(y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray) -> List[float]:
