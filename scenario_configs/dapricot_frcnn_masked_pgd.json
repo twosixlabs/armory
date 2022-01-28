@@ -54,7 +54,7 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/tf1:0.14.4",
-        "external_github_repo": "colour-science/colour",
+        "external_github_repo": "colour-science/colour@v0.3.16",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
