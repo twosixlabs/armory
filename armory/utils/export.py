@@ -48,7 +48,10 @@ class SampleExporter:
 
         if self.saved_samples < self.num_samples:
 
-            self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_pred_adv}
+            self.y_dict[self.saved_samples] = {
+                "ground truth": y,
+                "predicted": y_pred_adv,
+            }
             if plot_bboxes:
                 # For OD scenarios passes this
                 self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean)
@@ -153,9 +156,13 @@ class SampleExporter:
                 for adv_pred_box in bboxes_pred_adv:
                     adv_box_layer.rectangle(adv_pred_box, outline="white", width=2)
                 if y_pred_clean is not None:
-                    bboxes_pred_clean = y_pred_clean[0]["boxes"][y_pred_clean[0]["scores"] > 0.9]
+                    bboxes_pred_clean = y_pred_clean[0]["boxes"][
+                        y_pred_clean[0]["scores"] > 0.9
+                    ]
                     for clean_pred_box in bboxes_pred_clean:
-                        benign_box_layer.rectangle(clean_pred_box, outline="white", width=2)
+                        benign_box_layer.rectangle(
+                            clean_pred_box, outline="white", width=2
+                        )
 
                 benign_image_with_boxes.save(
                     os.path.join(
