@@ -21,7 +21,7 @@ def get_data_level_stats(model, data_list, resize=None):
             if resize is not None:
                 # convert from ndarray to PIL, resize, and convert back to ndarray
                 image = Image.fromarray(np.uint8(image * 255))
-                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = image.resize(size=(resize, resize), resample=Image.BILINEAR)
                 image = np.array(image, dtype=np.float32)
                 image = image / 255.0
             image = np.expand_dims(image, 0)
@@ -64,7 +64,7 @@ def get_data_level_stats(model, data_list, resize=None):
         with torch.no_grad():
             if resize is not None:
                 image = Image.fromarray(np.uint8(image * 255))
-                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = image.resize(size=(resize, resize), resample=Image.BILINEAR)
                 image = np.array(image, dtype=np.float32)
                 image = image / 255.0
             image = np.expand_dims(image, 0)
@@ -162,7 +162,7 @@ def get_per_example_stats(
     std_activations,
     class_typicality_match_stats,
     class_typicality_mismatch_stats,
-    resize=None,
+    resize=None
 ):
     """
     param model: The model that is used to produce the baseline statistics
@@ -184,7 +184,7 @@ def get_per_example_stats(
         with torch.no_grad():
             if resize is not None:
                 image = Image.fromarray(np.uint8(image * 255))
-                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = image.resize(size=(resize, resize), resample=Image.BILINEAR)
                 image = np.array(image, dtype=np.float32)
                 image = image / 255.0
             image = np.expand_dims(image, 0)
