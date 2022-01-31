@@ -4,23 +4,26 @@ from PIL import Image
 import numpy as np
 import torch
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def get_data_level_stats(model, data_list, device):
+def get_data_level_stats(model, data_list, resize=None):
     """
     param model: The model that is used to produce the baseline statistics
     param data_list: List of tuples, where each tuple comprise an image,
         given as ndarray of shape (H,W,C), and its class
     param device: Device on which to load data
+    param resize: Size of each dimension in resized images
     """
     # Get activations and class ids for all data
     activations, clsids = [], []
     for image, label in data_list:
         with torch.no_grad():
-            # convert from ndarray to PIL, resize, and convert back to ndarray
-            image = Image.fromarray(np.uint8(image * 255))
-            image = image.resize(size=(224, 224), resample=Image.BILINEAR)
-            image = np.array(image, dtype=np.float32)
-            image = image / 255.0
+            if resize is not None:
+                # convert from ndarray to PIL, resize, and convert back to ndarray
+                image = Image.fromarray(np.uint8(image * 255))
+                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = np.array(image, dtype=np.float32)
+                image = image / 255.0
             image = np.expand_dims(image, 0)
             image = torch.tensor(image).to(device)
             h, _ = model(image)  # returns (activation, output)
@@ -59,10 +62,11 @@ def get_data_level_stats(model, data_list, device):
 
     for image, label in data_list:
         with torch.no_grad():
-            image = Image.fromarray(np.uint8(image * 255))
-            image = image.resize(size=(224, 224), resample=Image.BILINEAR)
-            image = np.array(image, dtype=np.float32)
-            image = image / 255.0
+            if resize is not None:
+                image = Image.fromarray(np.uint8(image * 255))
+                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = np.array(image, dtype=np.float32)
+                image = image / 255.0
             image = np.expand_dims(image, 0)
             image = torch.tensor(image).to(device)
             h, pred = model(image)
@@ -118,11 +122,26 @@ def get_data_level_stats(model, data_list, device):
         class_typicality_match = class_typicality[class_preds == c]
         class_typicality_mismatch = class_typicality[class_preds != c]
 
-        match_mean = class_typicality_match.mean()
-        match_std = class_typicality_match.std()
-
-        mismatch_mean = class_typicality_mismatch.mean()
-        mismatch_std = class_typicality_mismatch.std()
+        # Save typicality stats and account for special cases        
+        if len(class_typicality_match) == 0:
+            match_mean = 0
+            match_std = 1e-10 # avoid dividing by zero
+        elif len(class_typicality_match) == 1:
+            match_mean = class_typicality_match[0]
+            match_std = 1e-10
+        else:
+            match_mean = class_typicality_match.mean()
+            match_std = class_typicality_match.std()
+        
+        if len(class_typicality_mismatch) == 0:
+            mismatch_mean = 0
+            mismatch_std = 1e-10
+        elif len(class_typicality_mismatch) == 1:
+            mismatch_mean = class_typicality_mismatch[0]
+            mismatch_std = 1e-10
+        else:
+            mismatch_mean = class_typicality_mismatch.mean()
+            mismatch_std = class_typicality_mismatch.std()
 
         class_typicality_match_stats.append((match_mean, match_std))
         class_typicality_mismatch_stats.append((mismatch_mean, mismatch_std))
@@ -143,7 +162,7 @@ def get_per_example_stats(
     std_activations,
     class_typicality_match_stats,
     class_typicality_mismatch_stats,
-    device,
+    resize=None,
 ):
     """
     param model: The model that is used to produce the baseline statistics
@@ -156,17 +175,18 @@ def get_per_example_stats(
     param class_typicality_mismatch_stats: List of tuples, where each tuple (mean, std) describe
         the distribution over typicality values for a class when the model prediction does not match the true
         label
-    param device: Device on which to load data
+    param resize: Size of each dimension in resized images
     """
     typicality_output = []
     majority_minority_output = []
 
     for image, label in data_list:
         with torch.no_grad():
-            image = Image.fromarray(np.uint8(image * 255))
-            image = image.resize(size=(224, 224), resample=Image.BILINEAR)
-            image = np.array(image, dtype=np.float32)
-            image = image / 255.0
+            if resize is not None:
+                image = Image.fromarray(np.uint8(image * 255))
+                image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+                image = np.array(image, dtype=np.float32)
+                image = image / 255.0
             image = np.expand_dims(image, 0)
             image = torch.tensor(image).to(device)
             h, _ = model(image)
