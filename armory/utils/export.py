@@ -146,15 +146,16 @@ class SampleExporter:
 
                 bboxes_true = y[0]["boxes"]
                 bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
-                bboxes_pred_clean = y_pred_clean[0]["boxes"][y_pred_clean[0]["scores"] > 0.9]
 
                 for true_box in bboxes_true:
                     benign_box_layer.rectangle(true_box, outline="red", width=2)
                     adv_box_layer.rectangle(true_box, outline="red", width=2)
                 for adv_pred_box in bboxes_pred_adv:
                     adv_box_layer.rectangle(adv_pred_box, outline="white", width=2)
-                for clean_pred_box in bboxes_pred_clean:
-                    benign_box_layer.rectangle(clean_pred_box, outline="white", width=2)
+                if y_pred_clean is not None:
+                    bboxes_pred_clean = y_pred_clean[0]["boxes"][y_pred_clean[0]["scores"] > 0.9]
+                    for clean_pred_box in bboxes_pred_clean:
+                        benign_box_layer.rectangle(clean_pred_box, outline="white", width=2)
 
                 benign_image_with_boxes.save(
                     os.path.join(
