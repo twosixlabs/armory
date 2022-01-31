@@ -6,12 +6,12 @@ import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 def get_data_level_stats(model, data_list, resize=None):
     """
     param model: The model that is used to produce the baseline statistics
     param data_list: List of tuples, where each tuple comprise an image,
         given as ndarray of shape (H,W,C), and its class
-    param device: Device on which to load data
     param resize: Size of each dimension in resized images
     """
     # Get activations and class ids for all data
@@ -122,17 +122,17 @@ def get_data_level_stats(model, data_list, resize=None):
         class_typicality_match = class_typicality[class_preds == c]
         class_typicality_mismatch = class_typicality[class_preds != c]
 
-        # Save typicality stats and account for special cases        
+        # Save typicality stats and account for special cases
         if len(class_typicality_match) == 0:
             match_mean = 0
-            match_std = 1e-10 # avoid dividing by zero
+            match_std = 1e-10  # avoid dividing by zero
         elif len(class_typicality_match) == 1:
             match_mean = class_typicality_match[0]
             match_std = 1e-10
         else:
             match_mean = class_typicality_match.mean()
             match_std = class_typicality_match.std()
-        
+
         if len(class_typicality_mismatch) == 0:
             mismatch_mean = 0
             mismatch_std = 1e-10

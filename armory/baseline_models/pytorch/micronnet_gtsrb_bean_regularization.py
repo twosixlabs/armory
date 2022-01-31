@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-import numpy as np
 
 import logging
 from typing import Optional
@@ -9,6 +8,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 nclasses = 43  # GTSRB has 43 classes
+
 
 class Micronnet(nn.Module):
     def __init__(self) -> None:
@@ -59,9 +59,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class get_model(nn.Module):
-    def __init__(
-        self, weights_path: Optional[str], model_kwargs: dict
-    ):
+    def __init__(self, weights_path: Optional[str], model_kwargs: dict):
         super().__init__()
         self.inner_model = Micronnet(**model_kwargs)
         self.inner_model.to(DEVICE)
