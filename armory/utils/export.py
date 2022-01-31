@@ -4,7 +4,7 @@ import numpy as np
 import ffmpeg
 import pickle
 import time
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
 from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
@@ -36,12 +36,23 @@ class SampleExporter:
             )
         self._make_output_dir()
 
-    def export(self, x, x_adv, y, y_adv):
+    def export(self, x, x_adv, y, y_adv, plot_bboxes=False):
+        """ x: the clean sample
+            x_adv: the adversarial sample
+            y: the clean label
+            y_adv: the predicted label on the adversarial sample
+            plot_bboxes: Boolean passed by the Carla OD scenario, in which case
+                y and y_adv are tuples including a dict of bounding box data
+        """
 
         if self.saved_samples < self.num_samples:
 
             self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_adv}
-            self.export_fn(x, x_adv)
+            if plot_bboxes:
+                # Carla OD scenario passes this
+                self.export_fn(x, x_adv, y, y_adv)
+            else:
+                self.export_fn(x, x_adv)
 
             if self.saved_samples == self.num_samples:
                 with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
@@ -64,7 +75,10 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(self, x, x_adv):
+    def _export_images(self, x, x_adv, y=None, y_adv=None):
+
+        plot_boxes = True if y is not None else False
+
         for x_i, x_adv_i in zip(x, x_adv):
 
             if self.saved_samples == self.num_samples:
@@ -116,6 +130,38 @@ class SampleExporter:
             adversarial_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.png")
             )
+
+            if plot_boxes:
+                # Export images again but with bounding boxes
+                benign_image_with_boxes = Image.fromarray(
+                    np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
+                )
+                adversarial_image_with_boxes = Image.fromarray(
+                    np.uint8(np.clip(x_adv_i_mode, 0.0, 1.0) * 255.0), mode
+                )
+
+                benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
+                adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
+                bboxes_true = y[0]["boxes"]
+                bboxes_pred = y_adv[0]["boxes"][y_adv[0]["scores"] > 0.9]
+
+                for true_box in bboxes_true:
+                    benign_box_layer.rectangle(true_box, outline="red", width=2)
+                    adv_box_layer.rectangle(true_box, outline="red", width=2)
+                for pred_box in bboxes_pred:
+                    adv_box_layer.rectangle(pred_box, outline="white", width=2)
+
+                benign_image_with_boxes.save(
+                    os.path.join(
+                        self.output_dir, f"{self.saved_samples}_benign_with_boxes.png"
+                    )
+                )
+                adversarial_image_with_boxes.save(
+                    os.path.join(
+                        self.output_dir,
+                        f"{self.saved_samples}_adversarial_with_boxes.png",
+                    )
+                )
 
             self.saved_samples += 1
 
