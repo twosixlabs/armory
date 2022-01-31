@@ -36,21 +36,22 @@ class SampleExporter:
             )
         self._make_output_dir()
 
-    def export(self, x, x_adv, y, y_adv, plot_bboxes=False):
+    def export(self, x, x_adv, y, y_pred_adv, y_pred_clean=None, plot_bboxes=False):
         """ x: the clean sample
             x_adv: the adversarial sample
             y: the clean label
-            y_adv: the predicted label on the adversarial sample
-            plot_bboxes: Boolean passed by the Carla OD scenario, in which case
-                y and y_adv are tuples including a dict of bounding box data
+            y_pred_adv: the predicted label on the adversarial sample
+            y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
+            plot_bboxes: Boolean passed by object detection scenarios, in which case
+                y, y_pred_adv, and y_pred_clean are tuples including a dict of bounding box data
         """
 
         if self.saved_samples < self.num_samples:
 
-            self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_adv}
+            self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_pred_adv}
             if plot_bboxes:
-                # Carla OD scenario passes this
-                self.export_fn(x, x_adv, y, y_adv)
+                # For OD scenarios passes this
+                self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean)
             else:
                 self.export_fn(x, x_adv)
 
@@ -75,7 +76,7 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(self, x, x_adv, y=None, y_adv=None):
+    def _export_images(self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None):
 
         plot_boxes = True if y is not None else False
 
@@ -142,14 +143,18 @@ class SampleExporter:
 
                 benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
                 adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
+
                 bboxes_true = y[0]["boxes"]
-                bboxes_pred = y_adv[0]["boxes"][y_adv[0]["scores"] > 0.9]
+                bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
+                bboxes_pred_clean = y_pred_clean[0]["boxes"][y_pred_clean[0]["scores"] > 0.9]
 
                 for true_box in bboxes_true:
                     benign_box_layer.rectangle(true_box, outline="red", width=2)
                     adv_box_layer.rectangle(true_box, outline="red", width=2)
-                for pred_box in bboxes_pred:
-                    adv_box_layer.rectangle(pred_box, outline="white", width=2)
+                for adv_pred_box in bboxes_pred_adv:
+                    adv_box_layer.rectangle(adv_pred_box, outline="white", width=2)
+                for clean_pred_box in bboxes_pred_clean:
+                    benign_box_layer.rectangle(clean_pred_box, outline="white", width=2)
 
                 benign_image_with_boxes.save(
                     os.path.join(
