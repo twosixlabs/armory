@@ -36,7 +36,16 @@ class SampleExporter:
             )
         self._make_output_dir()
 
-    def export(self, x, x_adv, y, y_pred_adv, y_pred_clean=None, plot_bboxes=False, classes_to_skip=None):
+    def export(
+        self,
+        x,
+        x_adv,
+        y,
+        y_pred_adv,
+        y_pred_clean=None,
+        plot_bboxes=False,
+        classes_to_skip=None,
+    ):
         """ x: the clean sample
             x_adv: the adversarial sample
             y: the clean label
@@ -84,11 +93,14 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None):
+    def _export_images(
+        self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None
+    ):
 
         plot_boxes = True if y is not None else False
         if classes_to_skip is not None:
-            if type(classes_to_skip) == int: classes_to_skip = [classes_to_skip]
+            if type(classes_to_skip) == int:
+                classes_to_skip = [classes_to_skip]
 
         for x_i, x_adv_i in zip(x, x_adv):
 
@@ -159,7 +171,8 @@ class SampleExporter:
                 bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
 
                 for true_box, label in zip(bboxes_true, labels_true):
-                    if classes_to_skip is not None and label in classes_to_skip: continue
+                    if classes_to_skip is not None and label in classes_to_skip:
+                        continue
                     benign_box_layer.rectangle(true_box, outline="red", width=2)
                     adv_box_layer.rectangle(true_box, outline="red", width=2)
                 for adv_pred_box in bboxes_pred_adv:

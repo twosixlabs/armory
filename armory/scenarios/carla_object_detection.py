@@ -87,7 +87,13 @@ class CarlaObjectDetectionTask(Scenario):
 
         if self.sample_exporter is not None:
             self.sample_exporter.export(
-                x, x_adv, y, y_pred_adv, self.y_pred, plot_bboxes=True, classes_to_skip=4
+                x,
+                x_adv,
+                y,
+                y_pred_adv,
+                self.y_pred,
+                plot_bboxes=True,
+                classes_to_skip=4,
             )
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
