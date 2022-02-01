@@ -7,15 +7,17 @@ Outputs are lists of python variables amenable to JSON serialization:
 """
 
 import logging
+from multiprocessing.sharedctypes import Value
 import numpy as np
 import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import cProfile
 import pstats
+from scipy import stats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
@@ -24,66 +26,58 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 logger = logging.getLogger(__name__)
 
 
-def compute_spds(y: np.ndarray, 
-                 flagged_A: np.ndarray, 
-                 flagged_B: np.ndarray) -> Dict[int, float]:
-    """
-    Computes the per-class Statistical Parity Difference for each
-    class indicated by y with parity indicated by (flagged_A, flagged_B) pairs.
-    See _compute_spd.__doc__ and _make_contingency_tables.__doc__.
-    """
-    contingency_tables = _make_contingency_tables(y, flagged_A, flagged_B)
-    spds = {label: _compute_spd(contingency_table)
-            for label, contingency_table in contingency_tables.items()}
-    return spds
-
-
-def _compute_spd(contingency_table: np.ndarray) -> float:
+def compute_fisher_p_value(contingency_table: np.ndarray) -> List[float]:
     """
     Given a 2-x-2 contingency table of the form
 
-                 incorrectly_classified | correctly_classified
-                 ---------------------------------------------
-    not_flagged |           a           |          b         |
-                |---------------------------------------------
-        flagged |           c           |          d         |
-                 ---------------------------------------------
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
+
+    perform a Fisher exact test to measure the association between
+    the A flags and B flags, returning a p-value.
+    """
+    _, fisher_p_value = stats.fisher_exact(contingency_table)
+    return [fisher_p_value]
+
+
+def compute_spd(contingency_table: np.ndarray) -> List[float]:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
 
     the Statistical Parity Difference computed by
 
     SPD = a / (a + b) - c / (c + d)
 
-    is one measure of the impact being flagged has on classification.
+    is one measure of the impact being flagged by A has on being flagged by B.
     """
-    if not hasattr(contingency_table, "shape"):
-        raise ValueError("Input has no 'shape' attribute. Is this an array?")
-    if not hasattr(contingency_table, "sum"):
-        raise ValueError("Input has no 'sum' method. Is this an array?")
-    if not callable(contingency_table.sum):
-        raise ValueError("Input has no 'sum' method. Is this an array?")
-    if not contingency_table.shape == (2, 2):
-        raise ValueError(f"Expected a 2-x-2 array: got shape {contingency_table.shape}.")
-    if np.any(contingency_table < 0):
-        raise ValueError("Expected a non-negative contingency table.")
-    if np.isclose(contingency_table.sum(), 0):
-        raise ValueError("Expected a non-zero contingency table.")
     numerators = contingency_table[:, 0]
     denominators = contingency_table.sum(1)
     numerators[denominators == 0] = 0   # Handle division by zero:
     denominators[denominators == 0] = 1 # 0/0 => 0/1.
     fractions = numerators / denominators
     spd = fractions[0] - fractions[1]
-    return spd
+    return [spd]
 
 
-def _make_contingency_tables(y: np.ndarray,
-                             flagged_A: np.ndarray,
-                             flagged_B: np.ndarray) -> Dict[int, np.ndarray]:
+def make_contingency_tables(y: np.ndarray,
+                            flagged_A: np.ndarray,
+                            flagged_B: np.ndarray) -> Dict[int, np.ndarray]:
     """
-    Given a list of class labels, and two arbitrary binary flags A and B: 
+    Given a list of class labels and two arbitrary binary flags A and B,
     for each class, produce the following 2-x-2 contingency table:
 
-                               not flagged by B | flagged by B
+                             not flagged by B   |     flagged by B
                          ---------------------------------------------
        not flagged by A |           a           |          b         |
                         |---------------------------------------------
@@ -1653,6 +1647,8 @@ SUPPORTED_METRICS = {
     "kl_div": kl_div,
     "perplexity": perplexity,
     "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
+    "poison_fisher_p_value": compute_fisher_p_value,
+    "poison_spd": compute_spd
 }
 
 # Image-based metrics applied to video
