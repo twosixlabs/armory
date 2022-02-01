@@ -21,6 +21,7 @@ def cluster_data(x: np.ndarray,
     cluster_labels = clusterer.fit_predict(x)
     return cluster_labels
 
+
 def get_majority_flags(model: Callable,
                        x: Iterable, 
                        device: torch.device, 
@@ -50,100 +51,11 @@ def get_majority_flags(model: Callable,
         class_minority = np.argmin(counts)
         if class_majority == class_minority:
             class_majority = 1
-            class_minority = 2
+            class_minority = 0
         if class_majority == 0 and class_minority == 1:
             majority_flags = ~majority_flags
     return majority_flags
 
-
-def get_majority_subclass_binary_labels(model, non_filtered_list, filtered_list, device):
-    """ Return a dictionary from classes to arrays designating 
-        by 1 a majority member of that class, and by 0 a minority
-
-        Requests 2 clusters from get_data_level_stats.
-    """
-
-    majority_labels, minority_labels, cluster_labels, _, _ = get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clusters=2)
-
-    # Note that majority label is a list of length N_classes.  
-    # The majority label may not be the same in each class.
-    # Similarly, cluster_labels is also a list of lists or arrays, one per class.
-
-    binary_labels = {}
-
-    for i, majority_label in enumerate(majority_labels):
-        binary_labels[i] = np.array(cluster_labels[i]) == majority_label
-
-    return binary_labels
-
-
-def demo():
-    """
-    Example code demonstrating how the above two functions can be used along with the
-    resnet18_bean_regularization model. DELETE when integration is complete.
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Instantiate a pretrained model
-    from BEAN.utils.resnet18_bean_regularization import get_model
-
-    print('Running on device:', device)
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-
-    weights_path = "./models/BEAN-2-abs-dist-alpha-100.pt"
-    print(weights_path)
-    model_kwargs = {
-        "data_means": [0.39382024, 0.4159701, 0.40887499],
-        "data_stds": [0.18931773, 0.18901625, 0.19651154],
-        "num_classes": 10,
-    }
-    
-    model = get_model(weights_path, **model_kwargs)
-    print("Instantiated model")
-
-    # Get all training data in the same format as Armory
-    # i.e., images with channel last and normalized to [0,1]
-    import numpy as np
-    from PIL import Image
-    import glob
-
-    root_dir = "resisc10/test"
-    image_dirs = glob.glob(root_dir + "/*")
-    image_dirs.sort()
-
-    complete_data_list = []
-    for c, d in enumerate(image_dirs):
-        images = glob.glob(d + "/*.jpg")
-        images.sort()
-        for image in images:
-            im = Image.open(image)
-            im = np.array(im, dtype=np.float32)
-            im = im / 255.0
-            complete_data_list.append((im, c))
-    print("Created complete data list")
-
-    # Create a random list of data to act as data filtered by poisoning defense
-    num_filtered_data = 100
-    filtered_data_idx = np.random.choice(
-        len(complete_data_list), size=num_filtered_data, replace=False
-    )
-    filtered_data_list = [complete_data_list[idx] for idx in filtered_data_idx]
-    print("Created filtered data list")
-    
-    #remove the elements of filtered_data_list from complete_data_list
-    complete_data_list = [i for j, i in enumerate(complete_data_list) if j not in filtered_data_idx]
-    
-    #print(len(complete_data_list), len(filtered_data_list))
-    
-    # Get statistics on the training data
-    (
-        sample_majority,
-        sample_minority,
-        sample_cluster_labels,
-        sample_silhouette_values,
-        sample_cluster_avg
-    ) = get_data_level_stats(model, complete_data_list, filtered_data_list, device)
-    print("Calculated statistics of filtered data")
 
 # Essentially copied from armory.utils.config_loading for BEAN regularization.
 def load_bean_model(model_config):
