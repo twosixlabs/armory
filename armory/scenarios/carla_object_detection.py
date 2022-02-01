@@ -86,7 +86,9 @@ class CarlaObjectDetectionTask(Scenario):
                 logger.warning("Adversarial attack perturbed depth channels")
 
         if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv, self.y_pred, plot_bboxes=True)
+            self.sample_exporter.export(
+                x, x_adv, y, y_pred_adv, self.y_pred, plot_bboxes=True
+            )
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
