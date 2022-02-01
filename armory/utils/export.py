@@ -36,7 +36,7 @@ class SampleExporter:
             )
         self._make_output_dir()
 
-    def export(self, x, x_adv, y, y_pred_adv, y_pred_clean=None, plot_bboxes=False):
+    def export(self, x, x_adv, y, y_pred_adv, y_pred_clean=None, plot_bboxes=False, classes_to_skip=None):
         """ x: the clean sample
             x_adv: the adversarial sample
             y: the clean label
@@ -44,6 +44,7 @@ class SampleExporter:
             y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
             plot_bboxes: Boolean passed by object detection scenarios, in which case
                 y, y_pred_adv, and y_pred_clean are tuples including a dict of bounding box data
+            classes_to_skip: int or list of ints, classes not to draw boxes for
         """
 
         if self.saved_samples < self.num_samples:
@@ -54,7 +55,7 @@ class SampleExporter:
             }
             if plot_bboxes:
                 # For OD scenarios passes this
-                self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean)
+                self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean, classes_to_skip)
             else:
                 self.export_fn(x, x_adv)
 
@@ -83,9 +84,11 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None):
+    def _export_images(self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None):
 
         plot_boxes = True if y is not None else False
+        if classes_to_skip is not None:
+            if type(classes_to_skip) == int: classes_to_skip = [classes_to_skip]
 
         for x_i, x_adv_i in zip(x, x_adv):
 
@@ -152,9 +155,11 @@ class SampleExporter:
                 adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
 
                 bboxes_true = y[0]["boxes"]
+                labels_true = y[0]["labels"]
                 bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
 
-                for true_box in bboxes_true:
+                for true_box, label in zip(bboxes_true, labels_true):
+                    if classes_to_skip is not None and label in classes_to_skip: continue
                     benign_box_layer.rectangle(true_box, outline="red", width=2)
                     adv_box_layer.rectangle(true_box, outline="red", width=2)
                 for adv_pred_box in bboxes_pred_adv:
