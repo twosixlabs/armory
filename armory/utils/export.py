@@ -58,9 +58,13 @@ class SampleExporter:
             else:
                 self.export_fn(x, x_adv)
 
-            if self.saved_samples == self.num_samples:
-                with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
-                    pickle.dump(self.y_dict, f)
+    def close(self):
+        """ Pickle the y_dict built up during each export() call.
+            Called at end of scenario.
+        """
+
+        with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+            pickle.dump(self.y_dict, f)
 
     def _make_output_dir(self):
         assert os.path.exists(self.base_output_dir) and os.path.isdir(
