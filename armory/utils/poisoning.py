@@ -17,8 +17,7 @@ def cluster_data(x: np.ndarray,
                  random_seed: int = 42, 
                  n_clusters: int = 2) -> np.ndarray:
     clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
-    #cluster_labels = clusterer.fit_predict(x)
-    cluster_labels = np.random.choice([0, 1], size=x.shape[0])
+    cluster_labels = clusterer.fit_predict(x)
     return cluster_labels
 
 
