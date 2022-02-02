@@ -8,7 +8,6 @@ import numpy as np
 import torch
 from PIL import Image
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples, silhouette_score
 
 
 from armory.data.utils import maybe_download_weights_from_s3
@@ -18,7 +17,8 @@ def cluster_data(x: np.ndarray,
                  random_seed: int = 42, 
                  n_clusters: int = 2) -> np.ndarray:
     clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
-    cluster_labels = clusterer.fit_predict(x)
+    #cluster_labels = clusterer.fit_predict(x)
+    cluster_labels = np.random.choice([0, 1], size=x.shape[0])
     return cluster_labels
 
 
@@ -29,14 +29,8 @@ def get_majority_flags(model: Callable,
     activations, class_ids  = [], []
     for image, class_id in x:
         with torch.no_grad():
-            image = Image.fromarray(np.uint8(image * 255))
-            image = image.resize(size=(224, 224), resample=Image.BILINEAR)
-            image = np.array(image, dtype=np.float32)
-            image = image / 255.0
-            image = np.expand_dims(image, 0)
-            image = torch.tensor(image).to(device)
-            h, _ = model(image)
-            h = h.detach().cpu().numpy()
+            image = convert_np_image_to_tensor(image, device)
+            h = get_hidden_representation(image, model)
             activations.append(h)
             class_ids.append(class_id)
     activations = np.concatenate(activations) 
@@ -57,8 +51,24 @@ def get_majority_flags(model: Callable,
     return majority_flags
 
 
+def convert_np_image_to_tensor(image: np.ndarray, device: torch.device) -> torch.Tensor:
+    image = Image.fromarray(np.uint8(image * 255))
+    image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+    image = np.array(image, dtype=np.float32)
+    image = image / 255.0
+    image = np.expand_dims(image, 0)
+    image = torch.tensor(image).to(device)
+    return image
+
+
+def get_hidden_representation(image: torch.Tensor, model: torch.nn.Module) -> np.ndarray:
+    hidden_representation, _ = model(image)
+    hidden_representation = hidden_representation.detach().cpu().numpy()
+    return hidden_representation
+
+
 # Essentially copied from armory.utils.config_loading for BEAN regularization.
-def load_bean_model(model_config):
+def load_explanatory_model(model_config):
     """
     Loads a model and preprocessing function from configuration file
 
@@ -83,18 +93,12 @@ def load_bean_model(model_config):
         }
     else:
         weights_path = None
-
     model = model_fn(weights_path)
-    """
-    if not isinstance(model, Classifier):
-        raise TypeError(f"{model} is not an instance of {Classifier}")
-    """
     if not weights_file and not model_config["fit"]:
         logger.warning(
             "No weights file was provided and the model is not configured to train. "
             "Are you loading model weights from an online repository?"
         )
-
     preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
     if preprocessing_fn is not None:
         if isinstance(preprocessing_fn, tuple):

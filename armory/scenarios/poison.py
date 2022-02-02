@@ -299,14 +299,10 @@ class Poison(Scenario):
             )
         if self.config["adhoc"].get("use_poison_filtering_defense", False):
             self.filter_perplexity = metrics.MetricList("filter_perplexity_fps_benign")
-        bean_model_config = self.config.get("bean_model", False)
-        if self.use_poison and bean_model_config:
-            bean_model, _ = poisoning_utils.load_bean_model(bean_model_config)
-            self.bean_model = bean_model
-            self.correct_prediction_flags_dict = {class_id: [] for class_id in np.unique(self.y_clean)}
-            self.x_adv_all = [] # The data is shuffled and batched,
-            self.y_true_all = [] # so it helps to track the order
-            self.y_adv_pred_all = [] # it's seen to compute metrics.
+        explanatory_model_config = self.config.get("explanatory_model", False)
+        if self.use_poison and explanatory_model_config:
+            explanatory_model, _ = poisoning_utils.load_explanatory_model(explanatory_model_config)
+            self.explanatory_model = explanatory_model
             self.fisher_p_value_metrics = {class_id: metrics.MetricList("poison_fisher_p_value")
                                            for class_id in np.unique(self.y_clean)}
             self.spd_metrics = {class_id: metrics.MetricList("poison_spd")
@@ -357,16 +353,6 @@ class Poison(Scenario):
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
 
-        if hasattr(self, "bean_model"):
-            self.x_adv_all.extend([x_adv[i] for i in range(x_adv.shape[0])])
-            self.y_true_all.extend(y.flatten().tolist())
-            self.y_adv_pred_all.extend(y_pred_adv.argmax(1).tolist())
-            for class_id in np.unique(y):
-                y_true_id = y[y == class_id]
-                y_pred_id = y_pred_adv[y == class_id].argmax(1)
-                correct_predictions_flags_id = (y_true_id == y_pred_id).tolist()
-                self.correct_prediction_flags_dict[class_id].extend(correct_predictions_flags_id)
-
     def evaluate_current(self):
         self.run_benign()
         if self.use_poison:
@@ -397,24 +383,24 @@ class Poison(Scenario):
             logger.info(
                 f"Normalized filter perplexity: {self.filter_perplexity.mean()}"
             )
-        if hasattr(self, "bean_model"):
-            y_true_all = np.array(self.y_true_all).flatten()
-            y_adv_pred_all = np.array(self.y_adv_pred_all).flatten()
-            correct_predictions_flags = (y_true_all == y_adv_pred_all)
-            majority_flags = poisoning_utils.get_majority_flags(model=self.bean_model,
-                                                                x=list(zip(self.x_adv_all, self.y_true_all)),
-                                                                device=torch.device("cpu"),
+        if hasattr(self, "indices_to_keep") and hasattr(self, "explanatory_model"):
+            logger.info("Computing explanatory model metrics.")
+            x_clean_kept = self.x_clean[self.indices_to_keep]
+            y_clean_kept = self.y_clean[self.indices_to_keep]
+            y_clean_pred = self.model.predict(x_clean_kept, **self.predict_kwargs).argmax(1)
+            correct_predictions_flags = (y_clean_kept == y_clean_pred)
+            DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            majority_flags = poisoning_utils.get_majority_flags(model=self.explanatory_model,
+                                                                x=list(zip(x_clean_kept, y_clean_kept)),
+                                                                device=DEVICE,
                                                                 n_clusters=2)
-            contingency_tables_dict = metrics.make_contingency_tables(y_true_all,
+            contingency_tables_dict = metrics.make_contingency_tables(y_clean_kept,
                                                                       correct_predictions_flags,
                                                                       majority_flags)
-            for class_id in np.unique(y_true_all):
-                try:
-                    contingency_table_id = contingency_tables_dict[class_id]
-                    self.fisher_p_value_metrics[class_id].add_results(contingency_table_id)
-                    results[f"poison_fisher_p_value_{str(class_id).zfill(2)}"] = self.fisher_p_value_metrics[class_id].mean()
-                    self.spd_metrics[class_id].add_results(contingency_table_id)
-                    results[f"poison_spd_{str(class_id).zfill(2)}"] = self.spd_metrics[class_id].mean()
-                except KeyError as e:
-                    logger.info(f"No instances of class {class_id} found!")
+            for class_id in np.unique(y_clean_kept):
+                contingency_table_id = contingency_tables_dict[class_id]
+                self.fisher_p_value_metrics[class_id].add_results(contingency_table_id)
+                results[f"poison_fisher_p_value_{str(class_id).zfill(2)}"] = self.fisher_p_value_metrics[class_id].mean()
+                self.spd_metrics[class_id].add_results(contingency_table_id)
+                results[f"poison_spd_{str(class_id).zfill(2)}"] = self.spd_metrics[class_id].mean()
         self.results = results
