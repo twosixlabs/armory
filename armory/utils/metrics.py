@@ -26,6 +26,27 @@ from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
 logger = logging.getLogger(__name__)
 
 
+def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
+
+    perform a chi-squared test to measure the association between
+    the A flags and B flags, returning a p-value.
+    """
+    try:
+        _, chi2_p_value, _, _ = stats.chi2_contingency(contingency_table, correction=False)
+    except ValueError as e:
+        chi2_p_value = np.nan
+    return [chi2_p_value]
+
+
 def compute_fisher_p_value(contingency_table: np.ndarray) -> List[float]:
     """
     Given a 2-x-2 contingency table of the form
@@ -40,7 +61,7 @@ def compute_fisher_p_value(contingency_table: np.ndarray) -> List[float]:
     perform a Fisher exact test to measure the association between
     the A flags and B flags, returning a p-value.
     """
-    _, fisher_p_value = stats.fisher_exact(contingency_table)
+    _, fisher_p_value = stats.fisher_exact(contingency_table, alternative="greater")
     return [fisher_p_value]
 
 
@@ -1647,6 +1668,7 @@ SUPPORTED_METRICS = {
     "kl_div": kl_div,
     "perplexity": perplexity,
     "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
+    "poison_chi2_p_value": compute_chi2_p_value,
     "poison_fisher_p_value": compute_fisher_p_value,
     "poison_spd": compute_spd
 }

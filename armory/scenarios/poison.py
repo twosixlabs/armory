@@ -303,10 +303,18 @@ class Poison(Scenario):
         if self.use_poison and explanatory_model_config:
             explanatory_model, _ = poisoning_utils.load_explanatory_model(explanatory_model_config)
             self.explanatory_model = explanatory_model
-            self.fisher_p_value_metrics = {class_id: metrics.MetricList("poison_fisher_p_value")
-                                           for class_id in np.unique(self.y_clean)}
-            self.spd_metrics = {class_id: metrics.MetricList("poison_spd")
-                                for class_id in np.unique(self.y_clean)}
+            self.majority_x_class_prediction_chi2_metrics = {
+                class_id: metrics.MetricList("poison_chi2_p_value") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_class_prediction_spd_metrics = {
+                class_id: metrics.MetricList("poison_spd") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_passed_filter_chi2_metrics = {
+                class_id: metrics.MetricList("poison_chi2_p_value") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_passed_filter_spd_metrics = {
+                class_id: metrics.MetricList("poison_spd") for class_id in np.unique(self.y_clean)
+            }
 
     def load(self):
         self.set_random_seed()
@@ -383,24 +391,31 @@ class Poison(Scenario):
             logger.info(
                 f"Normalized filter perplexity: {self.filter_perplexity.mean()}"
             )
-        if hasattr(self, "indices_to_keep") and hasattr(self, "explanatory_model"):
-            logger.info("Computing explanatory model metrics.")
-            x_clean_kept = self.x_clean[self.indices_to_keep]
-            y_clean_kept = self.y_clean[self.indices_to_keep]
-            y_clean_pred = self.model.predict(x_clean_kept, **self.predict_kwargs).argmax(1)
-            correct_predictions_flags = (y_clean_kept == y_clean_pred)
+        if hasattr(self, "explanatory_model") and hasattr(self, "indices_to_keep"):
             DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-            majority_flags = poisoning_utils.get_majority_flags(model=self.explanatory_model,
-                                                                x=list(zip(x_clean_kept, y_clean_kept)),
-                                                                device=DEVICE,
-                                                                n_clusters=2)
-            contingency_tables_dict = metrics.make_contingency_tables(y_clean_kept,
-                                                                      correct_predictions_flags,
-                                                                      majority_flags)
-            for class_id in np.unique(y_clean_kept):
-                contingency_table_id = contingency_tables_dict[class_id]
-                self.fisher_p_value_metrics[class_id].add_results(contingency_table_id)
-                results[f"poison_fisher_p_value_{str(class_id).zfill(2)}"] = self.fisher_p_value_metrics[class_id].mean()
-                self.spd_metrics[class_id].add_results(contingency_table_id)
-                results[f"poison_spd_{str(class_id).zfill(2)}"] = self.spd_metrics[class_id].mean()
+            y_clean_pred = self.model.predict(self.x_clean, **self.predict_kwargs).argmax(1)
+            correct_predictions_clean = (self.y_clean == y_clean_pred)
+            majority_flags_clean = poisoning_utils.get_majority_flags(model=self.explanatory_model,
+                                                                      x=list(zip(self.x_clean, self.y_clean)),
+                                                                      device=DEVICE,
+                                                                      n_clusters=2)
+            majority_x_correct_prediction_tables = metrics.make_contingency_tables(self.y_clean,
+                                                                                   majority_flags_clean,
+                                                                                   correct_predictions_clean)
+            majority_x_passed_filter_tables = metrics.make_contingency_tables(self.y_clean,
+                                                                              majority_flags_clean,
+                                                                              self.indices_to_keep)
+            for class_id in np.unique(self.y_clean):
+                self.majority_x_class_prediction_chi2_metrics[class_id].add_results(majority_x_correct_prediction_tables[class_id])
+                self.majority_x_class_prediction_spd_metrics[class_id].add_results(majority_x_correct_prediction_tables[class_id])
+                self.majority_x_passed_filter_chi2_metrics[class_id].add_results(majority_x_passed_filter_tables[class_id])
+                self.majority_x_passed_filter_spd_metrics[class_id].add_results(majority_x_passed_filter_tables[class_id])
+                results[f"metric_2.1_chi^2_p_value_{str(class_id).zfill(2)}"] = self.majority_x_class_prediction_chi2_metrics[class_id].mean()
+                results[f"metric_2.1_spd_{str(class_id).zfill(2)}"] = self.majority_x_class_prediction_spd_metrics[class_id].mean()
+                results[f"metric_2.2_chi^2_p_value_{str(class_id).zfill(2)}"] = self.majority_x_passed_filter_chi2_metrics[class_id].mean()
+                results[f"metric_2.2_spd_{str(class_id).zfill(2)}"] = self.majority_x_passed_filter_spd_metrics[class_id].mean()
+                logger.info(f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}")
+                logger.info(f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.2f}")
+                logger.info(f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}")
+                logger.info(f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.2f}")
         self.results = results
