@@ -4,15 +4,20 @@ Extended scenario for poisoning
 
 import copy
 import logging
-from typing import Optional
 import os
 import random
+from typing import Optional
+
 
 import numpy as np
+import torch
 
+
+import armory.utils.poisoning as poisoning_utils
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
+
 
 logger = logging.getLogger(__name__)
 
@@ -195,10 +200,14 @@ class Poison(Scenario):
         if (
             adhoc_config.get("use_poison_filtering_defense", True)
 <<<<<<< HEAD
+<<<<<<< HEAD
             #and not self.check_run
 =======
             and not self.check_run
 >>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
+=======
+            # and not self.check_run
+>>>>>>> 2d2a50b6efcc0eefa8a1a7d4f63be136ca4a2b90
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
             if "data_augmentation" in defense_config:
@@ -238,12 +247,17 @@ class Poison(Scenario):
             is_clean = np.array(is_clean)
             logger.info(f"Total clean data points: {np.sum(is_clean)}")
 <<<<<<< HEAD
+<<<<<<< HEAD
             is_dirty = (is_clean.astype(np.int64) == 0)
+=======
+            is_dirty = is_clean.astype(np.int64) == 0
+>>>>>>> 2d2a50b6efcc0eefa8a1a7d4f63be136ca4a2b90
             logger.info(f"Total dirty data points: {np.sum(is_dirty)}")
 
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = (is_clean == 1)
 
+<<<<<<< HEAD
             # Compute the overall class distribution and the filtered class distribution.
             # Then compute the "filter perplexity" metric on these distributions.
             y_counts_all = np.bincount(self.y_clean)
@@ -257,6 +271,9 @@ class Poison(Scenario):
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = is_clean == 1  # TODO: redundant?
 >>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
+=======
+            self.filter_perplexity.add_results(self.y_clean, self.poison_index, is_dirty)
+>>>>>>> 2d2a50b6efcc0eefa8a1a7d4f63be136ca4a2b90
 
         else:
             logger.info(
@@ -311,9 +328,29 @@ class Poison(Scenario):
             )
 <<<<<<< HEAD
         if self.config["adhoc"].get("use_poison_filtering_defense", False):
+<<<<<<< HEAD
             self.filter_perplexity = metrics.MetricList("perplexity")
 =======
 >>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
+=======
+            self.filter_perplexity = metrics.MetricList("filter_perplexity_fps_benign")
+        explanatory_model_config = self.config.get("explanatory_model", False)
+        if self.use_poison and explanatory_model_config:
+            explanatory_model, _ = poisoning_utils.load_explanatory_model(explanatory_model_config)
+            self.explanatory_model = explanatory_model
+            self.majority_x_class_prediction_chi2_metrics = {
+                class_id: metrics.MetricList("poison_chi2_p_value") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_class_prediction_spd_metrics = {
+                class_id: metrics.MetricList("poison_spd") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_passed_filter_chi2_metrics = {
+                class_id: metrics.MetricList("poison_chi2_p_value") for class_id in np.unique(self.y_clean)
+            }
+            self.majority_x_passed_filter_spd_metrics = {
+                class_id: metrics.MetricList("poison_spd") for class_id in np.unique(self.y_clean)
+            }
+>>>>>>> 2d2a50b6efcc0eefa8a1a7d4f63be136ca4a2b90
 
     def load(self):
         self.set_random_seed()
@@ -388,7 +425,40 @@ class Poison(Scenario):
 <<<<<<< HEAD
         if hasattr(self, "filter_perplexity"):
             results["filter_perplexity"] = self.filter_perplexity.mean()
+<<<<<<< HEAD
             logger.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
 =======
 >>>>>>> a6b3f05cd557787c83894d97d8e1ca753bb55eb5
+=======
+            logger.info(
+                f"Normalized filter perplexity: {self.filter_perplexity.mean()}"
+            )
+        if hasattr(self, "explanatory_model") and hasattr(self, "indices_to_keep"):
+            DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            y_clean_pred = self.model.predict(self.x_clean, **self.predict_kwargs).argmax(1)
+            correct_predictions_clean = (self.y_clean == y_clean_pred)
+            majority_flags_clean = poisoning_utils.get_majority_flags(model=self.explanatory_model,
+                                                                      x=list(zip(self.x_clean, self.y_clean)),
+                                                                      device=DEVICE,
+                                                                      n_clusters=2)
+            majority_x_correct_prediction_tables = metrics.make_contingency_tables(self.y_clean,
+                                                                                   majority_flags_clean,
+                                                                                   correct_predictions_clean)
+            majority_x_passed_filter_tables = metrics.make_contingency_tables(self.y_clean,
+                                                                              majority_flags_clean,
+                                                                              self.indices_to_keep)
+            for class_id in np.unique(self.y_clean):
+                self.majority_x_class_prediction_chi2_metrics[class_id].add_results(majority_x_correct_prediction_tables[class_id])
+                self.majority_x_class_prediction_spd_metrics[class_id].add_results(majority_x_correct_prediction_tables[class_id])
+                self.majority_x_passed_filter_chi2_metrics[class_id].add_results(majority_x_passed_filter_tables[class_id])
+                self.majority_x_passed_filter_spd_metrics[class_id].add_results(majority_x_passed_filter_tables[class_id])
+                results[f"metric_2.1_chi^2_p_value_{str(class_id).zfill(2)}"] = self.majority_x_class_prediction_chi2_metrics[class_id].mean()
+                results[f"metric_2.1_spd_{str(class_id).zfill(2)}"] = self.majority_x_class_prediction_spd_metrics[class_id].mean()
+                results[f"metric_2.2_chi^2_p_value_{str(class_id).zfill(2)}"] = self.majority_x_passed_filter_chi2_metrics[class_id].mean()
+                results[f"metric_2.2_spd_{str(class_id).zfill(2)}"] = self.majority_x_passed_filter_spd_metrics[class_id].mean()
+                logger.info(f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}")
+                logger.info(f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.2f}")
+                logger.info(f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}")
+                logger.info(f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.2f}")
+>>>>>>> 2d2a50b6efcc0eefa8a1a7d4f63be136ca4a2b90
         self.results = results

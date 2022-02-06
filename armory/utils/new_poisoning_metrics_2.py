@@ -7,10 +7,10 @@ from PIL import Image as PImage
 import numpy as np
 import torch
 
-def run_silhoutte_anal(X, random_seed = 32, range_n_clusters = [2,3,4,5,6]):
+def run_silhouette_analysis(X, random_seed = 32, range_n_clusters = [2,3,4,5,6]):
     
     avg_score, silhouette_coeff, cluster_groups, cluster_centers = [], [], [], []
-    # run k-means and generate silhoutte scores for input activations
+    # run k-means and generate silhouette scores for input activations
     # returns clusters
     #print("plotting activations for input:", X.shape)
     for n_clusters in range_n_clusters:
@@ -49,7 +49,7 @@ def run_silhoutte_anal(X, random_seed = 32, range_n_clusters = [2,3,4,5,6]):
 
     return avg_score, silhouette_coeff, cluster_groups, cluster_centers
 
-def get_data_level_stats(model, non_filtered_list, filtered_list, device):
+def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clusters=None):
     """
     param model: The model that is used to produce the baseline statistics
     param non_filtered_list: List of tuples, where each tuple comprise an image,
@@ -119,7 +119,7 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device):
     # minority: cluster_scores = [-1, 0] or cluster_scores[silhouette_avg, 1]
 
     # default range of clusters
-    range_n_clusters = [2,3,4,5,6]
+    range_n_clusters = [2,3,4,5,6] if n_clusters is None else [n_clusters]
     
     # compute scores, labels, majority/minority metrics of each input sample
     sample_majority, sample_minority = [], []
@@ -140,7 +140,7 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device):
             silhouette_coeff, 
             cluster_labels, 
             cluster_centers 
-        ) = run_silhoutte_anal(class_activations, range_n_clusters=range_n_clusters)
+        ) = run_silhouette_analysis(class_activations, range_n_clusters=range_n_clusters)
         
         # choose n_clusters with highest avg_score
         n_cluster_ind = np.argmax(avg_score, axis=0)
@@ -179,6 +179,28 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device):
         sample_silhouette_values,
         sample_cluster_avg
     )
+
+
+def get_majority_subclass_binary_labels(model, non_filtered_list, filtered_list, device):
+    """ Return a list of arrays, one per class, each array designating 
+        by 1 a majority member of that class, and by 0 a minority
+
+        Requests 2 clusters from get_data_level_stats.
+    """
+
+    majority_labels, minority_labels, cluster_labels, _, _ = get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clusters=2)
+
+    # Note that majority label is a list of length N_classes.  
+    # The majority label may not be the same in each class.
+    # Similarly, cluster_labels is also a list of lists or arrays, one per class.
+
+    binary_labels = []
+
+    for i, majority_label in enumerate(majority_labels):
+        binary_labels.append(np.array(cluster_labels[i]) == majority_label)
+
+    return binary_labels
+
 
 def demo():
     """
