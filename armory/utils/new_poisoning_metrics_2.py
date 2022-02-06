@@ -59,14 +59,15 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clus
     param device: Device on which to load data
     
     ### returns sub class statistics of filtered data only
-    attribute sample_majority: majority cluster label
-    attribute sample_minority: minority cluster label
-    attribute sample_cluster_labels: cluster label of each sample in the class
-    attribute sample_silhouette_values: silhouette value of each sample
-    attribute sample_cluster_avg: threshold value of sub groups has three ranges 
-        [-1, 0]: A negative values indicates potential misclassification of the data point
-        [0, avg]: Values close to 0 tend to overlap, this range shows typical representation
-        [avg, 1]: values in this range are considered outliers 
+    attribute c_majority: majority cluster label
+    attribute c_minority: minority cluster label
+    attribute s_majority: majority/minority of each sample from silhouette analysis
+    attribute c_labels: cluster label of each sample
+    attribute s_values: silhouette value of each sample
+    attribute c_avg: threshold value of sub groups has three ranges 
+        [-1, 0] is minority: A negative values indicates potential misclassification of the data point
+        [0, avg] is majority: Values close to 0 tend to overlap, this range shows typical representation
+        [avg, 1] is minority: values in this range are considered outliers 
     
     """
     activations, clsids  = [], []
@@ -84,8 +85,8 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clus
             activations.append(h)
             clsids.append(label)
     
-    clsids = np.array(clsids) # shape (num_batches * batch_size, )
-    
+    clsids = np.array(clsids, dtype=int) # shape (num_batches * batch_size, )
+
     # get activations of filtered data and class labels
     f_clsids = []
     for image, label in filtered_list:
@@ -104,7 +105,7 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clus
     
     # shape (num_batches * batch_size, 512); each row is the activations for one input
     activations = np.concatenate(activations) 
-    f_clsids = np.array(f_clsids)
+    f_clsids = np.array(f_clsids, dtype=int)
     clsids = np.append(clsids, f_clsids, axis=0)
     
     print(activations.shape, clsids.shape)
@@ -122,11 +123,12 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clus
     range_n_clusters = [2,3,4,5,6] if n_clusters is None else [n_clusters]
     
     # compute scores, labels, majority/minority metrics of each input sample
-    sample_majority, sample_minority = [], []
-    sample_cluster_labels = []
-    sample_silhouette_values = []
-    sample_cluster_avg = []
-    sample_inputs = []
+    c_majority = np.zeros(len(set(clsids)), dtype=int)
+    c_minority = np.zeros(len(set(clsids)), dtype=int)
+    s_majority = np.zeros(len(filtered_list), dtype=bool)
+    c_labels = np.zeros(len(filtered_list), dtype=int)
+    s_values = np.zeros(len(filtered_list), dtype=float)
+    c_avg = np.zeros(len(set(clsids)), dtype=float)
     
     # run analysis per class-wise activations
     for c in sorted(set(clsids)): # iterate over all unique classes in order
@@ -155,29 +157,35 @@ def get_data_level_stats(model, non_filtered_list, filtered_list, device, n_clus
         
         #assign majority/minority subgroups to cluster results
         counts = np.bincount(class_cluster_labels)
-        class_majority = np.argmax(counts)
-        class_minority = np.argmin(counts)
+        cluster_majority = np.argmax(counts)
+        #assign a high value to not choose the same label as minority as well
+        counts[cluster_majority] = 1e8 
+        cluster_minority = np.argmin(counts)
         #class_majority = max(class_cluster_labels, key=class_cluster_labels.count())
         #class_minority = min(class_cluster_labels, key=class_cluster_labels.count())
         
-        if class_majority == class_minority: # incase of equal sizes, assume two subclasses
-            class_majority = 0
-            class_minority = 1
+        # if class_majority == class_minority: # incase of equal sizes, assume two subclasses
+        #     class_majority = 0
+        #     class_minority = 1
     
         #append only the filtered images 
         N = np.bincount(f_clsids)[c]
-        sample_majority.append(class_majority)
-        sample_minority.append(class_minority)
-        sample_cluster_labels.append(class_cluster_labels[-N:])
-        sample_silhouette_values.append(class_silhouette_values[-N:])
-        sample_cluster_avg.append(class_silhouette_avg)   
+        c_majority[c] = cluster_majority
+        c_minority[c] = cluster_minority
+        # assign binary values: if score >0 and <avg, majority(True), else minority(False)
+        s_majority[np.where(f_clsids==c)] =  np.where((class_silhouette_values[-N:]>0) & (class_silhouette_values[-N:]<class_silhouette_avg), 
+                                                                  True, False) #True=majority
+        c_labels[np.where(f_clsids==c)] = class_cluster_labels[-N:]
+        s_values[np.where(f_clsids==c)] = class_silhouette_values[-N:]
+        c_avg[c] = class_silhouette_avg   
         
     return (
-        sample_majority,
-        sample_minority,
-        sample_cluster_labels,
-        sample_silhouette_values,
-        sample_cluster_avg
+        c_majority,
+        c_minority,
+        s_majority,
+        c_labels,
+        s_values,
+        c_avg
     )
 
 
@@ -210,7 +218,7 @@ def demo():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Instantiate a pretrained model
-    from BEAN.utils.resnet18_bean_regularization import get_model
+    from resnet_bean_regularization import get_model
 
     print('Running on device:', device)
     print("Let's use", torch.cuda.device_count(), "GPUs!")
