@@ -32,12 +32,15 @@ class ArmoryInstance(object):
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
 
-        mounts = [docker.types.Mount(
-            source=getattr(host_paths, dir),
-            target=getattr(docker_paths, dir),
-            type="bind",
-            read_only=False,
-            ) for dir in 'cwd dataset_dir local_git_dir output_dir saved_model_dir tmp_dir'.split()]
+        mounts = [
+            docker.types.Mount(
+                source=getattr(host_paths, dir),
+                target=getattr(docker_paths, dir),
+                type="bind",
+                read_only=False,
+            )
+            for dir in "cwd dataset_dir local_git_dir output_dir saved_model_dir tmp_dir".split()
+        ]
 
         container_args = {
             "runtime": runtime,
