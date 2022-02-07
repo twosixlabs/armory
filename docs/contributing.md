@@ -1,3 +1,20 @@
+# Contributing to Armory
+Contributions to Armory are welcomed and highly encouraged!  Generally, developing armory requires a different setup and some additional tools
+as compared to just using armory to run configurations.  
+
+## Setting up the Development Environment
+To get setup you will need to create a [virtual environment](https://docs.python.org/3/library/venv.html).  Once created and activated, you will need 
+to install the testing requirements.  Additionally its often useful to use the `-e` flag so that pip points to your local directory for the code
+```bash
+pip install -e .[tests]
+pip install -r host-requirements.txt
+```
+Now that you have the environment setup, kickoff the baseline tests to make sure its all good:
+```bash
+pytest -s tests/test_host
+```
+If this is successful you are off to the races!
+
 ## Pull Requests
 
 We gladly welcome [pull requests](

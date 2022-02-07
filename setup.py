@@ -27,6 +27,8 @@ def get_version(rel_path):
 with open("requirements.txt") as f:
     required_pkgs = f.read().splitlines()
 
+with open("test-requirements.txt") as f:
+    tests_require = f.readlines()
 
 setup(
     name="armory-testbed",
