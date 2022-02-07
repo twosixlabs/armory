@@ -21,6 +21,7 @@ import docker
 from jsonschema import ValidationError
 
 import armory
+from armory import log
 from armory import paths
 from armory import arguments
 from armory.configuration import load_global_config, save_config
@@ -28,8 +29,6 @@ from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
 from armory.utils.configuration import load_config, load_config_stdin
-
-logger = logging.getLogger(__name__)
 
 
 class PortNumber(argparse.Action):
@@ -51,7 +50,7 @@ def sorted_unique_nonnegative_numbers(values, warning_string):
     numbers = [int(x) for x in values.split(",")]
     sorted_unique_numbers = sorted(set(numbers))
     if numbers != sorted_unique_numbers:
-        print(
+        log.info(
             f"WARNING: {warning_string} sorted and made unique: {sorted_unique_numbers}"
         )
     return sorted_unique_numbers
@@ -86,7 +85,7 @@ class DockerImage(argparse.Action):
         elif values.lower() in images.IMAGE_MAP:
             setattr(namespace, self.dest, images.IMAGE_MAP[values])
         else:
-            print(
+            log.info(
                 f"WARNING: {values} not in "
                 f"{list(images.IMAGE_MAP.keys()) + list(images.IMAGE_MAP.values())}. "
                 "Attempting to load custom Docker image."
@@ -255,7 +254,7 @@ def _set_gpus(config, use_gpu, no_gpu, gpus):
 
     if gpus:
         if not use_gpu:
-            logger.info("--gpus field specified. Setting --use-gpu to True")
+            log.info("--gpus field specified. Setting --use-gpu to True")
             use_gpu = True
         config["sysconfig"]["gpus"] = gpus
 
@@ -340,41 +339,40 @@ def run(command_args, prog, description):
     try:
         if args.filepath == "-":
             if sys.stdin.isatty():
-                logging.error(
+                log.error(
                     "Cannot read config from raw 'stdin'; must pipe or redirect a file"
                 )
                 sys.exit(1)
-            logger.info("Reading config from stdin...")
+            log.info("Reading config from stdin...")
             config = load_config_stdin()
         else:
             config = load_config(args.filepath)
     except ValidationError as e:
-        logger.error(
+        log.error(
             f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
         )
         sys.exit(1)
     except json.decoder.JSONDecodeError:
         if args.filepath == "-":
-            logger.error("'stdin' did not provide a json-parsable input")
+            log.error("'stdin' did not provide a json-parsable input")
         else:
-            logger.error(f"Could not decode '{args.filepath}' as a json file.")
+            log.error(f"Could not decode '{args.filepath}' as a json file.")
             if not args.filepath.lower().endswith(".json"):
-                logger.warning(f"{args.filepath} is not a '*.json' file")
+                log.warning(f"{args.filepath} is not a '*.json' file")
         sys.exit(1)
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
-    logging.debug("unifying sysconfig %s and args %s", config["sysconfig"], args)
+    log.debug(f"unifying sysconfig {config['sysconfig']} and args {args}")
     (config, args) = arguments.merge_config_and_args(config, args)
-    logging.debug("unified sysconfig %s and args %s", config["sysconfig"], args)
 
     if args.num_eval_batches and args.index:
         raise ValueError("Cannot have --num-eval-batches and --index")
     if args.index and config["dataset"].get("index"):
-        logging.info("Overriding index in config with command line argument")
+        log.info("Overriding index in config with command line argument")
     if args.index:
         config["dataset"]["index"] = args.index
     if args.classes and config["dataset"].get("class_ids"):
-        logging.info("Overriding class_ids in config with command line argument")
+        log.info("Overriding class_ids in config with command line argument")
     if args.classes:
         config["dataset"]["class_ids"] = args.classes
 
@@ -401,10 +399,10 @@ def _pull_docker_images(docker_client=None):
             docker_client.images.get(image)
         except docker.errors.ImageNotFound:
             try:
-                logger.info(f"Image {image} was not found. Downloading...")
+                log.info(f"Image {image} was not found. Downloading...")
                 docker_api.pull_verbose(docker_client, image)
             except docker.errors.NotFound:
-                logger.exception(
+                log.exception(
                     f"Docker image {image} does not exist for this version. "
                     f"Please run 'bash docker/build.sh {image}'"
                     "or 'bash docker/build.sh all' before running armory"
@@ -441,7 +439,7 @@ def download(command_args, prog, description):
     coloredlogs.install(level=args.log_level)
 
     if args.no_docker:
-        logger.info("Downloading requested datasets and model weights in host mode...")
+        log.info("Downloading requested datasets and model weights in host mode...")
         paths.set_mode("host")
         from armory.data import datasets
         from armory.data import model_weights
@@ -451,12 +449,12 @@ def download(command_args, prog, description):
         return
 
     if args.skip_docker_images:
-        logger.info("Skipping docker image downloads...")
+        log.info("Skipping docker image downloads...")
     else:
-        logger.info("Downloading all docker images...")
+        log.info("Downloading all docker images...")
         _pull_docker_images()
 
-    logger.info("Downloading requested datasets and model weights...")
+    log.info("Downloading requested datasets and model weights...")
     config = {"sysconfig": {"docker_image": args.docker_image}}
 
     rig = Evaluator(config)
@@ -496,10 +494,10 @@ def clean(command_args, prog, description):
 
     docker_client = docker.from_env(version="auto")
     if args.download:
-        logger.info("Pulling the latest docker images")
+        log.info("Pulling the latest docker images")
         _pull_docker_images(docker_client)
 
-    logger.info("Deleting old docker images")
+    log.info("Deleting old docker images")
     tags = set()
     for image in docker_client.images.list():
         tags.update(image.tags)
@@ -507,13 +505,13 @@ def clean(command_args, prog, description):
     # If dev version, only remove old dev-tagged containers
     for tag in sorted(tags):
         if images.is_old(tag):
-            logger.info(f"Attempting to remove tag {tag}")
+            log.info(f"Attempting to remove tag {tag}")
             try:
                 docker_client.images.remove(tag, force=args.force)
-                logger.info(f"* Tag {tag} removed")
+                log.info(f"* Tag {tag} removed")
             except docker.errors.APIError as e:
                 if not args.force and "(must force)" in str(e):
-                    logger.exception(f"Cannot delete tag {tag}. Must use `--force`")
+                    log.exception(f"Cannot delete tag {tag}. Must use `--force`")
                 else:
                     raise
 

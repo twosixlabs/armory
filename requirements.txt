@@ -1,4 +1,5 @@
 coloredlogs
+loguru
 docker
 jsonschema
 pymongo
