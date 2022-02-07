@@ -29,7 +29,6 @@ class ArmoryInstance(object):
     ):
         self.docker_client = docker.from_env(version="auto")
 
-
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
 
@@ -47,10 +46,6 @@ class ArmoryInstance(object):
             "mounts": mounts,
             "shm_size": "16G",
         }
-
-        print(f"{container_args}")
-        input("Press Enter to continue...")
-
 
         if ports is not None:
             container_args["ports"] = ports
