@@ -31,7 +31,21 @@ pytest -s ./tests/unit/test_no_docker.py
 ```
 
 This runs a series of configs in a variety of ways to ensure that 
-the environment is operating as expected.  
+the environment is operating as expected.  If you would like to run
+the example interactively you can use:
+```bash
+pytest -s ./tests/unit/test_no_docker.py::test_interactive
+```
+or you can try yourself by entering python session and typing:
+```python
+from armory import scenarios
+from armory import paths
+paths.set_mode("host")
+
+config = os.path.join(".","scenario_configs","no_docker","cifar_short.json")
+s = scenarios.get(config).load()
+s.evaluate()
+```
 
 ## Run baseline CIFAR-10 config
 Now to see if everything is operating correctly you can run a config.
