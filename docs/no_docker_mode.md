@@ -1,7 +1,7 @@
 Armory No-Docker Mode
 =======================
 Reqs
- - Python3.7
+ - Python >= 3.7 <= 3.9
 Create new venv and activate
 run
 ```bash
@@ -10,68 +10,18 @@ pip install -r no-docker-req.txt
 pip install -e . 
 ```
 
-## Run baseline config
-Save the following to a file called `test.json`
-```json
-{
-    "_description": "Baseline cifar10 image classification",
-    "adhoc": null,
-    "attack": {
-        "knowledge": "white",
-        "kwargs": {
-            "batch_size": 1,
-            "eps": 0.031,
-            "eps_step": 0.007,
-            "max_iter": 20,
-            "num_random_init": 1,
-            "random_eps": false,
-            "targeted": false,
-            "verbose": false
-        },
-        "module": "art.attacks.evasion",
-        "name": "ProjectedGradientDescent",
-        "use_label": true
-    },
-    "dataset": {
-        "batch_size": 64,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "cifar10"
-    },
-    "defense": null,
-    "metric": {
-        "means": true,
-        "perturbation": "linf",
-        "record_metric_per_sample": false,
-        "task": [
-            "categorical_accuracy"
-        ]
-    },
-    "model": {
-        "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 20
-        },
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.cifar",
-        "name": "get_art_model",
-        "weights_file": null,
-        "wrapper_kwargs": {}
-    },
-    "scenario": {
-        "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
-    },
-    "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
-        "external_github_repo": null,
-        "gpus": "all",
-        "output_dir": null,
-        "output_filename": null,
-        "use_gpu": false
-    }
-}
+Now that this is working, to test the environment use:
+```bash
+pytest -s ./tests/unit/test_no_docker.py
 ```
 
-Then you can run `armory run test.json --no-docker --check`
+This runs a series of configs in a variety of ways to ensure that 
+the environment is operating as expected.  
+
+## Run baseline CIFAR-10 config
+Now to see if everything is operating correctly you can run a config.
+For example the [CIFAR-10 Short](../scenario_configs/no_docker/cifar_short.json).
+can be run with:
+```bash
+armory run ./scenario_configs/no_docker/cifar_short.json --no-docker
+```

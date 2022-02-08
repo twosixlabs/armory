@@ -5,8 +5,6 @@
 #########################################################
 
 # Base Requirements
-pip==22.0.3
-pytest # needed by armory.scenarios.main line 93
 Pillow==8.2.0
 
 # ART 1.9.1 requires scipy 1.7.1
@@ -38,3 +36,7 @@ ffmpeg-python==0.2.0
 
 # using Cifar10 baseline scenario...needs torch
 torch==1.10.2
+
+# Neede for CARLA baseline
+torchvision==0.11.3
+opencv-python
