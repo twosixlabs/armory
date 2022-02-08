@@ -54,7 +54,7 @@ jobs:
       - name: Run armory host tests
         shell: bash
         run: |
-          pip install --upgrade pip==22.0.3
+          pip install --user --upgrade pip==22.0.3
           pip install -r no-docker-reqs.txt
           pip install -r test-requirements.txt
           pip install -e .
