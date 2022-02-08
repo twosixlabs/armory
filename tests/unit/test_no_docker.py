@@ -17,14 +17,3 @@ def test_run(scenario_configs, config, args):
     log.info("Resulting Return Code: {}".format(result.returncode))
     assert result.returncode == 0
 
-@pytest.mark.parametrize("config",["cifar_short.json"])
-def test_interactive(scenario_configs, config):
-    # log.info("Executing Config Dir: {}".format(scenario_configs))
-    log.info("Importing Armory Scenarios")
-    from armory import scenarios
-    config = os.path.join(scenario_configs,"no_docker",config)
-    log.info("Loading Config: {}".format(config))
-    s = scenarios.get(config).load()
-    log.info("Evaluating Config")
-    s.evaluate()
-
