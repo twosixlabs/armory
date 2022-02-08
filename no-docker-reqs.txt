@@ -1,0 +1,40 @@
+#########################################################
+#               Armory No-Docker Requirements
+#
+# Need to make sure using Python <3.9
+#########################################################
+
+# Base Requirements
+pip==22.0.3
+pytest # needed by armory.scenarios.main line 93
+Pillow==8.2.0
+
+# ART 1.9.1 requires scipy 1.7.1
+numpy
+scipy==1.7.1
+adversarial-robustness-toolbox==1.9.1
+
+# appears to be necessary for tfds bits
+# This needs pyarrow which does not work with pip 21.3
+# needed to upgrade pip
+apache-beam==2.22.0
+
+# Needed for armory.data.utils
+boto3==1.20.42
+
+
+# TensorFlow Bits
+tensorflow==2.7.0
+tensorflow-datasets==3.2.0
+tensorflow-estimator==2.7.0
+tensorflow-io-gcs-filesystem==0.23.1
+tensorflow-metadata==1.6.0
+
+# needed for armory.data.adversarial.dapricot_dev.py
+pandas==1.3.5
+
+# needed for armory.utils.export
+ffmpeg-python==0.2.0
+
+# using Cifar10 baseline scenario...needs torch
+torch==1.10.2
