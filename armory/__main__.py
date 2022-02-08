@@ -21,7 +21,9 @@ import docker
 from jsonschema import ValidationError
 
 import armory
-from armory import log
+
+from armory.logs import log
+
 from armory import paths
 from armory import arguments
 from armory.configuration import load_global_config, save_config
