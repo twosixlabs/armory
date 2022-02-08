@@ -33,6 +33,4 @@ except ImportError as e:
     print("    Please run: $ pip install -r requirements.txt")
     raise
 
-from loguru import logger as log
-
 END_SENTINEL = "Scenario has finished running cleanly"
