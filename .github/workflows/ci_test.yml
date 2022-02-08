@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - develop
+      - logging-improvement # TODO Remove this after testing is complete
 
   pull_request:
     branches:
@@ -54,7 +55,7 @@ jobs:
         shell: bash
         run: |
           pip install --upgrade pip==22.0.3
-          pip install -r no-docker-req.txt
+          pip install -r no-docker-reqs.txt
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/unit/test_no_docker.py
