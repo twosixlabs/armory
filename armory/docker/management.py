@@ -7,7 +7,7 @@ import docker
 
 import armory
 from armory import paths
-from armory.logs import log
+from armory.logs import log as logger
 
 
 class ArmoryInstance(object):
@@ -65,7 +65,7 @@ class ArmoryInstance(object):
             image_name, **container_args
         )
 
-        log.info(f"ARMORY Instance {self.docker_container.short_id} created.")
+        logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str, user="", expect_sentinel=True) -> int:
         # We would like to check the return code to see if the command ran cleanly,
@@ -100,10 +100,10 @@ class ArmoryInstance(object):
         if not expect_sentinel:
             return 0
         if sentinel_found:
-            log.info("Command exited cleanly")
+            logger.info("Command exited cleanly")
             return 0
         else:
-            log.error("Command did not finish cleanly")
+            logger.error("Command did not finish cleanly")
             return 1
 
     def __del__(self):
@@ -132,5 +132,5 @@ class ManagementInstance(object):
         return temp_inst
 
     def stop_armory_instance(self, instance: ArmoryInstance) -> None:
-        log.info(f"Stopping instance: {instance.docker_container.short_id}")
+        logger.info(f"Stopping instance: {instance.docker_container.short_id}")
         del self.instances[instance.docker_container.short_id]
