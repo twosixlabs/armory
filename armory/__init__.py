@@ -1,7 +1,7 @@
 """Adversarial Robustness Evaluation Test Bed"""
 
 # Semantic Version
-__version__ = "0.15.0"
+__version__ = "0.14.4"
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
