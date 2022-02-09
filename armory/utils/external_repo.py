@@ -2,7 +2,6 @@
 Utils to pull external repos for evaluation
 """
 import os
-import logging
 import tarfile
 import shutil
 import sys
@@ -12,9 +11,7 @@ import requests
 
 from armory import paths
 from armory.configuration import get_verify_ssl
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 def add_path(path, include_parent=False, index=1):
@@ -87,7 +84,7 @@ def download_and_extract_repo(
     )
 
     if response.status_code == 200:
-        logger.info(f"Downloading external repo: {external_repo_name}")
+        log.info(f"Downloading external repo: {external_repo_name}")
 
         tar_filename = os.path.join(external_repo_dir, repo_name + ".tar.gz")
         with open(tar_filename, "wb") as f:

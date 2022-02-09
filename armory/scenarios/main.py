@@ -16,20 +16,16 @@ import argparse
 import base64
 import importlib.resources
 import json
-import logging
 import os
+import joblib
 import pytest
 import time
-
-import coloredlogs
 
 import armory
 from armory import environment, paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log, set_console_level, add_destination
 
 
 def _scenario_setup(config: Config) -> None:
@@ -43,14 +39,19 @@ def _scenario_setup(config: Config) -> None:
     runtime_paths = paths.runtime_paths()
     if "eval_id" not in config:
         timestamp = time.time()
-        logger.error(f"eval_id not in config. Inserting current timestamp {timestamp}")
+        log.error(f"eval_id not in config. Inserting current timestamp {timestamp}")
         config["eval_id"] = str(timestamp)
 
     scenario_output_dir = os.path.join(runtime_paths.output_dir, config["eval_id"])
     scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
     os.makedirs(scenario_output_dir, exist_ok=True)
     os.makedirs(scenario_tmp_dir, exist_ok=True)
-    logger.warning(f"Outputs will be written to {scenario_output_dir}")
+
+    add_destination(os.path.join(scenario_output_dir, "armory-log.txt"))
+    add_destination(os.path.join(scenario_output_dir, "colored-log.txt"), colorize=True)
+    log.info(f"armory outputs will be written to {scenario_output_dir}")
+    log.info(f"logs will be written to {scenario_output_dir}/armory-log.txt")
+    log.info(f"colored logs will be written to {scenario_output_dir}/colored-log.txt")
 
     # Download any external repositories and add them to the sys path for use
     if config["sysconfig"].get("external_github_repo", None):
@@ -105,7 +106,7 @@ def run_validation(config_json, from_file=False) -> None:
 
 def get(
     config_json,
-    set_logging_level=logging.INFO,
+    set_logging_level="INFO",
     from_file=True,
     check_run=False,
     mongo_host=None,
@@ -119,9 +120,9 @@ def get(
     returns a constructed Scenario subclass based on the config specification.
     """
     if set_logging_level not in (None, False):
-        coloredlogs.install(level=set_logging_level)
-        logger.info(
-            f"Setting logger via coloredlogs to {set_logging_level}."
+        armory.logs.set_console_level(set_logging_level)
+        log.info(
+            f"Setting logger to {set_logging_level}."
             " To avoid this behavior, call 'get(..., set_logging_level=False)'"
         )
 
@@ -166,9 +167,9 @@ if __name__ == "__main__":
         "--debug",
         dest="log_level",
         action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
+        const="DEBUG",
+        default="INFO",
+        help="use level debug for logging",
     )
     parser.add_argument(
         "--no-docker",
@@ -218,10 +219,10 @@ if __name__ == "__main__":
         help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
-    coloredlogs.install(level=args.log_level)
+    set_console_level(level=args.log_level)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
-        logger.warning(
+        log.warning(
             f"armory calling version {calling_version} != "
             f"armory imported version {armory.__version__}"
         )
@@ -230,7 +231,7 @@ if __name__ == "__main__":
         paths.set_mode("host")
 
     if args.check and args.num_eval_batches:
-        logger.warning(
+        log.warning(
             "--num_eval_batches will be overwritten and set to 1 since --check was passed"
         )
 

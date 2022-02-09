@@ -2,15 +2,12 @@
 Docker orchestration managers for ARMORY.
 """
 
-import logging
 
 import docker
 
 import armory
 from armory import paths
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class ArmoryInstance(object):
@@ -68,7 +65,7 @@ class ArmoryInstance(object):
             image_name, **container_args
         )
 
-        logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
+        log.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str, user="", expect_sentinel=True) -> int:
         # We would like to check the return code to see if the command ran cleanly,
@@ -103,10 +100,10 @@ class ArmoryInstance(object):
         if not expect_sentinel:
             return 0
         if sentinel_found:
-            logger.info("Command exited cleanly")
+            log.info("Command exited cleanly")
             return 0
         else:
-            logger.error("Command did not finish cleanly")
+            log.error("Command did not finish cleanly")
             return 1
 
     def __del__(self):
@@ -135,5 +132,5 @@ class ManagementInstance(object):
         return temp_inst
 
     def stop_armory_instance(self, instance: ArmoryInstance) -> None:
-        logger.info(f"Stopping instance: {instance.docker_container.short_id}")
+        log.info(f"Stopping instance: {instance.docker_container.short_id}")
         del self.instances[instance.docker_container.short_id]

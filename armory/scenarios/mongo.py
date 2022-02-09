@@ -2,14 +2,12 @@
 Scenario results export functionality for MongoDB
 """
 
-import logging
 import re
 
 import pymongo
 import pymongo.errors
 
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 MONGO_PORT = 27017
 MONGO_DATABASE = "armory"
@@ -32,8 +30,8 @@ def send_to_db(
         ip = tail_of_host[0]
     else:
         ip = host
-    logger.info(f"Sending evaluation results to MongoDB instance {ip}:{port}")
+    log.info(f"Sending evaluation results to MongoDB instance {ip}:{port}")
     try:
         col.insert_one(output)
     except pymongo.errors.PyMongoError as e:
-        logger.error(f"Encountered error {e} sending evaluation results to MongoDB")
+        log.error(f"Encountered error {e} sending evaluation results to MongoDB")

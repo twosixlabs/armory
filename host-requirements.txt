@@ -9,7 +9,6 @@
 # depending on which you use. TensorFlow1 support by Armory is deprecated and
 # will be removed in a future release.
 
-coloredlogs
 docker
 jsonschema
 requests

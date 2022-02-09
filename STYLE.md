@@ -47,20 +47,16 @@ Docstring
 """
 
 import json
-import logging
 import os
 
 import requests
 import numpy as np
 from art import defences
 
-from armory.docker.management import ManagementInstance                                   
+from armory.docker.management import ManagementInstance
 from armory.utils.external_repo import download_and_extract_repos
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 # ...
 ```
 
 Exceptions are allowed for import error handling, required import ordering, or in-class/function imports.
-

@@ -1,6 +1,4 @@
-import logging
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 import numpy as np
 
@@ -10,7 +8,7 @@ try:
         PoisonFilteringDefence,
     )
 except ImportError:
-    logger.warning(
+    log.warning(
         "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
     )
     from art.poison_detection.ground_truth_evaluator import GroundTruthEvaluator

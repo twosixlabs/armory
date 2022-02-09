@@ -1,14 +1,11 @@
 """
 Copyright 2021 The MITRE Corporation. All rights reserved
 """
-import logging
 import numpy as np
 import cv2
 import math
 
 from art.attacks.evasion import ProjectedGradientDescent
-
-logger = logging.getLogger(__name__)
 
 
 def shape_coords(h, w, obj_shape):

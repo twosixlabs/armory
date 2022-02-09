@@ -4,14 +4,12 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-import logging
 
 import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class CarlaVideoTracking(Scenario):

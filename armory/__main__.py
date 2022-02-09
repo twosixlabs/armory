@@ -11,12 +11,10 @@ This runs an arbitrary config file. Results are output to the `outputs/` directo
 
 import argparse
 import json
-import logging
 import os
 import re
 import sys
 
-import coloredlogs
 import docker
 from jsonschema import ValidationError
 
@@ -31,6 +29,7 @@ from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
 from armory.utils.configuration import load_config, load_config_stdin
+import armory.logs
 
 
 class PortNumber(argparse.Action):
@@ -122,9 +121,9 @@ def _debug(parser):
         "--debug",
         dest="log_level",
         action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
+        const="DEBUG",
+        default="INFO",
+        help="use level debug for logging",
     )
 
 
@@ -336,8 +335,8 @@ def run(command_args, prog, description):
     )
 
     args = parser.parse_args(command_args)
-    coloredlogs.install(level=args.log_level)
-    log.info("Parsing Run Input:\nargs:\n{}".format(args))
+    armory.logs.set_console_level(level=args.log_level)
+
     try:
         if args.filepath == "-":
             if sys.stdin.isatty():
@@ -438,7 +437,7 @@ def download(command_args, prog, description):
     _no_docker(parser)
 
     args = parser.parse_args(command_args)
-    coloredlogs.install(level=args.log_level)
+    armory.logs.set_console_level(level=args.log_level)
 
     if args.no_docker:
         log.info("Downloading requested datasets and model weights in host mode...")
@@ -462,11 +461,10 @@ def download(command_args, prog, description):
     rig = Evaluator(config)
     cmd = "; ".join(
         [
-            "import logging",
-            "import coloredlogs",
-            f"coloredlogs.install({args.log_level})",
             "from armory.data import datasets",
             "from armory.data import model_weights",
+            "from armory.logs import log, set_console_level",
+            f"set_console_level(level={args.log_level})",
             f'datasets.download_all("{args.download_config}", "{args.scenario}")',
             f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
@@ -492,7 +490,7 @@ def clean(command_args, prog, description):
     )
 
     args = parser.parse_args(command_args)
-    coloredlogs.install(level=args.log_level)
+    armory.logs.set_console_level(level=args.log_level)
 
     docker_client = docker.from_env(version="auto")
     if args.download:
@@ -557,7 +555,7 @@ def configure(command_args, prog, description):
     _debug(parser)
 
     args = parser.parse_args(command_args)
-    coloredlogs.install(level=args.log_level)
+    armory.logs.set_console_level(level=args.log_level)
 
     default_host_paths = paths.HostDefaultPaths()
 
@@ -676,7 +674,7 @@ def launch(command_args, prog, description):
     _root(parser)
 
     args = parser.parse_args(command_args)
-    coloredlogs.install(level=args.log_level)
+    armory.logs.set_console_level(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
@@ -719,7 +717,7 @@ def exec(command_args, prog, description):
         sys.exit(1)
 
     args = parser.parse_args(armory_args)
-    coloredlogs.install(level=args.log_level)
+    armory.logs.set_console_level(level=args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     # Config

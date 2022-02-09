@@ -1,12 +1,10 @@
-import logging
 import numpy as np
 import cv2
 import colour
 import random
 
+from armory.logs import log
 from art.attacks.evasion import RobustDPatch
-
-logger = logging.getLogger(__name__)
 
 
 def calculate_ccm(im_np, gt_np, gamma=2.2, Vandermonde=True, degree=1):
@@ -321,7 +319,7 @@ class CARLADapricotPatch(RobustDPatch):
 
         # 1) crop images: not used.
         if self.crop_range[0] != 0 and self.crop_range[1] != 0:
-            logger.warning("crop_range argument not used.")
+            log.warning("crop_range argument not used.")
 
         # 2) rotate images:
         if sum(self.rotation_weights[1:]) > 0:
@@ -397,7 +395,7 @@ class CARLADapricotPatch(RobustDPatch):
         param y_patch_metadata: Patch metadata. List of N dictionaries, ith dictionary contains patch metadata for x[i]
         """
         if x.shape[0] > 1:
-            logger.info("To perform per-example patch attack, batch size must be 1")
+            log.info("To perform per-example patch attack, batch size must be 1")
         assert x.shape[-1] in [3, 6], "x must have either 3 or 6 color channels"
 
         num_imgs = x.shape[0]

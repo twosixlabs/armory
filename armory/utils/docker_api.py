@@ -2,10 +2,7 @@
 Docker-related utilities
 """
 
-import logging
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 def pull_verbose(docker_client, repository, tag=None, log=True):
@@ -24,6 +21,6 @@ def pull_verbose(docker_client, repository, tag=None, log=True):
         output = ": ".join(tokens)
 
         if log:
-            logger.info(output)
+            log.info(output)
         else:
             print(output)

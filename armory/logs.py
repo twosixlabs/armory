@@ -1,63 +1,85 @@
 import sys
 import datetime
-import random
 import loguru
 
+# because the logger was used for application state storage (particularly level),
+# some of those mechanisms have to be reconstituted clumsily here
 
-class DurationFormatter:
-    """General message formatter for loguru. Records the time of the last call to
-    the formatter, and adds the duration since last call to the message header."""
+# in loguru, you can't set the level of an existing logger, so level changes
+# need to remove the logger and add it again. Save the id number so we can;
+# the basic logger is guaranteed to be 0 at import time
+_console_logger_id = 0
 
-    def __init__(self, fake_duration=False):
-        self.last = datetime.timedelta(0)
-        self.fake_duration = fake_duration
-
-    def format(self, record):
-        """loads the record.extra with the last elapsed and returns a delta string"""
-        extra = record["extra"]
-        delta = record["elapsed"] - self.last
-        if self.fake_duration:
-            delta = datetime.timedelta(seconds=random.randint(42, 1000))
-        extra["duration"] = self.duration_string(delta)
-        _message = "{time} {extra[duration]} {message}\n"
-        _message = (
-            # "<green>{time:YYYY-MM-DD HH:mm:ss.SSS} {extra[duration]:>8}</green> | "
-            "{time:YYYY-MM-DD HH:mm:ss} {extra[duration]:>8} | "
-            "<level>{level: <8}</level> | "
-            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-            "<level>{message}</level>\n"
-        )
-        self.last = record["elapsed"]
-
-        return _message
-
-    def duration_string(self, dt: datetime.timedelta):
-        seconds = int(dt.total_seconds())
-        periods = [("d", 60 * 60 * 24), ("h", 60 * 60), ("m", 60), ("s", 1)]
-
-        duration = ""
-        for period_name, period_seconds in periods:
-            if seconds > period_seconds:
-                period_value, seconds = divmod(seconds, period_seconds)
-                duration += f"{period_value}{period_name}"
-
-        return duration if duration else "0s"
+# there are places where the global logger is asked if the current level is debug
+# this mechanism saves the lowest level so far registered and the last named
+# console level so that (for example) per-run log destinations can be created at
+# eval time and use the established console level
+_minimum_level = loguru.logger.level("INFO").no
+_last_console_level = None
 
 
-def add_destination(sink, format=None, level="DEBUG", colorize=True):
-    loguru.logger.add(sink, format=format, level=level, colorize=colorize)
+def is_debug() -> bool:
+    return _minimum_level <= loguru.logger.level("DEBUG").no
 
 
-loguru.logger.remove(0)  # remove default logger
-add_destination(
-    sys.stdout, format=DurationFormatter(fake_duration=True).format, level="TRACE"
-)
+def format_log(record) -> str:
+    """loads the record.extra with a friendly elapsed and return a format using it"""
+    record["extra"]["duration"] = duration_string(record["elapsed"])
+    message = (
+        "{time:YYYY-MM-DD HH:mm:ss} {extra[duration]:>3} "
+        "<level>{level:<8}</level> "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
+        "{message}\n"
+    )
+    return message
 
-# TODO need to add_destination for colorized and non-colorized logs but we need armory.paths
-# to be available and they may not be imported yet
 
+def duration_string(dt: datetime.timedelta) -> str:
+    seconds = int(dt.total_seconds())
+    periods = [("d", 60 * 60 * 24), ("h", 60 * 60), ("m", 60), ("s", 1)]
+
+    duration = ""
+    for period_name, period_seconds in periods:
+        if seconds > period_seconds:
+            period_value, seconds = divmod(seconds, period_seconds)
+            duration += f"{period_value}{period_name}"
+
+    return duration if duration else "0s"
+
+
+def add_destination(sink, format=None, level=None, colorize=True):
+    """add a destination to the logger, update the minimum_level seen"""
+    global _minimum_level
+
+    if level is None and _last_console_level is not None:
+        level = _last_console_level
+
+    if format is None:
+        format = format_log
+
+    new_logger = loguru.logger.add(sink, format=format, level=level, colorize=colorize)
+    _minimum_level = min(loguru.logger.level(level).no, _minimum_level)
+    return new_logger
+
+
+def set_console_level(level: str):
+    global _console_logger_id
+    global _last_console_level
+    assert loguru.logger.level(
+        level
+    )  # check for valid level before removing the logger
+
+    loguru.logger.remove(_console_logger_id)
+    _console_logger_id = add_destination(sys.stderr, format=format_log, level=level)
+    _last_console_level = level
+
+
+set_console_level("INFO")
 log = loguru.logger
 
 if __name__ == "__main__":
+    import time
+
     for level in "trace debug info success warning error critical".split():
         log.log(level.upper(), f"message at {level}")
+        time.sleep(1)
