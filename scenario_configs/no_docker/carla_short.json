@@ -17,10 +17,10 @@
         "batch_size": 1,
         "eval_split": "dev",
         "framework": "numpy",
+        "index": "[:2]",
         "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev",
-        "index": "[:2]"
+        "name": "carla_obj_det_dev"
     },
     "defense": {
         "kwargs": {

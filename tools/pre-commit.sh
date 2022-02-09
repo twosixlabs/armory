@@ -23,6 +23,7 @@ then
     exit $need_format
 fi
 
+#TODO Do we need the `if` cluases above for these below?
 yamllint --no-warnings ./
 
-python -m flake8
+python -m flake8 .

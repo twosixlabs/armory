@@ -337,7 +337,7 @@ def run(command_args, prog, description):
 
     args = parser.parse_args(command_args)
     coloredlogs.install(level=args.log_level)
-
+    log.info("Parsing Run Input:\nargs:\n{}".format(args))
     try:
         if args.filepath == "-":
             if sys.stdin.isatty():

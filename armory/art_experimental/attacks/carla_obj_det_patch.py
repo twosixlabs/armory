@@ -251,8 +251,7 @@ def insert_patch(
 
 
 class CARLADapricotPatch(RobustDPatch):
-    """
-    """
+    """ """
 
     def __init__(self, estimator, **kwargs):
         # attack only RGB channels, assuming they have indices (0,1,2)

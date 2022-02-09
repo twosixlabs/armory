@@ -1,8 +1,27 @@
 # Contributing to Armory
-Contributions to Armory are welcomed and highly encouraged!  Generally, developing armory requires a different setup and some additional tools
-as compared to just using armory to run configurations.  
+Contributions to Armory are welcomed and highly encouraged!  Armory contains a complex suite of tools that both configure the execution
+environment as well as compose a set of objects (from a configuration file) to be executed in said environment.
+
+Primarily, Armory has two main modes of operation:
+  - Native (also known as `--no-docker`) mode - This uses a pre-set python environment to execute the configuration file
+  - Docker - In this mode of operation, armory composes a Docker image, launches the image, and executed the armory configuration
+    within the image.
+    
+For more details, including how to setup your development environment for either mode of operation see: [Setting up Development Environment](#Setting-up-the-Development-Environment)
+
+Armory Development follows the [GitHub Standard Fork & Pull Request Workflow](https://gist.github.com/Chaser324/ce0505fbed06b947d962).  
+
+
+
+ 
 
 ## Setting up the Development Environment
+```bash
+pip install -r test-requirements.txt
+```
+### Docker Operation Mode
+
+### Native Operation Mode
 To get setup you will need to create a [virtual environment](https://docs.python.org/3/library/venv.html).  Once created and activated, you will need 
 to install the testing requirements.  Additionally its often useful to use the `-e` flag so that pip points to your local directory for the code
 ```bash
@@ -37,6 +56,10 @@ Only release versions will be published to Dockerhub, so development branch imag
 ```
 bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all> dev
 ```
+## Style Guide
+Armory enforces code / file styling using [Flake8](https://flake8.pycqa.org/), [black](https://github.com/psf/black),
+[yamllint](https://yamllint.readthedocs.io/en/stable/), etc.  For more information about
+how we configure these tools, see [Armory Style Guide](../STYLE.md)
 
 ## Test Cases
 When adding new features please add test cases to ensure their correctness. We use 

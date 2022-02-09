@@ -20,9 +20,9 @@
     "dataset": {
         "batch_size": 5,
         "framework": "numpy",
+        "index": "[:10]",
         "module": "armory.data.datasets",
-        "name": "cifar10",
-        "index": "[:10]"
+        "name": "cifar10"
     },
     "defense": null,
     "metric": {
