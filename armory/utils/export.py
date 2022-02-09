@@ -36,6 +36,19 @@ class SampleExporter:
             )
         self._make_output_dir()
 
+    def export_data_per_example(self, data, name):
+        """ Pickle any additional per-example data.
+            Pickled object is a dictionary mapping integer keys 1 -- N
+            to each item from data.
+            name is used for the filepath
+        """
+        N = min(self.num_samples, len(data))
+
+        data_dict = {i: data[i] for i in range(N)}
+        with open(os.path.join(self.output_dir, "{}_per_example.pkl".format(name)), "wb") as f:
+            pickle.dump(data_dict, f)
+
+
     def export(self, x, x_adv, y, y_adv):
 
         if self.saved_samples < self.num_samples:
