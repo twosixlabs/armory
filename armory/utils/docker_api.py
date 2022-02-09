@@ -2,7 +2,7 @@
 Docker-related utilities
 """
 
-from armory.logs import log
+from armory.logs import log as logger
 
 
 def pull_verbose(docker_client, repository, tag=None, log=True):
@@ -20,4 +20,4 @@ def pull_verbose(docker_client, repository, tag=None, log=True):
                 tokens.append(value)
         output = ": ".join(tokens)
 
-        log.info(output)
+        logger.info(output)
