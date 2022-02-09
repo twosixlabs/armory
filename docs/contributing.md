@@ -1,4 +1,5 @@
-# Contributing to Armory
+Contributing to Armory
+======================
 Contributions to Armory are welcomed and highly encouraged!  Armory contains a complex suite of tools that both configure the execution
 environment as well as compose a set of objects (from a configuration file) to be executed in said environment.
 
@@ -11,9 +12,8 @@ For more details, including how to setup your development environment for either
 
 Armory Development follows the [GitHub Standard Fork & Pull Request Workflow](https://gist.github.com/Chaser324/ce0505fbed06b947d962).  
 
-
-
- 
+Armory uses GitHub Actions to test contributions, for more details see [Armory CI](../.github/ci_test.yml).  Generally it will be most 
+useful to setup the [Armory pre-commit hooks](../tools/pre-commit.sh).  For more information see the [Armory Style Guide](../STYLE.md)
 
 ## Setting up the Development Environment
 ```bash
@@ -59,7 +59,8 @@ bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all> dev
 ## Style Guide
 Armory enforces code / file styling using [Flake8](https://flake8.pycqa.org/), [black](https://github.com/psf/black),
 [yamllint](https://yamllint.readthedocs.io/en/stable/), etc.  For more information about
-how we configure these tools, see [Armory Style Guide](../STYLE.md)
+how we configure these tools, see [Armory Style Guide](../STYLE.md).
+
 
 ## Test Cases
 When adding new features please add test cases to ensure their correctness. We use 
