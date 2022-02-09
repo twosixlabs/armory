@@ -275,7 +275,7 @@ def resource_context(name="Name", profiler=None, computational_resource_dict=Non
     if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
     if profiler == "Deterministic":
-        log.warn(
+        log.warning(
             "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
         )
         pr = cProfile.Profile()

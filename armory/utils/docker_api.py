@@ -20,7 +20,4 @@ def pull_verbose(docker_client, repository, tag=None, log=True):
                 tokens.append(value)
         output = ": ".join(tokens)
 
-        if log:
-            log.info(output)
-        else:
-            print(output)
+        log.info(output)

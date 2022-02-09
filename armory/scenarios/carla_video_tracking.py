@@ -9,7 +9,6 @@ import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-from armory.logs import log
 
 
 class CarlaVideoTracking(Scenario):
