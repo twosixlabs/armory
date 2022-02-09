@@ -8,51 +8,64 @@ import numpy as np
 import torch
 from PIL import Image
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_samples
 
 
 from armory.data.utils import maybe_download_weights_from_s3
 
 
-def cluster_data(x: np.ndarray, 
-                 random_seed: int = 42, 
-                 n_clusters: int = 2) -> np.ndarray:
-    clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
-    cluster_labels = clusterer.fit_predict(x)
-    return cluster_labels
+class SilhouetteData(NamedTuple):
+    n_clusters: int
+    cluster_labels: np.ndarray
+    silhouette_scores: np.ndarray
 
 
-def get_majority_flags(model: Callable,
-                       x: Iterable, 
-                       device: torch.device, 
-                       n_clusters: int = 2) -> np.ndarray:
+def get_majority_mask(explanatory_model: torch.nn.Module,
+                      data: Iterable,
+                      device: torch.device,
+                      resize_image: bool,
+                      range_n_clusters: List[int] = [2],
+                      random_seed: int = 42) -> np.ndarray:
+    majority_mask = np.empty(len(data), dtype=np.bool_)
+    activations, class_ids = _get_activations_w_class_ids(explanatory_model, 
+                                                          data, 
+                                                          device, 
+                                                          resize_image)
+    for class_id in np.unique(class_ids):
+        mask_id = (class_ids == class_id)
+        activations_id = activations[mask_id]
+        silhouette_analysis_id = _get_silhouette_analysis(activations_id, 
+                                                          range_n_clusters, 
+                                                          random_seed)
+        best_n_clusters_id = _get_best_n_clusters(silhouette_analysis_id)
+        best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
+        majority_mask_id = _get_majority_mask(best_silhouette_data_id)
+        majority_mask[mask_id] = majority_mask_id
+    return majority_mask
+
+
+def _get_activations_w_class_ids(explanatory_model: torch.nn.Module,
+                                 data: Iterable,
+                                 device: torch.device,
+                                 resize_image: bool) -> Tuple[np.ndarray]:
     activations, class_ids  = [], []
-    for image, class_id in x:
+    for image, class_id in data:
         with torch.no_grad():
-            image = convert_np_image_to_tensor(image, device)
-            h = get_hidden_representation(image, model)
-            activations.append(h)
+            image = _convert_np_image_to_tensor(image, device, resize_image)
+            activation = _get_activation(explanatory_model, image)
+            activations.append(activation)
             class_ids.append(class_id)
     activations = np.concatenate(activations) 
     class_ids = np.array(class_ids, dtype=np.int64)
-    majority_flags = np.zeros_like(class_ids.flatten(), dtype=np.bool_)
-    for class_id in set(class_ids):
-        activations_id = activations[class_ids == class_id]
-        cluster_labels_id = cluster_data(activations_id, n_clusters=n_clusters)
-        majority_flags[class_ids == class_id] = cluster_labels_id.astype(np.bool_)
-        counts = np.bincount(cluster_labels_id, minlength=2)
-        class_majority = np.argmax(counts)
-        class_minority = np.argmin(counts)
-        if class_majority == class_minority:
-            class_majority = 1
-            class_minority = 0
-        if class_majority == 0 and class_minority == 1:
-            majority_flags = ~majority_flags
-    return majority_flags
+    return activations, class_ids
 
 
-def convert_np_image_to_tensor(image: np.ndarray, device: torch.device) -> torch.Tensor:
+def _convert_np_image_to_tensor(image: np.ndarray, 
+                                device: torch.device, 
+                                resize_image: bool) -> torch.Tensor:
     image = Image.fromarray(np.uint8(image * 255))
-    image = image.resize(size=(224, 224), resample=Image.BILINEAR)
+    if resize_image:
+        image = image.resize(size=(224, 224), resample=Image.BILINEAR)
     image = np.array(image, dtype=np.float32)
     image = image / 255.0
     image = np.expand_dims(image, 0)
@@ -60,10 +73,42 @@ def convert_np_image_to_tensor(image: np.ndarray, device: torch.device) -> torch
     return image
 
 
-def get_hidden_representation(image: torch.Tensor, model: torch.nn.Module) -> np.ndarray:
-    hidden_representation, _ = model(image)
-    hidden_representation = hidden_representation.detach().cpu().numpy()
-    return hidden_representation
+def _get_activation(explanatory_model: torch.nn.Module, image: torch.Tensor) -> np.ndarray:
+    activation, _ = explanatory_model(image)
+    activation = activation.detach().cpu().numpy()
+    return activation
+
+
+def _get_silhouette_analysis(activations: np.ndarray, 
+                             range_n_clusters: List[int],
+                             random_seed: int) -> Dict[int, SilhouetteData]:
+    silhouette_analysis = {}
+    for n_clusters in range_n_clusters:
+        clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
+        cluster_labels = clusterer.fit_predict(activations)
+        silhouette_scores = silhouette_samples(activations, cluster_labels)
+        silhouette_data = SilhouetteData(n_clusters, cluster_labels, silhouette_scores)
+        silhouette_analysis[n_clusters] = silhouette_data
+    return silhouette_analysis
+
+
+def _get_best_n_clusters(silhouette_analysis: Dict[int, SilhouetteData]) -> int:
+    best_n_clusters = max(
+        list(silhouette_analysis.keys()),
+        key=lambda n_clusters: silhouette_analysis[n_clusters].silhouette_scores.mean()
+    )
+    return best_n_clusters
+
+
+def _get_majority_mask(silhouette_data: SilhouetteData) -> np.ndarray:
+    mean_silhouette_score = _get_mean_silhouette_score(silhouette_data)
+    majority_mask = ((0 <= silhouette_data.silhouette_scores) & (silhouette_data.silhouette_scores <= mean_silhouette_score))
+    return majority_mask
+
+
+def _get_mean_silhouette_score(silhouette_data: SilhouetteData) -> float:
+    mean_silhouette_score = silhouette_data.silhouette_scores.mean()
+    return mean_silhouette_score
 
 
 # Essentially copied from armory.utils.config_loading for BEAN regularization.
@@ -92,7 +137,10 @@ def load_explanatory_model(model_config):
         }
     else:
         weights_path = None
-    model = model_fn(weights_path)
+    try:
+        model = model_fn(weights_path)
+    except TypeError as e:
+        model = model_fn(weights_path, model_config["model_kwargs"])
     if not weights_file and not model_config["fit"]:
         logger.warning(
             "No weights file was provided and the model is not configured to train. "
