@@ -27,6 +27,7 @@ RUN /opt/conda/bin/conda install \
     pandas==1.3.3 \
     jupyterlab==3.1.7 \
     boto3==1.18.21 \
+    loguru==0.6.0 \
     dill=0.3.4 \
     pytest==6.2.4
 
