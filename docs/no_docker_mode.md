@@ -44,12 +44,8 @@ alternative approach (make sure your virtualenv is active):
 python -m pytest -s ./tests/unit/test_no_docker.py
 ```
 
-If you would like to run
-the example interactively you can use:
-```bash
-pytest -s ./tests/unit/test_no_docker.py::test_interactive
-```
-or you can try yourself by entering python session and typing:
+If you would like to run the example interactively you 
+enter a python session in the virtualenv and type:
 ```python
 from armory import scenarios
 from armory import paths
