@@ -49,9 +49,12 @@ enter a python session in the virtualenv and type:
 ```python
 from armory import scenarios
 from armory import paths
+from pathlib import Path
+
+# Armory needs to have the paths set correctly
 paths.set_mode("host")
 
-config = os.path.join(".","scenario_configs","no_docker","cifar_short.json")
+config = Path("scenario_configs/no_docker/cifar_short.json")
 s = scenarios.get(config).load()
 s.evaluate()
 ```
