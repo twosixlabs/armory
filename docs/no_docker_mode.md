@@ -24,6 +24,9 @@ pip install --upgrade pip==22.0.3
 pip install -r no-docker-requirements.txt
 pip install -e . 
 ```
+Once this completes, you should run `armory configure` to setup the armory configuration 
+(e.g. dataset download directory, output directory, etc.).
+
 With this complete, you now can run armory using `armory run -h`.  If you would 
 like to test the installation / environment, we have provided some base tests that
 can be executed using:
