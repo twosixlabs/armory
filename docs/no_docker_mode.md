@@ -5,18 +5,19 @@ setup environment.  Generally folks have used conda in the past, however this
 document only requires a python (>=3.7, <3.9) environment to get going.
 
 First you will need to clone the armory repo (or if you plan to be a developer, 
-see [Contributing to Armory](./contributing.md)):
-```bash 
-git clone https://github.com/twosixlabs/armory.git
-cd armory
-```
+see [Contributing to Armory](./contributing.md) to clone a fork of the repo).
+For the following, the repo directory will be referred to as `[armory-repo]`.
+
 Now you will want to create a clean python virtual environment and activate
 that environment.  For example:
 ```bash
+cd [armory-repo]
 python37 -m venv venv37
 source venv37/bin/activate
 ```
-Once this is complete, and you have ensured you are in the `armory` repo directory, 
+or you can setup your virtualenv using another tool (e.g. conda, pyenv, etc.).
+
+Once this is complete, and you have ensured you are in the `[armory-repo]` directory, 
 you can setup the environment with the following:
 ```bash
 pip install --upgrade pip==22.0.3
@@ -31,7 +32,16 @@ pytest -s ./tests/unit/test_no_docker.py
 ```
 
 This runs a series of configs in a variety of ways to ensure that 
-the environment is operating as expected.  If you would like to run
+the environment is operating as expected. 
+
+NOTE: If you run into issues running pytest (e.g. sometimes your `$PATH` is configured
+to point to a global pytest that is outside your virtualenv) directly, you can use the 
+alternative approach (make sure your virtualenv is active):
+```bash
+python -m pytest -s ./tests/unit/test_no_docker.py
+```
+
+If you would like to run
 the example interactively you can use:
 ```bash
 pytest -s ./tests/unit/test_no_docker.py::test_interactive
