@@ -24,14 +24,16 @@ def get_majority_mask(explanatory_model: torch.nn.Module,
                       data: Iterable,
                       device: torch.device,
                       resize_image: bool,
+                      majority_ceilings: Dict[int, float] = {},
                       range_n_clusters: List[int] = [2],
-                      random_seed: int = 42) -> np.ndarray:
+                      random_seed: int = 42) -> Tuple[np.ndarray, Dict[int, float]]:
     majority_mask = np.empty(len(data), dtype=np.bool_)
     activations, class_ids = _get_activations_w_class_ids(explanatory_model, 
                                                           data, 
                                                           device, 
                                                           resize_image)
     for class_id in np.unique(class_ids):
+        majority_ceiling_id = majority_ceilings.get(class_id, None)
         mask_id = (class_ids == class_id)
         activations_id = activations[mask_id]
         silhouette_analysis_id = _get_silhouette_analysis(activations_id, 
@@ -39,9 +41,10 @@ def get_majority_mask(explanatory_model: torch.nn.Module,
                                                           random_seed)
         best_n_clusters_id = _get_best_n_clusters(silhouette_analysis_id)
         best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
-        majority_mask_id = _get_majority_mask(best_silhouette_data_id)
+        majority_mask_id, majority_ceiling_id = _get_majority_mask(best_silhouette_data_id, majority_ceiling_id)
         majority_mask[mask_id] = majority_mask_id
-    return majority_mask
+        majority_ceilings[class_id] = majority_ceiling_id
+    return majority_mask, majority_ceilings
 
 
 def _get_activations_w_class_ids(explanatory_model: torch.nn.Module,
@@ -100,10 +103,11 @@ def _get_best_n_clusters(silhouette_analysis: Dict[int, SilhouetteData]) -> int:
     return best_n_clusters
 
 
-def _get_majority_mask(silhouette_data: SilhouetteData) -> np.ndarray:
-    mean_silhouette_score = _get_mean_silhouette_score(silhouette_data)
-    majority_mask = ((0 <= silhouette_data.silhouette_scores) & (silhouette_data.silhouette_scores <= mean_silhouette_score))
-    return majority_mask
+def _get_majority_mask(silhouette_data: SilhouetteData, majority_ceiling: Optional[float]) -> Tuple[np.ndarray, float]:
+    if majority_ceiling is None:
+        majority_ceiling = _get_mean_silhouette_score(silhouette_data)
+    majority_mask = ((0 <= silhouette_data.silhouette_scores) & (silhouette_data.silhouette_scores <= majority_ceiling))
+    return majority_mask, majority_ceiling
 
 
 def _get_mean_silhouette_score(silhouette_data: SilhouetteData) -> float:
