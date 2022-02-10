@@ -51,7 +51,7 @@ class get_model(torch.nn.Module):
         self.inner_model.to(DEVICE)
 
         if weights_path:
-            checkpoint = torch.load(weights_path)  # , map_location=DEVICE)
+            checkpoint = torch.load(weights_path, map_location=DEVICE)
             self.inner_model.load_state_dict(checkpoint)
 
         self.inner_model.eval()
