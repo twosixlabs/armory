@@ -9,6 +9,13 @@
 #         `pip install --upgrade pip==21.0.3`
 #
 # For more information see: docs/no-docker-mode.md
+#
+#
+# NOTE:  Currently, this only provides a `pytorch`
+#        environment, covering the CIFAR-10 & CARLA
+#        armory experiments.  A future release will be
+#        more comprehensive.
+#
 #########################################################
 
 # Base Requirements
