@@ -1,7 +1,28 @@
+# there are some design decisions that this module makes which should be
+# called out explicitly
+
+# The logging level defaults to INFO, rather than WARNING because logs are
+# the main way that armory communicates to the user.
+#
+# console log messages are currentl sent to stdout rather than stderr,
+# mimicing the behavior of the previous coloredlogs package. I have kept
+# this for now because I don't know what external tools are consuming the
+# console output and I don't want to break them.
+#
+# armory constructs its output_dir slightly before evaluation, so we need
+# to delay instantiation of the file sinks until after that. It currently
+# creates a colored and non-colored log file for each run, the first is
+# for human reading and the second for machine consumption. The only
+# only difference between them is the presense of ansi color codes.
+# This may be considered redundant, but I don't expect the near-duplication
+# to be particularly costly.
+
 import sys
 import datetime
 import loguru
 import logging
+
+#
 
 # because the logger was used for application state storage (particularly level),
 # some of those mechanisms have to be reconstituted clumsily here
