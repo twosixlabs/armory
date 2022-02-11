@@ -332,6 +332,9 @@ class Scenario:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
 
+        if self.sample_exporter is not None:
+            self.sample_exporter.write()
+
     def _evaluate(self) -> dict:
         """
         Evaluate the config and return a results dict
