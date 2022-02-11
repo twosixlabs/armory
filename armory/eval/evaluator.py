@@ -143,16 +143,16 @@ class Evaluator(object):
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
     def _cleanup(self):
-        log.info(f"Deleting tmp_dir {self.tmp_dir}")
+        log.info(f"deleting tmp_dir {self.tmp_dir}")
         try:
             shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
                 log.exception(f"Error removing tmp_dir {self.tmp_dir}")
 
-        log.info(f"Removing output_dir {self.output_dir} if empty")
         try:
             os.rmdir(self.output_dir)
+            log.warning(f"removed output_dir {self.output_dir} because it was empty")
         except OSError:
             pass
 
@@ -189,7 +189,7 @@ class Evaluator(object):
             except KeyboardInterrupt:
                 log.warning("Keyboard interrupt caught")
             finally:
-                log.warning("Cleaning up...")
+                log.info("cleaning up...")
             self._cleanup()
             return exit_code
 

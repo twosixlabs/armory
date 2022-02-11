@@ -390,8 +390,8 @@ class Scenario:
         )
         filename = f"{scenario_name}_{output['timestamp']}.json"
         log.info(
-            "Saving evaluation results to path\n"
-            f"{self.scenario_output_dir}/{filename}\n"
+            "Saving evaluation results to path "
+            f"{self.scenario_output_dir}/{filename} "
             "inside container."
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:

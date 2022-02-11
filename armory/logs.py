@@ -1,6 +1,7 @@
 import sys
 import datetime
 import loguru
+import logging
 
 # because the logger was used for application state storage (particularly level),
 # some of those mechanisms have to be reconstituted clumsily here
@@ -57,7 +58,13 @@ def add_destination(sink, format=None, level=None, colorize=True):
     if format is None:
         format = format_log
 
-    new_logger = loguru.logger.add(sink, format=format, level=level, colorize=colorize)
+    # TODO: reasonable defaults
+    # TODO: method for configuration
+    level_per_module = {"": "TRACE", "botocore": "DEBUG", "h5py": False}
+
+    new_logger = loguru.logger.add(
+        sink, format=format, level=level, filter=level_per_module, colorize=colorize
+    )
     _minimum_level = min(loguru.logger.level(level).no, _minimum_level)
     return new_logger
 
@@ -65,21 +72,57 @@ def add_destination(sink, format=None, level=None, colorize=True):
 def set_console_level(level: str):
     global _console_logger_id
     global _last_console_level
-    assert loguru.logger.level(
-        level
-    )  # check for valid level before removing the logger
+
+    # check for valid level before removing the logger
+    assert loguru.logger.level(level)
 
     loguru.logger.remove(_console_logger_id)
     _console_logger_id = add_destination(sys.stderr, format=format_log, level=level)
     _last_console_level = level
 
 
-set_console_level("INFO")
+set_console_level("DEBUG")
 log = loguru.logger
 
-if __name__ == "__main__":
-    import time
+# adapt the logging module to use the our loguru logger
+# this works by adding a new root handler which sends everything to
+# our InterceptHandler which extracts the extra information that loguru
+# needs and sends it to the loguru logger
 
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = loguru.logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message
+        frame, depth = logging.currentframe(), 2
+        while frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        loguru.logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
+logging.basicConfig(handlers=[InterceptHandler()], level=0)
+
+if __name__ == "__main__":
     for level in "trace debug info success warning error critical".split():
         log.log(level.upper(), f"message at {level}")
-        time.sleep(1)
+
+    # this should induce a flurry of log messages through the InterceptHandler
+    import boto3
+
+    s3 = boto3.client("s3")
+    s3.get_bucket_location(Bucket="armory-submission-data")
+
+    import tensorflow as tf
+
+    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+
+    log.success("dev test complete")
