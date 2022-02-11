@@ -51,9 +51,11 @@ class SampleExporter:
             y: the clean label
             y_pred_adv: the predicted label on the adversarial sample
             y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
-            plot_bboxes: Boolean passed by object detection scenarios, in which case
-                y, y_pred_adv, and y_pred_clean are tuples including a dict of bounding box data
-            classes_to_skip: int or list of ints, classes not to draw boxes for
+            plot_bboxes: Boolean which can be set True for object detection and video
+                tracking scenarios, in which case samples are also exported with
+                ground-truth and predicted boxes drawn on
+            classes_to_skip: int or list of ints, classes not to draw boxes for. Only relevant
+                when plot_bboxes is set to True
         """
 
         if self.saved_samples < self.num_samples:
@@ -63,12 +65,12 @@ class SampleExporter:
                 "predicted": y_pred_adv,
             }
             if plot_bboxes:
-                # For OD scenarios passes this
+                # For OD and VT scenarios
                 self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean, classes_to_skip)
             else:
                 self.export_fn(x, x_adv)
 
-    def close(self):
+    def write(self):
         """ Pickle the y_dict built up during each export() call.
             Called at end of scenario.
         """
@@ -99,7 +101,7 @@ class SampleExporter:
 
         plot_boxes = True if y is not None else False
         if classes_to_skip is not None:
-            if type(classes_to_skip) == int:
+            if isinstance(classes_to_skip, int):
                 classes_to_skip = [classes_to_skip]
 
         for x_i, x_adv_i in zip(x, x_adv):
@@ -338,9 +340,12 @@ class SampleExporter:
 
             self.saved_samples += 1
 
-    def _export_video(self, x, x_adv):
+    def _export_video(
+        self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None
+    ):
         for x_i, x_adv_i in zip(x, x_adv):
 
+            plot_boxes = True if y is not None else False
             if self.saved_samples == self.num_samples:
                 break
 
@@ -409,8 +414,51 @@ class SampleExporter:
                     )
                 )
 
-                benign_process.stdin.write(benign_pixels.tobytes())
-                adversarial_process.stdin.write(adversarial_pixels.tobytes())
+                if plot_boxes:
+                    # Export images again but with ground-truth and predicted bounding boxes
+                    benign_image_with_boxes = Image.fromarray(
+                        np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0), "RGB"
+                    )
+                    adversarial_image_with_boxes = Image.fromarray(
+                        np.uint8(np.clip(x_adv_frame, 0.0, 1.0) * 255.0), "RGB"
+                    )
+
+                    benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
+                    adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
+
+                    bbox_true = y[0]["boxes"][n_frame].astype("float32")
+                    bbox_pred_adv = y_pred_adv[0]["boxes"][n_frame]
+
+                    benign_box_layer.rectangle(bbox_true, outline="red", width=2)
+                    adv_box_layer.rectangle(bbox_true, outline="red", width=2)
+                    adv_box_layer.rectangle(bbox_pred_adv, outline="white", width=2)
+                    if y_pred_clean is not None:
+                        bbox_pred_clean = y_pred_clean[0]["boxes"][n_frame]
+                        benign_box_layer.rectangle(
+                            bbox_pred_clean, outline="white", width=2
+                        )
+
+                    benign_image_with_boxes.save(
+                        os.path.join(
+                            self.output_dir,
+                            folder,
+                            f"frame_{n_frame:04d}_benign_with_boxes.png",
+                        )
+                    )
+                    adversarial_image_with_boxes.save(
+                        os.path.join(
+                            self.output_dir,
+                            folder,
+                            f"frame_{n_frame:04d}_adversarial_with_boxes.png",
+                        )
+                    )
+                    benign_process.stdin.write(benign_image_with_boxes.tobytes())
+                    adversarial_process.stdin.write(
+                        adversarial_image_with_boxes.tobytes()
+                    )
+                else:
+                    benign_process.stdin.write(benign_pixels.tobytes())
+                    adversarial_process.stdin.write(adversarial_pixels.tobytes())
 
             benign_process.stdin.close()
             benign_process.wait()

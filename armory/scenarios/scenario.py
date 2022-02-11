@@ -333,7 +333,7 @@ class Scenario:
         self.results = metrics_logger.results()
 
         if self.sample_exporter is not None:
-            self.sample_exporter.close()
+            self.sample_exporter.write()
 
     def _evaluate(self) -> dict:
         """
