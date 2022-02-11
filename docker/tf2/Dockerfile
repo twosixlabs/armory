@@ -21,7 +21,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux
 ENV PATH=/opt/conda/bin:$PATH
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    numpy==1.19.2 \
     tensorflow-datasets==3.2.0 \
     jupyterlab==3.0.9 \
     boto3==1.17.20 \
