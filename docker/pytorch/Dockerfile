@@ -1,6 +1,6 @@
 ########## ARMORY Base #################
 
-FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory
+FROM nvidia/cuda:11.2.1-cudnn8-runtime-ubuntu20.04 AS armory-pytorch-base
 
 # Temporary fix for broken nvidia package checksum
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
@@ -20,38 +20,37 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py37_4.9.2-Linux
 
 ENV PATH=/opt/conda/bin:$PATH
 
+RUN /opt/conda/bin/conda install \
+    pytorch==1.7.1 \
+    torchvision==0.8.2 \
+    torchaudio==0.7.2 \
+    cudatoolkit=11.0 \
+    -c pytorch \
+    && \
+    /opt/conda/bin/conda clean --all
+
+RUN /opt/conda/bin/conda install \
+    ffmpeg==4 \
+    -c conda-forge \
+    && \
+    /opt/conda/bin/conda clean --all
+
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.0 \
     jupyterlab==3.0.9 \
     boto3==1.17.20 \
-    Pillow==8.2.0 \
+    Pillow>=8.2.0 \
     pydub==0.24.1 \
-    apache-beam==2.22.0 \
     dill==0.3.1.1 \
     pytest==6.2.2 \
     opencv-python==4.5.1.48 \
-    pandas==1.2.4 \
     ffmpeg-python==0.2.0 \
     numba==0.53.1 \
-    tensorboardX==2.4.1
-
-RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
-    /opt/conda/bin/conda clean --all
-
-WORKDIR /workspace
-
-########## PyTorch 1 Base #################
-
-ARG armory_version
-FROM armory AS armory-pytorch-base
-
-RUN /opt/conda/bin/conda install pytorch==1.7 \
-    torchvision==0.8.0 \
-    cudatoolkit=11.0 -c pytorch -c conda-forge && \
-    /opt/conda/bin/conda clean --all
-RUN /opt/conda/bin/pip install --no-cache-dir \
+    tensorboardX==2.4.1 \
     tensorflow-gpu==2.4.1 \
     adversarial-robustness-toolbox==1.9.1
+
+WORKDIR /workspace
 
 ########## PyTorch 1 Dev #################
 
