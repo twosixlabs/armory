@@ -27,7 +27,6 @@ RUN /opt/conda/bin/conda install \
     pandas==1.3.3 \
     jupyterlab==3.1.7 \
     boto3==1.18.21 \
-    loguru==0.6.0 \
     dill=0.3.4 \
     pytest==6.2.4
 
@@ -40,7 +39,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.22.0 \
     opencv-python==4.5.1.48 \
     ffmpeg-python==0.2.0 \
-    tensorboardX==2.4.1
+    tensorboardX==2.4.1 \
+    loguru==0.6.0
 
 
 
@@ -59,6 +59,8 @@ ARG armory_version
 FROM armory AS armory-tf1-base
 
 
+# This section installs tensorflow object detection API from
+# https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf1/setup.py
 WORKDIR /tmp
 RUN git clone https://github.com/tensorflow/models.git && cd models/research && git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182
 WORKDIR /tmp/models/research
