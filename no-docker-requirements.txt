@@ -6,7 +6,7 @@
 # where python >= 3.7, <3.9.  Additionally the following
 # dependencies are required.  Note: to make this run with
 # pip, users will need to run:
-#         `pip install --upgrade pip==21.0.3`
+#         `pip install --upgrade pip==22.0.3`
 #
 # For more information see: docs/no-docker-mode.md
 #
