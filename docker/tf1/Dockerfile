@@ -58,6 +58,8 @@ ARG armory_version
 FROM armory AS armory-tf1-base
 
 
+# This section installs tensorflow object detection API from
+# https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf1/setup.py
 WORKDIR /tmp
 RUN git clone https://github.com/tensorflow/models.git && cd models/research && git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182
 WORKDIR /tmp/models/research
