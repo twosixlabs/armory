@@ -24,7 +24,6 @@ except ImportError:
     pass
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import apache_beam as beam
 from art.data_generators import DataGenerator
 
 from armory.data.utils import (
@@ -1084,6 +1083,22 @@ def german_traffic_sign(
     )
 
 
+def _get_librispeech_download_and_prepare_kwargs():
+    try:
+        import apache_beam as beam
+
+        dl_config = tfds.download.DownloadConfig(
+            beam_options=beam.options.pipeline_options.PipelineOptions(flags=[])
+        )
+        return {"download_config": dl_config}
+    except ImportError as e:
+        logger.warning(
+            f"Unable to import apache_beam:\n{e}\n"
+            "If building librispeech dataset from source, apache_beam must be installed"
+        )
+        return None
+
+
 def librispeech_dev_clean(
     split: str = "train",
     epochs: int = 1,
@@ -1105,11 +1120,7 @@ def librispeech_dev_clean(
     returns:
         Generator
     """
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
-
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1119,7 +1130,7 @@ def librispeech_dev_clean(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1179,11 +1190,8 @@ def librispeech(
         raise ValueError(
             "Filtering by class is not supported for the librispeech dataset"
         )
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
 
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
@@ -1204,7 +1212,7 @@ def librispeech(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1239,11 +1247,8 @@ def librispeech_dev_clean_asr(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_dev_clean_asr dataset"
         )
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
 
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1253,7 +1258,7 @@ def librispeech_dev_clean_asr(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         as_supervised=False,
         supervised_xy_keys=("speech", "text"),
         variable_length=bool(batch_size > 1),
