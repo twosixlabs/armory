@@ -29,6 +29,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linu
 
 ENV PATH=/opt/conda/bin:$PATH
 
+# conda installations ordered by channel
 RUN /opt/conda/bin/conda install \
     pytorch=1.10 \
     torchvision \
@@ -60,36 +61,24 @@ RUN /opt/conda/bin/conda install \
 # six==1.16.0 \
 # setuptools==52.0.0 \
 
-#RUN /opt/conda/bin/conda install \
-#    opencv \
-#    -c conda-forge \
-#    && /opt/conda/bin/conda clean --all
-##    opencv \
-#
-#RUN /opt/conda/bin/conda install \
-#    tensorflow \
-#    tensorflow-datasets \
-#    tensorboardx \
-#    -c conda-forge \
-#    && /opt/conda/bin/conda clean --all
-
-
 RUN /opt/conda/bin/conda install \
-    numba \
+    numba=0.55 \
     -c numba \
     && /opt/conda/bin/conda clean --all
     # ART requires numba >= 0.53.1
+# numba==0.55.1
 
 RUN /opt/conda/bin/conda install \
-    pandas \
+    pandas=1.1 \
     -c anaconda \
     && /opt/conda/bin/conda clean --all
+# pandas==1.1.3 
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets \
-    tensorflow \
-    tensorboardX \
-    boto3 \
+    tensorflow-datasets==3.2.1 \
+    tensorflow==2.8 \
+    tensorboardx==2.4 \
+    boto3==1.20 \
     opencv-python \
     ffmpeg-python \
     pytest \
@@ -97,30 +86,22 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     coloredlogs \
     docker \
     adversarial-robustness-toolbox==1.9.1
+    # tensorflow-datasets version 4 has breaking changes
+# dill==0.3.4 \
+# tensorflow-datasets==3.2.1 \
+# tensorflow=2.8.0 \
+# tensorboardx=2.4.1 \
+# boto3==1.20.54 \
+# opencv-python==4.5.5.62 \
+# ffmpeg-python==0.2.0 \
+# pytest==7.0.1 \
+# pymongo==4.0.1 \
+# coloredlogs==15.0.1 \
+# docker==5.0.3 \
+# adversarial-robustness-toolbox==1.9.1
 
-#    pydub==0.24.1 \
-#    dill==0.3.1.1 \
-
-#RUN /opt/conda/bin/pip install --no-cache-dir \
-#     pytest \
-#     pymongo \
-#     coloredlogs \
-#     docker \
-#     boto3 \
-#     adversarial-robustness-toolbox==1.9.1 \
-# pytest==6.2.2 \
-     
-
-#RUN /opt/conda/bin/pip install --no-cache-dir \
-#    tensorflow-datasets==3.2.0 \
-#    boto3==1.17.20 \
-#    pydub==0.24.1 \
-#    dill==0.3.1.1 \
-#    opencv-python==4.5.1.48 \
-#    ffmpeg-python==0.2.0 \
-#    tensorboardX==2.4.1 \
-#    tensorflow-gpu==2.4.1 \
-#    adversarial-robustness-toolbox==1.9.1
+# pydub not installed. Do we need?
+#    pydub==0.24.1 \  
 
 WORKDIR /workspace
 
@@ -129,8 +110,8 @@ WORKDIR /workspace
 FROM armory-pytorch-base AS armory-pytorch-dev
 ARG armory_version
 
-#COPY . /armory_dev/
-#RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
 
 WORKDIR /workspace
 CMD tail -f /dev/null
