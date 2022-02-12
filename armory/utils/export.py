@@ -4,7 +4,7 @@ import numpy as np
 import ffmpeg
 import pickle
 import time
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
 from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
@@ -36,16 +36,47 @@ class SampleExporter:
             )
         self._make_output_dir()
 
-    def export(self, x, x_adv, y, y_adv):
+    def export(
+        self,
+        x,
+        x_adv,
+        y,
+        y_pred_adv,
+        y_pred_clean=None,
+        plot_bboxes=False,
+        classes_to_skip=None,
+    ):
+        """ x: the clean sample
+            x_adv: the adversarial sample
+            y: the clean label
+            y_pred_adv: the predicted label on the adversarial sample
+            y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
+            plot_bboxes: Boolean which can be set True for object detection and video
+                tracking scenarios, in which case samples are also exported with
+                ground-truth and predicted boxes drawn on
+            classes_to_skip: int or list of ints, classes not to draw boxes for. Only relevant
+                when plot_bboxes is set to True
+        """
 
         if self.saved_samples < self.num_samples:
 
-            self.y_dict[self.saved_samples] = {"ground truth": y, "predicted": y_adv}
-            self.export_fn(x, x_adv)
+            self.y_dict[self.saved_samples] = {
+                "ground truth": y,
+                "predicted": y_pred_adv,
+            }
+            if plot_bboxes:
+                # For OD and VT scenarios
+                self.export_fn(x, x_adv, y, y_pred_adv, y_pred_clean, classes_to_skip)
+            else:
+                self.export_fn(x, x_adv)
 
-            if self.saved_samples == self.num_samples:
-                with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
-                    pickle.dump(self.y_dict, f)
+    def write(self):
+        """ Pickle the y_dict built up during each export() call.
+            Called at end of scenario.
+        """
+
+        with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+            pickle.dump(self.y_dict, f)
 
     def _make_output_dir(self):
         assert os.path.exists(self.base_output_dir) and os.path.isdir(
@@ -64,7 +95,15 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(self, x, x_adv):
+    def _export_images(
+        self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None
+    ):
+
+        plot_boxes = True if y is not None else False
+        if classes_to_skip is not None:
+            if isinstance(classes_to_skip, int):
+                classes_to_skip = [classes_to_skip]
+
         for x_i, x_adv_i in zip(x, x_adv):
 
             if self.saved_samples == self.num_samples:
@@ -116,6 +155,50 @@ class SampleExporter:
             adversarial_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.png")
             )
+
+            if plot_boxes:
+                # Export images again but with bounding boxes
+                benign_image_with_boxes = Image.fromarray(
+                    np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
+                )
+                adversarial_image_with_boxes = Image.fromarray(
+                    np.uint8(np.clip(x_adv_i_mode, 0.0, 1.0) * 255.0), mode
+                )
+
+                benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
+                adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
+
+                bboxes_true = y[0]["boxes"]
+                labels_true = y[0]["labels"]
+                bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
+
+                for true_box, label in zip(bboxes_true, labels_true):
+                    if classes_to_skip is not None and label in classes_to_skip:
+                        continue
+                    benign_box_layer.rectangle(true_box, outline="red", width=2)
+                    adv_box_layer.rectangle(true_box, outline="red", width=2)
+                for adv_pred_box in bboxes_pred_adv:
+                    adv_box_layer.rectangle(adv_pred_box, outline="white", width=2)
+                if y_pred_clean is not None:
+                    bboxes_pred_clean = y_pred_clean[0]["boxes"][
+                        y_pred_clean[0]["scores"] > 0.9
+                    ]
+                    for clean_pred_box in bboxes_pred_clean:
+                        benign_box_layer.rectangle(
+                            clean_pred_box, outline="white", width=2
+                        )
+
+                benign_image_with_boxes.save(
+                    os.path.join(
+                        self.output_dir, f"{self.saved_samples}_benign_with_boxes.png"
+                    )
+                )
+                adversarial_image_with_boxes.save(
+                    os.path.join(
+                        self.output_dir,
+                        f"{self.saved_samples}_adversarial_with_boxes.png",
+                    )
+                )
 
             self.saved_samples += 1
 
@@ -257,9 +340,12 @@ class SampleExporter:
 
             self.saved_samples += 1
 
-    def _export_video(self, x, x_adv):
+    def _export_video(
+        self, x, x_adv, y=None, y_pred_adv=None, y_pred_clean=None, classes_to_skip=None
+    ):
         for x_i, x_adv_i in zip(x, x_adv):
 
+            plot_boxes = True if y is not None else False
             if self.saved_samples == self.num_samples:
                 break
 
@@ -328,8 +414,51 @@ class SampleExporter:
                     )
                 )
 
-                benign_process.stdin.write(benign_pixels.tobytes())
-                adversarial_process.stdin.write(adversarial_pixels.tobytes())
+                if plot_boxes:
+                    # Export images again but with ground-truth and predicted bounding boxes
+                    benign_image_with_boxes = Image.fromarray(
+                        np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0), "RGB"
+                    )
+                    adversarial_image_with_boxes = Image.fromarray(
+                        np.uint8(np.clip(x_adv_frame, 0.0, 1.0) * 255.0), "RGB"
+                    )
+
+                    benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
+                    adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
+
+                    bbox_true = y[0]["boxes"][n_frame].astype("float32")
+                    bbox_pred_adv = y_pred_adv[0]["boxes"][n_frame]
+
+                    benign_box_layer.rectangle(bbox_true, outline="red", width=2)
+                    adv_box_layer.rectangle(bbox_true, outline="red", width=2)
+                    adv_box_layer.rectangle(bbox_pred_adv, outline="white", width=2)
+                    if y_pred_clean is not None:
+                        bbox_pred_clean = y_pred_clean[0]["boxes"][n_frame]
+                        benign_box_layer.rectangle(
+                            bbox_pred_clean, outline="white", width=2
+                        )
+
+                    benign_image_with_boxes.save(
+                        os.path.join(
+                            self.output_dir,
+                            folder,
+                            f"frame_{n_frame:04d}_benign_with_boxes.png",
+                        )
+                    )
+                    adversarial_image_with_boxes.save(
+                        os.path.join(
+                            self.output_dir,
+                            folder,
+                            f"frame_{n_frame:04d}_adversarial_with_boxes.png",
+                        )
+                    )
+                    benign_process.stdin.write(benign_image_with_boxes.tobytes())
+                    adversarial_process.stdin.write(
+                        adversarial_image_with_boxes.tobytes()
+                    )
+                else:
+                    benign_process.stdin.write(benign_pixels.tobytes())
+                    adversarial_process.stdin.write(adversarial_pixels.tobytes())
 
             benign_process.stdin.close()
             benign_process.wait()
