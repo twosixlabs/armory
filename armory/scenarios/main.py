@@ -46,7 +46,7 @@ def _scenario_setup(config: Config) -> None:
     os.makedirs(scenario_output_dir, exist_ok=True)
     os.makedirs(scenario_tmp_dir, exist_ok=True)
 
-    add_destination(os.path.join(scenario_output_dir, "armory-log.txt"))
+    add_destination(os.path.join(scenario_output_dir, "armory-log.txt"), colorize=False)
     add_destination(os.path.join(scenario_output_dir, "colored-log.txt"), colorize=True)
     log.info(f"armory outputs will be written to {scenario_output_dir}")
     log.info(f"logs will be written to {scenario_output_dir}/armory-log.txt")

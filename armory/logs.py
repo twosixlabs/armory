@@ -69,19 +69,18 @@ def duration_string(dt: datetime.timedelta) -> str:
     return duration if duration else "0s"
 
 
-def add_destination(sink, format=None, level=None, colorize=True):
+def add_destination(sink, colorize=True, level=None):
     """add a destination to the logger, update the minimum_level seen"""
     global _minimum_level
 
     if level is None and _last_console_level is not None:
         level = _last_console_level
 
-    if format is None:
-        format = format_log
+    format = format_log
 
     # TODO: reasonable defaults
     # TODO: method for configuration
-    level_per_module = {"": "TRACE", "botocore": "DEBUG", "h5py": False}
+    level_per_module = {"": "TRACE", "botocore": "INFO", "h5py": False}
 
     new_logger = loguru.logger.add(
         sink, format=format, level=level, filter=level_per_module, colorize=colorize
@@ -95,6 +94,7 @@ def set_console_level(level: str):
     global _last_console_level
 
     # check for valid level before removing the logger
+    level = level.upper()
     assert loguru.logger.level(level)
 
     loguru.logger.remove(_console_logger_id)
