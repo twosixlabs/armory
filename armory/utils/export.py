@@ -170,7 +170,7 @@ class SampleExporter:
 
                 bboxes_true = y[0]["boxes"]
                 labels_true = y[0]["labels"]
-                bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.9]
+                bboxes_pred_adv = y_pred_adv[0]["boxes"][y_pred_adv[0]["scores"] > 0.5]
 
                 for true_box, label in zip(bboxes_true, labels_true):
                     if classes_to_skip is not None and label in classes_to_skip:
