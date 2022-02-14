@@ -1,56 +1,47 @@
+# there are some design decisions that this module makes which should be
+# called out explicitly
+
 # The logging level defaults to INFO, rather than WARNING because logs are
 # the main way that armory communicates to the user.
 #
-# console log messages are currently sent to stdout rather than stderr,
+# console log messages are currentl sent to stdout rather than stderr,
 # mimicing the behavior of the previous coloredlogs package. I have kept
 # this for now because I don't know what external tools are consuming the
 # console output and I don't want to break them.
 #
-# This module creates three sinks at initialization:
-#   1. stdout
-#   2. output_dir/colored-log.txt
-#   3. output_dir/armory-log.txt
-#
-# which all receive the same messages, with armory-log.txt lacking the ansi color codes
-# of the other two. This may be considered redundant, but I don't expect the
-# near-duplication to be particularly costly.
-#
-# The standard logging level overlaps the per-module filter definitions, so we eschew
-# the logging level entirely. For example, if a user requests `--log art:debug`, we'd
-# have to adjust the level to the lowest one requested. It might be easier (and no less performant)
-# to set the level to 0 and let the filters do the selection work. Note the presence
-# of a "" null filter which provides the level for all sources not specified.  We still
-# need to track whether any DEBUG or lower filter has be set so that is_debug() is accurate.
+# armory constructs its output_dir slightly before evaluation, so we need
+# to delay instantiation of the file sinks until after that. It currently
+# creates a colored and non-colored log file for each run, the first is
+# for human reading and the second for machine consumption. The only
+# only difference between them is the presense of ansi color codes.
+# This may be considered redundant, but I don't expect the near-duplication
+# to be particularly costly.
 
 import sys
 import datetime
 import loguru
 import logging
-from typing import List, Dict
 
-import armory.paths
+#
 
-default_message_filters = {
-    "": "INFO",
-    "armory": "INFO",
-    "art": "INFO",
-    "boto": "INFO",
-}
+# because the logger was used for application state storage (particularly level),
+# some of those mechanisms have to be reconstituted clumsily here
 
-output_dir: str = armory.paths.runtime_paths().output_dir
-filters: Dict[str, str] = default_message_filters
-debug_requested: bool = False
-logger_ids: List[int] = []
+# in loguru, you can't set the level of an existing logger, so level changes
+# need to remove the logger and add it again. Save the id number so we can;
+# the basic logger is guaranteed to be 0 at import time
+_console_logger_id = 0
+
+# there are places where the global logger is asked if the current level is debug
+# this mechanism saves the lowest level so far registered and the last named
+# console level so that (for example) per-run log destinations can be created at
+# eval time and use the established console level
+_minimum_level = loguru.logger.level("INFO").no
+_last_console_level = None
 
 
-def is_debug(filters) -> bool:
-    """return true if there is a filter set to DEBUG or lower"""
-    for level in filters.values():
-        if level in (True, False):
-            continue
-        if loguru.logger.level(level).no <= loguru.logger.level("DEBUG").no:
-            return True
-    return False
+def is_debug() -> bool:
+    return _minimum_level <= loguru.logger.level("DEBUG").no
 
 
 def format_log(record) -> str:
@@ -78,19 +69,40 @@ def duration_string(dt: datetime.timedelta) -> str:
     return duration if duration else "0s"
 
 
-def add_destination(sink, colorize=True):
-    """add a destination to the logger"""
-    # TODO: add configuration method to main (cf. docs/logging.md)
+def add_destination(sink, colorize=True, level=None):
+    """add a destination to the logger, update the minimum_level seen"""
+    global _minimum_level
 
-    # set the base logging level to TRACE because we are using filters to control which
-    # messages are sent to the sink, so we want the level to be wide open
-    base_level = "TRACE"
+    if level is None and _last_console_level is not None:
+        level = _last_console_level
+
+    format = format_log
+
+    # TODO: reasonable defaults
+    # TODO: method for configuration
+    level_per_module = {"": "TRACE", "botocore": "INFO", "h5py": False}
+
     new_logger = loguru.logger.add(
-        sink, format=format_log, level=base_level, filters=filters, colorize=colorize
+        sink, format=format, level=level, filter=level_per_module, colorize=colorize
     )
+    _minimum_level = min(loguru.logger.level(level).no, _minimum_level)
     return new_logger
 
 
+def set_console_level(level: str):
+    global _console_logger_id
+    global _last_console_level
+
+    # check for valid level before removing the logger
+    level = level.upper()
+    assert loguru.logger.level(level)
+
+    loguru.logger.remove(_console_logger_id)
+    _console_logger_id = add_destination(sys.stderr, level=level)
+    _last_console_level = level
+
+
+set_console_level("DEBUG")
 log = loguru.logger
 
 # adapt the logging module to use the our loguru logger
