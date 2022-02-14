@@ -28,7 +28,7 @@ adversarial-robustness-toolbox==1.9.1
 
 # Currently is necessary for armory datasets which
 # utilizes tfds.  This requires old version of
-# pyarrow (0.17.1) which requires pip 21.0.3
+# pyarrow (0.17.1) which requires pip 22.0.3
 apache-beam==2.22.0
 
 # Needed for armory.data.utils
