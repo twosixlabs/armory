@@ -80,7 +80,13 @@ def add_destination(sink, colorize=True, level=None):
 
     # TODO: reasonable defaults
     # TODO: method for configuration
-    level_per_module = {"": "TRACE", "botocore": "INFO", "h5py": False}
+    level_per_module = {
+        "": "TRACE",
+        "h5py": False,
+        "botocore": "INFO",
+        "s3transfer": "INFO",
+        "urllib3": "INFO",
+    }
 
     new_logger = loguru.logger.add(
         sink, format=format, level=level, filter=level_per_module, colorize=colorize
