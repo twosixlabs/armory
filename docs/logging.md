@@ -24,7 +24,7 @@ The armory logger also adds two new levels
     log.trace - even more verbose than debug
     log.success - report that something completed ok
 
-These functions take one string argument
+All these functions take one string argument
 
     log.success(f'uploaded {file} to {server}')
 

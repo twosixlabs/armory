@@ -98,7 +98,7 @@ def set_console_level(level: str):
     assert loguru.logger.level(level)
 
     loguru.logger.remove(_console_logger_id)
-    _console_logger_id = add_destination(sys.stderr, format=format_log, level=level)
+    _console_logger_id = add_destination(sys.stderr, level=level)
     _last_console_level = level
 
 
