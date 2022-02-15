@@ -6,6 +6,7 @@ on:
     branches:
       - master
       - develop
+      - logging-improvement  # TODO Remove this after testing is complete
 
   pull_request:
     branches:
@@ -37,6 +38,27 @@ jobs:
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pytest -s ./tests/test_host/
+  pytest-no-docker:
+    name: PyTest No-docker
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install --user --upgrade pip==22.0.3
+          pip install -r no-docker-requirements.txt
+          pip install -r test-requirements.txt
+          pip install -e .
+          pytest -s ./tests/unit/test_no_docker.py
   pytest-tf1:
     name: PyTest TF1
     runs-on: ubuntu-18.04

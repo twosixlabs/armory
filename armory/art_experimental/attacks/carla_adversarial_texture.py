@@ -1,9 +1,6 @@
-import logging
 import numpy as np
 
 from art.attacks.evasion import AdversarialTexturePyTorch
-
-logger = logging.getLogger(__name__)
 
 
 class AdversarialPhysicalTexture(AdversarialTexturePyTorch):

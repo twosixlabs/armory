@@ -1,10 +1,7 @@
-import logging
-
 from art.attacks.evasion import RobustDPatch
 import numpy as np
 
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class RobustDPatch(RobustDPatch):
@@ -22,7 +19,7 @@ class RobustDPatch(RobustDPatch):
 
     def generate(self, x, y=None, **generate_kwargs):
         if self.random_location:
-            logger.info("Selecting random coordinates for patch_location.")
+            log.info("Selecting random coordinates for patch_location.")
             self.patch_location = (
                 np.random.randint(int(x.shape[-3] - self.patch_shape[0])),
                 np.random.randint(int(x.shape[-2] - self.patch_shape[1])),

@@ -32,7 +32,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     opencv-python==4.5.1.48 \
     pandas==1.2.4 \
     ffmpeg-python==0.2.0 \
-    tensorboardX==2.4.1
+    tensorboardX==2.4.1 \
+    loguru==0.6.0
 
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
@@ -45,6 +46,9 @@ WORKDIR /workspace
 ARG armory_version
 FROM armory AS armory-tf2-base
 
+# This section installs tensorflow object detection API from
+# https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf2/setup.py
+# It is messy
 RUN /opt/conda/bin/conda install protobuf==3.14.0 && \
     /opt/conda/bin/conda clean --all
 RUN /opt/conda/bin/pip install tensorflow-gpu==2.4.1 --no-cache-dir
@@ -53,6 +57,12 @@ RUN git clone https://github.com/tensorflow/models.git && cd models/research && 
 WORKDIR /tmp/models/research
 RUN protoc object_detection/protos/*.proto --python_out=.
 RUN cp object_detection/packages/tf2/setup.py .
+
+# The setup.py explit tf-models-official 2.8 and implicit tensorflow 2.8 dependencies cause numpy issues when numpy < 1.20. Pin them to 2.7.
+# https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf2/setup.py#L23
+RUN /opt/conda/bin/pip install --no-cache-dir \
+    tf-models-official==2.7 \
+    tensorflow==2.7
 RUN /opt/conda/bin/pip install .
 RUN /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.9.1
 

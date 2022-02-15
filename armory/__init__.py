@@ -1,14 +1,7 @@
 """Adversarial Robustness Evaluation Test Bed"""
 
-# Set up logging for a library
-import logging
-
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
-
-
 # Semantic Version
-__version__ = "0.14.4"
+__version__ = "0.14.5"
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
@@ -17,8 +10,6 @@ Config = Dict[str, Any]
 
 # Submodule imports
 try:
-    import coloredlogs
-
     from armory import art_experimental
     from armory import baseline_models
     from armory import data

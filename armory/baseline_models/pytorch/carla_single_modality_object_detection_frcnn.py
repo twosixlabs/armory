@@ -1,14 +1,11 @@
 """
 PyTorch Faster-RCNN Resnet50-FPN object detection model
 """
-import logging
 from typing import Optional
 
 from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 from torchvision import models
-
-logger = logging.getLogger(__name__)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -2,15 +2,12 @@
 Docker orchestration managers for ARMORY.
 """
 
-import logging
 
 import docker
 
 import armory
 from armory import paths
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log as logger
 
 
 class ArmoryInstance(object):

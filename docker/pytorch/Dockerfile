@@ -33,7 +33,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pandas==1.2.4 \
     ffmpeg-python==0.2.0 \
     numba==0.53.1 \
-    tensorboardX==2.4.1
+    tensorboardX==2.4.1 \
+    loguru==0.6.0
 
 RUN /opt/conda/bin/conda install -c conda-forge ffmpeg==4.2.3 && \
     /opt/conda/bin/conda clean --all
