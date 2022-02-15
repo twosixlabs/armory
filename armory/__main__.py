@@ -119,11 +119,16 @@ def _debug(parser):
     parser.add_argument(
         "-d",
         "--debug",
-        dest="log_level",
+        dest="debug",
         action="store_const",
         const="DEBUG",
         default="INFO",
-        help="use level debug for logging",
+        help="synonym for --log-level=armory:debug",
+    )
+    parser.add_argument(
+        "--log-level",
+        action="append",
+        help="set log level per-module (ex. art:debug) can be used mulitple times",
     )
 
 
@@ -335,7 +340,7 @@ def run(command_args, prog, description):
     )
 
     args = parser.parse_args(command_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     try:
         if args.filepath == "-":
@@ -437,7 +442,7 @@ def download(command_args, prog, description):
     _no_docker(parser)
 
     args = parser.parse_args(command_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     if args.no_docker:
         log.info("Downloading requested datasets and model weights in host mode...")
@@ -463,8 +468,8 @@ def download(command_args, prog, description):
         [
             "from armory.data import datasets",
             "from armory.data import model_weights",
-            "from armory.logs import log, set_console_level",
-            f"set_console_level(level={args.log_level})",
+            "from armory.logs import log, update_filters",
+            f"update_filters({args.log_level}, {args.debug})",
             f'datasets.download_all("{args.download_config}", "{args.scenario}")',
             f'model_weights.download_all("{args.download_config}", "{args.scenario}")',
         ]
@@ -490,7 +495,7 @@ def clean(command_args, prog, description):
     )
 
     args = parser.parse_args(command_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     docker_client = docker.from_env(version="auto")
     if args.download:
@@ -555,7 +560,7 @@ def configure(command_args, prog, description):
     _debug(parser)
 
     args = parser.parse_args(command_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     default_host_paths = paths.HostDefaultPaths()
 
@@ -674,7 +679,7 @@ def launch(command_args, prog, description):
     _root(parser)
 
     args = parser.parse_args(command_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
@@ -717,7 +722,7 @@ def exec(command_args, prog, description):
         sys.exit(1)
 
     args = parser.parse_args(armory_args)
-    armory.logs.set_console_level(level=args.log_level)
+    armory.logs.update_filters(args.log_level)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     # Config

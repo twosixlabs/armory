@@ -1,56 +1,102 @@
-# The logging level defaults to INFO, rather than WARNING because logs are
-# the main way that armory communicates to the user.
+# The logging level defaults to INFO, rather than WARNING because logs are the main way
+# that armory communicates to the user.
 #
-# console log messages are currently sent to stdout rather than stderr,
-# mimicing the behavior of the previous coloredlogs package. I have kept
-# this for now because I don't know what external tools are consuming the
-# console output and I don't want to break them.
+# console log messages are currently sent to stdout rather than stderr, mimicing the
+# behavior of the previous coloredlogs package. I have kept this for now because I don't
+# know what external tools are consuming the console output and I don't want to break
+# them.
 #
-# This module creates three sinks at initialization:
-#   1. stdout
-#   2. output_dir/colored-log.txt
-#   3. output_dir/armory-log.txt
+# This module creates the stdout sink at initialization, so `log.debug()` and friends
+# are available at import. The files
+#   1. output_dir/colored-log.txt
+#   2. output_dir/armory-log.txt
 #
-# which all receive the same messages, with armory-log.txt lacking the ansi color codes
-# of the other two. This may be considered redundant, but I don't expect the
-# near-duplication to be particularly costly.
+# cannot be created until after argument parsing completes so we know where to put them.
+# As soon as __main__ sets armory.paths to DOCKER or NO_DOCKER, it can call
+# make_logfiles(directory) to create the sink files. After make_logfiles is called,
+# all three sinks are receive the same messages.
 #
-# The standard logging level overlaps the per-module filter definitions, so we eschew
-# the logging level entirely. For example, if a user requests `--log art:debug`, we'd
-# have to adjust the level to the lowest one requested. It might be easier (and no less performant)
-# to set the level to 0 and let the filters do the selection work. Note the presence
-# of a "" null filter which provides the level for all sources not specified.  We still
-# need to track whether any DEBUG or lower filter has be set so that is_debug() is accurate.
+# The armory-log.txt file does not include ansi color codes for easier parsing. This may
+# be considered redundant, but I don't expect the near-duplication to be particularly
+# costly.
 
 import sys
 import datetime
 import loguru
 import logging
-from typing import List, Dict
+import warnings
+from typing import List
 
-import armory.paths
 
 default_message_filters = {
     "": "INFO",
     "armory": "INFO",
     "art": "INFO",
-    "boto": "INFO",
+    "botocore": "WARNING",
+    "s3transfer": "INFO",
+    "urllib3": "INFO",
+    "h5py": False,
 }
 
-output_dir: str = armory.paths.runtime_paths().output_dir
-filters: Dict[str, str] = default_message_filters
-debug_requested: bool = False
-logger_ids: List[int] = []
+log = loguru.logger
+
+# need to instantiate the filters early, replacing the default
+log.remove()
+log.add(sys.stdout, level="TRACE", filter=default_message_filters)
 
 
-def is_debug(filters) -> bool:
+filters = default_message_filters
+logfile_directory = None
+
+
+def is_debug() -> bool:
     """return true if there is a filter set to DEBUG or lower"""
+    global filters
+
     for level in filters.values():
         if level in (True, False):
             continue
-        if loguru.logger.level(level).no <= loguru.logger.level("DEBUG").no:
+        if log.level(level).no <= log.level("DEBUG").no:
             return True
     return False
+
+
+def set_armory_level(level: str):
+    update_filters(f"armory:{level}")
+
+
+def update_filters(specs: List[str], armory_debug=None):
+    """add or replace specs of the form module:level and restart the 0th sink"""
+    global filters
+    global logfile_directory
+
+    if logfile_directory is not None:
+        log.error("cannot update log filters once make_logfiles is called. ignoring.")
+        return
+
+    if specs is None:
+        specs = []
+
+    if armory_debug is not None:
+        specs.append(f"armory:{armory_debug}")
+
+    for spec in specs:
+        if ":" in spec:
+            key, level = spec.split(":")
+        else:
+            # convenience "LEVEL" is synonym for "armory:LEVEL"
+            key = "armory"
+            level = spec
+        level = level.upper()
+        try:
+            log.level(level)
+            filters[key] = level
+        except ValueError:
+            log.error(f"unknown log level {spec} ignored")
+            continue
+
+    log.remove()
+    log.add(sys.stdout, level="TRACE", filter=filters)
 
 
 def format_log(record) -> str:
@@ -80,18 +126,25 @@ def duration_string(dt: datetime.timedelta) -> str:
 
 def add_destination(sink, colorize=True):
     """add a destination to the logger"""
+    global filters
     # TODO: add configuration method to main (cf. docs/logging.md)
 
-    # set the base logging level to TRACE because we are using filters to control which
+    # set the base logging level to TRACE because we are using filter= to control which
     # messages are sent to the sink, so we want the level to be wide open
-    base_level = "TRACE"
     new_logger = loguru.logger.add(
-        sink, format=format_log, level=base_level, filters=filters, colorize=colorize
+        sink, format=format_log, level="TRACE", filter=filters, colorize=colorize
     )
     return new_logger
 
 
-log = loguru.logger
+def make_logfiles(output_dir: str) -> None:
+    """now that we have a output_dir start logging to the files there"""
+    global logfile_directory
+
+    logfile_directory = output_dir
+    add_destination(f"{output_dir}/colored-log.txt", colorize=True),
+    add_destination(f"{output_dir}/armory-log.txt", colorize=False),
+
 
 # adapt the logging module to use the our loguru logger
 # this works by adding a new root handler which sends everything to
@@ -121,6 +174,7 @@ class InterceptHandler(logging.Handler):
 logging.basicConfig(handlers=[InterceptHandler()], level=0)
 
 if __name__ == "__main__":
+    update_filters(None)
     for level in "trace debug info success warning error critical".split():
         log.log(level.upper(), f"message at {level}")
 

@@ -24,7 +24,7 @@ import armory
 from armory import environment, paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
-from armory.logs import log, set_console_level, add_destination
+from armory.logs import log, update_filters
 
 
 def _scenario_setup(config: Config) -> None:
@@ -46,11 +46,7 @@ def _scenario_setup(config: Config) -> None:
     os.makedirs(scenario_output_dir, exist_ok=True)
     os.makedirs(scenario_tmp_dir, exist_ok=True)
 
-    add_destination(os.path.join(scenario_output_dir, "armory-log.txt"), colorize=False)
-    add_destination(os.path.join(scenario_output_dir, "colored-log.txt"), colorize=True)
-    log.info(f"armory outputs will be written to {scenario_output_dir}")
-    log.info(f"logs will be written to {scenario_output_dir}/armory-log.txt")
-    log.info(f"colored logs will be written to {scenario_output_dir}/colored-log.txt")
+    log.info(f"armory outputs and logs will be written to {scenario_output_dir}")
 
     # Download any external repositories and add them to the sys path for use
     if config["sysconfig"].get("external_github_repo", None):
@@ -105,7 +101,6 @@ def run_validation(config_json, from_file=False) -> None:
 
 def get(
     config_json,
-    set_logging_level="INFO",
     from_file=True,
     check_run=False,
     mongo_host=None,
@@ -118,13 +113,6 @@ def get(
     Init environment variables and initialize scenario class with config;
     returns a constructed Scenario subclass based on the config specification.
     """
-    if set_logging_level not in (None, False):
-        armory.logs.set_console_level(set_logging_level)
-        log.info(
-            f"Setting logger to {set_logging_level}."
-            " To avoid this behavior, call 'get(..., set_logging_level=False)'"
-        )
-
     config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
     if scenario_config is None:
@@ -161,14 +149,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "config", metavar="<config json>", type=str, help="scenario config JSON",
     )
+
+    breakpoint()
     parser.add_argument(
         "-d",
         "--debug",
-        dest="log_level",
         action="store_const",
         const="DEBUG",
         default="INFO",
-        help="use level debug for logging",
+        help="enable debugging (deprecated use --log-level)",
     )
     parser.add_argument(
         "--no-docker",
@@ -218,7 +207,7 @@ if __name__ == "__main__":
         help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
-    set_console_level(level=args.log_level)
+    update_filters({}, args.debug)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
         log.warning(
@@ -239,7 +228,6 @@ if __name__ == "__main__":
     else:
         run_config(
             args.config,
-            set_logging_level=False,
             from_file=args.from_file,
             check_run=args.check,
             mongo_host=args.mongo_host,
