@@ -41,7 +41,9 @@ def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
     the A flags and B flags, returning a p-value.
     """
     try:
-        _, chi2_p_value, _, _ = stats.chi2_contingency(contingency_table, correction=False)
+        _, chi2_p_value, _, _ = stats.chi2_contingency(
+            contingency_table, correction=False
+        )
     except ValueError as e:
         chi2_p_value = np.nan
     return [chi2_p_value]
@@ -84,16 +86,16 @@ def compute_spd(contingency_table: np.ndarray) -> List[float]:
     """
     numerators = contingency_table[:, 0]
     denominators = contingency_table.sum(1)
-    numerators[denominators == 0] = 0   # Handle division by zero:
-    denominators[denominators == 0] = 1 # 0/0 => 0/1.
+    numerators[denominators == 0] = 0  # Handle division by zero:
+    denominators[denominators == 0] = 1  # 0/0 => 0/1.
     fractions = numerators / denominators
     spd = fractions[0] - fractions[1]
     return [spd]
 
 
-def make_contingency_tables(y: np.ndarray,
-                            flagged_A: np.ndarray,
-                            flagged_B: np.ndarray) -> Dict[int, np.ndarray]:
+def make_contingency_tables(
+    y: np.ndarray, flagged_A: np.ndarray, flagged_B: np.ndarray
+) -> Dict[int, np.ndarray]:
     """
     Given a list of class labels and two arbitrary binary flags A and B,
     for each class, produce the following 2-x-2 contingency table:
@@ -138,16 +140,15 @@ def make_contingency_tables(y: np.ndarray,
         c = (items_flagged_A & ~items_flagged_B).sum()
         d = (items_flagged_A & items_flagged_B).sum()
 
-        table = np.array([[a, b],
-                          [c, d]])
+        table = np.array([[a, b], [c, d]])
         contingency_tables[class_id] = table
-    
+
     return contingency_tables
 
 
-
-
-def filter_perplexity_fps_benign(y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray) -> List[float]:
+def filter_perplexity_fps_benign(
+    y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray
+) -> List[float]:
     """
     Measure one possible aspect of bias by seeing how closely the distribution of false 
     positives matches the distribution of unpoisoned data.  The intuition is that bias 
@@ -181,8 +182,9 @@ def filter_perplexity_fps_benign(y_clean: np.ndarray, poison_index: np.ndarray, 
     fp_inds = (1 - poison_inds) & poison_prediction
     fp_labels = y_clean[fp_inds == 1]
     fps = np.bincount(fp_labels, minlength=max(y_clean))
+    if fps.sum() == 0:
+        return 1  # If no FPs, we'll define perplexity to be 1 (unbiased)
     fps = fps / fps.sum()
-
 
     return perplexity(fps, x_benign)
 
@@ -1670,18 +1672,14 @@ SUPPORTED_METRICS = {
     "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
     "poison_chi2_p_value": compute_chi2_p_value,
     "poison_fisher_p_value": compute_fisher_p_value,
-    "poison_spd": compute_spd
+    "poison_spd": compute_spd,
 }
 
 # Image-based metrics applied to video
 
 
 def video_metric(metric, frame_average="mean"):
-    mapping = {
-        "mean": np.mean,
-        "max": np.max,
-        "min": np.min,
-    }
+    mapping = {"mean": np.mean, "max": np.max, "min": np.min}
     if frame_average not in mapping:
         raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
     frame_average_func = mapping[frame_average]
