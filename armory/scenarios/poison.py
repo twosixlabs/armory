@@ -428,11 +428,10 @@ class Poison(Scenario):
             # Uses predictions and majority labels on TEST set
             # First, reload the test dataset
             dataset_config = self.config["dataset"]
-            eval_split = dataset_config.get("eval_split", "test")
             test_dataset = config_loading.load_dataset(
                 dataset_config,
-                split=eval_split,
-                num_batches=self.num_eval_batches,
+                split="test",
+                num_batches=None,
                 **self.dataset_kwargs,
             )
             test_x, test_y = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
