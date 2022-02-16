@@ -24,8 +24,8 @@ import sys
 import datetime
 import loguru
 import logging
-import warnings
 from typing import List
+import functools
 
 
 default_message_filters = {
@@ -78,6 +78,7 @@ def update_filters(specs: List[str], armory_debug=None):
         specs = []
 
     if armory_debug is not None:
+        print(f"{specs=}")
         specs.append(f"armory:{armory_debug}")
 
     for spec in specs:
@@ -95,6 +96,7 @@ def update_filters(specs: List[str], armory_debug=None):
             log.error(f"unknown log level {spec} ignored")
             continue
 
+    log.trace(f"setting {filters=}")
     log.remove()
     log.add(sys.stdout, level="TRACE", filter=filters)
 
@@ -171,21 +173,51 @@ class InterceptHandler(logging.Handler):
         )
 
 
+def log_method(entry=True, exit=True, level="DEBUG"):
+    """function decorator that logs entry and exit"""
+
+    def wrapper(func):
+        name = func.__name__
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            logger_ = log.opt(depth=1)
+            if entry:
+                logger_.log(
+                    level, "Entering '{}' (args={}, kwargs={})", name, args, kwargs
+                )
+            result = func(*args, **kwargs)
+            if exit:
+                logger_.log(level, "Exiting '{}' (result={})", name, result)
+            return result
+
+        return wrapped
+
+    return wrapper
+
+
 logging.basicConfig(handlers=[InterceptHandler()], level=0)
 
 if __name__ == "__main__":
-    update_filters(None)
+    update_filters(["armory:INFO", "art:INFO"])
     for level in "trace debug info success warning error critical".split():
         log.log(level.upper(), f"message at {level}")
 
-    # this should induce a flurry of log messages through the InterceptHandler
-    import boto3
+    def library_messages():
+        # this should induce a flurry of log messages through the InterceptHandler
+        import boto3
 
-    s3 = boto3.client("s3")
-    s3.get_bucket_location(Bucket="armory-submission-data")
+        s3 = boto3.client("s3")
+        s3.get_bucket_location(Bucket="armory-submission-data")
 
-    import tensorflow as tf
+        import tensorflow as tf
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-    log.success("dev test complete")
+        log.success("dev test complete")
+
+    log.info("logging library messages at INFO")
+    library_messages()
+    update_filters(["s3transfer:DEBUG"])
+    log.info("logging s3:DEBUG")
+    library_messages()
