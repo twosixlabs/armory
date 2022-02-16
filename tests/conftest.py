@@ -4,8 +4,15 @@ import pytest
 import docker
 from armory import paths
 import logging
+from docker.errors import ImageNotFound
 
 logger = logging.getLogger(__name__)
+
+REQUIRED_DOCKER_IMAGES = [
+    "twosixarmory/armory-base:dev",
+    "twosixarmory/armory-pytorch:dev",
+    "twosixarmory/armory-tf2:dev",
+]
 
 
 @pytest.fixture()
@@ -28,9 +35,17 @@ def ensure_armory_dirs(request):
 @pytest.fixture(scope="session")
 def docker_client():
     try:
-        client = docker.DockerClient()
+        client = docker.from_env()
+        logger.info("Docker Client Established...")
     except Exception as e:
         logger.error("Docker Server is not running!!")
         raise e
+
+    for img in REQUIRED_DOCKER_IMAGES:
+        try:
+            client.images.get(name=img)
+        except ImageNotFound:
+            logger.error("Could not find Image: {}".format(img))
+            raise
 
     return client

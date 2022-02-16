@@ -5,10 +5,11 @@ ARG armory_build_type
 
 FROM armory-base AS armory-local
 RUN echo "Building Armory from local source"
-WORKDIR /armory
+WORKDIR /armory-repo/
 COPY setup.py LICENSE MANIFEST.in README.md requirements.txt .
 COPY ./armory ./armory/.
-RUN /opt/conda/bin/pip install /armory/. --no-cache-dir
+RUN /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
+
 WORKDIR /workspace
 
 FROM armory-base as armory-prebuilt

@@ -2,11 +2,38 @@
 # Build a docker image for specific framework. Optionally `all` frameworks can be built.
 # Ex: `bash docker/build.sh pytorch`
 
+Help()
+{
+  # Display Help
+  echo "----------------------------------------------------------------------------------------"
+  echo "                   Armory Docker Build Script                       "
+  echo
+  echo "This build script helps to build the necessary docker images to "
+  echo "execute the typical armory experiments.  "
+  echo
+  echo "Syntax: build.sh [-f|t|nc|av|h]"
+  echo "options:"
+  echo "-f | --framework            Select Which framework to target:"
+  echo "                                [all|base|tf1|tf2|pytorch|pytorch-deepspeech]"
+  echo "-t | --tag                  Tag to use when creating Docker Image (e.g. \`latest\` in"
+  echo "                                repo/image:latest"
+  echo "-nc | --no-cache            Build Images \"Clean\" (i.e. using --no-cache)"
+  echo "-av | --armory-version      Select armory version to install in container"
+  echo "                              (default: local)"
+  echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
+  echo "-h | --help                 Print this Help."
+  echo
+  echo "----------------------------------------------------------------------------------------"
+}
+
+
 POSITIONAL_ARGS=()
 CLEAN=false
 NO_CACHE=false
 TAG="dev"
 ARMORY_VERSION="local"
+DRYRUN=false
+VERBOSE="--progress=auto"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -20,7 +47,7 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    --no-cache)
+    -nc|--no-cache)
       NO_CACHE=true
       shift # past argument
       ;;
@@ -29,8 +56,21 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
+    -dr|--dry-run)
+      DRYRUN=true
+      shift # past argument
+      ;;
+    -v|--verbose)
+      VERBOSE="--progress=plain"
+      shift # past argument
+      ;;
+    -h|--help)
+      Help
+      exit
+      ;;
     -*|--*)
       echo "Unknown option $1"
+      echo "For more info try: build.sh -h"
       exit 1
       ;;
     *)
@@ -41,6 +81,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
+
 
 if [ "$FRAMEWORK" == "" ]; then
   echo "Must Specify Framework"
@@ -54,7 +95,7 @@ fi
 
 if [ $FRAMEWORK == "all" ]; then
   echo "setting all frameowks"
-  FRAMEWORK=("base" "tf1" "tf2" "pytorch" "pytorch-deepspeech")
+  FRAMEWORK=("base" "pytorch" "tf1" "tf2" "pytorch-deepspeech")
 fi
 
 # Parse Version
@@ -100,79 +141,21 @@ for framework in "${FRAMEWORK[@]}"; do
 
   CMD="$CMD "
   CMD="$CMD -t twosixarmory/armory-${framework}:${TAG}"
+  CMD="$CMD $VERBOSE"
   CMD="$CMD ."
-  echo "->  $CMD"
 
+  if [ $framework == "tf1" ] || [ $framework == "pytorch-deepspeech" ]; then
+    echo "Frameworks tf1 and deepspeech are not supported at this time"
+  else
+    if $DRYRUN; then
+      echo "Would have Executed: "
+      echo "    ->  $CMD"
+    else
+      echo "Executing: "
+      echo "    ->  $CMD"
+      $CMD
+
+    fi
+  fi
 done
 
-## Build images
-#for framework in "tf1" "tf2" "pytorch" "pytorch-deepspeech"; do
-#    if [[ "$1" == "$framework" || "$1" == "all" ]]; then
-#        echo ""
-#        echo "------------------------------------------------"
-#        echo "Building docker image for framework: $framework"
-#        echo docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
-#        docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
-#        if [[ $dev == "-dev" ]]; then
-#            echo "Tagging docker image as latest"
-#            echo docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
-#            docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
-#        fi
-#    fi
-#done
-#
-#echo "HEllo"
-#echo $FRAMEWORK
-#echo $CLEAN
-#echo $NO_CACHE
-
-#if [ "$#" == 1 ]; then
-#    dev=""
-#elif [ "$#" == 2 ]; then
-#    if [[ "$2" != "--dev" && "$2" != "dev" ]]; then
-#        echo "ERROR: argument 2 needs to be \`dev\` or \`--dev\`, not \`$2\`"
-#        exit 1
-#    fi
-#    dev="-dev"
-#else
-#    echo "Usage: bash docker/build.sh <framework> [dev]"
-#    echo "    <framework> be \`tf1\`, \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, or \`all\`"
-#    exit 1
-#fi
-#
-#
-## Parse framework argument
-#if [[ "$1" == "armory" ]]; then
-#    # Deprecation. Remove for 0.14
-#    echo "ERROR: <framework> armory is on longer supported as of 0.13.0"
-#fi
-#if [[ "$1" != "pytorch" &&  "$1" != "pytorch-deepspeech" && "$1" != "tf1" && "$1" != "tf2" && "$1" != "all" ]]; then
-#    echo "ERROR: <framework> argument must be \`tf1\`, \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, or \`all\`, not \`$1\`"
-#    exit 1
-#fi
-#
-## Parse Version
-#echo "Parsing Armory version"
-#version=$(python -m armory --version)
-#if [[ $version == *"-dev" ]]; then
-#    # Deprecation. Remove for 0.14
-#    echo "ERROR: Armory version $version ends in '-dev'. This is no longer supported as of 0.13.0"
-#    exit 1
-#fi
-#echo "Armory version $version"
-#
-## Build images
-#for framework in "tf1" "tf2" "pytorch" "pytorch-deepspeech"; do
-#    if [[ "$1" == "$framework" || "$1" == "all" ]]; then
-#        echo ""
-#        echo "------------------------------------------------"
-#        echo "Building docker image for framework: $framework"
-#        echo docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
-#        docker build --cache-from twosixarmory/${framework}:latest --force-rm --file docker/${framework}/Dockerfile --build-arg armory_version=${version} --target armory-${framework}${dev} -t twosixarmory/${framework}:${version} .
-#        if [[ $dev == "-dev" ]]; then
-#            echo "Tagging docker image as latest"
-#            echo docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
-#            docker tag twosixarmory/${framework}:${version} twosixarmory/${framework}:latest
-#        fi
-#    fi
-#done
