@@ -6,11 +6,13 @@ on:
     branches:
       - master
       - develop
+      - primo
 
   pull_request:
     branches:
       - master
       - develop
+      - primo
 
   workflow_dispatch:
 
