@@ -1,0 +1,18 @@
+ARG image_tag
+FROM twosixarmory/armory-base:${image_tag} as armory-base
+ARG armory_version
+ARG armory_build_type
+
+FROM armory-base AS armory-local
+RUN echo "Building Armory from local source"
+WORKDIR /armory
+COPY setup.py LICENSE MANIFEST.in README.md requirements.txt .
+COPY ./armory ./armory/.
+RUN /opt/conda/bin/pip install /armory/. --no-cache-dir
+WORKDIR /workspace
+
+FROM armory-base as armory-prebuilt
+RUN echo "Building Armory from prebuilt version: $armory_version"
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+
+WORKDIR /workspace

@@ -1,8 +1,11 @@
 import os
 
 import pytest
-
+import docker
 from armory import paths
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture()
@@ -20,3 +23,14 @@ def ensure_armory_dirs(request):
     os.makedirs(pytorch_dir, exist_ok=True)
     os.makedirs(dataset_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
+
+
+@pytest.fixture(scope="session")
+def docker_client():
+    try:
+        client = docker.DockerClient()
+    except Exception as e:
+        logger.error("Docker Server is not running!!")
+        raise e
+
+    return client
