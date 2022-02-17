@@ -1711,7 +1711,7 @@ class MetricsLogger:
         for task_idx, metric in enumerate(metrics):
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
-                log.info(
+                log.success(
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
@@ -1722,28 +1722,28 @@ class MetricsLogger:
                     )
                 else:
                     metric_result = metric.compute_non_elementwise_metric()
-                log.info(
+                log.success(
                     f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric_result}"
                 )
                 if metric.name in self.mean_ap_metrics:
-                    log.info(
+                    log.success(
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
             elif metric.name in self.quantity_metrics:
                 # Don't include % symbol
-                log.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2}"
                 )
                 if metric.name in self.mean_ap_metrics:
-                    log.info(
+                    log.success(
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
             else:
-                log.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2%}"
                 )
