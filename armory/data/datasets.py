@@ -1090,7 +1090,7 @@ def _get_librispeech_download_and_prepare_kwargs():
         )
         return {"download_config": dl_config}
     except ImportError as e:
-        logger.warning(
+        log.warning(
             f"Unable to import apache_beam:\n{e}\n"
             "If building librispeech dataset from source, apache_beam must be installed"
         )
