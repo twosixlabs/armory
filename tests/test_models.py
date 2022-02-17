@@ -14,25 +14,51 @@ def get_armory_module_and_fn(module_name, fn_attr_name, weights_path):
     return module, fn, classifier
 
 
+def calculate_accuracy(test_ds, classifier):
+    accuracy = 0
+    for _ in range(test_ds.batches_per_epoch):
+        x, y = test_ds.get_batch()
+        predictions = classifier.predict(x)
+        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+    return accuracy / test_ds.batches_per_epoch
+
+
 @pytest.mark.parametrize(
-    "module_name, fn_attr_name, weights_path",
-    [("armory.baseline_models.pytorch.mnist", "get_art_model", None)],
+    "module_name, fn_attr_name, weights_path, expected_accuracy",
+    [
+        ("armory.baseline_models.pytorch.mnist", "get_art_model", None, 0.9),
+        (
+            "armory.baseline_models.pytorch.mnist",
+            "get_art_model",
+            "undefended_mnist_5epochs.pth",
+            0.98,
+        ),
+    ],
 )
 def test_model_creation(
-    module_name, fn_attr_name, weights_path, dataset_generator, armory_dataset_dir
+    module_name,
+    fn_attr_name,
+    weights_path,
+    expected_accuracy,
+    dataset_generator,
+    armory_dataset_dir,
 ):
     module, fn, classifier = get_armory_module_and_fn(
         module_name, fn_attr_name, weights_path
     )
 
-    train_ds = dataset_generator(
-        name="mnist",
-        batch_size=600,
-        num_epochs=1,
-        split="train",
-        framework="numpy",
-        dataset_dir=armory_dataset_dir,
-    )
+    if weights_path is None:
+        train_ds = dataset_generator(
+            name="mnist",
+            batch_size=600,
+            num_epochs=1,
+            split="train",
+            framework="numpy",
+            dataset_dir=armory_dataset_dir,
+        )
+        classifier.fit_generator(
+            train_ds, nb_epochs=1,
+        )
 
     test_ds = dataset_generator(
         name="mnist",
@@ -43,13 +69,12 @@ def test_model_creation(
         dataset_dir=armory_dataset_dir,
     )
 
-    classifier.fit_generator(
-        train_ds, nb_epochs=1,
-    )
+    accuracy = calculate_accuracy(test_ds, classifier)
+    assert accuracy > expected_accuracy
 
-    accuracy = 0
-    for _ in range(test_ds.batches_per_epoch):
-        x, y = test_ds.get_batch()
-        predictions = classifier.predict(x)
-        accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
-    assert (accuracy / test_ds.batches_per_epoch) > 0.9
+    # accuracy = 0
+    # for _ in range(test_ds.batches_per_epoch):
+    #     x, y = test_ds.get_batch()
+    #     predictions = classifier.predict(x)
+    #     accuracy += np.sum(np.argmax(predictions, axis=1) == y) / len(y)
+    # assert (accuracy / test_ds.batches_per_epoch) > 0.9

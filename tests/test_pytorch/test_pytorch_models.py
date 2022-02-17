@@ -12,7 +12,7 @@ from armory.utils.metrics import object_detection_AP_per_class, video_tracking_m
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
-
+# TODO This one is refactored into test_models.py
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_mnist():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
@@ -38,6 +38,7 @@ def test_pytorch_mnist():
     assert (accuracy / test_dataset.batches_per_epoch) > 0.9
 
 
+# TODO This one is now in test_models.py
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_mnist_pretrained():
     classifier_module = import_module("armory.baseline_models.pytorch.mnist")
