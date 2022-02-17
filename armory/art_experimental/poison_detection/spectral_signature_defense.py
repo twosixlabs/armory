@@ -1,5 +1,3 @@
-from armory.logs import log
-
 import numpy as np
 
 from art.defences.detector.poison import (
