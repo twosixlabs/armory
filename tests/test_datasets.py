@@ -44,6 +44,7 @@ log = logging.getLogger(__name__)
             (16,),
         ),
         ("mnist", 16, 1, "train", "tf", tf.uint8, (16, 28, 28, 1), tf.int64, (16,)),
+        ("mnist", 16, 1, "train", "numpy", tf.uint8, (16, 28, 28, 1), tf.int64, (16,)),
     ],
 )
 def test_generator_construction(

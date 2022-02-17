@@ -8,6 +8,7 @@ from docker.errors import ImageNotFound
 import torch
 import tensorflow as tf
 from armory.data import datasets
+from armory.data.datasets import ArmoryDataGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,13 @@ def dataset_generator():
         instance_types = {
             "pytorch": torch.utils.data.DataLoader,
             "tf": (tf.compat.v2.data.Dataset, tf.compat.v1.data.Dataset),
+            "numpy": ArmoryDataGenerator,
         }
+
+        if framework not in instance_types:
+            raise Exception(
+                "Unrecognized Armory Dataset Framework: {}".format(framework)
+            )
 
         ds = getattr(datasets, name)
         dataset = ds(
@@ -145,6 +152,7 @@ def dataset_generator():
             preprocessing_fn=preprocessing_fn,
             fit_preprocessing_fn=fit_preprocessing_fn,
         )
+        print(type(dataset))
         assert isinstance(dataset, instance_types[framework])
         return dataset
 
