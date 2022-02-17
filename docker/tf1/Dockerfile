@@ -39,7 +39,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     apache-beam==2.22.0 \
     opencv-python==4.5.1.48 \
     ffmpeg-python==0.2.0 \
-    tensorboardX==2.4.1
+    tensorboardX==2.4.1 \
+    loguru==0.6.0
 
 
 

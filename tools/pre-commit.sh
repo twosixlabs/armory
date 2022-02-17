@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+echo "Performing Checks with black"
 python -m black --check ./ > /dev/null 2>&1
 need_format=$?
 set -e
@@ -12,6 +13,7 @@ then
 fi
 set +e
 
+echo "Performing Checks with tools.format_json"
 python -m tools.format_json --check > /dev/null 2>&1
 need_format=$?
 set -e
@@ -23,6 +25,9 @@ then
     exit $need_format
 fi
 
+#TODO Do we need the `if` cluases above for these below?
+echo "Performing checks with yamllint"
 yamllint --no-warnings ./
 
-python -m flake8
+echo "performing checks with flake8"
+python -m flake8 .

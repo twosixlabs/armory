@@ -3,14 +3,12 @@ Multimodal image classification, currently designed for So2Sat dataset
 """
 
 import copy
-import logging
 
 import numpy as np
 
 from armory.utils import metrics
 from armory.scenarios.scenario import Scenario
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class So2SatClassification(Scenario):
@@ -30,19 +28,19 @@ class So2SatClassification(Scenario):
         attack_channels_mask = attack_config.get("generate_kwargs", {}).get("mask")
         if attack_channels_mask is None:
             if self.attack_modality == "sar":
-                logger.info("No mask configured. Attacking all SAR channels")
+                log.info("No mask configured. Attacking all SAR channels")
                 attack_channels_mask = np.concatenate(
                     (np.ones(4, dtype=np.float32), np.zeros(10, dtype=np.float32)),
                     axis=0,
                 )
             elif self.attack_modality == "eo":
-                logger.info("No mask configured. Attacking all EO channels")
+                log.info("No mask configured. Attacking all EO channels")
                 attack_channels_mask = np.concatenate(
                     (np.zeros(4, dtype=np.float32), np.ones(10, dtype=np.float32)),
                     axis=0,
                 )
             elif self.attack_modality == "both":
-                logger.info("No mask configured. Attacking all SAR and EO channels")
+                log.info("No mask configured. Attacking all SAR and EO channels")
                 attack_channels_mask = np.ones(14, dtype=np.float32)
 
         else:
@@ -120,7 +118,7 @@ class So2SatClassification(Scenario):
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.attack_type == "preloaded":
-                logger.warning(
+                log.warning(
                     "Specified preloaded attack. Ignoring `attack_modality` parameter"
                 )
                 if len(x) == 2:

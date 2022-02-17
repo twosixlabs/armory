@@ -2,12 +2,10 @@
 Reference objects for armory paths
 """
 
-import logging
 import os
+import warnings  # armory.logs initialization depends on this module, use warnrings instead
 
 from armory import configuration
-
-logger = logging.getLogger(__name__)
 
 NO_DOCKER = False
 
@@ -81,8 +79,8 @@ class HostPaths(HostDefaultPaths):
             ):
                 setattr(self, k, config[k])
         else:
-            logger.warning(f"No {self.armory_config} file. Using default paths.")
-            logger.warning("Please run `armory configure`")
+            warnings.warn(f"No {self.armory_config} file. Using default paths.")
+            warnings.warn("Please run `armory configure`")
 
         os.makedirs(self.dataset_dir, exist_ok=True)
         os.makedirs(self.local_git_dir, exist_ok=True)

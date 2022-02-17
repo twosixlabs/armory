@@ -1,5 +1,4 @@
 import os
-import logging
 import numpy as np
 import ffmpeg
 import pickle
@@ -8,9 +7,7 @@ from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
 from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class SampleExporter:
@@ -87,7 +84,7 @@ class SampleExporter:
         ), f"Directory {self.base_output_dir} is not writable"
         self.output_dir = os.path.join(self.base_output_dir, "saved_samples")
         if os.path.exists(self.output_dir):
-            logger.warning(
+            log.warning(
                 f"Sample output directory {self.output_dir} already exists. Creating new directory"
             )
             self.output_dir = os.path.join(
@@ -113,11 +110,9 @@ class SampleExporter:
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
             if x_i.min() < 0.0 or x_i.max() > 1.0:
-                logger.warning(
-                    "Benign image out of expected range. Clipping to [0, 1]."
-                )
+                log.warning("Benign image out of expected range. Clipping to [0, 1].")
             if x_adv_i.min() < 0.0 or x_adv_i.max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Adversarial image out of expected range. Clipping to [0, 1]."
                 )
 
@@ -212,19 +207,19 @@ class SampleExporter:
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
             if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Benign SAR images out of expected range. Clipping to [-1, 1]."
                 )
             if x_adv_i[..., :4].min() < -1.0 or x_adv_i[..., :4].max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Adversarial SAR images out of expected range. Clipping to [-1, 1]."
                 )
             if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Benign EO images out of expected range. Clipping to [0, 1]."
                 )
             if x_adv_i[..., 4:].min() < 0.0 or x_adv_i[..., 4:].max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Adversarial EO images out of expected range. Clipping to [0, 1]."
                 )
 
@@ -319,11 +314,9 @@ class SampleExporter:
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial audio are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
             if x_i.min() < -1.0 or x_i.max() > 1.0:
-                logger.warning(
-                    "Benign audio out of expected range. Clipping to [-1, 1]"
-                )
+                log.warning("Benign audio out of expected range. Clipping to [-1, 1]")
             if x_adv_i.min() < -1.0 or x_adv_i.max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Adversarial audio out of expected range. Clipping to [-1, 1]"
                 )
 
@@ -353,9 +346,9 @@ class SampleExporter:
                 x_i.shape == x_adv_i.shape
             ), f"Benign and adversarial videos are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
             if x_i.min() < 0.0 or x_i.max() > 1.0:
-                logger.warning("Benign video out of expected range. Clipping to [0, 1]")
+                log.warning("Benign video out of expected range. Clipping to [0, 1]")
             if x_adv_i.min() < 0.0 or x_adv_i.max() > 1.0:
-                logger.warning(
+                log.warning(
                     "Adversarial video out of expected range. Clipping to [0, 1]"
                 )
 

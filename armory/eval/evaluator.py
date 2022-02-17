@@ -4,7 +4,6 @@ Evaluators control launching of ARMORY evaluations.
 import base64
 import os
 import json
-import logging
 import shutil
 import time
 import datetime
@@ -22,8 +21,7 @@ from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
 from armory import environment
-
-logger = logging.getLogger(__name__)
+from armory.logs import log, is_debug, added_filters
 
 
 class Evaluator(object):
@@ -74,7 +72,7 @@ class Evaluator(object):
         try:
             docker_client.images.get(kwargs["image_name"])
         except docker.errors.ImageNotFound:
-            logger.info(f"Image {image_name} was not found. Downloading...")
+            log.info(f"Image {image_name} was not found. Downloading...")
             try:
                 docker_api.pull_verbose(docker_client, image_name)
             except docker.errors.NotFound:
@@ -96,10 +94,10 @@ class Evaluator(object):
                         "bash docker/build.sh all dev"
                     )
                 else:
-                    logger.error(f"Image {image_name} could not be downloaded")
+                    log.error(f"Image {image_name} could not be downloaded")
                     raise
         except requests.exceptions.ConnectionError:
-            logger.error("Docker connection refused. Is Docker Daemon running?")
+            log.error("Docker connection refused. Is Docker Daemon running?")
             raise
 
         self.manager = ManagementInstance(**kwargs)
@@ -145,16 +143,16 @@ class Evaluator(object):
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
     def _cleanup(self):
-        logger.info(f"Deleting tmp_dir {self.tmp_dir}")
+        log.info(f"deleting tmp_dir {self.tmp_dir}")
         try:
             shutil.rmtree(self.tmp_dir)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                logger.exception(f"Error removing tmp_dir {self.tmp_dir}")
+                log.exception(f"Error removing tmp_dir {self.tmp_dir}")
 
-        logger.info(f"Removing output_dir {self.output_dir} if empty")
         try:
             os.rmdir(self.output_dir)
+            log.warning(f"removed output_dir {self.output_dir} because it was empty")
         except OSError:
             pass
 
@@ -189,9 +187,9 @@ class Evaluator(object):
                     validate_config=validate_config,
                 )
             except KeyboardInterrupt:
-                logger.warning("Keyboard interrupt caught")
+                log.warning("Keyboard interrupt caught")
             finally:
-                logger.warning("Cleaning up...")
+                log.info("cleaning up...")
             self._cleanup()
             return exit_code
 
@@ -247,27 +245,27 @@ class Evaluator(object):
                         validate_config=validate_config,
                     )
             except KeyboardInterrupt:
-                logger.warning("Keyboard interrupt caught")
+                log.warning("Keyboard interrupt caught")
             finally:
-                logger.warning("Shutting down container")
+                log.warning("Shutting down container")
                 self.manager.stop_armory_instance(runner)
         except requests.exceptions.RequestException as e:
-            logger.exception("Starting instance failed.")
+            log.exception("Starting instance failed.")
             if str(e).endswith(
                 f'Bind for 0.0.0.0:{host_port} failed: port is already allocated")'
             ):
-                logger.error(
+                log.error(
                     f"Port {host_port} already in use. Try a different one with '--port <port>'"
                 )
             elif (
                 str(e)
                 == '400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
             ):
-                logger.error(
+                log.error(
                     'NVIDIA runtime failed. Either install nvidia-docker or set config "use_gpu" to false'
                 )
             else:
-                logger.error("Is Docker Daemon running?")
+                log.error("Is Docker Daemon running?")
         self._cleanup()
         return exit_code
 
@@ -286,7 +284,7 @@ class Evaluator(object):
         skip_misclassified=None,
         validate_config=None,
     ) -> int:
-        logger.info(bold(red("Running evaluation script")))
+        log.info(bold(red("Running evaluation script")))
 
         b64_config = self._b64_encode_config()
         options = self._build_options(
@@ -308,7 +306,7 @@ class Evaluator(object):
         return runner.exec_cmd(cmd, **kwargs)
 
     def _run_command(self, runner: ArmoryInstance, command: str) -> int:
-        logger.info(bold(red(f"Running bash command: {command}")))
+        log.info(bold(red(f"Running bash command: {command}")))
         return runner.exec_cmd(command, user=self.get_id(), expect_sentinel=False)
 
     def get_id(self):
@@ -397,7 +395,7 @@ class Evaluator(object):
                     "",
                 ]
             )
-        logger.info("\n".join(lines))
+        log.info("\n".join(lines))
         while True:
             time.sleep(1)
 
@@ -412,7 +410,7 @@ class Evaluator(object):
         skip_misclassified=None,
     ) -> None:
         if not self.root:
-            logger.warning("Running Jupyter Lab as root inside the container.")
+            log.warning("Running Jupyter Lab as root inside the container.")
 
         user_group_id = self.get_id()
         port = list(ports.keys())[0]
@@ -455,7 +453,7 @@ class Evaluator(object):
             "",
             "Jupyter notebook log:",
         ]
-        logger.info("\n".join(lines))
+        log.info("\n".join(lines))
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser",
             user=user_group_id,
@@ -476,7 +474,7 @@ class Evaluator(object):
             options += " --no-docker"
         if check_run:
             options += " --check"
-        if logger.getEffectiveLevel() == logging.DEBUG:
+        if is_debug():
             options += " --debug"
         if num_eval_batches:
             options += f" --num-eval-batches {num_eval_batches}"
@@ -488,6 +486,8 @@ class Evaluator(object):
             options += " --skip-misclassified"
         if validate_config:
             options += " --validate-config"
+        for module, level in added_filters.items():
+            options += f" --log-level {module}:{level}"
         return options
 
     def _constructor_options(

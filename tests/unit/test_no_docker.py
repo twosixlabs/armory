@@ -1,9 +1,5 @@
 import pytest
-
-# from armory.logs import log
-import logging
-
-log = logging.getLogger(__name__)
+from armory.logs import log
 import os
 import subprocess
 

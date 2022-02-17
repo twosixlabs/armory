@@ -53,10 +53,10 @@ RUN /opt/conda/bin/conda install \
     matplotlib \
     -c conda-forge \
     && /opt/conda/bin/conda clean --all
-    # ART requires scikit-learn >=0.22.2,<1.1.0
+# ART requires scikit-learn >=0.22.2,<1.1.0
 # scikit-learn==1.0.2 \
 # scipy==1.7.3 \
-# jupyterlab==3.2.9 \ 
+# jupyterlab==3.2.9 \
 # jsonschema==4.4.0 \
 # six==1.16.0 \
 # setuptools==52.0.0 \
@@ -65,14 +65,14 @@ RUN /opt/conda/bin/conda install \
     numba=0.55 \
     -c numba \
     && /opt/conda/bin/conda clean --all
-    # ART requires numba >= 0.53.1
+# ART requires numba >= 0.53.1
 # numba==0.55.1
 
 RUN /opt/conda/bin/conda install \
     pandas=1.1 \
     -c anaconda \
     && /opt/conda/bin/conda clean --all
-# pandas==1.1.3 
+# pandas==1.1.3
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.1 \
@@ -86,7 +86,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     coloredlogs \
     docker \
     adversarial-robustness-toolbox==1.9.1
-    # tensorflow-datasets version 4 has breaking changes
+# tensorflow-datasets version 4 has breaking changes
 # dill==0.3.4 \
 # tensorflow-datasets==3.2.1 \
 # tensorflow=2.8.0 \
@@ -101,7 +101,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 # adversarial-robustness-toolbox==1.9.1
 
 # pydub not installed. Do we need?
-#    pydub==0.24.1 \  
+#    pydub==0.24.1 \
 
 WORKDIR /workspace
 
