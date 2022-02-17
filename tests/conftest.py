@@ -5,6 +5,9 @@ import docker
 from armory import paths
 import logging
 from docker.errors import ImageNotFound
+import torch
+import tensorflow as tf
+from armory.data import datasets
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +105,47 @@ def external_resources():
     except Exception as e:
         logger.error("Cannot Reach External Resources")
         raise e
+
+
+@pytest.fixture
+def armory_dataset_dir():
+    from armory import paths
+
+    paths.set_mode("host")
+    return paths.runtime_paths().dataset_dir
+
+
+@pytest.fixture
+def dataset_generator():
+    def generator(
+        name,
+        batch_size,
+        num_epochs,
+        split,
+        framework,
+        dataset_dir,
+        shuffle_files=False,
+        preprocessing_fn=None,
+        fit_preprocessing_fn=None,
+    ):
+        # Instance types based on framework
+        instance_types = {
+            "pytorch": torch.utils.data.DataLoader,
+            "tf": (tf.compat.v2.data.Dataset, tf.compat.v1.data.Dataset),
+        }
+
+        ds = getattr(datasets, name)
+        dataset = ds(
+            split=split,
+            batch_size=batch_size,
+            epochs=num_epochs,
+            dataset_dir=dataset_dir,
+            framework=framework,
+            shuffle_files=shuffle_files,
+            preprocessing_fn=preprocessing_fn,
+            fit_preprocessing_fn=fit_preprocessing_fn,
+        )
+        assert isinstance(dataset, instance_types[framework])
+        return dataset
+
+    return generator
