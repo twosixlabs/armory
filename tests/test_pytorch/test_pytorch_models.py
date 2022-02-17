@@ -12,6 +12,7 @@ from armory.utils.metrics import object_detection_AP_per_class, video_tracking_m
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
+
 # TODO This one is refactored into test_models.py
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_mnist():
