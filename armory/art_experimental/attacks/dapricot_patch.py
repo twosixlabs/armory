@@ -112,8 +112,6 @@ def create_mask(mask_type, h, w):
 
 
 class DApricotMaskedPGD(ProjectedGradientDescent):
-    """ """
-
     def __init__(self, estimator, **kwargs):
         super().__init__(estimator=estimator, **kwargs)
 
