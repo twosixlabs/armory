@@ -108,5 +108,6 @@ venv*
 # mypy
 .mypy_cache/
 
-# idea
+# editors
 .idea/
+.vscode/

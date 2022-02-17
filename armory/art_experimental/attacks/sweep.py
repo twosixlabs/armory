@@ -1,11 +1,10 @@
-import logging
 from importlib import import_module
 
 import numpy as np
 from art.attacks import EvasionAttack
 
 
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class SweepAttack(EvasionAttack):
@@ -42,7 +41,7 @@ class SweepAttack(EvasionAttack):
             )
 
         if len(kwargs.keys() & self.sweep_kwargs.keys()) > 0:
-            logger.warning(
+            log.warning(
                 f"The following kwargs were set in both attack_config['kwargs'] and "
                 f"attack_config['sweep_params']['kwargs']: "
                 f"{list(kwargs.keys() & self.sweep_kwargs.keys())}. Values specified "
@@ -80,7 +79,7 @@ class SweepAttack(EvasionAttack):
             )
 
         if len(kwargs.keys() & self.sweep_generate_kwargs.keys()) > 0:
-            logger.warning(
+            log.warning(
                 f"The following kwargs were set in both attack_config['generate_kwargs'] and "
                 f"attack_config['sweep_params']['generate_kwargs']: "
                 f"{list(kwargs.keys() & self.sweep_generate_kwargs.keys())}. Values specified "
@@ -89,7 +88,7 @@ class SweepAttack(EvasionAttack):
 
         y_pred = self._estimator.predict(x)
         if not self._is_robust(y, y_pred):
-            logger.info(
+            log.info(
                 f"Estimator is not robust to original x as measured with metric "
                 f"function {self.metric_fn.__name__} and threshold "
                 f"{self.metric_threshold}. Returning original x."
@@ -110,7 +109,7 @@ class SweepAttack(EvasionAttack):
             y_pred = self._estimator.predict(x_adv)
             if not self._is_robust(y, y_pred):
                 # attack success
-                logger.info(
+                log.info(
                     f"Success with kwargs {attack_kwargs} and generate_kwargs {generate_kwargs}"
                 )
                 x_best = x_adv
@@ -120,17 +119,17 @@ class SweepAttack(EvasionAttack):
             else:
                 # attack failure
                 i_min = i_mid + 1
-                logger.info(
+                log.info(
                     f"Failure with kwargs {attack_kwargs} and generate_kwargs {generate_kwargs}"
                 )
 
         if x_best is None:
-            logger.info(
+            log.info(
                 "Sweep attack concluded. Returning original x since attack failed at all sweep points."
             )
             return x
         if x_best is not None:
-            logger.info(
+            log.info(
                 f"Sweep attack concluded. Returning the weakest-strength successful attack with "
                 f"kwargs {best_attack_kwargs} and generate_kwargs {best_generate_kwargs}"
             )
@@ -191,7 +190,7 @@ class SweepAttack(EvasionAttack):
                     )
 
             if sorted(values) != values:
-                logger.warning(
+                log.warning(
                     f"The values of kwarg '{kwarg}' are not sorted in ascending order. "
                     f"SweepAttack's search procedure assumes that attack strength is "
                     f"monotonically increasing."
@@ -203,7 +202,7 @@ class SweepAttack(EvasionAttack):
             # by default use categorical accuracy to measure attack success
             from armory.utils.metrics import categorical_accuracy
 
-            logger.info(
+            log.info(
                 "Using default categorical accuracy to measure attack success "
                 "since attack_config['sweep_params']['metric']['module'] is "
                 "unspecified."

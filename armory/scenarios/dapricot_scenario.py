@@ -3,18 +3,16 @@ D-APRICOT scenario for object detection in the presence of targeted adversarial 
 """
 
 import copy
-import logging
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class ObjectDetectionTask(Scenario):
     def __init__(self, *args, skip_benign=None, **kwargs):
         if skip_benign is False:
-            logger.warning(
+            log.warning(
                 "--skip-benign=False is being ignored since the D-APRICOT"
                 " scenario doesn't include benign evaluation."
             )
@@ -75,7 +73,7 @@ class ObjectDetectionTask(Scenario):
             model_config["model_kwargs"].get("batch_size") != 3
             and generate_kwargs["threat_model"].lower() == "physical"
         ):
-            logger.warning(
+            log.warning(
                 "If using Armory's baseline mscoco frcnn model,"
                 " model['model_kwargs']['batch_size'] should be set to 3 for physical attack."
             )

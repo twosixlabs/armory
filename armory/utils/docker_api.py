@@ -2,18 +2,13 @@
 Docker-related utilities
 """
 
-import logging
+from armory.logs import log as logger
 
 
-logger = logging.getLogger(__name__)
-
-
-def pull_verbose(docker_client, repository, tag=None, log=True):
+def pull_verbose(docker_client, repository, tag=None):
     """
     Use low-level docker-py API to show status while pulling docker containers.
         Attempts to replicate docker command line output
-
-    log - if True, logs the output, if False, prints the output
     """
     for update in docker_client.api.pull(repository, tag=tag, stream=True, decode=True):
         tokens = []
@@ -23,7 +18,4 @@ def pull_verbose(docker_client, repository, tag=None, log=True):
                 tokens.append(value)
         output = ": ".join(tokens)
 
-        if log:
-            logger.info(output)
-        else:
-            print(output)
+        logger.info(output)

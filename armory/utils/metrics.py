@@ -6,7 +6,6 @@ Outputs are lists of python variables amenable to JSON serialization:
     numpy data types and tensors generally fail to serialize
 """
 
-import logging
 import numpy as np
 import time
 from contextlib import contextmanager
@@ -18,9 +17,7 @@ import pstats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 def abstains(y, y_pred):
@@ -278,7 +275,7 @@ def resource_context(name="Name", profiler=None, computational_resource_dict=Non
     if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
     if profiler == "Deterministic":
-        logger.warn(
+        log.warning(
             "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
         )
         pr = cProfile.Profile()
@@ -335,7 +332,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
     if (x_i == x_adv_i).mean() < 0.5:
-        logger.warning(
+        log.warning(
             f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
             "indices. image_circle_patch_area may not be accurate"
         )
@@ -346,7 +343,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     # Determine which indices (along the spatial dimension) are perturbed
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
     if len(pert_spatial_indices) == 0:
-        logger.warning("x_i == x_adv_i. image_circle_patch_area is 0")
+        log.warning("x_i == x_adv_i. image_circle_patch_area is 0")
         return 0
 
     # Find which indices (preceding the patch's max index) are unperturbed, in order
@@ -363,7 +360,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
 
     # If there are any perturbed indices outside the range of the patch just computed
     if min(pert_spatial_indices) < min_ind_of_patch:
-        logger.warning("Multiple regions of the image have been perturbed")
+        log.warning("Multiple regions of the image have been perturbed")
 
     diameter = max_ind_of_patch - min_ind_of_patch + 1
     spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
@@ -454,9 +451,7 @@ def _intersection_over_union(box_1, box_2):
     if all(i <= 1.0 for i in box_1[np.where(box_1 > 0)]) ^ all(
         i <= 1.0 for i in box_2[np.where(box_2 > 0)]
     ):
-        logger.warning(
-            "One set of boxes appears to be normalized while the other is not"
-        )
+        log.warning("One set of boxes appears to be normalized while the other is not")
 
     # Determine coordinates of intersection box
     x_left = max(box_1[1], box_2[1])
@@ -1597,7 +1592,7 @@ class MetricsLogger:
         self.full = bool(record_metric_per_sample)
         self.computational_resource_dict = {}
         if not self.means and not self.full:
-            logger.warning(
+            log.warning(
                 "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
@@ -1607,7 +1602,7 @@ class MetricsLogger:
             and not self.adversarial_tasks
             and not self.targeted_tasks
         ):
-            logger.warning(
+            log.warning(
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
@@ -1716,7 +1711,7 @@ class MetricsLogger:
         for task_idx, metric in enumerate(metrics):
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
-                logger.info(
+                log.success(
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
@@ -1727,28 +1722,28 @@ class MetricsLogger:
                     )
                 else:
                     metric_result = metric.compute_non_elementwise_metric()
-                logger.info(
+                log.success(
                     f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric_result}"
                 )
                 if metric.name in self.mean_ap_metrics:
-                    logger.info(
+                    log.success(
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
             elif metric.name in self.quantity_metrics:
                 # Don't include % symbol
-                logger.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2}"
                 )
                 if metric.name in self.mean_ap_metrics:
-                    logger.info(
+                    log.success(
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
             else:
-                logger.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2%}"
                 )

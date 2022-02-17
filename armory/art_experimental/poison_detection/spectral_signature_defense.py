@@ -1,20 +1,11 @@
-import logging
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 import numpy as np
 
-try:
-    from art.defences.detector.poison import (
-        GroundTruthEvaluator,
-        PoisonFilteringDefence,
-    )
-except ImportError:
-    logger.warning(
-        "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
-    )
-    from art.poison_detection.ground_truth_evaluator import GroundTruthEvaluator
-    from art.poison_detection.poison_filtering_defence import PoisonFilteringDefence
+from art.defences.detector.poison import (
+    GroundTruthEvaluator,
+    PoisonFilteringDefence,
+)
 
 
 class SpectralSignatureDefense(PoisonFilteringDefence):
