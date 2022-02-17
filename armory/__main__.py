@@ -119,7 +119,6 @@ def _debug(parser):
     parser.add_argument(
         "-d",
         "--debug",
-        dest="debug",
         action="store_const",
         const="DEBUG",
         default="INFO",

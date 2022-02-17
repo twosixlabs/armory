@@ -21,7 +21,7 @@ from armory.utils.printing import bold, red
 from armory.utils import docker_api
 from armory import paths
 from armory import environment
-from armory.logs import log, is_debug
+from armory.logs import log, is_debug, added_filters
 
 
 class Evaluator(object):
@@ -486,6 +486,8 @@ class Evaluator(object):
             options += " --skip-misclassified"
         if validate_config:
             options += " --validate-config"
+        for module, level in added_filters.items():
+            options += f" --log-level {module}:{level}"
         return options
 
     def _constructor_options(

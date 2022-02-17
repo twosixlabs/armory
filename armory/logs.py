@@ -29,13 +29,15 @@ import functools
 
 
 default_message_filters = {
-    "": "INFO",
+    "": "TRACE",
     "armory": "INFO",
     "art": "INFO",
+    "docker": "INFO",
     "botocore": "WARNING",
     "s3transfer": "INFO",
     "urllib3": "INFO",
     "h5py": False,
+    "avro": False,
 }
 
 log = loguru.logger
@@ -46,6 +48,8 @@ log.add(sys.stdout, level="TRACE", filter=default_message_filters)
 
 
 filters = default_message_filters
+# need to store filter overrides because we have to pass them to scenarios.main
+added_filters = {}
 logfile_directory = None
 
 
@@ -78,7 +82,7 @@ def update_filters(specs: List[str], armory_debug=None):
         specs = []
 
     if armory_debug is not None:
-        print(f"{specs=}")
+        log.trace("added armory:{armory_debug} to {specs}")
         specs.append(f"armory:{armory_debug}")
 
     for spec in specs:
@@ -89,14 +93,16 @@ def update_filters(specs: List[str], armory_debug=None):
             key = "armory"
             level = spec
         level = level.upper()
+
         try:
             log.level(level)
             filters[key] = level
+            added_filters[key] = level
         except ValueError:
             log.error(f"unknown log level {spec} ignored")
             continue
 
-    log.trace(f"setting {filters=}")
+    log.trace(f"setting {filters}")
     log.remove()
     log.add(sys.stdout, level="TRACE", filter=filters)
 
@@ -126,10 +132,8 @@ def duration_string(dt: datetime.timedelta) -> str:
     return duration if duration else "0s"
 
 
-def add_destination(sink, colorize=True):
-    """add a destination to the logger"""
+def add_sink(sink, colorize=True):
     global filters
-    # TODO: add configuration method to main (cf. docs/logging.md)
 
     # set the base logging level to TRACE because we are using filter= to control which
     # messages are sent to the sink, so we want the level to be wide open
@@ -144,8 +148,9 @@ def make_logfiles(output_dir: str) -> None:
     global logfile_directory
 
     logfile_directory = output_dir
-    add_destination(f"{output_dir}/colored-log.txt", colorize=True),
-    add_destination(f"{output_dir}/armory-log.txt", colorize=False),
+    log.trace(f"make_logfiles {output_dir}")
+    add_sink(f"{output_dir}/colored-log.txt", colorize=True),
+    add_sink(f"{output_dir}/armory-log.txt", colorize=False),
 
 
 # adapt the logging module to use the our loguru logger

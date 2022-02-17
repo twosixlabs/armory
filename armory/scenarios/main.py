@@ -24,7 +24,7 @@ import armory
 from armory import environment, paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
-from armory.logs import log, update_filters
+from armory.logs import log, update_filters, make_logfiles
 
 
 def _scenario_setup(config: Config) -> None:
@@ -47,6 +47,7 @@ def _scenario_setup(config: Config) -> None:
     os.makedirs(scenario_tmp_dir, exist_ok=True)
 
     log.info(f"armory outputs and logs will be written to {scenario_output_dir}")
+    make_logfiles(scenario_output_dir)
 
     # Download any external repositories and add them to the sys path for use
     if config["sysconfig"].get("external_github_repo", None):
@@ -141,6 +142,7 @@ def run_config(*args, **kwargs):
     Convenience wrapper around 'load'
     """
     scenario = get(*args, **kwargs)
+    log.trace(f"scenario loaded {scenario}")
     scenario.evaluate()
 
 
@@ -150,14 +152,18 @@ if __name__ == "__main__":
         "config", metavar="<config json>", type=str, help="scenario config JSON",
     )
 
-    breakpoint()
     parser.add_argument(
         "-d",
         "--debug",
         action="store_const",
         const="DEBUG",
         default="INFO",
-        help="enable debugging (deprecated use --log-level)",
+        help="synonym for --log-level=armory:debug",
+    )
+    parser.add_argument(
+        "--log-level",
+        action="append",
+        help="set log level per-module (ex. art:debug) can be used mulitple times",
     )
     parser.add_argument(
         "--no-docker",
@@ -207,7 +213,8 @@ if __name__ == "__main__":
         help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
-    update_filters({}, args.debug)
+    log.trace(f"log-level: {args.log_level} debug: {args.debug}")
+    update_filters(args.log_level, args.debug)
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
         log.warning(
