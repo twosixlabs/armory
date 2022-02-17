@@ -32,27 +32,21 @@ class ArmoryInstance(object):
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
 
+        mounts = [
+            docker.types.Mount(
+                source=getattr(host_paths, dir),
+                target=getattr(docker_paths, dir),
+                type="bind",
+                read_only=False,
+            )
+            for dir in "cwd dataset_dir local_git_dir output_dir saved_model_dir tmp_dir".split()
+        ]
+
         container_args = {
             "runtime": runtime,
             "remove": True,
             "detach": True,
-            "volumes": {
-                host_paths.cwd: {"bind": docker_paths.cwd, "mode": "rw"},
-                host_paths.dataset_dir: {
-                    "bind": docker_paths.dataset_dir,
-                    "mode": "rw",
-                },
-                host_paths.local_git_dir: {
-                    "bind": docker_paths.local_git_dir,
-                    "mode": "rw",
-                },
-                host_paths.output_dir: {"bind": docker_paths.output_dir, "mode": "rw"},
-                host_paths.saved_model_dir: {
-                    "bind": docker_paths.saved_model_dir,
-                    "mode": "rw",
-                },
-                host_paths.tmp_dir: {"bind": docker_paths.tmp_dir, "mode": "rw"},
-            },
+            "mounts": mounts,
             "shm_size": "16G",
         }
 
