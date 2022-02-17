@@ -1,5 +1,5 @@
 import os
-
+import requests
 import pytest
 import docker
 from armory import paths
@@ -32,6 +32,21 @@ def ensure_armory_dirs(request):
     os.makedirs(output_dir, exist_ok=True)
 
 
+@pytest.fixture()
+def scenario_configs():
+    """Pointer to armory.scenario_configs file"""
+    dirname = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "scenario_configs"
+    )
+    if not os.path.exists(dirname):
+        raise Exception(
+            "Something is wrong... Scenario Config Dir: {} does not exist".format(
+                dirname
+            )
+        )
+    return dirname
+
+
 @pytest.fixture(scope="session")
 def docker_client():
     try:
@@ -49,3 +64,41 @@ def docker_client():
             raise
 
     return client
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--armory-mode",
+        action="store",
+        default="docker",
+        choices=["native", "docker", "both"],
+        help="Set Armory Mode [native|docker|both]",
+    )
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "skip_test_if_armory_mode(amory-mode): this mark skips the tests for the given armory mode",
+    )
+
+
+def pytest_runtest_setup(item):
+
+    # Setting up for `--armory-mode`
+    parameters = [
+        mark.args[0] for mark in item.iter_markers(name="skip_test_if_armory_mode")
+    ]
+    if parameters:
+        if item.config.getoption("--armory-mode") in parameters:
+            pytest.skip("Test skipped because armory-mode is {!r}".format(parameters))
+
+
+@pytest.fixture()
+def external_resources():
+
+    try:
+        requests.get("https://www.google.com/").status_code
+    except Exception as e:
+        logger.error("Cannot Reach External Resources")
+        raise e
