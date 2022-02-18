@@ -11,10 +11,10 @@ RUN /opt/conda/bin/conda install -c conda-forge librosa
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     pytorch-lightning==1.4.* \
-    git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
-    python-levenshtein
-    hydra-core 
-    google-cloud-storage
+    git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning \
+    python-levenshtein \
+    hydra-core \
+    google-cloud-storage \
     sox
 # pytorch-lightning >= 1.5.0 will break Deep Speech 2
 # hydra-lightning installs omegaconf
