@@ -72,20 +72,8 @@ def test_generator_construction(
 
 
 @pytest.mark.parametrize(
-    "name, batch_size, num_epochs, split, framework, xtype, xshape, ytype, yshape",
-    [
-        (
-            "mnist",
-            10,
-            2,
-            "test",
-            "pytorch",
-            torch.uint8,
-            (16, 28, 28, 1),
-            torch.int64,
-            (16,),
-        ),
-    ],
+    "name, batch_size, num_epochs, split, framework, shuffle, exp_cnt",
+    [("mnist", 10, 2, "test", "pytorch", True, 2000,),],
 )
 def test_generator_epoch_creation(
     name,
@@ -93,32 +81,35 @@ def test_generator_epoch_creation(
     num_epochs,
     split,
     framework,
-    xtype,
-    xshape,
-    ytype,
-    yshape,
+    shuffle,
+    exp_cnt,
     dataset_generator,
     armory_dataset_dir,
 ):
     dataset = dataset_generator(
-        name, batch_size, num_epochs, split, framework, dataset_dir=armory_dataset_dir
+        name=name,
+        batch_size=batch_size,
+        num_epochs=num_epochs,
+        split=split,
+        framework=framework,
+        dataset_dir=armory_dataset_dir,
+        shuffle_files=shuffle,
     )
     cnt = 0
 
     for images, labels in dataset:
-        if cnt % 100 == 0:
-            print(cnt, labels)
         if cnt == 0:
             first_batch = labels
         if cnt == 1000:
             second_batch = labels
         cnt += 1
 
-    print(first_batch)
-    print("second\n", second_batch)
-    assert cnt == 2000
-    # TODO Understand why `not` is there...feels like it should be equal
-    # assert not torch.all(torch.eq(first_batch, second_batch))
+    assert cnt == exp_cnt
+
+    if shuffle:
+        assert not torch.all(torch.eq(first_batch, second_batch))
+    else:
+        assert torch.all(torch.eq(first_batch, second_batch))
 
 
 @pytest.mark.parametrize(
