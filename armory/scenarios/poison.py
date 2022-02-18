@@ -244,8 +244,6 @@ class Poison(Scenario):
             logger.info("Filtering out detected poisoned samples")
             indices_to_keep = (is_clean == 1)
 
-            self.filter_perplexity.add_results(self.y_clean, self.poison_index, is_dirty)
-
         else:
             logger.info(
                 "Defense does not require filtering. Model fitting will use all data."
@@ -403,6 +401,9 @@ class Poison(Scenario):
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
         if hasattr(self, "filter_perplexity") and not self.check_run:
+            is_dirty = np.ones_like(self.y_clean)
+            is_dirty[self.indices_to_keep] = 0
+            self.filter_perplexity.add_results(self.y_clean, self.poison_index, is_dirty)
             results["filter_perplexity"] = self.filter_perplexity.mean()
             logger.info(
                 f"Normalized filter perplexity: {self.filter_perplexity.mean()}"

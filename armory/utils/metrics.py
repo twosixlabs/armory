@@ -183,7 +183,7 @@ def filter_perplexity_fps_benign(
     fp_labels = y_clean[fp_inds == 1]
     fps = np.bincount(fp_labels, minlength=max(y_clean))
     if fps.sum() == 0:
-        return 1  # If no FPs, we'll define perplexity to be 1 (unbiased)
+        return [1]  # If no FPs, we'll define perplexity to be 1 (unbiased)
     fps = fps / fps.sum()
 
     return perplexity(fps, x_benign)
