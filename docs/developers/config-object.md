@@ -23,19 +23,22 @@ a better name at the moment, I'm calling it a ConfigurationTin.
         credential: ArmoryCredentials
         path: ArmoryPaths
 
-    tin = ConfigurationTin()
-
-There is a singleton-oid initializer used in `random` where the random module creates an
-an instance of the Random class and then exports that. This allows syntactically
-convenient calls like `random.uniform` which reference the module's instance, while
-still allowing `my_rand = Random(seed); my_rand.uniform`. For testing, we want to
-be able to construct ConfigurationTins without all the complex machinery needed; now
-we can do that.  Typical use is
+Typical use is like
 
     from armory.configuration import tin
 
+    tin = ConfigurationTin(…)
+
     if tin.mode == 'docker':
         docker_mount(tin.path.output_dir)
+    ...
+    armory.eval.run(tin, experiment)
+
+But a test should be able to construct a ConfigurationTin from scratch like
+
+    def test_with_overrides():
+        my_tin = ConfigurationTin(overrides of some kind)
+        armory.eval.run(my_tin, experiment)
 
 ## immutability declined
 
