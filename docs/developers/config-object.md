@@ -64,7 +64,7 @@ modify.
 This mechanism does (not yet) address the hierarchical construction of configuration
 which we think we want. If we used a json-like "bag of properties" as a `Dict[str, Any]`
 we could use `dict.update` to trivially implement overrides. This desire does contain
-a presupposition that we'd have a dictionary of modifers to merge in. In actuality,
+a presupposition that we'd have a dictionary of modifiers to merge in. In actuality,
 we'd have to construct that set of modifiers first, so why not use the
 dataclass constructors for that?
 
