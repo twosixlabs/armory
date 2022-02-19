@@ -3,6 +3,15 @@ from typing import Optional
 import numpy as np
 from art.estimators.object_tracking import PyTorchGoturn
 
+# TODO Check with Slater if this is better implementation
+from armory.utils import external_repo
+from armory import paths
+
+runtime_paths = paths.runtime_paths()
+external_repo_dir = runtime_paths.external_repo_dir
+external_repo.download_and_extract_repos(
+    "amoudgl/pygoturn", external_repo_dir=external_repo_dir,
+)
 # Load model from MITRE external repo: https://github.com/yusong-tan/pygoturn
 # This needs to be defined in your config's `external_github_repo` field to be
 # downloaded and placed on the PYTHONPATH

@@ -81,6 +81,27 @@ jobs:
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_datasets.py
+  pytest-models-native:
+    name: PyTest Armory Models in Native Mode
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install --user --upgrade pip==22.0.3
+          pip install -r no-docker-requirements.txt
+          pip install -r test-requirements.txt
+          pip install -e .
+          pytest -s ./tests/test_models.py
   pytest-tf1:
     name: PyTest TF1
     runs-on: ubuntu-18.04
@@ -125,7 +146,6 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build.sh tf2 dev
           docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_docker
-          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_tf2
           docker run -w /armory_dev twosixarmory/tf2:${version} python \
           /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf2_test.py
   pytest-pytorch:

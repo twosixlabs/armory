@@ -18,13 +18,18 @@ REQUIRED_DOCKER_IMAGES = [
     "twosixarmory/armory-tf2:dev",
 ]
 
+# Added this to make run local
+paths.set_mode("host")
+
 
 @pytest.fixture()
 def ensure_armory_dirs(request):
     """
     CI doesn't mount volumes
     """
-    docker_paths = paths.DockerPaths()
+    # Changing this to make more appropriate
+    # docker_paths = paths.DockerPaths()
+    docker_paths = paths.runtime_paths()
     saved_model_dir = docker_paths.saved_model_dir
     pytorch_dir = docker_paths.pytorch_dir
     dataset_dir = docker_paths.dataset_dir
@@ -127,7 +132,6 @@ def dataset_generator():
         dataset_dir,
         shuffle_files=False,
         preprocessing_fn=None,
-        fit_preprocessing_fn=None,
     ):
         # Instance types based on framework
         instance_types = {
@@ -150,7 +154,6 @@ def dataset_generator():
             framework=framework,
             shuffle_files=shuffle_files,
             preprocessing_fn=preprocessing_fn,
-            fit_preprocessing_fn=fit_preprocessing_fn,
         )
         print(type(dataset))
         assert isinstance(dataset, instance_types[framework])
