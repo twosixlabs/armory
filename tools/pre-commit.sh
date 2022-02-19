@@ -25,7 +25,7 @@ then
     exit $need_format
 fi
 
-#TODO Do we need the `if` cluases above for these below?
+#TODO Do we need the `if` clauses above for these below?
 echo "Performing checks with yamllint"
 yamllint --no-warnings ./
 

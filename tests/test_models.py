@@ -151,22 +151,14 @@ def test_model_creation(
 
 
 # TODO This has different structure uses armory.data.utils.load_dataset...find out why
-# Also it uses `num-batches` where others dont
-@pytest.mark.usefixtures("ensure_armory_dirs")
+#  Also it uses `num-batches` where others dont
+@pytest.mark.slow
 def test_pytorch_xview_pretrained():
     module, fn, classifier = get_armory_module_and_fn(
         "armory.baseline_models.pytorch.xview_frcnn",
         "get_art_model",
         "xview_model_state_dict_epoch_99_loss_0p67",
     )
-    # detector_module = import_module("armory.baseline_models.pytorch.xview_frcnn")
-    # detector_fn = getattr(detector_module, "get_art_model")
-    # weights_path = maybe_download_weights_from_s3(
-    #     "xview_model_state_dict_epoch_99_loss_0p67"
-    # )
-    # detector = detector_fn(
-    #     model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,
-    # )
     from armory.utils.config_loading import load_dataset
 
     NUM_TEST_SAMPLES = 250
@@ -202,17 +194,9 @@ def test_pytorch_xview_pretrained():
 
 
 # TODO Need to figure out why load_dataset is used which introduces new pattern
-# for calculating accuracy.
+#  for calculating accuracy.
 @pytest.mark.usefixtures("ensure_armory_dirs")
 def test_pytorch_carla_video_tracking():
-    # Moved this to armory.baseline_models.pytorch.carla_goturn
-    # runtime_paths = paths.runtime_paths()
-    # external_repo_dir = runtime_paths.external_repo_dir
-    # external_repo.download_and_extract_repos(
-    #     "amoudgl/pygoturn", external_repo_dir=external_repo_dir,
-    # )
-
-    #
     tracker_module = import_module("armory.baseline_models.pytorch.carla_goturn")
     tracker_fn = getattr(tracker_module, "get_art_model")
     weights_path = maybe_download_weights_from_s3("pytorch_goturn.pth.tar")
@@ -475,3 +459,14 @@ def test_carla_od(
         y_preds.extend(y_pred)
     ap_per_class = object_detection_AP_per_class(ys, y_preds)
     assert [ap_per_class[i] > 0.35 for i in range(1, 4)]
+
+
+# TODO:  Still need to add the following
+#  - test_tf1/test_keras_models.py - These complain about tf `eager` execution
+#  - test_tf1/test_tf1_models.py
+
+# TODO: Think about how to mark these appropriately so they can be split in CI
+
+# TODO: Determine if moving the `download_and_extract_external_repo` bits is
+#  appropriate to move to the model module.  E.g. see what I did in:
+#  armory.baseline_models.pytorch.carla_goturn
