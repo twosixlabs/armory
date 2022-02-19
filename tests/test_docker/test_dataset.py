@@ -13,6 +13,11 @@ from armory import paths
 
 DATASET_DIR = paths.DockerPaths().dataset_dir
 
+# TODO:  Figure out why this is in `tests/test_docker` as it does not
+#  seem to have anything to do with Docker.  If there is no good
+#  reason, then add this to the `tests/test_datasets.py` file, or
+#  if necessary, break apaart into sub files
+
 
 def test__parse_token():
     for x in "test", "train[15:20]", "train[:10%]", "train[-80%:]":
