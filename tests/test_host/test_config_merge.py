@@ -3,6 +3,7 @@ import argparse
 from armory import arguments
 
 
+# TODO Refactor this pattern with Matt's new Config
 def test_config_args_merge():
     config = dict(
         sysconfig={

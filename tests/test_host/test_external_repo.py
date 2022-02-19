@@ -9,6 +9,7 @@ from armory.utils.external_repo import download_and_extract_repos
 HOST_PATHS = paths.HostPaths()
 
 
+# TODO:  This is BAD JuJu...add to github action secrets
 def set_github_token():
     """
     Sets a public read-only token to authethenticate our github ci calls. This is only
@@ -23,6 +24,8 @@ def set_github_token():
     os.environ["ARMORY_GITHUB_TOKEN"] = public_token
 
 
+# TODO:  This modifies state on the local machine...consider how to refactor this
+#  so that it pulls to a temp dir or something
 def test_download():
     set_github_token()
     test_external_repo_dir = pathlib.Path(
@@ -41,6 +44,8 @@ def test_download():
     os.rmdir(test_external_repo_dir)
 
 
+# TODO:  This modifies state on the local machine...consider how to refactor this
+#  so that it pulls to a temp dir or something
 def test_download_multiple():
     set_github_token()
     test_external_repo_dir = pathlib.Path(
@@ -60,6 +65,8 @@ def test_download_multiple():
     os.rmdir(test_external_repo_dir)
 
 
+# TODO:  This modifies state on the local machine...consider how to refactor this
+#  so that it pulls to a temp dir or something
 def test_download_branch():
     set_github_token()
     test_external_repo_dir = pathlib.Path(
