@@ -4,6 +4,8 @@ Running Armory Tests
 Tests have to download a bunch of code (external repos,etc.) and model weights the first
 time around so that one can take a while.  
 
+You will need to have the `ARMORY_GITHUB_TOKEN` env variable set (which may be done by 
+armory configure...but will need to make sure)
 
 Can use pytest -s to run all tests:
 ```bash
