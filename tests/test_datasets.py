@@ -131,3 +131,14 @@ def test_framework_equality(
 
         assert np.amax(np.abs(img1 - img2)) == 0
         assert np.amax(np.abs(l1 - l2)) == 0
+
+
+# TODO: Check if there is a reason not to have this here as I moved it from
+#  tests/test_docker/test_supported_datasets.py
+def test_supported_datasets():
+    from armory.data import datasets
+
+    for name, function in datasets.SUPPORTED_DATASETS.items():
+        assert callable(function)
+        # TODO:  This seems super minimal....maybe consider invoking the callable here
+        #  or add this as a part of the `test_generator_construction` test above.
