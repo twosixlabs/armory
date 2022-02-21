@@ -3,7 +3,6 @@ General object detection scenario
 """
 
 from armory.scenarios.image_classification import ImageClassificationTask
-from armory.utils.export import SampleExporter
 
 
 class ObjectDetectionTask(ImageClassificationTask):
