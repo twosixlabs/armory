@@ -227,6 +227,9 @@ class Scenario:
             computational_resource_dict=metrics_logger.computational_resource_dict,
         )
 
+        self.metrics_logger = metrics_logger
+
+    def load_sample_exporter(self):
         export_samples = self.config["scenario"].get("export_samples")
         if export_samples is not None and export_samples > 0:
             sample_exporter = SampleExporter(
@@ -234,8 +237,6 @@ class Scenario:
             )
         else:
             sample_exporter = None
-
-        self.metrics_logger = metrics_logger
         self.sample_exporter = sample_exporter
 
     def load(self):
@@ -246,6 +247,7 @@ class Scenario:
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
+        self.load_sample_exporter()
         return self
 
     def evaluate_all(self):
@@ -313,16 +315,20 @@ class Scenario:
             )
         self.metrics_logger.update_perturbation(x, x_adv)
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
-
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
+
+    def export_samples(self):
+        self.sample_exporter.export(
+            x=self.x, x_adv=self.x_adv, y=self.y, y_pred_adv=self.y_pred_adv
+        )
 
     def evaluate_current(self):
         if not self.skip_benign:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
+        if self.sample_exporter is not None:
+            self.export_samples()
 
     def finalize_results(self):
         metrics_logger = self.metrics_logger
