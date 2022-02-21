@@ -3,6 +3,7 @@ General object detection scenario
 """
 
 from armory.scenarios.image_classification import ImageClassificationTask
+from armory.utils.export import SampleExporter
 
 
 class ObjectDetectionTask(ImageClassificationTask):
@@ -17,6 +18,16 @@ class ObjectDetectionTask(ImageClassificationTask):
         raise NotImplementedError(
             "Training has not yet been implemented for object detectors"
         )
+
+    def load_sample_exporter(self):
+        export_samples = self.config["scenario"].get("export_samples")
+        if export_samples is not None and export_samples > 0:
+            # Sample exporting needs access to benign predictions to include bounding boxes
+            if self.skip_benign:
+                raise ValueError(
+                    "--skip-benign should not be set for object_detection scenario if export_samples is enabled."
+                )
+        super().load_sample_exporter()
 
     def export_samples(self):
         self.sample_exporter.export(
