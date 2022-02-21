@@ -17,3 +17,8 @@ class ObjectDetectionTask(ImageClassificationTask):
         raise NotImplementedError(
             "Training has not yet been implemented for object detectors"
         )
+
+    def export_samples(self):
+        self.sample_exporter.export(
+            self.x, self.x_adv, self.y, self.y_pred_adv, self.y_pred, plot_bboxes=True
+        )
