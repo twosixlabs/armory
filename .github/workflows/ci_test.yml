@@ -21,7 +21,7 @@ env:
 
 jobs:
   pytest-host:
-    name: Test Basic Host actions for armory configuration in `native` mode
+    name: Basic `native` configuration
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -40,7 +40,7 @@ jobs:
           pip install -r test-requirements.txt
           pytest -s ./tests/test_configuration.py
   pytest-native-base:
-    name: Test Basic Host actions for armory configuration in `native` mode
+    name: Native Mode All `Not Slow` Tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -59,7 +59,7 @@ jobs:
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
           pip install -e .
-          pytest -s -k not slow ./tests/
+          pytest -s -k "not slow" ./tests/
   pytest-no-docker:
     name: Test Armory Functionality in `native` (a.k.a. `--no-docker` mode)
     runs-on: ${{ matrix.os }}
@@ -135,8 +135,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           version=$(python -m armory --version)
-          bash docker/build.sh -f base --tag dev --no-cache
-          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s -k not slow ./tests/
+          bash docker/build.sh -f tf2 --tag dev --no-cache
+          docker run -w /armory-repo twosixarmory/armory-tf2:dev pytest -s -k "not slow" ./tests/
 #  pytest-tf1:
 #    name: PyTest TF1
 #    runs-on: ubuntu-18.04
