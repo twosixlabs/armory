@@ -142,3 +142,78 @@ def test_supported_datasets():
         assert callable(function)
         # TODO:  This seems super minimal....maybe consider invoking the callable here
         #  or add this as a part of the `test_generator_construction` test above.
+
+
+# TODO:  The Following were moved from test_docker/test_dataset.py because the don't have
+# anything to do with docker
+
+
+@pytest.mark.parametrize(
+    "token1, token2",
+    [
+        ("test", "test"),
+        ("train[15:20]", "train[15:20]"),
+        ("train[:10%]", "train[:10%]"),
+        ("train[-80%:]", "train[-80%:]"),
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+        ("test[10]", "test[10:11]"),
+    ],
+)
+def test_parse_valid_token(token1, token2):
+    from armory.data import datasets
+
+    assert datasets._parse_token(token1) == token2
+
+
+@pytest.mark.parametrize(
+    "token1, error",
+    [
+        ("", ValueError),
+        ("test[", ValueError),
+        ("test[]", ValueError),
+        ("test[[]]", ValueError),
+        ("[10:11]", ValueError),
+        ("test[10:20:2]", NotImplementedError),
+    ],
+)
+def test_parse_invalid_token(token1, error):
+    from armory.data import datasets
+
+    with pytest.raises(error):
+        datasets._parse_token(token1)
+
+
+@pytest.mark.parametrize(
+    "token1, token2",
+    [
+        ("train[15:20]", "train[15:20]"),
+        ("train[:10%]+train[-80%:]", "train[:10%]+train[-80%:]"),
+        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
+        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
+        ("test[10]", "test[10:11]"),
+        ("test + train", "test+train"),
+    ],
+)
+def test_parse_valid_split_index(token1, token2):
+    from armory.data import datasets
+
+    assert datasets.parse_split_index(token1) == token2
+
+
+@pytest.mark.parametrize(
+    "token1, error",
+    [
+        ("", ValueError),
+        ("test++train", ValueError),
+        (None, ValueError),
+        (13, ValueError),
+        ([1, 4, 5], ValueError),
+        ("test[10:20:2]", NotImplementedError),
+    ],
+)
+def test_parse_invalid_split_index(token1, error):
+    from armory.data import datasets
+
+    with pytest.raises(error):
+        datasets.parse_split_index(token1)
