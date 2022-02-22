@@ -1,6 +1,13 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+from enum import Enum
+
+
+class ArmoryMode(Enum):
+    HOST = "host"
+    DOCKER = "docker"
+    OFFLINE = "offline"
 
 
 @dataclass
