@@ -12,6 +12,8 @@ from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Lambda
 
+tf.compat.v1.disable_eager_execution()
+
 num_classes = 45
 
 
