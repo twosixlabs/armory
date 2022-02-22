@@ -1749,6 +1749,12 @@ def _parse_dataset_name(dataset_name: str):
     return name, subpath
 
 
+"""
+SUPPORTED_DATASETS = ['mnist','cifar10'...]
+def generator(name, **kwargs):
+    return getattr(dataset, name)(itertools.partial(**kwargs))
+"""
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,

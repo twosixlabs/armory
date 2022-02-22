@@ -157,6 +157,11 @@ def dataset_generator():
         )
         print(type(dataset))
         assert isinstance(dataset, instance_types[framework])
+        if framework == "numpy":
+            assert dataset.batch_size == batch_size
+            assert dataset.batches_per_epoch == (
+                dataset.size // batch_size + bool(dataset.size % batch_size)
+            )
         return dataset
 
     return generator
