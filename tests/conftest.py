@@ -5,10 +5,7 @@ import docker
 from armory import paths
 import logging
 from docker.errors import ImageNotFound
-import torch
-import tensorflow as tf
-from armory.data import datasets
-from armory.data.datasets import ArmoryDataGenerator
+
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +120,11 @@ def armory_dataset_dir():
 
 @pytest.fixture
 def dataset_generator():
+    import torch
+    import tensorflow as tf
+    from armory.data import datasets
+    from armory.data.datasets import ArmoryDataGenerator
+
     def generator(
         name,
         batch_size,

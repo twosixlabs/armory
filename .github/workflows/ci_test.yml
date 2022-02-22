@@ -21,7 +21,7 @@ env:
 
 jobs:
   pytest-host:
-    name: Test Basic Host actions including armory configuration and downloads in `native` mode
+    name: Test Basic Host actions for armory configuration in `native` mode
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -39,7 +39,27 @@ jobs:
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pytest -s ./tests/test_configuration.py
-          pytest -s ./tests/test_downloads.py
+  pytest-native-base:
+    name: Test Basic Host actions for armory configuration in `native` mode
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install -r armory-base-requirements.txt
+          pip install -e .
+          pytest -s -k not slow ./tests/
   pytest-no-docker:
     name: Test Armory Functionality in `native` (a.k.a. `--no-docker` mode)
     runs-on: ${{ matrix.os }}
@@ -57,7 +77,7 @@ jobs:
         shell: bash
         run: |
           pip install --user --upgrade pip==22.0.3
-          pip install -r no-docker-requirements.txt
+          pip install -r armory-base-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_no_docker.py
@@ -78,7 +98,7 @@ jobs:
         shell: bash
         run: |
           pip install --user --upgrade pip==22.0.3
-          pip install -r no-docker-requirements.txt
+          pip install -r armory-base-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_datasets.py
@@ -99,7 +119,7 @@ jobs:
         shell: bash
         run: |
           pip install --user --upgrade pip==22.0.3
-          pip install -r no-docker-requirements.txt
+          pip install -r armory-base-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_models.py
@@ -117,25 +137,25 @@ jobs:
           version=$(python -m armory --version)
           bash docker/build.sh -f base --tag dev --no-cache
           docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s -k not slow ./tests/
-  pytest-tf1:
-    name: PyTest TF1
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Run armory TF1 docker tests
-        run: |
-          pip install -r requirements.txt
-          version=$(python -m armory --version)
-          bash docker/build.sh tf1 dev
-          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
-          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
-          docker run -w /armory_dev twosixarmory/tf1:${version} python \
-          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf1_test.py
-  armory-tf1:
-    name: Armory run tests TF1
+#  pytest-tf1:
+#    name: PyTest TF1
+#    runs-on: ubuntu-18.04
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: '3.7'
+#      - name: Run armory TF1 docker tests
+#        run: |
+#          pip install -r requirements.txt
+#          version=$(python -m armory --version)
+#          bash docker/build.sh tf1 dev
+#          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
+#          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+#          docker run -w /armory_dev twosixarmory/tf1:${version} python \
+#          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf1_test.py
+  armory-tf1-integration-native:
+    name: Run Armory TF1 integration test in `native` mode
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2e
@@ -145,7 +165,7 @@ jobs:
       - name: Run armory TF1 scenarios
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh tf1 dev
+          bash docker/build.sh -f tf2 dev
           python -m armory run tests/scenarios/tf1/image_classification.json
   pytest-tf2:
     name: PyTest TF2
