@@ -21,7 +21,7 @@ env:
 
 jobs:
   pytest-host:
-    name: PyTest Host
+    name: Test Basic Host actions including armory configuration and downloads in `native` mode
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -38,9 +38,10 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
-          pytest -s ./tests/test_host/
+          pytest -s ./tests/test_configuration.py
+          pytest -s ./tests/test_downloads.py
   pytest-no-docker:
-    name: PyTest No-docker
+    name: Test Armory Functionality in `native` (a.k.a. `--no-docker` mode)
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -59,9 +60,9 @@ jobs:
           pip install -r no-docker-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          pytest -s ./tests/unit/test_no_docker.py
+          pytest -s ./tests/test_no_docker.py
   pytest-datasets-native:
-    name: PyTest Armory Datasets in Native Mode
+    name: Tests Armory Datasets in Native Mode
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -102,6 +103,20 @@ jobs:
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_models.py
+  pytest-docker-base:
+    name: Run Tests in docker using `armory-base` image
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory docker tests
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh -f base --tag dev --no-cache
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s -k not slow ./tests/
   pytest-tf1:
     name: PyTest TF1
     runs-on: ubuntu-18.04
