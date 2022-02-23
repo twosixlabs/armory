@@ -68,6 +68,9 @@ RUN /opt/conda/bin/conda install \
     # ART requires numba >= 0.53.1
 # numba==0.55.1
 
+# TODO: determine if NUMBA_CACHE_DIR needs to be set
+#ENV NUMBA_CACHE_DIR /tmp
+
 RUN /opt/conda/bin/conda install \
     pandas=1.1 \
     -c anaconda \
@@ -100,7 +103,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 # docker==5.0.3 \
 # adversarial-robustness-toolbox==1.9.1
 
-# pydub not installed. Do we need?
+# TODO: pydub not installed. Do we need?
 #    pydub==0.24.1 \  
 
 WORKDIR /workspace
