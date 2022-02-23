@@ -27,6 +27,9 @@ import logging
 from typing import List
 import functools
 
+log = loguru.logger
+
+log.level("PROGRESS", no=15, color="<blue>", icon="\N{downwards quadruple arrow}")
 
 default_message_filters = {
     "": "TRACE",
@@ -36,11 +39,11 @@ default_message_filters = {
     "botocore": "WARNING",
     "s3transfer": "INFO",
     "urllib3": "INFO",
+    "absl": False,
     "h5py": False,
     "avro": False,
 }
 
-log = loguru.logger
 
 # need to instantiate the filters early, replacing the default
 log.remove()
