@@ -27,5 +27,5 @@ do
    # do whatever on "$i" here
 done
 
-echo "All Checks completed succesfully!!\n"
+echo "All Checks completed succesfully!!"
 
