@@ -59,7 +59,7 @@ jobs:
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
           pip install -e .
-          pytest -s -k "not slow" ./tests/
+          pytest -s -k "not slow" -k "not docker_required" ./tests/
   pytest-no-docker:
     name: Test Armory Functionality in `native` (a.k.a. `--no-docker` mode)
     runs-on: ${{ matrix.os }}
@@ -81,48 +81,48 @@ jobs:
           pip install -r test-requirements.txt
           pip install -e .
           pytest -s ./tests/test_no_docker.py
-  pytest-datasets-native:
-    name: Tests Armory Datasets in Native Mode
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pip install --user --upgrade pip==22.0.3
-          pip install -r armory-base-requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
-          pytest -s ./tests/test_datasets.py
-  pytest-models-native:
-    name: PyTest Armory Models in Native Mode
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pip install --user --upgrade pip==22.0.3
-          pip install -r armory-base-requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
-          pytest -s ./tests/test_models.py
+#  pytest-datasets-native:
+#    name: Tests Armory Datasets in Native Mode
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+#        python-version: ['3.7']
+#      fail-fast: false
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#      - name: Run armory host tests
+#        shell: bash
+#        run: |
+#          pip install --user --upgrade pip==22.0.3
+#          pip install -r armory-base-requirements.txt
+#          pip install -r test-requirements.txt
+#          pip install -e .
+#          pytest -s ./tests/test_datasets.py
+#  pytest-models-native:
+#    name: PyTest Armory Models in Native Mode
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+#        python-version: ['3.7']
+#      fail-fast: false
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions/setup-python@v1
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#      - name: Run armory host tests
+#        shell: bash
+#        run: |
+#          pip install --user --upgrade pip==22.0.3
+#          pip install -r armory-base-requirements.txt
+#          pip install -r test-requirements.txt
+#          pip install -e .
+#          pytest -s ./tests/test_models.py
   pytest-docker-base:
     name: Run Tests in docker using `armory-base` image
     runs-on: ubuntu-18.04

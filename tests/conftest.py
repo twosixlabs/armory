@@ -54,6 +54,7 @@ def scenario_configs():
 
 
 @pytest.fixture(scope="session")
+@pytest.mark.docker_required
 def docker_client():
     try:
         client = docker.from_env()
