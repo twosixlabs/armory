@@ -762,7 +762,3 @@ def test_tf1_apricot(armory_dataset_dir):
 
 
 # TODO: Think about how to mark these appropriately so they can be split in CI
-
-# TODO: Determine if moving the `download_and_extract_external_repo` bits is
-#  appropriate to move to the model module.  E.g. see what I did in:
-#  armory.baseline_models.pytorch.carla_goturn

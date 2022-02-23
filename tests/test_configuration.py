@@ -70,7 +70,7 @@ def test_bad_configs(filePath, error, match):
 
 @pytest.mark.parametrize("file", glob("scenario_configs/*.json"))
 def test_scenario_configs(file):
-    # TODO: Why the string cast here?
+    # TODO: Fix with refactor of config tin bit
     config = load_config(str(file))
     assert (
         __version__ in config["sysconfig"]["docker_image"]

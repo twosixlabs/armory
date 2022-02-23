@@ -3,7 +3,8 @@ from typing import Optional
 import numpy as np
 from art.estimators.object_tracking import PyTorchGoturn
 
-# TODO Check with Slater if this is better implementation
+# TODO Fix this Implementation either pull code into armory direct
+#  or work with goturn dev to get proper release
 from armory.utils import external_repo
 from armory import paths
 

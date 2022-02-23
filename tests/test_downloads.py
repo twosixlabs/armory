@@ -4,10 +4,6 @@ import pytest
 from armory.data.utils import download_file_from_s3, maybe_download_weights_from_s3
 from armory.utils.external_repo import download_and_extract_repos
 
-# TODO:  Notes - This originated from tests/test_docker/test_weight_download.py
-#  but it seemed strange to keep it there so promoted it up and added more tests
-#  for downloading.  Confirm this choice with team
-
 
 def test_valid_model_weight(tmp_path):
 

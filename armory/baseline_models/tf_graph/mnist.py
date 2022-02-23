@@ -9,6 +9,17 @@ from art.estimators.classification import TFClassifier
 from armory import paths
 
 tf.disable_eager_execution()
+from tensorflow.compat.v1 import ConfigProto
+
+session_conf = ConfigProto(intra_op_parallelism_threads=1)
+mySession = tf.compat.v1.Session(
+    graph=tf.compat.v1.get_default_graph(), config=session_conf
+)
+# sess = tf.compat.v1.Session(graph=tf.compat.v1.get_default_graph())
+
+tf.compat.v1.keras.backend.set_session(mySession)
+
+print(tf.compat.v1.get_default_graph())
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
@@ -29,8 +40,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     )
     optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
     train_op = optimizer.minimize(loss)
-    sess = tf.Session()
-    sess.run(tf.global_variables_initializer())
+    # sess = tf.Session()
+    # sess.run(tf.global_variables_initializer())
 
     if weights_path:
         # Load Model using preferred save/restore method
@@ -47,7 +58,8 @@ def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
         train=train_op,
         loss=loss,
         learning=training_ph,
-        sess=sess,
+        # sess=sess,
+        sess=mySession,
         **wrapper_kwargs
     )
 

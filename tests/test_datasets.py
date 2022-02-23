@@ -8,6 +8,8 @@ import os
 log = logging.getLogger(__name__)
 
 
+# TODO Refactor this to a end-to-end  (For Seth)
+# Then only have small smoke test for CI
 @pytest.mark.parametrize(
     "name, batch_size, num_epochs, split, framework, xtype, xshape, ytype, yshape, dataset_size",
     [
@@ -236,7 +238,6 @@ def test_generator_construction(
         name, batch_size, num_epochs, split, framework, dataset_dir=armory_dataset_dir
     )
 
-    # TODO rename to x, y
     x, y = next(iter(dataset))
 
     # TODO:  These asserts will work with numpy framework because its ArmoryDataGenerator
@@ -318,6 +319,7 @@ def test_framework_equality(
 
 # TODO: Check if there is a reason not to have this here as I moved it from
 #  tests/test_docker/test_supported_datasets.py
+#  Notes: SUPPORTED_DATASETS is out of date...need to consider how to fix
 def test_supported_datasets():
     from armory.data import datasets
 
@@ -328,7 +330,7 @@ def test_supported_datasets():
 
 
 # TODO:  The Following were moved from test_docker/test_dataset.py because the don't have
-# anything to do with docker
+#  anything to do with docker
 
 
 @pytest.mark.parametrize(
@@ -397,10 +399,7 @@ def test_dataset_methods(dataset_method, is_valid, input1, input2):
             getattr(datasets, dataset_method)(input1)
 
 
-# TODO Below here are just copied from tests/test_docker/test_dataset.py.
-#  These still need to be cleaned up
-
-
+# TODO Clean up tests below here
 def test_filter_by_index():
     from armory.data import datasets
 
@@ -539,58 +538,6 @@ def test_parse_split_index_ordering(armory_dataset_dir):
 # TODO Talk to David to see why these parameters are used....could we just used the
 #  bits from the tests_datasets.py::test_generator_construction
 #  David says these can be removed once we do all the asserts
-# def test_mnist(armory_dataset_dir):
-#     from armory.data import datasets
-#     batch_size = 600
-#     for split, size in [("train", 60000), ("test", 10000)]:
-#         dataset = datasets.mnist(
-#             split=split, epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#         assert dataset.size == size
-#         assert dataset.batch_size == batch_size
-#         assert dataset.batches_per_epoch == (
-#             size // batch_size + bool(size % batch_size)
-#         )
-#
-#         x, y = dataset.get_batch()
-#         assert x.shape == (batch_size, 28, 28, 1)
-#         assert y.shape == (batch_size,)
-
-
-# def test_cifar(armory_dataset_dir):
-#     from armory.data import datasets
-#     batch_size = 500
-#     for split, size in [("train", 50000), ("test", 10000)]:
-#         dataset = datasets.cifar10(
-#             split=split, epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#         assert dataset.size == size
-#         assert dataset.batch_size == batch_size
-#         assert dataset.batches_per_epoch == (
-#             size // batch_size + bool(size % batch_size)
-#         )
-#
-#         x, y = dataset.get_batch()
-#         assert x.shape == (batch_size, 32, 32, 3)
-#         assert y.shape == (batch_size,)
-
-
-# def test_cifar100(armory_dataset_dir):
-#     from armory.data import datasets
-#     batch_size = 500
-#     for split, size in [("train", 50000), ("test", 10000)]:
-#         dataset = datasets.cifar100(
-#             split=split, epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#         assert dataset.size == size
-#         assert dataset.batch_size == batch_size
-#         assert dataset.batches_per_epoch == (
-#             size // batch_size + bool(size % batch_size)
-#         )
-#
-#         x, y = dataset.get_batch()
-#         assert x.shape == (batch_size, 32, 32, 3)
-#         assert y.shape == (batch_size,)
 
 
 def test_digit(armory_dataset_dir):
@@ -746,51 +693,6 @@ def test_librispeech(armory_dataset_dir):
         assert x.shape[0] == 1
         assert min_dim1 <= x.shape[1] <= max_dim1
         assert y.shape == (batch_size,)
-
-
-#
-# def test_resisc45(armory_dataset_dir):
-#     """
-#     Skip test if not locally available
-#     """
-#     from armory.data import datasets
-#     if not os.path.isdir(os.path.join(DATASET_DIR, "resisc45_split", "3.0.0")):
-#         pytest.skip("resisc45_split dataset not locally available.")
-#
-#     for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
-#         batch_size = 16
-#         epochs = 1
-#         dataset = datasets.resisc45(
-#             split=split, epochs=epochs, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#         assert dataset.size == size
-#         assert dataset.batch_size == batch_size
-#         assert dataset.batches_per_epoch == (
-#             size // batch_size + bool(size % batch_size)
-#         )
-#
-#         x, y = dataset.get_batch()
-#         assert x.shape == (batch_size, 256, 256, 3)
-#         assert y.shape == (batch_size,)
-#
-#
-# def test_resisc10(armory_dataset_dir):
-#     from armory.data import datasets
-#     for split, size in [("train", 5000), ("validation", 1000), ("test", 1000)]:
-#         batch_size = 16
-#         epochs = 1
-#         dataset = datasets.resisc10(
-#             split=split, epochs=epochs, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#         assert dataset.size == size
-#         assert dataset.batch_size == batch_size
-#         assert dataset.batches_per_epoch == (
-#             size // batch_size + bool(size % batch_size)
-#         )
-#
-#         x, y = dataset.get_batch()
-#         assert x.shape == (batch_size, 256, 256, 3)
-#         assert y.shape == (batch_size,)
 
 
 def test_librispeech_adversarial(armory_dataset_dir):
@@ -1109,31 +1011,3 @@ def test_variable_length(armory_dataset_dir):
         assert x_i.ndim == 1
         assert 1148 <= len(x_i) <= 18262
     assert y.shape == (batch_size,)
-
-
-#
-# def test_generator(armory_dataset_dir):
-#     batch_size = 600
-#     from armory.data import datasets
-#     for split, size in [("train", 60000)]:
-#         dataset = datasets.mnist(
-#             split=split, epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
-#         )
-#
-#         for x, y in dataset:
-#             assert x.shape == (batch_size, 28, 28, 1)
-#             assert y.shape == (batch_size,)
-#             break
-
-#
-# def test_numpy_generator(armory_dataset_dir):
-#     from armory.data import datasets
-#     dataset = datasets.mnist(
-#         split="train",
-#         epochs=1,
-#         batch_size=16,
-#         dataset_dir=armory_dataset_dir,
-#         framework="numpy",
-#     )
-#     x, y = dataset.get_batch()
-#     assert isinstance(x, np.ndarray)
