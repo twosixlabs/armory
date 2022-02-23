@@ -57,7 +57,7 @@
         "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.4",
+        "docker_image": "twosixarmory/pytorch:0.14.6",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
