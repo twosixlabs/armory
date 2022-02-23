@@ -13,7 +13,6 @@ run_check () {
       exit $need_format
   fi
 }
-#func(cmd):
 
 declare -a cmds=(
   "python -m black ./" \
@@ -28,51 +27,5 @@ do
    # do whatever on "$i" here
 done
 
+echo "All Checks completed succesfully!!\n"
 
-#set -e
-#echo "Performing Checks with black"
-#python -m black --check ./ > /dev/null 2>&1
-#need_format=$?
-#if [ $need_format -ne 0 ]
-#then
-#    python -m black ./
-#    echo Some Python files were formatted
-#    echo You need to do git add and git commit again
-#    exit $need_format
-#fi
-#
-#echo "Performing Checks with tools.format_json"
-#python -m tools.format_json --check > /dev/null 2>&1
-#need_format=$?
-#if [ $need_format -ne 0 ]
-#then
-#    python -m tools.format_json
-#    echo "Some JSON files were formatted"
-#    echo "You need to do git add and git commit again"
-#    exit $need_format
-#fi
-#
-#echo "Performing checks with yamllint"
-#yamllint --no-warnings ./ > /dev/null 2>&1
-#need_format=$?
-#if [ $need_format -ne 0 ]
-#then
-#    yamllint --no-warnings ./
-#    echo "Some YAML files were formatted"
-#    echo "You need to do git add and git commit again"
-#    exit $need_format
-#fi
-#
-##echo "Performing checks with yamllint"
-##yamllint --no-warnings ./
-#
-#echo "performing checks with flake8"
-#python -m flake8 . >/dev/null 2>&1
-#need_format=$?
-#if [ $need_format -ne 0 ]
-#then
-#    yamllint --no-warnings ./
-#    echo "Some YAML files were formatted"
-#    echo "You need to do git add and git commit again"
-#    exit $need_format
-#fi
