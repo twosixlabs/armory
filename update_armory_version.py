@@ -8,6 +8,8 @@ import re
 import glob
 import json
 
+# TODO: Go over this with team see if I am missing something
+
 
 def update_version(args):
 
