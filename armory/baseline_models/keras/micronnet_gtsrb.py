@@ -11,6 +11,8 @@ from tensorflow.keras.layers import Dense, Conv2D, Activation, Lambda
 from tensorflow.keras.layers import Flatten, BatchNormalization, MaxPooling2D
 from art.estimators.classification import KerasClassifier
 
+tf.compat.v1.disable_eager_execution()
+
 
 def make_model(**kwargs) -> tf.keras.Model:
     # Model is based on MicronNet: https://arxiv.org/abs/1804.00497v3
