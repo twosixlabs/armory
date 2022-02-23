@@ -81,6 +81,20 @@ jobs:
           pip install -r armory-base-requirements.txt
           pip install -e .
           pytest -s -k "not slow" -k "not docker_required" ./tests/
+  test-docker-build:
+    name: Run Docker build script
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory docker tests
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh -f all --tag dev --no-cache
+#          bash docker/build.sh -f tf2 --tag dev --no-cache
+#          docker run -w /armory-repo twosixarmory/armory-tf2:dev pytest -s -k "not slow" -k "not docker_required" ./tests/
   pytest-docker-tf2:
     name: Run Tests in docker using `armory-tf2` image
     runs-on: ubuntu-18.04

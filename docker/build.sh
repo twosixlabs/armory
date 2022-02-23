@@ -34,6 +34,7 @@ TAG="dev"
 ARMORY_VERSION="local"
 DRYRUN=false
 VERBOSE="--progress=auto"
+REPO="twosixarmory"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -64,6 +65,12 @@ while [[ $# -gt 0 ]]; do
       VERBOSE="--progress=plain"
       shift # past argument
       ;;
+    -r|--repo)
+      REPO="$2"
+      shift # past argument
+      shift # past value
+      ;;
+
     -h|--help)
       Help
       exit
@@ -121,7 +128,7 @@ for framework in "${FRAMEWORK[@]}"; do
   if $NO_CACHE; then
     CMD="$CMD --no-cache"
   else
-    CMD="$CMD --cache-from twosixarmory/armory-${framework}:${TAG}"
+    CMD="$CMD --cache-from ${REPO}/${framework}:${TAG}"
   fi
 
 
@@ -140,12 +147,12 @@ for framework in "${FRAMEWORK[@]}"; do
 
 
   CMD="$CMD "
-  CMD="$CMD -t twosixarmory/armory-${framework}:${TAG}"
+  CMD="$CMD -t ${REPO}/${framework}:${TAG}"
   CMD="$CMD $VERBOSE"
   CMD="$CMD ."
 
-  if [ $framework == "tf1" ] || [ $framework == "pytorch-deepspeech" ]; then
-    echo "Frameworks tf1 and deepspeech are not supported at this time"
+  if [ $framework == "tf1" ]; then
+    echo "Framework tf1 is deprecated....please use tf2"
   else
     if $DRYRUN; then
       echo "Would have Executed: "
