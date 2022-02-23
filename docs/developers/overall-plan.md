@@ -58,3 +58,50 @@ well structured Python classes. A clear example is:
         github_token: str
         s3_id: str
         s3_secret: str
+
+# toward the Armory library
+
+There is a substantial part of this Armory rework devoted to changing the model of
+armory operation from a framework to a Python library. Clean definition of internal
+interfaces has been peeking out through the sections above. The Launcher becomes
+a smaller, well-defined means of reading Experiment parameters and Configuration
+flags and passing them to Evaluate leading to pseudo-code like:
+
+    environment = get_configuration(tin-path)
+    experiment = read_experiment(path)
+    results = evaluate(environment, experiment)
+
+The first advantage is that armory evaluations are now composable and programmable
+with standard Python.  The open design question is how this obvious calling sequence
+can be extended so that there are useful interactions that an evaluator could have
+with the evaluation engine. But, even if we find no additional mechanisms, clearer
+segmentation of the code into initialization and evaluation will make it more
+comprehensible and maintainable.
+
+# testability
+
+Segregating the platform dependent and independent parts increases testability.
+We have already been making some extant tests platform-independent, and
+having pure functions like `evaluate(experiment, context)` only speeds this.
+
+This means, in addition to better testing, that developer tests become feasible
+without building out new containers and all the time and complexity needed
+to run them. A developer can run
+
+    pytest -m quick
+
+to get a rapid check that no breaking changes were made. It is also easier
+to write tests when you don't have to wait 30+ minutes for the CI system to
+fire up so much infrastructure.
+
+
+## things to think about more
+
+1. Should experiments contain platform/sysconfig parameters. For example, should
+  `sysconfig.mode=docker` belong in the experiment? Put another way, should any system
+  parameter (e.g. --gpus) be configurable at by default, experiment, environment or
+  command argument regardless of their natural locus.
+2. Find an easy way for Launcher to pass the evaluation request to a container
+   running elsewhere. This actually gets us some pretty big benefit if it can be
+   done simply. Need to run 9 different naive variant tests? Send it to a cluster
+   and get your results in 1/9th the time.
