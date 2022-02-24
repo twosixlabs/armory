@@ -14,7 +14,7 @@ FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 # Temporary fix for broken nvidia package checksum
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
-
+# Basic Apt-get Bits
 RUN apt-get -y -qq update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y \
@@ -40,6 +40,8 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linu
 ENV PATH=/opt/conda/bin:$PATH
 
 # conda installations ordered by channel
+
+# TODO Figure out why we need to support this and `armory-base-requirements` separately.
 
 # Conda Install for Channel: pytorch
 RUN /opt/conda/bin/conda install \
@@ -96,8 +98,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     coloredlogs \
     docker
 
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    adversarial-robustness-toolbox==1.9.1
+# Removing ART from Base container
+#RUN /opt/conda/bin/pip install --no-cache-dir \
+#    adversarial-robustness-toolbox==1.9.1
     # tensorflow-datasets version 4 has breaking changes
 # dill==0.3.4 \
 # tensorflow-datasets==3.2.1 \

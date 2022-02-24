@@ -102,7 +102,7 @@ fi
 
 if [ $FRAMEWORK == "all" ]; then
   echo "setting all frameowks"
-  FRAMEWORK=("base" "pytorch" "tf1" "tf2" "pytorch-deepspeech")
+  FRAMEWORK=("base" "pytorch" "tf2" "pytorch-deepspeech")
 fi
 
 # Parse Version
@@ -110,6 +110,8 @@ internal_armory_version=$(python -m armory --version)
 if [[ $internal_armory_version == *"-dev" ]]; then
     # Deprecation. Remove for 0.14
     echo "ERROR: Armory version $internal_armory_version ends in '-dev'. This is no longer supported as of 0.13.0"
+    # TODO Figure out if this is best way to handle this
+    #  I dont like that it stops the terminal session
     exit 1
 fi
 

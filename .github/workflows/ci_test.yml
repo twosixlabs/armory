@@ -93,8 +93,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           bash docker/build.sh -f all --tag dev --no-cache
-#          bash docker/build.sh -f tf2 --tag dev --no-cache
-#          docker run -w /armory-repo twosixarmory/armory-tf2:dev pytest -s -k "not slow" -k "not docker_required" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
+          docker run -w /armory-repo/ twosixarmory/tf2 pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
   pytest-docker-tf2:
     name: Run Tests in docker using `armory-tf2` image
     runs-on: ubuntu-18.04

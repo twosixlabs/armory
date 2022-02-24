@@ -11,6 +11,7 @@ from armory import paths
 tf.disable_eager_execution()
 # TODO Update when ART is fixed with default_graph thing
 
+
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):
     input_ph = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
     labels_ph = tf.placeholder(tf.int32, shape=[None, 10])

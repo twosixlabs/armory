@@ -1,22 +1,27 @@
 ARG image_tag
-FROM twosixarmory/armory-base:${image_tag} as armory-base
+FROM twosixarmory/base:${image_tag} as armory-base
 ARG armory_version
 ARG armory_build_type
+
+RUN /opt/conda/bin/pip install --no-cache-dir \
+    adversarial-robustness-toolbox==1.9.1
 
 FROM armory-base AS armory-local
 RUN echo "Building Armory from local source"
 WORKDIR /armory-repo/
-COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt .
-COPY pytest.ini .
-COPY ./tests ./tests/.
-COPY ./scenario_configs ./scenario_configs/.
-COPY ./armory ./armory/.
+COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt /armory-repo/
+COPY pytest.ini /armory-repo/
+COPY ./tests /armory-repo/tests/
+COPY ./scenario_configs /armory-repo/scenario_configs/
+COPY ./armory /armory-repo/armory/
 RUN /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
+RUN yes "" | armory configure
 
 WORKDIR /workspace
 
 FROM armory-base as armory-prebuilt
 RUN echo "Building Armory from prebuilt version: $armory_version"
 RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+RUN yes "" | armory configure
 
 WORKDIR /workspace

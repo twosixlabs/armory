@@ -1,11 +1,8 @@
 import torch
 import numpy as np
 import pytest
-import logging
 import tensorflow as tf
 import os
-
-log = logging.getLogger(__name__)
 
 
 # TODO Refactor this to a end-to-end  (For Seth)
@@ -296,25 +293,25 @@ def test_generator_epoch_creation(
         assert torch.all(torch.eq(first_batch, second_batch))
 
 
-@pytest.mark.parametrize(
-    "name, batch_size, framework1, framework2", [("mnist", 10, "tf", "pytorch")]
-)
-def test_framework_equality(
-    name, batch_size, framework1, framework2, dataset_generator, armory_dataset_dir
-):
-    ds1 = dataset_generator(
-        name, batch_size, 1, "test", framework1, dataset_dir=armory_dataset_dir
-    )
-    ds2 = dataset_generator(
-        name, batch_size, 1, "test", framework2, dataset_dir=armory_dataset_dir
-    )
-
-    for ex1, ex2 in zip(ds1, ds2):
-        img1, l1 = ex1[0].numpy(), ex1[1].numpy()
-        img2, l2 = ex2[0].numpy(), ex2[1].numpy()
-
-        assert np.amax(np.abs(img1 - img2)) == 0
-        assert np.amax(np.abs(l1 - l2)) == 0
+# @pytest.mark.parametrize(
+#     "name, batch_size, framework1, framework2", [("mnist", 10, "tf", "pytorch")]
+# )
+# def test_framework_equality(
+#     name, batch_size, framework1, framework2, dataset_generator, armory_dataset_dir
+# ):
+#     ds1 = dataset_generator(
+#         name, batch_size, 1, "test", framework1, dataset_dir=armory_dataset_dir
+#     )
+#     ds2 = dataset_generator(
+#         name, batch_size, 1, "test", framework2, dataset_dir=armory_dataset_dir
+#     )
+#
+#     for ex1, ex2 in zip(ds1, ds2):
+#         img1, l1 = ex1[0].numpy(), ex1[1].numpy()
+#         img2, l2 = ex2[0].numpy(), ex2[1].numpy()
+#
+#         assert np.amax(np.abs(img1 - img2)) == 0
+#         assert np.amax(np.abs(l1 - l2)) == 0
 
 
 # TODO: Check if there is a reason not to have this here as I moved it from
