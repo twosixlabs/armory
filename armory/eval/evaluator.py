@@ -89,9 +89,7 @@ class Evaluator(object):
                         "If you'd like to continue working on the developer image please "
                         "build it from source on your machine as described here:\n"
                         "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                        f"bash docker/build.sh {name} dev\n"
-                        "OR\n"
-                        "bash docker/build.sh all dev"
+                        "bash docker/build.sh --framework all --tag dev"
                     )
                 else:
                     log.error(f"Image {image_name} could not be downloaded")
@@ -245,9 +243,9 @@ class Evaluator(object):
                         validate_config=validate_config,
                     )
             except KeyboardInterrupt:
-                log.warning("Keyboard interrupt caught")
+                log.warning("keyboard interrupt caught")
             finally:
-                log.warning("Shutting down container")
+                log.debug("shutting down container")
                 self.manager.stop_armory_instance(runner)
         except requests.exceptions.RequestException as e:
             log.exception("Starting instance failed.")
