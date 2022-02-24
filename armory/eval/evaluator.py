@@ -247,7 +247,7 @@ class Evaluator(object):
             except KeyboardInterrupt:
                 log.warning("Keyboard interrupt caught")
             finally:
-                log.warning("Shutting down container")
+                log.trace("Shutting down container")
                 self.manager.stop_armory_instance(runner)
         except requests.exceptions.RequestException as e:
             log.exception("Starting instance failed.")

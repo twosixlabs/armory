@@ -45,11 +45,6 @@ default_message_filters = {
 }
 
 
-# need to instantiate the filters early, replacing the default
-log.remove()
-log.add(sys.stdout, level="TRACE", filter=default_message_filters)
-
-
 filters = default_message_filters
 # need to store filter overrides because we have to pass them to scenarios.main
 added_filters = {}
@@ -68,14 +63,37 @@ def is_debug() -> bool:
     return False
 
 
-def set_armory_level(level: str):
-    update_filters(f"armory:{level}")
+def format_log(record) -> str:
+    """loads the record.extra with a friendly elapsed and return a format using it"""
+    record["extra"]["duration"] = duration_string(record["elapsed"])
+    message = (
+        "{time:YYYY-MM-DD HH:mm:ss} {extra[duration]:>3} "
+        "<level>{level:<8}</level> "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
+        "{message}\n"
+    )
+    return message
+
+
+def duration_string(dt: datetime.timedelta) -> str:
+    seconds = int(dt.total_seconds())
+    periods = [("d", 60 * 60 * 24), ("h", 60 * 60), ("m", 60), ("s", 1)]
+
+    duration = ""
+    for period_name, period_seconds in periods:
+        if seconds > period_seconds:
+            period_value, seconds = divmod(seconds, period_seconds)
+            duration += f"{period_value}{period_name}"
+
+    return duration if duration else "0s"
 
 
 def update_filters(specs: List[str], armory_debug=None):
     """add or replace specs of the form module:level and restart the 0th sink"""
     global filters
     global logfile_directory
+
+    log.info(f"update_filters {specs} {armory_debug}")
 
     if logfile_directory is not None:
         log.error("cannot update log filters once make_logfiles is called. ignoring.")
@@ -105,34 +123,9 @@ def update_filters(specs: List[str], armory_debug=None):
             log.error(f"unknown log level {spec} ignored")
             continue
 
-    log.trace(f"setting {filters}")
     log.remove()
-    log.add(sys.stdout, level="TRACE", filter=filters)
-
-
-def format_log(record) -> str:
-    """loads the record.extra with a friendly elapsed and return a format using it"""
-    record["extra"]["duration"] = duration_string(record["elapsed"])
-    message = (
-        "{time:YYYY-MM-DD HH:mm:ss} {extra[duration]:>3} "
-        "<level>{level:<8}</level> "
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
-        "{message}\n"
-    )
-    return message
-
-
-def duration_string(dt: datetime.timedelta) -> str:
-    seconds = int(dt.total_seconds())
-    periods = [("d", 60 * 60 * 24), ("h", 60 * 60), ("m", 60), ("s", 1)]
-
-    duration = ""
-    for period_name, period_seconds in periods:
-        if seconds > period_seconds:
-            period_value, seconds = divmod(seconds, period_seconds)
-            duration += f"{period_value}{period_name}"
-
-    return duration if duration else "0s"
+    add_sink(sys.stdout, colorize=True)
+    log.trace(f"set {filters}")
 
 
 def add_sink(sink, colorize=True):
@@ -229,3 +222,7 @@ if __name__ == "__main__":
     update_filters(["s3transfer:DEBUG"])
     log.info("logging s3:DEBUG")
     library_messages()
+
+# need to instantiate the filters early, replacing the default
+log.remove()
+add_sink(sys.stdout)

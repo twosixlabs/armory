@@ -721,7 +721,7 @@ def exec(command_args, prog, description):
         sys.exit(1)
 
     args = parser.parse_args(armory_args)
-    armory.logs.update_filters(args.log_level)
+    armory.logs.update_filters(args.log_level, args.debug)
 
     config = {"sysconfig": {"docker_image": args.docker_image}}
     # Config
