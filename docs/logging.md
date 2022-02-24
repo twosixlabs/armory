@@ -36,7 +36,7 @@ user of the library, that's all you need to know.
 The armory.logs system always logs to the console, this is initialized at import
 time.  The module also writes to two files called
 
-    color-log.txt
+    colored-log.txt
     armory-log.txt
 
 where the first is a direct duplicate of the console, and the second is identical
@@ -47,67 +47,64 @@ time so the log files are created in the configured `output_dir` at the start.
 
 When armory knows the name of that timestamped directory it calls
 
-    armory.logs.move_log_files(timestamp_directory)
+    armory.logs.make_logfiles(timestamp_directory)
 
-This operation will fail with a log message if `timestamp_directory` is not on the same
-filesystem as `output_dir`.
+TODO: The output directory needs to be created earlier in the armory initialization
+so that the logfile can start near the top of run.
 
 ## logging level specification
 
 As with the standard `logging` module, armory log messages are conditionally emitted
 based on their level. Messages sent by armory will be logged at the INFO level
-by default, or DEBUG level if `--debug` is specified.
+by default.
 
 But armory.logs also handles messages sent by libraries that we call such as: art,
 tensorflow, boto, etc. The armory.logs module has a filter that is applied before
 emitting messages and is configured as a dictionary mapping the originating module name
 to level such as:
 
-    filters = {
-        'art': 'DEBUG',
-        'tensorflow': 'INFO',
-        'boto': 'WARN',
-        'h5py': False,
+    default_message_filters = {
+        "": "TRACE"
+        "armory": "INFO",
+        "art": "INFO",
+        "docker": "INFO",
+        "botocore": "WARNING",
+        "s3transfer": "INFO",
+        "urllib3": "INFO",
+        "absl": False,
+        "h5py": False,
+        "avro": False,
     }
 
-This would pass messages from art and tensorflow as expected. In this example all
-messages from h5py are dropped. The boto3 library is a notable case, its messages
-originate from `botocore` not `boto3` and its debug level is almost criminally verbose.
-Because the different libraries have different useful levels, armory.logs uses a simple
-scheme for configuration.
+which is how the logger is configured at the start. The `""` module is special, and
+covers all cases which aren't otherwise specified. So we start with printing all
+messages at TRACE and higher (which means all). For messages from armory, art, and
+docker, INFO is fine. The botocore and s3transfer modules are crazy chatty so we raise
+the threshold for them. I don't know that I've ever heard mention of debug tracing in
+absl, h5py, or avro so I've disabled any messages from them.
 
-There is a set of default filters set at initialization. These are overridden
-by:
+I'm not sure these are good defaults, so I am hoping the other armory devs will
+give opinions.
 
-    user_filters = {
-        'art': 'DEBUG',
-        'tensorflow': False
-    }
-    armory.logs.change_filters(user_filters)
+## armory --log-level option
 
-which will override the defaults only for the specified user_filters, leaving
-the other defaults as they were. On the armory command line, this set of
-user specified filters would appear as
+The command
 
-    armory run --log-level art:debug --log-level tensorflow:none
+    armory run --log-level armory:debug --log-level art:debug ...
 
-where None, none, and false are all synonyms for False. If we get good defaults
-in place, `:none` should be an uncommon command option.
+overrides the default log-levels for armory and art.  Because argparse allows
+unique option substrings to be used, this command can be written more briefly
+as
 
-### drop --debug ???
+    armory run --log debug --log art:debug ...
 
-The way it currently works, `--debug` sets the lower bound on what the logger
-will emit regardless of filter (--log-level) specifications. So the command
+as a convenience omitting the `module:` part of the level assumes `armory:`.
+The `--debug` option become a deprecated alias for `--log-level armory:debug`.
 
-    armory run --log-level art:debug
+The module names are done with a simple text match, so if you see too many messages
+like
 
-would not emit art debug messages because the global level defaults to INFO.
-This is pretty confusing.
+    2022-02-24 15:31:19  4s INFO     art.estimators.classification.pytorch:get_layers:986 ...
 
-Better might be
-
-    armory run --log-level debug
-
-where the no-colon argument sets the global level.
-
-TODO: develop this idea more
+you can adjust that down with `--log art.estimators:warning` or the hyper-specific
+`--log art.estimators.classification:warning`.
