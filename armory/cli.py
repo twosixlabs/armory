@@ -80,8 +80,9 @@ def run(experiment, interactive):
 def setup(default):
     """Armory Setup - Setup the Armory Environment / Parameters
     """
-    raise NotImplementedError("Still Working")
-    # TODO Update this to do the old `configure` bits
+    from armory.environment import setup_environment
+
+    setup_environment()
 
 
 @cli.command()

@@ -7,7 +7,7 @@ import docker
 
 import armory
 from armory import paths
-from armory.logs import log as logger
+from armory.logs import log
 
 
 class ArmoryInstance(object):
@@ -55,17 +55,21 @@ class ArmoryInstance(object):
             container_args["user"] = user
         if envs:
             container_args["environment"] = envs
+        log.info("Running Armory in Container using Image: {}\n".format(image_name))
+        msg = "\nContainer Args:\n"
+        msg += "\n".join(["\t{}: {}".format(k, v) for k, v in container_args.items()])
+        log.debug(msg)
         self.docker_container = self.docker_client.containers.run(
             image_name, **container_args
         )
 
-        logger.info(f"ARMORY Instance {self.docker_container.short_id} created.")
+        log.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
     def exec_cmd(self, cmd: str, user="", expect_sentinel=True) -> int:
         # We would like to check the return code to see if the command ran cleanly,
         #  but `exec_run()` cannot both return the code and stream logs
         # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
-        log = self.docker_container.exec_run(
+        container_log = self.docker_container.exec_run(
             cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
         )
 
@@ -73,11 +77,11 @@ class ArmoryInstance(object):
         # but threading may cause certain warning messages to be printed during container shutdown
         #  ie after the sentinel
         sentinel_found = False
-        for out in log.output:
+        for out in container_log.output:
             output = out.decode().strip()
             if not output:  # skip empty lines
                 continue
-            # this looks absurd, but in some circumstances log.output will combine
+            # this looks absurd, but in some circumstances container_log.output will combine
             #  outputs from the container into a single string
             # eg, print(a); print(b) is delivered as 'a\r\nb'
             for inner_line in output.splitlines():
@@ -94,10 +98,10 @@ class ArmoryInstance(object):
         if not expect_sentinel:
             return 0
         if sentinel_found:
-            logger.info("Command exited cleanly")
+            log.info("Command exited cleanly")
             return 0
         else:
-            logger.error("Command did not finish cleanly")
+            log.error("Command did not finish cleanly")
             return 1
 
     def __del__(self):
@@ -126,5 +130,5 @@ class ManagementInstance(object):
         return temp_inst
 
     def stop_armory_instance(self, instance: ArmoryInstance) -> None:
-        logger.info(f"Stopping instance: {instance.docker_container.short_id}")
+        log.info(f"Stopping instance: {instance.docker_container.short_id}")
         del self.instances[instance.docker_container.short_id]
