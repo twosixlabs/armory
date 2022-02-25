@@ -77,7 +77,7 @@ class Evaluator(object):
                 docker_api.pull_verbose(docker_client, image_name)
             except docker.errors.NotFound:
                 if image_name in images.ALL:
-                    name = image_name.lstrip(f"{images.USER}/").rstrip(
+                    image_name.lstrip(f"{images.USER}/").rstrip(
                         f":{armory.__version__}"
                     )
                     raise ValueError(
