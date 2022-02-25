@@ -80,7 +80,7 @@ jobs:
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
           pip install -e .
-          pytest -k "not docker_required" -k "unit" ./tests/
+          pytest -k "not docker_required and unit" ./tests/
   pytest-docker-all-unit:
     name: Run Docker build script
     runs-on: ubuntu-18.04
@@ -93,9 +93,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           bash docker/build.sh -f all --tag dev --no-cache
-          docker run -w /armory-repo/ twosixarmory/pytorch pytest -k "not docker_required" -k "unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/tf2 pytest -k "not docker_required" -k "unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -k "not docker_required" -k "unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/tf2 pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -k "not docker_required and unit" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04
