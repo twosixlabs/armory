@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 
+set -e
+
 run_check () {
   echo "Running Check: $@"
-  "$@" > /dev/null 2>&1
+  "$@" > /dev/null
+  echo "Result"
   need_format=$?
+  echo "Need Format: $need_format"
   if [ $need_format -ne 0 ]
   then
-      "$@"
+      exec "$@"
       echo Some Python files were formatted
       echo You need to run \`git add ...\`
       echo and then \`git commit ...\` again
-      return $need_format
+      echo "Exiting with $need_format"
+      exit $need_format
   fi
 }
 

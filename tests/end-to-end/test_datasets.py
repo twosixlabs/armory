@@ -4,6 +4,7 @@ import pytest
 import tensorflow as tf
 import os
 from armory.data import datasets
+from armory.data import adversarial_datasets
 
 
 @pytest.mark.parametrize(
@@ -257,7 +258,6 @@ def test_generator_construction(
 
 
 def test_digit(armory_dataset_dir):
-    from armory.data import datasets
 
     epochs = 1
     batch_size = 1
@@ -285,7 +285,6 @@ def test_digit(armory_dataset_dir):
 
 
 def test_imagenet_adv(armory_dataset_dir):
-    from armory.data import adversarial_datasets
 
     batch_size = 100
     total_size = 1000
@@ -309,7 +308,6 @@ def test_imagenet_adv(armory_dataset_dir):
 
 
 def test_german_traffic_sign(armory_dataset_dir):
-    from armory.data import datasets
 
     for split, size in [("train", 39209), ("test", 12630)]:
         batch_size = 1
@@ -329,7 +327,6 @@ def test_german_traffic_sign(armory_dataset_dir):
 
 
 def test_imagenette(armory_dataset_dir):
-    from armory.data import datasets
 
     if not os.path.isdir(
         os.path.join(armory_dataset_dir, "imagenette", "full-size", "0.1.0")
@@ -354,7 +351,6 @@ def test_imagenette(armory_dataset_dir):
 
 
 def test_ucf101(armory_dataset_dir):
-    from armory.data import datasets
 
     if not os.path.isdir(
         os.path.join(armory_dataset_dir, "ucf101", "ucf101_1", "2.0.0")
@@ -379,7 +375,6 @@ def test_ucf101(armory_dataset_dir):
 
 
 def test_librispeech(armory_dataset_dir):
-    from armory.data import datasets
 
     if not os.path.exists(
         os.path.join(armory_dataset_dir, "librispeech_dev_clean_split")
@@ -412,7 +407,6 @@ def test_librispeech(armory_dataset_dir):
 
 
 def test_librispeech_adversarial(armory_dataset_dir):
-    from armory.data import adversarial_datasets
 
     if not os.path.exists(
         os.path.join(armory_dataset_dir, "librispeech_adversarial", "1.0.0")
@@ -444,7 +438,6 @@ def test_librispeech_adversarial(armory_dataset_dir):
 
 
 def test_resisc45_adversarial_224x224(armory_dataset_dir):
-    from armory.data import adversarial_datasets
 
     size = 225
     split = "adversarial"
@@ -471,7 +464,6 @@ def test_resisc45_adversarial_224x224(armory_dataset_dir):
 
 
 def test_coco2017(armory_dataset_dir):
-    from armory.data import datasets
 
     if not os.path.exists(os.path.join(armory_dataset_dir, "coco", "2017", "1.1.0")):
         pytest.skip("coco2017 dataset not downloaded.")
@@ -494,7 +486,6 @@ def test_coco2017(armory_dataset_dir):
 
 
 def test_dapricot_dev():
-    from armory.data import adversarial_datasets
 
     split_size = 27
     split = "small"
@@ -517,7 +508,6 @@ def test_dapricot_dev():
 
 
 def test_dapricot_test():
-    from armory.data import adversarial_datasets
 
     split_size = 108
     split = "small"
@@ -540,7 +530,6 @@ def test_dapricot_test():
 
 
 def test_carla_obj_det_train():
-    from armory.data import datasets
 
     dataset = datasets.carla_obj_det_train(split="train")
     assert dataset.size == 4727
@@ -565,7 +554,6 @@ def test_carla_obj_det_train():
 
 
 def test_carla_obj_det_dev():
-    from armory.data import adversarial_datasets
 
     ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
@@ -598,7 +586,6 @@ def test_carla_obj_det_dev():
 
 
 def test_carla_obj_det_test():
-    from armory.data import adversarial_datasets
 
     ds_rgb = adversarial_datasets.carla_obj_det_test(split="test", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_test(split="test", modality="depth")
@@ -633,7 +620,6 @@ def test_carla_obj_det_test():
 
 
 def test_carla_video_tracking_dev():
-    from armory.data import adversarial_datasets
 
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
     assert dataset.size == 20
@@ -654,7 +640,6 @@ def test_carla_video_tracking_dev():
 
 
 def test_carla_video_tracking_test():
-    from armory.data import adversarial_datasets
 
     dataset = adversarial_datasets.carla_video_tracking_test(split="test")
     assert dataset.size == 20
@@ -675,7 +660,6 @@ def test_carla_video_tracking_test():
 
 
 def test_ucf101_adversarial_112x112(armory_dataset_dir):
-    from armory.data import adversarial_datasets
 
     if not os.path.isdir(
         os.path.join(
@@ -713,7 +697,6 @@ def test_variable_length(armory_dataset_dir):
     """
     size = 1350
     batch_size = 4
-    from armory.data import datasets
 
     dataset = datasets.digit(
         split="train", epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
