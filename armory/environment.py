@@ -7,6 +7,7 @@ ARMORY_VERSION = "ARMORY_VERSION"
 
 from pydantic import BaseModel, validator
 import os
+from armory.logs import log
 
 
 class EnvironmentConfiguration(BaseModel):
@@ -78,6 +79,19 @@ class EnvironmentConfiguration(BaseModel):
         if not os.path.exists(dname):
             raise ValueError(f"Invalid TEMP Directory: {dname}")
         return dname
+
+    @classmethod
+    def load(cls, overrides=[]):
+        log.info("Loading Armory Environment")
+        if len(overrides) != 0:
+            overrides = {j[0]:j[1] for j in [i.split("=") for i in overrides]}
+        args = {}
+        for key in cls.__fields__.keys():
+            args[key] = os.environ.get(key,None)
+            if key in overrides:
+                log.info(f"Overriding {key} with {overrides[key]}")
+                args[key] = overrides[key]
+        return cls(**args)
 
 
 def ask_yes_no(prompt, msg):

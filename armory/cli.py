@@ -84,6 +84,16 @@ def setup(default):
 
     setup_environment()
 
+@cli.command()
+@click.option("--override", default=[], multiple=True)
+def check(override):
+    """Armory Check - Check basic Armory Setup
+    """
+    from armory.environment import EnvironmentConfiguration
+    env = EnvironmentConfiguration.load(overrides=override)
+
+    print(f"Armory Environment: \n {env}")
+
 
 @cli.command()
 @click.option("-d", "--default", is_flag=True, help="Use Defaults")
