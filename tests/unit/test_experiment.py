@@ -7,4 +7,4 @@ def test_scenario_read(file):
     with open(file, "r") as f:
         exp = Experiment.parse_raw(f.read())
     print(exp)
-    assert exp.model.fit == True
+    assert exp.model.fit is True

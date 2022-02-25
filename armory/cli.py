@@ -3,6 +3,7 @@ from armory.logs import log
 import armory.logs
 import click
 from armory.eval import Evaluator
+import sys
 
 
 def setup_log(verbose, log_level):
@@ -21,7 +22,7 @@ def setup_log(verbose, log_level):
         armory.logs.update_filters([f"armory:{level}"])
     else:
         print("Setting Log Level to Default")
-        armory.logs.update_filters([f"armory:INFO"])
+        armory.logs.update_filters(["armory:INFO"])
 
 
 def execute_rig(config, root, interactive, jupyter_port, command):
@@ -111,14 +112,14 @@ def launch(docker_image, interactive, jupyter_port, gpus, root):
         config={
             "sysconfig": {
                 "docker_image": docker_image,
-                "use_gpu": True if gpus is not "none" else False,
+                "use_gpu": True if gpus != "none" else False,
                 "gpus": gpus,
             }
         },
         root=root,
         interactive=interactive,
         jupyter_port=jupyter_port,
-        command=true,
+        command="true # No-op",
     )
 
 
@@ -139,7 +140,7 @@ def exec(docker_image, command, gpus, root):
         config={
             "sysconfig": {
                 "docker_image": docker_image,
-                "use_gpu": True if gpus is not "none" else False,
+                "use_gpu": True if gpus != "none" else False,
                 "gpus": gpus,
             }
         },
