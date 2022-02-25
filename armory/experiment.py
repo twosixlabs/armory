@@ -128,9 +128,11 @@ class Experiment(BaseModel):
 
     @classmethod
     def load(cls, filename):
-        valid_ext = (".aexp",".json")
+        valid_ext = (".aexp", ".json")
         if os.path.splitext(filename)[1] not in valid_ext:
-            raise ValueError(f"Experiment File: {filename} has invalid extension....must be in {valid_ext}")
+            raise ValueError(
+                f"Experiment File: {filename} has invalid extension....must be in {valid_ext}"
+            )
 
         if not os.path.exists(filename):
             raise ValueError(f"Experiment File: {filename} does not exist!")

@@ -74,7 +74,7 @@ def run(experiment, interactive):
     log.info(f"Executing Experiment: {experiment}")
     click.echo(f"Interactive: {interactive}")
     raise NotImplementedError("Still Working")
-    #TODO Fix this
+    # TODO Fix this
 
 
 @cli.command()
@@ -92,11 +92,12 @@ def setup(default):
 def check(override):
     """Armory Check - Check basic Armory Setup
     """
-    from armory.environment import EnvironmentConfiguration
+    from armory.environment import EnvironmentParameters
 
-    env = EnvironmentConfiguration.load(overrides=override)
+    env = EnvironmentParameters.load(overrides=override)
 
     print(f"Armory Environment: \n {env}")
+
 
 @cli.command()
 @click.argument("experiment")
@@ -104,9 +105,9 @@ def validate(experiment):
     """Armory Check - Check basic Armory Setup
     """
     from armory.experiment import Experiment
+
     exp = Experiment.load(experiment)
     print(f"Armory Experiment: \n {exp}\n\n is valid!!")
-
 
 
 @cli.command()
@@ -116,6 +117,7 @@ def clean(default):
     """
     raise NotImplementedError("Still Working")
     # TODO Update this to do the old `clean` bits
+
 
 @cli.command()
 def download():
@@ -186,4 +188,3 @@ def exec(docker_image, command, gpus, root):
 
 if __name__ == "__main__":
     cli()
-

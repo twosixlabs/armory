@@ -10,7 +10,7 @@ import os
 from armory.logs import log
 
 
-class EnvironmentConfiguration(BaseModel):
+class EnvironmentParameters(BaseModel):
     """Armory Environment Configuration Context
 
     This Dataclass contains the environmental references
@@ -142,6 +142,10 @@ def get_value(msg, default_value, type, choices=None):
 
 
 def save_profile(profile_dict, filename):
+    #TODO Refactor this to not write as ENV Vars
+    # just go to .armory/profile.yml
+    # Then search code for all refs to os.environ
+    # and fix up
     if os.path.exists(filename):
         print(f"WARNING: Profile File: {filename} already exists...overwriting!!")
         response = ask_yes_no(None, "Are you sure?")
@@ -158,6 +162,7 @@ def save_profile(profile_dict, filename):
 def setup_environment():
     main_dir = os.path.expanduser(os.path.join("~", ".armory"))
     profile = os.path.join(main_dir, "armory_profile")
+    #TODO change to lower case 
     DEFAULTS = dict(
         ARMORY_CONFIGURATION_DIRECTORY=(main_dir, "dir", None),
         ARMORY_GITHUB_TOKEN=(None, "str", None),
