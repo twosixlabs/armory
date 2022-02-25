@@ -105,4 +105,4 @@ jobs:
       - name: install test requirements
         run: pip install -r test-requirements.txt
       - name: Run commit hooks
-        run: . tools/pre-commit.sh
+        run: bash tools/pre-commit.sh
