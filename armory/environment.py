@@ -142,7 +142,7 @@ def get_value(msg, default_value, type, choices=None):
 
 
 def save_profile(profile_dict, filename):
-    #TODO Refactor this to not write as ENV Vars
+    # TODO Refactor this to not write as ENV Vars
     # just go to .armory/profile.yml
     # Then search code for all refs to os.environ
     # and fix up
@@ -162,7 +162,7 @@ def save_profile(profile_dict, filename):
 def setup_environment():
     main_dir = os.path.expanduser(os.path.join("~", ".armory"))
     profile = os.path.join(main_dir, "armory_profile")
-    #TODO change to lower case 
+    # TODO change to lower case
     DEFAULTS = dict(
         ARMORY_CONFIGURATION_DIRECTORY=(main_dir, "dir", None),
         ARMORY_GITHUB_TOKEN=(None, "str", None),
