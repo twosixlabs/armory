@@ -93,9 +93,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           bash docker/build.sh -f all --tag dev --no-cache
-          docker run -w /armory-repo/ twosixarmory/pytorch pytest -k "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/tf2 pytest -k "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and unit" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04
