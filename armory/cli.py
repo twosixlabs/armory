@@ -73,6 +73,8 @@ def run(experiment, interactive):
     """
     log.info(f"Executing Experiment: {experiment}")
     click.echo(f"Interactive: {interactive}")
+    raise NotImplementedError("Still Working")
+    #TODO Fix this
 
 
 @cli.command()
@@ -84,15 +86,27 @@ def setup(default):
 
     setup_environment()
 
+
 @cli.command()
 @click.option("--override", default=[], multiple=True)
 def check(override):
     """Armory Check - Check basic Armory Setup
     """
     from armory.environment import EnvironmentConfiguration
+
     env = EnvironmentConfiguration.load(overrides=override)
 
     print(f"Armory Environment: \n {env}")
+
+@cli.command()
+@click.argument("experiment")
+def validate(experiment):
+    """Armory Check - Check basic Armory Setup
+    """
+    from armory.experiment import Experiment
+    exp = Experiment.load(experiment)
+    print(f"Armory Experiment: \n {exp}\n\n is valid!!")
+
 
 
 @cli.command()
@@ -102,6 +116,13 @@ def clean(default):
     """
     raise NotImplementedError("Still Working")
     # TODO Update this to do the old `clean` bits
+
+@cli.command()
+def download():
+    """Armory Download - Use Armory to Download things
+    """
+    raise NotImplementedError("Still Working")
+    # TODO Implement this
 
 
 @cli.command()
@@ -147,6 +168,7 @@ def exec(docker_image, command, gpus, root):
         f"Armory Executing command `{command}` using Docker Image: {docker_image} using "
         f"gpus: {gpus} and root: {root}"
     )
+
     execute_rig(
         config={
             "sysconfig": {
@@ -165,72 +187,3 @@ def exec(docker_image, command, gpus, root):
 if __name__ == "__main__":
     cli()
 
-#
-# def run_subparser(subp, parents=[]):
-#     p2 = subp.add_parser("run", description=am.bob.__doc__)
-#     p2.add_argument("--bob-arg", default=False, action="store_true")
-#     p2.set_defaults(handler=am.bob)
-#
-# # def run_subparser(subp, parents=[]):
-# #     p2 = subp.add_parser("run", )
-# #     p2.add_argument("--bob-arg", default=False, action="store_true")
-# #     p2.set_defaults(handler=am.bob)
-# #
-# # def run_subparser(subp, parents=[]):
-# #     p2 = subp.add_parser("run", )
-# #     p2.add_argument("--bob-arg", default=False, action="store_true")
-# #     p2.set_defaults(handler=am.bob)
-#
-# def setup_log(verbose, log_level):
-#     if log_level:
-#         print("Setting Log Levels using Filters: {}".format(log_level))
-#         armory.logs.update_filters(log_level)
-#     if verbose:
-#         print('Setting Log Level using Verbose: {}'.format(verbose))
-#         level = "DEBUG" if verbose == 1 else "TRACE"
-#         armory.logs.update_filters([f"armory:{level}"])
-#     else:
-#         print('Setting Log Level to Default')
-#         armory.logs.update_filters([f"armory:INFO"])
-#
-#
-# class ArmoryCommandParser():
-#     COMMANDS = ['run']
-#
-#     def run(self, arglist):
-#         log.info(f"Executing Armory Run Parser: {arglist}")
-#         parser = argparse.ArgumentParser()
-#         parser.add_argument("--interactive", default=False, action="store_true", help="Run in interactive mode")
-#         args = parser.parse_args(arglist)
-#         print(args)
-#         print(vars(args))
-#         # log.info("CP ARGS: ".format(args))
-#         # print("CP Args: {}".format(vars(args)))
-#         # am.bob(**vars(args))
-#
-# def setup_parser():
-#     """Armory CLI Interface
-#
-#
-#     """
-#     epilog = "\n For more information, please visit: https://github.com/shenshaw26/armory/\n"
-#     epilog += " or contact <armory@twosixlabs.com>\n"
-#
-#     cmdparser = ArmoryCommandParser()
-#
-#     parser = argparse.ArgumentParser(prog="armory", description=setup_parser.__doc__)
-#
-#     parser.add_argument(
-#         "command", metavar="<command>", type=str, choices=cmdparser.COMMANDS, help="armory command. Choices  [%(choices) s]"
-#     )
-#     parser.add_argument("--version", action='version', version=f"{armory.__version__}", help="Show Armory Version used")
-#     grp = parser.add_mutually_exclusive_group()
-#     grp.add_argument("-v", "--verbose", default=0, action="count", help="Set ALL log levels to `trace` (Default: INFO)")
-#     grp.add_argument("--log-level", default=None, action="append", help="Set Log Levels for modules")
-#
-#     args, cmd_args = parser.parse_known_args()
-#     print(args)
-#     print(cmd_args)
-#
-#     setup_log(args.verbose, args.log_level)
-#     getattr(ArmoryCommandParser(), args.command)(cmd_args)

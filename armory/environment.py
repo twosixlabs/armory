@@ -84,10 +84,10 @@ class EnvironmentConfiguration(BaseModel):
     def load(cls, overrides=[]):
         log.info("Loading Armory Environment")
         if len(overrides) != 0:
-            overrides = {j[0]:j[1] for j in [i.split("=") for i in overrides]}
+            overrides = {j[0]: j[1] for j in [i.split("=") for i in overrides]}
         args = {}
         for key in cls.__fields__.keys():
-            args[key] = os.environ.get(key,None)
+            args[key] = os.environ.get(key, None)
             if key in overrides:
                 log.info(f"Overriding {key} with {overrides[key]}")
                 args[key] = overrides[key]

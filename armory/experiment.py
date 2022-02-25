@@ -127,16 +127,18 @@ class Experiment(BaseModel):
             f.write(self.json())
 
     @classmethod
-    def load(cls, thing):
-        data = thing
-        if os.path.exists(thing):
-            log.info(f"Attempting to load experiment from file: {thing}")
-            with open(thing, "r") as f:
-                data = f.read()
+    def load(cls, filename):
+        valid_ext = (".aexp",".json")
+        if os.path.splitext(filename)[1] not in valid_ext:
+            raise ValueError(f"Experiment File: {filename} has invalid extension....must be in {valid_ext}")
+
+        if not os.path.exists(filename):
+            raise ValueError(f"Experiment File: {filename} does not exist!")
 
         try:
-            exp = cls.parse_raw(data)
+            with open(filename, "r") as f:
+                exp = cls.parse_raw(f.read())
         except Exception as e:
-            log.error(f"Could not parse Experiment from: {thing}")
+            log.error(f"Could not parse Experiment from: {filename}")
             raise e
         return exp
