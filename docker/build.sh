@@ -35,6 +35,14 @@ ARMORY_VERSION="local"
 DRYRUN=false
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
+BASE_TAG="dev"
+FRAMEWORK=""
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+if [ "$PWD" != "$(dirname $SCRIPT_DIR)" ]; then
+  echo "Must Execute build script from within armory/ folder that contains Dockerfiles"
+  return 1
+fi
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -70,15 +78,19 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-
+    -bt|--base-tag)
+      BASE_TAG="$2"
+      shift # past argument
+      shift # past value
+      ;;
     -h|--help)
       Help
-      exit
+      return
       ;;
     -*|--*)
       echo "Unknown option $1"
       echo "For more info try: build.sh -h"
-      exit 1
+      return 1
       ;;
     *)
       POSITIONAL_ARGS+=("$1") # save positional arg
@@ -92,27 +104,19 @@ set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 if [ "$FRAMEWORK" == "" ]; then
   echo "Must Specify Framework"
-  exit 1
+  return 1
 fi
 
-if [[ "$FRAMEWORK" != "pytorch" &&  "$FRAMEWORK" != "pytorch-deepspeech" && "$FRAMEWORK" != "tf1" && "$FRAMEWORK" != "tf2" && "$FRAMEWORK" != "all"  && "$FRAMEWORK" != "base" ]]; then
-    echo "ERROR: <framework> argument must be \`tf1\`, \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\` or \`all\`, not \`$FRAMEWORK\`"
-    exit 1
+if [[ "$FRAMEWORK" != "pytorch" &&  "$FRAMEWORK" != "pytorch-deepspeech" && "$FRAMEWORK" != "tf2" && "$FRAMEWORK" != "all"  && "$FRAMEWORK" != "base" ]]; then
+    echo "ERROR: <framework> argument must be \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\` or \`all\`, not \`$FRAMEWORK\`"
+    return 1
 fi
 
 if [ $FRAMEWORK == "all" ]; then
   echo "setting all frameowks"
   FRAMEWORK=("base" "pytorch" "tf2" "pytorch-deepspeech")
-fi
-
-# Parse Version
-internal_armory_version=$(python -m armory --version)
-if [[ $internal_armory_version == *"-dev" ]]; then
-    # Deprecation. Remove for 0.14
-    echo "ERROR: Armory version $internal_armory_version ends in '-dev'. This is no longer supported as of 0.13.0"
-    # TODO Figure out if this is best way to handle this
-    #  I dont like that it stops the terminal session
-    exit 1
+else
+  FRAMEWORK=($FRAMEWORK)
 fi
 
 if [ $ARMORY_VERSION == "local" ]; then
@@ -126,6 +130,7 @@ for framework in "${FRAMEWORK[@]}"; do
   echo ""
   echo "------------------------------------------------"
   echo "Building docker image for framework: $framework"
+
   CMD="docker build"
   if $NO_CACHE; then
     CMD="$CMD --no-cache"
@@ -135,8 +140,13 @@ for framework in "${FRAMEWORK[@]}"; do
 
 
   CMD="$CMD --force-rm"
-  CMD="$CMD --file docker/Dockerfile-${framework}"
-  CMD="$CMD --build-arg image_tag=${TAG}"
+  CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${framework}"
+  if [ $framework == "base" ]; then
+    CMD="$CMD --build-arg image_tag=${BASE_TAG}"
+  else
+    CMD="$CMD --build-arg image_tag=${TAG}"
+  fi
+
   CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
 
   if [ $framework != "base" ]; then
@@ -149,22 +159,22 @@ for framework in "${FRAMEWORK[@]}"; do
 
 
   CMD="$CMD "
-  CMD="$CMD -t ${REPO}/${framework}:${TAG}"
+  if [ $framework == "base" ]; then
+    CMD="$CMD -t ${REPO}/${framework}:${BASE_TAG}"
+  else
+    CMD="$CMD -t ${REPO}/${framework}:${TAG}"
+  fi
   CMD="$CMD $VERBOSE"
   CMD="$CMD ."
 
-  if [ $framework == "tf1" ]; then
-    echo "Framework tf1 is deprecated....please use tf2"
+  if $DRYRUN; then
+    echo "Would have Executed: "
+    echo "    ->  $CMD"
   else
-    if $DRYRUN; then
-      echo "Would have Executed: "
-      echo "    ->  $CMD"
-    else
-      echo "Executing: "
-      echo "    ->  $CMD"
-      $CMD
-
-    fi
+    echo "Executing: "
+    echo "    ->  $CMD"
+    $CMD
   fi
+
 done
 

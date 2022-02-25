@@ -38,7 +38,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
-          pytest -s ./tests/test_configuration.py
+          pytest -s ./tests/unit/test_configuration.py
   pytest-native-simple:
     name: Native Mode test_no_docker.py
     runs-on: ${{ matrix.os }}
@@ -59,9 +59,9 @@ jobs:
           pip install -r armory-base-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          pytest -s ./tests/test_no_docker.py
-  pytest-native-all-not-slow:
-    name: Native Mode All `Not Slow` Tests
+          pytest -s ./tests/unit/test_no_docker.py
+  pytest-native-all-unit:
+    name: Native Mode All unit tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -80,8 +80,8 @@ jobs:
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
           pip install -e .
-          pytest -s -k "not slow" -k "not docker_required" ./tests/
-  test-docker-build:
+          pytest -k "not docker_required" -k "unit" ./tests/
+  pytest-docker-all-unit:
     name: Run Docker build script
     runs-on: ubuntu-18.04
     steps:
@@ -93,23 +93,9 @@ jobs:
         run: |
           pip install -r requirements.txt
           bash docker/build.sh -f all --tag dev --no-cache
-          docker run -w /armory-repo/ twosixarmory/pytorch pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
-          docker run -w /armory-repo/ twosixarmory/tf2 pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -s -k "not slow" -k "not docker_required" ./tests/unit/
-  pytest-docker-tf2:
-    name: Run Tests in docker using `armory-tf2` image
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Run armory docker tests
-        run: |
-          pip install -r requirements.txt
-          bash docker/build.sh -f base --tag dev --no-cache
-          bash docker/build.sh -f tf2 --tag dev --no-cache
-          docker run -w /armory-repo twosixarmory/armory-tf2:dev pytest -s -k "not slow" -k "not docker_required" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch pytest -k "not docker_required" -k "unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/tf2 pytest -k "not docker_required" -k "unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech pytest -k "not docker_required" -k "unit" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04
@@ -119,4 +105,4 @@ jobs:
       - name: install test requirements
         run: pip install -r test-requirements.txt
       - name: Run commit hooks
-        run: source tools/pre-commit.sh
+        run: . tools/pre-commit.sh

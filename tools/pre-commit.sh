@@ -10,7 +10,7 @@ run_check () {
       echo Some Python files were formatted
       echo You need to run \`git add ...\`
       echo and then \`git commit ...\` again
-      exit $need_format
+      return $need_format
   fi
 }
 
