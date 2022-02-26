@@ -22,4 +22,4 @@ jobs:
       - name: Build image
         run: |
           echo ${{github.event.inputs.tags}}
-          bash update_registry.sh ${{github.event.inputs.tags}}
+          bash docker/update_registry.sh ${{github.event.inputs.tags}}
