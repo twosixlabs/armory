@@ -5,6 +5,7 @@ Enables programmatic accessing of most recent docker images
 import pkg_resources
 
 import armory
+# from armory.logs import log
 
 USER = "twosixarmory"
 TAG = armory.__version__
@@ -34,8 +35,11 @@ def parse_version(tag):
     """
     if not isinstance(tag, str):
         raise ValueError(f"tag is a {type(tag)}, not a str")
-    if len(tag.split(".")) != 3:
-        raise ValueError(f"tag {tag} must be of form 'major.minor.patch'")
+    # if len(tag.split(".")) == 4:
+    #     log.warning(f"Using Experimental Version of Armory: {tag}")
+    #     if tag.split(".")[-1]
+    # elif len(tag.split(".")) != 3:
+    #     raise ValueError(f"tag {tag} must be of form 'major.minor.patch(.dev...)'")
     version = pkg_resources.parse_version(tag)
     if not isinstance(version, pkg_resources.extern.packaging.version.Version):
         raise ValueError(f"tag {tag} parses to type {type(version)}, not Version")

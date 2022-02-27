@@ -1,7 +1,15 @@
 """Adversarial Robustness Evaluation Test Bed"""
 
 # Semantic Version
-__version__ = "0.14.6"
+# __version__ = "0.14.6"
+
+from importlib_metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("armory-testbed")
+except PackageNotFoundError:
+    # package is not installed
+    pass
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
