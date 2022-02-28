@@ -3,6 +3,7 @@ General object detection scenario
 """
 
 from armory.scenarios.image_classification import ImageClassificationTask
+from armory.utils.export import ObjectDetectionExporter
 
 
 class ObjectDetectionTask(ImageClassificationTask):
@@ -28,7 +29,7 @@ class ObjectDetectionTask(ImageClassificationTask):
                 )
         super().load_sample_exporter()
 
-    def export_samples(self):
-        self.sample_exporter.export(
-            self.x, self.x_adv, self.y, self.y_pred_adv, self.y_pred, plot_bboxes=True
+    def _load_sample_exporter(self):
+        return ObjectDetectionExporter(
+            self.scenario_output_dir, self.num_export_samples
         )

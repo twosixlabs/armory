@@ -1,5 +1,6 @@
 import os
 import logging
+import abc
 import numpy as np
 import ffmpeg
 import pickle
@@ -7,56 +8,23 @@ import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
-from armory.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
-
 
 logger = logging.getLogger(__name__)
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, context, num_samples):
+    def __init__(self, base_output_dir, num_samples):
         self.base_output_dir = base_output_dir
-        self.context = context
         self.num_samples = num_samples
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
 
-        if isinstance(self.context, VideoContext):
-            self.export_fn = self._export_video
-        elif isinstance(self.context, ImageContext):
-            self.export_fn = self._export_images
-        elif isinstance(self.context, AudioContext):
-            self.export_fn = self._export_audio
-        elif isinstance(self.context, So2SatContext):
-            self.export_fn = self._export_so2sat
-        else:
-            raise TypeError(
-                f"Expected VideoContext, ImageContext, AudioContext, or So2SatContext, got {type(self.context)}"
-            )
         self._make_output_dir()
 
     def export(
-        self,
-        x,
-        x_adv,
-        y,
-        y_pred_adv,
-        y_pred_clean=None,
-        plot_bboxes=False,
-        classes_to_skip=None,
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
-        """ x: the clean sample
-            x_adv: the adversarial sample
-            y: the clean label
-            y_pred_adv: the predicted label on the adversarial sample
-            y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
-            plot_bboxes: Boolean which can be set True for object detection and video
-                tracking scenarios, in which case samples are also exported with
-                ground-truth and predicted boxes drawn on
-            classes_to_skip: int or list of ints, classes not to draw boxes for. Only relevant
-                when plot_bboxes is set to True
-        """
 
         if self.saved_samples < self.num_samples:
 
@@ -64,18 +32,20 @@ class SampleExporter:
                 "ground truth": y,
                 "predicted": y_pred_adv,
             }
-            if plot_bboxes:
-                # For OD and VT scenarios
-                self.export_fn(
-                    x=x,
-                    x_adv=x_adv,
-                    y=y,
-                    y_pred_adv=y_pred_adv,
-                    y_pred_clean=y_pred_clean,
-                    classes_to_skip=classes_to_skip,
-                )
-            else:
-                self.export_fn(x=x, x_adv=x_adv)
+            self._export(
+                x=x,
+                x_adv=x_adv,
+                y=y,
+                y_pred_adv=y_pred_adv,
+                y_pred_clean=y_pred_clean,
+                **kwargs,
+            )
+
+    @abc.abstractmethod
+    def _export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+        raise NotImplementedError
 
     def write(self):
         """ Pickle the y_dict built up during each export() call.
@@ -102,151 +72,6 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_images(
-        self,
-        x,
-        x_adv=None,
-        y=None,
-        y_pred_adv=None,
-        y_pred_clean=None,
-        classes_to_skip=None,
-    ):
-
-        plot_boxes = True if y is not None else False
-        if classes_to_skip is not None:
-            if isinstance(classes_to_skip, int):
-                classes_to_skip = [classes_to_skip]
-
-        for i, x_i in enumerate(x):
-
-            if self.saved_samples == self.num_samples:
-                break
-
-            if x_i.min() < 0.0 or x_i.max() > 1.0:
-                logger.warning(
-                    "Benign image out of expected range. Clipping to [0, 1]."
-                )
-
-            # Export benign image x_i
-            if x_i.shape[-1] == 1:
-                mode = "L"
-                x_i_mode = np.squeeze(x_i, axis=2)
-            elif x_i.shape[-1] == 3:
-                mode = "RGB"
-                x_i_mode = x_i
-            elif x_i.shape[-1] == 6:
-                mode = "RGB"
-                x_i_mode = x_i[..., :3]
-                x_i_depth = x_i[..., 3:]
-                depth_image = Image.fromarray(
-                    np.uint8(np.clip(x_i_depth, 0.0, 1.0) * 255.0), mode
-                )
-                depth_image.save(
-                    os.path.join(self.output_dir, f"{self.saved_samples}_depth.png")
-                )
-            else:
-                raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
-
-            benign_image = Image.fromarray(
-                np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
-            )
-            benign_image.save(
-                os.path.join(self.output_dir, f"{self.saved_samples}_benign.png")
-            )
-
-            if plot_boxes:
-                # Export benign image again but with bounding boxes
-                benign_image_with_boxes = Image.fromarray(
-                    np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
-                )
-                benign_box_layer = ImageDraw.Draw(benign_image_with_boxes)
-                bboxes_true = y[0]["boxes"]
-                labels_true = y[0]["labels"]
-
-                for true_box, label in zip(bboxes_true, labels_true):
-                    if classes_to_skip is not None and label in classes_to_skip:
-                        continue
-                    benign_box_layer.rectangle(true_box, outline="red", width=2)
-
-                if y_pred_clean is not None:
-                    bboxes_pred_clean = y_pred_clean[0]["boxes"][
-                        y_pred_clean[0]["scores"] > 0.9
-                    ]
-                    for clean_pred_box in bboxes_pred_clean:
-                        benign_box_layer.rectangle(
-                            clean_pred_box, outline="white", width=2
-                        )
-                benign_image_with_boxes.save(
-                    os.path.join(
-                        self.output_dir, f"{self.saved_samples}_benign_with_boxes.png"
-                    )
-                )
-
-            # Export adversarial image x_adv_i if present
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-
-                assert np.all(
-                    x_i.shape == x_adv_i.shape
-                ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-
-                if x_adv_i.min() < 0.0 or x_adv_i.max() > 1.0:
-                    logger.warning(
-                        "Adversarial image out of expected range. Clipping to [0, 1]."
-                    )
-
-                if x_adv_i.shape[-1] == 1:
-                    x_adv_i_mode = np.squeeze(x_adv_i, axis=2)
-                elif x_adv_i.shape[-1] == 3:
-                    x_adv_i_mode = x_adv_i
-                elif x_adv_i.shape[-1] == 6:
-                    x_adv_i_mode = x_adv_i[..., :3]
-                    x_adv_i_depth = x_adv_i[..., 3:]
-                    adv_depth_image = Image.fromarray(
-                        np.uint8(np.clip(x_adv_i_depth, 0.0, 1.0) * 255.0), mode
-                    )
-                    adv_depth_image.save(
-                        os.path.join(
-                            self.output_dir,
-                            f"{self.saved_samples}_depth_adversarial.png",
-                        )
-                    )
-
-                adversarial_image = Image.fromarray(
-                    np.uint8(np.clip(x_adv_i_mode, 0.0, 1.0) * 255.0), mode
-                )
-                adversarial_image.save(
-                    os.path.join(
-                        self.output_dir, f"{self.saved_samples}_adversarial.png"
-                    )
-                )
-
-                if plot_boxes:
-                    # Export adversarial image again but with bounding boxes
-                    adversarial_image_with_boxes = Image.fromarray(
-                        np.uint8(np.clip(x_adv_i_mode, 0.0, 1.0) * 255.0), mode
-                    )
-                    adv_box_layer = ImageDraw.Draw(adversarial_image_with_boxes)
-
-                    bboxes_pred_adv = y_pred_adv[0]["boxes"][
-                        y_pred_adv[0]["scores"] > 0.5
-                    ]
-
-                    for true_box, label in zip(bboxes_true, labels_true):
-                        if classes_to_skip is not None and label in classes_to_skip:
-                            continue
-                        adv_box_layer.rectangle(true_box, outline="red", width=2)
-                    for adv_pred_box in bboxes_pred_adv:
-                        adv_box_layer.rectangle(adv_pred_box, outline="white", width=2)
-
-                    adversarial_image_with_boxes.save(
-                        os.path.join(
-                            self.output_dir,
-                            f"{self.saved_samples}_adversarial_with_boxes.png",
-                        )
-                    )
-
-            self.saved_samples += 1
 
     def _export_so2sat(self, x, x_adv):
         for x_i, x_adv_i in zip(x, x_adv):
@@ -511,3 +336,110 @@ class SampleExporter:
             adversarial_process.stdin.close()
             adversarial_process.wait()
             self.saved_samples += 1
+
+
+class ImageClassificationExporter(SampleExporter):
+    def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+        for i, x_i in enumerate(x):
+            if self.saved_samples == self.num_samples:
+                break
+
+            self._export_image(x_i, type="benign")
+
+            # Export adversarial image x_adv_i if present
+            if x_adv is not None:
+                x_adv_i = x_adv[i]
+                self._export_image(x_adv_i, type="adversarial")
+
+            self.saved_samples += 1
+
+    def _export_image(self, x_i, type="benign"):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+
+        if x_i.min() < 0.0 or x_i.max() > 1.0:
+            logger.warning("Image out of expected range. Clipping to [0, 1].")
+
+        # Export benign image x_i
+        if x_i.shape[-1] == 1:
+            self.mode = "L"
+            self.x_i_mode = np.squeeze(x_i, axis=2)
+        elif x_i.shape[-1] == 3:
+            self.mode = "RGB"
+            self.x_i_mode = x_i
+        elif x_i.shape[-1] == 6:
+            self.mode = "RGB"
+            self.x_i_mode = x_i[..., :3]
+            self.x_i_depth = x_i[..., 3:]
+            depth_image = Image.fromarray(
+                np.uint8(np.clip(self.x_i_depth, 0.0, 1.0) * 255.0), self.mode
+            )
+            depth_image.save(
+                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
+            )
+        else:
+            raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
+
+        self.image = Image.fromarray(
+            np.uint8(np.clip(self.x_i_mode, 0.0, 1.0) * 255.0), self.mode
+        )
+        self.image.save(
+            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
+        )
+
+
+class ObjectDetectionExporter(ImageClassificationExporter):
+    def _export(
+        self,
+        x,
+        x_adv=None,
+        y=None,
+        y_pred_adv=None,
+        y_pred_clean=None,
+        classes_to_skip=None,
+    ):
+        for i, x_i in enumerate(x):
+            if self.saved_samples == self.num_samples:
+                break
+
+            self._export_image(x_i, type="benign")
+
+            y_i = y[i]
+            y_i_pred_clean = y_pred_clean[i]
+            self._export_image_with_boxes(y_i, y_i_pred_clean, type="benign")
+
+            # Export adversarial image x_adv_i if present
+            if x_adv is not None:
+                x_adv_i = x_adv[i]
+                self._export_image(x_adv_i, type="adversarial")
+                y_i_pred_adv = y_pred_adv[i]
+                self._export_image_with_boxes(y_i, y_i_pred_adv, type="adversarial")
+
+            self.saved_samples += 1
+
+    def _export_image_with_boxes(
+        self, y_i, y_i_pred, classes_to_skip=None, type="benign", score_threshold=0.5
+    ):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+        box_layer = ImageDraw.Draw(self.image)
+
+        bboxes_true = y_i["boxes"]
+        labels_true = y_i["labels"]
+
+        bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+
+        for true_box, label in zip(bboxes_true, labels_true):
+            if classes_to_skip is not None and label in classes_to_skip:
+                continue
+            box_layer.rectangle(true_box, outline="red", width=2)
+        for pred_box in bboxes_pred:
+            box_layer.rectangle(pred_box, outline="white", width=2)
+
+        self.image.save(
+            os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
+        )

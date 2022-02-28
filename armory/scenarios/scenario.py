@@ -9,6 +9,7 @@ import os
 import sys
 import time
 from typing import Optional
+import abc
 
 from tqdm import tqdm
 
@@ -230,14 +231,16 @@ class Scenario:
         self.metrics_logger = metrics_logger
 
     def load_sample_exporter(self):
-        export_samples = self.config["scenario"].get("export_samples")
-        if export_samples is not None and export_samples > 0:
-            sample_exporter = SampleExporter(
-                self.scenario_output_dir, self.test_dataset.context, export_samples
-            )
+        self.num_export_samples = self.config["scenario"].get("export_samples")
+        if self.num_export_samples is not None and self.num_export_samples > 0:
+            sample_exporter = self._load_sample_exporter()
         else:
             sample_exporter = None
         self.sample_exporter = sample_exporter
+
+    @abc.abstractmethod
+    def _load_sample_exporter(self):
+        raise NotImplementedError
 
     def load(self):
         self.load_model()
@@ -319,7 +322,11 @@ class Scenario:
 
     def export_samples(self):
         self.sample_exporter.export(
-            x=self.x, x_adv=self.x_adv, y=self.y, y_pred_adv=self.y_pred_adv
+            x=self.x,
+            x_adv=self.x_adv,
+            y=self.y,
+            y_pred_clean=self.y_pred,
+            y_pred_adv=self.y_pred_adv,
         )
 
     def evaluate_current(self):
