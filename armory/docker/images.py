@@ -5,6 +5,7 @@ Enables programmatic accessing of most recent docker images
 import pkg_resources
 
 import armory
+
 # from armory.logs import log
 
 USER = "twosixarmory"
