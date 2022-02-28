@@ -1,13 +1,22 @@
-"""Adversarial Robustness Evaluation Test Bed"""
+"""Adversarial Robustness Evaluation Test Bed
 
-# Semantic Version
-# __version__ = "0.14.6"
+ARMORY Versions use "Semantic Version" scheme
+where stable releases will have versions like
+`0.14.6`.  Armory uses `setuptools_scm` under the
+hood which pulls the version from the .git
+information.  Stable release will be denoted by
+git tags.  If you are a developer, and you modify
+armory locally, the version will follow the format
+as specified by `setuptools_scm`
+"""
 
 from importlib_metadata import version, PackageNotFoundError
+from armory.logs import log
 
 try:
     __version__ = version("armory-testbed")
 except PackageNotFoundError:
+    log.warning("Armory Package is not Installed... Passing `PackageNotFoundError`")
     # package is not installed
     pass
 

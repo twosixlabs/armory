@@ -34,7 +34,6 @@ setup(
     name="armory-testbed",
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
-    # version=get_version("armory/__init__.py"),
     description="Adversarial Robustness Test Bed",
     long_description=long_description,
     long_description_content_type="text/markdown",

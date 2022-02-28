@@ -2,19 +2,17 @@
 Enables programmatic accessing of most recent docker images
 """
 
+import armory
 import pkg_resources
 
-import armory
-
-# from armory.logs import log
-
-USER = "twosixarmory"
+DOCKER_REPOSITORY = "twosixarmory"
+ARMORY_VERSION = armory.__version__
 TAG = armory.__version__
 
-PYTORCH = f"{USER}/pytorch:{TAG}"
-PYTORCH_DEEPSPEECH = f"{USER}/pytorch-deepspeech:{TAG}"
-TF1 = f"{USER}/tf1:{TAG}"
-TF2 = f"{USER}/tf2:{TAG}"
+PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
+PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
+TF1 = f"{DOCKER_REPOSITORY}/tf1:{TAG}"
+TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
 ALL = (
     PYTORCH,
     PYTORCH_DEEPSPEECH,
