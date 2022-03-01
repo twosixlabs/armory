@@ -39,7 +39,7 @@ jobs:
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          yes "" | armory configure
+          yes 2>/dev/null "" | armory configure
           pytest -s ./tests/unit/test_configuration.py
   pytest-native-simple:
     name: Native Mode test_no_docker.py
