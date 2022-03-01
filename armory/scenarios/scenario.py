@@ -16,7 +16,6 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.utils import config_loading, metrics
-from armory.utils.export import SampleExporter
 
 
 logger = logging.getLogger(__name__)
