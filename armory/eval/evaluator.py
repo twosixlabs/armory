@@ -28,6 +28,7 @@ class Evaluator(object):
     def __init__(
         self, config: dict, no_docker: bool = False, root: bool = False,
     ):
+        log.info("Constructing Evaluator Object")
         if not isinstance(config, dict):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
@@ -58,6 +59,7 @@ class Evaluator(object):
         self.root = root
 
         # Retrieve environment variables that should be used in evaluation
+        log.info("Retrieving Environment Variables")
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
@@ -68,6 +70,9 @@ class Evaluator(object):
             return
 
         # Download docker image on host
+        # TODO This seems like it still needs docker even in no docker mode
+        #  we should fix this
+        log.info("Attempting to get Docker Client")
         docker_client = docker.from_env()
         try:
             docker_client.images.get(kwargs["image_name"])

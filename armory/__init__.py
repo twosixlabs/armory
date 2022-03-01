@@ -15,10 +15,11 @@ from armory.logs import log
 
 try:
     __version__ = version("armory-testbed")
+    log.info(f"Armory Version: {__version__} Installed.")
 except PackageNotFoundError:
-    log.warning("Armory Package is not Installed... Passing `PackageNotFoundError`")
+    log.error("Armory Package is not Installed... Passing `PackageNotFoundError`")
     # package is not installed
-    pass
+    # pass
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
