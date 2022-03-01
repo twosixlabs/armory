@@ -1748,6 +1748,7 @@ def _parse_dataset_name(dataset_name: str):
         )
     return name, subpath
 
+
 # TODO Move to something like this
 """
 SUPPORTED_DATASETS = ['mnist','cifar10'...]
