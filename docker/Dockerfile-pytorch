@@ -18,10 +18,3 @@ RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install 
 RUN yes "" | armory configure
 
 WORKDIR /workspace
-
-FROM armory-base as armory-prebuilt
-RUN echo "Building Armory from prebuilt version: $armory_version"
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
-RUN yes "" | armory configure
-
-WORKDIR /workspace

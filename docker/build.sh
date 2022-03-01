@@ -6,33 +6,25 @@ Help()
   echo "----------------------------------------------------------------------------------------"
   echo "                   Armory Docker Build Script                       "
   echo
-  echo "This build script helps to build the necessary docker images to "
-  echo "execute the typical armory experiments.  "
-  echo
-  echo "Syntax: build.sh [-f|t|nc|av|h]"
+  echo "This build script helps to build the docker images necessary for armory exectuion "
+  echo "(in docker mode).  The primary purpose of this script is to build the images from "
+  echo "scratch and to be used by the armory CI toolchain.  If modifications are necessary"
+  echo "you can use \`--dry-run\` to get the \`docker build...\` commands directly and "
+  echo "modify them as necessary. "
+  echo ""
+  echo "Armory uses scm versioning from git, therefore if you want to re-build containers "
+  echo "from a stable armory release, simply checkout that tag and then run this script"
+  echo ""
+  echo "Syntax: build.sh [-f|nc|dr|v|h]"
   echo ""
   echo "REQUIRED"
   echo "-f | --framework            Select Which framework to target:"
   echo "                                [all|base|tf2|pytorch|pytorch-deepspeech]"
   echo ""
   echo "OPTIONAL"
-  echo "-av | --armory-version      Specify the armory version to install in image when "
-  echo "                            framework != \`base\` (Note: base armory image does not"
-  echo "                            contain armory "
-  echo "                                (default: uses \`local\` scm version)"
-  echo ""
-  echo "-t | --tag                  Specify \`tag\` to use for the created image (e.g. \`latest\` in"
-  echo "                            repo/image:latest.  If framework=all, this tag will be applied to "
-  echo "                            all images.  "
-  echo "                                (default: \`armory-version\`)"
-  echo "-bt | --base-tag            Specify \`tag\` to use as the base image for frameworks != \`base\`"
-  echo "                                (default: uses \`tag\`)"
-  echo "                                Note: This will NOT tag the base image, it will simply "
-  echo "                                specify the base_image to use for dervied images "
   echo "-nc | --no-cache            Build Images \`Clean\` (i.e. using --no-cache)"
   echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
   echo "-v | --verbose              Show Logs in Plain Text (uses \`--progress=plain\`"
-  echo "-r | --repo                 Set the Docker Repository (Default: \`twosixarmory\`"
   echo "-h | --help                 Print this Help."
   echo
   echo "----------------------------------------------------------------------------------------"
@@ -42,13 +34,12 @@ Help()
 POSITIONAL_ARGS=()
 NO_CACHE=false
 ARMORY_VERSION="$(python setup.py --version)"
-BASE_ARMORY_VERSION="$ARMORY_VERSION"
 DRYRUN=false
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
-TAG=${ARMORY_VERSION%.*}
-BASE_TAG=$TAG
+TAG=${ARMORY_VERSION%.*} # removing last part that tracks every edit
+TAG=${TAG/+/-} # Cannot have + sign in tags
 
 # Making sure execution path is correct
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -66,21 +57,6 @@ while [[ $# -gt 0 ]]; do
       shift # past argument
       shift # past value
       ;;
-    -av|--armory-version)
-      ARMORY_VERSION="$2"
-      shift # past argument
-      shift # past value
-      ;;
-    -t|--tag)
-      TAG="$2"
-      shift # past argument
-      shift # past value
-      ;;
-    -bt|--base-tag)
-      BASE_TAG="$2"
-      shift # past argument
-      shift # past value
-      ;;
     -nc|--no-cache)
       NO_CACHE=true
       shift # past argument
@@ -92,11 +68,6 @@ while [[ $# -gt 0 ]]; do
     -v|--verbose)
       VERBOSE="--progress=plain"
       shift # past argument
-      ;;
-    -r|--repo)
-      REPO="$2"
-      shift # past argument
-      shift # past value
       ;;
     -h|--help)
       Help
@@ -135,17 +106,6 @@ else
   FRAMEWORK=($FRAMEWORK)
 fi
 
-if [ "$ARMORY_VERSION" == "$BASE_ARMORY_VERSION" ]; then
-  ARMORY_BUILD_TYPE="local"
-else
-  ARMORY_BUILD_TYPE="prebuilt"
-  TAG="$ARMORY_VERSION"
-fi
-
-echo "Reformatting Tag to remove + sign (if in there)"
-TAG=${TAG/+/-}
-BASE_TAG=${BASE_TAG/+/-}
-
 echo "Building Images for Framework(s): ${FRAMEWORK[@]}"
 for framework in "${FRAMEWORK[@]}"; do
   echo ""
@@ -163,13 +123,8 @@ for framework in "${FRAMEWORK[@]}"; do
   CMD="$CMD --force-rm"
   CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${framework}"
   if [ $framework != "base" ]; then
-    CMD="$CMD --build-arg base_image_tag=${BASE_TAG}"
+    CMD="$CMD --build-arg base_image_tag=${TAG}"
     CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
-    if [ $ARMORY_BUILD_TYPE == "local" ]; then
-      CMD="$CMD --target armory-local"
-    else
-      CMD="$CMD --target armory-prebuilt"
-    fi
   fi
 
   CMD="$CMD -t ${REPO}/${framework}:${TAG}"

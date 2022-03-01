@@ -35,14 +35,7 @@ COPY pytest.ini /armory-repo/
 COPY ./scenario_configs /armory-repo/scenario_configs/
 COPY ./tests /armory-repo/tests/
 COPY ./armory /armory-repo/armory/
-RUN /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN yes "" | armory configure
-
-WORKDIR /workspace
-
-FROM armory-base as armory-prebuilt
-RUN echo "Building Armory from prebuilt version: $armory_version"
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
 RUN yes "" | armory configure
 
 WORKDIR /workspace
