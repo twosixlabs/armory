@@ -31,6 +31,16 @@ Help()
   echo "----------------------------------------------------------------------------------------"
 }
 
+get_tag_from_version ()
+{
+  local  input=$1
+  arr=( ${input//\./ } ) # Split by .
+  arr="${arr[@]:0:4}" # Keep 1st 4 elements
+  arr="${arr// /.}" # Put it back together
+  result="${arr/+/-}" # Replace + with -
+  echo $result
+}
+
 # Setting Defaults
 POSITIONAL_ARGS=()
 NO_CACHE=false
@@ -39,8 +49,7 @@ DRYRUN=false
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
-TAG=${ARMORY_VERSION%.*} # removing last part that tracks every edit
-TAG=${TAG/+/-} # Cannot have + sign in tags
+TAG=$(get_tag_from_version $ARMORY_VERSION)
 ADDITIONAL_TAG=false
 
 
