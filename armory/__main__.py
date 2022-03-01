@@ -558,7 +558,9 @@ def configure(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     _debug(parser)
 
-    parser.add_argument("--use-defaults", default=False, action='store_true', help="Use Defaults")
+    parser.add_argument(
+        "--use-defaults", default=False, action="store_true", help="Use Defaults"
+    )
 
     args = parser.parse_args(command_args)
     armory.logs.update_filters(args.log_level, args.debug)
@@ -665,7 +667,6 @@ def configure(command_args, prog, description):
     print(resolved)
     save = None
     while save is None:
-
 
         if os.path.isfile(default_host_paths.armory_config):
             print("WARNING: this will overwrite existing configuration.")

@@ -44,72 +44,72 @@ jobs:
         shell: bash
         run: |
           pytest -s ./tests/unit/test_configuration.py
-#  pytest-native-simple:
-#    name: Native Mode test_no_docker.py
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
-#        python-version: ['3.7']
-#      fail-fast: false
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions/setup-python@v1
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#      - name: Run armory host tests
-#        shell: bash
-#        run: |
-#          pip install --user --upgrade pip==22.0.3
-#          pip install -r armory-base-requirements.txt
-#          pip install -r test-requirements.txt
-#          pip install -e .
-#          yes "" | armory configure
-#          pytest -s ./tests/end-to-end/test_no_docker.py
-#  pytest-native-all-unit:
-#    name: Native Mode All unit tests
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os: ['ubuntu-18.04', 'macos-latest']
-#        python-version: ['3.7']
-#      fail-fast: false
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions/setup-python@v1
-#        with:
-#          python-version: ${{ matrix.python-version }}
-#      - name: Run armory host tests
-#        shell: bash
-#        run: |
-#          pip install -r requirements.txt
-#          pip install -r test-requirements.txt
-#          pip install -r armory-base-requirements.txt
-#          pip install -e .
-#          yes "" | armory configure
-#          pytest -k "not docker_required and unit" ./tests/
-#  pytest-docker-all-unit:
-#    name: Run Docker build script
-#    runs-on: ubuntu-18.04
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions/setup-python@v1
-#        with:
-#          python-version: '3.7'
-#      - name: Run armory docker tests
-#        run: |
-#          pip install -r requirements.txt
-#          bash docker/build.sh -f all --tag dev --no-cache
-#          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and unit" ./tests/
-#          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and unit" ./tests/
-#          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and unit" ./tests/
-#  formatting-test:
-#    name: Check Code Formatting
-#    runs-on: ubuntu-18.04
-#    steps:
-#      - uses: actions/checkout@v2
-#      - uses: actions/setup-python@v1
-#      - name: install test requirements
-#        run: pip install -r test-requirements.txt
-#      - name: Run commit hooks
-#        run: bash tools/pre-commit.sh
+  pytest-native-simple:
+    name: Native Mode test_no_docker.py
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install --user --upgrade pip==22.0.3
+          pip install -r armory-base-requirements.txt
+          pip install -r test-requirements.txt
+          pip install -e .
+          yes "" | armory configure
+          pytest -s ./tests/end-to-end/test_no_docker.py
+  pytest-native-all-unit:
+    name: Native Mode All unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install -r armory-base-requirements.txt
+          pip install -e .
+          yes "" | armory configure
+          pytest -k "not docker_required and unit" ./tests/
+  pytest-docker-all-unit:
+    name: Run Docker build script
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory docker tests
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh -f all --tag dev --no-cache
+          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and unit" ./tests/
+  formatting-test:
+    name: Check Code Formatting
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install test requirements
+        run: pip install -r test-requirements.txt
+      - name: Run commit hooks
+        run: bash tools/pre-commit.sh
