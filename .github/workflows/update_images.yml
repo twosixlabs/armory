@@ -1,5 +1,6 @@
 ---
-# This is a basic workflow to help you get started with Actions
+# This workflow allows for manual updating of
+# armory docker images from github actions.
 
 name: armory-image-update
 

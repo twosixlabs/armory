@@ -7,7 +7,12 @@ hood which pulls the version from the .git
 information.  Stable release will be denoted by
 git tags.  If you are a developer, and you modify
 armory locally, the version will follow the format
-as specified by `setuptools_scm`
+as specified by `setuptools_scm`.
+
+For example: if you checkout a stable release version
+of armory (e.g. `git checkout v0.14.5`) and then make
+a local edit to a file, the `version` will be something
+like `dev142+gc650673.d20220301143014`.
 """
 
 from importlib_metadata import version, PackageNotFoundError
@@ -16,10 +21,9 @@ from armory.logs import log
 try:
     __version__ = version("armory-testbed")
     log.info(f"Armory Version: {__version__} Installed.")
-except PackageNotFoundError:
-    log.error("Armory Package is not Installed... Passing `PackageNotFoundError`")
-    # package is not installed
-    # pass
+except PackageNotFoundError as e:
+    log.error("Armory Package is not Installed...")
+    raise e
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
