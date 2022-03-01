@@ -33,7 +33,11 @@ with open("test-requirements.txt") as f:
 setup(
     name="armory-testbed",
     setup_requires=["setuptools_scm"],
-    use_scm_version=True,
+    use_scm_version={
+        "root": ".",
+        "relative_to": __file__,
+        "local_scheme": "node-and-timestamp",
+    },
     description="Adversarial Robustness Test Bed",
     long_description=long_description,
     long_description_content_type="text/markdown",

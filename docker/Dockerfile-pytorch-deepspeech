@@ -1,5 +1,5 @@
-ARG image_tag
-FROM twosixarmory/base:${image_tag} as armory-base
+ARG base_image_tag
+FROM twosixarmory/base:${base_image_tag} as armory-base
 ARG armory_version
 ARG armory_build_type
 # NOTE: installed after pip installs in base container,
