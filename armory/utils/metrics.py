@@ -173,7 +173,7 @@ def filter_perplexity_fps_benign(
 
     # convert poison_index to binary vector the same length as data
     poison_inds = np.zeros_like(y_clean)
-    poison_inds[poison_index] = 1
+    poison_inds[poison_index.astype(np.int64)] = 1
     # benign is here defined to be the class distribution of the unpoisoned part of the data
     x_benign = y_clean[poison_inds == 0]
     x_benign = np.bincount(x_benign, minlength=max(y_clean))
