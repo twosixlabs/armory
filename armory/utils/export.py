@@ -435,7 +435,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
-        box_layer = ImageDraw.Draw(self.image)
+        box_layer = ImageDraw.Draw(image)
 
         bboxes_true = y_i["boxes"]
         labels_true = y_i["labels"]
