@@ -58,7 +58,7 @@
         "name": "GTSRB_CLBD"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.6",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

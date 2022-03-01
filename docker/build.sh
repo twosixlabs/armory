@@ -22,6 +22,7 @@ Help()
   echo "                                [all|base|tf2|pytorch|pytorch-deepspeech]"
   echo ""
   echo "OPTIONAL"
+  echo "-t | --tag                  Specify Additional Tag to apply to each image"
   echo "-nc | --no-cache            Build Images \`Clean\` (i.e. using --no-cache)"
   echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
   echo "-v | --verbose              Show Logs in Plain Text (uses \`--progress=plain\`"
@@ -40,6 +41,8 @@ REPO="twosixarmory"
 FRAMEWORK=""
 TAG=${ARMORY_VERSION%.*} # removing last part that tracks every edit
 TAG=${TAG/+/-} # Cannot have + sign in tags
+ADDITIONAL_TAG=false
+
 
 # Making sure execution path is correct
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -56,6 +59,11 @@ while [[ $# -gt 0 ]]; do
       FRAMEWORK="$2"
       shift # past argument
       shift # past value
+      ;;
+    -t|--tag)
+      ADDITIONAL_TAG="$2"
+      shift # past argument
+      shift # past argument
       ;;
     -nc|--no-cache)
       NO_CACHE=true
@@ -140,5 +148,15 @@ for framework in "${FRAMEWORK[@]}"; do
     $CMD
   fi
 
+  if [ "$ADDITIONAL_TAG" != "" ]; then
+    if $DRYRUN; then
+      echo "Would have Executed: "
+      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
+    else
+      echo "Executing: "
+      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
+      docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
+    fi
+  fi
 done
 
