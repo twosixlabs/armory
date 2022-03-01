@@ -39,7 +39,7 @@ jobs:
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          yes "" | armory configure 2>/dev/null
+          yes "" 2>/dev/null | armory configure
       - name: Run armory host tests
         shell: bash
         run: |
