@@ -72,7 +72,6 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-
     def _export_so2sat(self, x, x_adv):
         for x_i, x_adv_i in zip(x, x_adv):
 
@@ -408,19 +407,29 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
             y_i = y[i]
             y_i_pred_clean = y_pred_clean[i]
-            self._export_image_with_boxes(y_i, y_i_pred_clean, type="benign")
+            self._export_image_with_boxes(
+                self.image, y_i, y_i_pred_clean, type="benign"
+            )
 
             # Export adversarial image x_adv_i if present
             if x_adv is not None:
                 x_adv_i = x_adv[i]
                 self._export_image(x_adv_i, type="adversarial")
                 y_i_pred_adv = y_pred_adv[i]
-                self._export_image_with_boxes(y_i, y_i_pred_adv, type="adversarial")
+                self._export_image_with_boxes(
+                    self.image, y_i, y_i_pred_adv, type="adversarial"
+                )
 
             self.saved_samples += 1
 
     def _export_image_with_boxes(
-        self, y_i, y_i_pred, classes_to_skip=None, type="benign", score_threshold=0.5
+        self,
+        image,
+        y_i,
+        y_i_pred,
+        classes_to_skip=None,
+        type="benign",
+        score_threshold=0.5,
     ):
         if type not in ["benign", "adversarial"]:
             raise ValueError(
@@ -440,6 +449,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         for pred_box in bboxes_pred:
             box_layer.rectangle(pred_box, outline="white", width=2)
 
-        self.image.save(
+        image.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
         )
