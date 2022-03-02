@@ -21,7 +21,7 @@ env:
 
 jobs:
   pytest-host:
-    name: Basic `native` configuration
+    name: PyTest Host
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -33,19 +33,14 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Armory
+      - name: Run armory host tests
         shell: bash
         run: |
           pip install -r requirements.txt
           pip install -r test-requirements.txt
-          pip install -e .
-          armory configure --use-defaults
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pytest -s ./tests/unit/test_configuration.py
-  pytest-native-simple:
-    name: Native Mode test_no_docker.py
+          pytest -s ./tests/test_host/
+  pytest-no-docker:
+    name: PyTest No-docker
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -61,55 +56,152 @@ jobs:
         shell: bash
         run: |
           pip install --user --upgrade pip==22.0.3
-          pip install -r armory-base-requirements.txt
+          pip install -r no-docker-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          armory configure --use-defaults
-          pytest -s ./tests/end-to-end/test_no_docker.py
-  pytest-native-all-unit:
-    name: Native Mode All unit tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -r armory-base-requirements.txt
-          pip install -e .
-          armory configure --use-defaults
-          pytest -k "not docker_required and unit" ./tests/
-  pytest-docker-all-unit:
-    name: Run Docker build script
+          pytest -s ./tests/unit/test_no_docker.py
+  pytest-tf1:
+    name: PyTest TF1
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - name: Run armory docker tests
+      - name: Run armory TF1 docker tests
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh -f all --tag dev --no-cache
-          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and unit" ./tests/
-  formatting-test:
-    name: Check Code Formatting
+          version=$(python -m armory --version)
+          bash docker/build.sh tf1 dev
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf1:${version} pytest -s ./tests/test_tf1
+          docker run -w /armory_dev twosixarmory/tf1:${version} python \
+          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf1_test.py
+  armory-tf1:
+    name: Armory run tests TF1
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
-      - name: install test requirements
-        run: pip install -r test-requirements.txt
-      - name: Run commit hooks
-        run: bash tools/pre-commit.sh
+        with:
+          python-version: '3.7'
+      - name: Run armory TF1 scenarios
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh tf1 dev
+          python -m armory run tests/scenarios/tf1/image_classification.json
+  pytest-tf2:
+    name: PyTest TF2
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory TF2 docker tests
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh tf2 dev
+          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/tf2:${version} pytest -s ./tests/test_tf2
+          docker run -w /armory_dev twosixarmory/tf2:${version} python \
+          /opt/conda/lib/python3.7/site-packages/object_detection/builders/model_builder_tf2_test.py
+  pytest-pytorch:
+    name: PyTest PyTorch non-carla
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory PyTorch docker tests
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh pytorch dev
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -s ./tests/test_docker
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -k "not carla" -s ./tests/test_pytorch
+  pytest-pytorch-carla:
+    name: PyTest PyTorch carla
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory PyTorch docker tests
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh pytorch dev
+          docker run -w /armory_dev twosixarmory/pytorch:${version} pytest -k carla -s ./tests/test_pytorch
+  armory-pytorch:
+    name: Armory run tests PyTorch
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory Pytorch scenarios
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh pytorch dev
+          python -m armory run tests/scenarios/pytorch/image_classification.json
+  armory-no-docker:
+    name: Armory test without docker
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Run armory test without docker
+        run: |
+          pip install -r requirements.txt
+          version=$(python -m armory --version)
+          bash docker/build.sh tf1 dev
+          docker run -w /armory_dev twosixarmory/tf1:${version} python -m armory \
+          run --no-docker tests/scenarios/tf1/image_classification.json
+          bash docker/build.sh pytorch dev
+          docker run -w /armory_dev twosixarmory/pytorch:${version} python -m armory \
+          run --no-docker tests/scenarios/pytorch/image_classification.json
+  flake8-test:
+    name: Flake8
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install flake8
+        run: pip install flake8
+      - name: Run flake8
+        run: flake8
+  black-test:
+    name: Black code format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install black
+        run: pip install black==19.10b0
+      - name: Ensure contributor used ("black ./") before commit
+        run: black --check ./
+  yamllint-test:
+    name: Yamllint
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: install yamllint
+        run: pip install yamllint
+      - name: Run yamllint
+        run: yamllint --no-warnings ./
+  json-format-test:
+    name: JSON file format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+      - name: Ensure contributor used ("python -m tools.format_json") before commit
+        run: python -m tools.format_json --check

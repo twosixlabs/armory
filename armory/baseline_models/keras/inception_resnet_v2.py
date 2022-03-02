@@ -9,8 +9,6 @@ from tensorflow.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 
-tf.compat.v1.disable_eager_execution()
-
 
 def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None

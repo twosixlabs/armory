@@ -9,8 +9,6 @@ from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model
 
-tf.compat.v1.disable_eager_execution()
-
 
 IMAGENET_MEANS = [103.939, 116.779, 123.68]
 

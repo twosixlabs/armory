@@ -1,20 +1,10 @@
-###########################################################################################
-#                           ARMORY Baseline Docker Image
-#
-# This File contains the baseline image for Armory docker images.  All framework
-# based images should inhereit from this image using:
-#       FROM twosixlabs/armory-baseline AS armory-baseline
-#
-#
-###########################################################################################
+########## ARMORY Base #################
 
-
-FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04 AS armory-pytorch-base
 
 # Temporary fix for broken nvidia package checksum
-RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
+# RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
-# Basic Apt-get Bits
 RUN apt-get -y -qq update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y \
@@ -40,10 +30,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linu
 ENV PATH=/opt/conda/bin:$PATH
 
 # conda installations ordered by channel
-
-# TODO Figure out why we need to support this and `armory-base-requirements` separately.
-
-# Conda Install for Channel: pytorch
 RUN /opt/conda/bin/conda install \
     pytorch=1.10 \
     torchvision \
@@ -51,15 +37,23 @@ RUN /opt/conda/bin/conda install \
     cudatoolkit=11.3 \
     -c pytorch \
     && /opt/conda/bin/conda clean --all
+# pytorch==1.10.2 \
+# torchvision==0.11.3 \
+# torchaudio==0.10.2 \
+# cudatoolkit==11.3.1 \
+# ffmpeg==4.3 \
+# numpy==1.21.2 \
+# pillow==8.4.0 \
+# tqdm==4.61.2 \
+# requests==2.25.1 \
 
-# Conda Install for Channel: conda-forge
 RUN /opt/conda/bin/conda install \
     scikit-learn=1.0 \
     jupyterlab \
     matplotlib \
     -c conda-forge \
     && /opt/conda/bin/conda clean --all
-    # ART requires scikit-learn >=0.22.2,<1.1.0
+# ART requires scikit-learn >=0.22.2,<1.1.0
 # scikit-learn==1.0.2 \
 # scipy==1.7.3 \
 # jupyterlab==3.2.9 \
@@ -67,24 +61,18 @@ RUN /opt/conda/bin/conda install \
 # six==1.16.0 \
 # setuptools==52.0.0 \
 
-# Conda Install for Channel: Numba
 RUN /opt/conda/bin/conda install \
     numba=0.55 \
     -c numba \
     && /opt/conda/bin/conda clean --all
-    # ART requires numba >= 0.53.1
+# ART requires numba >= 0.53.1
 # numba==0.55.1
 
-# Conda Install for Channel: Anaconda
 RUN /opt/conda/bin/conda install \
     pandas=1.1 \
     -c anaconda \
     && /opt/conda/bin/conda clean --all
-
-# Conda Install for packages with no channel
-RUN /opt/conda/bin/conda install \
-    protobuf=3 \
-    && /opt/conda/bin/conda clean --all
+# pandas==1.1.3
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==3.2.1 \
@@ -96,12 +84,9 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pytest \
     pymongo \
     coloredlogs \
-    docker
-
-# Removing ART from Base container
-#RUN /opt/conda/bin/pip install --no-cache-dir \
-#    adversarial-robustness-toolbox==1.9.1
-    # tensorflow-datasets version 4 has breaking changes
+    docker \
+    adversarial-robustness-toolbox==1.9.1
+# tensorflow-datasets version 4 has breaking changes
 # dill==0.3.4 \
 # tensorflow-datasets==3.2.1 \
 # tensorflow=2.8.0 \
@@ -119,3 +104,24 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 #    pydub==0.24.1 \
 
 WORKDIR /workspace
+
+########## PyTorch 1 Dev #################
+
+FROM armory-pytorch-base AS armory-pytorch-dev
+ARG armory_version
+
+COPY . /armory_dev/
+RUN /opt/conda/bin/pip install /armory_dev/ --no-cache-dir
+
+WORKDIR /workspace
+CMD tail -f /dev/null
+
+########## PyTorch 1 Release #################
+
+FROM armory-pytorch-base AS armory-pytorch
+ARG armory_version
+
+RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
+
+WORKDIR /workspace
+CMD tail -f /dev/null

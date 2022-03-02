@@ -5,4 +5,3 @@ datasets/
 # ignore temp directories
 outputs/
 tmp/
-__pycache__
