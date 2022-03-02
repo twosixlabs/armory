@@ -239,7 +239,7 @@ class Scenario:
 
     @abc.abstractmethod
     def _load_sample_exporter(self):
-        raise NotImplementedError
+        raise NotImplementedError("_load_sample_exporter() method should instantiate applicable Exporter class in armory.utils.export module")
 
     def load(self):
         self.load_model()
