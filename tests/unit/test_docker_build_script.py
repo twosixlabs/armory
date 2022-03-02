@@ -40,14 +40,15 @@ def image_tag(armory_version_tbi):
     return tag
 
 
+
 @pytest.mark.parametrize(
     "img, opt",
     [
-        # ("base", ""),
+        ("base", ""),
         ("pytorch", ""),
-        # ("tf2", ""),
-        # ("pytorch-deepspeech", ""),
-        # ("base", "--no-cache"),
+        ("tf2", ""),
+        ("pytorch-deepspeech", ""),
+        ("base", "--no-cache"),
     ],
 )
 def test_build_script(img, opt, image_tag, armory_version_tbi):
