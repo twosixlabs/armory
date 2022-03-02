@@ -50,7 +50,7 @@ VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
 TAG=$(get_tag_from_version $ARMORY_VERSION)
-ADDITIONAL_TAG=false
+ADDITIONAL_TAG=""
 
 
 # Making sure execution path is correct
@@ -168,4 +168,3 @@ for framework in "${FRAMEWORK[@]}"; do
     fi
   fi
 done
-
