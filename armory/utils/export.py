@@ -391,3 +391,78 @@ class VideoClassificationExporter(SampleExporter):
 
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
+
+
+class VideoTrackingExporter(VideoClassificationExporter):
+    def _export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+        for i, x_i in enumerate(x):
+            if self.saved_samples == self.num_samples:
+                break
+
+            self._export_video(x_i, type="benign")
+
+            y_i = y[i]
+            y_i_pred_clean = y_pred_clean[i]
+            self._export_video_with_boxes(x_i, y_i, y_i_pred_clean, type="benign")
+
+            if x_adv is not None:
+                x_adv_i = x_adv[i]
+                self._export_video(x_adv_i, type="adversarial")
+                y_i_pred_adv = y_pred_adv[i]
+                self._export_video_with_boxes(
+                    x_adv_i, y_i, y_i_pred_adv, type="adversarial"
+                )
+
+            self.saved_samples += 1
+
+    def _export_video_with_boxes(self, x_i, y_i, y_i_pred, type="benign"):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+
+        if x_i.min() < 0.0 or x_i.max() > 1.0:
+            logger.warning("video out of expected range. Clipping to [0, 1]")
+
+        folder = str(self.saved_samples)
+        os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
+
+        ffmpeg_process = (
+            ffmpeg.input(
+                "pipe:",
+                format="rawvideo",
+                pix_fmt="rgb24",
+                s=f"{x_i.shape[2]}x{x_i.shape[1]}",
+            )
+            .output(
+                os.path.join(self.output_dir, folder, f"video_{type}_with_boxes.mp4"),
+                pix_fmt="yuv420p",
+                vcodec="libx264",
+                r=self.frame_rate,
+            )
+            .overwrite_output()
+            .run_async(pipe_stdin=True, quiet=True)
+        )
+
+        for n_frame, x_frame, in enumerate(x_i):
+            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            image = Image.fromarray(pixels, "RGB")
+            box_layer = ImageDraw.Draw(image)
+            bbox_true = y_i["boxes"][n_frame].astype("float32")
+            bbox_pred = y_i_pred["boxes"][n_frame]
+            box_layer.rectangle(bbox_true, outline="red", width=2)
+            box_layer.rectangle(bbox_pred, outline="white", width=2)
+            image.save(
+                os.path.join(
+                    self.output_dir,
+                    folder,
+                    f"frame_{n_frame:04d}_{type}_with_boxes.png",
+                )
+            )
+            pixels_with_boxes = np.array(image)
+            ffmpeg_process.stdin.write(pixels_with_boxes.tobytes())
+
+        ffmpeg_process.stdin.close()
+        ffmpeg_process.wait()

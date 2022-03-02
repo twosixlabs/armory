@@ -10,6 +10,7 @@ import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
+from armory.utils.export import VideoTrackingExporter
 
 logger = logging.getLogger(__name__)
 
@@ -75,3 +76,8 @@ class CarlaVideoTracking(Scenario):
             )
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
+
+    def _load_sample_exporter(self):
+        return VideoTrackingExporter(
+            self.scenario_output_dir, self.num_export_samples, frame_rate=10
+        )
