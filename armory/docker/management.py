@@ -94,10 +94,10 @@ class ArmoryInstance(object):
         if not expect_sentinel:
             return 0
         if sentinel_found:
-            log.info("Command exited cleanly")
+            log.success("command exited cleanly")
             return 0
         else:
-            log.error("Command did not finish cleanly")
+            log.error("command {cmd} did not finish cleanly")
             return 1
 
     def __del__(self):
