@@ -57,7 +57,7 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf2:0.14.6",
+        "docker_image": "twosixarmory/tf2",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

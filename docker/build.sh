@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Build a docker image for specific framework. Optionally `all` frameworks can be built.
-# Ex: `bash docker/build.sh pytorch`
 
 Help()
 {
@@ -8,33 +6,61 @@ Help()
   echo "----------------------------------------------------------------------------------------"
   echo "                   Armory Docker Build Script                       "
   echo
-  echo "This build script helps to build the necessary docker images to "
-  echo "execute the typical armory experiments.  "
-  echo
-  echo "Syntax: build.sh [-f|t|nc|av|h]"
-  echo "options:"
+  echo "This build script helps to build the docker images necessary for armory exectuion "
+  echo "(in docker mode).  The primary purpose of this script is to build the images from "
+  echo "scratch and to be used by the armory CI toolchain.  If modifications are necessary"
+  echo "you can use \`--dry-run\` to get the \`docker build...\` commands directly and "
+  echo "modify them as necessary. "
+  echo ""
+  echo "Armory uses scm versioning from git, therefore if you want to re-build containers "
+  echo "from a stable armory release, simply checkout that tag and then run this script"
+  echo ""
+  echo "Syntax: build.sh [-f|nc|dr|v|h]"
+  echo ""
+  echo "REQUIRED"
   echo "-f | --framework            Select Which framework to target:"
-  echo "                                [all|base|tf1|tf2|pytorch|pytorch-deepspeech]"
-  echo "-t | --tag                  Tag to use when creating Docker Image (e.g. \`latest\` in"
-  echo "                                repo/image:latest"
-  echo "-nc | --no-cache            Build Images \"Clean\" (i.e. using --no-cache)"
-  echo "-av | --armory-version      Select armory version to install in container"
-  echo "                              (default: local)"
+  echo "                                [all|base|tf2|pytorch|pytorch-deepspeech]"
+  echo ""
+  echo "OPTIONAL"
+  echo "-t | --tag                  Specify Additional Tag to apply to each image"
+  echo "-nc | --no-cache            Build Images \`Clean\` (i.e. using --no-cache)"
   echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
+  echo "-v | --verbose              Show Logs in Plain Text (uses \`--progress=plain\`"
   echo "-h | --help                 Print this Help."
   echo
   echo "----------------------------------------------------------------------------------------"
 }
 
+get_tag_from_version ()
+{
+  local  input=$1
+  arr=( ${input//\./ } ) # Split by .
+  arr="${arr[@]:0:4}" # Keep 1st 4 elements
+  arr="${arr// /.}" # Put it back together
+  result="${arr/+/-}" # Replace + with -
+  echo $result
+}
 
+# Setting Defaults
 POSITIONAL_ARGS=()
-CLEAN=false
 NO_CACHE=false
-TAG="dev"
-ARMORY_VERSION="local"
+ARMORY_VERSION="$(python setup.py --version)"
 DRYRUN=false
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
+FRAMEWORK=""
+TAG=$(get_tag_from_version $ARMORY_VERSION)
+ADDITIONAL_TAG=""
+
+
+# Making sure execution path is correct
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+if [ "$PWD" != "$(dirname $SCRIPT_DIR)" ]; then
+  echo "Must Execute build script from within armory/ folder that contains folder called \`docker\`"
+  return 1
+fi
+
+## Parsing CLI Arguments
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -44,18 +70,13 @@ while [[ $# -gt 0 ]]; do
       shift # past value
       ;;
     -t|--tag)
-      TAG="$2"
+      ADDITIONAL_TAG="$2"
       shift # past argument
-      shift # past value
+      shift # past argument
       ;;
     -nc|--no-cache)
       NO_CACHE=true
       shift # past argument
-      ;;
-    -av|--armory-version)
-      ARMORY_VERSION="$2"
-      shift # past argument
-      shift # past value
       ;;
     -dr|--dry-run)
       DRYRUN=true
@@ -65,15 +86,9 @@ while [[ $# -gt 0 ]]; do
       VERBOSE="--progress=plain"
       shift # past argument
       ;;
-    -r|--repo)
-      REPO="$2"
-      shift # past argument
-      shift # past value
-      ;;
-
     -h|--help)
       Help
-      exit
+      exit 0
       ;;
     -*|--*)
       echo "Unknown option $1"
@@ -89,36 +104,23 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+## Conducting Checks of CLI args
 
 if [ "$FRAMEWORK" == "" ]; then
   echo "Must Specify Framework"
   exit 1
 fi
 
-if [[ "$FRAMEWORK" != "pytorch" &&  "$FRAMEWORK" != "pytorch-deepspeech" && "$FRAMEWORK" != "tf1" && "$FRAMEWORK" != "tf2" && "$FRAMEWORK" != "all"  && "$FRAMEWORK" != "base" ]]; then
-    echo "ERROR: <framework> argument must be \`tf1\`, \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\` or \`all\`, not \`$FRAMEWORK\`"
+if [[ "$FRAMEWORK" != "pytorch" &&  "$FRAMEWORK" != "pytorch-deepspeech" && "$FRAMEWORK" != "tf2" && "$FRAMEWORK" != "all"  && "$FRAMEWORK" != "base" ]]; then
+    echo "ERROR: <framework> argument must be \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\` or \`all\`, not \`$FRAMEWORK\`"
     exit 1
 fi
 
 if [ $FRAMEWORK == "all" ]; then
-  echo "setting all frameowks"
+  echo "Setting Build to use all frameworks"
   FRAMEWORK=("base" "pytorch" "tf2" "pytorch-deepspeech")
-fi
-
-# Parse Version
-internal_armory_version=$(python -m armory --version)
-if [[ $internal_armory_version == *"-dev" ]]; then
-    # Deprecation. Remove for 0.14
-    echo "ERROR: Armory version $internal_armory_version ends in '-dev'. This is no longer supported as of 0.13.0"
-    # TODO Figure out if this is best way to handle this
-    #  I dont like that it stops the terminal session
-    exit 1
-fi
-
-if [ $ARMORY_VERSION == "local" ]; then
-  ARMORY_BUILD_TYPE="local"
 else
-  ARMORY_BUILD_TYPE="prebuilt"
+  FRAMEWORK=($FRAMEWORK)
 fi
 
 echo "Building Images for Framework(s): ${FRAMEWORK[@]}"
@@ -126,6 +128,7 @@ for framework in "${FRAMEWORK[@]}"; do
   echo ""
   echo "------------------------------------------------"
   echo "Building docker image for framework: $framework"
+
   CMD="docker build"
   if $NO_CACHE; then
     CMD="$CMD --no-cache"
@@ -135,36 +138,33 @@ for framework in "${FRAMEWORK[@]}"; do
 
 
   CMD="$CMD --force-rm"
-  CMD="$CMD --file docker/Dockerfile-${framework}"
-  CMD="$CMD --build-arg image_tag=${TAG}"
-  CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
-
+  CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${framework}"
   if [ $framework != "base" ]; then
-    if [ $ARMORY_BUILD_TYPE == "local" ]; then
-      CMD="$CMD --target armory-local"
-    else
-      CMD="$CMD --target armory-prebuilt"
-    fi
+    CMD="$CMD --build-arg base_image_tag=${TAG}"
+    CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
   fi
 
-
-  CMD="$CMD "
   CMD="$CMD -t ${REPO}/${framework}:${TAG}"
   CMD="$CMD $VERBOSE"
   CMD="$CMD ."
 
-  if [ $framework == "tf1" ]; then
-    echo "Framework tf1 is deprecated....please use tf2"
+  if $DRYRUN; then
+    echo "Would have Executed: "
+    echo "    ->  $CMD"
   else
+    echo "Executing: "
+    echo "    ->  $CMD"
+    $CMD
+  fi
+
+  if [ "$ADDITIONAL_TAG" != "" ]; then
     if $DRYRUN; then
       echo "Would have Executed: "
-      echo "    ->  $CMD"
+      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
     else
       echo "Executing: "
-      echo "    ->  $CMD"
-      $CMD
-
+      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
+      docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
     fi
   fi
 done
-

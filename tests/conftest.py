@@ -10,9 +10,10 @@ from docker.errors import ImageNotFound
 logger = logging.getLogger(__name__)
 
 REQUIRED_DOCKER_IMAGES = [
-    "twosixarmory/armory-base:dev",
-    "twosixarmory/armory-pytorch:dev",
-    "twosixarmory/armory-tf2:dev",
+    "twosixarmory/base:dev",
+    "twosixarmory/pytorch:dev",
+    "twosixarmory/tf2:dev",
+    "twosixarmory/pytorch-deepspeech:dev",
 ]
 
 # Added this to make run local

@@ -176,11 +176,12 @@ if __name__ == "__main__":
         action="store_false",
         help="If the config argument is a base64 serialized JSON instead of a filepath",
     )
+    # TODO: Figure out if this should be removed/deprecated
     parser.add_argument(
         "--mongo",
         dest="mongo_host",
         default=None,
-        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://USER:PASS@5.6.7.8')",
+        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://DOCKER_REPOSITORY:PASS@5.6.7.8')",
     )
     parser.add_argument(
         "--check",

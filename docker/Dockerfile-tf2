@@ -1,5 +1,5 @@
-ARG image_tag
-FROM twosixarmory/base:${image_tag} as armory-base
+ARG base_image_tag
+FROM twosixarmory/base:${base_image_tag} as armory-base
 ARG armory_version
 ARG armory_build_type
 
@@ -35,14 +35,7 @@ COPY pytest.ini /armory-repo/
 COPY ./scenario_configs /armory-repo/scenario_configs/
 COPY ./tests /armory-repo/tests/
 COPY ./armory /armory-repo/armory/
-RUN /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN yes "" | armory configure
-
-WORKDIR /workspace
-
-FROM armory-base as armory-prebuilt
-RUN echo "Building Armory from prebuilt version: $armory_version"
-RUN /opt/conda/bin/pip install armory-testbed==${armory_version} --no-cache-dir
-RUN yes "" | armory configure
+RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
+RUN armory configure --use-default
 
 WORKDIR /workspace

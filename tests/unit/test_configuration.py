@@ -8,7 +8,6 @@ import jsonschema
 import pytest
 
 from armory.utils.configuration import load_config
-from armory import __version__
 
 
 # TODO Refactor this pattern with Matt's new Config
@@ -71,10 +70,7 @@ def test_bad_configs(filePath, error, match):
 @pytest.mark.parametrize("file", glob("scenario_configs/*.json"))
 def test_scenario_configs(file):
     # TODO: Fix with refactor of config tin bit
-    config = load_config(str(file))
-    assert (
-        __version__ in config["sysconfig"]["docker_image"]
-    ), "Docker image does not match version in repository"
+    load_config(str(file))
 
 
 @pytest.mark.parametrize(
@@ -86,7 +82,4 @@ def test_scenario_configs(file):
     ),
 )
 def test_all_examples(file):
-    config = load_config(str(file))
-    assert (
-        __version__ in config["sysconfig"]["docker_image"]
-    ), "Docker image does not match version in repository"
+    load_config(str(file))
