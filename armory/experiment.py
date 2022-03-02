@@ -3,6 +3,18 @@ from importlib import import_module
 from armory.logs import log
 import os
 
+# TODO: Change class names to [thing]Parameters format
+#  e.g. Attack-> AttackParameters
+
+# TODO:  Make Experiment class which is like old
+#  scneario.main
+
+# TODO: Update this so that validation occurs at lowest
+#  level possible.  I.e. we do NOT validate at edge,
+#  and let process throw exception, therefore data model
+#  is assumed to be "unsafe" and each function needs to
+#  protect its inputs.
+
 
 class Attack(BaseModel):
     """Armory Data Class for `Attack` Parameters
