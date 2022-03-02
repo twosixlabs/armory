@@ -64,7 +64,7 @@ jobs:
           pip install -r armory-base-requirements.txt
           pip install -r test-requirements.txt
           pip install -e .
-          yes "" | armory configure
+          armory configure --use-defaults
           pytest -s ./tests/end-to-end/test_no_docker.py
   pytest-native-all-unit:
     name: Native Mode All unit tests
@@ -86,7 +86,7 @@ jobs:
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
           pip install -e .
-          yes "" | armory configure
+          armory configure --use-defaults
           pytest -k "not docker_required and unit" ./tests/
   pytest-docker-all-unit:
     name: Run Docker build script
