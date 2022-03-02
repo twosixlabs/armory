@@ -1,6 +1,6 @@
-# the big honking primo feature
+# the big honking duo feature
 
-We developing larger-scale changes in the work-branch called `shenshaw26/primo`.
+We developing larger-scale changes in the work-branch called `shenshaw26/duo`.
 The goal is to migrate features into twosixlabs/armory as they are tested and
 GARD developers are updated. Keeping it is a separate branch which keeps closely
 _tracked to_ develop using frequent merges so that merges _into_ develop

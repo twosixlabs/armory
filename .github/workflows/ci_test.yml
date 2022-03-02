@@ -6,13 +6,13 @@ on:
     branches:
       - master
       - develop
-      - primo
+      - duo
 
   pull_request:
     branches:
       - master
       - develop
-      - primo
+      - duo
 
   workflow_dispatch:
 
