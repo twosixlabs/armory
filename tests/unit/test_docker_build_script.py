@@ -23,9 +23,7 @@ def armory_version_tbi():
         )
     except subprocess.CalledProcessError:
         print("armory .git not avaiable...trying armory")
-        expected_armory_version = subprocess.check_output(
-            "armory version".split(" ")
-        )
+        expected_armory_version = subprocess.check_output("armory version".split(" "))
     expected_armory_version = expected_armory_version.decode("utf-8")
     expected_armory_version = expected_armory_version.replace("\n", "").strip()
     return expected_armory_version
