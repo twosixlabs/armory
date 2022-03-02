@@ -40,7 +40,6 @@ def image_tag(armory_version_tbi):
     return tag
 
 
-
 @pytest.mark.parametrize(
     "img, opt",
     [
