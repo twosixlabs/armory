@@ -1033,7 +1033,6 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
-    # TODO Find out why this is in some of the functions but not others (e.g. see german_traffic_sign)
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1748,13 +1747,6 @@ def _parse_dataset_name(dataset_name: str):
         )
     return name, subpath
 
-
-# TODO Move to something like this
-"""
-SUPPORTED_DATASETS = ['mnist','cifar10'...]
-def generator(name, **kwargs):
-    return getattr(dataset, name)(itertools.partial(**kwargs))
-"""
 
 SUPPORTED_DATASETS = {
     "mnist": mnist,

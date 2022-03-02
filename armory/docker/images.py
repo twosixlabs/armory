@@ -2,17 +2,17 @@
 Enables programmatic accessing of most recent docker images
 """
 
-import armory
 import pkg_resources
 
-DOCKER_REPOSITORY = "twosixarmory"
-ARMORY_VERSION = armory.__version__
+import armory
+
+USER = "twosixarmory"
 TAG = armory.__version__
 
-PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
-PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
-TF1 = f"{DOCKER_REPOSITORY}/tf1:{TAG}"
-TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
+PYTORCH = f"{USER}/pytorch:{TAG}"
+PYTORCH_DEEPSPEECH = f"{USER}/pytorch-deepspeech:{TAG}"
+TF1 = f"{USER}/tf1:{TAG}"
+TF2 = f"{USER}/tf2:{TAG}"
 ALL = (
     PYTORCH,
     PYTORCH_DEEPSPEECH,
@@ -34,11 +34,8 @@ def parse_version(tag):
     """
     if not isinstance(tag, str):
         raise ValueError(f"tag is a {type(tag)}, not a str")
-    # if len(tag.split(".")) == 4:
-    #     log.warning(f"Using Experimental Version of Armory: {tag}")
-    #     if tag.split(".")[-1]
-    # elif len(tag.split(".")) != 3:
-    #     raise ValueError(f"tag {tag} must be of form 'major.minor.patch(.dev...)'")
+    if len(tag.split(".")) != 3:
+        raise ValueError(f"tag {tag} must be of form 'major.minor.patch'")
     version = pkg_resources.parse_version(tag)
     if not isinstance(version, pkg_resources.extern.packaging.version.Version):
         raise ValueError(f"tag {tag} parses to type {type(version)}, not Version")

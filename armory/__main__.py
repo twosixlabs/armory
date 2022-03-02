@@ -558,33 +558,13 @@ def configure(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, description=description)
     _debug(parser)
 
-    parser.add_argument(
-        "--use-defaults", default=False, action="store_true", help="Use Defaults"
-    )
-
     args = parser.parse_args(command_args)
     armory.logs.update_filters(args.log_level, args.debug)
 
     default_host_paths = paths.HostDefaultPaths()
 
     config = None
-
-    if args.use_defaults:
-        config = {
-            "dataset_dir": default_host_paths.dataset_dir,
-            "local_git_dir": default_host_paths.local_git_dir,
-            "saved_model_dir": default_host_paths.saved_model_dir,
-            "tmp_dir": default_host_paths.tmp_dir,
-            "output_dir": default_host_paths.output_dir,
-            "verify_ssl": True,
-        }
-        print("Saving configuration...")
-        save_config(config, default_host_paths.armory_dir)
-        print("Configure successful")
-        print("Configure complete")
-        return
-
-    elif os.path.exists(default_host_paths.armory_config):
+    if os.path.exists(default_host_paths.armory_config):
         response = None
         while response is None:
             prompt = f"Existing configuration found: {default_host_paths.armory_config}"
@@ -667,7 +647,6 @@ def configure(command_args, prog, description):
     print(resolved)
     save = None
     while save is None:
-
         if os.path.isfile(default_host_paths.armory_config):
             print("WARNING: this will overwrite existing configuration.")
             print("    Press Ctrl-C to abort.")
