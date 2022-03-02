@@ -1,248 +1,264 @@
-"""
-Test cases for ARMORY datasets.
-"""
-
-import os
-
-import pytest
+import torch
 import numpy as np
-
+import pytest
+import tensorflow as tf
+import os
 from armory.data import datasets
 from armory.data import adversarial_datasets
-from armory import paths
-
-DATASET_DIR = paths.DockerPaths().dataset_dir
 
 
-def test__parse_token():
-    for x in "test", "train[15:20]", "train[:10%]", "train[-80%:]":
-        assert datasets._parse_token(x) == x
-
-    for x, y in [
-        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
-        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
-    ]:
-        assert datasets._parse_token(x) == y
-
-    for x in "", "test[", "test[]", "test[[]]", "[10:11]":
-        with pytest.raises(ValueError):
-            datasets._parse_token(x)
-
-    with pytest.raises(NotImplementedError):
-        datasets._parse_token("test[10:20:2]")
-
-
-def test_parse_split_index():
-    for x in "train[15:20]", "train[:10%]+train[-80%:]":
-        assert datasets.parse_split_index(x) == x
-
-    for x, y in [
-        ("test[10]", "test[10:11]"),
-        ("test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
-        ("test + train", "test+train"),
-        ("test[[1, 4, 5, 6]]", "test[1:2]+test[4:5]+test[5:6]+test[6:7]"),
-    ]:
-        assert datasets.parse_split_index(x) == y
-
-    for x in (None, 13, [1, 4, 5], "", "test++train"):
-        with pytest.raises(ValueError):
-            datasets.parse_split_index(x)
-
-    with pytest.raises(NotImplementedError):
-        datasets.parse_split_index("test[10:20:2]")
-
-
-def test_parse_str_slice():
-    for x, y in [
-        ("[2:5]", (2, 5)),
-        ("[:5]", (None, 5)),
-        ("[6:]", (6, None)),
-        ("[[5: 7] ", (5, 7)),
-        (":3", (None, 3)),
-        ("4:5", (4, 5)),
-    ]:
-        assert datasets.parse_str_slice(x) == y
-
-    for x in ("[::3]", "[5:-1]", "-10:", "3:3", "4:3"):
-        with pytest.raises(ValueError):
-            datasets.parse_str_slice(x)
-
-
-def test_filter_by_index():
-    ds = datasets.mnist(
-        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
-    )
-    dataset_size = 10000
-
-    for index in ([], [-4, 5, 6], ["1:3"]):
-        with pytest.raises(ValueError):
-            datasets.filter_by_index(ds, index, dataset_size)
-
-    ds = datasets.mnist("test", shuffle_files=False, preprocessing_fn=None)
-    assert ds.size == dataset_size
-    ys = np.hstack([next(ds)[1] for i in range(10)])  # first 10 labels
-
-    for index in (
-        [1, 3, 6, 5],
-        [0],
-        [6, 7, 8, 9, 9, 8, 7, 6],
-        list(range(10)),
-    ):
-        ds = datasets.mnist(
-            "test", shuffle_files=False, preprocessing_fn=None, index=index
-        )
-        index = sorted(set(index))
-        assert ds.size == len(index)
-        ys_index = np.hstack([y for (x, y) in ds])
-        # ys_index = np.hstack([next(ds)[1] for i in range(len(index))])
-        assert (ys[index] == ys_index).all()
-
-
-def test_filter_by_class():
-    with pytest.raises(ValueError):
-        datasets.cifar10("test", shuffle_files=False, class_ids=[])
-
-    ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[3])
-    for i, (x, y) in enumerate(ds_filtered):
-        assert int(y) == 3
-    assert i + 1 == 1000
-
-    ds_filtered = datasets.cifar10("test", shuffle_files=False, class_ids=[2, 7])
-    for x, y in ds_filtered:
-        assert int(y) in [2, 7]
-
-
-def test_filter_by_class_and_index():
-    ds_filtered_by_class = datasets.cifar10(
-        "test",
-        shuffle_files=False,
-        preprocessing_fn=None,
-        framework="numpy",
-        class_ids=[3],
-    )
-    num_examples = 10
-    xs = np.vstack([next(ds_filtered_by_class)[0] for i in range(10)])
-
-    for index in (
-        [1, 3, 6, 5],
-        [0],
-        [6, 7, 8, 9, 9, 8, 7, 6],
-        list(range(num_examples)),
-    ):
-        ds_filtered_by_class_and_idx = datasets.cifar10(
+@pytest.mark.parametrize(
+    "name, batch_size, num_epochs, split, framework, xtype, xshape, ytype, yshape, dataset_size",
+    [
+        (
+            "cifar10",
+            16,
+            1,
+            "train",
+            "pytorch",
+            torch.uint8,
+            (16, 32, 32, 3),
+            torch.int64,
+            (16,),
+            50000,
+        ),
+        (
+            "mnist",
+            16,
+            1,
+            "train",
+            "pytorch",
+            torch.uint8,
+            (16, 28, 28, 1),
+            torch.int64,
+            (16,),
+            60000,
+        ),
+        (
+            "resisc45",
+            16,
+            1,
+            "train",
+            "pytorch",
+            torch.uint8,
+            (16, 256, 256, 3),
+            torch.int64,
+            (16,),
+            22500,
+        ),
+        (
+            "mnist",
+            16,
+            1,
+            "train",
+            "tf",
+            tf.uint8,
+            (16, 28, 28, 1),
+            tf.int64,
+            (16,),
+            60000,
+        ),
+        (
+            "mnist",
+            16,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (16, 28, 28, 1),
+            tf.int64,
+            (16,),
+            60000,
+        ),
+        # These come from the tests/test_docker/test_dataset.py individuals
+        (
+            "mnist",
+            600,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (600, 28, 28, 1),
+            tf.int64,
+            (600,),
+            60000,
+        ),
+        (
+            "mnist",
+            600,
+            1,
             "test",
-            shuffle_files=False,
-            preprocessing_fn=None,
-            class_ids=[3],
-            index=index,
-        )
-        index = sorted(set(index))
-        assert ds_filtered_by_class_and_idx.size == len(index)
-        xs_index = np.vstack([x for (x, y) in ds_filtered_by_class_and_idx])
-        assert (xs[index] == xs_index).all()
-
-
-def test_filter_by_str_slice():
-    ds = datasets.mnist(
-        "test", shuffle_files=False, preprocessing_fn=None, framework="tf"
+            "numpy",
+            tf.uint8,
+            (600, 28, 28, 1),
+            tf.int64,
+            (600,),
+            10000,
+        ),
+        (
+            "cifar10",
+            500,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (500, 32, 32, 3),
+            tf.int64,
+            (500,),
+            50000,
+        ),
+        (
+            "cifar10",
+            500,
+            1,
+            "test",
+            "numpy",
+            tf.uint8,
+            (500, 32, 32, 3),
+            tf.int64,
+            (500,),
+            10000,
+        ),
+        (
+            "cifar100",
+            500,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (500, 32, 32, 3),
+            tf.int64,
+            (500,),
+            50000,
+        ),
+        (
+            "cifar100",
+            500,
+            1,
+            "test",
+            "numpy",
+            tf.uint8,
+            (500, 32, 32, 3),
+            tf.int64,
+            (500,),
+            10000,
+        ),
+        (
+            "resisc45",
+            16,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            22500,
+        ),
+        (
+            "resisc45",
+            16,
+            1,
+            "test",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            4500,
+        ),
+        (
+            "resisc45",
+            16,
+            1,
+            "validation",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            4500,
+        ),
+        (
+            "resisc10",
+            16,
+            1,
+            "train",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            5000,
+        ),
+        (
+            "resisc10",
+            16,
+            1,
+            "test",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            1000,
+        ),
+        (
+            "resisc10",
+            16,
+            1,
+            "validation",
+            "numpy",
+            tf.uint8,
+            (16, 256, 256, 3),
+            tf.int64,
+            (16,),
+            1000,
+        ),
+    ],
+)
+def test_generator_construction(
+    name,
+    batch_size,
+    num_epochs,
+    split,
+    framework,
+    xtype,
+    xshape,
+    ytype,
+    yshape,
+    dataset_size,
+    dataset_generator,
+    armory_dataset_dir,
+):
+    dataset = dataset_generator(
+        name, batch_size, num_epochs, split, framework, dataset_dir=armory_dataset_dir
     )
-    dataset_size = 10000
 
-    with pytest.raises(ValueError):
-        datasets.filter_by_str_slice(ds, "[10000:]", dataset_size)
+    x, y = next(iter(dataset))
 
-    ds = datasets.mnist("test", shuffle_files=False, preprocessing_fn=None)
-    assert ds.size == dataset_size
-    ys = np.hstack([next(ds)[1] for i in range(10)])  # first 10 labels
-
-    for index, target in (
-        ("[:5]", ys[:5]),
-        ("[3:8]", ys[3:8]),
-        ("[0:5]", ys[0:5]),
-    ):
-        ds = datasets.mnist(
-            "test", shuffle_files=False, preprocessing_fn=None, index=index
-        )
-        assert ds.size == len(target)
-        ys_index = np.hstack([y for (x, y) in ds])
-        assert (target == ys_index).all()
-
-
-def test_parse_split_index_ordering():
-    """
-    Ensure that output order is deterministic for multiple splits
-    """
-    index = [5, 37, 38, 56, 111]  # test has max index 9999
-    split = "test"
-    kwargs = dict(epochs=1, batch_size=1, dataset_dir=DATASET_DIR, shuffle_files=False)
-    ds = datasets.mnist(split=split, **kwargs)
-    fixed_order = []
-    for i, (x, y) in enumerate(ds):
-        if i in index:
-            fixed_order.append(x)
-        if i >= max(index):
-            break
-
-    sliced_split = f"{split}[{index}]"
-    ds = datasets.mnist(split=sliced_split, **kwargs)
-    output_x = [x for (x, y) in ds]
-    assert len(fixed_order) == len(output_x)
-    for x_i, x_j in zip(fixed_order, output_x):
-        assert (x_i == x_j).all()
-
-
-def test_mnist():
-    batch_size = 600
-    for split, size in [("train", 60000), ("test", 10000)]:
-        dataset = datasets.mnist(
-            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-        assert dataset.size == size
-        assert dataset.batch_size == batch_size
-        assert dataset.batches_per_epoch == (
-            size // batch_size + bool(size % batch_size)
-        )
-
+    assert x.dtype == xtype
+    assert x.shape == xshape
+    assert y.dtype == ytype
+    assert y.shape == yshape
+    if framework == "numpy":
+        assert dataset.size == dataset_size
         x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 28, 28, 1)
-        assert y.shape == (batch_size,)
+        assert x.shape == xshape
+        assert y.shape == yshape
+        assert isinstance(x, np.ndarray)
 
 
-def test_cifar():
-    batch_size = 500
-    for split, size in [("train", 50000), ("test", 10000)]:
-        dataset = datasets.cifar10(
-            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-        assert dataset.size == size
-        assert dataset.batch_size == batch_size
-        assert dataset.batches_per_epoch == (
-            size // batch_size + bool(size % batch_size)
-        )
-
-        x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 32, 32, 3)
-        assert y.shape == (batch_size,)
+# TODO Clean up tests below here
 
 
-def test_cifar100():
-    batch_size = 500
-    for split, size in [("train", 50000), ("test", 10000)]:
-        dataset = datasets.cifar100(
-            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-        assert dataset.size == size
-        assert dataset.batch_size == batch_size
-        assert dataset.batches_per_epoch == (
-            size // batch_size + bool(size % batch_size)
-        )
-
-        x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 32, 32, 3)
-        assert y.shape == (batch_size,)
+# TODO Talk to David to see why these parameters are used....could we just used the
+#  bits from the tests_datasets.py::test_generator_construction
+#  David says these can be removed once we do all the asserts
 
 
-def test_digit():
+def test_digit(armory_dataset_dir):
+
     epochs = 1
     batch_size = 1
     num_users = 3
@@ -253,7 +269,10 @@ def test_digit():
         ("test", 5 * num_users * 10),
     ]:
         dataset = datasets.digit(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=armory_dataset_dir,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -265,11 +284,12 @@ def test_digit():
         assert y.shape == (batch_size,)
 
 
-def test_imagenet_adv():
+def test_imagenet_adv(armory_dataset_dir):
+
     batch_size = 100
     total_size = 1000
     test_dataset = adversarial_datasets.imagenet_adversarial(
-        dataset_dir=DATASET_DIR,
+        dataset_dir=armory_dataset_dir,
         split="adversarial",
         batch_size=batch_size,
         epochs=1,
@@ -287,12 +307,16 @@ def test_imagenet_adv():
     assert y.shape == (batch_size,)
 
 
-def test_german_traffic_sign():
+def test_german_traffic_sign(armory_dataset_dir):
+
     for split, size in [("train", 39209), ("test", 12630)]:
         batch_size = 1
         epochs = 1
         dataset = datasets.german_traffic_sign(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=armory_dataset_dir,
         )
         assert dataset.size == size
 
@@ -302,15 +326,21 @@ def test_german_traffic_sign():
         assert y.shape == (batch_size,)
 
 
-def test_imagenette():
-    if not os.path.isdir(os.path.join(DATASET_DIR, "imagenette", "full-size", "0.1.0")):
+def test_imagenette(armory_dataset_dir):
+
+    if not os.path.isdir(
+        os.path.join(armory_dataset_dir, "imagenette", "full-size", "0.1.0")
+    ):
         pytest.skip("imagenette dataset not locally available.")
 
     for split, size in [("train", 12894), ("validation", 500)]:
         batch_size = 1
         epochs = 1
         dataset = datasets.imagenette(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=armory_dataset_dir,
         )
         assert dataset.size == size
 
@@ -320,15 +350,21 @@ def test_imagenette():
         assert y.shape == (batch_size,)
 
 
-def test_ucf101():
-    if not os.path.isdir(os.path.join(DATASET_DIR, "ucf101", "ucf101_1", "2.0.0")):
+def test_ucf101(armory_dataset_dir):
+
+    if not os.path.isdir(
+        os.path.join(armory_dataset_dir, "ucf101", "ucf101_1", "2.0.0")
+    ):
         pytest.skip("ucf101 dataset not locally available.")
 
     for split, size in [("train", 9537), ("test", 3783)]:
         batch_size = 1
         epochs = 1
         dataset = datasets.ucf101(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split,
+            epochs=epochs,
+            batch_size=batch_size,
+            dataset_dir=armory_dataset_dir,
         )
         assert dataset.size == size
 
@@ -338,8 +374,11 @@ def test_ucf101():
         assert y.shape == (batch_size,)
 
 
-def test_librispeech():
-    if not os.path.exists(os.path.join(DATASET_DIR, "librispeech_dev_clean_split")):
+def test_librispeech(armory_dataset_dir):
+
+    if not os.path.exists(
+        os.path.join(armory_dataset_dir, "librispeech_dev_clean_split")
+    ):
         pytest.skip("Librispeech dataset not downloaded.")
 
     splits = ("train", "validation", "test")
@@ -350,7 +389,10 @@ def test_librispeech():
 
     for split, size, min_dim1, max_dim1 in zip(splits, sizes, min_dim1s, max_dim1s):
         dataset = datasets.librispeech_dev_clean(
-            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+            split=split,
+            epochs=1,
+            batch_size=batch_size,
+            dataset_dir=armory_dataset_dir,
         )
         assert dataset.size == size
         assert dataset.batch_size == batch_size
@@ -364,51 +406,10 @@ def test_librispeech():
         assert y.shape == (batch_size,)
 
 
-def test_resisc45():
-    """
-    Skip test if not locally available
-    """
-    if not os.path.isdir(os.path.join(DATASET_DIR, "resisc45_split", "3.0.0")):
-        pytest.skip("resisc45_split dataset not locally available.")
+def test_librispeech_adversarial(armory_dataset_dir):
 
-    for split, size in [("train", 22500), ("validation", 4500), ("test", 4500)]:
-        batch_size = 16
-        epochs = 1
-        dataset = datasets.resisc45(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-        assert dataset.size == size
-        assert dataset.batch_size == batch_size
-        assert dataset.batches_per_epoch == (
-            size // batch_size + bool(size % batch_size)
-        )
-
-        x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 256, 256, 3)
-        assert y.shape == (batch_size,)
-
-
-def test_resisc10():
-    for split, size in [("train", 5000), ("validation", 1000), ("test", 1000)]:
-        batch_size = 16
-        epochs = 1
-        dataset = datasets.resisc10(
-            split=split, epochs=epochs, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-        assert dataset.size == size
-        assert dataset.batch_size == batch_size
-        assert dataset.batches_per_epoch == (
-            size // batch_size + bool(size % batch_size)
-        )
-
-        x, y = dataset.get_batch()
-        assert x.shape == (batch_size, 256, 256, 3)
-        assert y.shape == (batch_size,)
-
-
-def test_librispeech_adversarial():
     if not os.path.exists(
-        os.path.join(DATASET_DIR, "librispeech_adversarial", "1.0.0")
+        os.path.join(armory_dataset_dir, "librispeech_adversarial", "1.0.0")
     ):
         pytest.skip("Librispeech adversarial dataset not downloaded.")
 
@@ -422,7 +423,7 @@ def test_librispeech_adversarial():
         split=split,
         epochs=1,
         batch_size=batch_size,
-        dataset_dir=DATASET_DIR,
+        dataset_dir=armory_dataset_dir,
         adversarial_key="adversarial",
     )
     assert dataset.size == size
@@ -436,7 +437,8 @@ def test_librispeech_adversarial():
     assert y.shape == (batch_size,)
 
 
-def test_resisc45_adversarial_224x224():
+def test_resisc45_adversarial_224x224(armory_dataset_dir):
+
     size = 225
     split = "adversarial"
     batch_size = 16
@@ -446,7 +448,7 @@ def test_resisc45_adversarial_224x224():
             split=split,
             epochs=epochs,
             batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            dataset_dir=armory_dataset_dir,
             adversarial_key=adversarial_key,
         )
         assert dataset.size == size
@@ -461,8 +463,9 @@ def test_resisc45_adversarial_224x224():
         assert y.shape == (batch_size,)
 
 
-def test_coco2017():
-    if not os.path.exists(os.path.join(DATASET_DIR, "coco", "2017", "1.1.0")):
+def test_coco2017(armory_dataset_dir):
+
+    if not os.path.exists(os.path.join(armory_dataset_dir, "coco", "2017", "1.1.0")):
         pytest.skip("coco2017 dataset not downloaded.")
 
     split_size = 5000
@@ -483,6 +486,7 @@ def test_coco2017():
 
 
 def test_dapricot_dev():
+
     split_size = 27
     split = "small"
     dataset = adversarial_datasets.dapricot_dev_adversarial(split=split,)
@@ -504,6 +508,7 @@ def test_dapricot_dev():
 
 
 def test_dapricot_test():
+
     split_size = 108
     split = "small"
     dataset = adversarial_datasets.dapricot_test_adversarial(split=split,)
@@ -525,6 +530,7 @@ def test_dapricot_test():
 
 
 def test_carla_obj_det_train():
+
     dataset = datasets.carla_obj_det_train(split="train")
     assert dataset.size == 4727
     # Testing batch_size > 1
@@ -548,6 +554,7 @@ def test_carla_obj_det_train():
 
 
 def test_carla_obj_det_dev():
+
     ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
     ds_multimodal = adversarial_datasets.carla_obj_det_dev(split="dev", modality="both")
@@ -579,6 +586,7 @@ def test_carla_obj_det_dev():
 
 
 def test_carla_obj_det_test():
+
     ds_rgb = adversarial_datasets.carla_obj_det_test(split="test", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_test(split="test", modality="depth")
     ds_multimodal = adversarial_datasets.carla_obj_det_test(
@@ -612,6 +620,7 @@ def test_carla_obj_det_test():
 
 
 def test_carla_video_tracking_dev():
+
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
     assert dataset.size == 20
     for x, y in dataset:
@@ -631,6 +640,7 @@ def test_carla_video_tracking_dev():
 
 
 def test_carla_video_tracking_test():
+
     dataset = adversarial_datasets.carla_video_tracking_test(split="test")
     assert dataset.size == 20
     for x, y in dataset:
@@ -649,10 +659,11 @@ def test_carla_video_tracking_test():
             assert key in y_patch_metadata
 
 
-def test_ucf101_adversarial_112x112():
+def test_ucf101_adversarial_112x112(armory_dataset_dir):
+
     if not os.path.isdir(
         os.path.join(
-            DATASET_DIR,
+            armory_dataset_dir,
             "ucf101_mars_perturbation_and_patch_adversarial112x112",
             "1.0.0",
         )
@@ -668,7 +679,7 @@ def test_ucf101_adversarial_112x112():
             split=split,
             epochs=epochs,
             batch_size=batch_size,
-            dataset_dir=DATASET_DIR,
+            dataset_dir=armory_dataset_dir,
             adversarial_key=adversarial_key,
         )
         assert dataset.size == size
@@ -680,14 +691,15 @@ def test_ucf101_adversarial_112x112():
         assert y.shape == (batch_size,)
 
 
-def test_variable_length():
+def test_variable_length(armory_dataset_dir):
     """
     Test batches with variable length items using digit dataset
     """
     size = 1350
     batch_size = 4
+
     dataset = datasets.digit(
-        split="train", epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
+        split="train", epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
     )
     assert dataset.batches_per_epoch == (size // batch_size + bool(size % batch_size))
 
@@ -698,28 +710,3 @@ def test_variable_length():
         assert x_i.ndim == 1
         assert 1148 <= len(x_i) <= 18262
     assert y.shape == (batch_size,)
-
-
-def test_generator():
-    batch_size = 600
-    for split, size in [("train", 60000)]:
-        dataset = datasets.mnist(
-            split=split, epochs=1, batch_size=batch_size, dataset_dir=DATASET_DIR,
-        )
-
-        for x, y in dataset:
-            assert x.shape == (batch_size, 28, 28, 1)
-            assert y.shape == (batch_size,)
-            break
-
-
-def test_numpy_generator():
-    dataset = datasets.mnist(
-        split="train",
-        epochs=1,
-        batch_size=16,
-        dataset_dir=DATASET_DIR,
-        framework="numpy",
-    )
-    x, y = dataset.get_batch()
-    assert isinstance(x, np.ndarray)
