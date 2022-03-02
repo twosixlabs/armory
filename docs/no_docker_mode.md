@@ -21,7 +21,7 @@ Once this is complete, and you have ensured you are in the `[armory-repo]` direc
 you can setup the environment with the following:
 ```bash
 pip install --upgrade pip==22.0.3
-pip install -r no-docker-requirements.txt
+pip install -r armory-base-requirements.txt
 pip install -e . 
 ```
 Once this completes, you should run `armory configure` (If you haven't already done this

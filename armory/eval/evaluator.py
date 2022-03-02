@@ -28,6 +28,7 @@ class Evaluator(object):
     def __init__(
         self, config: dict, no_docker: bool = False, root: bool = False,
     ):
+        log.info("Constructing Evaluator Object")
         if not isinstance(config, dict):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
@@ -58,6 +59,7 @@ class Evaluator(object):
         self.root = root
 
         # Retrieve environment variables that should be used in evaluation
+        log.info("Retrieving Environment Variables")
         self.extra_env_vars = dict()
         self._gather_env_variables()
 
@@ -68,6 +70,9 @@ class Evaluator(object):
             return
 
         # Download docker image on host
+        # TODO This seems like it still needs docker even in no docker mode
+        #  we should fix this
+        log.info("Attempting to get Docker Client")
         docker_client = docker.from_env()
         try:
             docker_client.images.get(kwargs["image_name"])
@@ -77,7 +82,7 @@ class Evaluator(object):
                 docker_api.pull_verbose(docker_client, image_name)
             except docker.errors.NotFound:
                 if image_name in images.ALL:
-                    name = image_name.lstrip(f"{images.USER}/").rstrip(
+                    image_name.lstrip(f"{images.DOCKER_REPOSITORY}/").rstrip(
                         f":{armory.__version__}"
                     )
                     raise ValueError(
@@ -89,9 +94,7 @@ class Evaluator(object):
                         "If you'd like to continue working on the developer image please "
                         "build it from source on your machine as described here:\n"
                         "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                        f"bash docker/build.sh {name} dev\n"
-                        "OR\n"
-                        "bash docker/build.sh all dev"
+                        "bash docker/build.sh --framework all --tag dev"
                     )
                 else:
                     log.error(f"Image {image_name} could not be downloaded")
@@ -245,9 +248,8 @@ class Evaluator(object):
                         validate_config=validate_config,
                     )
             except KeyboardInterrupt:
-                log.warning("Keyboard interrupt caught")
+                log.warning("keyboard interrupt caught")
             finally:
-                log.trace("Shutting down container")
                 log.trace("Shutting down container {self.manager.instances.keys()}")
                 self.manager.stop_armory_instance(runner)
         except requests.exceptions.RequestException as e:

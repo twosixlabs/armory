@@ -47,6 +47,7 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
+# TODO THIS is a TERRIBLE Pattern....can we refactor?
 def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwargs):
     """
     Loads a dataset from configuration file
