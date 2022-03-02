@@ -23,15 +23,16 @@ def armory_version_tbi():
     return expected_armory_version
 
 
+def get_short(value):
+    return ".".join(value.split(".")[:4])
+
+
 @pytest.fixture
 def image_tag(armory_version_tbi):
     av = armory_version_tbi.replace("+", "-")
-    tag = ".".join(av.split(".")[:-1])
+    tag = get_short(av)
     return tag
 
-
-def get_short(value):
-    return ".".join(value.split(".")[:-1])
 
 
 @pytest.mark.parametrize(
