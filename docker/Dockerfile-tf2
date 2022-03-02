@@ -36,6 +36,6 @@ COPY ./scenario_configs /armory-repo/scenario_configs/
 COPY ./tests /armory-repo/tests/
 COPY ./armory /armory-repo/armory/
 RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN yes "" | armory configure
+RUN armory configure --use-default
 
 WORKDIR /workspace

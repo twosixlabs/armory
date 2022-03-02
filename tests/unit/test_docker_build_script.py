@@ -3,6 +3,8 @@ import subprocess
 import re
 import os
 
+pytestmark = [pytest.mark.docker_required]
+
 
 def get_cmd_output(cmd):
     output = subprocess.check_output(cmd.split(" "))
@@ -15,9 +17,15 @@ def get_cmd_output(cmd):
 @pytest.fixture
 def armory_version_tbi():
     """Expected Version of Armory to be installed in Docker Image"""
-    expected_armory_version = subprocess.check_output(
-        "python setup.py --version".split(" ")
-    )
+    try:
+        expected_armory_version = subprocess.check_output(
+            "python setup.py --version".split(" ")
+        )
+    except subprocess.CalledProcessError:
+        print("armory .git not avaiable...trying armory")
+        expected_armory_version = subprocess.check_output(
+            "armory version".split(" ")
+        )
     expected_armory_version = expected_armory_version.decode("utf-8")
     expected_armory_version = expected_armory_version.replace("\n", "").strip()
     return expected_armory_version
@@ -34,15 +42,14 @@ def image_tag(armory_version_tbi):
     return tag
 
 
-
 @pytest.mark.parametrize(
     "img, opt",
     [
-        ("base", ""),
+        # ("base", ""),
         ("pytorch", ""),
-        ("tf2", ""),
-        ("pytorch-deepspeech", ""),
-        ("base", "--no-cache"),
+        # ("tf2", ""),
+        # ("pytorch-deepspeech", ""),
+        # ("base", "--no-cache"),
     ],
 )
 def test_build_script(img, opt, image_tag, armory_version_tbi):
