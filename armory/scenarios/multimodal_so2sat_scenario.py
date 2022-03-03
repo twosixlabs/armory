@@ -189,9 +189,6 @@ class So2SatClassification(Scenario):
         if self.eo_perturbation_logger is not None:
             self.eo_perturbation_logger.update_perturbation(x_eo, x_adv_eo)
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
-
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def finalize_results(self):
