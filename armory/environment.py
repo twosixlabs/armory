@@ -1,13 +1,86 @@
 """
 Environment parameter names
 """
-
-# TODO This is a relic...remove
-ARMORY_VERSION = "ARMORY_VERSION"
-
 from pydantic import BaseModel, validator
 import os
 from armory.logs import log
+from typing import List, Union
+
+
+from enum import Enum, IntEnum
+
+
+class ExecutionMode(str, Enum):
+    """Armory Execution Mode
+    docker  ->  Means that armory will execute
+                experiments inside the prescribed
+                docker container
+    native  ->  Means that armory will execute
+                experiments in the python environment
+                in which it is called.
+    """
+    docker = 'docker'
+    native = 'native'
+
+
+class Credentials(BaseModel):
+    """Armory Credentials"""
+    # TODO: maybe have a `credential_file` ?
+    git_token: str = None
+    s3_token: str = None
+    verify_ssl: bool = True
+
+
+class Paths(BaseModel):
+    """Paths to various armory items
+    NOTE: At construction, the fiels are
+    validated to make sure they exist.
+    """
+    setup_file: str = os.path.expanduser(os.path.join("~",".armory","profile"))
+    dataset_directory: str = os.path.expanduser(os.path.join("~",".armory","datasets"))
+    git_repository_directory: str = os.path.expanduser(os.path.join("~",".armory","git"))
+    output_directory: str = os.path.expanduser(os.path.join("~",".armory","outputs"))
+    saved_models_directory: str = os.path.expanduser(os.path.join("~",".armory","saved_models"))
+    temporary_directory: str = os.path.expanduser(os.path.join("~",".armory","tmp"))
+
+    # '*' is the same as 'cube_numbers', 'square_numbers' here:
+    @validator('*', pre=True)
+    def split_str(cls, v):
+        if not os.path.exists(v):
+            msg = f"armory environment path: {v} does not exist"
+            raise ValueError(msg)
+        return v
+
+DOCKER_REPO = "twosixarmory"
+
+# TODO Think aobut what to do if multiple simulatenous test
+#  builds are happending on same machine with image name/tag
+#  clashes
+
+
+class DockerImage(str, Enum):
+    """Armory Supported Docker Images
+
+    IMAGES
+    base:                   This image contains the base requirements
+                            necessary to run armory within a container.
+                            NOTE: This image does NOT contain an installation
+                            of armory.
+
+    tf2                     Image with armory installed and ready to use with
+                            TensorFlow2 based architectures
+
+    pytorch                 Image with armory installed and ready to use with
+                            pytorch based architectures
+
+    pytorch-deepspeech      Image with armory installed and ready to use with
+                            pytorch deepspeech architectures (primarily used with
+                            audio scenarios
+    """
+    base = f"{DOCKER_REPO}/base"
+    pytorch = f"{DOCKER_REPO}/pytorch"
+    pytorch_deepspeech = f"{DOCKER_REPO}/pytorch-deepspeech"
+    tf2 = f"{DOCKER_REPO}/tf2"
 
 
 class EnvironmentParameters(BaseModel):
@@ -16,69 +89,13 @@ class EnvironmentParameters(BaseModel):
     This Dataclass contains the environmental references
     necessary for armory execution.
     """
+    execution_mode: ExecutionMode = ExecutionMode.native
+    credentials: Credentials
+    paths: Paths
+    armory_images: List[Union[str, DockerImage]] = [DockerImage.tf2,
+                                                    DockerImage.pytorch,
+                                                    DockerImage.pytorch_deepspeech]
 
-    ARMORY_CONFIGURATION_DIRECTORY: str = os.path.expanduser("~")
-    ARMORY_GITHUB_TOKEN: str = None
-    ARMORY_EXECUTION_MODE: str = "native"
-    ARMORY_DATASET_DIRECTORY: str
-    ARMORY_GIT_DIRECTORY: str
-    ARMORY_OUTPUT_DIRECTORY: str
-    ARMORY_SAVED_MODELS_DIRECTORY: str
-    ARMORY_TEMP_DIRECTORY: str
-    ARMORY_VERIFY_SSL: bool = True
-
-    @validator("ARMORY_CONFIGURATION_DIRECTORY")
-    def validate_armory_configuration_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid Configuration Directory: {dname}")
-        return dname
-
-    @validator("ARMORY_GITHUB_TOKEN")
-    def validate_github_token(cls, token):
-        # TODO: Figure out how to validate this
-        return token
-
-    @validator("ARMORY_EXECUTION_MODE")
-    def validate_execution_mode(cls, mode):
-        if mode.lower() not in ["native", "docker"]:
-            raise ValueError(f"Invalid Execution Mode: {mode}")
-        return mode.lower()
-
-    @validator("ARMORY_DATASET_DIRECTORY")
-    def validate_dataset_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid Dataset Directory: {dname}")
-        return dname
-
-    @validator("ARMORY_GIT_DIRECTORY")
-    def validate_git_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid GIT Directory: {dname}")
-        return dname
-
-    @validator("ARMORY_OUTPUT_DIRECTORY")
-    def validate_output_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid Output Directory: {dname}")
-        return dname
-
-    @validator("ARMORY_SAVED_MODELS_DIRECTORY")
-    def validate_saved_models_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid Saved Models Directory: {dname}")
-        return dname
-
-    @validator("ARMORY_TEMP_DIRECTORY")
-    def validate_temp_directory(cls, dname):
-        dname = os.path.abspath(os.path.expanduser(dname))
-        if not os.path.exists(dname):
-            raise ValueError(f"Invalid TEMP Directory: {dname}")
-        return dname
 
     @classmethod
     def load(cls, overrides=[]):
@@ -93,7 +110,23 @@ class EnvironmentParameters(BaseModel):
                 args[key] = overrides[key]
         return cls(**args)
 
+    def override(self, key:str, value):
+        """Overide Environment Parameter
 
+        key:
+
+        """
+
+    def override(self, vals: Union[dict, str]):
+        """Override Evironment parameter
+        vals:       Expects either space separated string of `key=value` pairs
+                    e.g. 'credentials.s3_token=12345 paths.temporary_directory=/tmp
+                    or `dict` with key in same format (e.g. {'paths.setup_file':'/tmp'})
+        """
+        if isinstance(vals, str):
+            vals = {j[0]: j[1] for j in [i.split("=") for i in overrides]}
+        elif isinstance(vals, dict):
+            vals = vals
 def ask_yes_no(prompt, msg):
     while True:
         if prompt:

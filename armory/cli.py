@@ -64,14 +64,23 @@ def cli(verbose, log_level):
 
 
 @cli.command()
-@click.option("--interactive", is_flag=True)
 @click.argument("experiment")
-def run(experiment, interactive):
+@click.option("--interactive", is_flag=True)
+@click.option("--override", default=[], multiple=True)
+def run(experiment, interactive, override):
     """Armory Run - Execute Armory using Experiment File
 
     EXPERIMENT - File containing experiment parameters
     """
-    log.info(f"Executing Experiment: {experiment}")
+    from armory.environment import EnvironmentParameters
+    log.info(f"Executing `armory run` from experiment file: {experiment}")
+
+    env = EnvironmentParameters.load(overrides=override)
+
+
+
+
+
     click.echo(f"Interactive: {interactive}")
     raise NotImplementedError("Still Working")
     # TODO Fix this
@@ -91,23 +100,13 @@ def setup(default):
 @click.option("--override", default=[], multiple=True)
 def check(override):
     """Armory Check - Check basic Armory Setup
+    This replaces `--check` method from old armory run
     """
     from armory.environment import EnvironmentParameters
 
     env = EnvironmentParameters.load(overrides=override)
 
     print(f"Armory Environment: \n {env}")
-
-
-@cli.command()
-@click.argument("experiment")
-def validate(experiment):
-    """Armory Check - Check basic Armory Setup
-    """
-    from armory.experiment import Experiment
-
-    exp = Experiment.load(experiment)
-    print(f"Armory Experiment: \n {exp}\n\n is valid!!")
 
 
 @cli.command()

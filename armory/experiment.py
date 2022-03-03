@@ -16,53 +16,19 @@ import os
 #  protect its inputs.
 
 
-class Attack(BaseModel):
+class AttackParameters(BaseModel):
     """Armory Data Class for `Attack` Parameters
 
     """
-
     name: str
     module: str
     knowledge: str
     kwargs: dict
     type: str = None
 
-    @validator("knowledge")
-    def validate_knowledge(cls, v):
-        if v not in ["white", "black"]:
-            raise ValueError(
-                f"invalid attack.knowledge: {v}...must be ['white'|'black']"
-            )
-        return v
-
-    @validator("module")
-    def validate_module(cls, module_name):
-        print(cls, module_name)
-        try:
-            import_module(module_name)
-        except Exception as e:
-            log.error("Invalid Attack.module: {}".format(module_name))
-            raise e
-        return module_name
-
-    # @validator("name")
-    # def validate_name(cls, function_name):
-    #     print(cls.module, function_name)
-    #     try:
-    #         getattr(cls.module, function_name)
-    #     except Exception as e:
-    #         log.error("Invalid Attack.module name: {}".format(function_name))
-    #         raise e
-    #     return function_name
-    #
-    # @validator("type")
-    # def validate_type(cls, type):
-    #     valid_types = [None, "preloaded", "patch", "sweep"]
-    #     if type not in valid_types:
-    #         raise ValueError(f"Attack type: {type} is invalid... must be in {valid_types}")
 
 
-class Dataset(BaseModel):
+class DatasetParameters(BaseModel):
     """Armory Dataclass For `Dataset` Parameters"""
 
     name: str
@@ -71,7 +37,7 @@ class Dataset(BaseModel):
     batch_size: int
 
 
-class Defense(BaseModel):
+class DefenseParameters(BaseModel):
     """Armory Dataclass for `Defense` Parameters"""
 
     name: str
@@ -80,7 +46,7 @@ class Defense(BaseModel):
     kwargs: dict
 
 
-class Metric(BaseModel):
+class MetricParameters(BaseModel):
     """Armory Dataclass for Evaluation `Metric` Parameters"""
 
     means: bool
@@ -89,7 +55,7 @@ class Metric(BaseModel):
     task: list
 
 
-class Model(BaseModel):
+class ModelParameters(BaseModel):
     """Armory Dataclass for `Model` Parameters"""
 
     name: str
@@ -101,7 +67,7 @@ class Model(BaseModel):
     fit: bool
 
 
-class Scenario(BaseModel):
+class ScenarioParameters(BaseModel):
     """Armory Dataclass for `Scenario` Parameters"""
 
     name: str
@@ -109,7 +75,7 @@ class Scenario(BaseModel):
     kwargs: dict
 
 
-class SystemConfiguration(BaseModel):
+class SystemConfigurationParameters(BaseModel):
     """Armory Dataclass for Environment Configuration Paramters"""
 
     docker_image: str = None
@@ -120,19 +86,19 @@ class SystemConfiguration(BaseModel):
     use_gpu: bool = False
 
 
-class Experiment(BaseModel):
+class ExperimentParameters(BaseModel):
     """Armory Dataclass for Experiment Parameters"""
 
     name: str = None
     _description: str = None
     adhoc: bool = None  # TODO Figure out what this is for...maybe poison?
-    attack: Attack = None
-    dataset: Dataset
-    defense: Defense = None
-    metric: Metric = None
-    model: Model
-    scenario: Scenario
-    sysconfig: SystemConfiguration = None
+    attack: AttackParameters = None
+    dataset: DatasetParameters
+    defense: DefenseParameters = None
+    metric: MetricParameters = None
+    model: ModelParameters
+    scenario: ScenarioParameters
+    sysconfig: SystemConfigurationParameters = None
 
     def save(self, filename):
         with open(filename, "w") as f:
@@ -156,3 +122,12 @@ class Experiment(BaseModel):
             log.error(f"Could not parse Experiment from: {filename}")
             raise e
         return exp
+
+
+class Experiment(object):
+    """Execution Class to `run` armory experiments
+
+    """
+
+    def __init__(self):
+        pass
