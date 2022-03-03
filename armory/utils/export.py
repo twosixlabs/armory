@@ -72,113 +72,6 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_so2sat(self, x, x_adv):
-        for x_i, x_adv_i in zip(x, x_adv):
-
-            if self.saved_samples == self.num_samples:
-                break
-
-            assert np.all(
-                x_i.shape == x_adv_i.shape
-            ), f"Benign and adversarial images are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-                logger.warning(
-                    "Benign SAR images out of expected range. Clipping to [-1, 1]."
-                )
-            if x_adv_i[..., :4].min() < -1.0 or x_adv_i[..., :4].max() > 1.0:
-                logger.warning(
-                    "Adversarial SAR images out of expected range. Clipping to [-1, 1]."
-                )
-            if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-                logger.warning(
-                    "Benign EO images out of expected range. Clipping to [0, 1]."
-                )
-            if x_adv_i[..., 4:].min() < 0.0 or x_adv_i[..., 4:].max() > 1.0:
-                logger.warning(
-                    "Adversarial EO images out of expected range. Clipping to [0, 1]."
-                )
-
-            folder = str(self.saved_samples)
-            os.mkdir(os.path.join(self.output_dir, folder))
-
-            sar_eps = 1e-9 + 1j * 1e-9
-            x_vh = np.log10(
-                np.abs(
-                    np.complex128(
-                        np.clip(x_i[..., 0], -1.0, 1.0)
-                        + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
-                    )
-                    + sar_eps
-                )
-            )
-            x_vv = np.log10(
-                np.abs(
-                    np.complex128(
-                        np.clip(x_i[..., 2], -1.0, 1.0)
-                        + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
-                    )
-                    + sar_eps
-                )
-            )
-            x_adv_vh = np.log10(
-                np.abs(
-                    np.complex128(
-                        np.clip(x_adv_i[..., 0], -1.0, 1.0)
-                        + 1j * np.clip(x_adv_i[..., 1], -1.0, 1.0)
-                    )
-                    + sar_eps
-                )
-            )
-            x_adv_vv = np.log10(
-                np.abs(
-                    np.complex128(
-                        np.clip(x_adv_i[..., 2], -1.0, 1.0)
-                        + 1j * np.clip(x_adv_i[..., 3], -1.0, 1.0)
-                    )
-                    + sar_eps
-                )
-            )
-            sar_min = np.min((x_vh.min(), x_vv.min(), x_adv_vh.min(), x_adv_vv.min()))
-            sar_max = np.max((x_vh.max(), x_vv.max(), x_adv_vh.max(), x_adv_vv.max()))
-            sar_scale = 255.0 / (sar_max - sar_min)
-
-            benign_vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
-            benign_vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
-            adversarial_vh = Image.fromarray(
-                np.uint8(sar_scale * (x_adv_vh - sar_min)), "L"
-            )
-            adversarial_vv = Image.fromarray(
-                np.uint8(sar_scale * (x_adv_vv - sar_min)), "L"
-            )
-            benign_vh.save(os.path.join(self.output_dir, folder, "vh_benign.png"))
-            benign_vv.save(os.path.join(self.output_dir, folder, "vv_benign.png"))
-            adversarial_vh.save(
-                os.path.join(self.output_dir, folder, "vh_adversarial.png")
-            )
-            adversarial_vv.save(
-                os.path.join(self.output_dir, folder, "vv_adversarial.png")
-            )
-
-            eo_min = np.min((x_i[..., 4:].min(), x_adv[..., 4:].min()))
-            eo_max = np.max((x_i[..., 4:].max(), x_adv[..., 4:].max()))
-            eo_scale = 255.0 / (eo_max - eo_min)
-            for c in range(4, 14):
-                benign_eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
-                )
-                adversarial_eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x_adv_i[..., c], 0.0, 1.0) - eo_min)),
-                    "L",
-                )
-                benign_eo.save(
-                    os.path.join(self.output_dir, folder, f"eo{c-4}_benign.png")
-                )
-                adversarial_eo.save(
-                    os.path.join(self.output_dir, folder, f"eo{c-4}_adversarial.png")
-                )
-
-            self.saved_samples += 1
-
     def _export_audio(self, x, x_adv):
         for x_i, x_adv_i in zip(x, x_adv):
 
@@ -466,3 +359,73 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
+
+
+class So2SatExporter(SampleExporter):
+    def _export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+
+        for i, x_i in enumerate(x):
+
+            if self.saved_samples == self.num_samples:
+                break
+
+            self._export_so2sat_image(x_i, type="benign")
+
+            if x_adv is not None:
+                x_adv_i = x_adv[i]
+                self._export_so2sat_image(x_adv_i, type="adversarial")
+
+            self.saved_samples += 1
+
+    def _export_so2sat_image(self, x_i, type="benign"):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+
+        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
+            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
+            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+
+        folder = str(self.saved_samples)
+        os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
+
+        sar_eps = 1e-9 + 1j * 1e-9
+        x_vh = np.log10(
+            np.abs(
+                np.complex128(
+                    np.clip(x_i[..., 0], -1.0, 1.0)
+                    + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+                )
+                + sar_eps
+            )
+        )
+        x_vv = np.log10(
+            np.abs(
+                np.complex128(
+                    np.clip(x_i[..., 2], -1.0, 1.0)
+                    + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+                )
+                + sar_eps
+            )
+        )
+        sar_min = np.min((x_vh.min(), x_vv.min()))
+        sar_max = np.max((x_vh.max(), x_vv.max()))
+        sar_scale = 255.0 / (sar_max - sar_min)
+
+        vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+        vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
+        vh.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
+        vv.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+
+        eo_min = x_i[..., 4:].min()
+        eo_max = x_i[..., 4:].max()
+        eo_scale = 255.0 / (eo_max - eo_min)
+        for c in range(4, 14):
+            eo = Image.fromarray(
+                np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+            )
+            eo.save(os.path.join(self.output_dir, folder, f"eo{c-4}_{type}.png"))

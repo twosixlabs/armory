@@ -9,6 +9,7 @@ import numpy as np
 
 from armory.utils import metrics
 from armory.scenarios.scenario import Scenario
+from armory.utils.export import So2SatExporter
 
 logger = logging.getLogger(__name__)
 
@@ -218,3 +219,6 @@ class So2SatClassification(Scenario):
                 {f"eo_{k}": v for k, v in self.eo_perturbation_logger.results().items()}
             )
         self.results = combined_results
+
+    def _load_sample_exporter(self):
+        return So2SatExporter(self.scenario_output_dir, self.num_export_samples)
