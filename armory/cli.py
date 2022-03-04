@@ -73,13 +73,10 @@ def run(experiment, interactive, override):
     EXPERIMENT - File containing experiment parameters
     """
     from armory.environment import EnvironmentParameters
+
     log.info(f"Executing `armory run` from experiment file: {experiment}")
 
     env = EnvironmentParameters.load(overrides=override)
-
-
-
-
 
     click.echo(f"Interactive: {interactive}")
     raise NotImplementedError("Still Working")

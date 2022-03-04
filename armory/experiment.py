@@ -20,12 +20,12 @@ class AttackParameters(BaseModel):
     """Armory Data Class for `Attack` Parameters
 
     """
+
     name: str
     module: str
     knowledge: str
     kwargs: dict
     type: str = None
-
 
 
 class DatasetParameters(BaseModel):
