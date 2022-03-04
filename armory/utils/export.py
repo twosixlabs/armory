@@ -72,37 +72,6 @@ class SampleExporter:
             )
         os.mkdir(self.output_dir)
 
-    def _export_audio(self, x, x_adv):
-        for x_i, x_adv_i in zip(x, x_adv):
-
-            if self.saved_samples == self.num_samples:
-                break
-
-            assert np.all(
-                x_i.shape == x_adv_i.shape
-            ), f"Benign and adversarial audio are different shapes: {x_i.shape} vs. {x_adv_i.shape}"
-            if x_i.min() < -1.0 or x_i.max() > 1.0:
-                logger.warning(
-                    "Benign audio out of expected range. Clipping to [-1, 1]"
-                )
-            if x_adv_i.min() < -1.0 or x_adv_i.max() > 1.0:
-                logger.warning(
-                    "Adversarial audio out of expected range. Clipping to [-1, 1]"
-                )
-
-            wavfile.write(
-                os.path.join(self.output_dir, f"{self.saved_samples}_benign.wav"),
-                rate=self.context.sample_rate,
-                data=np.clip(x_i, -1.0, 1.0),
-            )
-            wavfile.write(
-                os.path.join(self.output_dir, f"{self.saved_samples}_adversarial.wav"),
-                rate=self.context.sample_rate,
-                data=np.clip(x_adv_i, -1.0, 1.0),
-            )
-
-            self.saved_samples += 1
-
 
 class ImageClassificationExporter(SampleExporter):
     def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
@@ -317,7 +286,9 @@ class VideoTrackingExporter(VideoClassificationExporter):
             )
 
         if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("video out of expected range. Clipping to [0, 1]")
+            logger.warning(
+                "video out of expected range. Clipping to [0,twosixlabs/gard-submissions/repos/hkakitani__deepspeech.pytorch__default/deepspeech.pytorch 1]"
+            )
 
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
@@ -359,6 +330,46 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
+
+
+class AudioExporter(SampleExporter):
+    def __init__(self, base_output_dir, num_samples, sample_rate):
+        self.sample_rate = sample_rate
+        super().__init__(base_output_dir, num_samples)
+
+    @classmethod
+    def from_context(cls, base_output_dir, num_samples, context):
+        return cls(base_output_dir, num_samples, context.sample_rate)
+
+    def _export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+        for i, x_i in enumerate(x):
+            if self.saved_samples == self.num_samples:
+                break
+
+            self._export_audio(x_i, type="benign")
+
+            if x_adv is not None:
+                x_i_adv = x_adv[i]
+                self._export_audio(x_i_adv, type="adversarial")
+
+            self.saved_samples += 1
+
+    def _export_audio(self, x_i, type="benign"):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+
+        if x_i.min() < -1.0 or x_i.max() > 1.0:
+            logger.warning("input out of expected range. Clipping to [-1, 1]")
+
+        wavfile.write(
+            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.wav"),
+            rate=self.sample_rate,
+            data=np.clip(x_i, -1.0, 1.0),
+        )
 
 
 class So2SatExporter(SampleExporter):
