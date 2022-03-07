@@ -106,10 +106,8 @@ class EnvironmentParameters(BaseModel):
     def check(self):
         self.paths.check()
 
-
-
     @validator("execution_mode")
-    def name_must_contain_space(cls, v):
+    def validate_execution_mode(cls, v):
         if isinstance(v, str):
             return ExecutionMode._value2member_map_[v]
         elif isinstance(v, ExecutionMode):
@@ -144,6 +142,7 @@ def get_value(msg, default_value, type, choices=None):
                 None, f"Directory: {answer} does not exist, would you like to create?"
             )
             if response in ["y", ""]:
+                print(f"\tCreating New Directory `{answer}`!!")
                 os.makedirs(answer)
         return answer
     elif type == "bool":
@@ -172,22 +171,34 @@ def get_value(msg, default_value, type, choices=None):
         )
 
 
-def save_profile(profile_dict, filename):
-    # TODO Refactor this to not write as ENV Vars
-    # just go to .armory/profile.yml
-    # Then search code for all refs to os.environ
-    # and fix up
+def save_profile(env_dict, filename):
     if os.path.exists(filename):
         print(f"WARNING: Profile File: {filename} already exists...overwriting!!")
         response = ask_yes_no(None, "Are you sure?")
-        if response in ("n"):
+        if response not in ("y",""):
             print("Skipping Save!!")
             return
     print(f"Saving Profile to: {filename}")
+
+    # Attempting to Load (verification)
+    try:
+        tmpfile = f"{filename}.tmp"
+        print(f"Attempting Write to: {tmpfile}")
+        with open(tmpfile, "w") as f:
+            f.write(json.dumps(env_dict, indent=2, sort_keys=True))
+        print(f"Reloading Environment from File: {tmpfile} and checking...")
+        venv = EnvironmentParameters.parse_file(tmpfile)
+        venv.check()
+    except Exception as e:
+        print("ERROR: Something went wrong during save/reload!!")
+        print(f"Removing {tmpfile}")
+        os.remove(tmpfile)
+        print(f"Did not Save profile to {filename}!!!")
+        raise e
+
+    os.remove(tmpfile)
     with open(filename, "w") as f:
-        for k, v in profile_dict.items():
-            line = f"export {k}={v}\n"
-            f.write(line)
+        f.write(json.dumps(env_dict, indent=2, sort_keys=True))
 
 
 def setup_environment(use_defaults=False):
@@ -220,7 +231,7 @@ def setup_environment(use_defaults=False):
         print(instructions)
 
         # Query for Execution Mode
-        mode = get_value("Set Execution Mode", env.execution_mode, "str", choices=ExecutionMode.__members__.keys())
+        mode = get_value("Set Execution Mode", env.execution_mode.value, "str", choices=list(ExecutionMode.__members__.keys()))
         env.execution_mode = mode
 
         # Query for Credentials
@@ -234,113 +245,21 @@ def setup_environment(use_defaults=False):
             setattr(env.paths, k, new_val)
 
         # Query for Images
-        images = get_value(f"images", env.images, "str", choices=None)
+        images = get_value(f"images", [img.value for img in env.images], "list", choices=None)
         env.images = images
 
-        print(json.dumps(env.images))
-        print(env.paths.json())
-        print(env.credentials.json())
-        # print(env)
-
+        # Saving (if selected)
         prompt = "\nSetup Information Selected:\n"
-        prompt += json.dumps(env.json, indent=2, sort_keys=True)
+        prompt += json.dumps(env.dict(), indent=2, sort_keys=True)
         prompt += "\n"
         # prompt += "\n".join([f"\t{k:35s}:\t\t{v}" for k, v in values.items()])
         response = ask_yes_no(prompt, "Save this Profile?")
         if response in ("y", ""):
             print(f"\nSaving Armory Setup to: {env.profile}")
-            save_profile(env.json(), env.profile)
+            save_profile(env.dict(), env.profile)
             break
         else:
             print("Configuration Not Saved!!!")
 
     print("\n Armory Setup Complete!!\n")
 
-# def setup_environment():
-#     main_dir = os.path.expanduser(os.path.join("~", ".armory"))
-#     profile = os.path.join(main_dir, "armory_profile")
-#     # TODO change to lower case
-#     DEFAULTS = dict(
-#         ARMORY_CONFIGURATION_DIRECTORY=(main_dir, "dir", None),
-#         ARMORY_GITHUB_TOKEN=(None, "str", None),
-#         ARMORY_EXECUTION_MODE=("native", "str", ["native", "docker"]),
-#         ARMORY_DATASET_DIRECTORY=(
-#             os.path.expanduser(os.path.join(main_dir, "datasets")),
-#             "dir",
-#             None,
-#         ),
-#         ARMORY_GIT_DIRECTORY=(
-#             os.path.expanduser(os.path.join(main_dir, "git")),
-#             "dir",
-#             None,
-#         ),
-#         ARMORY_OUTPUT_DIRECTORY=(
-#             os.path.expanduser(os.path.join(main_dir, "outputs")),
-#             "dir",
-#             None,
-#         ),
-#         ARMORY_SAVED_MODELS_DIRECTORY=(
-#             os.path.expanduser(os.path.join(main_dir, "saved_models")),
-#             "dir",
-#             None,
-#         ),
-#         ARMORY_TEMP_DIRECTORY=(
-#             os.path.expanduser(os.path.join(main_dir, "tmp")),
-#             "dir",
-#             None,
-#         ),
-#         ARMORY_VERIFY_SSL=(True, "bool", None),
-#     )
-#
-#     while True:
-#         values = {}
-#         if os.path.isfile(profile):
-#             print("WARNING: this will overwrite existing armory profile.")
-#             print("    Press Ctrl-C to abort.")
-#
-#         instructions = "\n".join(
-#             [
-#                 "\nSetting up Armory Profile",
-#                 f'    This profile will be stored at "{profile}"',
-#                 "",
-#                 "Please enter desired target directory for the following paths.",
-#                 "    If left empty, the default path will be used.",
-#                 "    Absolute paths (which include '~' user paths) are required.",
-#                 "",
-#                 "Stop at any time by pressing Ctrl-C.",
-#                 "",
-#             ]
-#         )
-#         print(instructions)
-#
-#         for k, v in DEFAULTS.items():
-#             values[k] = get_value(f"Set {k}", v[0], v[1], v[2])
-#
-#         prompt = "\nConfiguration Items:\n"
-#         prompt += "\n".join([f"\t{k:35s}:\t\t{v}" for k, v in values.items()])
-#         response = ask_yes_no(prompt, "Save this Profile?")
-#         if response in ("y", ""):
-#             print(f"\nSaving Configuration to: {profile}")
-#             save_profile(values, profile)
-#             break
-#         else:
-#             print("Configuration Not Saved!!!")
-#
-#     lines = "\n".join(
-#         [
-#             "",
-#             "Armory Setup Complete!!",
-#             "If not already done, you should add the following",
-#             "to your bash_profile:",
-#             "",
-#             "# Setting Armory Profile in Environment",
-#             f"ARMORY_PROFILE={profile}",
-#             "if [[ -f $ARMORY_PROFILE ]]; then",
-#             "   echo Setting Armory Environment",
-#             "   source $ARMORY_PROFILE",
-#             "fi",
-#             "\n" "Once complete, you will need to source your profile or",
-#             "start a new terminal session",
-#         ]
-#     )
-#     print(lines)
