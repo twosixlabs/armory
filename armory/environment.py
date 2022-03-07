@@ -6,7 +6,7 @@ import os
 from typing import List, Union
 from enum import Enum
 import json
-from armory.utils import rsetattr, rhasattr
+from armory.utils import rsetattr, rhasattr, parse_overrides
 
 DEFAULT_ARMORY_DIRECTORY = os.path.expanduser("~/.armory")
 DEFAULT_DOCKER_REPO = "twosixarmory"
@@ -128,17 +128,19 @@ class EnvironmentParameters(BaseModel):
 
     @classmethod
     def load(cls, profile=None, overrides=[]):
-        overrides = [(i.split("=")[0], i.split("=")[1]) for i in overrides]
         if profile is None:
             profile = cls().profile
 
         env = cls.parse_file(profile)
-        for k, v in overrides:
-            if rhasattr(env, k):
-                rsetattr(env, k, v)
-
+        env.apply_overrides(overrides)
         env.check()
         return env
+
+    def apply_overrides(self, overrides):
+        overrides = parse_overrides(overrides)
+        for k, v in overrides:
+            if rhasattr(self, k):
+                rsetattr(self, k, v)
 
 
 def ask_yes_no(prompt, msg):

@@ -22,3 +22,15 @@ def rhasattr(obj, attr):
         return rhasattr(getattr(obj, left), right)
     else:
         return False
+
+
+def parse_overrides(overrides):
+    if isinstance(overrides, str):
+        overrides = overrides.split(" ")
+    output = [tuple(i.split("=")) for i in overrides]
+    for v in output:
+        if len(v) != 2:
+            raise ValueError(
+                f"Override: `{overrides}` has invalid format must be of form `thing.thing=value`"
+            )
+    return output

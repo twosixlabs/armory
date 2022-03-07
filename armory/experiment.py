@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 from armory.logs import log
 import os
+import yaml
+import json
+from armory.utils import parse_overrides
+
 
 # TODO: Change class names to [thing]Parameters format
 #  e.g. Attack-> AttackParameters
@@ -85,42 +89,59 @@ class SystemConfigurationParameters(BaseModel):
     use_gpu: bool = False
 
 
+class MetaData(BaseModel):
+    name: str
+    author: str
+    description: str
+
+
+class PoisonParameters(BaseModel):
+    pass
+
+
 class ExperimentParameters(BaseModel):
     """Armory Dataclass for Experiment Parameters"""
 
-    name: str = None
-    _description: str = None
-    adhoc: bool = None  # TODO Figure out what this is for...maybe poison?
+    _meta: MetaData
+    poison: PoisonParameters = None
     attack: AttackParameters = None
     dataset: DatasetParameters
     defense: DefenseParameters = None
     metric: MetricParameters = None
     model: ModelParameters
     scenario: ScenarioParameters
-    sysconfig: SystemConfigurationParameters = None
+    # sysconfig: SystemConfigurationParameters = None
 
-    def save(self, filename):
-        with open(filename, "w") as f:
-            f.write(self.json())
+    # def save(self, filename):
+    #     with open(filename, "w") as f:
+    #         f.write(self.json())
 
     @classmethod
-    def load(cls, filename):
+    def load(cls, filename, overrides=[]):
+        overrides = parse_overrides(overrides)
         valid_ext = (".aexp", ".json")
-        if os.path.splitext(filename)[1] not in valid_ext:
+        fname, fext = os.path.splitext(filename)
+        log.info(f"Attempting to Load Experiment from file: {filename}")
+        if fext == ".json":
+            with open(filename, "r") as f:
+                data = json.loads(f.read())
+        elif fext in (".aexp", ".yml", ".yaml"):
+            with open(filename, "r") as f:
+                data = yaml.safe_load(f.read())
+        else:
             raise ValueError(
                 f"Experiment File: {filename} has invalid extension....must be in {valid_ext}"
             )
 
-        if not os.path.exists(filename):
-            raise ValueError(f"Experiment File: {filename} does not exist!")
+        log.debug(f"Parsing Class Object from: {data}")
+        exp = cls.parse_obj(data)
+        # Getting Environment Overrides from File (if available)
+        if "environment" in data:
+            file_overrides = parse_overrides(data["environment"])
+        else:
+            file_overrides = []
 
-        try:
-            with open(filename, "r") as f:
-                exp = cls.parse_raw(f.read())
-        except Exception as e:
-            log.error(f"Could not parse Experiment from: {filename}")
-            raise e
-        return exp
+        return exp, file_overrides
 
 
 class Experiment(object):
@@ -128,5 +149,6 @@ class Experiment(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, experiment_parameters, environment_parameters):
+        log.info(f"Constructing Experiment using parameters: \n{experiment_parameters}")
         pass

@@ -74,9 +74,16 @@ def run(experiment, interactive, override):
     """
     from armory.environment import EnvironmentParameters
 
-    env = EnvironmentParameters.load(overrides=override)
-    log.info(f"Loaded Environment from: {env.profile}\n{env.pretty_print()}")
+    env_pars = EnvironmentParameters.load(overrides=override)
+    log.info(f"Loaded Environment from: {env_pars.profile}")
 
+    from armory.experiment import ExperimentParameters, Experiment
+
+    exp_pars, env_overrides = ExperimentParameters.load(experiment)
+    env_pars.apply_overrides(env_overrides)
+
+    exp = Experiment(exp_pars, env_pars)
+    print(exp)
     # log.info(f"Executing `armory run` from experiment file: {experiment}")
     #
     # env = EnvironmentParameters(overrides=override)
