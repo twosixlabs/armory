@@ -7,11 +7,18 @@ Model contributed by: MITRE Corporation
 import os
 from typing import Optional
 
-from armory import paths
 from art import config
 
+from armory import paths
+from armory.errors import ExternalRepoImport
+
 config.set_data_path(os.path.join(paths.runtime_paths().saved_model_dir, "art"))
-from art.estimators.speech_recognition import PyTorchDeepSpeech
+
+with ExternalRepoImport(
+    repo="SeanNaren/deepspeech.pytorch@V3.0",
+    experiment="librispeech_asr_snr_undefended.json",
+):
+    from art.estimators.speech_recognition import PyTorchDeepSpeech
 
 
 def get_art_model(

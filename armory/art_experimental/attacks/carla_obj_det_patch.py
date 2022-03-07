@@ -1,10 +1,17 @@
 import logging
-import numpy as np
-import cv2
-import colour
 import random
 
+import numpy as np
+import cv2
 from art.attacks.evasion import RobustDPatch
+
+from armory.errors import ExternalRepoImport
+
+with ExternalRepoImport(
+    repo="colour-science/colour@v0.3.16",
+    experiment="carla_obj_det_dpatch_undefended.json",
+):
+    import colour
 
 logger = logging.getLogger(__name__)
 
