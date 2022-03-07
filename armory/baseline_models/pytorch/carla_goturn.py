@@ -1,8 +1,6 @@
 import logging
 from typing import Optional
 
-logger = logging.getLogger(__name__)
-
 from art.estimators.object_tracking import PyTorchGoturn
 import numpy as np
 import torch
@@ -15,6 +13,8 @@ with ExternalRepoImport(
     experiment="carla_video_tracking_goturn_advtextures_defended.json",
 ):
     from pygoturn.src.model import GoNet
+
+logger = logging.getLogger(__name__)
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
