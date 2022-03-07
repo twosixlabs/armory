@@ -5,10 +5,10 @@ logger = logging.getLogger(__name__)
 
 
 class ExternalRepoImport(contextlib.AbstractContextManager):
-    def __enter__(self, repo="", experiment=""):
+    def __init__(self, repo="", experiment=""):
+        super().__init__()
         url = f"https://github.com/{repo}"
         name = repo.split("/")[-1].split("@")[0]
-
         self.error_message = "\n".join(
             [
                 f"{name} is an external repo.",
@@ -18,11 +18,8 @@ class ExternalRepoImport(contextlib.AbstractContextManager):
             ]
         )
 
-        return self
-
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if isinstance(exc_type, ImportError):
-            logger.exception()
+        if exc_type is not None and issubclass(exc_type, ImportError):
             logger.error(self.error_message)
             return False
         return True

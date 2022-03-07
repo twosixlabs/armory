@@ -1,9 +1,9 @@
 import logging
 import random
 
-import numpy as np
-import cv2
 from art.attacks.evasion import RobustDPatch
+import cv2
+import numpy as np
 
 from armory.errors import ExternalRepoImport
 
