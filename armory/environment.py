@@ -6,6 +6,7 @@ import os
 from typing import List, Union
 from enum import Enum
 import json
+from armory.utils import rsetattr, rhasattr
 
 DEFAULT_ARMORY_DIRECTORY = os.path.expanduser("~/.armory")
 DEFAULT_DOCKER_REPO = "twosixarmory"
@@ -36,6 +37,7 @@ class Credentials(BaseModel):
 class Paths(BaseModel):
     """Paths needed for armory use
     """
+
     dataset_directory: str = os.path.join(DEFAULT_ARMORY_DIRECTORY, "datasets")
     git_repository_directory: str = os.path.join(DEFAULT_ARMORY_DIRECTORY, "git")
     output_directory: str = os.path.join(DEFAULT_ARMORY_DIRECTORY, "outputs")
@@ -45,12 +47,15 @@ class Paths(BaseModel):
     def check(self):
         for k, v in self.dict().items():
             if not os.path.isdir(v):
-                raise NotADirectoryError(f"armory environment path {k}: {v} does not exist")
+                raise NotADirectoryError(
+                    f"armory environment path {k}: {v} does not exist"
+                )
 
     def change_base(self, base_dir):
-        for k,v in self.dict().items():
+        for k, v in self.dict().items():
             new_v = os.path.join(base_dir, os.path.basename(v))
             setattr(self, k, str(new_v))
+
 
 # TODO Think aobut what to do if multiple simulatenous test
 #  builds are happending on same machine with image name/tag
@@ -93,6 +98,7 @@ class EnvironmentParameters(BaseModel):
         To load from dictionary `pars`:
             env = EnvironmentParameters.parse_obj(pars)
     """
+
     profile: str = os.path.join(DEFAULT_ARMORY_DIRECTORY, "profile")
     execution_mode: ExecutionMode = ExecutionMode.native
     credentials: Credentials = Credentials()
@@ -106,6 +112,9 @@ class EnvironmentParameters(BaseModel):
     def check(self):
         self.paths.check()
 
+    def pretty_print(self):
+        return json.dumps(self.dict(), indent=2, sort_keys=True)
+
     @validator("execution_mode")
     def validate_execution_mode(cls, v):
         if isinstance(v, str):
@@ -113,7 +122,24 @@ class EnvironmentParameters(BaseModel):
         elif isinstance(v, ExecutionMode):
             return v
         else:
-            return ValueError(f"Cannot Set Execution Mode to {v}... must be str or `ExecutionMode` enum value")
+            return ValueError(
+                f"Cannot Set Execution Mode to {v}... must be str or `ExecutionMode` enum value"
+            )
+
+    @classmethod
+    def load(cls, profile=None, overrides=[]):
+        overrides = [(i.split("=")[0], i.split("=")[1]) for i in overrides]
+        if profile is None:
+            profile = cls().profile
+
+        env = cls.parse_file(profile)
+        for k, v in overrides:
+            if rhasattr(env, k):
+                rsetattr(env, k, v)
+
+        env.check()
+        return env
+
 
 def ask_yes_no(prompt, msg):
     while True:
@@ -175,7 +201,7 @@ def save_profile(env_dict, filename):
     if os.path.exists(filename):
         print(f"WARNING: Profile File: {filename} already exists...overwriting!!")
         response = ask_yes_no(None, "Are you sure?")
-        if response not in ("y",""):
+        if response not in ("y", ""):
             print("Skipping Save!!")
             return
     print(f"Saving Profile to: {filename}")
@@ -227,11 +253,17 @@ def setup_environment(use_defaults=False):
                 "",
                 "If, at any time, you wish to stop, press Ctrl-C.",
                 "Note: This will NOT save the values you have already selected",
-            ])
+            ]
+        )
         print(instructions)
 
         # Query for Execution Mode
-        mode = get_value("Set Execution Mode", env.execution_mode.value, "str", choices=list(ExecutionMode.__members__.keys()))
+        mode = get_value(
+            "Set Execution Mode",
+            env.execution_mode.value,
+            "str",
+            choices=list(ExecutionMode.__members__.keys()),
+        )
         env.execution_mode = mode
 
         # Query for Credentials
@@ -245,7 +277,9 @@ def setup_environment(use_defaults=False):
             setattr(env.paths, k, new_val)
 
         # Query for Images
-        images = get_value(f"images", [img.value for img in env.images], "list", choices=None)
+        images = get_value(
+            "images", [img.value for img in env.images], "list", choices=None
+        )
         env.images = images
 
         # Saving (if selected)
@@ -262,4 +296,3 @@ def setup_environment(use_defaults=False):
             print("Configuration Not Saved!!!")
 
     print("\n Armory Setup Complete!!\n")
-

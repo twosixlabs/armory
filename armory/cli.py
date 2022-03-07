@@ -74,13 +74,16 @@ def run(experiment, interactive, override):
     """
     from armory.environment import EnvironmentParameters
 
-    log.info(f"Executing `armory run` from experiment file: {experiment}")
-
     env = EnvironmentParameters.load(overrides=override)
+    log.info(f"Loaded Environment from: {env.profile}\n{env.pretty_print()}")
 
-    click.echo(f"Interactive: {interactive}")
-    raise NotImplementedError("Still Working")
-    # TODO Fix this
+    # log.info(f"Executing `armory run` from experiment file: {experiment}")
+    #
+    # env = EnvironmentParameters(overrides=override)
+    #
+    # click.echo(f"Interactive: {interactive}")
+    # raise NotImplementedError("Still Working")
+    # # TODO Fix this
 
 
 @cli.command()
@@ -103,7 +106,7 @@ def check(override):
 
     env = EnvironmentParameters.load(overrides=override)
 
-    print(f"Armory Environment: \n {env}")
+    print(f"Armory Environment: \n {env.pretty_print()}")
 
 
 @cli.command()

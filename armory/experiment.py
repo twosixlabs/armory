@@ -1,5 +1,4 @@
-from pydantic import BaseModel, validator
-from importlib import import_module
+from pydantic import BaseModel
 from armory.logs import log
 import os
 
