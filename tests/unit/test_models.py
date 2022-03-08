@@ -2,6 +2,8 @@ import pytest
 from importlib import import_module
 from armory.data.utils import maybe_download_weights_from_s3
 
+# Mark all tests in this file as `unit`
+pytestmark = pytest.mark.unit
 
 @pytest.mark.usefixtures("ensure_armory_dirs")
 @pytest.mark.online

@@ -6,6 +6,9 @@ import os
 from armory.data import datasets
 from armory.data import adversarial_datasets
 
+# Marks all tests in this file as `end_to_end`
+pytestmark = pytest.mark.end_to_end
+
 
 @pytest.mark.parametrize(
     "name, batch_size, num_epochs, split, framework, xtype, xshape, ytype, yshape, dataset_size",
@@ -689,7 +692,6 @@ def test_ucf101_adversarial_112x112(armory_dataset_dir):
             # video length is variable so we don't compare 2nd dim
             assert x[i].shape[:1] + x[i].shape[2:] == (batch_size, 112, 112, 3)
         assert y.shape == (batch_size,)
-
 
 def test_variable_length(armory_dataset_dir):
     """

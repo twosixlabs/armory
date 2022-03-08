@@ -3,7 +3,7 @@ import subprocess
 import re
 import os
 
-pytestmark = [pytest.mark.docker_required]
+pytestmark = [pytest.mark.docker_required, pytest.mark.unit]
 
 
 def get_cmd_output(cmd):

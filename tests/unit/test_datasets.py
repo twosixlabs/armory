@@ -7,6 +7,9 @@ from armory.data import datasets
 # TODO Right now unit tests only run for `mnist`, `cifar10`, and `resisc10`
 #  figure out if this is what we want or if we need more
 
+# Mark all tests in this file as `unit`
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.parametrize("name", ["cifar10", "mnist", "resisc10"])
 @pytest.mark.parametrize("split", ["test", "train", "validation"])
