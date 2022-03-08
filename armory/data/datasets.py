@@ -1355,6 +1355,27 @@ def resisc10(
     )
 
 
+class ClipFrames:
+    """
+    Clip Video Frames
+        Assumes first two dims are (batch, frames, ...)
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, batch):
+        if batch.dtype == np.object:
+            clipped_batch = np.empty_like(batch, dtype=np.object)
+            clipped_batch[:] = [x[: self.max_frames] for x in batch]
+            return clipped_batch
+        else:
+            return batch[:, : self.max_frames]
+
+
 def ucf101(
     split: str = "train",
     epochs: int = 1,
@@ -1365,13 +1386,21 @@ def ucf101(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    max_frames: int = None,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
+
+    max_frames, if it exists, will clip the inputs to a set number of frames
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    if max_frames:
+        clip = ClipFrames(max_frames)
+    else:
+        clip = None
+
+    preprocessing_fn = preprocessing_chain(clip, preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
