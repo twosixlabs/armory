@@ -1,5 +1,5 @@
 ---
-name: GitHub CI
+name: CI Tests
 
 on:
   push:
@@ -20,12 +20,12 @@ env:
   DOCKER_BUILDKIT: 1
 
 jobs:
-  pytest-host:
+  host-test:
     name: Basic `native` configuration
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        os: ['ubuntu-18.04', 'macos-latest']
         python-version: ['3.7']
       fail-fast: false
     steps:
@@ -44,12 +44,12 @@ jobs:
         shell: bash
         run: |
           pytest -s ./tests/unit/test_configuration.py
-  pytest-native-simple:
+  native-simple:
     name: Native Mode test_no_docker.py
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-18.04', 'windows-latest', 'macos-latest']
+        os: ['ubuntu-18.04', 'macos-latest']
         python-version: ['3.7']
       fail-fast: false
     steps:
@@ -66,7 +66,7 @@ jobs:
           pip install -e .
           armory configure --use-defaults
           pytest -s ./tests/end-to-end/test_no_docker.py
-  pytest-native-all-unit:
+  native-all-unit:
     name: Native Mode All unit tests
     runs-on: ${{ matrix.os }}
     strategy:
@@ -88,20 +88,65 @@ jobs:
           pip install -e .
           armory configure --use-defaults
           pytest -k "not docker_required and unit" ./tests/
-  pytest-docker-all-unit:
-    name: Run Docker build script
-    runs-on: ubuntu-18.04
+  docker-torch-unit:
+    name: Docker Pytorch Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
           python-version: '3.7'
-      - name: Run armory docker tests
+      - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh -f all --tag dev --no-cache
+          bash docker/build.sh -f pytorch --tag dev --no-cache
+      - name: Run Unit tests
+        run: |
           docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and unit" ./tests/
+  docker-tf2-unit:
+    name: Docker TF2 Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Build Docker
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh -f tf2 --tag dev --no-cache
+      - name: Run Unit tests
+        run: |
           docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and unit" ./tests/
+  docker-deepspeech-unit:
+    name: Docker Deepspeech Unit Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Build Docker
+        run: |
+          pip install -r requirements.txt
+          bash docker/build.sh -f pytorch-deepspeech --tag dev --no-cache
+      - name: Run Unit tests
+        run: |
           docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and unit" ./tests/
   formatting-test:
     name: Check Code Formatting

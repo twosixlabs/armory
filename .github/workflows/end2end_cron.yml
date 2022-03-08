@@ -17,68 +17,17 @@ on:
     - cron: 0 0 * * * # At Midnight Every Day
 
 jobs:
-  native-end2end:
-    name: Native Mode End2End
+  docker-build:
+    name: Build Docker Image
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Armory
-        shell: bash
+          python-version: '3.7'
+      - name: Build Docker
         run: |
+          python setup.py --version
           pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -r armory-base-requirements.txt
           pip install -e .
-          armory configure --use-defaults
-      - name: Run End2End Tests
-        shell: bash
-        run: |
-          pytest -k "not docker_required and end_to_end" ./tests/
-  docker-torch-end2end:
-    name: Docker Pytorch End2End
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          bash docker/build.sh -f pytorch --tag dev --no-cache
-      - name: Run armory docker tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -k "not docker_required and end_to_end" ./tests/
-  docker-tf2-end2end:
-    name: Docker TF2 End2End
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          bash docker/build.sh -f tf2 --tag dev --no-cache
-      - name: Run armory docker tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -k "not docker_required and end_to_end" ./tests/
-  docker-deepspeech-end2end:
-    name: Docker torch Deepspeech End2End
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          bash docker/build.sh -f pytorch-deepspeech --tag dev --no-cache
-      - name: Run armory docker tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -k "not docker_required and end_to_end" ./tests/
+          armory --version
