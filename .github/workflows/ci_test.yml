@@ -65,7 +65,7 @@ jobs:
           pip install -r test-requirements.txt
           pip install -e .
           armory configure --use-defaults
-          pytest -s ./tests/end-to-end/test_no_docker.py
+          pytest -s ./tests/end_to_end/test_no_docker.py
   native-all-unit:
     name: Native Mode All unit tests
     runs-on: ${{ matrix.os }}
