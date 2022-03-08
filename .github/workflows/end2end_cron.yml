@@ -33,7 +33,7 @@ jobs:
           pip install -e .
           version=$(python setup.py --version)
           echo "armory --version -> $version"
-          bash docker/build.sh -f all --tag dev --no-cache
+          bash docker/build.sh -f all --tag $version
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
