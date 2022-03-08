@@ -31,9 +31,11 @@ jobs:
           python setup.py --version
           pip install -r requirements.txt
           pip install -e .
-          version=$(python setup.py --version)
-          echo "armory --version -> $version"
-          bash docker/build.sh -f all --tag $version
+          imageTag=$$
+          echo "Image Tag -> $imageTag"
+          bash docker/build.sh -f all --tag $imageTag
+    outputs:
+      imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
@@ -41,5 +43,37 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
+          imageName=twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -k "not docker_required and unit" ./tests/unit/test_configuration.py
+  docker-tf2-end2end:
+    name: Docker TF2 End2End
+    needs: docker-build
+    runs-on: self-hosted
+    steps:
+      - name: Run Tests TF2 Docker
+        run: |
+          imageName=twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -k "not docker_required and unit" ./tests/unit/test_configuration.py
+  docker-deepspeech-end2end:
+    name: Docker deepspeech End2End
+    needs: docker-build
+    runs-on: self-hosted
+    steps:
+      - name: Run Tests Deepspeech Docker
+        run: |
+          imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -k "not docker_required and unit" ./tests/unit/test_configuration.py
+  docker-remove:
+    name: Remove Docker Images
+    needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
+    runs-on: self-hosted
+    steps:
+      - name: Run Tests Torch Docker
+        run: |
           version=$(python setup.py --version)
-          docker run -w /armory-repo/ twosixarmory/pytorch:$version pytest -k "not docker_required and unit" ./tests/
+          docker rmi twosixarmory/pytorch:$version
+          docker rmi twosixarmory/tf2:$version
+          docker rmi twosixarmory/pytorch-deepspeech:$version
