@@ -150,5 +150,6 @@ class Experiment(object):
         log.info(f"Importing Scenario Module: {self.exp_pars.scenario.module_name}")
         self.scenario_module = import_module(self.exp_pars.scenario.module_name)
         log.info(f"Loading Scenario Function: {self.exp_pars.scenario.function_name}")
-        self.scenario_fn = getattr(self.scenario_module, self.exp_pars.scenario.function_name)
-
+        self.scenario_fn = getattr(
+            self.scenario_module, self.exp_pars.scenario.function_name
+        )
