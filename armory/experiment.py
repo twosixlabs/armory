@@ -4,13 +4,7 @@ import os
 import yaml
 import json
 from armory.utils import parse_overrides
-
-
-# TODO: Change class names to [thing]Parameters format
-#  e.g. Attack-> AttackParameters
-
-# TODO:  Make Experiment class which is like old
-#  scneario.main
+from importlib import import_module
 
 # TODO: Update this so that validation occurs at lowest
 #  level possible.  I.e. we do NOT validate at edge,
@@ -73,8 +67,8 @@ class ModelParameters(BaseModel):
 class ScenarioParameters(BaseModel):
     """Armory Dataclass for `Scenario` Parameters"""
 
-    name: str
-    module: str
+    function_name: str
+    module_name: str
     kwargs: dict
 
 
@@ -151,4 +145,10 @@ class Experiment(object):
 
     def __init__(self, experiment_parameters, environment_parameters):
         log.info(f"Constructing Experiment using parameters: \n{experiment_parameters}")
-        pass
+        self.exp_pars = experiment_parameters
+        self.env_pars = environment_parameters
+        log.info(f"Importing Scenario Module: {self.exp_pars.scenario.module_name}")
+        self.scenario_module = import_module(self.exp_pars.scenario.module_name)
+        log.info(f"Loading Scenario Function: {self.exp_pars.scenario.function_name}")
+        self.scenario_fn = getattr(self.scenario_module, self.exp_pars.scenario.function_name)
+

@@ -46,6 +46,9 @@ def load_fn(sub_config):
     module = import_module(sub_config["module"])
     return getattr(module, sub_config["name"])
 
+def load_module_function(module_name, function_name):
+    module = import_module(module_name)
+    return getattr(module, function_name)
 
 # TODO THIS is a TERRIBLE Pattern....can we refactor?
 def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwargs):
