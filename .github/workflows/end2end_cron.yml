@@ -26,16 +26,15 @@ jobs:
         with:
           python-version: '3.7'
       - name: Build Docker
-        id: docker_build
+        id: docker-build
         run: |
           python setup.py --version
           pip install -r requirements.txt
           pip install -e .
-          version=$(armory --version)
-          echo "armory --verion -> $version"
-          bash docker/build.sh -f all --tag $version --no-cache
+          version=$(python setup.py --version)
+          echo "armory --version -> $version"
     outputs:
-      imageTag: ${{ steps.docker_build.version }}
+      imageTag: ${{ steps.docker-build.version }}
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
@@ -43,4 +42,4 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          echo "Docker Tag: ${{ needs.docker_build.outputs.imageTag }} "
+          echo "Docker Tag: ${{ needs.docker-build.outputs.imageTag }} "
