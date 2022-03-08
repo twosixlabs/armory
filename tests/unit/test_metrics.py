@@ -8,6 +8,7 @@ import pytest
 import numpy as np
 
 from armory.utils import metrics
+
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit
 

@@ -693,6 +693,7 @@ def test_ucf101_adversarial_112x112(armory_dataset_dir):
             assert x[i].shape[:1] + x[i].shape[2:] == (batch_size, 112, 112, 3)
         assert y.shape == (batch_size,)
 
+
 def test_variable_length(armory_dataset_dir):
     """
     Test batches with variable length items using digit dataset

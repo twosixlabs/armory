@@ -104,7 +104,7 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh -f pytorch --tag dev --no-cache
+          bash docker/build.sh base pytorch --tag dev --base-tag dev
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -m "not docker_required and unit" ./tests/
@@ -124,7 +124,7 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh -f tf2 --tag dev --no-cache
+          bash docker/build.sh -f base tf2 --tag dev --base-tag dev
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -m "not docker_required and unit" ./tests/
@@ -144,7 +144,7 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh -f pytorch-deepspeech --tag dev --no-cache
+          bash docker/build.sh -f base pytorch-deepspeech --tag dev --base-tag dev
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -m "not docker_required and unit" ./tests/
