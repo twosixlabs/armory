@@ -1371,7 +1371,6 @@ class ClipFrames:
         if batch.dtype == np.object:
             clipped_batch = np.empty_like(batch, dtype=np.object)
             clipped_batch[:] = [x[: self.max_frames] for x in batch]
-            print(clipped_batch.shape, clipped_batch.dtype, batch.shape, batch.dtype)
             return clipped_batch
         else:
             return batch[:, : self.max_frames]
