@@ -33,8 +33,7 @@ jobs:
           pip install -e .
           version=$(python setup.py --version)
           echo "armory --version -> $version"
-    outputs:
-      imageTag: ${{ steps.docker-build.version }}
+          bash docker/build.sh -f all --tag dev --no-cache
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
@@ -42,4 +41,5 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          echo "Docker Tag: ${{ needs.docker-build.outputs.imageTag }} "
+          version=$(python setup.py --version)
+          docker run -w /armory-repo/ twosixarmory/pytorch:$version pytest -k "not docker_required and unit" ./tests/
