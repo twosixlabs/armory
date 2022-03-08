@@ -51,15 +51,13 @@ def image_tag(armory_version_tbi):
     ],
 )
 def test_build_script(img, opt, image_tag, armory_version_tbi):
-    cmd = f"bash docker/build.sh -f {img} --dry-run {opt}"
+    cmd = f"bash docker/build.sh {img} --dry-run {opt}"
     output = get_cmd_output(cmd)
     assert output.startswith("docker build")
     assert "--force-rm" in output
 
     if "--no-cache" in opt:
         assert "--no-cache" in output
-    else:
-        assert f"--cache-from twosixarmory/{img}:{image_tag}"
 
     docker_file = re.match(r"(.*?)--file\s+(.*?)\s+(.*?)", output).groups()[1]
     docker_file = os.path.basename(docker_file)
