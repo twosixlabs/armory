@@ -90,12 +90,7 @@ jobs:
           pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
     name: Docker Pytorch Unit Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -110,12 +105,7 @@ jobs:
           docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -m "not docker_required and unit" ./tests/
   docker-tf2-unit:
     name: Docker TF2 Unit Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
@@ -130,12 +120,7 @@ jobs:
           docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -m "not docker_required and unit" ./tests/
   docker-deepspeech-unit:
     name: Docker Deepspeech Unit Tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
