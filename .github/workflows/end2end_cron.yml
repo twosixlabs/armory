@@ -56,7 +56,7 @@ jobs:
         run: |
           imageName=twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
           echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
   docker-deepspeech-end2end:
     name: Docker Deepspeech End2End
     needs: docker-build
@@ -66,7 +66,7 @@ jobs:
         run: |
           imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
           echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
   docker-remove:
     name: Remove Docker Images
     needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
