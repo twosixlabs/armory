@@ -46,7 +46,7 @@ jobs:
         run: |
           imageName=twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
           echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and unit" ./tests/
   docker-tf2-end2end:
     name: Docker TF2 End2End
     needs: docker-build
