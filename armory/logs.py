@@ -42,6 +42,7 @@ default_message_filters = {
     "absl": False,
     "h5py": False,
     "avro": False,
+    "matplotlib": "INFO",
 }
 
 
