@@ -9,6 +9,9 @@ import pytest
 
 from armory.utils.configuration import load_config
 
+# Mark all tests in this file as `unit`
+pytestmark = pytest.mark.unit
+
 
 # TODO Refactor this pattern with Matt's new Config
 def test_config_args_merge():

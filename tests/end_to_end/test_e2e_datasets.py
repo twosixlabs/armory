@@ -6,6 +6,9 @@ import os
 from armory.data import datasets
 from armory.data import adversarial_datasets
 
+# Marks all tests in this file as `end_to_end`
+pytestmark = pytest.mark.end_to_end
+
 
 @pytest.mark.parametrize(
     "name, batch_size, num_epochs, split, framework, xtype, xshape, ytype, yshape, dataset_size",

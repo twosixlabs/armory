@@ -9,6 +9,9 @@ import numpy as np
 
 from armory.utils import metrics
 
+# Mark all tests in this file as `unit`
+pytestmark = pytest.mark.unit
+
 
 def test_abstains():
     y = [0, 1, 2, 3, 4]

@@ -15,7 +15,7 @@ Help()
   echo "Armory uses scm versioning from git, therefore if you want to re-build containers "
   echo "from a stable armory release, simply checkout that tag and then run this script"
   echo ""
-  echo "Syntax: build.sh [-f|nc|dr|v|h]"
+  echo "Syntax: build.sh image [-t|bt|nc|dr|v|h]"
   echo ""
   echo "REQUIRED"
   echo "-f | --framework            Select Which framework to target:"
@@ -23,6 +23,7 @@ Help()
   echo ""
   echo "OPTIONAL"
   echo "-t | --tag                  Specify Additional Tag to apply to each image"
+  echo "-bt | --base-tag            Specify Tag for Base Image"
   echo "-nc | --no-cache            Build Images \`Clean\` (i.e. using --no-cache)"
   echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
   echo "-v | --verbose              Show Logs in Plain Text (uses \`--progress=plain\`"
@@ -41,6 +42,13 @@ get_tag_from_version ()
   echo $result
 }
 
+# Checking Script Execution Directory
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+if [ "$PWD" != "$(dirname $SCRIPT_DIR)" ]; then
+  echo "Must Execute build script from within armory/ folder that contains folder called \`docker\`"
+  return 1
+fi
+
 # Setting Defaults
 POSITIONAL_ARGS=()
 NO_CACHE=false
@@ -50,18 +58,9 @@ VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
 TAG=$(get_tag_from_version $ARMORY_VERSION)
-ADDITIONAL_TAG=""
-
-
-# Making sure execution path is correct
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-if [ "$PWD" != "$(dirname $SCRIPT_DIR)" ]; then
-  echo "Must Execute build script from within armory/ folder that contains folder called \`docker\`"
-  return 1
-fi
+BASE_TAG=$TAG
 
 ## Parsing CLI Arguments
-
 while [[ $# -gt 0 ]]; do
   case $1 in
     -f|--framework)
@@ -70,7 +69,12 @@ while [[ $# -gt 0 ]]; do
       shift # past value
       ;;
     -t|--tag)
-      ADDITIONAL_TAG="$2"
+      TAG="$2"
+      shift # past argument
+      shift # past argument
+      ;;
+    -bt|--base-tag)
+      BASE_TAG="$2"
       shift # past argument
       shift # past argument
       ;;
@@ -104,27 +108,14 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
-## Conducting Checks of CLI args
+echo "Building Images for [ ${POSITIONAL_ARGS[@]} ]"
 
-if [ "$FRAMEWORK" == "" ]; then
-  echo "Must Specify Framework"
-  exit 1
-fi
-
-if [[ "$FRAMEWORK" != "pytorch" &&  "$FRAMEWORK" != "pytorch-deepspeech" && "$FRAMEWORK" != "tf2" && "$FRAMEWORK" != "all"  && "$FRAMEWORK" != "base" ]]; then
-    echo "ERROR: <framework> argument must be \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\` or \`all\`, not \`$FRAMEWORK\`"
+for framework in "${POSITIONAL_ARGS[@]}"; do
+  if [[ "$framework" != "pytorch" &&  "$framework" != "pytorch-deepspeech" && "$framework" != "tf2" && "$framework" != "base" ]]; then
+    echo "ERROR: <framework> argument must be \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\`, not \`$framework\`"
     exit 1
-fi
+  fi
 
-if [ $FRAMEWORK == "all" ]; then
-  echo "Setting Build to use all frameworks"
-  FRAMEWORK=("base" "pytorch" "tf2" "pytorch-deepspeech")
-else
-  FRAMEWORK=($FRAMEWORK)
-fi
-
-echo "Building Images for Framework(s): ${FRAMEWORK[@]}"
-for framework in "${FRAMEWORK[@]}"; do
   echo ""
   echo "------------------------------------------------"
   echo "Building docker image for framework: $framework"
@@ -132,19 +123,18 @@ for framework in "${FRAMEWORK[@]}"; do
   CMD="docker build"
   if $NO_CACHE; then
     CMD="$CMD --no-cache"
-  else
-    CMD="$CMD --cache-from ${REPO}/${framework}:${TAG}"
   fi
-
 
   CMD="$CMD --force-rm"
   CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${framework}"
-  if [ $framework != "base" ]; then
-    CMD="$CMD --build-arg base_image_tag=${TAG}"
+  if [ $framework == "base" ]; then
+    CMD="$CMD -t ${REPO}/${framework}:${BASE_TAG}"
+  else
+    CMD="$CMD --build-arg base_image_tag=${BASE_TAG}"
     CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
+    CMD="$CMD -t ${REPO}/${framework}:${TAG}"
   fi
 
-  CMD="$CMD -t ${REPO}/${framework}:${TAG}"
   CMD="$CMD $VERBOSE"
   CMD="$CMD ."
 
@@ -157,14 +147,4 @@ for framework in "${FRAMEWORK[@]}"; do
     $CMD
   fi
 
-  if [ "$ADDITIONAL_TAG" != "" ]; then
-    if $DRYRUN; then
-      echo "Would have Executed: "
-      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
-    else
-      echo "Executing: "
-      echo docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
-      docker tag "${REPO}/${framework}:${TAG}" "${REPO}/${framework}:${ADDITIONAL_TAG}"
-    fi
-  fi
 done

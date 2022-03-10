@@ -3,6 +3,10 @@ import pytest
 from armory.data.utils import maybe_download_weights_from_s3
 import numpy as np
 
+# Marks all tests in this file as `end_to_end`
+pytestmark = pytest.mark.end_to_end
+
+
 # NOTES:
 # Many of these tests will have to download external repos and weights files
 # which requires access to open internet, armory github tokens, and armory s3 tokens

@@ -17,7 +17,6 @@ from armory.logs import log
 
 try:
     __version__ = version("armory-testbed")
-    log.info(f"Armory Version: {__version__} Installed.")
 except PackageNotFoundError as e:
     log.error("Armory Package is not Installed...")
     raise e

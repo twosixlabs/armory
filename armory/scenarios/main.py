@@ -214,8 +214,8 @@ if __name__ == "__main__":
         help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
-    log.trace(f"log-level: {args.log_level} debug: {args.debug}")
     update_filters(args.log_level, args.debug)
+    log.trace(f"main.py called update_filters({args.log_level} debug: {args.debug})")
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
         log.warning(

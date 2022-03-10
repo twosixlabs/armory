@@ -9,6 +9,7 @@ from docker.errors import ImageNotFound
 
 logger = logging.getLogger(__name__)
 
+# TODO need to fix this
 REQUIRED_DOCKER_IMAGES = [
     "twosixarmory/base:dev",
     "twosixarmory/pytorch:dev",
