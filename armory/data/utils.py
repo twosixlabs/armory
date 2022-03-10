@@ -19,7 +19,7 @@ import requests
 from tqdm import tqdm
 
 from armory import paths
-from armory.logs import log
+from armory.logs import log, is_progress
 from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
 from armory.configuration import get_verify_ssl
 
@@ -127,10 +127,15 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         )
 
         try:
-            log.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
 
@@ -154,10 +159,15 @@ def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
             verify=verify_ssl,
         )
         try:
-            log.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
     else:

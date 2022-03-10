@@ -37,12 +37,13 @@ default_message_filters = {
     "art": "INFO",
     "docker": "INFO",
     "botocore": "WARNING",
-    "s3transfer": "INFO",
+    "matplotlib": "INFO",
+    "s3transfer": "WARNING",
+    "tensorflow": "WARNING",
     "urllib3": "INFO",
     "absl": False,
     "h5py": False,
     "avro": False,
-    "matplotlib": "INFO",
 }
 
 
@@ -62,6 +63,17 @@ def is_debug() -> bool:
         if log.level(level).no <= log.level("DEBUG").no:
             return True
     return False
+
+
+def is_progress() -> bool:
+    """return true if detailed progress messages are needed"""
+    # this is used by the progress meters which should not be shown if false
+
+    global filters
+    if "armory" not in filters:
+        return False
+
+    return log.level(filters["armory"]).no <= log.level("PROGRESS").no
 
 
 def format_log(record) -> str:
@@ -126,7 +138,9 @@ def update_filters(specs: List[str], armory_debug=None):
 
     log.remove()
     add_sink(sys.stdout, colorize=True)
-    log.trace(f"set {filters}")
+
+    # TODO: I want to see this even if levels are set low, change to trace after debugging
+    log.error(f"log levels set to {filters}")
 
 
 def add_sink(sink, colorize=True):
