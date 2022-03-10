@@ -181,13 +181,18 @@ def download_requests(url: str, dirpath: str, filename: str):
     chunk_size = 4096
     r = requests.get(url, stream=True, verify=verify_ssl)
     with open(filepath, "wb") as f:
-        progress_bar = tqdm(
-            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
-        )
+        progress_bar = None
+        if is_progress():
+            progress_bar = tqdm(
+                unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+            )
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk:  # filter keep-alive chunks
-                progress_bar.update(len(chunk))
+                if progress_bar:
+                    progress_bar.update(len(chunk))
                 f.write(chunk)
+
+    log.info(f"downloaded {filename} from {url}")
 
 
 def sha256(filepath: str, block_size=4096):
