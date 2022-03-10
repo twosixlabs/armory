@@ -78,7 +78,7 @@ RUN /opt/conda/bin/conda install \
 # pandas==1.1.3 
 
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets==3.2.1 \
+    tensorflow-datasets==4.5 \
     tensorflow==2.8 \
     tensorboardx==2.4 \
     boto3==1.20 \
@@ -89,16 +89,15 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     coloredlogs \
     docker \
     adversarial-robustness-toolbox==1.9.1
-    # tensorflow-datasets version 4 has breaking changes
 # dill==0.3.4 \
-# tensorflow-datasets==3.2.1 \
-# tensorflow=2.8.0 \
-# tensorboardx=2.4.1 \
-# boto3==1.20.54 \
-# opencv-python==4.5.5.62 \
+# tensorflow-datasets==4.5.0 \
+# tensorflow==2.8.0 \
+# tensorboardX==2.4 \
+# boto3==1.20.0 \
+# opencv-python==4.5.5.64 \
 # ffmpeg-python==0.2.0 \
 # pytest==7.0.1 \
-# pymongo==4.0.1 \
+# pymongo==4.0.2 \
 # coloredlogs==15.0.1 \
 # docker==5.0.3 \
 # adversarial-robustness-toolbox==1.9.1
