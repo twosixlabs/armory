@@ -32,16 +32,6 @@ Help()
   echo "----------------------------------------------------------------------------------------"
 }
 
-get_tag_from_version ()
-{
-  local  input=$1
-  arr=( ${input//\./ } ) # Split by .
-  arr="${arr[@]:0:4}" # Keep 1st 4 elements
-  arr="${arr// /.}" # Put it back together
-  result="${arr/+/-}" # Replace + with -
-  echo $result
-}
-
 # Checking Script Execution Directory
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 if [ "$PWD" != "$(dirname $SCRIPT_DIR)" ]; then
@@ -52,12 +42,12 @@ fi
 # Setting Defaults
 POSITIONAL_ARGS=()
 NO_CACHE=false
-ARMORY_VERSION="$(python setup.py --version)"
+ARMORY_VERSION=$(python setup.py --version | sed  -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
 DRYRUN=false
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
-TAG=$(get_tag_from_version $ARMORY_VERSION)
+TAG=$ARMORY_VERSION
 BASE_TAG=$TAG
 
 ## Parsing CLI Arguments
@@ -105,8 +95,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
 echo "Building Images for [ ${POSITIONAL_ARGS[@]} ]"
 
