@@ -36,7 +36,7 @@ fi
 POSITIONAL_ARGS=()
 NO_CACHE=false
 ARMORY_VERSION=$(python setup.py --version | sed  -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-DRYRUN=false
+DRYRUN=""
 VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
