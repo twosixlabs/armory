@@ -62,6 +62,7 @@ while true ; do
 done
 
 if [ "$#" -ne 1 ]; then
+  echo "$0: framework argument is required"
   usage
   exit 1
 fi
@@ -84,7 +85,7 @@ CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
 CMD="$CMD --tag ${REPO}/${FRAMEWORK}:${TAG}"
 CMD="$CMD $VERBOSE ."
 
-if $DRYRUN; then
+if [ -n "$DRYRUN" ]; then
     echo "dry-run. would have executed: "
     echo "    ->  $CMD"
     exit 0;
