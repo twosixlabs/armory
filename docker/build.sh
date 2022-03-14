@@ -86,7 +86,7 @@ CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
 CMD="$CMD --tag ${REPO}/${FRAMEWORK}:${TAG}"
 CMD="$CMD $VERBOSE ."
 
-if [ -n "$DRYRUN" ]; then
+if [ -n "$dryrun" ]; then
     echo "dry-run. would have executed: "
     echo "    ->  $CMD"
     exit 0;

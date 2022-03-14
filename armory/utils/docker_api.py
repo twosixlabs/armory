@@ -11,7 +11,9 @@ def pull_verbose(docker_client, repository, tag=None):
         Attempts to replicate docker command line output if we are showing progress.
     """
     if not is_progress():
-        log.info(f"docker pulling from {repository}:{tag}")
+        log.info(
+            f"docker pulling from {repository}:{tag} use '--log=progress' to see status"
+        )
         docker_client.api.pull(repository, tag=tag, stream=False)
         log.success(f"pulled {repository}:{tag}")
         return

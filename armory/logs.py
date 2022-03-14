@@ -106,7 +106,7 @@ def update_filters(specs: List[str], armory_debug=None):
     global filters
     global logfile_directory
 
-    log.trace(f"update_filters {specs} {armory_debug}")
+    log.trace(f"update_filters {specs} armory_debug={armory_debug}")
 
     if logfile_directory is not None:
         log.error("cannot update log filters once make_logfiles is called. ignoring.")
@@ -115,9 +115,9 @@ def update_filters(specs: List[str], armory_debug=None):
     if specs is None:
         specs = []
 
-    if armory_debug is not None:
-        log.trace("added armory:{armory_debug} to {specs}")
-        specs.append(f"armory:{armory_debug}")
+    if armory_debug:
+        specs.append("armory:debug")
+        log.trace("added armory:debug to {specs}")
 
     for spec in specs:
         if ":" in spec:
