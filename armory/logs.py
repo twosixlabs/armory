@@ -106,7 +106,7 @@ def update_filters(specs: List[str], armory_debug=None):
     global filters
     global logfile_directory
 
-    log.info(f"update_filters {specs} {armory_debug}")
+    log.trace(f"update_filters {specs} {armory_debug}")
 
     if logfile_directory is not None:
         log.error("cannot update log filters once make_logfiles is called. ignoring.")
@@ -140,7 +140,7 @@ def update_filters(specs: List[str], armory_debug=None):
     add_sink(sys.stdout, colorize=True)
 
     # TODO: I want to see this even if levels are set low, change to trace after debugging
-    log.error(f"log levels set to {filters}")
+    log.trace(f"log levels set to {filters}")
 
 
 def add_sink(sink, colorize=True):
