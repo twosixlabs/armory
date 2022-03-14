@@ -48,7 +48,8 @@ VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
 TAG=$ARMORY_VERSION
-BASE_TAG=$TAG
+# TODO: @shenshaw26 this default for base tag may not be correct when building `base`
+BASE_TAG=latest
 
 ## Parsing CLI Arguments
 while [[ $# -gt 0 ]]; do
