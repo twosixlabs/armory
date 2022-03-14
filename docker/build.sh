@@ -1,35 +1,28 @@
 #!/usr/bin/env bash
 
-Help()
+usage()
 {
-  # Display Help
-  echo "----------------------------------------------------------------------------------------"
-  echo "                   Armory Docker Build Script                       "
-  echo
-  echo "This build script helps to build the docker images necessary for armory exectuion "
-  echo "(in docker mode).  The primary purpose of this script is to build the images from "
-  echo "scratch and to be used by the armory CI toolchain.  If modifications are necessary"
-  echo "you can use \`--dry-run\` to get the \`docker build...\` commands directly and "
-  echo "modify them as necessary. "
-  echo ""
-  echo "Armory uses scm versioning from git, therefore if you want to re-build containers "
-  echo "from a stable armory release, simply checkout that tag and then run this script"
-  echo ""
-  echo "Syntax: build.sh image [-t|bt|nc|dr|v|h]"
-  echo ""
-  echo "REQUIRED"
-  echo "-f | --framework            Select Which framework to target:"
-  echo "                                [all|base|tf2|pytorch|pytorch-deepspeech]"
-  echo ""
-  echo "OPTIONAL"
-  echo "-t | --tag                  Specify Additional Tag to apply to each image"
-  echo "-bt | --base-tag            Specify Tag for Base Image"
-  echo "-nc | --no-cache            Build Images \`Clean\` (i.e. using --no-cache)"
-  echo "-dr | --dry-run             Only show the Build calls (do not execute the builds)"
-  echo "-v | --verbose              Show Logs in Plain Text (uses \`--progress=plain\`"
-  echo "-h | --help                 Print this Help."
-  echo
-  echo "----------------------------------------------------------------------------------------"
+  cat <<EOF
+armory docker build
+
+This build script helps to build the docker images necessary for armory exectuion
+(in docker mode).  The primary purpose of this script is to build the images from
+scratch and to be used by the armory CI toolchain.
+
+Armory uses scm versioning from git, therefore if you want to re-build containers
+from a stable armory release, simply checkout that tag and then run this script
+
+usage:
+    docker/build.sh [options] framework
+
+where framework is tf2, pytorch, or pytorch-deepspeech
+
+OPTIONS
+--base-tag=1.0.0      which twosixarmory/base tag to use (default: latest)
+--no-cache            do not use local docker cache
+-n | --dry-run        only show the build command that would be run
+-h | --help           show this help
+EOF
 }
 
 # Checking Script Execution Directory
@@ -48,92 +41,54 @@ VERBOSE="--progress=auto"
 REPO="twosixarmory"
 FRAMEWORK=""
 TAG=$ARMORY_VERSION
-# TODO: @shenshaw26 this default for base tag may not be correct when building `base`
 BASE_TAG=latest
 
-## Parsing CLI Arguments
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    -f|--framework)
-      FRAMEWORK="$2"
-      shift # past argument
-      shift # past value
-      ;;
-    -t|--tag)
-      TAG="$2"
-      shift # past argument
-      shift # past argument
-      ;;
-    -bt|--base-tag)
-      BASE_TAG="$2"
-      shift # past argument
-      shift # past argument
-      ;;
-    -nc|--no-cache)
-      NO_CACHE=true
-      shift # past argument
-      ;;
-    -dr|--dry-run)
-      DRYRUN=true
-      shift # past argument
-      ;;
-    -v|--verbose)
-      VERBOSE="--progress=plain"
-      shift # past argument
-      ;;
-    -h|--help)
-      Help
-      exit 0
-      ;;
-    -*|--*)
-      echo "Unknown option $1"
-      echo "For more info try: build.sh -h"
-      exit 1
-      ;;
-    *)
-      POSITIONAL_ARGS+=("$1") # save positional arg
-      shift # past argument
-      ;;
-  esac
+# cannonicalize arguments: turn --opt=val to --opt val etc.
+rewrite=$(getopt -o t:vnh --long tag:,base-tag:,verbose,dry-run,help,no-cache -n "$0" -- "$@")
+[ $? -ne 0 ] && exit 1
+eval set -- "$rewrite"
+
+while true ; do
+    case "$1" in
+        -t | --tag) TAG="$2"; shift 2;;
+        --base-tag) BASE_TAG="$2"; shift 2;;
+        -v | --verbose) verbose="--progress-plain" ; shift;;
+        -n | --dry-run) dryrun=true ; shift ;;
+        --no-cache) no_cache=true; shift ;;
+        -h | --help) usage; shift ;;
+        --) shift; break ;;
+        *) break;;
+    esac
 done
 
-echo "Building Images for [ ${POSITIONAL_ARGS[@]} ]"
+if [ "$#" -ne 1 ]; then
+  usage
+  exit 1
+fi
+FRAMEWORK=$1 ; shift
 
-for framework in "${POSITIONAL_ARGS[@]}"; do
-  if [[ "$framework" != "pytorch" &&  "$framework" != "pytorch-deepspeech" && "$framework" != "tf2" && "$framework" != "base" ]]; then
-    echo "ERROR: <framework> argument must be \`tf2\`, \`pytorch\`, \`pytorch-deepspeech\`, \`base\`, not \`$framework\`"
-    exit 1
-  fi
+case $FRAMEWORK in
+    pytorch | pytorch-deepspeech | tf2) ;;
+    *) echo "invalid framework: $FRAMEWORK should be one of pytorch, tf2, pytorch-deepspeech"; exit 1;;
+esac
 
-  echo ""
-  echo "------------------------------------------------"
-  echo "Building docker image for framework: $framework"
-
-  CMD="docker build"
-  if $NO_CACHE; then
+CMD="docker build"
+if $NO_CACHE; then
     CMD="$CMD --no-cache"
-  fi
+fi
 
-  CMD="$CMD --force-rm"
-  CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${framework}"
-  if [ $framework == "base" ]; then
-    CMD="$CMD -t ${REPO}/${framework}:${BASE_TAG}"
-  else
-    CMD="$CMD --build-arg base_image_tag=${BASE_TAG}"
-    CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
-    CMD="$CMD -t ${REPO}/${framework}:${TAG}"
-  fi
+CMD="$CMD --force-rm"
+CMD="$CMD --file $SCRIPT_DIR/Dockerfile-${FRAMEWORK}"
+CMD="$CMD --build-arg base_image_tag=${BASE_TAG}"
+CMD="$CMD --build-arg armory_version=${ARMORY_VERSION}"
+CMD="$CMD --tag ${REPO}/${FRAMEWORK}:${TAG}"
+CMD="$CMD $VERBOSE ."
 
-  CMD="$CMD $VERBOSE"
-  CMD="$CMD ."
-
-  if $DRYRUN; then
-    echo "Would have Executed: "
+if $DRYRUN; then
+    echo "dry-run. would have executed: "
     echo "    ->  $CMD"
-  else
-    echo "Executing: "
-    echo "    ->  $CMD"
-    $CMD
-  fi
+    exit 0;
+fi
 
-done
+set +x
+$CMD
