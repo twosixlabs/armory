@@ -46,6 +46,7 @@ BASE_TAG=latest
 # cannonicalize arguments: turn --opt=val to --opt val etc.
 rewrite=$(getopt -o t:vnh --long tag:,base-tag:,verbose,dry-run,help,no-cache -n "$0" -- "$@")
 [ $? -ne 0 ] && exit 1
+# echo "rewrite $rewrite"
 eval set -- "$rewrite"
 
 while true ; do
@@ -57,16 +58,16 @@ while true ; do
         --no-cache) no_cache=true; shift ;;
         -h | --help) usage; shift ;;
         --) shift; break ;;
-        *) break;;
+        *) echo "error unrecognized option $1" ; exit 1;;
     esac
 done
 
-if [ "$#" -ne 1 ]; then
+FRAMEWORK="$1"
+if [ -z "$FRAMEWORK" ]; then
   echo "$0: framework argument is required"
   usage
   exit 1
 fi
-FRAMEWORK=$1 ; shift
 
 case $FRAMEWORK in
     pytorch | pytorch-deepspeech | tf2) ;;
