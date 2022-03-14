@@ -11,19 +11,16 @@ TAG = armory.__version__
 
 PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
 PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
-TF1 = f"{DOCKER_REPOSITORY}/tf1:{TAG}"
 TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
 ALL = (
     PYTORCH,
     PYTORCH_DEEPSPEECH,
-    TF1,
     TF2,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
     "pytorch": PYTORCH,
     "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
-    "tf1": TF1,
     "tf2": TF2,
 }
 
