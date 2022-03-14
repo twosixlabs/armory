@@ -72,19 +72,17 @@ class Evaluator(object):
         # Download docker image on host
         # TODO This seems like it still needs docker even in no docker mode
         #  we should fix this
-        log.info("Attempting to get Docker Client")
+        log.trace("attempting to get docker client")
         docker_client = docker.from_env()
         try:
-            docker_client.images.get(kwargs["image_name"])
+            docker_client.images.get(image_name)
+            log.success(f"found docker image {image_name}")
         except docker.errors.ImageNotFound:
-            log.info(f"Image {image_name} was not found. Downloading...")
+            log.info(f"image {image_name} not found. downloading...")
             try:
                 docker_api.pull_verbose(docker_client, image_name)
             except docker.errors.NotFound:
                 if image_name in images.ALL:
-                    image_name.lstrip(f"{images.DOCKER_REPOSITORY}/").rstrip(
-                        f":{armory.__version__}"
-                    )
                     raise ValueError(
                         "You are attempting to pull an unpublished armory docker image.\n"
                         "This is likely because you're running armory from a dev branch. "
@@ -94,7 +92,7 @@ class Evaluator(object):
                         "If you'd like to continue working on the developer image please "
                         "build it from source on your machine as described here:\n"
                         "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                        "bash docker/build.sh --framework all --tag dev"
+                        "bash docker/build.sh"
                     )
                 else:
                     log.error(f"Image {image_name} could not be downloaded")
