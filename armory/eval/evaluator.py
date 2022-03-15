@@ -77,17 +77,27 @@ class Evaluator(object):
         # TODO This seems like it still needs docker even in no docker mode
         #  we should fix this
 
+        log.trace(f"ensure_image_present {image_name}")
+
         docker_client = docker.from_env()
 
         # look first for  the versioned and then the unversioned, return if hit
-        for name in (f"{image_name}:{armory.__version__}", image_name):
-            log.trace(f"asking local docker for image {name}")
-            try:
-                docker_client.images.get(name)
-                log.success(f"found docker image {image_name} as {name}")
-                return name
-            except docker.errors.ImageNotFound:
-                continue
+        # if there is a tag present, use that. otherwise add the current version
+        if ":" in image_name:
+            check = image_name
+        else:
+            check = f"{image_name}:{armory.__version__}"
+
+        log.trace(f"asking local docker for image {check}")
+        try:
+            docker_client.images.get(check)
+            log.success(f"found docker image {image_name} as {check}")
+            return check
+        except docker.errors.ImageNotFound:
+            log.trace(f"image {check} not found")
+        except requests.exceptions.HTTPError:
+            log.trace(f"http error when looking for image {check}")
+            raise
 
         log.info(f"image {image_name} not found. downloading...")
         try:
