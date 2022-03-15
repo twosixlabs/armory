@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, num_samples):
+    def __init__(self, base_output_dir):
         self.base_output_dir = base_output_dir
-        self.num_samples = num_samples
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
@@ -25,21 +24,18 @@ class SampleExporter:
     def export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
-
-        if self.saved_samples < self.num_samples:
-
-            self.y_dict[self.saved_samples] = {
-                "ground truth": y,
-                "predicted": y_pred_adv,
-            }
-            self._export(
-                x=x,
-                x_adv=x_adv,
-                y=y,
-                y_pred_adv=y_pred_adv,
-                y_pred_clean=y_pred_clean,
-                **kwargs,
-            )
+        self.y_dict[self.saved_samples] = {
+            "ground truth": y,
+            "predicted": y_pred_adv,
+        }
+        self._export(
+            x=x,
+            x_adv=x_adv,
+            y=y,
+            y_pred_adv=y_pred_adv,
+            y_pred_clean=y_pred_clean,
+            **kwargs,
+        )
 
     @abc.abstractmethod
     def _export(
@@ -76,9 +72,6 @@ class SampleExporter:
 class ImageClassificationExporter(SampleExporter):
     def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
         for i, x_i in enumerate(x):
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_image(x_i, type="benign")
 
             # Export adversarial image x_adv_i if present
@@ -136,9 +129,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         classes_to_skip=None,
     ):
         for i, x_i in enumerate(x):
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_image(x_i, type="benign")
 
             y_i = y[i]
@@ -191,21 +181,18 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, num_samples, frame_rate):
-        super().__init__(base_output_dir, num_samples)
+    def __init__(self, base_output_dir, frame_rate):
+        super().__init__(base_output_dir)
         self.frame_rate = frame_rate
 
     @classmethod
-    def from_context(cls, base_output_dir, num_samples, context):
-        return cls(base_output_dir, num_samples, context.frame_rate)
+    def from_context(cls, base_output_dir, context):
+        return cls(base_output_dir, context.frame_rate)
 
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_video(x_i, type="benign")
 
             if x_adv is not None:
@@ -260,9 +247,6 @@ class VideoTrackingExporter(VideoClassificationExporter):
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_video(x_i, type="benign")
 
             y_i = y[i]
@@ -333,21 +317,18 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
 
 class AudioExporter(SampleExporter):
-    def __init__(self, base_output_dir, num_samples, sample_rate):
+    def __init__(self, base_output_dir, sample_rate):
         self.sample_rate = sample_rate
-        super().__init__(base_output_dir, num_samples)
+        super().__init__(base_output_dir)
 
     @classmethod
-    def from_context(cls, base_output_dir, num_samples, context):
-        return cls(base_output_dir, num_samples, context.sample_rate)
+    def from_context(cls, base_output_dir, context):
+        return cls(base_output_dir, context.sample_rate)
 
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_audio(x_i, type="benign")
 
             if x_adv is not None:
@@ -378,10 +359,6 @@ class So2SatExporter(SampleExporter):
     ):
 
         for i, x_i in enumerate(x):
-
-            if self.saved_samples == self.num_samples:
-                break
-
             self._export_so2sat_image(x_i, type="benign")
 
             if x_adv is not None:

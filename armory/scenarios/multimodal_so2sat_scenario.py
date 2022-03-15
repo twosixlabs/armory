@@ -218,4 +218,4 @@ class So2SatClassification(Scenario):
         self.results = combined_results
 
     def _load_sample_exporter(self):
-        return So2SatExporter(self.scenario_output_dir, self.num_export_samples)
+        return So2SatExporter(self.scenario_output_dir)

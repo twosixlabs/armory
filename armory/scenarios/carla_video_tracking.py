@@ -79,7 +79,5 @@ class CarlaVideoTracking(Scenario):
 
     def _load_sample_exporter(self):
         return VideoTrackingExporter(
-            self.scenario_output_dir,
-            self.num_export_samples,
-            frame_rate=self.test_dataset.context.frame_rate,
+            self.scenario_output_dir, frame_rate=self.test_dataset.context.frame_rate,
         )

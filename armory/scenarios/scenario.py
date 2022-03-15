@@ -321,13 +321,23 @@ class Scenario:
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def export_samples(self):
+    def export_samples(self, num_samples):
+        if num_samples < 1:
+            raise ValueError(
+                f"num_samples should be greater than or equal to 1, received {num_samples}."
+            )
+        elif num_samples > self.test_dataset.batch_size:
+            raise ValueError(
+                f"num_samples should be less than or equal to batch size. Received num_samples of {num_samples} and batch_size of {self.test_dataset.batch_size}"
+            )
         self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            y=self.y,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
+            x=self.x[:num_samples],
+            x_adv=self.x_adv[:num_samples] if self.x_adv is not None else None,
+            y=self.y[:num_samples] if self.y is not None else None,
+            y_pred_clean=self.y_pred[:num_samples] if self.y_pred is not None else None,
+            y_pred_adv=self.y_pred_adv[:num_samples]
+            if self.y_pred_adv is not None
+            else None,
         )
 
     def evaluate_current(self):
@@ -335,8 +345,15 @@ class Scenario:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
-        if self.sample_exporter is not None:
-            self.export_samples()
+        if (
+            self.sample_exporter is not None
+            and self.num_export_samples > self.sample_exporter.saved_samples
+        ):
+            num_samples_to_export = min(
+                self.test_dataset.batch_size,
+                self.num_export_samples - self.sample_exporter.saved_samples,
+            )
+            self.export_samples(num_samples=num_samples_to_export)
 
     def finalize_results(self):
         metrics_logger = self.metrics_logger
