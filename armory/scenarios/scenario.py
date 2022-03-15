@@ -235,13 +235,8 @@ class Scenario:
                 "The export_samples field was deprecated in Armory 0.15.0. Please use export_batches instead."
             )
 
-        self.num_export_batches = self.config["scenario"].get("export_batches")
-
-        if self.num_export_batches is not None and self.num_export_batches > 0:
-            sample_exporter = self._load_sample_exporter()
-        else:
-            sample_exporter = None
-        self.sample_exporter = sample_exporter
+        self.num_export_batches = self.config["scenario"].get("export_batches", 0)
+        self.sample_exporter = self._load_sample_exporter()
 
     @abc.abstractmethod
     def _load_sample_exporter(self):
@@ -341,10 +336,7 @@ class Scenario:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
-        if (
-            self.sample_exporter is not None
-            and self.num_export_batches > self.sample_exporter.saved_batches
-        ):
+        if self.num_export_batches > self.sample_exporter.saved_batches:
             self.export_samples()
 
     def finalize_results(self):
