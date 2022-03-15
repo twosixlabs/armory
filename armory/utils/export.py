@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class SampleExporter:
     def __init__(self, base_output_dir):
         self.base_output_dir = base_output_dir
+        self.saved_batches = 0
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
@@ -80,6 +81,7 @@ class ImageClassificationExporter(SampleExporter):
                 self._export_image(x_adv_i, type="adversarial")
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_image(self, x_i, type="benign"):
         if type not in ["benign", "adversarial"]:
@@ -147,6 +149,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 )
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_image_with_boxes(
         self,
@@ -200,6 +203,7 @@ class VideoClassificationExporter(SampleExporter):
                 self._export_video(x_adv_i, type="adversarial")
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_video(self, x_i, type="benign"):
         if type not in ["benign", "adversarial"]:
@@ -262,6 +266,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
                 )
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_video_with_boxes(self, x_i, y_i, y_i_pred, type="benign"):
         if type not in ["benign", "adversarial"]:
@@ -270,9 +275,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
             )
 
         if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning(
-                "video out of expected range. Clipping to [0,1]"
-            )
+            logger.warning("video out of expected range. Clipping to [0,1]")
 
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
@@ -336,6 +339,7 @@ class AudioExporter(SampleExporter):
                 self._export_audio(x_i_adv, type="adversarial")
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_audio(self, x_i, type="benign"):
         if type not in ["benign", "adversarial"]:
@@ -366,6 +370,7 @@ class So2SatExporter(SampleExporter):
                 self._export_so2sat_image(x_adv_i, type="adversarial")
 
             self.saved_samples += 1
+        self.saved_batches += 1
 
     def _export_so2sat_image(self, x_i, type="benign"):
         if type not in ["benign", "adversarial"]:
