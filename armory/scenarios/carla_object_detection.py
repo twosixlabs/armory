@@ -64,7 +64,7 @@ class CarlaObjectDetectionTask(Scenario):
                 x=x,
                 y=y_target,
                 y_patch_metadata=[y_patch_metadata],
-                **self.generate_kwargs
+                **self.generate_kwargs,
             )
 
         # Ensure that input sample isn't overwritten by model
