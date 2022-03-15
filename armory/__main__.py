@@ -195,7 +195,7 @@ def _docker_image(parser):
 def _docker_image_optional(parser):
     parser.add_argument(
         "--docker-image",
-        default=images.TF1,
+        default=images.PYTORCH,
         metavar="<docker image>",
         type=str,
         help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
