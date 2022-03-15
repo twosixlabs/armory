@@ -323,6 +323,10 @@ class Scenario:
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def export_samples(self):
+        if not hasattr(self, "x"):
+            raise AttributeError(
+                f"{type(self).__name__} has no attribute 'x'. Be sure to call evaluate_current() before attempting to export samples. "
+            )
         self.sample_exporter.export(
             x=self.x,
             x_adv=self.x_adv,
