@@ -271,7 +271,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             logger.warning(
-                "video out of expected range. Clipping to [0,twosixlabs/gard-submissions/repos/hkakitani__deepspeech.pytorch__default/deepspeech.pytorch 1]"
+                "video out of expected range. Clipping to [0,1]"
             )
 
         folder = str(self.saved_samples)
