@@ -8,6 +8,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
 from art.estimators.classification import KerasClassifier
 
+tf.compat.v1.disable_eager_execution()
+
 
 def make_mnist_model(**kwargs) -> tf.keras.Model:
     """

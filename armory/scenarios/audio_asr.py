@@ -2,8 +2,6 @@
 Automatic speech recognition scenario
 """
 
-import logging
-
 import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
 
@@ -11,6 +9,7 @@ from armory.scenarios.scenario import Scenario
 from armory.utils.export import AudioExporter
 
 logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 def load_audio_channel(delay, attenuation, pytorch=True):
@@ -27,12 +26,12 @@ def load_audio_channel(delay, attenuation, pytorch=True):
     if delay < 0:
         raise ValueError(f"delay {delay} must be a nonnegative number (of samples)")
     if delay == 0 or attenuation == 0:
-        logger.warning("Using an identity channel")
+        log.warning("Using an identity channel")
         numerator_coef = np.array([1.0])
         denominator_coef = np.array([1.0])
     else:
         if not (-1 <= attenuation <= 1):
-            logger.warning(f"filter attenuation {attenuation} not in [-1, 1]")
+            log.warning(f"filter attenuation {attenuation} not in [-1, 1]")
 
         # Simple FIR filter with a single multipath delay
         numerator_coef = np.zeros(delay + 1)
@@ -48,9 +47,9 @@ def load_audio_channel(delay, attenuation, pytorch=True):
                 numerator_coef=numerator_coef, denominator_coef=denominator_coef
             )
         except ImportError:
-            logger.exception("PyTorch not available. Resorting to scipy filter")
+            log.exception("PyTorch not available. Resorting to scipy filter")
 
-    logger.warning("Scipy LFilter does not currently implement proper gradients")
+    log.warning("Scipy LFilter does not currently implement proper gradients")
     return LFilter(numerator_coef=numerator_coef, denominator_coef=denominator_coef)
 
 
@@ -60,16 +59,16 @@ class AutomaticSpeechRecognition(Scenario):
         skip_adversarial = (config.get("adhoc") or {}).get("skip_adversarial")
         if skip_adversarial:
             if skip_attack is False:
-                logger.warning(
+                log.warning(
                     "config['adhoc']['skip_adversarial']=True overridden by skip_attack=False"
                 )
             elif skip_attack is None:
-                logger.warning(
+                log.warning(
                     "skip_attack set by config['adhoc']['skip_adversarial']=True"
                 )
                 skip_attack = True
         elif skip_attack:
-            logger.warning(
+            log.warning(
                 "config['adhoc']['skip_adversarial']=False overridden by skip_attack=True"
             )
 
@@ -81,7 +80,7 @@ class AutomaticSpeechRecognition(Scenario):
         audio_channel_config = self.config.get("adhoc", {}).get("audio_channel")
         if audio_channel_config is None:
             return None
-        logger.info("loading audio channel")
+        log.info("loading audio channel")
         for k in "delay", "attenuation":
             if k not in audio_channel_config:
                 raise ValueError(f"audio_channel must have key {k}")
@@ -106,7 +105,7 @@ class AutomaticSpeechRecognition(Scenario):
 
     def load_dataset(self, eval_split_default="test_clean"):
         if self.config["dataset"]["batch_size"] != 1:
-            logger.warning("Evaluation batch_size != 1 may not be supported.")
+            log.warning("Evaluation batch_size != 1 may not be supported.")
         super().load_dataset(eval_split_default=eval_split_default)
 
     def _load_sample_exporter(self):

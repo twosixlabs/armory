@@ -16,20 +16,15 @@ import argparse
 import base64
 import importlib.resources
 import json
-import logging
 import os
 import pytest
 import time
-
-import coloredlogs
 
 import armory
 from armory import environment, paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log, update_filters, make_logfiles
 
 
 def _scenario_setup(config: Config) -> None:
@@ -43,14 +38,16 @@ def _scenario_setup(config: Config) -> None:
     runtime_paths = paths.runtime_paths()
     if "eval_id" not in config:
         timestamp = time.time()
-        logger.error(f"eval_id not in config. Inserting current timestamp {timestamp}")
+        log.error(f"eval_id not in config. Inserting current timestamp {timestamp}")
         config["eval_id"] = str(timestamp)
 
     scenario_output_dir = os.path.join(runtime_paths.output_dir, config["eval_id"])
     scenario_tmp_dir = os.path.join(runtime_paths.tmp_dir, config["eval_id"])
     os.makedirs(scenario_output_dir, exist_ok=True)
     os.makedirs(scenario_tmp_dir, exist_ok=True)
-    logger.warning(f"Outputs will be written to {scenario_output_dir}")
+
+    log.info(f"armory outputs and logs will be written to {scenario_output_dir}")
+    make_logfiles(scenario_output_dir)
 
     # Download any external repositories and add them to the sys path for use
     if config["sysconfig"].get("external_github_repo", None):
@@ -105,7 +102,6 @@ def run_validation(config_json, from_file=False) -> None:
 
 def get(
     config_json,
-    set_logging_level=logging.INFO,
     from_file=True,
     check_run=False,
     mongo_host=None,
@@ -118,13 +114,6 @@ def get(
     Init environment variables and initialize scenario class with config;
     returns a constructed Scenario subclass based on the config specification.
     """
-    if set_logging_level not in (None, False):
-        coloredlogs.install(level=set_logging_level)
-        logger.info(
-            f"Setting logger via coloredlogs to {set_logging_level}."
-            " To avoid this behavior, call 'get(..., set_logging_level=False)'"
-        )
-
     config = _get_config(config_json, from_file=from_file)
     scenario_config = config.get("scenario")
     if scenario_config is None:
@@ -153,6 +142,7 @@ def run_config(*args, **kwargs):
     Convenience wrapper around 'load'
     """
     scenario = get(*args, **kwargs)
+    log.trace(f"scenario loaded {scenario}")
     scenario.evaluate()
 
 
@@ -161,14 +151,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "config", metavar="<config json>", type=str, help="scenario config JSON",
     )
+
     parser.add_argument(
         "-d",
         "--debug",
-        dest="log_level",
-        action="store_const",
-        const=logging.DEBUG,
-        default=logging.INFO,
-        help="Debug output (logging=DEBUG)",
+        action="store_true",
+        help="synonym for --log-level=armory:debug",
+    )
+    parser.add_argument(
+        "--log-level",
+        action="append",
+        help="set log level per-module (ex. art:debug) can be used mulitple times",
     )
     parser.add_argument(
         "--no-docker",
@@ -181,11 +174,12 @@ if __name__ == "__main__":
         action="store_false",
         help="If the config argument is a base64 serialized JSON instead of a filepath",
     )
+    # TODO: Figure out if this should be removed/deprecated
     parser.add_argument(
         "--mongo",
         dest="mongo_host",
         default=None,
-        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://USER:PASS@5.6.7.8')",
+        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://DOCKER_REPOSITORY:PASS@5.6.7.8')",
     )
     parser.add_argument(
         "--check",
@@ -218,10 +212,11 @@ if __name__ == "__main__":
         help="Skip attack of inputs that are already misclassified",
     )
     args = parser.parse_args()
-    coloredlogs.install(level=args.log_level)
+    update_filters(args.log_level, args.debug)
+    log.trace(f"main.py called update_filters({args.log_level} debug: {args.debug})")
     calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
-        logger.warning(
+        log.warning(
             f"armory calling version {calling_version} != "
             f"armory imported version {armory.__version__}"
         )
@@ -230,7 +225,7 @@ if __name__ == "__main__":
         paths.set_mode("host")
 
     if args.check and args.num_eval_batches:
-        logger.warning(
+        log.warning(
             "--num_eval_batches will be overwritten and set to 1 since --check was passed"
         )
 
@@ -239,7 +234,6 @@ if __name__ == "__main__":
     else:
         run_config(
             args.config,
-            set_logging_level=False,
             from_file=args.from_file,
             check_run=args.check,
             mongo_host=args.mongo_host,

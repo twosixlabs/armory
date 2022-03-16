@@ -1,5 +1,4 @@
 import os
-import logging
 import abc
 import numpy as np
 import ffmpeg
@@ -8,8 +7,7 @@ import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class SampleExporter:
@@ -61,7 +59,7 @@ class SampleExporter:
         ), f"Directory {self.base_output_dir} is not writable"
         self.output_dir = os.path.join(self.base_output_dir, "saved_samples")
         if os.path.exists(self.output_dir):
-            logger.warning(
+            log.warning(
                 f"Sample output directory {self.output_dir} already exists. Creating new directory"
             )
             self.output_dir = os.path.join(
@@ -101,7 +99,7 @@ class ImageClassificationExporter(SampleExporter):
     @staticmethod
     def get_sample(x_i):
         if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("Image out of expected range. Clipping to [0, 1].")
+            log.warning("Image out of expected range. Clipping to [0, 1].")
 
         # Export benign image x_i
         if x_i.shape[-1] == 1:
@@ -267,7 +265,7 @@ class VideoClassificationExporter(SampleExporter):
     @staticmethod
     def get_sample(x_i):
         if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("video out of expected range. Clipping to [0, 1]")
+            log.warning("video out of expected range. Clipping to [0, 1]")
 
         pil_frames = []
         for n_frame, x_frame, in enumerate(x_i):
@@ -345,7 +343,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
     @staticmethod
     def get_sample_with_boxes(x_i, y_i, y_i_pred):
         if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("video out of expected range. Clipping to [0,1]")
+            log.warning("video out of expected range. Clipping to [0,1]")
 
         pil_frames = []
         for n_frame, x_frame, in enumerate(x_i):
@@ -390,7 +388,7 @@ class AudioExporter(SampleExporter):
             )
 
         if x_i.min() < -1.0 or x_i.max() > 1.0:
-            logger.warning("input out of expected range. Clipping to [-1, 1]")
+            log.warning("input out of expected range. Clipping to [-1, 1]")
 
         wavfile.write(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}.wav"),
@@ -441,9 +439,9 @@ class So2SatExporter(SampleExporter):
     @staticmethod
     def get_vh_sample(x_i):
         if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
         if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+            log.warning("EO image out of expected range. Clipping to [0, 1].")
 
         sar_eps = 1e-9 + 1j * 1e-9
         x_vh = np.log10(
@@ -465,9 +463,9 @@ class So2SatExporter(SampleExporter):
     @staticmethod
     def get_vv_sample(x_i):
         if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
         if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+            log.warning("EO image out of expected range. Clipping to [0, 1].")
 
         sar_eps = 1e-9 + 1j * 1e-9
         x_vv = np.log10(
@@ -489,9 +487,9 @@ class So2SatExporter(SampleExporter):
     @staticmethod
     def get_eo_samples(x_i):
         if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
         if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+            log.warning("EO image out of expected range. Clipping to [0, 1].")
 
         eo_images = []
 

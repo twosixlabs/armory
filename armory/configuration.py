@@ -2,12 +2,10 @@
 Utilities for handling the global armory configuration file
 """
 
-import logging
 import json
 import os
 from collections import defaultdict
-
-logger = logging.getLogger(__name__)
+import warnings  # armory.logs initialization depends on this module, use warnings instead
 
 
 def get_verify_ssl():
@@ -37,7 +35,7 @@ def validate_config(config: dict) -> None:
     for key, value in config.items():
         if key not in keys:
             # warning instead of error to make forward compatible
-            logger.warning(f"config has additional key {key}")
+            warnings.warn(f"config has additional key {key}")
 
         if key in ("verify_ssl") and not isinstance(value, bool):
             raise ValueError(f"{key} value {value} is not a bool")
@@ -60,17 +58,17 @@ def load_global_config(config_path: str, validate: bool = True) -> dict:
         with open(config_path) as f:
             config = json.load(f)
     except json.decoder.JSONDecodeError:
-        logger.exception(f"Armory config file {config_path} could not be decoded")
+        warnings.warn(f"Armory config file {config_path} could not be decoded")
         raise
     except OSError:
-        logger.exception(f"Armory config file {config_path} could not be read")
+        warnings.warn(f"Armory config file {config_path} could not be read")
         raise
 
     if validate:
         try:
             validate_config(config)
         except (TypeError, KeyError, ValueError):
-            logger.error(
+            warnings.warn(
                 "Error parsing config.json. Please run `armory configure`.\n"
                 "    If you previously ran an older version of armory, you may\n"
                 f"    need to remove the {os.path.dirname(config_path)} directory due to changes"

@@ -8,13 +8,9 @@ This module implements adversarial training following Madry's Protocol.
 This has been modified from ART by adding a fit_generator functionality
 """
 
-import logging
-
 from art.defences.trainer.trainer import Trainer
 from art.defences.trainer.adversarial_trainer import AdversarialTrainer
 from art.attacks.evasion import ProjectedGradientDescent
-
-logger = logging.getLogger(__name__)
 
 
 class AdversarialTrainerMadryPGD(Trainer):

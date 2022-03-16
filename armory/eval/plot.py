@@ -2,13 +2,12 @@
 Plot output json files
 """
 import json
-import logging
 import os
-
-logger = logging.getLogger(__name__)
 
 from matplotlib import pyplot as plt
 import numpy as np
+
+from armory.logs import log
 
 
 def classification(
@@ -168,7 +167,7 @@ class SpeakerID:
         ylabel="Task Accuracy",
     ):
         if save_filepath is not None and show is True:
-            logger.warning("setting show to False")
+            log.warning("setting show to False")
             show = False
 
         for x, y, name in zip(self.xs, self.ys, self.names):
@@ -251,7 +250,7 @@ class SpeakerIDLinf:
         ylabel="Task Accuracy",
     ):
         if save_filepath is not None and show is True:
-            logger.warning("setting show to False")
+            log.warning("setting show to False")
             show = False
 
         for x, y, name in zip(self.xs, self.ys, self.names):
