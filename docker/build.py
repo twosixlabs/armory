@@ -25,11 +25,11 @@ parser.add_argument("--no-cache", action="store_true", help="do not use docker c
 parser.add_argument("-t", "--tag", help="additional tag for the docker image")
 parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
 parser.add_argument(
-    "framework", help="framework to build (tf2, pytorch, pyrtorch-deepspeech)",
+    "framework", help="framework to build (tf2, pytorch, pytorch-deepspeech)",
 )
 args = parser.parse_args()
 
-if args.framework not in ("tf2", "pytorch", "pyrtorch-deepspeech"):
+if args.framework not in ("tf2", "pytorch", "pytorch-deepspeech"):
     raise ValueError(f"unknown framework {args.framework}")
 
 dockerfile = script_dir / f"Dockerfile-{args.framework}"
