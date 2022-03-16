@@ -398,6 +398,10 @@ class AudioExporter(SampleExporter):
             data=np.clip(x_i, -1.0, 1.0),
         )
 
+    @staticmethod
+    def get_sample(x_i, dataset_context):
+        return np.int16(x_i * dataset_context.quantization)
+
 
 class So2SatExporter(SampleExporter):
     def _export(
