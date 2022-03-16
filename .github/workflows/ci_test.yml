@@ -135,7 +135,8 @@ jobs:
           python docker/build.py pytorch-deepspeech
       - name: Run Unit tests
         run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) pytest -m "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
+          pytest -m "not docker_required and unit" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04
