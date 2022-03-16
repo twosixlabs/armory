@@ -349,8 +349,7 @@ def apricot_label_preprocessing(x, y):
 
 
 def dapricot_label_preprocessing(x, y):
-    """
-    """
+    """ """
     y_object, y_patch_metadata = y
     y_object_list = []
     y_patch_metadata_list = []

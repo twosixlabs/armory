@@ -5,10 +5,6 @@ from art.preprocessing.expectation_over_transformation.pytorch import EoTPyTorch
 if TYPE_CHECKING:
     import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class EoTRandomAffinePyTorch(EoTPyTorch):
     """

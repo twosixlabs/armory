@@ -148,18 +148,18 @@ class CarlaVideoTrackingTest(tfds.core.GeneratorBasedBuilder):
             # convert patch mask to patch coordinates [top_left, top_right, bottom_right, bottom_left]
             def build_coords(mask):
                 """
-        Get the corner points of a patch by using its segmentation mask.
+                Get the corner points of a patch by using its segmentation mask.
 
-        Arguments:
-            mask: A numpy array of shape (height, width). mask will be converted
-                  to a uint8 image for use with the cornerHarris algorithm
+                Arguments:
+                    mask: A numpy array of shape (height, width). mask will be converted
+                          to a uint8 image for use with the cornerHarris algorithm
 
-        Returns:
-            pts: The corner points (vertices) of the mask/patch. This is a list
-                of lists, with each nested list containing the (x,y) coordinate
-                of a vertex/corner. The points will be in the order of:
-                    [Top/Left, Top/Right, Bottom/Right, Bottom/Left]
-        """
+                Returns:
+                    pts: The corner points (vertices) of the mask/patch. This is a list
+                        of lists, with each nested list containing the (x,y) coordinate
+                        of a vertex/corner. The points will be in the order of:
+                            [Top/Left, Top/Right, Bottom/Right, Bottom/Left]
+                """
                 # Importing cv2 inside function, since not all twosixarmory images contain cv2 package
                 import cv2
 

@@ -1,4 +1,4 @@
-u"""
+"""
 TensorFlow Dataset for resisc45 attacked by Adversarial Patch with adv/clean splits
 """
 from __future__ import absolute_import

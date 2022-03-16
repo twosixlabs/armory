@@ -3,9 +3,7 @@ Helper utilies to load things from armory configuration files.
 """
 
 from importlib import import_module
-import logging
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
@@ -18,7 +16,7 @@ from art.attacks import Attack
 try:
     from art.estimators import BaseEstimator as Classifier
 except ImportError:
-    logger.warning(
+    log.warning(
         "ART 1.2 support is deprecated and will be removed in ARMORY 0.11. Use ART 1.3"
     )
     from art.classifiers import Classifier
@@ -49,6 +47,7 @@ def load_fn(sub_config):
     return getattr(module, sub_config["name"])
 
 
+# TODO THIS is a TERRIBLE Pattern....can we refactor?
 def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwargs):
     """
     Loads a dataset from configuration file
@@ -113,7 +112,7 @@ def load_model(model_config):
     if not isinstance(model, Classifier):
         raise TypeError(f"{model} is not an instance of {Classifier}")
     if not weights_file and not model_config["fit"]:
-        logger.warning(
+        log.warning(
             "No weights file was provided and the model is not configured to train. "
             "Are you loading model weights from an online repository?"
         )
@@ -145,11 +144,11 @@ def load_attack(attack_config, classifier):
         apply_patch_kwargs = kwargs.pop("apply_patch_kwargs", {})
         targeted = kwargs.pop("targeted", None)  # not explicitly used by patch attacks
         if targeted:
-            logger.warning("Patch attack generation may ignore 'targeted' set to True")
+            log.warning("Patch attack generation may ignore 'targeted' set to True")
         attack_config["kwargs"] = kwargs
     else:
         if attack_config.get("type") not in SUPPORTED_TYPES:
-            logger.warning(
+            log.warning(
                 f"attack_config['type'] of {attack_config.get('type')} was not "
                 f"recognized and isn't being used. Supported attack types "
                 f"are as follows: {SUPPORTED_TYPES}."
@@ -168,7 +167,7 @@ def load_attack(attack_config, classifier):
         )
 
     if not isinstance(attack, Attack):
-        logger.warning(
+        log.warning(
             f"attack {attack} is not an instance of {Attack}."
             " Ensure that it implements ART `generate` API."
         )
@@ -252,7 +251,7 @@ def load_defense_internal(defense_config, classifier):
 
 def load_label_targeter(config):
     if config.get("scheme"):
-        logger.warning(
+        log.warning(
             "The use of a 'scheme' key in attack['targeted_labels'] has been deprecated. "
             "The supported means of configuring label targeters is to include 'module' "
             "and 'name' keys in attack['targeted_labels'] pointing to the targeter object. "

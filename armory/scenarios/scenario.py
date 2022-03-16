@@ -4,7 +4,6 @@ Primary class for scenario
 
 import copy
 import json
-import logging
 import os
 import sys
 import time
@@ -16,9 +15,7 @@ import armory
 from armory import Config, paths
 from armory.utils import config_loading, metrics
 from armory.utils.export import SampleExporter
-
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class Scenario:
@@ -62,9 +59,9 @@ class Scenario:
         self.skip_attack = bool(skip_attack)
         self.skip_misclassified = bool(skip_misclassified)
         if skip_benign:
-            logger.info("Skipping benign classification...")
+            log.info("Skipping benign classification...")
         if skip_attack:
-            logger.info("Skipping attack generation...")
+            log.info("Skipping attack generation...")
         self.mongo_host = mongo_host
         self.time_stamp = time.time()
         if self.mongo_host is not None:  # fail fast if pymongo is not installed
@@ -104,7 +101,7 @@ class Scenario:
             defense_config = self.config.get("defense") or {}
             defense_type = defense_config.get("type")
             if defense_type in ["Preprocessor", "Postprocessor"]:
-                logger.info(f"Applying internal {defense_type} defense to model")
+                log.info(f"Applying internal {defense_type} defense to model")
                 model = config_loading.load_defense_internal(defense_config, model)
             elif defense_type == "Trainer":
                 self.trainer = config_loading.load_defense_wrapper(
@@ -113,7 +110,7 @@ class Scenario:
             elif defense_type is not None:
                 raise ValueError(f"{defense_type} not currently supported")
         else:
-            logger.info("Not loading any defenses for model")
+            log.info("Not loading any defenses for model")
             defense_type = None
 
         self.model = model
@@ -125,7 +122,7 @@ class Scenario:
 
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
-        logger.info(f"Loading train dataset {dataset_config['name']}...")
+        log.info(f"Loading train dataset {dataset_config['name']}...")
         self.train_dataset = config_loading.load_dataset(
             dataset_config,
             epochs=self.fit_kwargs["nb_epochs"],
@@ -136,10 +133,10 @@ class Scenario:
 
     def fit(self):
         if self.defense_type == "Trainer":
-            logger.info(f"Training with {type(self.trainer)} Trainer defense...")
+            log.info(f"Training with {type(self.trainer)} Trainer defense...")
             self.trainer.fit_generator(self.train_dataset, **self.fit_kwargs)
         else:
-            logger.info(f"Fitting model {self.model_name}...")
+            log.info(f"Fitting model {self.model_name}...")
             self.model.fit_generator(self.train_dataset, **self.fit_kwargs)
 
     def load_attack(self):
@@ -151,7 +148,7 @@ class Scenario:
         if "summary_writer" in attack_config.get("kwargs", {}):
             summary_writer_kwarg = attack_config.get("kwargs").get("summary_writer")
             if isinstance(summary_writer_kwarg, str):
-                logger.warning(
+                log.warning(
                     f"Overriding 'summary_writer' attack kwarg {summary_writer_kwarg} with {self.scenario_output_dir}."
                 )
             attack_config["kwargs"][
@@ -194,7 +191,7 @@ class Scenario:
         dataset_config = self.config["dataset"]
         eval_split = dataset_config.get("eval_split", eval_split_default)
         # Evaluate the ART model on benign test examples
-        logger.info(f"Loading test dataset {dataset_config['name']}...")
+        log.info(f"Loading test dataset {dataset_config['name']}...")
         self.test_dataset = config_loading.load_dataset(
             dataset_config,
             epochs=1,
@@ -210,7 +207,7 @@ class Scenario:
             targeted = self.targeted
         else:
             targeted = False
-            logger.warning(
+            log.warning(
                 "Run 'load_attack' before 'load_metrics' if not just doing benign inference"
             )
 
@@ -249,7 +246,7 @@ class Scenario:
         return self
 
     def evaluate_all(self):
-        logger.info("Running inference on benign and adversarial examples")
+        log.info("Running inference on benign and adversarial examples")
         for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
             self.next()
             self.evaluate_current()
@@ -352,17 +349,17 @@ class Scenario:
             results = self._evaluate()
         except Exception as e:
             if str(e) == "assignment destination is read-only":
-                logger.exception(
+                log.exception(
                     "Encountered error during scenario evaluation. Be sure "
                     + "that the classifier's predict() isn't directly modifying the "
                     + "input variable itself, as this can cause unexpected behavior in ART."
                 )
             else:
-                logger.exception("Encountered error during scenario evaluation.")
+                log.exception("Encountered error during scenario evaluation.")
             sys.exit(1)
 
         if results is None:
-            logger.warning(f"{self._evaluate} returned None, not a dict")
+            log.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(self.config, results)
         self._save(output)
         if self.mongo_host is not None:
@@ -395,9 +392,9 @@ class Scenario:
             override_name if override_name else output["config"]["scenario"]["name"]
         )
         filename = f"{scenario_name}_{output['timestamp']}.json"
-        logger.info(
-            "Saving evaluation results to path\n"
-            f"{self.scenario_output_dir}/{filename}\n"
+        log.info(
+            "Saving evaluation results to path "
+            f"{self.scenario_output_dir}/{filename} "
             "inside container."
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:

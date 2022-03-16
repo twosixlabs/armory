@@ -2,7 +2,6 @@
 Utils for data processing
 
 """
-import logging
 import hashlib
 import tarfile
 import os
@@ -20,10 +19,9 @@ import requests
 from tqdm import tqdm
 
 from armory import paths
+from armory.logs import log, is_progress
 from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
 from armory.configuration import get_verify_ssl
-
-logger = logging.getLogger(__name__)
 
 CHECKSUMS_DIRS = []
 
@@ -46,9 +44,9 @@ def maybe_download_weights_from_s3(
     filepath = os.path.join(saved_model_dir, weights_file)
 
     if os.path.isfile(filepath):
-        logger.info(f"Using available {weights_file} in Armory `saved_model_dir`")
+        log.info(f"Using available {weights_file} in Armory `saved_model_dir`")
     else:
-        logger.info(
+        log.info(
             f"{weights_file} not found in Armory `saved_model_dir`. Attempting to pull weights from S3"
         )
         try:
@@ -87,7 +85,7 @@ def maybe_download_weights_from_s3(
 
     if auto_expand_tars:
         if tarfile.is_tarfile(filepath):
-            logger.debug(f"Detected model weights file {weights_file} as a tar archive")
+            log.debug(f"Detected model weights file {weights_file} as a tar archive")
             with tarfile.open(filepath) as tar:
                 # check if the tarfile contains a directory containing all its members
                 # ie if the tarfile expands out entirely into a subdirectory
@@ -102,13 +100,13 @@ def maybe_download_weights_from_s3(
                     )
                 full_path = os.path.join(saved_model_dir, commonpath)
                 if os.path.exists(full_path):
-                    logger.warning(
+                    log.warning(
                         f"Model weights folder {commonpath} from {weights_file} already exists"
                     )
-                    logger.warning(f"Skipping auto-unpacking of {weights_file}")
-                    logger.warning(f"Delete {commonpath} manually to force unpacking")
+                    log.warning(f"Skipping auto-unpacking of {weights_file}")
+                    log.warning(f"Delete {commonpath} manually to force unpacking")
                 else:
-                    logger.info(f"Auto-unpacking model weights from {weights_file}")
+                    log.info(f"Auto-unpacking model weights from {weights_file}")
                     tar.extractall(path=saved_model_dir)
             filepath = commonpath
 
@@ -129,15 +127,20 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         )
 
         try:
-            logger.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
 
     else:
-        logger.info(f"Reusing cached file {local_path}...")
+        log.info(f"Reusing cached file {local_path}...")
 
 
 def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
@@ -156,14 +159,19 @@ def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
             verify=verify_ssl,
         )
         try:
-            logger.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
     else:
-        logger.info("Reusing cached S3 data file...")
+        log.info("Reusing cached S3 data file...")
 
 
 def download_requests(url: str, dirpath: str, filename: str):
@@ -173,13 +181,18 @@ def download_requests(url: str, dirpath: str, filename: str):
     chunk_size = 4096
     r = requests.get(url, stream=True, verify=verify_ssl)
     with open(filepath, "wb") as f:
-        progress_bar = tqdm(
-            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
-        )
+        progress_bar = None
+        if is_progress():
+            progress_bar = tqdm(
+                unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+            )
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk:  # filter keep-alive chunks
-                progress_bar.update(len(chunk))
+                if progress_bar:
+                    progress_bar.update(len(chunk))
                 f.write(chunk)
+
+    log.info(f"downloaded {filename} from {url}")
 
 
 def sha256(filepath: str, block_size=4096):
@@ -235,6 +248,7 @@ def move_merge(source, dest):
 
 def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     found_checksum_flag = False
+    log.info("Attempting download_verigy_dataset_cache with dataset_dir")
     for checksum_dir in CHECKSUMS_DIRS:
         checksum_file_full_path = os.path.join(checksum_dir, checksum_file)
         if os.path.exists(checksum_file_full_path):
@@ -253,41 +267,41 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     already_verified = False
     if os.path.exists(tar_filepath):
         # Check existing download to avoid falling back to processing data
-        logger.info(f"{tar_filepath} exists. Verifying...")
+        log.info(f"{tar_filepath} exists. Verifying...")
         try:
             verify_size(tar_filepath, int(file_length))
             verify_sha256(tar_filepath, hash)
             already_verified = True
         except ValueError as e:
-            logger.warning(f"Verification failed: {str(e)}")
+            log.warning(f"Verification failed: {str(e)}")
             os.remove(tar_filepath)
 
     if not os.path.exists(tar_filepath):
         if s3_bucket_name == "local":
             raise FileNotFoundError(f"Expected to find {s3_key} locally in cache!")
-        logger.info(f"Downloading dataset: {name}...")
+        log.info(f"Downloading dataset: {name}...")
         try:
             s3_url_region = "us-east-2"
             url = f"https://{s3_bucket_name}.s3.{s3_url_region}.amazonaws.com/{s3_key}"
             download_requests(url, dataset_dir, tar_filepath)
         except KeyboardInterrupt:
-            logger.exception("Keyboard interrupt caught")
+            log.exception("Keyboard interrupt caught")
             if os.path.exists(tar_filepath):
                 os.remove(tar_filepath)
             raise
     else:
-        logger.info("Dataset already downloaded.")
+        log.info("Dataset already downloaded.")
 
     # verification
     if not already_verified:
         try:
             verify_size(tar_filepath, int(file_length))
-            logger.info("Verifying sha256 hash of download...")
+            log.info("Verifying sha256 hash of download...")
             verify_sha256(tar_filepath, hash)
         except ValueError:
             if os.path.exists(tar_filepath):
                 os.remove(tar_filepath)
-            logger.warning(
+            log.warning(
                 "Cached file download failed. Falling back to processing data..."
             )
             return
@@ -298,22 +312,22 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     )
     os.makedirs(tmp_dir)
 
-    logger.info("Extracting .tfrecord files from download...")
+    log.info("Extracting .tfrecord files from download...")
     try:
         completedprocess = subprocess.run(
             ["tar", "zxvf", tar_filepath, "--directory", tmp_dir],
         )
         if completedprocess.returncode:
-            logger.warning("bash tar failed. Reverting to python tar unpacking")
+            log.warning("bash tar failed. Reverting to python tar unpacking")
             with tarfile.open(tar_filepath, "r:gz") as tar_ref:
                 tar_ref.extractall(tmp_dir)
     except tarfile.ReadError:
-        logger.warning(f"Could not read tarfile: {tar_filepath}")
-        logger.warning("Falling back to processing data...")
+        log.warning(f"Could not read tarfile: {tar_filepath}")
+        log.warning("Falling back to processing data...")
         return
     except tarfile.ExtractError:
-        logger.warning(f"Could not extract tarfile: {tar_filepath}")
-        logger.warning("Falling back to processing data...")
+        log.warning(f"Could not extract tarfile: {tar_filepath}")
+        log.warning("Falling back to processing data...")
         return
 
     filepaths = [
@@ -328,7 +342,7 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         shutil.rmtree(tmp_dir)
     except OSError as e:
         if not isinstance(e, FileNotFoundError):
-            logger.exception(f"Error removing temporary directory {tmp_dir}")
+            log.exception(f"Error removing temporary directory {tmp_dir}")
 
 
 def _read_validate_scenario_config(config_filepath):
@@ -353,7 +367,7 @@ def upload_file_to_s3(key: str, local_path: str, public: bool = False):
         aws_access_key_id=os.getenv("ARMORY_PRIVATE_S3_ID"),
         aws_secret_access_key=os.getenv("ARMORY_PRIVATE_S3_KEY"),
     )
-    logger.info("Uploading file to S3...")
+    log.info("Uploading file to S3...")
     if public:
         client.upload_file(
             local_path,
