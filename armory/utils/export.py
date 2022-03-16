@@ -305,9 +305,6 @@ class VideoTrackingExporter(VideoClassificationExporter):
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
 
-        if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("video out of expected range. Clipping to [0,1]")
-
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
@@ -328,6 +325,29 @@ class VideoTrackingExporter(VideoClassificationExporter):
             .run_async(pipe_stdin=True, quiet=True)
         )
 
+        self.frames_with_boxes = self.get_sample_with_boxes(
+            x_i=x_i, y_i=y_i, y_i_pred=y_i_pred
+        )
+        for n_frame, frame, in enumerate(self.frames_with_boxes):
+            frame.save(
+                os.path.join(
+                    self.output_dir,
+                    folder,
+                    f"frame_{n_frame:04d}_{type}_with_boxes.png",
+                )
+            )
+            pixels_with_boxes = np.array(frame)
+            ffmpeg_process.stdin.write(pixels_with_boxes.tobytes())
+
+        ffmpeg_process.stdin.close()
+        ffmpeg_process.wait()
+
+    @staticmethod
+    def get_sample_with_boxes(x_i, y_i, y_i_pred):
+        if x_i.min() < 0.0 or x_i.max() > 1.0:
+            logger.warning("video out of expected range. Clipping to [0,1]")
+
+        pil_frames = []
         for n_frame, x_frame, in enumerate(x_i):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
@@ -336,18 +356,9 @@ class VideoTrackingExporter(VideoClassificationExporter):
             bbox_pred = y_i_pred["boxes"][n_frame]
             box_layer.rectangle(bbox_true, outline="red", width=2)
             box_layer.rectangle(bbox_pred, outline="white", width=2)
-            image.save(
-                os.path.join(
-                    self.output_dir,
-                    folder,
-                    f"frame_{n_frame:04d}_{type}_with_boxes.png",
-                )
-            )
-            pixels_with_boxes = np.array(image)
-            ffmpeg_process.stdin.write(pixels_with_boxes.tobytes())
+            pil_frames.append(image)
 
-        ffmpeg_process.stdin.close()
-        ffmpeg_process.wait()
+        return pil_frames
 
 
 class AudioExporter(SampleExporter):
