@@ -8,7 +8,6 @@ from art.preprocessing.audio import LFilter, LFilterPyTorch
 from armory.scenarios.scenario import Scenario
 from armory.utils.export import AudioExporter
 
-logger = logging.getLogger(__name__)
 from armory.logs import log
 
 
