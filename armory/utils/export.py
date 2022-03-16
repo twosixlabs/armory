@@ -402,11 +402,11 @@ class So2SatExporter(SampleExporter):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
-        vh_image = self.get_vh_sample(x_i)
-        vh_image.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
+        self.vh_image = self.get_vh_sample(x_i)
+        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
 
-        vv_image = self.get_vv_sample(x_i)
-        vv_image.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+        self.vv_image = self.get_vv_sample(x_i)
+        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
 
         self.eo_images = self.get_eo_samples(x_i)
         for i in range(10):
