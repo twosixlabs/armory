@@ -399,13 +399,26 @@ class So2SatExporter(SampleExporter):
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
 
+        folder = str(self.saved_samples)
+        os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
+
+        vh_image = self.get_vh_sample(x_i)
+        vh_image.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
+
+        vv_image = self.get_vv_sample(x_i)
+        vv_image.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+
+        self.eo_images = self.get_eo_samples(x_i)
+        for i in range(10):
+            eo_image = self.eo_images[i]
+            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{type}.png"))
+
+    @staticmethod
+    def get_vh_sample(x_i):
         if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
             logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
         if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
             logger.warning("EO image out of expected range. Clipping to [0, 1].")
-
-        folder = str(self.saved_samples)
-        os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
         sar_eps = 1e-9 + 1j * 1e-9
         x_vh = np.log10(
@@ -417,6 +430,21 @@ class So2SatExporter(SampleExporter):
                 + sar_eps
             )
         )
+        sar_min = x_vh.min()
+        sar_max = x_vh.max()
+        sar_scale = 255.0 / (sar_max - sar_min)
+
+        vh_image = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+        return vh_image
+
+    @staticmethod
+    def get_vv_sample(x_i):
+        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
+            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
+            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+
+        sar_eps = 1e-9 + 1j * 1e-9
         x_vv = np.log10(
             np.abs(
                 np.complex128(
@@ -426,14 +454,21 @@ class So2SatExporter(SampleExporter):
                 + sar_eps
             )
         )
-        sar_min = np.min((x_vh.min(), x_vv.min()))
-        sar_max = np.max((x_vh.max(), x_vv.max()))
+        sar_min = x_vv.min()
+        sar_max = x_vv.max()
         sar_scale = 255.0 / (sar_max - sar_min)
 
-        vh = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
-        vv = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
-        vh.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
-        vv.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+        vv_image = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
+        return vv_image
+
+    @staticmethod
+    def get_eo_samples(x_i):
+        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
+            logger.warning("SAR image out of expected range. Clipping to [-1, 1].")
+        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
+            logger.warning("EO image out of expected range. Clipping to [0, 1].")
+
+        eo_images = []
 
         eo_min = x_i[..., 4:].min()
         eo_max = x_i[..., 4:].max()
@@ -442,4 +477,6 @@ class So2SatExporter(SampleExporter):
             eo = Image.fromarray(
                 np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
             )
-            eo.save(os.path.join(self.output_dir, folder, f"eo{c-4}_{type}.png"))
+            eo_images.append(eo)
+
+        return eo_images
