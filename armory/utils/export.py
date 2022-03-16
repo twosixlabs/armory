@@ -88,44 +88,45 @@ class ImageClassificationExporter(SampleExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
-        image = self.get_sample(x_i)
-        image.save(os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png"))
+        self.image = self.get_sample(x_i)
+        self.image.save(os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png"))
         if x_i.shape[-1] == 6:
-            depth_image = self.get_depth_sample(x_i)
-            depth_image.save(
+            self.depth_image = self.get_depth_sample(x_i)
+            self.depth_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
             )
 
-    def get_sample(self, x_i):
+    @staticmethod
+    def get_sample(x_i):
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             logger.warning("Image out of expected range. Clipping to [0, 1].")
 
         # Export benign image x_i
         if x_i.shape[-1] == 1:
-            self.mode = "L"
-            self.x_i_mode = np.squeeze(x_i, axis=2)
+            mode = "L"
+            x_i_mode = np.squeeze(x_i, axis=2)
         elif x_i.shape[-1] == 3:
-            self.mode = "RGB"
-            self.x_i_mode = x_i
+            mode = "RGB"
+            x_i_mode = x_i
         elif x_i.shape[-1] == 6:
-            self.mode = "RGB"
-            self.x_i_mode = x_i[..., :3]
+            mode = "RGB"
+            x_i_mode = x_i[..., :3]
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
-        self.image = Image.fromarray(
-            np.uint8(np.clip(self.x_i_mode, 0.0, 1.0) * 255.0), self.mode
+        image = Image.fromarray(
+            np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
         )
-        return self.image
+        return image
 
-    def get_depth_sample(self, x_i):
+    @staticmethod
+    def get_depth_sample(x_i):
         if x_i.shape[-1] != 6:
             raise ValueError(f"Expected 6 channels, found {x_i.shape[-1]}")
-        self.mode = "RGB"
-        self.x_i_depth = x_i[..., 3:]
-        self.depth_image = Image.fromarray(
-            np.uint8(np.clip(self.x_i_depth, 0.0, 1.0) * 255.0), self.mode
+        x_i_depth = x_i[..., 3:]
+        depth_image = Image.fromarray(
+            np.uint8(np.clip(x_i_depth, 0.0, 1.0) * 255.0), "RGB"
         )
-        return self.depth_image
+        return depth_image
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
