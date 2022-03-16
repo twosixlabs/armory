@@ -89,7 +89,9 @@ class ImageClassificationExporter(SampleExporter):
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
         self.image = self.get_sample(x_i)
-        self.image.save(os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png"))
+        self.image.save(
+            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
+        )
         if x_i.shape[-1] == 6:
             self.depth_image = self.get_depth_sample(x_i)
             self.depth_image.save(
@@ -113,9 +115,7 @@ class ImageClassificationExporter(SampleExporter):
             x_i_mode = x_i[..., :3]
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
-        image = Image.fromarray(
-            np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode
-        )
+        image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
 
     @staticmethod
@@ -160,8 +160,9 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             self.saved_samples += 1
         self.saved_batches += 1
 
+    @staticmethod
     def get_sample_with_boxes(
-        self, image, y_i, y_i_pred, classes_to_skip=None, score_threshold=0.5,
+        image, y_i, y_i_pred, classes_to_skip=None, score_threshold=0.5,
     ):
         box_layer = ImageDraw.Draw(image)
 
@@ -177,7 +178,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         for pred_box in bboxes_pred:
             box_layer.rectangle(pred_box, outline="white", width=2)
 
-        self.image_with_boxes = image
         return image
 
     def _export_image_with_boxes(
@@ -193,14 +193,14 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
-        image_with_boxes = self.get_sample_with_boxes(
+        self.image_with_boxes = self.get_sample_with_boxes(
             image=image,
             y_i=y_i,
             y_i_pred=y_i_pred,
             classes_to_skip=classes_to_skip,
             score_threshold=score_threshold,
         )
-        image_with_boxes.save(
+        self.image_with_boxes.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
         )
 
