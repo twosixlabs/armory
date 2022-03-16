@@ -187,7 +187,7 @@ def _docker_image(parser):
         "docker_image",
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -198,7 +198,7 @@ def _docker_image_optional(parser):
         default=images.PYTORCH,
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
