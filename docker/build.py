@@ -1,8 +1,11 @@
 import argparse
+from pprint import pprint
+import subprocess
 import docker
 import armory
 from pathlib import Path
 import sys
+import os
 
 print(f"armory docker builder version {armory.__version__}")
 script_dir = Path(__file__).parent
@@ -31,26 +34,49 @@ if not dockerfile.exists():
 
 # TODO: might want pull:True here to get the latest version of the base image
 
-docker_options = {
-    "path": str(script_dir),
-    "dockerfile": str(dockerfile),
-    "tag": f"twosixarmory/{args.framework}:{armory.__version__}",
-    "buildargs": {
-        "base_image_tag": args.base_tag,
-        "armory_version": armory.__version__,
-    },
-    "rm": True,
-    "forcerm": True,
-}
+# docker_options = {
+#     "path": str(script_dir),
+#     "fileobj": dockerfile.open(mode="rb"),
+#     "tag": f"twosixarmory/{args.framework}:{armory.__version__}",
+#     "buildargs": {
+#         "base_image_tag": args.base_tag,
+#         "armory_version": armory.__version__,
+#     },
+#     "rm": True,
+#     "forcerm": True,
+# }
+# if args.no_cache:
+#     docker_options["nocache"] = True
 
+cmd = [
+    "docker",
+    "build",
+    "--file",
+    str(dockerfile),
+    "--tag",
+    f"twosixarmory/{args.framework}:{armory.__version__}",
+    "--build-arg",
+    f"base_image_tag={args.base_tag}",
+    "--build-arg",
+    f"armory_version={armory.__version__}",
+    "--force-rm",
+]
 if args.no_cache:
-    docker_options["nocache"] = True
+    cmd.append("--no-cache")
 
-client = docker.from_env()
-if args.dry_run:
-    print(f"dry-run is set, would docker build {docker_options}")
-    sys.exit(0)
+cmd.append(".")
 
-print("running in", Path.cwd())
-print("building docker image", docker_options)
-client.images.build(**docker_options)
+print(" ".join(cmd))
+subprocess.run(cmd)
+# the docker.client.images.build() method documentation is not very clear
+# lets try the cli
+
+# client = docker.from_env()
+# if args.dry_run:
+#     print(f"dry-run is set, would docker build {docker_options}")
+#     sys.exit(0)
+
+# print("running in", Path.cwd())
+# print("building docker image")
+# pprint(docker_options)
+# client.images.build(**docker_options)
