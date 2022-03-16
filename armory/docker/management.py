@@ -97,7 +97,7 @@ class ArmoryInstance(object):
             log.success("command exited cleanly")
             return 0
         else:
-            log.error("command {cmd} did not finish cleanly")
+            log.error(f"command {cmd} did not finish cleanly")
             return 1
 
     def __del__(self):
