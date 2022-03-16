@@ -3,7 +3,6 @@ Extended scenario for poisoning
 """
 
 import copy
-import logging
 from typing import Optional
 import os
 import random
@@ -13,8 +12,7 @@ import numpy as np
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class DatasetPoisoner:
@@ -43,7 +41,7 @@ class DatasetPoisoner:
         total = len(source_index)
         poison_count = int(fraction * total)
         if poison_count == 0:
-            logger.warning(f"0 of {total} poisoned for class {self.source_class}.")
+            log.warning(f"0 of {total} poisoned for class {self.source_class}.")
         return np.sort(np.random.choice(source_index, size=poison_count, replace=False))
 
     def poison_dataset(self, x, y, return_index=False, fraction=None):
@@ -114,7 +112,7 @@ class Poison(Scenario):
             if "data_augmentation" in defense_config:
                 for data_aug_config in defense_config["data_augmentation"].values():
                     model = config_loading.load_defense_internal(data_aug_config, model)
-                logger.info(
+                log.info(
                     f"model.preprocessing_defences: {model.preprocessing_defences}"
                 )
         self.model = model
@@ -146,7 +144,7 @@ class Poison(Scenario):
             self.label_function = lambda y: y
 
         dataset_config = self.config["dataset"]
-        logger.info(f"Loading dataset {dataset_config['name']}...")
+        log.info(f"Loading dataset {dataset_config['name']}...")
         ds = config_loading.load_dataset(
             dataset_config,
             split=dataset_config.get("train_split", "train"),
@@ -205,7 +203,7 @@ class Poison(Scenario):
                 "defense_model", self.config["model"]
             )
             classifier_for_defense, _ = config_loading.load_model(defense_model_config)
-            logger.info(
+            log.info(
                 f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
                 f"for defense {defense_config['name']}..."
             )
@@ -232,13 +230,13 @@ class Poison(Scenario):
             detection_kwargs = adhoc_config.get("detection_kwargs", {})
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
-            logger.info(f"Total clean data points: {np.sum(is_clean)}")
+            log.info(f"Total clean data points: {np.sum(is_clean)}")
 
-            logger.info("Filtering out detected poisoned samples")
+            log.info("Filtering out detected poisoned samples")
             indices_to_keep = is_clean == 1  # TODO: redundant?
 
         else:
-            logger.info(
+            log.info(
                 "Defense does not require filtering. Model fitting will use all data."
             )
             indices_to_keep = ...
@@ -250,7 +248,7 @@ class Poison(Scenario):
 
     def fit(self):
         if len(self.x_train):
-            logger.info("Fitting model")
+            log.info("Fitting model")
             self.model.fit(
                 self.x_train,
                 self.label_function(self.y_train),
@@ -260,7 +258,7 @@ class Poison(Scenario):
                 shuffle=True,
             )
         else:
-            logger.warning("All data points filtered by defense. Skipping training")
+            log.warning("All data points filtered by defense. Skipping training")
 
     def load_attack(self):
         raise NotImplementedError(
@@ -271,7 +269,7 @@ class Poison(Scenario):
         dataset_config = self.config["dataset"]
         eval_split = dataset_config.get("eval_split", eval_split_default)
         # Evaluate the ART model on benign test examples
-        logger.info(f"Loading test dataset {dataset_config['name']}...")
+        log.info(f"Loading test dataset {dataset_config['name']}...")
         self.test_dataset = config_loading.load_dataset(
             dataset_config,
             split=eval_split,
@@ -340,10 +338,10 @@ class Poison(Scenario):
             self.run_attack()
 
     def finalize_results(self):
-        logger.info(
+        log.info(
             f"Unpoisoned validation accuracy: {self.benign_validation_metric.mean():.2%}"
         )
-        logger.info(
+        log.info(
             f"Unpoisoned validation accuracy on targeted class: {self.target_class_benign_metric.mean():.2%}"
         )
         results = {
@@ -355,8 +353,8 @@ class Poison(Scenario):
             results[
                 "poisoned_targeted_misclassification_accuracy"
             ] = self.poisoned_targeted_test_metric.mean()
-            logger.info(f"Test accuracy: {self.poisoned_test_metric.mean():.2%}")
-            logger.info(
+            log.info(f"Test accuracy: {self.poisoned_test_metric.mean():.2%}")
+            log.info(
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
         self.results = results

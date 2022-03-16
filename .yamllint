@@ -1,6 +1,14 @@
 ---
 extends: default
 
+yaml-files:
+  - '*.yaml'
+  - '*.yml'
+  - '.yamlint'
+
+ignore: |
+  venv*
+
 rules:
   line-length:
     max: 135
