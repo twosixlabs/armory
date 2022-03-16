@@ -276,7 +276,7 @@ class OuterModel(torch.nn.Module):
         super().__init__()
         max_frames = int(max_frames)
         if max_frames:
-            logger.warning(
+            log.warning(
                 "Deprecation warning: max_frames should be used as kwarg in ucf101 dataset, not in MARS model. "
                 "This will be removed in version 0.16.0"
             )
