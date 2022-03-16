@@ -7,10 +7,7 @@ try:
     import armory
 except ModuleNotFoundError as e:
     if str(e) == "No module named 'armory'":
-        raise ModuleNotFoundError(
-            "Run this script as a module from the root of the armory repo:\n"
-            "    python -m docker.build ..."
-        )
+        raise ModuleNotFoundError("Ensure armory is pip installed before running")
     raise
 
 
@@ -26,6 +23,7 @@ parser.add_argument(
 )
 parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
 parser.add_argument("-t", "--tag", help="additional tag for the docker image")
+parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
 parser.add_argument(
     "framework", help="framework to build (tf2, pytorch, pyrtorch-deepspeech)",
 )
@@ -38,8 +36,6 @@ dockerfile = script_dir / f"Dockerfile-{args.framework}"
 if not dockerfile.exists():
     print("make sure you run this script from the root of the armory repo")
     raise ValueError(f"Dockerfile not found: {dockerfile}")
-
-# TODO: might want pull:True here to get the latest version of the base image
 
 cmd = [
     "docker",
@@ -56,6 +52,8 @@ cmd = [
 ]
 if args.no_cache:
     cmd.append("--no-cache")
+if not args.no_pull:
+    cmd.append("--pull")
 
 cmd.append(os.getcwd())
 

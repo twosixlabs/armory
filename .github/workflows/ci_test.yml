@@ -99,7 +99,8 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          python -m docker.build pytorch
+          pip install -e .
+          python docker/build.py pytorch
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -m "not docker_required and unit" ./tests/
@@ -114,7 +115,8 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          python -m docker.build tf2
+          pip install -e .
+          python docker/build.py tf2
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -m "not docker_required and unit" ./tests/
@@ -129,7 +131,8 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          python -m docker.build pytorch-deepspeech
+          pip install -e .
+          python docker/build.py pytorch-deepspeech
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -m "not docker_required and unit" ./tests/
