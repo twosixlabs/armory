@@ -407,8 +407,7 @@ def _pull_docker_images(docker_client=None):
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "
-                    f"Please run 'bash docker/build.sh {image}'"
-                    "or 'bash docker/build.sh all' before running armory"
+                    f"Please run 'python docker/build.py {image}' before running armory"
                 )
                 raise ValueError(f"Docker image {image} not built")
 

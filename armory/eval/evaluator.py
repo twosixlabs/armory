@@ -114,7 +114,7 @@ class Evaluator(object):
                     "If you'd like to continue working on the developer image please "
                     "build it from source on your machine as described here:\n"
                     "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                    "bash docker/build.sh"
+                    "python docker/build.py --help"
                 )
             else:
                 log.error(f"Image {image_name} could not be downloaded")

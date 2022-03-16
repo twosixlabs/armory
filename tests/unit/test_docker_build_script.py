@@ -43,15 +43,16 @@ def image_tag(armory_version_tbi):
 @pytest.mark.parametrize(
     "img, opt",
     [
-        ("base", ""),
+#        ("base", ""),
         ("pytorch", ""),
         ("tf2", ""),
         ("pytorch-deepspeech", ""),
-        ("base", "--no-cache"),
+        ("pytorch-deepspeech", "--no-cache"),
+#        ("base", "--no-cache"),
     ],
 )
 def test_build_script(img, opt, image_tag, armory_version_tbi):
-    cmd = f"bash docker/build.sh {img} --dry-run {opt}"
+    cmd = f"python docker/build.py {img} --dry-run {opt}"
     output = get_cmd_output(cmd)
     assert output.startswith("docker build")
     assert "--force-rm" in output
