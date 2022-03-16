@@ -1,4 +1,6 @@
-coloredlogs
+loguru
 docker
 jsonschema
+pymongo
 requests
+pytest # needed by armory.scenarios.main line 93

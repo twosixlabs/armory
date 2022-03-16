@@ -9,6 +9,7 @@ from art.estimators.classification import TFClassifier
 from armory import paths
 
 tf.disable_eager_execution()
+# TODO Update when ART is fixed with default_graph thing
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_path=None):

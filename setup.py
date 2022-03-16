@@ -27,10 +27,17 @@ def get_version(rel_path):
 with open("requirements.txt") as f:
     required_pkgs = f.read().splitlines()
 
+with open("test-requirements.txt") as f:
+    tests_require = f.readlines()
 
 setup(
     name="armory-testbed",
-    version=get_version("armory/__init__.py"),
+    setup_requires=["setuptools_scm"],
+    use_scm_version={
+        "root": ".",
+        "relative_to": __file__,
+        "local_scheme": "node-and-timestamp",
+    },
     description="Adversarial Robustness Test Bed",
     long_description=long_description,
     long_description_content_type="text/markdown",

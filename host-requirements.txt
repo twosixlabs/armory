@@ -9,7 +9,6 @@
 # depending on which you use. TensorFlow1 support by Armory is deprecated and
 # will be removed in a future release.
 
-coloredlogs
 docker
 jsonschema
 requests
@@ -25,23 +24,14 @@ dill==0.3.1.1
 pytest==6.2.2
 ffmpeg-python==0.2.0
 opencv-python==4.5.1.48
-tensorflow-datasets==3.2.0
-jupyterlab==3.0.9
-boto3==1.17.20
-Pillow==8.1.1
-pydub==0.24.1
-apache-beam==2.22.0
-dill==0.3.1.1
-pytest==6.2.2
 pandas==1.2.4
-ffmpeg-python==0.2.0
 
 ###
 ### Begin Pytorch required libraries
-torch==1.7.0
-torchvision==0.8.1
-torchaudio==0.6.0
-cudatoolkit==11.0
+torch==1.8.1
+torchvision==0.9.1
+torchaudio==0.8.1
+#cudatoolkit==11.0.0
 hydra-core~=1.0.6
 python-levenshtein~=0.12.2
 librosa

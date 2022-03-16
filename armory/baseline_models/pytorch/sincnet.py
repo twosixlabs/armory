@@ -4,7 +4,6 @@ CNN model for raw audio classification
 Model contributed by: MITRE Corporation
 Adapted from: https://github.com/mravanelli/SincNet
 """
-import logging
 from typing import Optional
 
 from art.estimators.classification import PyTorchClassifier
@@ -18,8 +17,6 @@ with ExternalRepoImport(
     repo="hkakitani/SincNet", experiment="librispeech_baseline_sincnet.json",
 ):
     from SincNet import dnn_models
-
-logger = logging.getLogger(__name__)
 
 # NOTE: Underlying dataset sample rate is 16 kHz. SincNet uses this SAMPLE_RATE to
 # determine internal filter high cutoff frequency.

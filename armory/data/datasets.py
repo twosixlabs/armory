@@ -8,13 +8,13 @@ data is found at '<dataset_dir>/cifar10'
 The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
-import logging
 import json
 import os
 import re
 from typing import Callable, Union, Tuple, List
 
 import numpy as np
+from armory.logs import log
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
@@ -44,8 +44,6 @@ from armory.data.carla_object_detection import carla_obj_det_train as codt  # no
 
 
 os.environ["KMP_WARNINGS"] = "0"
-
-logger = logging.getLogger(__name__)
 
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
@@ -277,7 +275,7 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
 
     returns the dataset and the indexed size
     """
-    logger.info(f"Filtering dataset to the following indices: {index}")
+    log.info(f"Filtering dataset to the following indices: {index}")
     dataset_size = int(dataset_size)
     sorted_index = sorted([int(x) for x in set(index)])
     if len(sorted_index) == 0:
@@ -306,7 +304,7 @@ def filter_by_class(dataset: "tf.data.Dataset", class_ids: Union[list, int]):
 
     returns the dataset filtered by class id, keeping elements with label in class_ids
     """
-    logger.info(f"Filtering dataset to the following class IDs: {class_ids}")
+    log.info(f"Filtering dataset to the following class IDs: {class_ids}")
     if len(class_ids) == 0:
         raise ValueError(
             "The specified dataset 'class_ids' param must have at least one value"
@@ -429,10 +427,10 @@ def _generator_from_tfds(
     except AssertionError as e:
         if not str(e).startswith("Unrecognized instruction format: "):
             raise
-        logger.warning(f"Caught AssertionError in TFDS load split argument: {e}")
-        logger.warning(f"Attempting to parse split {split}")
+        log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
+        log.warning(f"Attempting to parse split {split}")
         split = parse_split_index(split)
-        logger.warning(f"Replacing split with {split}")
+        log.warning(f"Replacing split with {split}")
         ds, ds_info = tfds.load(
             dataset_name,
             split=split,
@@ -485,7 +483,7 @@ def _generator_from_tfds(
     # Add class-based filtering
     if class_ids is not None:
         if split == "train":
-            logger.warning(
+            log.warning(
                 "Filtering by class entails iterating over the whole dataset and thus "
                 "can be very slow if using the 'train' split"
             )
@@ -1035,6 +1033,7 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
+    # TODO Find out why this is in some of the functions but not others (e.g. see german_traffic_sign)
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1092,7 +1091,7 @@ def _get_librispeech_download_and_prepare_kwargs():
         )
         return {"download_config": dl_config}
     except ImportError as e:
-        logger.warning(
+        log.warning(
             f"Unable to import apache_beam:\n{e}\n"
             "If building librispeech dataset from source, apache_beam must be installed"
         )
@@ -1355,6 +1354,27 @@ def resisc10(
     )
 
 
+class ClipFrames:
+    """
+    Clip Video Frames
+        Assumes first two dims are (batch, frames, ...)
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, batch):
+        if batch.dtype == np.object:
+            clipped_batch = np.empty_like(batch, dtype=np.object)
+            clipped_batch[:] = [x[: self.max_frames] for x in batch]
+            return clipped_batch
+        else:
+            return batch[:, : self.max_frames]
+
+
 def ucf101(
     split: str = "train",
     epochs: int = 1,
@@ -1365,13 +1385,21 @@ def ucf101(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    max_frames: int = None,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
+
+    max_frames, if it exists, will clip the inputs to a set number of frames
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    if max_frames:
+        clip = ClipFrames(max_frames)
+    else:
+        clip = None
+
+    preprocessing_fn = preprocessing_chain(clip, preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
@@ -1750,6 +1778,13 @@ def _parse_dataset_name(dataset_name: str):
     return name, subpath
 
 
+# TODO Move to something like this
+"""
+SUPPORTED_DATASETS = ['mnist','cifar10'...]
+def generator(name, **kwargs):
+    return getattr(dataset, name)(itertools.partial(**kwargs))
+"""
+
 SUPPORTED_DATASETS = {
     "mnist": mnist,
     "cifar10": cifar10,
@@ -1772,11 +1807,11 @@ def download_all(download_config, scenario):
     """
 
     def _print_scenario_names():
-        logger.info(
+        log.info(
             f"The following scenarios are available based upon config file {download_config}:"
         )
         for scenario in config["scenario"].keys():
-            logger.info(scenario)
+            log.info(scenario)
 
     config = _read_validate_scenario_config(download_config)
     if scenario == "all":
@@ -1787,7 +1822,7 @@ def download_all(download_config, scenario):
         _print_scenario_names()
     else:
         if scenario not in config["scenario"].keys():
-            logger.info(f"The scenario name {scenario} is not valid.")
+            log.info(f"The scenario name {scenario} is not valid.")
             _print_scenario_names()
             raise ValueError("Invalid scenario name.")
 
@@ -1806,13 +1841,13 @@ def _download_data(dataset_name):
 
     func = SUPPORTED_DATASETS[dataset_name]
 
-    logger.info(f"Downloading (if necessary) dataset {dataset_name}...")
+    log.info(f"Downloading (if necessary) dataset {dataset_name}...")
 
     try:
         func()
-        logger.info(f"Successfully downloaded dataset {dataset_name}.")
+        log.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
-        logger.exception(f"Loading dataset {dataset_name} failed.")
+        log.exception(f"Loading dataset {dataset_name} failed.")
 
 
 def _get_pytorch_dataset(ds):
