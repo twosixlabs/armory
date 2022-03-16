@@ -14,15 +14,48 @@ which is a bit ungainly.
 """
 
 from importlib_metadata import version, PackageNotFoundError
-from armory.logs import log
+import pathlib
 import re
+import subprocess
 
-try:
-    __version__ = version("armory-testbed")
-    __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)\.d\d+$", r"\1", __version__)
-except PackageNotFoundError as e:
-    log.crticial("armory package is not installed")
-    raise e
+from armory.logs import log
+
+
+def get_dynamic_version():
+    """
+    Produce the version dynamically from setup.py if available.
+
+    Return None if setup.py is not available
+    """
+    armory_repo_root = pathlib.Path(__file__).parent.parent
+    setup = armory_repo_root / "setup.py"
+    if not setup.is_file():
+        return None
+
+    completed = subprocess.run(
+        ["python", str(setup), "--version"],
+        cwd=str(armory_repo_root),
+        capture_output=True,
+        text=True,
+    )
+    try:
+        completed.check_returncode()
+    except subprocess.CalledProcessError:
+        log.critical("setup.py exists but 'python setup.py --version' failed.")
+        raise
+    version = completed.stdout.strip()
+    return version
+
+
+__version__ = get_dynamic_version()
+if __version__ is None:
+    try:
+        __version__ = version("armory-testbed")
+    except PackageNotFoundError:
+        log.critical("armory package is not pip installed and not locally cloned")
+        raise
+__version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
+
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
