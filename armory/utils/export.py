@@ -88,7 +88,15 @@ class ImageClassificationExporter(SampleExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
+        image = self.get_sample(x_i)
+        image.save(os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png"))
+        if x_i.shape[-1] == 6:
+            depth_image = self.get_depth_sample(x_i)
+            depth_image.save(
+                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
+            )
 
+    def get_sample(self, x_i):
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             logger.warning("Image out of expected range. Clipping to [0, 1].")
 
@@ -102,22 +110,22 @@ class ImageClassificationExporter(SampleExporter):
         elif x_i.shape[-1] == 6:
             self.mode = "RGB"
             self.x_i_mode = x_i[..., :3]
-            self.x_i_depth = x_i[..., 3:]
-            depth_image = Image.fromarray(
-                np.uint8(np.clip(self.x_i_depth, 0.0, 1.0) * 255.0), self.mode
-            )
-            depth_image.save(
-                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
-            )
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
-
         self.image = Image.fromarray(
             np.uint8(np.clip(self.x_i_mode, 0.0, 1.0) * 255.0), self.mode
         )
-        self.image.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
+        return self.image
+
+    def get_depth_sample(self, x_i):
+        if x_i.shape[-1] != 6:
+            raise ValueError(f"Expected 6 channels, found {x_i.shape[-1]}")
+        self.mode = "RGB"
+        self.x_i_depth = x_i[..., 3:]
+        self.depth_image = Image.fromarray(
+            np.uint8(np.clip(self.x_i_depth, 0.0, 1.0) * 255.0), self.mode
         )
+        return self.depth_image
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
@@ -151,19 +159,9 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_image_with_boxes(
-        self,
-        image,
-        y_i,
-        y_i_pred,
-        classes_to_skip=None,
-        type="benign",
-        score_threshold=0.5,
+    def get_sample_with_boxes(
+        self, image, y_i, y_i_pred, classes_to_skip=None, score_threshold=0.5,
     ):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
         box_layer = ImageDraw.Draw(image)
 
         bboxes_true = y_i["boxes"]
@@ -178,7 +176,30 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         for pred_box in bboxes_pred:
             box_layer.rectangle(pred_box, outline="white", width=2)
 
-        image.save(
+        self.image_with_boxes = image
+        return image
+
+    def _export_image_with_boxes(
+        self,
+        image,
+        y_i,
+        y_i_pred,
+        classes_to_skip=None,
+        type="benign",
+        score_threshold=0.5,
+    ):
+        if type not in ["benign", "adversarial"]:
+            raise ValueError(
+                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+            )
+        image_with_boxes = self.get_sample_with_boxes(
+            image=image,
+            y_i=y_i,
+            y_i_pred=y_i_pred,
+            classes_to_skip=classes_to_skip,
+            score_threshold=score_threshold,
+        )
+        image_with_boxes.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
         )
 
