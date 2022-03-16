@@ -9,6 +9,7 @@ import copy
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
+from armory.utils.export import ObjectDetectionExporter
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,9 @@ class CarlaObjectDetectionTask(Scenario):
                 logger.warning("Adversarial attack perturbed depth channels")
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
+
+    def _load_sample_exporter(self):
+        return ObjectDetectionExporter(self.scenario_output_dir)
 
     def export_samples(self, num_samples):
         if num_samples < 1:
