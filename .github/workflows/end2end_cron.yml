@@ -19,7 +19,7 @@ on:
 jobs:
   docker-build:
     name: Build Docker Image
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -40,7 +40,7 @@ jobs:
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
     steps:
       - name: Run Tests Torch Docker
         run: |
@@ -50,7 +50,7 @@ jobs:
   docker-tf2-end2end:
     name: Docker TF2 End2End
     needs: docker-build
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
     steps:
       - name: Run Tests TF2 Docker
         run: |
@@ -60,7 +60,7 @@ jobs:
   docker-deepspeech-end2end:
     name: Docker Deepspeech End2End
     needs: docker-build
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
@@ -70,7 +70,7 @@ jobs:
   docker-remove:
     name: Remove Docker Images
     needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
-    runs-on: self-hosted
+    runs-on: ubuntu-18.04
     steps:
       - name: Run Tests Torch Docker
         run: |
