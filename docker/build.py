@@ -3,7 +3,16 @@ import subprocess
 from pathlib import Path
 import os
 
-import armory
+try:
+    import armory
+except ModuleNotFoundError as e:
+    if str(e) == "No module named 'armory'":
+        raise ModuleNotFoundError(
+            "Run this script as a module from the root of the armory repo:\n"
+            "    python -m docker.build ..."
+        )
+    raise
+
 
 print(f"armory docker builder version {armory.__version__}")
 script_dir = Path(__file__).parent
