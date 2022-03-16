@@ -232,10 +232,6 @@ class VideoClassificationExporter(SampleExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
-
-        if x_i.min() < 0.0 or x_i.max() > 1.0:
-            logger.warning("video out of expected range. Clipping to [0, 1]")
-
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
@@ -256,16 +252,29 @@ class VideoClassificationExporter(SampleExporter):
             .run_async(pipe_stdin=True, quiet=True)
         )
 
-        for n_frame, x_frame, in enumerate(x_i):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
-            image = Image.fromarray(pixels, "RGB")
-            image.save(
+        self.frames = self.get_sample(x_i)
+
+        for n_frame, frame in enumerate(self.frames):
+            pixels = np.array(frame)
+            ffmpeg_process.stdin.write(pixels.tobytes())
+            frame.save(
                 os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{type}.png")
             )
-            ffmpeg_process.stdin.write(pixels.tobytes())
 
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
+
+    @staticmethod
+    def get_sample(x_i):
+        if x_i.min() < 0.0 or x_i.max() > 1.0:
+            logger.warning("video out of expected range. Clipping to [0, 1]")
+
+        pil_frames = []
+        for n_frame, x_frame, in enumerate(x_i):
+            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            image = Image.fromarray(pixels, "RGB")
+            pil_frames.append(image)
+        return pil_frames
 
 
 class VideoTrackingExporter(VideoClassificationExporter):
