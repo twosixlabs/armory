@@ -1,20 +1,20 @@
-import os
-import requests
-import pytest
-import docker
-from armory import paths
 import logging
+import os
+
+import docker
 from docker.errors import ImageNotFound
+import pytest
+import requests
+
+from armory import paths, __version__
 
 
 logger = logging.getLogger(__name__)
 
-# TODO need to fix this
 REQUIRED_DOCKER_IMAGES = [
-    "twosixarmory/base:dev",
-    "twosixarmory/pytorch:dev",
-    "twosixarmory/tf2:dev",
-    "twosixarmory/pytorch-deepspeech:dev",
+    f"twosixarmory/pytorch:{__version__}",
+    f"twosixarmory/tf2:{__version__}",
+    f"twosixarmory/pytorch-deepspeech:{__version__}",
 ]
 
 # Added this to make run local
