@@ -1121,7 +1121,7 @@ def librispeech_dev_clean(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_dev_clean_split/plain_text:1.1.0",
+        "librispeech_dev_clean_split:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1153,15 +1153,17 @@ def librispeech_full(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_full dataset"
         )
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_full/plain_text:1.1.0",
+        "librispeech_full:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1203,7 +1205,7 @@ def librispeech(
             )
 
     return _generator_from_tfds(
-        "librispeech/plain_text:1.1.0",
+        "librispeech:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1249,7 +1251,7 @@ def librispeech_dev_clean_asr(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_dev_clean_split/plain_text:1.1.0",
+        "librispeech_dev_clean_split:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
