@@ -1,7 +1,6 @@
 """
 Enables programmatic accessing of most recent docker images
 """
-import re
 
 import armory
 from armory.logs import log
