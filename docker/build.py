@@ -18,12 +18,12 @@ parser = argparse.ArgumentParser(description="builds a docker image for armory")
 parser.add_argument(
     "-b", "--base-tag", help="version tag for twosixarmory", default="latest"
 )
+parser.add_argument("-t", "--tag", help="additional tag for the docker image")
+parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
+parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
 parser.add_argument(
     "-n", "--dry-run", action="store_true", help="show what would be done"
 )
-parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
-parser.add_argument("-t", "--tag", help="additional tag for the docker image")
-parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
 parser.add_argument(
     "framework", help="framework to build (tf2, pytorch, pytorch-deepspeech)",
 )
