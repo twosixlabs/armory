@@ -69,41 +69,59 @@ class Evaluator(object):
             self.manager = HostManagementInstance()
             return
 
-        # Download docker image on host
+        kwargs["image_name"] = self.ensure_image_present(image_name)
+        self.manager = ManagementInstance(**kwargs)
+
+    def ensure_image_present(self, image_name: str) -> str:
+        """if image_name is available, return it. Otherwise, pull it from dockerhub"""
         # TODO This seems like it still needs docker even in no docker mode
         #  we should fix this
-        log.info("Attempting to get Docker Client")
+
+        log.trace(f"ensure_image_present {image_name}")
+
         docker_client = docker.from_env()
+
+        # look first for  the versioned and then the unversioned, return if hit
+        # if there is a tag present, use that. otherwise add the current version
+        if ":" in image_name:
+            check = image_name
+        else:
+            check = f"{image_name}:{armory.__version__}"
+
+        log.trace(f"asking local docker for image {check}")
         try:
-            docker_client.images.get(kwargs["image_name"])
+            docker_client.images.get(check)
+            log.success(f"found docker image {image_name} as {check}")
+            return check
         except docker.errors.ImageNotFound:
-            log.info(f"Image {image_name} was not found. Downloading...")
-            try:
-                docker_api.pull_verbose(docker_client, image_name)
-            except docker.errors.NotFound:
-                if image_name in images.ALL:
-                    image_name.lstrip(f"{images.DOCKER_REPOSITORY}/").rstrip(
-                        f":{armory.__version__}"
-                    )
-                    raise ValueError(
-                        "You are attempting to pull an unpublished armory docker image.\n"
-                        "This is likely because you're running armory from a dev branch. "
-                        "If you want a stable release with "
-                        "published docker images try pip installing 'armory-testbed' "
-                        "or using out one of the release branches on the git repository. "
-                        "If you'd like to continue working on the developer image please "
-                        "build it from source on your machine as described here:\n"
-                        "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                        "bash docker/build.sh --framework all --tag dev"
-                    )
-                else:
-                    log.error(f"Image {image_name} could not be downloaded")
-                    raise
+            log.trace(f"image {check} not found")
+        except requests.exceptions.HTTPError:
+            log.trace(f"http error when looking for image {check}")
+            raise
+
+        log.info(f"image {image_name} not found. downloading...")
+        try:
+            docker_api.pull_verbose(docker_client, image_name)
+            return image_name
+        except docker.errors.NotFound:
+            if image_name in images.ALL:
+                raise ValueError(
+                    "You are attempting to pull an unpublished armory docker image.\n"
+                    "This is likely because you're running armory from a dev branch. "
+                    "If you want a stable release with "
+                    "published docker images try pip installing 'armory-testbed' "
+                    "or using out one of the release branches on the git repository. "
+                    "If you'd like to continue working on the developer image please "
+                    "build it from source on your machine as described here:\n"
+                    "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
+                    "python docker/build.py --help"
+                )
+            else:
+                log.error(f"Image {image_name} could not be downloaded")
+                raise
         except requests.exceptions.ConnectionError:
             log.error("Docker connection refused. Is Docker Daemon running?")
             raise
-
-        self.manager = ManagementInstance(**kwargs)
 
     def _gather_env_variables(self):
         """

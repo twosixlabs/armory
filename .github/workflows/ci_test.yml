@@ -6,13 +6,11 @@ on:
     branches:
       - master
       - develop
-      - duo
 
   pull_request:
     branches:
       - master
       - develop
-      - duo
 
   workflow_dispatch:
 
@@ -99,10 +97,11 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh base pytorch --tag dev --base-tag dev
+          pip install -e .
+          python docker/build.py pytorch
       - name: Run Unit tests
         run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch:dev pytest -m "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
   docker-tf2-unit:
     name: Docker TF2 Unit Tests
     runs-on: ubuntu-18.04
@@ -114,10 +113,11 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh base tf2 --tag dev --base-tag dev
+          pip install -e .
+          python docker/build.py tf2
       - name: Run Unit tests
         run: |
-          docker run -w /armory-repo/ twosixarmory/tf2:dev pytest -m "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
   docker-deepspeech-unit:
     name: Docker Deepspeech Unit Tests
     runs-on: ubuntu-18.04
@@ -129,10 +129,12 @@ jobs:
       - name: Build Docker
         run: |
           pip install -r requirements.txt
-          bash docker/build.sh base pytorch-deepspeech --tag dev --base-tag dev
+          pip install -e .
+          python docker/build.py pytorch-deepspeech
       - name: Run Unit tests
         run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:dev pytest -m "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
+          pytest -m "not docker_required and unit" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04

@@ -19,7 +19,7 @@ import requests
 from tqdm import tqdm
 
 from armory import paths
-from armory.logs import log
+from armory.logs import log, is_progress
 from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
 from armory.configuration import get_verify_ssl
 
@@ -127,10 +127,15 @@ def download_file_from_s3(bucket_name: str, key: str, local_path: str) -> None:
         )
 
         try:
-            log.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
 
@@ -154,10 +159,15 @@ def download_private_file_from_s3(bucket_name: str, key: str, local_path: str):
             verify=verify_ssl,
         )
         try:
-            log.info("Downloading S3 data file...")
+            log.info(f"downloading S3 data file {bucket_name}/{key}")
             total = client.head_object(Bucket=bucket_name, Key=key)["ContentLength"]
-            with ProgressPercentage(client, bucket_name, key, total) as Callback:
-                client.download_file(bucket_name, key, local_path, Callback=Callback)
+            if is_progress():
+                with ProgressPercentage(client, bucket_name, key, total) as Callback:
+                    client.download_file(
+                        bucket_name, key, local_path, Callback=Callback
+                    )
+            else:
+                client.download_file(bucket_name, key, local_path)
         except ClientError:
             raise KeyError(f"File {key} not available in {bucket_name} bucket.")
     else:
@@ -171,13 +181,18 @@ def download_requests(url: str, dirpath: str, filename: str):
     chunk_size = 4096
     r = requests.get(url, stream=True, verify=verify_ssl)
     with open(filepath, "wb") as f:
-        progress_bar = tqdm(
-            unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
-        )
+        progress_bar = None
+        if is_progress():
+            progress_bar = tqdm(
+                unit="B", total=int(r.headers["Content-Length"]), unit_scale=True
+            )
         for chunk in r.iter_content(chunk_size=chunk_size):
             if chunk:  # filter keep-alive chunks
-                progress_bar.update(len(chunk))
+                if progress_bar:
+                    progress_bar.update(len(chunk))
                 f.write(chunk)
+
+    log.info(f"downloaded {filename} from {url}")
 
 
 def sha256(filepath: str, block_size=4096):

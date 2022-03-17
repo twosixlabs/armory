@@ -69,7 +69,7 @@ class ArmoryInstance(object):
         # We would like to check the return code to see if the command ran cleanly,
         #  but `exec_run()` cannot both return the code and stream logs
         # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
-        container_log = self.docker_container.exec_run(
+        result = self.docker_container.exec_run(
             cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
         )
 
@@ -77,11 +77,11 @@ class ArmoryInstance(object):
         # but threading may cause certain warning messages to be printed during container shutdown
         #  ie after the sentinel
         sentinel_found = False
-        for out in container_log.output:
+        for out in result.output:
             output = out.decode().strip()
             if not output:  # skip empty lines
                 continue
-            # this looks absurd, but in some circumstances container_log.output will combine
+            # this looks absurd, but in some circumstances result.output will combine
             #  outputs from the container into a single string
             # eg, print(a); print(b) is delivered as 'a\r\nb'
             for inner_line in output.splitlines():
@@ -101,7 +101,7 @@ class ArmoryInstance(object):
             log.success("command exited cleanly")
             return 0
         else:
-            log.error("command {cmd} did not finish cleanly")
+            log.error(f"command {cmd} did not finish cleanly")
             return 1
 
     def __del__(self):

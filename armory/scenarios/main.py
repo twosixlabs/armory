@@ -155,9 +155,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d",
         "--debug",
-        action="store_const",
-        const="DEBUG",
-        default="INFO",
+        action="store_true",
         help="synonym for --log-level=armory:debug",
     )
     parser.add_argument(

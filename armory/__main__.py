@@ -29,7 +29,6 @@ from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils import docker_api
 from armory.utils.configuration import load_config, load_config_stdin
-import armory.logs
 
 
 class PortNumber(argparse.Action):
@@ -119,9 +118,7 @@ def _debug(parser):
     parser.add_argument(
         "-d",
         "--debug",
-        action="store_const",
-        const="DEBUG",
-        default="INFO",
+        action="store_true",
         help="synonym for --log-level=armory:debug",
     )
     parser.add_argument(
@@ -189,7 +186,7 @@ def _docker_image(parser):
         "docker_image",
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -197,10 +194,10 @@ def _docker_image(parser):
 def _docker_image_optional(parser):
     parser.add_argument(
         "--docker-image",
-        default=images.TF1,
+        default=images.PYTORCH,
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf1', 'tf2', or 'pytorch'",
+        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -409,8 +406,7 @@ def _pull_docker_images(docker_client=None):
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "
-                    f"Please run 'bash docker/build.sh {image}'"
-                    "or 'bash docker/build.sh all' before running armory"
+                    f"Please run 'python docker/build.py {image}' before running armory"
                 )
                 raise ValueError(f"Docker image {image} not built")
 

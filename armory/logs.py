@@ -32,17 +32,18 @@ log = loguru.logger
 log.level("PROGRESS", no=15, color="<blue>", icon="\N{downwards quadruple arrow}")
 
 default_message_filters = {
-    "": "TRACE",
+    "": "WARNING",
     "armory": "INFO",
     "art": "INFO",
     "docker": "INFO",
     "botocore": "WARNING",
-    "s3transfer": "INFO",
+    "matplotlib": "INFO",
+    "s3transfer": "WARNING",
+    "tensorflow": "WARNING",
     "urllib3": "INFO",
     "absl": False,
     "h5py": False,
     "avro": False,
-    "matplotlib": "INFO",
 }
 
 
@@ -62,6 +63,17 @@ def is_debug() -> bool:
         if log.level(level).no <= log.level("DEBUG").no:
             return True
     return False
+
+
+def is_progress() -> bool:
+    """return true if detailed progress messages are needed"""
+    # this is used by the progress meters which should not be shown if false
+
+    global filters
+    if "armory" not in filters:
+        return False
+
+    return log.level(filters["armory"]).no <= log.level("PROGRESS").no
 
 
 def format_log(record) -> str:
@@ -94,7 +106,7 @@ def update_filters(specs: List[str], armory_debug=None):
     global filters
     global logfile_directory
 
-    log.info(f"update_filters {specs} {armory_debug}")
+    log.trace(f"update_filters {specs} armory_debug={armory_debug}")
 
     if logfile_directory is not None:
         log.error("cannot update log filters once make_logfiles is called. ignoring.")
@@ -103,9 +115,9 @@ def update_filters(specs: List[str], armory_debug=None):
     if specs is None:
         specs = []
 
-    if armory_debug is not None:
-        log.trace("added armory:{armory_debug} to {specs}")
-        specs.append(f"armory:{armory_debug}")
+    if armory_debug:
+        specs.append("armory:debug")
+        log.trace(f"added armory:debug to {specs}")
 
     for spec in specs:
         if ":" in spec:
@@ -126,7 +138,9 @@ def update_filters(specs: List[str], armory_debug=None):
 
     log.remove()
     add_sink(sys.stdout, colorize=True)
-    log.trace(f"set {filters}")
+
+    # TODO: I want to see this even if levels are set low, change to trace after debugging
+    log.trace(f"log levels set to {filters}")
 
 
 def add_sink(sink, colorize=True):

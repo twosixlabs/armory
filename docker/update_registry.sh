@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Build a docker image for specific framework. Optionally `all` frameworks can be built.
-# Ex: `bash docker/build.sh pytorch`
 
 Help()
 {
@@ -26,7 +24,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -h|--help)
       Help
-      return
+      exit 0
       ;;
     -dr|--dry-run)
       DRYRUN=true
@@ -35,8 +33,8 @@ while [[ $# -gt 0 ]]; do
 
     -*|--*)
       echo "Unknown option $1"
-      echo "For more info try: build.sh -h"
-      return 1
+      echo "For more info try: update_registry.sh -h"
+      exit 1
       ;;
     *)
       POSITIONAL_ARGS+=("$1") # save positional arg
