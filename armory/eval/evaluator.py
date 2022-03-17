@@ -86,6 +86,8 @@ class Evaluator(object):
         if ":" in image_name:
             checks = (image_name,)
         else:
+            # TODO: This needs to be fixed if 'image_name' does not refer to twosixarmory image
+            #   There should be a more explicit check for specific armory image names.
             check = f"{image_name}:{armory.__version__}"
             check_previous = ".".join(check.split(".")[:3])
             if check_previous != check:
