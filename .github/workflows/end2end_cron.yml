@@ -1,16 +1,18 @@
 ---
 name: End-to-End Tests
-
+# Update this before merge into twosixlabs/armory to remove tiga ref
 on:
   push:
     branches:
       - master
       - develop
+      - tiga
 
   pull_request:
     branches:
       - master
       - develop
+      - tiga
   schedule:
     - cron: 0 0 * * * # At Midnight Every Day
 
