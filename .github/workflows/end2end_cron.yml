@@ -6,13 +6,11 @@ on:
     branches:
       - master
       - develop
-      - duo
 
   pull_request:
     branches:
       - master
       - develop
-      - duo
   schedule:
     - cron: 0 0 * * * # At Midnight Every Day
 
