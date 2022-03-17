@@ -6,6 +6,7 @@ import pickle
 import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
+from copy import deepcopy
 
 from armory.logs import log
 
@@ -82,10 +83,6 @@ class ImageClassificationExporter(SampleExporter):
         self.saved_batches += 1
 
     def _export_image(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
         self.image = self.get_sample(x_i)
         self.image.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
@@ -187,10 +184,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         type="benign",
         score_threshold=0.5,
     ):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
         self.image_with_boxes = self.get_sample_with_boxes(
             image=image,
             y_i=y_i,
@@ -201,6 +194,84 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         self.image_with_boxes.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
         )
+
+
+class DApricotExporter(ObjectDetectionExporter):
+    def _export(
+        self,
+        x,
+        x_adv=None,
+        y=None,
+        y_pred_adv=None,
+        y_pred_clean=None,
+        classes_to_skip=None,
+    ):
+        if x_adv is None:
+            raise TypeError("Expected x_adv to not be None for DApricot scenario.")
+        x_adv_angle_1 = x_adv[0]
+        self._export_image(x_adv_angle_1, type="adversarial_angle_1")
+
+        x_adv_angle_2 = x_adv[1]
+        self._export_image(x_adv_angle_2, type="adversarial_angle_2")
+
+        x_adv_angle_3 = x_adv[2]
+        self._export_image(x_adv_angle_3, type="adversarial_angle_3")
+
+        y_angle_1 = y[0]
+        y_pred_angle_1 = deepcopy(y_pred_adv[0])
+        y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
+            x_adv_angle_1, y_pred_angle_1["boxes"]
+        )
+        pil_image_angle_1 = Image.fromarray(np.uint8(x_adv_angle_1 * 255.0))
+        self._export_image_with_boxes(
+            pil_image_angle_1,
+            y_angle_1,
+            y_pred_angle_1,
+            classes_to_skip=classes_to_skip,
+            type="adversarial_angle_1",
+        )
+
+        y_angle_2 = y[1]
+        y_pred_angle_2 = deepcopy(y_pred_adv[1])
+        y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
+            x_adv_angle_2, y_pred_angle_2["boxes"]
+        )
+        pil_image_angle_2 = Image.fromarray(np.uint8(x_adv_angle_2 * 255.0))
+        self._export_image_with_boxes(
+            pil_image_angle_2,
+            y_angle_2,
+            y_pred_angle_2,
+            classes_to_skip=classes_to_skip,
+            type="adversarial_angle_2",
+        )
+
+        y_angle_3 = y[2]
+        y_pred_angle_3 = deepcopy(y_pred_adv[2])
+        y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
+            x_adv_angle_3, y_pred_angle_3["boxes"]
+        )
+        pil_image_angle_3 = Image.fromarray(np.uint8(x_adv_angle_3 * 255.0))
+        self._export_image_with_boxes(
+            pil_image_angle_3,
+            y_angle_3,
+            y_pred_angle_3,
+            classes_to_skip=classes_to_skip,
+            type="adversarial_angle_3",
+        )
+
+        self.saved_samples += 1
+        self.saved_batches += 1
+
+    @staticmethod
+    def convert_boxes_tf_to_torch(x, box_array):
+        # Convert boxes from [y1/height, x1/width, y2/height, x2/width] to [x1, y1, x2, y2]
+        if box_array.max() > 1:
+            log.warning(
+                "Attempting to scale boxes from [0, 1] to [0, 255], but boxes are already outside [0, 1]."
+            )
+        converted_boxes = box_array[:, [1, 0, 3, 2]]
+        height, width = x.shape[:2]
+        return (converted_boxes * [width, height, width, height]).astype(np.float32)
 
 
 class VideoClassificationExporter(SampleExporter):
