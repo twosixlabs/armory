@@ -1,6 +1,6 @@
 ---
 name: CI Tests
-# Update this before merge into twosixlabs/armory to remove tiga ref
+# TODO: Update this before merge into twosixlabs/armory to remove tiga ref
 on:
   push:
     branches:
