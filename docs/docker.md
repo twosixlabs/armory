@@ -1,35 +1,46 @@
-# Docker
-Armory is intended to be a lightweight python package which standardizes all evaluations
-inside a docker container.
+Armory Docker Instructions / Usage
+==================================
 
+Armory is intended to be a lightweight python package which provides robustness evaluation 
+tools, and evaluation engine, and resources / scripts to be able executed evaluations inside
+standardized docker containers. 
+
+## Usage
+When using `armory run <path/to/config.json>`, the image used to execute the evaluation
+is specified in the `sysconfig.docker_image` field of the `config.json`. A user can either 
+specify an armory provided image or may specify a custom image. 
+
+When using `armory launch` or `armory exec`, the framework specific arguments will 
+utilize one of the three armory provided images. 
 
 ## Images
-There are four docker images that are currently published to dockerhub for every release of 
-the armory framework:
+Armory provides four docker images that are used for evaluations.  These images are created 
+and maintained by armory maintainers and published during armory releases to the 
+`twosixarmory` repository on dockerhub.  
 
-1. `twosixarmory/tf1:<version>` 
-2. `twosixarmory/tf2:<version>` 
-3. `twosixarmory/pytorch:<version>` 
-4. `twosixarmory/pytorch-deepspeech:<version>` 
+### Armory `base` image
+The `base` image (`twosixarmory/base`) provides all the slow changing requirements and serves 
+as a base image for all the other armory images.  This image is infrequently built (roughly
+quarterly) and published to dockerhub.  
 
-When using `armory launch` or `armory exec` the framework specific arguments will 
-utilize one of these three images. 
-
-When running `armory run <path/to/config.json>` the image launched will be whatever is 
-specified in the `docker_image` field. This enables users to extend our base images 
-and run evaluations on an image that has all additional requirements for their defense.
-
+### Armory derived images
+Armory uses a variety of technologies to execute models (e.g. tensorflow, pytorch, etc.) that 
+require separate (and possibly conflicting) dependency trees.  Therefore, armory provides
+separate docker images for each execution methodology (`tf2`|`pytorch`|`pytorch-deepspeech`):
+and can be referenced like:
+1. `twosixarmory/tf2:<version>`  - Tensorflow Version 2 specific dependencies
+2. `twosixarmory/pytorch:<version>` - Pytorch specific dependencies
+3. `twosixarmory/pytorch-deepspeech:<version>` - Pytorch based "deepspeech" dependencies primarily for ASR
 
 ### Custom Images
+When creating custom images, it is important to extend from the armory `base`
+image to ensure that armory will function properly.  Once a custom image has been created, 
+it is a good idea to run the armory `unit` test suite in the container to make sure that 
+armory is functioning as desired.  For more information on how to do this, see [Armory Testing](developers/testing.md)
 
-If you wish to utilize custom images for armory, these can be directly specified by
-either the `"docker_image"` field of the [config file](configuration_files.md)
-of `armory run <path/to/config.json>` or in the CLI of the `launch` and `exec` commands,
-as in `run launch <custom_image:tag>`.
-
-Note: since Armory executes commands on detached containers, the `CMD` of the Docker image 
-will be *ignored* and replaced with `tail -f /dev/null` to ensure that the container does not
-exit while those commands are being executed.
+Note: when using armory with a custom image (e.g. `armory run <custom_image>`) armory will
+*ignore* the `CMD` specified in the image.  If necessary, armory may call `tail -f /dev/null` in the
+container to ensure the container does not exit while those commands are being executed.
 
 ### Interactive Use
 
@@ -76,13 +87,17 @@ as root, to prevent potential security issues. Instead, we recommend creating a 
 as described above.
 
 ## Building Images from Source
-When using a released version of armory, docker images will be pulled as needed when 
-evaluations are ran. However if there are issues downloading the images (e.g. proxy) 
-they can be built from the release branch of the repo:
+Generally, armory will take care of pulling images as necessary when executing evaluations.  However,
+if needed, each of the armory images can be built locally using the [build.sh](../docker/build.sh) 
+script.  The `build.sh` script utilizes armory `.git` information to version, build, and install
+armory inside the images.  Therefore, to build an image from a "released" armory version (e.g. `0.14.0`):
 ```
-git checkout -b r0.14.0
-bash docker/build.sh <tf1|tf2|pytorch|all>
-```
+# Clone Repo to [armory-repo] if not done already
+cd [armory-repo]
+git checkout 0.14.0 
+bash docker/build.sh <tf2|pytorch|pytorch-deepspeech>
+``` 
+For more options see `usage()` in [build.sh](../docker/build.sh)
 
 ## Docker Volume Mounts
 When launching an ARMORY instance several host directories will be mounted within the 
