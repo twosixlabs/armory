@@ -4,9 +4,7 @@ from art.attacks.evasion import (
 )
 import numpy as np
 
-import logging
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class SNR_PGDRange:
@@ -49,7 +47,7 @@ class SNR_PGDRange:
         if y is None:
             raise ValueError("This attack requires given labels")
         if self.estimator.predict(x).argmax() != y:
-            logger.info("Original prediction failed. Returning original x.")
+            log.info("Original prediction failed. Returning original x.")
             return x
 
         # find best eps via bisection
@@ -63,20 +61,20 @@ class SNR_PGDRange:
             eps = self.eps_range[i_mid]
             if self.estimator.predict(x_adv).argmax() != y:
                 # attack success (will also succeed for lower SNR)
-                logger.info(f"Success with eps {eps}")
+                log.info(f"Success with eps {eps}")
                 x_best = x_adv
                 eps_best = eps
                 i_min = i_mid + 1
             else:
                 # attack failure (will also fail for higher SNR)
-                logger.info(f"Failure with eps {eps}")
+                log.info(f"Failure with eps {eps}")
                 i_max = i_mid
 
         if x_best is None:
-            logger.info("Attack failed. Returning original x.")
+            log.info("Attack failed. Returning original x.")
             return x
         if x_best is not None:
-            logger.info(f"Returning best attack with eps {eps_best}")
+            log.info(f"Returning best attack with eps {eps_best}")
             return x_best
 
 
@@ -132,7 +130,7 @@ class SNR_PGDRange2:
         if not (tolerance >= 0):
             raise ValueError(f"tolerance {tolerance} must be a positive float")
         if tolerance == 0:
-            logger.warning("Using minimum float tolerance instead of 0")
+            log.warning("Using minimum float tolerance instead of 0")
 
         self.tolerance = tolerance
 
@@ -140,7 +138,7 @@ class SNR_PGDRange2:
         if y is None:
             raise ValueError("This attack requires given labels")
         if self.estimator.predict(x).argmax() != y:
-            logger.info("Original prediction failed. Returning original x.")
+            log.info("Original prediction failed. Returning original x.")
             return x
         if self.eps_min == self.eps_max:
             return self.min_attack.generate(x, y, **kwargs)
@@ -148,39 +146,39 @@ class SNR_PGDRange2:
         # test endpoints
         x_adv = self.max_attack.generate(x, y, **kwargs)
         if self.estimator.predict(x_adv).argmax() != y:
-            logger.info(f"Success at upper boundary eps = {self.eps_max}")
+            log.info(f"Success at upper boundary eps = {self.eps_max}")
             return x_adv
         else:
-            logger.info(f"Failure at upper boundary eps = {self.eps_max}")
+            log.info(f"Failure at upper boundary eps = {self.eps_max}")
             upper_eps = self.eps_max
 
         x_adv = self.min_attack.generate(x, y, **kwargs)
         if self.estimator.predict(x_adv).argmax() != y:
-            logger.info(f"Success at lower boundary eps = {self.eps_min}")
+            log.info(f"Success at lower boundary eps = {self.eps_min}")
             lower_eps = self.eps_min
             x_best = x_adv
             eps_best = lower_eps
         else:
-            logger.info(f"Failure at lower boundary eps = {self.eps_min}")
+            log.info(f"Failure at lower boundary eps = {self.eps_min}")
             return x_adv
 
         while upper_eps - lower_eps > self.tolerance:
             mid_eps = (upper_eps + lower_eps) / 2
             if mid_eps == lower_eps or mid_eps == upper_eps:
-                logger.info("Reached floating point tolerance limit")
+                log.info("Reached floating point tolerance limit")
                 break
             attack = self.Attack(self.estimator, eps=mid_eps, **self.kwargs)
             x_adv = attack.generate(x, y, **kwargs)
             if self.estimator.predict(x_adv).argmax() != y:
-                logger.info(f"Success at eps = {mid_eps}")
+                log.info(f"Success at eps = {mid_eps}")
                 lower_eps = mid_eps
                 x_best = x_adv
                 eps_best = lower_eps
             else:
-                logger.info(f"Failure at eps = {mid_eps}")
+                log.info(f"Failure at eps = {mid_eps}")
                 upper_eps = mid_eps
 
-        logger.info(f"Returning best attack with eps {eps_best}")
+        log.info(f"Returning best attack with eps {eps_best}")
         return x_best
 
 
@@ -219,7 +217,7 @@ class SNR_PGD_Numpy(ProjectedGradientDescentNumpy):
     def generate(self, x, y=None, **kwargs):
         x_l2 = np.linalg.norm(x, ord=2)
         if x_l2 == 0:
-            logger.warning("Input all 0. Not making any change.")
+            log.warning("Input all 0. Not making any change.")
             return x
         elif self.snr_sqrt_reciprocal == 0:
             return x
@@ -282,12 +280,12 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
 
     def generate(self, x, y=None, **kwargs):
         if x.shape[1] == 0:
-            logger.warning("Length 0 signal. Returning original.")
+            log.warning("Length 0 signal. Returning original.")
             return x
 
         x_l2 = np.linalg.norm(x, ord=2)
         if x_l2 == 0:
-            logger.warning("Input all 0. Not making any change.")
+            log.warning("Input all 0. Not making any change.")
             return x
         elif self.snr_sqrt_reciprocal == 0:
             return x
@@ -355,7 +353,7 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
             perturbation = grad * eps_step
         else:
             if not torch.isfinite(normalization).all():
-                logger.warning(
+                log.warning(
                     "Some gradient values are infinite. Perturbation will be 0!"
                 )
             perturbation = grad * eps_step / normalization
@@ -418,12 +416,12 @@ class SNR_PGD_Linf(ProjectedGradientDescentPyTorch):
 
     def generate(self, x, y=None, **kwargs):
         if x.shape[1] == 0:
-            logger.warning("Length 0 signal. Returning original.")
+            log.warning("Length 0 signal. Returning original.")
             return x
 
         x_rms = np.linalg.norm(x, ord=2) / np.sqrt(x.shape[1])
         if x_rms == 0:
-            logger.warning("Input all 0. Not making any change.")
+            log.warning("Input all 0. Not making any change.")
             return x
         elif self.snr_sqrt_reciprocal == 0:
             return x

@@ -1,5 +1,1 @@
-"""
-Docker management in ARMORY
-"""
-
-from armory.docker import management
+# left blank because all imports of armory.docker use explicit module names

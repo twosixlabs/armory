@@ -30,6 +30,4 @@ class ObjectDetectionTask(ImageClassificationTask):
         super().load_sample_exporter()
 
     def _load_sample_exporter(self):
-        return ObjectDetectionExporter(
-            self.scenario_output_dir, self.num_export_samples
-        )
+        return ObjectDetectionExporter(self.scenario_output_dir)

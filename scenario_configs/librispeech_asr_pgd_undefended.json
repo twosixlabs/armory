@@ -64,8 +64,8 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech:0.14.4",
-        "external_github_repo": "hkakitani/deepspeech.pytorch",
+        "docker_image": "twosixarmory/pytorch-deepspeech",
+        "external_github_repo": "SeanNaren/deepspeech.pytorch@V3.0",
         "gpus": "all",
         "local_repo_path": null,
         "output_dir": null,

@@ -4,15 +4,12 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-import logging
 import copy
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-
 from armory.utils.export import ObjectDetectionExporter
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class CarlaObjectDetectionTask(Scenario):
@@ -66,7 +63,7 @@ class CarlaObjectDetectionTask(Scenario):
                 x=x,
                 y=y_target,
                 y_patch_metadata=[y_patch_metadata],
-                **self.generate_kwargs
+                **self.generate_kwargs,
             )
 
         # Ensure that input sample isn't overwritten by model
@@ -85,7 +82,7 @@ class CarlaObjectDetectionTask(Scenario):
         # If using multimodal input, add a warning if depth channels are perturbed
         if x.shape[-1] == 6:
             if (x[..., 3:] != x_adv[..., 3:]).sum() > 0:
-                logger.warning("Adversarial attack perturbed depth channels")
+                log.warning("Adversarial attack perturbed depth channels")
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
@@ -95,10 +92,10 @@ class CarlaObjectDetectionTask(Scenario):
     def export_samples(self):
         self.sample_exporter.export(
             self.x,
-            self.x_adv,
-            self.y,
-            self.y_pred_adv,
-            self.y_pred,
+            x_adv=self.x_adv,
+            y=self.y,
+            y_pred_clean=self.y_pred,
+            y_pred_adv=self.y_pred_adv,
             classes_to_skip=4,
         )
 

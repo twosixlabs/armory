@@ -349,8 +349,7 @@ def apricot_label_preprocessing(x, y):
 
 
 def dapricot_label_preprocessing(x, y):
-    """
-    """
+    """ """
     y_object, y_patch_metadata = y
     y_object_list = []
     y_patch_metadata_list = []
@@ -365,7 +364,9 @@ def dapricot_label_preprocessing(x, y):
     for i in range(num_imgs_per_ex):
         y_object_img = {}
         for k, v in y_object.items():
-            y_object_img[k] = np.array(y_object[k].flat_values[i])
+            y_object_img[k] = np.expand_dims(
+                np.array(y_object[k].flat_values[i]), axis=0
+            )
         y_object_list.append(y_object_img)
 
         y_patch_metadata_img = {

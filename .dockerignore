@@ -5,3 +5,5 @@ datasets/
 # ignore temp directories
 outputs/
 tmp/
+__pycache__/
+*.pyc
