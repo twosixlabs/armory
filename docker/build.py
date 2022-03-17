@@ -10,6 +10,7 @@ except ModuleNotFoundError as e:
         raise ModuleNotFoundError("Ensure armory is pip installed before running")
     raise
 
+FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 
 print(f"armory docker builder version {armory.__version__}")
 script_dir = Path(__file__).parent
@@ -24,41 +25,45 @@ parser.add_argument(
     "-n", "--dry-run", action="store_true", help="show what would be done"
 )
 parser.add_argument(
-    "framework", help="framework to build (tf2, pytorch, pytorch-deepspeech)",
+    "framework", help=f"framework to build ({FRAMEWORKS + ['all']})",
 )
 args = parser.parse_args()
 
-if args.framework not in ("tf2", "pytorch", "pytorch-deepspeech"):
+if args.framework == "all":
+    frameworks = FRAMEWORKS
+elif args.framework in FRAMEWORKS:
+    frameworks = [args.framework]
+else:
     raise ValueError(f"unknown framework {args.framework}")
 
-dockerfile = script_dir / f"Dockerfile-{args.framework}"
-if not dockerfile.exists():
-    print("make sure you run this script from the root of the armory repo")
-    raise ValueError(f"Dockerfile not found: {dockerfile}")
+for framework in frameworks:
+    dockerfile = script_dir / f"Dockerfile-{framework}"
+    if not dockerfile.exists():
+        print("make sure you run this script from the root of the armory repo")
+        raise ValueError(f"Dockerfile not found: {dockerfile}")
 
-cmd = [
-    "docker",
-    "build",
-    "--file",
-    str(dockerfile),
-    "--tag",
-    f"twosixarmory/{args.framework}:{armory.__version__}",
-    "--build-arg",
-    f"base_image_tag={args.base_tag}",
-    "--build-arg",
-    f"armory_version={armory.__version__}",
-    "--force-rm",
-]
-if args.no_cache:
-    cmd.append("--no-cache")
-if not args.no_pull:
-    cmd.append("--pull")
+    cmd = [
+        "docker",
+        "build",
+        "--file",
+        str(dockerfile),
+        "--tag",
+        f"twosixarmory/{framework}:{armory.__version__}",
+        "--build-arg",
+        f"base_image_tag={args.base_tag}",
+        "--build-arg",
+        f"armory_version={armory.__version__}",
+        "--force-rm",
+    ]
+    if args.no_cache:
+        cmd.append("--no-cache")
+    if not args.no_pull:
+        cmd.append("--pull")
 
-cmd.append(os.getcwd())
+    cmd.append(os.getcwd())
 
-
-print("about to run: ", " ".join(cmd))
-if args.dry_run:
-    print("dry-run requested, not executing build")
-else:
-    subprocess.run(cmd)
+    print("about to run: ", " ".join(cmd))
+    if args.dry_run:
+        print("dry-run requested, not executing build")
+    else:
+        subprocess.run(cmd)
