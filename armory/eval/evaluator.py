@@ -406,8 +406,8 @@ class Evaluator(object):
                     bold(
                         red(
                             "python\n"
-                            "from armory import scenarios\n"
-                            f's = scenarios.get("{docker_config_path}"{init_options}).load()\n'
+                            "from armory.scenarios.main import get as get_scenario\n"
+                            f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
                             "s.evaluate()"
                         )
                     ),
@@ -464,8 +464,8 @@ class Evaluator(object):
             bold("# To run, inside of a notebook:"),
             bold(
                 red(
-                    "from armory import scenarios\n"
-                    f's = scenarios.get("{docker_config_path}"{init_options}).load()\n'
+                    "from armory.scenarios.main import get as get_scenario\n"
+                    f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
                     "s.evaluate()"
                 )
             ),
