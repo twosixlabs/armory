@@ -232,7 +232,10 @@ class Scenario:
                 "The export_samples field was deprecated in Armory 0.15.0. Please use export_batches instead."
             )
 
-        self.num_export_batches = self.config["scenario"].get("export_batches", 0)
+        num_export_batches = self.config["scenario"].get("export_batches", 0)
+        if num_export_batches is True:
+            num_export_batches = len(self.test_dataset)
+        self.num_export_batches = num_export_batches
         self.sample_exporter = self._load_sample_exporter()
 
     @abc.abstractmethod
