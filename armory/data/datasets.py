@@ -1121,7 +1121,7 @@ def librispeech_dev_clean(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_dev_clean_split:2.1.0",
+        "librispeech_dev_clean_split/plain_text:1.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1157,7 +1157,7 @@ def librispeech_full(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_full:2.1.0",
+        "librispeech_full/plain_text:1.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1203,6 +1203,17 @@ def librispeech(
                 f"Split {split} not available in cache. Must be one of {CACHED_SPLITS}."
                 f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
+
+    # TODO: make less hacky by updating dataset to librispeech 2.1.0
+    # Begin Hack
+    # make symlink to ~/.armory/datasets/librispeech/plain_text/1.1.0 from ~/.armory/datasets/librispeech/2.1.0 (required for TFDS v4)
+    base = os.path.join(paths.runtime_paths().dataset_dir, "librispeech")
+    os.makedirs(base, exist_ok=True)
+    src = os.path.join(base, "plain_text", "1.1.0")
+    dst = os.path.join(base, "2.1.0")
+    if not os.path.exists(dst):
+        os.symlink(src, dst)
+    # End Hack
 
     return _generator_from_tfds(
         "librispeech:2.1.0",
@@ -1251,7 +1262,7 @@ def librispeech_dev_clean_asr(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "librispeech_dev_clean_split:2.1.0",
+        "librispeech_dev_clean_split/plain_text:1.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
