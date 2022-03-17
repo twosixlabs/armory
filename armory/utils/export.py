@@ -208,10 +208,6 @@ class VideoClassificationExporter(SampleExporter):
         super().__init__(base_output_dir)
         self.frame_rate = frame_rate
 
-    @classmethod
-    def from_context(cls, base_output_dir, context):
-        return cls(base_output_dir, context.frame_rate)
-
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
@@ -363,10 +359,6 @@ class AudioExporter(SampleExporter):
     def __init__(self, base_output_dir, sample_rate):
         self.sample_rate = sample_rate
         super().__init__(base_output_dir)
-
-    @classmethod
-    def from_context(cls, base_output_dir, context):
-        return cls(base_output_dir, context.sample_rate)
 
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
