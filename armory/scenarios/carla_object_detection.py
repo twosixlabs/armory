@@ -10,6 +10,8 @@ import copy
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
 
+from armory.utils.export import ObjectDetectionExporter
+
 logger = logging.getLogger(__name__)
 
 
@@ -87,6 +89,9 @@ class CarlaObjectDetectionTask(Scenario):
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
+    def _load_sample_exporter(self):
+        return ObjectDetectionExporter(self.scenario_output_dir, self.num_export_samples)
+
     def export_samples(self):
         self.sample_exporter.export(
             self.x,
@@ -94,7 +99,6 @@ class CarlaObjectDetectionTask(Scenario):
             self.y,
             self.y_pred_adv,
             self.y_pred,
-            plot_bboxes=True,
             classes_to_skip=4,
         )
 

@@ -7,6 +7,7 @@ import pickle
 import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -126,6 +127,13 @@ class ImageClassificationExporter(SampleExporter):
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
+
+    def __init__(self, base_output_dir, num_samples):
+        super().__init__(base_output_dir, num_samples)
+        self.ground_truth_coco_data = []
+        self.benign_preds_coco_data = []
+        self.adv_preds_coco_data = []
+
     def _export(
         self,
         x,
@@ -144,7 +152,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             y_i = y[i]
             y_i_pred_clean = y_pred_clean[i]
             self._export_image_with_boxes(
-                self.image, y_i, y_i_pred_clean, type="benign"
+                self.image, y_i, y_i_pred_clean, type="benign", classes_to_skip=classes_to_skip
             )
 
             # Export adversarial image x_adv_i if present
@@ -153,7 +161,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 self._export_image(x_adv_i, type="adversarial")
                 y_i_pred_adv = y_pred_adv[i]
                 self._export_image_with_boxes(
-                    self.image, y_i, y_i_pred_adv, type="adversarial"
+                    self.image, y_i, y_i_pred_adv, type="adversarial", classes_to_skip=classes_to_skip
                 )
 
             self.saved_samples += 1
@@ -171,23 +179,57 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
+        if isinstance(classes_to_skip, int):
+            classes_to_skip = [classes_to_skip]
+
         box_layer = ImageDraw.Draw(image)
 
         bboxes_true = y_i["boxes"]
         labels_true = y_i["labels"]
-
+        image_id = y_i["image_id"][0] # All boxes in y_i are for the same image
         bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+        labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
+        scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
 
         for true_box, label in zip(bboxes_true, labels_true):
             if classes_to_skip is not None and label in classes_to_skip:
                 continue
             box_layer.rectangle(true_box, outline="red", width=2)
-        for pred_box in bboxes_pred:
+            if type == "benign": # these will be the same for adversarial; only do it one time.
+                xmin, ymin, xmax, ymax = true_box
+                coco_result = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax-ymin)],
+                }
+                self.ground_truth_coco_data.append(coco_result)
+
+        for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
             box_layer.rectangle(pred_box, outline="white", width=2)
+            xmin, ymin, xmax, ymax = pred_box
+            coco_result = {
+                "image_id": int(image_id),
+                "category_id": int(label),
+                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax-ymin)],
+                "score": float(score),}
+
+            if type == "benign":
+                self.benign_preds_coco_data.append(coco_result)
+            elif type == "adversarial":
+                self.adv_preds_coco_data.append(coco_result)
 
         image.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
         )
+
+    def write(self):
+        super().write()
+        if len(self.ground_truth_coco_data) > 0:
+            json.dump(self.ground_truth_coco_data, open(os.path.join(self.output_dir, "ground_truth_coco_data.json"), "w"))
+        if len(self.benign_preds_coco_data) > 0:
+            json.dump(self.benign_preds_coco_data, open(os.path.join(self.output_dir, "benign_preds_coco_data.json"), "w"))
+        if len(self.adv_preds_coco_data) > 0:
+            json.dump(self.adv_preds_coco_data, open(os.path.join(self.output_dir, "adv_preds_coco_data.json"), "w"))
 
 
 class VideoClassificationExporter(SampleExporter):
