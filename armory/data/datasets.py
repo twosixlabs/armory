@@ -409,8 +409,6 @@ def _generator_from_tfds(
             dataset_dir, dataset_name=dataset_name,
         )
 
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
-
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
 
@@ -521,9 +519,9 @@ def _generator_from_tfds(
         )
 
     if framework == "numpy":
-        ds = tfds.as_numpy(ds, graph=default_graph)
+        ds = tfds.as_numpy(ds)
         generator = ArmoryDataGenerator(
-            ds,
+            iter(ds),
             size=dataset_size,
             batch_size=batch_size,
             epochs=epochs,
@@ -1155,6 +1153,7 @@ def librispeech_full(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_full dataset"
         )
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1164,6 +1163,7 @@ def librispeech_full(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1204,8 +1204,19 @@ def librispeech(
                 f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
 
+    # TODO: make less hacky by updating dataset to librispeech 2.1.0
+    # Begin Hack
+    # make symlink to ~/.armory/datasets/librispeech/plain_text/1.1.0 from ~/.armory/datasets/librispeech/2.1.0 (required for TFDS v4)
+    base = os.path.join(paths.runtime_paths().dataset_dir, "librispeech")
+    os.makedirs(base, exist_ok=True)
+    src = os.path.join(base, "plain_text", "1.1.0")
+    dst = os.path.join(base, "2.1.0")
+    if not os.path.exists(dst):
+        os.symlink(src, dst)
+    # End Hack
+
     return _generator_from_tfds(
-        "librispeech/plain_text:1.1.0",
+        "librispeech:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
