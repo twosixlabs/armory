@@ -84,20 +84,28 @@ class Evaluator(object):
         # look first for  the versioned and then the unversioned, return if hit
         # if there is a tag present, use that. otherwise add the current version
         if ":" in image_name:
-            check = image_name
+            checks = (image_name,)
         else:
+            # TODO: This needs to be fixed if 'image_name' does not refer to twosixarmory image
+            #   There should be a more explicit check for specific armory image names.
             check = f"{image_name}:{armory.__version__}"
+            check_previous = ".".join(check.split(".")[:3])
+            if check_previous != check:
+                checks = (check, check_previous)
+            else:
+                checks = (check,)
 
-        log.trace(f"asking local docker for image {check}")
-        try:
-            docker_client.images.get(check)
-            log.success(f"found docker image {image_name} as {check}")
-            return check
-        except docker.errors.ImageNotFound:
-            log.trace(f"image {check} not found")
-        except requests.exceptions.HTTPError:
-            log.trace(f"http error when looking for image {check}")
-            raise
+        for check in checks:
+            log.trace(f"asking local docker for image {check}")
+            try:
+                docker_client.images.get(check)
+                log.success(f"found docker image {image_name} as {check}")
+                return check
+            except docker.errors.ImageNotFound:
+                log.trace(f"image {check} not found")
+            except requests.exceptions.HTTPError:
+                log.trace(f"http error when looking for image {check}")
+                raise
 
         log.info(f"image {image_name} not found. downloading...")
         try:
