@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
+        with:
+            fetch-depth: 0
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
@@ -30,6 +32,7 @@ jobs:
           pip install -e .
           python docker/build.py all
           imageTag=$(python setup.py --version | sed  -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+          echo "passing imageTag $imageTag to later jobs"
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:
