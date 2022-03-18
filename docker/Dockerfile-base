@@ -56,6 +56,7 @@ RUN /opt/conda/bin/conda install \
 # torchaudio==0.10.2
 # cudatoolkit==1.11.3
 # numpy==1.21.2
+# Pillow==9.0.1
 
 # Conda Install for Channel: conda-forge
 RUN /opt/conda/bin/conda install \
@@ -71,6 +72,7 @@ RUN /opt/conda/bin/conda install \
 # jsonschema==4.4.0 \
 # six==1.16.0 \
 # setuptools==52.0.0 \
+# matplotlib==3.5.1 \
 
 # Conda Install for Channel: Numba
 RUN /opt/conda/bin/conda install \
@@ -102,7 +104,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     ffmpeg-python \
     pytest \
     pymongo \
-    coloredlogs \
+    loguru \
     docker
 # dill==0.3.4 \
 # tensorflow-datasets==4.5.0 \
@@ -113,10 +115,6 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 # ffmpeg-python==0.2.0 \
 # pytest==7.0.1 \
 # pymongo==4.0.2 \
-# coloredlogs==15.0.1 \
 # docker==5.0.3
-
-# pydub not installed. Do we need?
-#    pydub==0.24.1 \
 
 WORKDIR /workspace

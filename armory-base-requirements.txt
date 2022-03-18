@@ -18,39 +18,32 @@
 #
 #########################################################
 
-# Base Requirements
-Pillow==8.2.0
+# PyTorch
+torch==1.10.*
+torchvision==0.11.*
+torchaudio==0.10.*
 
-# ART 1.9.1 requires scipy 1.7.1
-numpy==1.21.5
-scipy==1.7.1
-adversarial-robustness-toolbox==1.9.1
+# TensorFlow
+tensorflow==2.8.0
+tensorflow-datasets==4.5.*
+tensorboardx==2.4.*
 
-# Currently is necessary for armory datasets which
-# utilizes tfds.  This requires old version of
-# pyarrow (0.17.1) which requires pip 22.0.3
-apache-beam==2.22.0
+# Numpy
+numpy==1.21.*
+scipy==1.7.*
+matplotlib==3.*
+
+# ART
+adversarial-robustness-toolbox==1.10.0
+
+# Data dependencies
+Pillow==9.0.*
 
 # Needed for armory.data.utils
-boto3==1.20.42
-
-
-# TensorFlow Bits
-tensorflow==2.7.0
-tensorflow-datasets==3.2.0
-tensorflow-estimator==2.7.0
-tensorflow-io-gcs-filesystem==0.23.1
-tensorflow-metadata==1.6.0
-
-# needed for armory.data.adversarial.dapricot_dev.py
-pandas==1.3.5
+boto3==1.20.*
 
 # needed for armory.utils.export
 ffmpeg-python==0.2.0
 
-# Needed for Cifar10 baseline scenario
-torch==1.10.2
-
 # Needed for CARLA baseline scenario
-torchvision==0.11.3
 opencv-python==4.5.5.62
