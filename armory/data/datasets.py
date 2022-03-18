@@ -422,8 +422,10 @@ def _generator_from_tfds(
             download_and_prepare_kwargs=download_and_prepare_kwargs,
             shuffle_files=shuffle_files,
         )
-    except AssertionError as e:
-        if not str(e).startswith("Unrecognized instruction format: "):
+    except (AssertionError, ValueError) as e:
+        if not str(e).startswith(
+            "Unrecognized instruction format: "
+        ) and "Unrecognized split format: " not in str(e):
             raise
         log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
         log.warning(f"Attempting to parse split {split}")
