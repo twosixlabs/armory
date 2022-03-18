@@ -25,8 +25,9 @@ class SampleExporter:
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         self.y_dict[self.saved_samples] = {
-            "ground truth": y,
-            "predicted": y_pred_adv,
+            "y": y,
+            "y_pred_clean": y_pred_clean,
+            "y_pred_adv": y_pred_adv,
         }
         self._export(
             x=x,
