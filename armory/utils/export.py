@@ -141,7 +141,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             y_i = y[i]
             y_i_pred_clean = y_pred_clean[i]
             self._export_image_with_boxes(
-                self.image, y_i, y_i_pred_clean, type="benign"
+                x_i, y_i=y_i, y_i_pred=y_i_pred_clean, type="benign"
             )
 
             # Export adversarial image x_adv_i if present
@@ -150,7 +150,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 self._export_image(x_adv_i, type="adversarial")
                 y_i_pred_adv = y_pred_adv[i]
                 self._export_image_with_boxes(
-                    self.image, y_i, y_i_pred_adv, type="adversarial"
+                    x_adv_i, y_i=y_i, y_i_pred=y_i_pred_adv, type="adversarial"
                 )
 
             self.saved_samples += 1
@@ -158,35 +158,41 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
     @staticmethod
     def get_sample_with_boxes(
-        image, y_i, y_i_pred, classes_to_skip=None, score_threshold=0.5,
+        x_i, y_i=None, y_i_pred=None, classes_to_skip=None, score_threshold=0.5,
     ):
+        image = ObjectDetectionExporter.get_sample(x_i)
+        if y_i is None and y_i_pred is None:
+            raise TypeError("Both y_i and y_pred are None, expected to receive boxes.")
         box_layer = ImageDraw.Draw(image)
 
-        bboxes_true = y_i["boxes"]
-        labels_true = y_i["labels"]
+        if y_i is not None:
+            bboxes_true = y_i["boxes"]
+            labels_true = y_i["labels"]
 
-        bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+            for true_box, label in zip(bboxes_true, labels_true):
+                if classes_to_skip is not None and label in classes_to_skip:
+                    continue
+                box_layer.rectangle(true_box, outline="red", width=2)
 
-        for true_box, label in zip(bboxes_true, labels_true):
-            if classes_to_skip is not None and label in classes_to_skip:
-                continue
-            box_layer.rectangle(true_box, outline="red", width=2)
-        for pred_box in bboxes_pred:
-            box_layer.rectangle(pred_box, outline="white", width=2)
+        if y_i_pred is not None:
+            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+
+            for pred_box in bboxes_pred:
+                box_layer.rectangle(pred_box, outline="white", width=2)
 
         return image
 
     def _export_image_with_boxes(
         self,
-        image,
-        y_i,
-        y_i_pred,
+        x_i,
+        y_i=None,
+        y_i_pred=None,
         classes_to_skip=None,
         type="benign",
         score_threshold=0.5,
     ):
         self.image_with_boxes = self.get_sample_with_boxes(
-            image=image,
+            x_i=x_i,
             y_i=y_i,
             y_i_pred=y_i_pred,
             classes_to_skip=classes_to_skip,
@@ -223,11 +229,10 @@ class DApricotExporter(ObjectDetectionExporter):
         y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
             x_adv_angle_1, y_pred_angle_1["boxes"]
         )
-        pil_image_angle_1 = Image.fromarray(np.uint8(x_adv_angle_1 * 255.0))
         self._export_image_with_boxes(
-            pil_image_angle_1,
-            y_angle_1,
-            y_pred_angle_1,
+            x_adv_angle_1,
+            y_i=y_angle_1,
+            y_i_pred=y_pred_angle_1,
             classes_to_skip=classes_to_skip,
             type="adversarial_angle_1",
         )
@@ -237,11 +242,10 @@ class DApricotExporter(ObjectDetectionExporter):
         y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
             x_adv_angle_2, y_pred_angle_2["boxes"]
         )
-        pil_image_angle_2 = Image.fromarray(np.uint8(x_adv_angle_2 * 255.0))
         self._export_image_with_boxes(
-            pil_image_angle_2,
-            y_angle_2,
-            y_pred_angle_2,
+            x_adv_angle_2,
+            y_i=y_angle_2,
+            y_i_pred=y_pred_angle_2,
             classes_to_skip=classes_to_skip,
             type="adversarial_angle_2",
         )
@@ -251,11 +255,10 @@ class DApricotExporter(ObjectDetectionExporter):
         y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
             x_adv_angle_3, y_pred_angle_3["boxes"]
         )
-        pil_image_angle_3 = Image.fromarray(np.uint8(x_adv_angle_3 * 255.0))
         self._export_image_with_boxes(
-            pil_image_angle_3,
-            y_angle_3,
-            y_pred_angle_3,
+            x_adv_angle_3,
+            y_i=y_angle_3,
+            y_i_pred=y_pred_angle_3,
             classes_to_skip=classes_to_skip,
             type="adversarial_angle_3",
         )

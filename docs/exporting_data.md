@@ -100,10 +100,11 @@ PIL image including bounding boxes:
 >>> type(adv_img)
 <class 'PIL.Image.Image'>
 
->>> adv_img_with_boxes = s.sample_exporter.get_sample_with_boxes(adv_img, y_i=s.y[0], y_i_pred=s.y_pred_adv[0])
+>>> adv_img_with_boxes = s.sample_exporter.get_sample_with_boxes(s.x_adv[0], y_i=s.y[0], y_i_pred=s.y_pred_adv[0])
 >>> type(adv_img_with_boxes)
 <class 'PIL.Image.Image'>
 ```
+If you'd only like to include ground-truth boxes (or only predicted boxes), don't provide an arg for `y_i` or `y_i_pred`.
 
 ### Exporting Multimodal Data
 #### Multimodal CARLA Object Detection
