@@ -368,7 +368,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_video_with_boxes(self, x_i, y_i, y_i_pred, type="benign"):
+    def _export_video_with_boxes(self, x_i, y_i=None, y_i_pred=None, type="benign"):
         if type not in ["benign", "adversarial"]:
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
@@ -395,7 +395,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
         )
 
         self.frames_with_boxes = self.get_sample_with_boxes(
-            x_i=x_i, y_i=y_i, y_i_pred=y_i_pred
+            x_i, y_i=y_i, y_i_pred=y_i_pred
         )
         for n_frame, frame, in enumerate(self.frames_with_boxes):
             frame.save(
@@ -412,7 +412,9 @@ class VideoTrackingExporter(VideoClassificationExporter):
         ffmpeg_process.wait()
 
     @staticmethod
-    def get_sample_with_boxes(x_i, y_i, y_i_pred):
+    def get_sample_with_boxes(x_i, y_i=None, y_i_pred=None):
+        if y_i is None and y_i_pred is None:
+            raise TypeError("Both y_i and y_pred are None, expected to receive boxes.")
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
 
@@ -421,10 +423,12 @@ class VideoTrackingExporter(VideoClassificationExporter):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
-            bbox_true = y_i["boxes"][n_frame].astype("float32")
-            bbox_pred = y_i_pred["boxes"][n_frame]
-            box_layer.rectangle(bbox_true, outline="red", width=2)
-            box_layer.rectangle(bbox_pred, outline="white", width=2)
+            if y_i is not None:
+                bbox_true = y_i["boxes"][n_frame].astype("float32")
+                box_layer.rectangle(bbox_true, outline="red", width=2)
+            if y_i_pred is not None:
+                bbox_pred = y_i_pred["boxes"][n_frame]
+                box_layer.rectangle(bbox_pred, outline="white", width=2)
             pil_frames.append(image)
 
         return pil_frames
