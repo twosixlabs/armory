@@ -27,8 +27,9 @@ jobs:
         id: docker-build
         run: |
           pip install -r requirements.txt
-          pip install -e .
-          python docker/build.py all
+          pip install .
+          imageTag=$(armory --version)
+          python docker/build.py derived --tag imageTag --no-cache
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:
