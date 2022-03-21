@@ -37,8 +37,15 @@ def test_object_detection_export():
         "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
     }
 
-    pil_img_with_boxes = exporter.get_sample_with_boxes(pil_img, y, y_pred)
-    assert isinstance(pil_img_with_boxes, PIL.Image.Image)
+    pil_img_with_both_boxes = exporter.get_sample_with_boxes(random_x, y_i=y, y_i_pred=y_pred)
+    assert isinstance(pil_img_with_both_boxes, PIL.Image.Image)
+
+    pil_img_with_gt_boxes = exporter.get_sample_with_boxes(random_x, y_i=y)
+    assert isinstance(pil_img_with_gt_boxes, PIL.Image.Image)
+
+    pil_img_with_pred_boxes = exporter.get_sample_with_boxes(random_x, y_i_pred=y_pred)
+    assert isinstance(pil_img_with_pred_boxes, PIL.Image.Image)
+
 
 
 def test_video_classification_export():
