@@ -7,8 +7,7 @@ import docker.errors
 import requests
 
 import armory
-from armory.logs import log
-from armory.utils import docker_api
+from armory.logs import log, is_progress
 
 TAG = armory.__version__
 log.trace(f"armory.__version__: {armory.__version__}")
@@ -139,7 +138,7 @@ def last_armory_release(image_name: str):
         )
 
 
-def ensure_image_present(self, image_name: str) -> str:
+def ensure_image_present(image_name: str) -> str:
     """
     If image_name is available, return it. Otherwise, pull it from dockerhub.
     """
@@ -159,7 +158,7 @@ def ensure_image_present(self, image_name: str) -> str:
             raise
 
         try:
-            docker_api.pull_verbose(docker_client, image_name)
+            pull_verbose(docker_client, image_name)
             return image_name
         except docker.errors.NotFound:
             log.error(f"Image {image_name} could not be downloaded")
@@ -198,7 +197,7 @@ def ensure_image_present(self, image_name: str) -> str:
 
     log.info(f"image {prev_release} not found. downloading...")
     try:
-        docker_api.pull_verbose(docker_client, prev_release)
+        pull_verbose(docker_client, prev_release)
         return prev_release
     except docker.errors.NotFound:
         log.error(f"Image {prev_release} could not be downloaded")
@@ -216,3 +215,29 @@ def ensure_image_present(self, image_name: str) -> str:
     except requests.exceptions.ConnectionError:
         log.error("Docker connection refused. Is Docker Daemon running?")
         raise
+
+
+def pull_verbose(docker_client, repository, tag=None):
+    """
+    Use low-level docker-py API to show status while pulling docker containers.
+        Attempts to replicate docker command line output if we are showing progress.
+    """
+    if not is_progress():
+        log.info(
+            f"docker pulling from {repository}:{tag} use '--log=progress' to see status"
+        )
+        docker_client.api.pull(repository, tag=tag, stream=False)
+        log.success(f"pulled {repository}:{tag}")
+        return
+
+    for update in docker_client.api.pull(repository, tag=tag, stream=True, decode=True):
+        tokens = []
+        for key in ("id", "status", "progress"):
+            value = update.get(key)
+            if value is not None:
+                tokens.append(value)
+        output = ": ".join(tokens)
+
+        log.info(output)
+
+    log.success(f"pulled {repository}:{tag}")
