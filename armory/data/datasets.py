@@ -16,12 +16,7 @@ from typing import Callable, Union, Tuple, List
 import numpy as np
 from armory.logs import log
 
-# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
-#     all CPU resources when num_workers > 1
-try:
-    import torch  # noqa: F401
-except ImportError:
-    pass
+import torch
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
