@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements.txt
           pip install .
           imageTag=$(armory --version)
-          python docker/build.py all --no-cache --no-pull --base-tag imageTag --tag imageTag
+          python docker/build.py all --no-cache --no-pull --base-tag $imageTag --tag $imageTag
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-test:
@@ -71,12 +71,16 @@ jobs:
           echo "Pushing base with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
           docker push twosixarmory/base:${{ needs.docker-build.outputs.imageTag }}
           docker tag twosixarmory/base:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          docker push twosixarmory/base:latest
           echo "Pushing pytorch with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
           docker push twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
           docker tag twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          docker push twosixarmory/pytorch:latest
           echo "Pushing tf2 with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
           docker push twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
           docker tag twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          docker push twosixarmory/tf2:latest
           echo "Pushing deepspeech with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
           docker push twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
           docker tag twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          docker push twosixarmory/pytorch-deepspeech:latest
