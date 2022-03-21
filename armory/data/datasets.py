@@ -8,9 +8,7 @@ data is found at '<dataset_dir>/cifar10'
 The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
-import json
 import os
-import re
 from typing import Callable, Union, Tuple, List
 
 import numpy as np
@@ -204,66 +202,6 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
-def _parse_token(token: str):
-    """
-    Token from parse_split index
-
-    Return parsed token
-    """
-    if not token:
-        raise ValueError("empty token found")
-
-    left = token.find("[")
-    if left == -1:
-        return token
-
-    right = token.rfind("]")
-    if right != len(token) - 1:
-        raise ValueError(f"could not parse token {token} - mismatched brackets")
-    name = token[:left]
-    index = token[left + 1 : right]  # remove brackets
-    if not name:
-        raise ValueError(f"empty split name: {token}")
-    if not index:
-        raise ValueError(f"empty index found: {token}")
-    if index.count(":") == 2:
-        raise NotImplementedError(f"slice 'step' not enabled: {token}")
-    elif index == "[]":
-        raise ValueError(f"empty list index found: {token}")
-
-    if re.match(r"^\d+$", index):
-        # single index
-        i = int(index)
-        return f"{name}[{i}:{i+1}]"
-    elif re.match(r"^\[\d+(\s*,\s*\d+)*\]$", index):
-        # list index of nonnegative integer indices
-        # out-of-order and duplicate indices are allowed
-        index_list = json.loads(index)
-        token_list = [f"{name}[{i}:{i+1}]" for i in index_list]
-        if not token_list:
-            raise ValueError
-        return "+".join(token_list)
-
-    return token
-
-
-def parse_split_index(split: str):
-    """
-    Take a TFDS split argument and rewrite index arguments such as:
-        test[10] --> test[10:11]
-        test[[1, 5, 7]] --> test[1:2]+test[5:6]+test[7:8]
-    """
-    if not isinstance(split, str):
-        raise ValueError(f"split must be str, not {type(split)}")
-    if not split.strip():
-        raise ValueError("split cannot be empty")
-
-    tokens = split.split("+")
-    tokens = [x.strip() for x in tokens]
-    output_tokens = [_parse_token(x) for x in tokens]
-    return "+".join(output_tokens)
-
-
 def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
     """
     index must be a list or iterable of integer values
@@ -407,34 +345,15 @@ def _generator_from_tfds(
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
 
-    try:
-        ds, ds_info = tfds.load(
-            dataset_name,
-            split=split,
-            as_supervised=as_supervised,
-            data_dir=dataset_dir,
-            with_info=True,
-            download_and_prepare_kwargs=download_and_prepare_kwargs,
-            shuffle_files=shuffle_files,
-        )
-    except (AssertionError, ValueError) as e:
-        if not str(e).startswith(
-            "Unrecognized instruction format: "
-        ) and "Unrecognized split format: " not in str(e):
-            raise
-        log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
-        log.warning(f"Attempting to parse split {split}")
-        split = parse_split_index(split)
-        log.warning(f"Replacing split with {split}")
-        ds, ds_info = tfds.load(
-            dataset_name,
-            split=split,
-            as_supervised=as_supervised,
-            data_dir=dataset_dir,
-            with_info=True,
-            download_and_prepare_kwargs=download_and_prepare_kwargs,
-            shuffle_files=shuffle_files,
-        )
+    ds, ds_info = tfds.load(
+        dataset_name,
+        split=split,
+        as_supervised=as_supervised,
+        data_dir=dataset_dir,
+        with_info=True,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
+        shuffle_files=shuffle_files,
+    )
 
     if not as_supervised:
         try:
