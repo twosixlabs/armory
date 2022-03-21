@@ -13,7 +13,11 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
-from importlib_metadata import version, PackageNotFoundError
+try:
+    from importlib.metadata import version, PackageNotFoundError
+except ModuleNotFoundError:
+    from importlib_metadata import version, PackageNotFoundError
+
 import pathlib
 import re
 import subprocess

@@ -4,10 +4,9 @@ ARG armory_version
 ARG armory_build_type
 
 FROM armory-base AS armory-local
-# Putting here to see if it will cache
-# TODO this is still not cache
+RUN echo "Installing ART"
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    adversarial-robustness-toolbox==1.9.1
+    adversarial-robustness-toolbox==1.10.0
 
 RUN echo "Building Armory from local source"
 WORKDIR /armory-repo/
