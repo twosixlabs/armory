@@ -31,7 +31,7 @@ jobs:
           imageTag=$(armory --version)
           echo "::set-output imageTag=$imageTag"
           echo "Building Images with Tag: $imageTag"
-          python docker/build.py derived --tag imageTag --no-cache
+          python docker/build.py derived --tag $imageTag --no-cache
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:
