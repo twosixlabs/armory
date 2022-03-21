@@ -369,18 +369,18 @@ def filter_by_str_slice(dataset: "tf.data.Dataset", index: str, dataset_size: in
 
 def _generator_from_tfds(
     dataset_name: str,
-    split: str,
-    batch_size: int,
-    epochs: int,
-    dataset_dir: str,
-    preprocessing_fn: Callable,
+    split: str = "train",
+    batch_size: int = 1,
+    epochs: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,
     label_preprocessing_fn: Callable = None,
     as_supervised: bool = True,
-    supervised_xy_keys=None,
+    supervised_xy_keys: bool = None,
     download_and_prepare_kwargs=None,
-    variable_length=False,
-    variable_y=False,
-    shuffle_files=True,
+    variable_length: bool = False,
+    variable_y: bool = False,
+    shuffle_files: bool = True,
     cache_dataset: bool = True,
     framework: str = "numpy",
     lambda_map: Callable = None,
@@ -784,33 +784,17 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
 
 
 def mnist(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = mnist_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Handwritten digits dataset:
         http://yann.lecun.com/exdb/mnist/
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "mnist:3.0.1",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         context=mnist_context,
         **kwargs,
     )
@@ -842,16 +826,11 @@ def carla_obj_det_label_preprocessing(x, y):
 
 
 def carla_obj_det_train(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
     label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
+    modality="rgb",
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
@@ -860,13 +839,6 @@ def carla_obj_det_train(
     if "class_ids" in kwargs:
         raise ValueError(
             "Filtering by class is not supported for the carla_obj_det_train dataset"
-        )
-    modality = kwargs.pop("modality", "rgb")
-    if modality not in ["rgb", "depth", "both"]:
-        raise ValueError(
-            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
-                modality
-            )
         )
 
     def rgb_fn(batch):
@@ -879,32 +851,25 @@ def carla_obj_det_train(
         return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
 
     func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
-
-    mode_split_fn = func_dict[modality]
+    if modality not in func_dict:
+        raise ValueError(f"Unknown modality: {modality} not in {func_dict}")
 
     preprocessing_fn = preprocessing_chain(
-        mode_split_fn, preprocessing_fn, fit_preprocessing_fn
+        func_dict[modality], preprocessing_fn, fit_preprocessing_fn
     )
 
-    carla_context = (
-        carla_obj_det_multimodal_context
-        if modality == "both"
-        else carla_obj_det_single_modal_context
-    )
+    if modality == "both":
+        carla_context = carla_obj_det_multimodal_context
+    else:
+        carla_context = carla_obj_det_single_modal_context
 
     return _generator_from_tfds(
         "carla_obj_det_train:1.0.1",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         label_preprocessing_fn=label_preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
         variable_y=bool(batch_size > 1),
         variable_length=False,
-        shuffle_files=shuffle_files,
         context=carla_context,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
@@ -913,165 +878,93 @@ def carla_obj_det_train(
 
 
 def cifar10(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = cifar10_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Ten class image dataset:
         https://www.cs.toronto.edu/~kriz/cifar.html
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "cifar10:3.0.2",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         context=cifar10_context,
         **kwargs,
     )
 
 
 def cifar100(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = cifar100_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     One hundred class image dataset:
         https://www.cs.toronto.edu/~kriz/cifar.html
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "cifar100:3.0.2",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         context=cifar100_context,
         **kwargs,
     )
 
 
 def digit(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = None,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of spoken digits:
         https://github.com/Jakobovski/free-spoken-digit-dataset
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "digit:1.0.8",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=digit_context,
         **kwargs,
     )
 
 
 def imagenette(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = imagenette_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
-    # TODO Find out why this is in some of the functions but not others (e.g. see german_traffic_sign)
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "imagenette/full-size:0.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=imagenette_context,
         **kwargs,
     )
 
 
 def german_traffic_sign(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
     preprocessing_fn: Callable = gtsrb_canonical_preprocessing,
-    dataset_dir: str = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     German traffic sign dataset with 43 classes and over 50,000 images.
     """
+    # TODO Find out why preprocessing_chain is in some of the functions but not others
     return _generator_from_tfds(
         "german_traffic_sign:3.0.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=gtsrb_context,
         **kwargs,
     )
@@ -1094,15 +987,9 @@ def _get_librispeech_download_and_prepare_kwargs():
 
 
 def librispeech_dev_clean(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ):
     """
@@ -1115,35 +1002,23 @@ def librispeech_dev_clean(
         Generator
     """
     download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
         **kwargs,
     )
 
 
 def librispeech_full(
-    split: str = "train_clean360",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
+    split: str = "train_clean360",
     preprocessing_fn: Callable = librispeech_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     if "class_ids" in kwargs:
@@ -1151,35 +1026,25 @@ def librispeech_full(
             "Filtering by class is not supported for the librispeech_full dataset"
         )
     download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_full/plain_text:1.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        split=split,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=librispeech_context,
         **kwargs,
     )
 
 
 def librispeech(
-    split: str = "train_clean100",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
+    split: str = "train_clean100",
     preprocessing_fn: Callable = librispeech_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     if "class_ids" in kwargs:
@@ -1188,7 +1053,6 @@ def librispeech(
         )
 
     download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
     if cache_dataset:
@@ -1214,31 +1078,21 @@ def librispeech(
 
     return _generator_from_tfds(
         "librispeech:2.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        split=split,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=librispeech_context,
         **kwargs,
     )
 
 
 def librispeech_dev_clean_asr(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = librispeech_dev_clean_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ):
     """
@@ -1256,37 +1110,23 @@ def librispeech_dev_clean_asr(
         )
 
     download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "librispeech_dev_clean_split/plain_text:1.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         download_and_prepare_kwargs=download_and_prepare_kwargs,
         as_supervised=False,
         supervised_xy_keys=("speech", "text"),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
         **kwargs,
     )
 
 
 def resisc45(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = resisc45_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
@@ -1304,33 +1144,17 @@ def resisc45(
 
     split - one of ("train", "validation", "test")
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "resisc45_split:3.0.0",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         context=resisc45_context,
         **kwargs,
     )
 
 
 def resisc10(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = resisc10_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
@@ -1345,18 +1169,9 @@ def resisc10(
 
     split - one of ("train", "validation", "test")
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "resisc10_poison:1.1.0",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         context=resisc10_context,
         **kwargs,
     )
@@ -1384,15 +1199,9 @@ class ClipFrames:
 
 
 def ucf101(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = ucf101_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     max_frames: int = None,
     **kwargs,
 ) -> ArmoryDataGenerator:
@@ -1407,57 +1216,45 @@ def ucf101(
     else:
         clip = None
 
-    preprocessing_fn = preprocessing_chain(clip, preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(
+            clip, preprocessing_fn, fit_preprocessing_fn
+        ),
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=ucf101_context,
         **kwargs,
     )
 
 
 def ucf101_clean(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = ucf101_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
+    max_frames: int = None,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset with high quality MPEG extraction
         https://www.crcv.ucf.edu/data/UCF101.php
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    if max_frames:
+        clip = ClipFrames(max_frames)
+    else:
+        clip = None
 
     return _generator_from_tfds(
         "ucf101_clean/ucf101_1:2.0.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(
+            clip, preprocessing_fn, fit_preprocessing_fn
+        ),
         as_supervised=False,
         supervised_xy_keys=("video", "label"),
         variable_length=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=ucf101_context,
         **kwargs,
     )
@@ -1488,16 +1285,10 @@ def xview_label_preprocessing(x, y):
 
 
 def xview(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = xview_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
     label_preprocessing_fn: Callable = xview_label_preprocessing,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
@@ -1509,23 +1300,16 @@ def xview(
     """
     if "class_ids" in kwargs:
         raise ValueError("Filtering by class is not supported for the xView dataset")
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "xview:1.0.1",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         variable_length=bool(batch_size > 1),
         variable_y=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=xview_context,
         **kwargs,
     )
@@ -1632,16 +1416,10 @@ def coco_label_preprocessing(x, y):
 
 
 def coco2017(
-    split: str = "train",
-    epochs: int = 1,
     batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = coco_canonical_preprocessing,
     label_preprocessing_fn: Callable = coco_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
@@ -1649,24 +1427,17 @@ def coco2017(
 
     Note: images from the "test" split are not annotated.
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
     if "class_ids" in kwargs:
         raise ValueError("Filtering by class is not supported for the coco2017 dataset")
     return _generator_from_tfds(
         "coco/2017:1.1.0",
-        split=split,
         batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         label_preprocessing_fn=label_preprocessing_fn,
         as_supervised=False,
         supervised_xy_keys=("image", "objects"),
         variable_length=bool(batch_size > 1),
         variable_y=bool(batch_size > 1),
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=coco_context,
         **kwargs,
     )
@@ -1715,35 +1486,19 @@ def so2sat_canonical_preprocessing(batch):
 
 
 def so2sat(
-    split: str = "train",
-    epochs: int = 1,
-    batch_size: int = 1,
-    dataset_dir: str = None,
     preprocessing_fn: Callable = so2sat_canonical_preprocessing,
     fit_preprocessing_fn: Callable = None,
-    cache_dataset: bool = True,
-    framework: str = "numpy",
-    shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     Multimodal SAR / EO image dataset
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
-
     return _generator_from_tfds(
         "so2sat/all:2.1.0",
-        split=split,
-        batch_size=batch_size,
-        epochs=epochs,
-        dataset_dir=dataset_dir,
-        preprocessing_fn=preprocessing_fn,
+        preprocessing_fn=preprocessing_chain(preprocessing_fn, fit_preprocessing_fn),
         as_supervised=False,
         supervised_xy_keys=(("sentinel1", "sentinel2"), "label"),
         lambda_map=so2sat_concat_map,
-        cache_dataset=cache_dataset,
-        framework=framework,
-        shuffle_files=shuffle_files,
         context=so2sat_context,
         **kwargs,
     )
