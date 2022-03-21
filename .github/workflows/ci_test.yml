@@ -6,11 +6,13 @@ on:
     branches:
       - master
       - develop
+      - datasets-refactor
 
   pull_request:
     branches:
       - master
       - develop
+      - datasets-refactor
 
   workflow_dispatch:
 
