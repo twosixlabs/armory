@@ -351,22 +351,32 @@ class VideoClassificationExporter(SampleExporter):
 
 class VideoTrackingExporter(VideoClassificationExporter):
     def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+        self,
+        x,
+        x_adv=None,
+        y=None,
+        y_pred_adv=None,
+        y_pred_clean=None,
+        plot_boxes=False,
     ):
         for i, x_i in enumerate(x):
             self._export_video(x_i, type="benign")
 
-            y_i = y[i]
-            y_i_pred_clean = y_pred_clean[i]
-            self._export_video_with_boxes(x_i, y_i, y_i_pred_clean, type="benign")
+            if plot_boxes:
+                y_i = y[i] if y is not None else None
+                y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
+                self._export_video_with_boxes(
+                    x_i, y_i=y_i, y_i_pred=y_i_pred_clean, type="benign"
+                )
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
                 self._export_video(x_adv_i, type="adversarial")
-                y_i_pred_adv = y_pred_adv[i]
-                self._export_video_with_boxes(
-                    x_adv_i, y_i, y_i_pred_adv, type="adversarial"
-                )
+                if plot_boxes:
+                    y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
+                    self._export_video_with_boxes(
+                        x_adv_i, y_i=y_i, y_i_pred=y_i_pred_adv, type="adversarial"
+                    )
 
             self.saved_samples += 1
         self.saved_batches += 1

@@ -82,4 +82,5 @@ class CarlaVideoTracking(Scenario):
             y=self.y_object,
             y_pred_clean=self.y_pred,
             y_pred_adv=self.y_pred_adv,
+            plot_boxes=True,
         )
