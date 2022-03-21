@@ -27,6 +27,7 @@ jobs:
           pip install -r requirements.txt
           pip install .
           imageTag=$(armory --version)
+          echo "::set-output imageTag=$imageTag"
           python docker/build.py all --no-cache --no-pull --base-tag $imageTag --tag $imageTag
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
