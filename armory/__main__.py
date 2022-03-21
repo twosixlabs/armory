@@ -402,7 +402,8 @@ def _pull_docker_images(docker_client=None):
         except docker.errors.ImageNotFound:
             try:
                 log.info(f"Image {image} was not found. Downloading...")
-                images.pull_verbose(docker_client, image)
+                repository, tag = ":".split(image)
+                images.pull_verbose(docker_client, repository, tag=tag)
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "

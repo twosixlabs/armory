@@ -222,6 +222,16 @@ def pull_verbose(docker_client, repository, tag=None):
     Use low-level docker-py API to show status while pulling docker containers.
         Attempts to replicate docker command line output if we are showing progress.
     """
+    if tag is None and ":" in repository:
+        repository, tag = repository.split(":")
+    elif ":" in repository:
+        raise ValueError(
+            f"cannot set tag kwarg and have tag in repository arg {repository}"
+        )
+    elif tag is None:
+        log.info("empty tag is set to latest by API")
+        tag = "latest"
+
     if not is_progress():
         log.info(
             f"docker pulling from {repository}:{tag} use '--log=progress' to see status"
