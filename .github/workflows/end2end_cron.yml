@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-            fetch-depth: 0
+          fetch-depth: 0
       - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
@@ -33,6 +33,7 @@ jobs:
           python docker/build.py all
           imageTag=$(python setup.py --version | sed  -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
           echo "passing imageTag $imageTag to later jobs"
+          echo "::set-output name=imageTag::$imageTag"
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:
