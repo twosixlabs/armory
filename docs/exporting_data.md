@@ -83,7 +83,13 @@ the following interactive example as well:
 
 In the example below, we've already loaded an xView object detection scenario and run `evaluate_current()` for a single batch before running the following:
 ```commandline
->>> s.sample_exporter.export(x=s.x, x_adv=s.x_adv, y=s.y, y_pred_clean=s.y_pred, y_pred_adv=s.y_pred_adv)
+>>> s.sample_exporter.export(
+                      x=s.x, 
+                      x_adv=s.x_adv, 
+                      y=s.y, 
+                      y_pred_clean=s.y_pred, 
+                      y_pred_adv=s.y_pred_adv,
+                      plot_boxes=True)
 ```
 
 The call above yields the following output:
@@ -91,6 +97,11 @@ The call above yields the following output:
 ```commandline
 ls ~/.armory/outputs/2022-03-18T181736.925088/saved_samples/
 0_adversarial.png  0_adversarial_with_boxes.png  0_benign.png  0_benign_with_boxes.png
+```
+
+You could also export only the raw images, absent boxes, with the following call:
+```commandline
+>>> s.sample_exporter.export(x=s.x, x_adv=s.x_adv)
 ```
 
 As depicted earlier, the `get_sample()` method can be used to return the PIL image. In addition, the `get_sample_with_boxes()` method can be used to obtain the 
