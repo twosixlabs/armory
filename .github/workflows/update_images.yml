@@ -10,17 +10,73 @@ on:
       tags:
         description: "Specify Arguments"
 jobs:
-  update-image:
-    name: Update Image
+  build-image:
+    name: Build Images
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.7'
-      - name: Build image
+      - name: Build Docker images
+        id: docker-build
         run: |
           echo ${{github.event.inputs.tags}}
-          bash docker/update_registry.sh ${{github.event.inputs.tags}}
+          pip install -r requirements.txt
+          pip install .
+          imageTag=$(armory --version)
+          python docker/build.py all --no-cache --no-pull --base-tag imageTag --tag imageTag
+    outputs:
+      imageTag: ${{ steps.docker-build.outputs.imageTag }}
+  docker-pytorch-test:
+    name: Docker Torch Tests
+    needs: docker-build
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Run Tests Torch Docker
+        run: |
+          imageName=twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required" ./tests/
+  docker-tf2-test:
+    name: Docker TF2 Tests
+    needs: docker-build
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Run Tests TF2 Docker
+        run: |
+          imageName=twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required" ./tests/
+  docker-deepspeech-test:
+    name: Docker Deepspeech Tests
+    needs: docker-build
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Run Tests Deepspeech Docker
+        run: |
+          imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+          echo "Running Tests with Image -> $imageName"
+          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required" ./tests/
+  docker-upload:
+    name: Upload Docker Images
+    needs: [docker-build, docker-pytorch-test, docker-tf2-test, docker-deepspeech-test]
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Upload images to dockerhub
+        run: |
+          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          echo "Pushing base with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
+          docker push twosixarmory/base:${{ needs.docker-build.outputs.imageTag }}
+          docker tag twosixarmory/base:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          echo "Pushing pytorch with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
+          docker push twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
+          docker tag twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          echo "Pushing tf2 with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
+          docker push twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
+          docker tag twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest
+          echo "Pushing deepspeech with tag: \`${{ needs.docker-build.outputs.imageTag }}\` and \`latest\`"
+          docker push twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+          docker tag twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }} twosixarmory/base:latest

@@ -88,16 +88,16 @@ as described above.
 
 ## Building Images from Source
 Generally, armory will take care of pulling images as necessary when executing evaluations.  However,
-if needed, each of the armory images can be built locally using the [build.sh](../docker/build.sh) 
-script.  The `build.sh` script utilizes armory `.git` information to version, build, and install
+if needed, each of the armory images can be built locally using the [build.py](../docker/build.py) 
+script.  The `build.py` script utilizes armory `.git` information to version, build, and install
 armory inside the images.  Therefore, to build an image from a "released" armory version (e.g. `0.14.0`):
 ```
 # Clone Repo to [armory-repo] if not done already
 cd [armory-repo]
 git checkout 0.14.0 
-bash docker/build.sh <tf2|pytorch|pytorch-deepspeech>
+python python docker/build.py derived --no-cache --no-pull
 ``` 
-For more options see `usage()` in [build.sh](../docker/build.sh)
+For more options see: [build.py](../docker/build.py)
 
 ## Docker Volume Mounts
 When launching an ARMORY instance several host directories will be mounted within the 
@@ -182,20 +182,15 @@ armory exec pytorch --gpus=0 -- nvidia-smi
 
 ### CUDA 
 
-The TensorFlow versions we support require CUDA 10+.
+The TensorFlow versions we support require CUDA 10+ and the pre-built armory containers 
+currently utilize CUDA 11.3.  
 
 While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
 due to an inability to upgrade your local server, and we do not have it baked in to our docker
-containers. To use CUDA 9 in our docker container, you will need to replace the line
-```
- cudatoolkit=10.1 -c pytorch && \
-```
-with
-```
- cudatoolkit=9.2 -c pytorch && \
-```
-in `docker/pytorch/Dockerfile` and build the pytorch container locally.
-
+containers. To use CUDA 9, you will need to rebuilt the armory images locally.  First
+you will need to edit the [Dockerfile-base](../docker/Dockerfile-base) file replacing `cudatoolkit=11.3` 
+with `cudatoolkit=9.2`.  Then follow the instructions [above](#building-images-from-source) to rebuild
+the armory images locally.
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for 
