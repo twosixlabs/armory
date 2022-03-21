@@ -75,10 +75,7 @@ class CarlaVideoTracking(Scenario):
         )
 
     def export_samples(self):
-        if not hasattr(self, "x"):
-            raise AttributeError(
-                f"{type(self).__name__} has no attribute 'x'. Be sure to call next() and evaluate_current() before attempting to export samples. "
-            )
+        self._check_x("export_samples")
         self.sample_exporter.export(
             x=self.x,
             x_adv=self.x_adv,
