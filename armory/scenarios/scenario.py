@@ -267,7 +267,12 @@ class Scenario:
         self.i, self.x, self.y = i, x, y
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
+    def _check_x(self, function_name):
+        if not hasattr(self, "x"):
+            raise ValueError(f"Run `next()` before `{function_name}()`")
+
     def run_benign(self):
+        self._check_x("run_benign")
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
@@ -279,6 +284,7 @@ class Scenario:
             self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
 
     def run_attack(self):
+        self._check_x("run_attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -336,6 +342,7 @@ class Scenario:
         )
 
     def evaluate_current(self):
+        self._check_x("evaluate_current")
         if not self.skip_benign:
             self.run_benign()
         if not self.skip_attack:

@@ -75,10 +75,8 @@ class ImagenetAdversarial(tfds.core.GeneratorBasedBuilder):
 
         ds = tf.data.TFRecordDataset(filenames=[path])
         ds = ds.map(lambda x: _parse(x))
-        default_graph = tf.compat.v1.keras.backend.get_session().graph
-        ds = tfds.as_numpy(ds, graph=default_graph)
 
-        for i, (img, label) in enumerate(ds):
+        for i, (img, label) in enumerate(tfds.as_numpy(ds)):
             yield str(i), {
                 "images": img,
                 "label": label,
