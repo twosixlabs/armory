@@ -31,3 +31,14 @@ class ObjectDetectionTask(ImageClassificationTask):
 
     def _load_sample_exporter(self):
         return ObjectDetectionExporter(self.scenario_output_dir)
+
+    def export_samples(self):
+        self._check_x("export_samples")
+        self.sample_exporter.export(
+            x=self.x,
+            x_adv=self.x_adv,
+            y=self.y,
+            y_pred_clean=self.y_pred,
+            y_pred_adv=self.y_pred_adv,
+            plot_boxes=True,
+        )

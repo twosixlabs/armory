@@ -90,6 +90,7 @@ class CarlaObjectDetectionTask(Scenario):
         return ObjectDetectionExporter(self.scenario_output_dir)
 
     def export_samples(self):
+        self._check_x("export_samples")
         self.sample_exporter.export(
             self.x,
             x_adv=self.x_adv,
@@ -97,6 +98,7 @@ class CarlaObjectDetectionTask(Scenario):
             y_pred_clean=self.y_pred,
             y_pred_adv=self.y_pred_adv,
             classes_to_skip=4,
+            plot_boxes=True,
         )
 
     def finalize_results(self):
