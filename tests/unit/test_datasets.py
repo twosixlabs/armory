@@ -143,46 +143,6 @@ def test_generator_epoch_creation(
 @pytest.mark.parametrize(
     "dataset_method, is_valid, input1, input2",
     [
-        ("_parse_token", True, "test", "test"),
-        ("_parse_token", True, "train[15:20]", "train[15:20]"),
-        ("_parse_token", True, "train[:10%]", "train[:10%]"),
-        ("_parse_token", True, "train[-80%:]", "train[-80%:]"),
-        ("_parse_token", True, "test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
-        (
-            "_parse_token",
-            True,
-            "test[[1, 4, 5, 6]]",
-            "test[1:2]+test[4:5]+test[5:6]+test[6:7]",
-        ),
-        ("_parse_token", True, "test[10]", "test[10:11]"),
-        ("_parse_token", False, "", ValueError),
-        ("_parse_token", False, "test[", ValueError),
-        ("_parse_token", False, "test[]", ValueError),
-        ("_parse_token", False, "test[[]]", ValueError),
-        ("_parse_token", False, "[10:11]", ValueError),
-        ("_parse_token", False, "test[10:20:2]", NotImplementedError),
-        ("parse_split_index", True, "train[15:20]", "train[15:20]"),
-        (
-            "parse_split_index",
-            True,
-            "train[:10%]+train[-80%:]",
-            "train[:10%]+train[-80%:]",
-        ),
-        ("parse_split_index", True, "test[[1, 5, 7]]", "test[1:2]+test[5:6]+test[7:8]"),
-        (
-            "parse_split_index",
-            True,
-            "test[[1, 4, 5, 6]]",
-            "test[1:2]+test[4:5]+test[5:6]+test[6:7]",
-        ),
-        ("parse_split_index", True, "test[10]", "test[10:11]"),
-        ("parse_split_index", True, "test + train", "test+train"),
-        ("parse_split_index", False, "", ValueError),
-        ("parse_split_index", False, "test++train", ValueError),
-        ("parse_split_index", False, None, ValueError),
-        ("parse_split_index", False, 13, ValueError),
-        ("parse_split_index", False, [1, 4, 5], ValueError),
-        ("parse_split_index", False, "test[10:20:2]", NotImplementedError),
         ("parse_str_slice", True, "[2:5]", (2, 5)),
         ("parse_str_slice", True, "[:5]", (None, 5)),
         ("parse_str_slice", True, "[6:]", (6, None)),
@@ -312,30 +272,3 @@ def test_filter_by_str_slice():
         assert ds.size == len(target)
         ys_index = np.hstack([y for (x, y) in ds])
         assert (target == ys_index).all()
-
-
-def test_parse_split_index_ordering(armory_dataset_dir):
-    """
-    Ensure that output order is deterministic for multiple splits
-    """
-    from armory.data import datasets
-
-    index = [5, 37, 38, 56, 111]  # test has max index 9999
-    split = "test"
-    kwargs = dict(
-        epochs=1, batch_size=1, dataset_dir=armory_dataset_dir, shuffle_files=False
-    )
-    ds = datasets.mnist(split=split, **kwargs)
-    fixed_order = []
-    for i, (x, y) in enumerate(ds):
-        if i in index:
-            fixed_order.append(x)
-        if i >= max(index):
-            break
-
-    sliced_split = f"{split}[{index}]"
-    ds = datasets.mnist(split=sliced_split, **kwargs)
-    output_x = [x for (x, y) in ds]
-    assert len(fixed_order) == len(output_x)
-    for x_i, x_j in zip(fixed_order, output_x):
-        assert (x_i == x_j).all()
