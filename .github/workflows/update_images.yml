@@ -10,7 +10,7 @@ on:
       tags:
         description: "Specify Arguments"
 jobs:
-  build-image:
+  docker-build:
     name: Build Images
     runs-on: ubuntu-18.04
     steps:
