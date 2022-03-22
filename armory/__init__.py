@@ -18,6 +18,7 @@ try:
 except ModuleNotFoundError:
     from importlib_metadata import version, PackageNotFoundError
 
+import os
 import pathlib
 import re
 import subprocess
@@ -86,6 +87,12 @@ except RuntimeError:
 except ImportError:
     pass
 
+# Handle ART configuration
+
+from armory import paths
+from art import config
+
+config.set_data_path(os.path.join(paths.runtime_paths().saved_model_dir, "art"))
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
