@@ -90,9 +90,8 @@ except ImportError:
 # Handle ART configuration
 
 from armory import paths
-from art import config
 
-config.set_data_path(os.path.join(paths.runtime_paths().saved_model_dir, "art"))
+paths.set_art_data_path()
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
