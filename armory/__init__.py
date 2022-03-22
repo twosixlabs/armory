@@ -18,7 +18,6 @@ try:
 except ModuleNotFoundError:
     from importlib_metadata import version, PackageNotFoundError
 
-import os
 import pathlib
 import re
 import subprocess
