@@ -61,6 +61,32 @@ if __version__ is None:
 __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 
 
+# Handle PyTorch / TensorFlow interplay
+
+# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
+#     all CPU resources when num_workers > 1
+try:
+    import torch  # noqa: F401
+except ImportError:
+    pass
+
+# From: https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
+try:
+    import tensorflow as tf
+
+    gpus = tf.config.list_physical_devices("GPU")
+    if gpus:
+        # Currently, memory growth needs to be the same across GPUs
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        log.info("Setting tf.config.experimental.set_memory_growth to True on all GPUs")
+except RuntimeError:
+    log.exception("Import armory before initializing GPU tensors")
+    raise
+except ImportError:
+    pass
+
+
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
 
