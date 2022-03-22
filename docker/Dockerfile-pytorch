@@ -8,14 +8,19 @@ RUN echo "Installing ART"
 RUN /opt/conda/bin/pip install --no-cache-dir \
     adversarial-robustness-toolbox==1.10.0
 
-RUN echo "Building Armory from local source"
-WORKDIR /armory-repo/
-COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt /armory-repo/
-COPY pytest.ini /armory-repo/
-COPY ./tests /armory-repo/tests/
-COPY ./scenario_configs /armory-repo/scenario_configs/
-COPY ./armory /armory-repo/armory/
-RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN armory configure --use-default
+RUN echo "Copying armory src to container"
+WORKDIR /build-armory-repo/
+COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt /build-armory-repo/
+COPY pytest.ini /build-armory-repo/
+COPY ./tests /build-armory-repo/tests/
+COPY ./scenario_configs /build-armory-repo/scenario_configs/
+COPY ./armory /build-armory-repo/armory/
+RUN echo ${armory_version} > /build-armory-repo/build_version.txt
+COPY ./docker/setup.sh/ /build-armory-repo/docker/setup.sh
+RUN chmod +x /build-armory-repo/docker/setup.sh
+#RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
+#RUN armory configure --use-default
 
 WORKDIR /workspace
+
+ENTRYPOINT ["/build-armory-repo/docker/setup.sh"]
