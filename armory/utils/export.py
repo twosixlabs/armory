@@ -73,25 +73,25 @@ class SampleExporter:
 class ImageClassificationExporter(SampleExporter):
     def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
         for i, x_i in enumerate(x):
-            self._export_image(x_i, type="benign")
+            self._export_image(x_i, name="benign")
 
             # Export adversarial image x_adv_i if present
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, type="adversarial")
+                self._export_image(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_image(self, x_i, type="benign"):
+    def _export_image(self, x_i, name="benign"):
         self.image = self.get_sample(x_i)
         self.image.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.png")
         )
         if x_i.shape[-1] == 6:
             self.depth_image = self.get_depth_sample(x_i)
             self.depth_image.save(
-                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
+                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{name}.png")
             )
 
     @staticmethod
@@ -130,42 +130,89 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         self,
         x,
         x_adv=None,
+        with_boxes=False,
         y=None,
         y_pred_adv=None,
         y_pred_clean=None,
+        score_threshold=0.5,
         classes_to_skip=None,
-        plot_boxes=False,
     ):
         for i, x_i in enumerate(x):
-            self._export_image(x_i, type="benign")
+            self._export_image(x_i, name="benign")
 
-            if plot_boxes:
+            if with_boxes:
                 y_i = y[i] if y is not None else None
                 y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
-                self._export_image_with_boxes(
-                    x_i, y_i=y_i, y_i_pred=y_i_pred_clean, type="benign"
+                self._export_image(
+                    x_i,
+                    name="benign",
+                    with_boxes=True,
+                    y_i=y_i,
+                    y_i_pred=y_i_pred_clean,
+                    score_threshold=score_threshold,
+                    classes_to_skip=classes_to_skip,
                 )
 
             # Export adversarial image x_adv_i if present
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, type="adversarial")
-                if plot_boxes:
+                self._export_image(x_adv_i, name="adversarial")
+                if with_boxes:
                     y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
-                    self._export_image_with_boxes(
-                        x_adv_i, y_i=y_i, y_i_pred=y_i_pred_adv, type="adversarial"
+                    self._export_image(
+                        x_adv_i,
+                        name="adversarial",
+                        with_boxes=True,
+                        y_i=y_i,
+                        y_i_pred=y_i_pred_adv,
+                        score_threshold=score_threshold,
+                        classes_to_skip=classes_to_skip,
                     )
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    @staticmethod
-    def get_sample_with_boxes(
-        x_i, y_i=None, y_i_pred=None, classes_to_skip=None, score_threshold=0.5,
+    def _export_image(
+        self,
+        x_i,
+        name="benign",
+        with_boxes=False,
+        y_i=None,
+        y_i_pred=None,
+        score_threshold=0.5,
+        classes_to_skip=None,
     ):
-        image = ObjectDetectionExporter.get_sample(x_i)
+        if not with_boxes:
+            super()._export_image(x_i=x_i, name=name)
+            return
+
+        self.image_with_boxes = self.get_sample(
+            x_i=x_i,
+            with_boxes=True,
+            y_i=y_i,
+            y_i_pred=y_i_pred,
+            classes_to_skip=classes_to_skip,
+            score_threshold=score_threshold,
+        )
+        self.image_with_boxes.save(
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
+        )
+
+    def get_sample(
+        self,
+        x_i,
+        with_boxes=False,
+        y_i=None,
+        y_i_pred=None,
+        score_threshold=0.5,
+        classes_to_skip=None,
+    ):
+        image = super().get_sample(x_i)
+        if not with_boxes:
+            return image
+
         if y_i is None and y_i_pred is None:
-            raise TypeError("Both y_i and y_pred are None, expected to receive boxes.")
+            raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
         if y_i is not None:
@@ -184,26 +231,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 box_layer.rectangle(pred_box, outline="white", width=2)
 
         return image
-
-    def _export_image_with_boxes(
-        self,
-        x_i,
-        y_i=None,
-        y_i_pred=None,
-        classes_to_skip=None,
-        type="benign",
-        score_threshold=0.5,
-    ):
-        self.image_with_boxes = self.get_sample_with_boxes(
-            x_i=x_i,
-            y_i=y_i,
-            y_i_pred=y_i_pred,
-            classes_to_skip=classes_to_skip,
-            score_threshold=score_threshold,
-        )
-        self.image_with_boxes.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
-        )
 
 
 class DApricotExporter(ObjectDetectionExporter):

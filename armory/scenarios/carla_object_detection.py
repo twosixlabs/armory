@@ -30,46 +30,46 @@ class CarlaObjectDetectionTask(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
 
+    def next(self):
+        x, y = next(self.test_dataset)
+        i = self.i + 1
+        self.i, self.x, self.y = i, x, y
+        self.y_object = [y[0]]
+        self.y_patch_metadata = [y[1]]
+        self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
+
     def run_benign(self):
         x, y = self.x, self.y
-        y_object, y_patch_metadata = y
-
-        # convert dict to List[dict] to comply with ART format
-        y_object = [y_object]
 
         x.flags.writeable = False
 
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred)
+        self.metrics_logger.update_task(self.y_object, y_pred)
         self.y_pred = y_pred
 
     def run_attack(self):
         x, y = self.x, self.y
-        y_object, y_patch_metadata = y
-
-        # convert dict to List[dict] to comply with ART format
-        y_object = [y_object]
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.use_label:
-                y_target = [y_object]
+                y_target = self.y_object
             elif self.targeted:
-                y_target = self.label_targeter.generate(y_object)
+                y_target = self.label_targeter.generate(self.y_object)
             else:
                 y_target = None
 
             x_adv = self.attack.generate(
                 x=x,
                 y=y_target,
-                y_patch_metadata=[y_patch_metadata],
+                y_patch_metadata=self.y_patch_metadata,
                 **self.generate_kwargs,
             )
 
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred_adv, adversarial=True)
+        self.metrics_logger.update_task(self.y_object, y_pred_adv, adversarial=True)
         self.metrics_logger_wrt_benign_preds.update_task(
             self.y_pred, y_pred_adv, adversarial=True
         )
@@ -94,11 +94,11 @@ class CarlaObjectDetectionTask(Scenario):
         self.sample_exporter.export(
             self.x,
             x_adv=self.x_adv,
-            y=self.y,
+            y=self.y_object,
             y_pred_clean=self.y_pred,
             y_pred_adv=self.y_pred_adv,
-            classes_to_skip=4,
-            plot_boxes=True,
+            classes_to_skip=[4],
+            with_boxes=True,
         )
 
     def finalize_results(self):
