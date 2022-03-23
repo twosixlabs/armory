@@ -188,7 +188,7 @@ gtsrb_silhouette_clustering_config = {
     "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
     "name": "get_model",
     "resize_image": False,
-    "weights_file": "micronnet_bean_gtsrb.pt",
+    "weights_file": "gtsrb_explanatory_model_micronnet_bean.pt",
     "wrapper_kwargs": {},
 }
 
@@ -202,7 +202,7 @@ resisc10_silhouette_clustering_config = {
     },
     "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
     "name": "get_model",
-    "weights_file": "resnet18_bean_resisc10.pt",
+    "weights_file": "resisc10_explanatory_model_resnet18_bean.pt",
     "wrapper_kwargs": {},
 }
 
