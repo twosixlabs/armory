@@ -89,7 +89,7 @@ class ImageClassificationExporter(SampleExporter):
             os.path.join(self.output_dir, f"{self.saved_samples}_{name}.png")
         )
         if x_i.shape[-1] == 6:
-            self.depth_image = self.get_depth_sample(x_i)
+            self.depth_image = self.get_sample(x_i[..., 3:])
             self.depth_image.save(
                 os.path.join(self.output_dir, f"{self.saved_samples}_depth_{name}.png")
             )
@@ -113,16 +113,6 @@ class ImageClassificationExporter(SampleExporter):
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
-
-    @staticmethod
-    def get_depth_sample(x_i):
-        if x_i.shape[-1] != 6:
-            raise ValueError(f"Expected 6 channels, found {x_i.shape[-1]}")
-        x_i_depth = x_i[..., 3:]
-        depth_image = Image.fromarray(
-            np.uint8(np.clip(x_i_depth, 0.0, 1.0) * 255.0), "RGB"
-        )
-        return depth_image
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
