@@ -16,7 +16,6 @@ from typing import Callable, Union, Tuple, List
 import numpy as np
 from armory.logs import log
 
-import torch
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
@@ -533,10 +532,9 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = _get_pytorch_dataset(ds)
-        generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
-        )
+        from armory.data import pytorch_loader
+
+        generator = pytorch_loader.get_pytorch_data_loader(ds)
 
     else:
         raise ValueError(
@@ -1856,11 +1854,3 @@ def _download_data(dataset_name):
         log.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         log.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _get_pytorch_dataset(ds):
-    import armory.data.pytorch_loader as ptl
-
-    ds = ptl.TFToTorchGenerator(ds)
-
-    return ds
