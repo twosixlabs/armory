@@ -98,7 +98,7 @@ class ObjectDetectionTask(Scenario):
         raise NotImplementedError("D-APRICOT has no benign task")
 
     def run_attack(self):
-        x, y = self.x, self.y
+        x, y = self.x, self.y_object
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
 
@@ -109,7 +109,7 @@ class ObjectDetectionTask(Scenario):
 
             generate_kwargs = copy.deepcopy(self.generate_kwargs)
             generate_kwargs["y_patch_metadata"] = self.y_patch_metadata
-            y_target = self.label_targeter.generate(self.y_object)
+            y_target = self.label_targeter.generate(y)
             generate_kwargs["y_object"] = y_target
 
             x_adv = self.attack.generate(x=x, **generate_kwargs)
@@ -117,7 +117,7 @@ class ObjectDetectionTask(Scenario):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv)
-        for img_idx in range(len(self.y_object)):
+        for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
             self.metrics_logger.update_task(
