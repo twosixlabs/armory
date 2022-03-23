@@ -26,11 +26,8 @@ class CarlaVideoTracking(Scenario):
         super().load_dataset(eval_split_default="dev")
 
     def next(self):
-        x, y = next(self.test_dataset)
-        i = self.i + 1
-        self.i, self.x, self.y = i, x, y
-        self.y_object, self.y_patch_metadata = y
-        self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
+        super().next()
+        self.y_object, self.y_patch_metadata = self.y
 
     def run_benign(self):
         x, y = self.x, self.y_object
