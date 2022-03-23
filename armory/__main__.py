@@ -27,7 +27,6 @@ from armory import arguments
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
-from armory.utils import docker_api
 from armory.utils.configuration import load_config, load_config_stdin
 import armory.logs
 
@@ -403,7 +402,8 @@ def _pull_docker_images(docker_client=None):
         except docker.errors.ImageNotFound:
             try:
                 log.info(f"Image {image} was not found. Downloading...")
-                docker_api.pull_verbose(docker_client, image)
+                repository, tag = ":".split(image)
+                images.pull_verbose(docker_client, repository, tag=tag)
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "
