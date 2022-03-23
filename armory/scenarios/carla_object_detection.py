@@ -39,23 +39,23 @@ class CarlaObjectDetectionTask(Scenario):
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
     def run_benign(self):
-        x, y = self.x, self.y
+        x, y = self.x, self.y_object
 
         x.flags.writeable = False
 
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(self.y_object, y_pred)
+        self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y = self.x, self.y
+        x, y = self.x, self.y_object
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.use_label:
-                y_target = self.y_object
+                y_target = y
             elif self.targeted:
-                y_target = self.label_targeter.generate(self.y_object)
+                y_target = self.label_targeter.generate(y)
             else:
                 y_target = None
 
@@ -69,7 +69,7 @@ class CarlaObjectDetectionTask(Scenario):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
-        self.metrics_logger.update_task(self.y_object, y_pred_adv, adversarial=True)
+        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         self.metrics_logger_wrt_benign_preds.update_task(
             self.y_pred, y_pred_adv, adversarial=True
         )
