@@ -112,7 +112,7 @@ class CarlaObjectDetectionTask(Scenario):
         metric_config = self.config["metric"]
         subset_config = {
             k: metric_config[k]
-            for k in ("means", "record_metric_per_sample", "task")
+            for k in ("means", "record_metric_per_sample", "task", "task_kwargs")
             if k in metric_config
         }
         self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
