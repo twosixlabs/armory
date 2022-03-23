@@ -196,16 +196,11 @@ which is likely insufficient. See the docker documentation to change this:
 Since there are new docker images for every release of ARMORY, you may want to clean up
 your docker image cache as you increase versions.
 
-To download the current version's images ,and remove old ones, simply run:
-```
-armory clean --force
-```
-
 To display the set of current images on your machine, you can run:
 ```
 docker images
 ```
-To manually delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
+To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
 
 
 ### Docker Container Maintenance

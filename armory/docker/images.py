@@ -30,14 +30,6 @@ IMAGE_MAP = {
 }
 
 
-# TODO is_old is used by the two implementations of `armory clean` in clean()
-# with the advent of setuptools_scm, this no longer makes sense. Since
-# I don't know if `armory clean` is used anywhere else, NotImplemented is a rude
-# way to find out
-def is_old(tag: str):
-    raise NotImplementedError
-
-
 def split_name(name: str):
     """
     Return the components of user/repo:tag as (user, repo, tag)
