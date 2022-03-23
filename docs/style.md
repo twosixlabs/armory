@@ -94,3 +94,4 @@ with ExternalRepoImport(
 `repo` refers to the GitHub repo name (optionally with `@tag`).
 `experiment` refers to the `.json` file in the `scenario_config` directory that uses this repo.
 These repos are specifically *NOT* installed in the armory-supported docker containers and conda environments, and are downloaded at runtime.
+The rationale is that they are not a core part of the library and are meant to mirror usage of individuals evaluating their own models.
