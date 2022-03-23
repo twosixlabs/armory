@@ -47,7 +47,7 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
-        "export_samples": 30,
+        "export_batches": true,
         "kwargs": {},
         "module": "armory.scenarios.dapricot_scenario",
         "name": "ObjectDetectionTask"
