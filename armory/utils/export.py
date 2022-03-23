@@ -42,12 +42,14 @@ class SampleExporter:
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"_export() method should be defined for export class {self.__class__}"
+        )
 
     @abc.abstractmethod
     def get_sample(self):
         raise NotImplementedError(
-            f"get_sample() method should be defined for scenario {self.__class__}"
+            f"get_sample() method should be defined for export class {self.__class__}"
         )
 
     def write(self):
