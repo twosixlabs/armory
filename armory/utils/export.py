@@ -44,6 +44,12 @@ class SampleExporter:
     ):
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_sample(self):
+        raise NotImplementedError(
+            f"get_sample() method should be defined for scenario {self.__class__}"
+        )
+
     def write(self):
         """ Pickle the y_dict built up during each export() call.
             Called at end of scenario.
