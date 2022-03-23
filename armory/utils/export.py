@@ -238,60 +238,69 @@ class DApricotExporter(ObjectDetectionExporter):
         self,
         x,
         x_adv=None,
+        with_boxes=False,
         y=None,
         y_pred_adv=None,
         y_pred_clean=None,
-        classes_to_skip=None,
+        score_threshold=0.5,
+        classes_to_skip=[12],  # class of green-screen
     ):
         if x_adv is None:
             raise TypeError("Expected x_adv to not be None for DApricot scenario.")
         x_adv_angle_1 = x_adv[0]
-        self._export_image(x_adv_angle_1, type="adversarial_angle_1")
+        self._export_image(x_adv_angle_1, name="adversarial_angle_1")
 
         x_adv_angle_2 = x_adv[1]
-        self._export_image(x_adv_angle_2, type="adversarial_angle_2")
+        self._export_image(x_adv_angle_2, name="adversarial_angle_2")
 
         x_adv_angle_3 = x_adv[2]
-        self._export_image(x_adv_angle_3, type="adversarial_angle_3")
+        self._export_image(x_adv_angle_3, name="adversarial_angle_3")
 
-        y_angle_1 = y[0]
-        y_pred_angle_1 = deepcopy(y_pred_adv[0])
-        y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_1, y_pred_angle_1["boxes"]
-        )
-        self._export_image_with_boxes(
-            x_adv_angle_1,
-            y_i=y_angle_1,
-            y_i_pred=y_pred_angle_1,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_1",
-        )
+        if with_boxes:
+            y_angle_1 = y[0]
+            y_pred_angle_1 = deepcopy(y_pred_adv[0])
+            y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_1, y_pred_angle_1["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_1,
+                with_boxes=True,
+                y_i=y_angle_1,
+                y_i_pred=y_pred_angle_1,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_1",
+            )
 
-        y_angle_2 = y[1]
-        y_pred_angle_2 = deepcopy(y_pred_adv[1])
-        y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_2, y_pred_angle_2["boxes"]
-        )
-        self._export_image_with_boxes(
-            x_adv_angle_2,
-            y_i=y_angle_2,
-            y_i_pred=y_pred_angle_2,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_2",
-        )
+            y_angle_2 = y[1]
+            y_pred_angle_2 = deepcopy(y_pred_adv[1])
+            y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_2, y_pred_angle_2["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_2,
+                with_boxes=True,
+                y_i=y_angle_2,
+                y_i_pred=y_pred_angle_2,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_2",
+            )
 
-        y_angle_3 = y[2]
-        y_pred_angle_3 = deepcopy(y_pred_adv[2])
-        y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_3, y_pred_angle_3["boxes"]
-        )
-        self._export_image_with_boxes(
-            x_adv_angle_3,
-            y_i=y_angle_3,
-            y_i_pred=y_pred_angle_3,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_3",
-        )
+            y_angle_3 = y[2]
+            y_pred_angle_3 = deepcopy(y_pred_adv[2])
+            y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_3, y_pred_angle_3["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_3,
+                with_boxes=True,
+                y_i=y_angle_3,
+                y_i_pred=y_pred_angle_3,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_3",
+            )
 
         self.saved_samples += 1
         self.saved_batches += 1
