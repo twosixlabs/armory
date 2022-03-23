@@ -346,15 +346,25 @@ def _generator_from_tfds(
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
 
-    ds, ds_info = tfds.load(
-        dataset_name,
-        split=split,
-        as_supervised=as_supervised,
-        data_dir=dataset_dir,
-        with_info=True,
-        download_and_prepare_kwargs=download_and_prepare_kwargs,
-        shuffle_files=shuffle_files,
-    )
+    dataset_folder = os.path.join(dataset_dir, "/".join(dataset_name.split(":")))
+    print(dataset_folder)
+    if not os.path.exists(dataset_folder):
+        raise ValueError(f"Dataset: {dataset_folder} does not exist")
+    builder = tfds.core.builder_from_directory(dataset_folder)
+
+    ds_info = builder.info
+    ds = builder.as_dataset(split='train', shuffle_files=shuffle_files)
+
+
+    # ds, ds_info = tfds.load(
+    #     dataset_name,
+    #     split=split,
+    #     as_supervised=as_supervised,
+    #     data_dir=dataset_dir,
+    #     with_info=True,
+    #     download_and_prepare_kwargs=download_and_prepare_kwargs,
+    #     shuffle_files=shuffle_files,
+    # )
 
     if not as_supervised:
         try:
