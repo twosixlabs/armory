@@ -284,6 +284,9 @@ class FairnessMetrics:
         """ Compute two metrics based on comparing two binary distributions.
             Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
             Metric 2 (Filter Bias) compares the filtering rate on the same binary splits.
+            This comparison can be made in a variety of arbitrary ways.  Currently, we compute both SPD and chi^2 on
+            the contingency tables of the distributions.
+
             Adds results to results dict of calling scenario, and returns the data for logging.
 
             x_poison: the poisoned training dataset
