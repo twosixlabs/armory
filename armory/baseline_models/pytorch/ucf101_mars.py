@@ -10,7 +10,7 @@ from PIL import Image
 import torch
 from torch import optim
 
-from armory.errors import ExternalRepoImport
+from armory.utils.external_repo import ExternalRepoImport
 
 with ExternalRepoImport(
     repo="yusong-tan/MARS", experiment="ucf101_baseline_finetune.json",

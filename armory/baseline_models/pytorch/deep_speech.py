@@ -11,7 +11,7 @@ from art import config
 from art.estimators.speech_recognition import PyTorchDeepSpeech
 
 from armory import paths
-from armory.errors import ExternalRepoImport
+from armory.utils.external_repo import ExternalRepoImport
 
 # Test for external repo at import time to fail fast
 with ExternalRepoImport(

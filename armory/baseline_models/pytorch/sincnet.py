@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from armory.errors import ExternalRepoImport
+from armory.utils.external_repo import ExternalRepoImport
 
 with ExternalRepoImport(
     repo="hkakitani/SincNet", experiment="librispeech_baseline_sincnet.json",

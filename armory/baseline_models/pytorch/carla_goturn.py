@@ -4,7 +4,7 @@ from art.estimators.object_tracking import PyTorchGoturn
 import numpy as np
 import torch
 
-from armory.errors import ExternalRepoImport
+from armory.utils.external_repo import ExternalRepoImport
 
 # load amoudgl model and instantiate ART PyTorchGoTurn model
 with ExternalRepoImport(
