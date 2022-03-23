@@ -38,63 +38,46 @@ def is_old(tag: str):
     raise NotImplementedError
 
 
-def split_name(image_name: str):
+def split_name(name: str):
     """
-    Parse image name and return tuple (repo, name, tag)
+    Return the components of user/repo:tag as (user, repo, tag)
         Return the empty string "" for any that do not exist
     """
-    if not image_name:
-        raise ValueError("image_name cannot be empty")
-
-    tokens = image_name.split(":")
-    if len(tokens) == 1:
-        repo_name = tokens[0]
-        tag = ""
-    elif len(tokens) == 2:
-        repo_name, tag = tokens
-        if "/" in tag:
-            raise ValueError(
-                f"invalid docker image image_name {image_name}. '/' cannot be in tag"
-            )
+    if ":" in name:
+        user_repo, tag = name.split(":")
     else:
-        raise ValueError(f"invalid docker image image_name {image_name}. Too many ':'")
+        user_repo, tag = name, ""
 
-    if "/" in repo_name:
-        i = repo_name.rindex("/")
-        repo = repo_name[:i]
-        name = repo_name[i + 1 :]
+    if "/" in user_repo:
+        i = user_repo.rindex("/")
+        user, repo = user_repo[:i], user_repo[i + 1 :]
     else:
-        repo = ""
-        name = repo_name
-    if not name:
-        raise ValueError(f"invalid docker image image_name {image_name}. No name")
+        user, repo = "", user_repo
 
-    return repo, name, tag
+    return user, repo, tag
 
 
-def join_name(repo: str, name: str, tag: str):
+def join_name(user: str, repo: str, tag: str):
     """
     Inverse of split_image_name. The following should be identity operations:
         image_name = join_name(*split_name(image_name))
-        repo, name, tag = split_name(join_name(repo, name, tag))
+        user, repo, tag = split_name(join_name(user, repo, tag))
     """
-    if not name:
-        raise ValueError("name cannot be empty")
-    if repo:
-        repo = repo + "/"
+    if user:
+        user = user + "/"
     if tag:
         tag = ":" + tag
-    return f"{repo}{name}{tag}"
+    return f"{user}{repo}{tag}"
 
 
 def is_armory(image_name: str):
     """
     Return whether image_name refers to an armory docker image
     """
-    repo, name, _ = split_name(image_name)
-    if repo and repo != DOCKER_REPOSITORY:
+    user, repo, _ = split_name(image_name)
+    if user and user != DOCKER_REPOSITORY:
         return False
-    return name in IMAGE_MAP
+    return repo in IMAGE_MAP
 
 
 def get_armory_name(image_name: str):
@@ -104,11 +87,11 @@ def get_armory_name(image_name: str):
     """
     if not is_armory(image_name):
         raise ValueError(f"Not an armory image name: {image_name}")
-    repo, name, tag = split_name(image_name)
-    repo = "twosixarmory"
+    user, repo, tag = split_name(image_name)
+    user = "twosixarmory"
     if tag:  # tag is explicitly defined, use it
-        return join_name(repo, name, tag)
-    return IMAGE_MAP[name]
+        return join_name(user, repo, tag)
+    return IMAGE_MAP[repo]
 
 
 def last_armory_release(image_name: str):
@@ -116,9 +99,9 @@ def last_armory_release(image_name: str):
     Return the image_name corresponding to the last armory major.minor.patch release
         If the current image_name is a release, return the current
     """
-    repo, name, tag = split_name(image_name)
-    if not repo or not tag:
-        raise ValueError("Must be a full repo/name:tag docker image_name")
+    user, repo, tag = split_name(image_name)
+    if not user or not tag:
+        raise ValueError("Must be a full user/repo:tag docker image_name")
     tokens = tag.split(".")
     if len(tokens) == 3:
         return image_name
@@ -131,7 +114,7 @@ def last_armory_release(image_name: str):
         patch -= 1
         patch = str(patch)
         release_tag = ".".join([major, minor, patch])
-        return join_name(repo, name, release_tag)
+        return join_name(user, repo, release_tag)
     else:
         raise ValueError(
             f"Tag {tag} must be in major.minor.patch[.hash] SCM version format"
