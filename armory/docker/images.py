@@ -121,6 +121,20 @@ def last_armory_release(image_name: str):
         )
 
 
+def is_image_local(docker_client, image_name):
+    """
+    Return True if image_name is found, else False
+    """
+    log.trace(f"asking local docker for image {image_name}")
+    try:
+        docker_client.images.get(image_name)
+        log.success(f"found docker image {image_name}")
+        return True
+    except docker.errors.ImageNotFound:
+        log.trace(f"image {image_name} not found")
+        return False
+
+
 def ensure_image_present(image_name: str) -> str:
     """
     If image_name is available, return it. Otherwise, pull it from dockerhub.
@@ -129,16 +143,8 @@ def ensure_image_present(image_name: str) -> str:
     docker_client = docker.from_env()
 
     if not is_armory(image_name):
-        log.trace(f"asking local docker for image {image_name}")
-        try:
-            docker_client.images.get(image_name)
-            log.success(f"found docker image {image_name}")
+        if is_image_local(docker_client, image_name):
             return image_name
-        except docker.errors.ImageNotFound:
-            log.trace(f"image {image_name} not found")
-        except requests.exceptions.HTTPError:
-            log.trace(f"http error when looking for image {image_name}")
-            raise
 
         try:
             pull_verbose(docker_client, image_name)
@@ -155,28 +161,12 @@ def ensure_image_present(image_name: str) -> str:
 
     prev_release = last_armory_release(canon_image_name)
     if canon_image_name != prev_release:  # currently on hashed dev branch
-        log.trace(f"asking local docker for image {canon_image_name}")
-        try:
-            docker_client.images.get(canon_image_name)
-            log.success(f"found docker image {image_name} as {canon_image_name}")
+        if is_image_local(docker_client, canon_image_name):
             return canon_image_name
-        except docker.errors.ImageNotFound:
-            log.trace(f"image {canon_image_name} not found")
-            log.info(f"reverting to previous release tag image {prev_release}")
-        except requests.exceptions.HTTPError:
-            log.trace(f"http error when looking for image {canon_image_name}")
-            raise
+        log.info(f"reverting to previous release tag image {prev_release}")
 
-    log.trace(f"asking local docker for image {prev_release}")
-    try:
-        docker_client.images.get(prev_release)
-        log.success(f"found docker image {image_name} as {prev_release}")
+    if is_image_local(docker_client, prev_release):
         return prev_release
-    except docker.errors.ImageNotFound:
-        log.trace(f"image {prev_release} not found")
-    except requests.exceptions.HTTPError:
-        log.trace(f"http error when looking for image {prev_release}")
-        raise
 
     log.info(f"image {prev_release} not found. downloading...")
     try:
