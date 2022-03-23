@@ -534,99 +534,81 @@ class So2SatExporter(SampleExporter):
     ):
 
         for i, x_i in enumerate(x):
-            self._export_so2sat_image(x_i, type="benign")
+            self._export_so2sat_image(x_i, name="benign")
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_so2sat_image(x_adv_i, type="adversarial")
+                self._export_so2sat_image(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_so2sat_image(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
-
+    def _export_so2sat_image(self, x_i, name="benign"):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
-        self.vh_image = self.get_vh_sample(x_i)
-        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
+        self.vh_image = self.get_sample(x_i, modality="vh")
+        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{name}.png"))
 
-        self.vv_image = self.get_vv_sample(x_i)
-        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+        self.vv_image = self.get_sample(x_i, modality="vv")
+        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{name}.png"))
 
-        self.eo_images = self.get_eo_samples(x_i)
+        self.eo_images = self.get_sample(x_i, modality="eo")
         for i in range(10):
             eo_image = self.eo_images[i]
-            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{type}.png"))
+            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{name}.png"))
 
     @staticmethod
-    def get_vh_sample(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
-
+    def get_sample(x_i, modality):
         sar_eps = 1e-9 + 1j * 1e-9
-        x_vh = np.log10(
-            np.abs(
-                np.complex128(
-                    np.clip(x_i[..., 0], -1.0, 1.0)
-                    + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+
+        if modality == "vh":
+            x_vh = np.log10(
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 0], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+                    )
+                    + sar_eps
                 )
-                + sar_eps
             )
-        )
-        sar_min = x_vh.min()
-        sar_max = x_vh.max()
-        sar_scale = 255.0 / (sar_max - sar_min)
+            sar_min = x_vh.min()
+            sar_max = x_vh.max()
+            sar_scale = 255.0 / (sar_max - sar_min)
 
-        vh_image = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
-        return vh_image
+            return Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
 
-    @staticmethod
-    def get_vv_sample(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
-
-        sar_eps = 1e-9 + 1j * 1e-9
-        x_vv = np.log10(
-            np.abs(
-                np.complex128(
-                    np.clip(x_i[..., 2], -1.0, 1.0)
-                    + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+        elif modality == "vv":
+            x_vv = np.log10(
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 2], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+                    )
+                    + sar_eps
                 )
-                + sar_eps
             )
-        )
-        sar_min = x_vv.min()
-        sar_max = x_vv.max()
-        sar_scale = 255.0 / (sar_max - sar_min)
+            sar_min = x_vv.min()
+            sar_max = x_vv.max()
+            sar_scale = 255.0 / (sar_max - sar_min)
 
-        vv_image = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
-        return vv_image
+            return Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
 
-    @staticmethod
-    def get_eo_samples(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
+        elif modality == "eo":
+            eo_images = []
 
-        eo_images = []
+            eo_min = x_i[..., 4:].min()
+            eo_max = x_i[..., 4:].max()
+            eo_scale = 255.0 / (eo_max - eo_min)
+            for c in range(4, 14):
+                eo = Image.fromarray(
+                    np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+                )
+                eo_images.append(eo)
 
-        eo_min = x_i[..., 4:].min()
-        eo_max = x_i[..., 4:].max()
-        eo_scale = 255.0 / (eo_max - eo_min)
-        for c in range(4, 14):
-            eo = Image.fromarray(
-                np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+            return eo_images
+
+        else:
+            raise ValueError(
+                f"modality must be one of ('vh', 'vv', 'eo'), received {modality}"
             )
-            eo_images.append(eo)
-
-        return eo_images
