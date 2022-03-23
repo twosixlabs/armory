@@ -124,7 +124,13 @@ class Evaluator(object):
             os.rmdir(self.output_dir)
             log.warning(f"removed output_dir {self.output_dir} because it was empty")
         except OSError:
-            pass
+            jsons = [x for x in os.listdir(self.output_dir) if x.endswith(".json")]
+            if len(jsons) == 1:
+                json = jsons[0]
+            else:
+                json = ""
+            output_path = os.path.join(self.output_dir, json)
+            log.info(f"results output written to:\n{output_path}")
 
     def run(
         self,
