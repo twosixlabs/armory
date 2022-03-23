@@ -90,7 +90,12 @@ except ImportError:
 
 from armory import paths
 
-paths.set_art_data_path()
+try:
+    paths.set_art_data_path()
+except OSError:
+    # If running in --no-docker mode, catch write error based on default DockerPaths
+    # the later call to paths.set_mode("host") will set this properly
+    pass
 
 # typedef for a widely used JSON-like configuration specification
 from typing import Dict, Any
