@@ -282,8 +282,8 @@ class FairnessMetrics:
         self, x_poison, y_poison, poison_index, predicted_clean_indices, test_dataset
     ):
         """ Compute two metrics based on comparing two binary distributions.
-            Metric 1 compares the classification accuracy in a binary split of each class.
-            Metric 2 compares the filtering rate on the same binary splits.
+            Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
+            Metric 2 (Filter Bias) compares the filtering rate on the same binary splits.
             Adds results to results dict of calling scenario, and returns the data for logging.
 
             x_poison: the poisoned training dataset
@@ -333,16 +333,16 @@ class FairnessMetrics:
                 majority_x_correct_prediction_tables[class_id]
             )
             self.scenario.results[
-                f"metric_2.1_chi^2_p_value_{str(class_id).zfill(2)}"
+                f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}"
             ] = self.majority_x_class_prediction_chi2_metrics[class_id].mean()
             self.scenario.results[
-                f"metric_2.1_spd_{str(class_id).zfill(2)}"
+                f"model_bias_spd_{str(class_id).zfill(2)}"
             ] = self.majority_x_class_prediction_spd_metrics[class_id].mean()
             log_lines.append(
-                f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}"
+                f"Model Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}"
             )
             log_lines.append(
-                f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.4f}"
+                f"Model Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.4f}"
             )
 
         # Metric 2 Filter bias (only if filtering defense)
@@ -368,16 +368,16 @@ class FairnessMetrics:
                     majority_x_passed_filter_tables[class_id]
                 )
                 self.scenario.results[
-                    f"metric_2.2_chi^2_p_value_{str(class_id).zfill(2)}"
+                    f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}"
                 ] = self.majority_x_passed_filter_chi2_metrics[class_id].mean()
                 self.scenario.results[
-                    f"metric_2.2_spd_{str(class_id).zfill(2)}"
+                    f"filter_bias_spd_{str(class_id).zfill(2)}"
                 ] = self.majority_x_passed_filter_spd_metrics[class_id].mean()
                 log_lines.append(
-                    f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}"
+                    f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}"
                 )
                 log_lines.append(
-                    f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.4f}"
+                    f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.4f}"
                 )
 
         return log_lines
