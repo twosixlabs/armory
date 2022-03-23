@@ -25,19 +25,24 @@ class CarlaVideoTracking(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
 
+    def next(self):
+        x, y = next(self.test_dataset)
+        i = self.i + 1
+        self.i, self.x, self.y = i, x, y
+        self.y_object, self.y_patch_metadata = y
+        self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
+
     def run_benign(self):
         x, y = self.x, self.y
-        y_object, y_patch_metadata = y
-        y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
+        y_init = np.expand_dims(self.y_object[0]["boxes"][0], axis=0)
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred)
+        self.metrics_logger.update_task(self.y_object, y_pred)
         self.y_pred = y_pred
 
     def run_attack(self):
         x, y = self.x, self.y
-        self.y_object, self.y_patch_metadata = y
         y_init = np.expand_dims(self.y_object[0]["boxes"][0], axis=0)
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -82,5 +87,5 @@ class CarlaVideoTracking(Scenario):
             y=self.y_object,
             y_pred_clean=self.y_pred,
             y_pred_adv=self.y_pred_adv,
-            plot_boxes=True,
+            with_boxes=True,
         )

@@ -317,20 +317,16 @@ class VideoClassificationExporter(SampleExporter):
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            self._export_video(x_i, type="benign")
+            self._export_video(x_i, name="benign")
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, type="adversarial")
+                self._export_video(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_video(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
+    def _export_video(self, x_i, name="benign"):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
@@ -342,7 +338,7 @@ class VideoClassificationExporter(SampleExporter):
                 s=f"{x_i.shape[2]}x{x_i.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{type}.mp4"),
+                os.path.join(self.output_dir, folder, f"video_{name}.mp4"),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -357,7 +353,7 @@ class VideoClassificationExporter(SampleExporter):
             pixels = np.array(frame)
             ffmpeg_process.stdin.write(pixels.tobytes())
             frame.save(
-                os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{type}.png")
+                os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{name}.png")
             )
 
         ffmpeg_process.stdin.close()
@@ -381,38 +377,47 @@ class VideoTrackingExporter(VideoClassificationExporter):
         self,
         x,
         x_adv=None,
+        with_boxes=False,
         y=None,
         y_pred_adv=None,
         y_pred_clean=None,
-        plot_boxes=False,
     ):
         for i, x_i in enumerate(x):
-            self._export_video(x_i, type="benign")
+            self._export_video(x_i, name="benign")
 
-            if plot_boxes:
+            if with_boxes:
                 y_i = y[i] if y is not None else None
                 y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
-                self._export_video_with_boxes(
-                    x_i, y_i=y_i, y_i_pred=y_i_pred_clean, type="benign"
+                self._export_video(
+                    x_i,
+                    with_boxes=True,
+                    y_i=y_i,
+                    y_i_pred=y_i_pred_clean,
+                    name="benign",
                 )
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, type="adversarial")
-                if plot_boxes:
+                self._export_video(x_adv_i, name="adversarial")
+                if with_boxes:
                     y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
-                    self._export_video_with_boxes(
-                        x_adv_i, y_i=y_i, y_i_pred=y_i_pred_adv, type="adversarial"
+                    self._export_video(
+                        x_adv_i,
+                        with_boxes=True,
+                        y_i=y_i,
+                        y_i_pred=y_i_pred_adv,
+                        name="adversarial",
                     )
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_video_with_boxes(self, x_i, y_i=None, y_i_pred=None, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
+    def _export_video(
+        self, x_i, with_boxes=False, y_i=None, y_i_pred=None, name="benign"
+    ):
+        if not with_boxes:
+            super()._export_video(x_i, name=name)
+            return
 
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
@@ -425,7 +430,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
                 s=f"{x_i.shape[2]}x{x_i.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{type}_with_boxes.mp4"),
+                os.path.join(self.output_dir, folder, f"video_{name}_with_boxes.mp4"),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -434,15 +439,15 @@ class VideoTrackingExporter(VideoClassificationExporter):
             .run_async(pipe_stdin=True, quiet=True)
         )
 
-        self.frames_with_boxes = self.get_sample_with_boxes(
-            x_i, y_i=y_i, y_i_pred=y_i_pred
+        self.frames_with_boxes = self.get_sample(
+            x_i, with_boxes=True, y_i=y_i, y_i_pred=y_i_pred
         )
         for n_frame, frame, in enumerate(self.frames_with_boxes):
             frame.save(
                 os.path.join(
                     self.output_dir,
                     folder,
-                    f"frame_{n_frame:04d}_{type}_with_boxes.png",
+                    f"frame_{n_frame:04d}_{name}_with_boxes.png",
                 )
             )
             pixels_with_boxes = np.array(frame)
@@ -451,10 +456,12 @@ class VideoTrackingExporter(VideoClassificationExporter):
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
 
-    @staticmethod
-    def get_sample_with_boxes(x_i, y_i=None, y_i_pred=None):
+    def get_sample(self, x_i, with_boxes=False, y_i=None, y_i_pred=None):
+        if not with_boxes:
+            return super().get_sample(x_i)
+
         if y_i is None and y_i_pred is None:
-            raise TypeError("Both y_i and y_pred are None, expected to receive boxes.")
+            raise TypeError("Both y_i and y_pred are None, but with_boxes is True.")
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
 
