@@ -37,15 +37,18 @@ def test_object_detection_export():
         "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
     }
 
-    pil_img_with_both_boxes = exporter.get_sample_with_boxes(random_x, y_i=y, y_i_pred=y_pred)
+    pil_img_with_both_boxes = exporter.get_sample(
+        random_x, with_boxes=True, y_i=y, y_i_pred=y_pred
+    )
     assert isinstance(pil_img_with_both_boxes, PIL.Image.Image)
 
-    pil_img_with_gt_boxes = exporter.get_sample_with_boxes(random_x, y_i=y)
+    pil_img_with_gt_boxes = exporter.get_sample(random_x, with_boxes=True, y_i=y)
     assert isinstance(pil_img_with_gt_boxes, PIL.Image.Image)
 
-    pil_img_with_pred_boxes = exporter.get_sample_with_boxes(random_x, y_i_pred=y_pred)
+    pil_img_with_pred_boxes = exporter.get_sample(
+        random_x, with_boxes=True, y_i_pred=y_pred
+    )
     assert isinstance(pil_img_with_pred_boxes, PIL.Image.Image)
-
 
 
 def test_video_classification_export():
@@ -72,7 +75,9 @@ def test_video_tracking_export():
     y = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
     y_pred = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
 
-    pil_img_with_boxes_list = exporter.get_sample_with_boxes(random_x, y, y_pred)
+    pil_img_with_boxes_list = exporter.get_sample(
+        random_x, with_boxes=True, y_i_pred=y_pred, y_i=y
+    )
 
     assert isinstance(pil_img_with_boxes_list, list)
     assert len(pil_img_list) == num_frames
@@ -83,13 +88,13 @@ def test_video_tracking_export():
 def test_so2sat_export():
     random_x = np.random.rand(32, 32, 14)
     exporter = So2SatExporter(base_output_dir="/armory/tmp")
-    sample_vh = exporter.get_vh_sample(random_x)
+    sample_vh = exporter.get_sample(random_x, modality="vh")
     assert isinstance(sample_vh, PIL.Image.Image)
 
-    sample_vv = exporter.get_vv_sample(random_x)
+    sample_vv = exporter.get_sample(random_x, modality="vv")
     assert isinstance(sample_vv, PIL.Image.Image)
 
-    samples_eo = exporter.get_eo_samples(random_x)
+    samples_eo = exporter.get_sample(random_x, modality="eo")
     assert isinstance(samples_eo, list)
     assert len(samples_eo) == 10
     for i in samples_eo:
