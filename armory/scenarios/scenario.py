@@ -32,7 +32,6 @@ class Scenario:
         skip_benign: Optional[bool] = False,
         skip_attack: Optional[bool] = False,
         skip_misclassified: Optional[bool] = False,
-        mongo_host: Optional[str] = None,
         check_run: bool = False,
     ):
         self.check_run = bool(check_run)
@@ -62,10 +61,7 @@ class Scenario:
             log.info("Skipping benign classification...")
         if skip_attack:
             log.info("Skipping attack generation...")
-        self.mongo_host = mongo_host
         self.time_stamp = time.time()
-        if self.mongo_host is not None:  # fail fast if pymongo is not installed
-            from armory.scenarios import mongo  # noqa: F401
 
     def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
@@ -388,12 +384,10 @@ class Scenario:
             log.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(self.config, results)
         self._save(output)
-        if self.mongo_host is not None:
-            self._send_to_mongo(self.mongo_host, output)
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
-        Build the JSON results blob for _save() and _send_to_mongo()
+        Build the JSON results blob for _save()
 
         adv_examples are (optional) instances of the actual examples used.
             They will be saved in a binary format.
@@ -425,11 +419,3 @@ class Scenario:
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
-
-    def _send_to_mongo(self, output: dict):
-        """
-        Send results to a Mongo database at mongo_host
-        """
-        import mongo
-
-        mongo.send_to_db(output, self.mongo_host)

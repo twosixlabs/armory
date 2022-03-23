@@ -3,14 +3,14 @@ Reference objects for armory paths
 """
 
 import os
-import warnings  # armory.logs initialization depends on this module, use warnrings instead
+import warnings  # armory.logs initialization depends on this module, use warnings instead
 
 from armory import configuration
 
 NO_DOCKER = False
 
 
-def set_mode(mode):
+def set_mode(mode, set_art_path=True):
     """
     Set path mode to "docker" or "host"
     """
@@ -22,6 +22,21 @@ def set_mode(mode):
         NO_DOCKER = True
     else:
         raise ValueError(f"mode {mode} is not in {MODES}")
+
+    if set_art_path:
+        set_art_data_path()
+
+
+def set_art_data_path():
+    """
+    Sets the art data path if art can be imported in the current environment
+    """
+    try:
+        from art import config
+
+        config.set_data_path(os.path.join(runtime_paths().saved_model_dir, "art"))
+    except ImportError:
+        pass
 
 
 def runtime_paths():
