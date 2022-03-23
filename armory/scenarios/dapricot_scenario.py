@@ -67,6 +67,10 @@ class ObjectDetectionTask(Scenario):
             )
         super().load_dataset()
 
+    def next(self):
+        super().next()
+        self.y_object, self.y_patch_metadata = self.y
+
     def load_model(self, defended=True):
         model_config = self.config["model"]
         generate_kwargs = self.config["attack"]["generate_kwargs"]
@@ -102,7 +106,6 @@ class ObjectDetectionTask(Scenario):
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
             x = x[0]
-            self.y_object, self.y_patch_metadata = y
 
             generate_kwargs = copy.deepcopy(self.generate_kwargs)
             generate_kwargs["y_patch_metadata"] = self.y_patch_metadata
