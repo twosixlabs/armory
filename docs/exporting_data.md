@@ -44,8 +44,9 @@ Note: If using Armory < 0.15.0, please instead use the `"export_samples"` field 
 ### Exporting/Viewing Data Interactively
 If you are running Armory with the `--interactive` flag, you can interactively view and/or save off data examples. 
 Please see [docker.md](docker.md#interactive-use) for instructions on how to run Armory interactively. Once you've attached
-to the container, please see the following code snippet for an example of how to view and/or save off data examples:
+to the container, please see the following code snippets for an example of how to view and/or save off data examples:
 
+First, we'll simply load our scenario config and evaluate on one batch of data:
 ```commandline
 >>> from armory import scenarios
 >>> s = scenarios.get("/armory/tmp/2022-03-18T163008.249437/interactive-config.json").load()  # load cifar10 config
@@ -89,7 +90,7 @@ In the example below, we've already loaded an xView object detection scenario an
                       y=s.y, 
                       y_pred_clean=s.y_pred, 
                       y_pred_adv=s.y_pred_adv,
-                      plot_boxes=True)
+                      with_boxes=True)
 ```
 
 The call above yields the following output:
@@ -104,25 +105,32 @@ You could also export only the raw images, absent boxes, with the following call
 >>> s.sample_exporter.export(x=s.x, x_adv=s.x_adv)
 ```
 
-As depicted earlier, the `get_sample()` method can be used to return the PIL image. In addition, the `get_sample_with_boxes()` method can be used to obtain the 
-PIL image including bounding boxes:
+As depicted earlier, the `get_sample()` method can be used to return the PIL image. The boolean `with_boxes` kwarg can be used to add
+bounding boxes to the image. When this is set to `True`, you must provide values for at least one of `y_i` and `y_i_pred`.
 ```commandline
 >>> adv_img = s.sample_exporter.get_sample(s.x_adv[0])
 >>> type(adv_img)
 <class 'PIL.Image.Image'>
 
->>> adv_img_with_boxes = s.sample_exporter.get_sample_with_boxes(s.x_adv[0], y_i=s.y[0], y_i_pred=s.y_pred_adv[0])
+>>> adv_img_with_boxes = s.sample_exporter.get_sample(s.x_adv[0], with_boxes=True, y_i=s.y[0], y_i_pred=s.y_pred_adv[0])
 >>> type(adv_img_with_boxes)
 <class 'PIL.Image.Image'>
+
+>>> s.sample_exporter.get_sample(s.x[0], with_boxes=True)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/workspace/armory/utils/export.py", line 205, in get_sample
+    raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
+TypeError: Both y_i and y_pred are None, but with_boxes is True
+
 ```
 If you'd only like to include ground-truth boxes (or only predicted boxes), don't provide an arg for `y_i` or `y_i_pred`.
 
 ### Exporting Multimodal Data
 #### Multimodal CARLA Object Detection
-For the multimodal CARLA scenario, depth images are outputted in addition to RGB. Depth images can be interactively obtained using the 
-`get_depth_sample()` method.
+For the multimodal CARLA scenario, depth images are automatically outputted in addition to RGB when `"export_batches"` is set in the config. If you'd like to interactively return the depth image, 
+call `get_sample(x_i[..., 3:])`.
 
 #### So2Sat Image Classification
-The So2Sat scenario exporter contains `get_vh_sample()`, `get_vv_sample()`, and `get_eo_samples()` methods, the last of which returns a list of 
-PIL images. Calling `export()` will save off all three types of examples.
+The `get_sample()` method for the So2Sat scenario exporter takes a `modality` arg which must be one of `{'vh', 'vv', 'eo'}`. Calling `export()` will save off all three types of examples, which will occur automatically when running a config where `"export_batches"` is set.
 
