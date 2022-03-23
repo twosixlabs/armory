@@ -104,6 +104,13 @@ class ImageClassificationExporter(SampleExporter):
 
     @staticmethod
     def get_sample(x_i):
+        """
+
+        :param x_i: floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+                3 (RGB), or 6 (RGB-Depth)
+        :return: PIL.Image.Image
+        """
+
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("Image out of expected range. Clipping to [0, 1].")
 
@@ -205,6 +212,17 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         score_threshold=0.5,
         classes_to_skip=None,
     ):
+        """
+
+        :param x_i:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+                3 (RGB), or 6 (RGB-Depth)
+        :param with_boxes: boolean indicating whether to display bounding boxes
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :param score_threshold: float in [0, 1]; boxes with confidence > score_threshold are displayed
+        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be displayed
+        :return: PIL.Image.Image
+        """
         image = super().get_sample(x_i)
         if not with_boxes:
             return image
@@ -368,6 +386,11 @@ class VideoClassificationExporter(SampleExporter):
 
     @staticmethod
     def get_sample(x_i):
+        """
+
+        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :return: List[PIL.Image.Image] of length equal to num_frames
+        """
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0, 1]")
 
@@ -464,6 +487,14 @@ class VideoTrackingExporter(VideoClassificationExporter):
         ffmpeg_process.wait()
 
     def get_sample(self, x_i, with_boxes=False, y_i=None, y_i_pred=None):
+        """
+
+        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :param with_boxes: boolean indicating whether to display bounding boxes
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :return: List[PIL.Image.Image] of length equal to num_frames
+        """
         if not with_boxes:
             return super().get_sample(x_i)
 
@@ -523,6 +554,12 @@ class AudioExporter(SampleExporter):
 
     @staticmethod
     def get_sample(x_i, dataset_context):
+        """
+
+        :param x_i: floating point np array of shape (sequence_length,) in [0.0, 1.0]
+        :param dataset_context: armory.data.datasets AudioContext object
+        :return: int np array of shape (sequence_length, )
+        """
         return np.int16(x_i * dataset_context.quantization)
 
 
@@ -558,6 +595,12 @@ class So2SatExporter(SampleExporter):
 
     @staticmethod
     def get_sample(x_i, modality):
+        """
+
+        :param x_i: floating point np array of shape (H, W, C=14) in [0.0, 1.0]
+        :param modality: one of {'vv', 'vh', 'eo'}
+        :return: PIL.Image.Image, or List[PIL.Image.Image] if modality == "eo"
+        """
         sar_eps = 1e-9 + 1j * 1e-9
 
         if modality == "vh":
