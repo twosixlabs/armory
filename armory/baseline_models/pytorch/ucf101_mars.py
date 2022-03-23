@@ -10,9 +10,14 @@ from PIL import Image
 import torch
 from torch import optim
 
-from MARS.opts import parse_opts
-from MARS.models.model import generate_model
-from MARS.dataset import preprocess_data
+from armory.utils.external_repo import ExternalRepoImport
+
+with ExternalRepoImport(
+    repo="yusong-tan/MARS", experiment="ucf101_baseline_finetune.json",
+):
+    from MARS.opts import parse_opts
+    from MARS.models.model import generate_model
+    from MARS.dataset import preprocess_data
 
 from armory.logs import log
 
