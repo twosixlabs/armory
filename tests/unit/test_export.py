@@ -14,16 +14,16 @@ from armory.utils.export import (
 pytestmark = pytest.mark.unit
 
 
-def test_image_classification_export():
+def test_image_classification_export(tmp_path):
     random_x = np.random.rand(32, 32, 3)
-    exporter = ImageClassificationExporter(base_output_dir="/armory/tmp/")
+    exporter = ImageClassificationExporter(base_output_dir=tmp_path)
     pil_img = exporter.get_sample(random_x)
     assert isinstance(pil_img, PIL.Image.Image)
 
 
-def test_object_detection_export():
+def test_object_detection_export(tmp_path):
     random_x = np.random.rand(32, 32, 3)
-    exporter = ObjectDetectionExporter(base_output_dir="/armory/tmp")
+    exporter = ObjectDetectionExporter(base_output_dir=tmp_path)
     pil_img = exporter.get_sample(random_x)
     assert isinstance(pil_img, PIL.Image.Image)
 
@@ -51,10 +51,10 @@ def test_object_detection_export():
     assert isinstance(pil_img_with_pred_boxes, PIL.Image.Image)
 
 
-def test_video_classification_export():
+def test_video_classification_export(tmp_path):
     num_frames = 12
     random_x = np.random.rand(num_frames, 32, 32, 3)
-    exporter = VideoClassificationExporter(base_output_dir="/armory/tmp", frame_rate=10)
+    exporter = VideoClassificationExporter(base_output_dir=tmp_path, frame_rate=10)
     pil_img_list = exporter.get_sample(random_x)
     assert isinstance(pil_img_list, list)
     assert len(pil_img_list) == num_frames
@@ -62,10 +62,10 @@ def test_video_classification_export():
         assert isinstance(img, PIL.Image.Image)
 
 
-def test_video_tracking_export():
+def test_video_tracking_export(tmp_path):
     num_frames = 12
     random_x = np.random.rand(num_frames, 32, 32, 3)
-    exporter = VideoTrackingExporter(base_output_dir="/armory/tmp", frame_rate=10)
+    exporter = VideoTrackingExporter(base_output_dir=tmp_path, frame_rate=10)
     pil_img_list = exporter.get_sample(random_x)
     assert isinstance(pil_img_list, list)
     assert len(pil_img_list) == num_frames
@@ -85,9 +85,9 @@ def test_video_tracking_export():
         assert isinstance(img, PIL.Image.Image)
 
 
-def test_so2sat_export():
+def test_so2sat_export(tmp_path):
     random_x = np.random.rand(32, 32, 14)
-    exporter = So2SatExporter(base_output_dir="/armory/tmp")
+    exporter = So2SatExporter(base_output_dir=tmp_path)
     sample_vh = exporter.get_sample(random_x, modality="vh")
     assert isinstance(sample_vh, PIL.Image.Image)
 
