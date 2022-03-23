@@ -191,13 +191,17 @@ poison data (1/5/10% of the training size) that should be mixed with the trainin
 * **Metrics of Interest:**
   * Primary metrics:
     * Accuracy (mean, per-class), backdoor success rate, attack computational cost, defense computational cost
+  * Fairness metrics.  These attempt to ascertain whether the model or the filter is biased toward data that is unusual in some sense:
+    * Filter Perplexity compares the class distribution of False Positives to the class distribution of unpoisoned data.  A filter is biased if it removes, besides poison, data from only a few classes.
+    * Model Subclass Bias measures, for each class, the difference in accuracy in two sub-populations of the class
+    * Filter Subclass Bias measures, for each class, the difference in filtering rate in two sub-populations of the class
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Attacks:**
-  * [Dirty-label Backdoor Attack](https://arxiv.org/abs/1708.06733): 1 to 10% of a *source class* in the 
+  * [Dirty-label Backdoor Attack](https://arxiv.org/abs/1708.06733): 1 to 30% of a *source class* in the 
   training data have trigger added and are intentionally mislabeled with *target label*; during test time,
    the same trigger is added to an input of *source class* to cause targeted misclassification.
-  * [Clean-label Backdoor Attack](https://people.csail.mit.edu/madry/lab/cleanlabel.pdf): 1 to 10% of the 
+  * [Clean-label Backdoor Attack](https://people.csail.mit.edu/madry/lab/cleanlabel.pdf): 20 to 80% of the 
   *target class* in training data are imperceptibly perturbed (so they are still correctly labeled) and have 
   trigger added; during test time, same trigger is added to an input of a *source class* to cause 
   targeted misclassification
