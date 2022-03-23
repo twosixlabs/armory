@@ -69,6 +69,8 @@ def is_armory(image_name: str):
     user, repo, _ = split_name(image_name)
     if user and user != DOCKER_REPOSITORY:
         return False
+    if repo == "tf1":
+        raise ValueError("tf1 docker image is deprecated. Use Armory version < 0.15.0")
     return repo in IMAGE_MAP
 
 
