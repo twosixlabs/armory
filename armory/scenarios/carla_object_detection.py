@@ -4,8 +4,6 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-import copy
-
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
 from armory.logs import log
@@ -108,18 +106,15 @@ class CarlaObjectDetectionTask(Scenario):
         }
         self.results = {**self.results, **self.results_wrt_benign_preds}
 
-    def _evaluate(self) -> dict:
-        """
-        Evaluate the config and return a results dict
-        """
-        self.load()
-
+    def load_metrics(self):
+        super().load_metrics()
         # Add a MetricsLogger to measure adversarial results using benign predictions as labels
-        self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger()
-        self.metrics_logger_wrt_benign_preds.adversarial_tasks = copy.deepcopy(
-            self.metrics_logger.adversarial_tasks
+        metric_config = self.config["metric"]
+        subset_config = {
+            k: metric_config[k]
+            for k in ("means", "record_metric_per_sample", "task", "task_kwargs")
+            if k in metric_config
+        }
+        self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
+            subset_config, skip_benign=True, targeted=False
         )
-
-        self.evaluate_all()
-        self.finalize_results()
-        return self.results
