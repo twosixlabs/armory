@@ -1,5 +1,6 @@
 from importlib import import_module
 import logging
+
 logger = logging.getLogger(__name__)
 from typing import *
 
@@ -12,6 +13,7 @@ from sklearn.metrics import silhouette_samples
 
 
 from armory.data.utils import maybe_download_weights_from_s3
+from armory.utils.metrics import MetricList, make_contingency_tables
 
 
 class SilhouetteData(NamedTuple):
@@ -20,52 +22,57 @@ class SilhouetteData(NamedTuple):
     silhouette_scores: np.ndarray
 
 
-def get_majority_mask(explanatory_model: torch.nn.Module,
-                      data: Iterable,
-                      device: torch.device,
-                      resize_image: bool,
-                      majority_ceilings: Dict[int, float] = {},
-                      range_n_clusters: List[int] = [2],
-                      random_seed: int = 42) -> Tuple[np.ndarray, Dict[int, float]]:
+def get_majority_mask(
+    explanatory_model: torch.nn.Module,
+    data: Iterable,
+    device: torch.device,
+    resize_image: bool,
+    majority_ceilings: Dict[int, float] = {},
+    range_n_clusters: List[int] = [2],
+    random_seed: int = 42,
+) -> Tuple[np.ndarray, Dict[int, float]]:
     majority_mask = np.empty(len(data), dtype=np.bool_)
-    activations, class_ids = _get_activations_w_class_ids(explanatory_model, 
-                                                          data, 
-                                                          device, 
-                                                          resize_image)
+    activations, class_ids = _get_activations_w_class_ids(
+        explanatory_model, data, device, resize_image
+    )
     for class_id in np.unique(class_ids):
         majority_ceiling_id = majority_ceilings.get(class_id, None)
-        mask_id = (class_ids == class_id)
+        mask_id = class_ids == class_id
         activations_id = activations[mask_id]
-        silhouette_analysis_id = _get_silhouette_analysis(activations_id, 
-                                                          range_n_clusters, 
-                                                          random_seed)
+        silhouette_analysis_id = _get_silhouette_analysis(
+            activations_id, range_n_clusters, random_seed
+        )
         best_n_clusters_id = _get_best_n_clusters(silhouette_analysis_id)
         best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
-        majority_mask_id, majority_ceiling_id = _get_majority_mask(best_silhouette_data_id, majority_ceiling_id)
+        majority_mask_id, majority_ceiling_id = _get_majority_mask(
+            best_silhouette_data_id, majority_ceiling_id
+        )
         majority_mask[mask_id] = majority_mask_id
         majority_ceilings[class_id] = majority_ceiling_id
     return majority_mask, majority_ceilings
 
 
-def _get_activations_w_class_ids(explanatory_model: torch.nn.Module,
-                                 data: Iterable,
-                                 device: torch.device,
-                                 resize_image: bool) -> Tuple[np.ndarray]:
-    activations, class_ids  = [], []
+def _get_activations_w_class_ids(
+    explanatory_model: torch.nn.Module,
+    data: Iterable,
+    device: torch.device,
+    resize_image: bool,
+) -> Tuple[np.ndarray]:
+    activations, class_ids = [], []
     for image, class_id in data:
         with torch.no_grad():
             image = _convert_np_image_to_tensor(image, device, resize_image)
             activation = _get_activation(explanatory_model, image)
             activations.append(activation)
             class_ids.append(class_id)
-    activations = np.concatenate(activations) 
+    activations = np.concatenate(activations)
     class_ids = np.array(class_ids, dtype=np.int64)
     return activations, class_ids
 
 
-def _convert_np_image_to_tensor(image: np.ndarray, 
-                                device: torch.device, 
-                                resize_image: bool) -> torch.Tensor:
+def _convert_np_image_to_tensor(
+    image: np.ndarray, device: torch.device, resize_image: bool
+) -> torch.Tensor:
     image = Image.fromarray(np.uint8(image * 255))
     if resize_image:
         image = image.resize(size=(224, 224), resample=Image.BILINEAR)
@@ -76,15 +83,17 @@ def _convert_np_image_to_tensor(image: np.ndarray,
     return image
 
 
-def _get_activation(explanatory_model: torch.nn.Module, image: torch.Tensor) -> np.ndarray:
+def _get_activation(
+    explanatory_model: torch.nn.Module, image: torch.Tensor
+) -> np.ndarray:
     activation, _ = explanatory_model(image)
     activation = activation.detach().cpu().numpy()
     return activation
 
 
-def _get_silhouette_analysis(activations: np.ndarray, 
-                             range_n_clusters: List[int],
-                             random_seed: int) -> Dict[int, SilhouetteData]:
+def _get_silhouette_analysis(
+    activations: np.ndarray, range_n_clusters: List[int], random_seed: int
+) -> Dict[int, SilhouetteData]:
     silhouette_analysis = {}
     for n_clusters in range_n_clusters:
         clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
@@ -98,15 +107,19 @@ def _get_silhouette_analysis(activations: np.ndarray,
 def _get_best_n_clusters(silhouette_analysis: Dict[int, SilhouetteData]) -> int:
     best_n_clusters = max(
         list(silhouette_analysis.keys()),
-        key=lambda n_clusters: silhouette_analysis[n_clusters].silhouette_scores.mean()
+        key=lambda n_clusters: silhouette_analysis[n_clusters].silhouette_scores.mean(),
     )
     return best_n_clusters
 
 
-def _get_majority_mask(silhouette_data: SilhouetteData, majority_ceiling: Optional[float]) -> Tuple[np.ndarray, float]:
+def _get_majority_mask(
+    silhouette_data: SilhouetteData, majority_ceiling: Optional[float]
+) -> Tuple[np.ndarray, float]:
     if majority_ceiling is None:
         majority_ceiling = _get_mean_silhouette_score(silhouette_data)
-    majority_mask = ((0 <= silhouette_data.silhouette_scores) & (silhouette_data.silhouette_scores <= majority_ceiling))
+    majority_mask = (0 <= silhouette_data.silhouette_scores) & (
+        silhouette_data.silhouette_scores <= majority_ceiling
+    )
     return majority_mask, majority_ceiling
 
 
@@ -166,3 +179,205 @@ def load_explanatory_model(model_config):
                 f"preprocessing_fn {preprocessing_fn} must be None, tuple, or callable"
             )
     return model, preprocessing_fn
+
+
+gtsrb_silhouette_clustering_config = {
+    "fit": False,
+    "fit_kwargs": {},
+    "model_kwargs": {},
+    "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
+    "name": "get_model",
+    "resize_image": False,
+    "weights_file": "micronnet_bean_gtsrb.pt",
+    "wrapper_kwargs": {},
+}
+
+resisc10_silhouette_clustering_config = {
+    "fit": False,
+    "fit_kwargs": {},
+    "model_kwargs": {
+        "data_means": [0.39382024, 0.4159701, 0.40887499],
+        "data_stds": [0.18931773, 0.18901625, 0.19651154],
+        "num_classes": 10,
+    },
+    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
+    "name": "get_model",
+    "weights_file": "resnet18_bean_resisc10.pt",
+    "wrapper_kwargs": {},
+}
+
+# An armory user will request one of these explanatory models under 'adhoc'/'explanatory_model'
+explanatory_model_configs = {
+    "gtsrb_silhouette_model": gtsrb_silhouette_clustering_config,
+    "resisc10_silhouette_model": resisc10_silhouette_clustering_config,
+}
+
+
+class FairnessMetrics:
+    """ This class will manage the computation of fairness metrics for the poisoning scenario.
+    """
+
+    def __init__(self, poisoning_config, is_filtering_defense, scenario):
+        """ poisoning_config: the adhoc section of the config
+            is_filtering_defense: Boolean used to indicate whether the filtering metric(s) should be computed
+            scenario: A reference to the scenario object which instantiates this
+        """
+        # self.metric_config = metric_config
+        self.is_filtering_defense = is_filtering_defense
+        self.DEVICE = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        self.scenario = scenario
+        self.class_labels = np.unique(self.scenario.y_clean)
+
+        explanatory_model_name = poisoning_config.get("explanatory_model", None)
+        if explanatory_model_name not in explanatory_model_configs.keys():
+            raise ValueError(
+                f"Config should specify model for fairness metrics.  Set adhoc/explanatory_model to one of {list(explanatory_model_configs.keys())}"
+            )
+        explanatory_model_config = explanatory_model_configs[explanatory_model_name]
+        explanatory_model, _ = load_explanatory_model(explanatory_model_config)
+        self.explanatory_model = explanatory_model
+        self.explanatory_model_resize_image = explanatory_model_config.get(
+            "resize_image", True
+        )
+
+        self.majority_x_class_prediction_chi2_metrics = {
+            class_id: MetricList("poison_chi2_p_value")
+            for class_id in self.class_labels
+        }
+        self.majority_x_class_prediction_spd_metrics = {
+            class_id: MetricList("poison_spd") for class_id in self.class_labels
+        }
+        if is_filtering_defense:
+            self.filter_perplexity = MetricList("filter_perplexity_fps_benign")
+            self.majority_x_passed_filter_chi2_metrics = {
+                class_id: MetricList("poison_chi2_p_value")
+                for class_id in self.class_labels
+            }
+            self.majority_x_passed_filter_spd_metrics = {
+                class_id: MetricList("poison_spd") for class_id in self.class_labels
+            }
+
+    def add_filter_perplexity(
+        self,
+        y_clean: np.ndarray,
+        poison_index: np.ndarray,
+        predicted_clean_indices: np.ndarray,
+    ):
+        """ Compute filter perplexity, add it to the results dict in the calling scenario, and return data for logging
+            
+            y_clean: the labels for the clean dataset
+            poison_index: the indices of the poisoned samples
+            predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
+        """
+        is_dirty_mask = np.ones_like(y_clean)
+        is_dirty_mask[predicted_clean_indices] = 0
+        self.filter_perplexity.add_results(y_clean, poison_index, is_dirty_mask)
+        self.scenario.results["filter_perplexity"] = self.filter_perplexity.mean()
+        log_lines = [f"Normalized filter perplexity: {self.filter_perplexity.mean()}"]
+        return log_lines
+
+    def add_cluster_metrics(
+        self, x_poison, y_poison, poison_index, predicted_clean_indices, test_dataset
+    ):
+        """ Compute two metrics based on comparing two binary distributions.
+            Metric 1 compares the classification accuracy in a binary split of each class.
+            Metric 2 compares the filtering rate on the same binary splits.
+            Adds results to results dict of calling scenario, and returns the data for logging.
+
+            x_poison: the poisoned training dataset
+            y_poison: the labels of the poisoned dataset
+            poison_index: the indices of the poisoned samples in x_poison and y_poison
+            predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
+            test_dataset: the test dataset
+        """
+        # get majority ceilings on unpoisoned part of train set
+        poisoned_mask = np.zeros_like(y_poison, dtype=np.bool_)
+        poisoned_mask[poison_index.astype(np.int64)] = True
+        x_unpoisoned = x_poison[~poisoned_mask]
+        y_unpoisoned = y_poison[~poisoned_mask]
+        majority_mask_unpoisoned, majority_ceilings = get_majority_mask(
+            explanatory_model=self.explanatory_model,
+            data=list(zip(x_unpoisoned, y_unpoisoned)),
+            device=self.DEVICE,
+            resize_image=self.explanatory_model_resize_image,
+        )
+
+        # Metric 1 General model bias
+        # Compares rate of correct predictions between binary clusters of each class
+        test_x, test_y = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
+        test_set_preds = self.scenario.model.predict(
+            test_x, **self.scenario.predict_kwargs
+        ).argmax(1)
+        correct_prediction_mask_test_set = test_y == test_set_preds
+        majority_mask_test_set, majority_ceilings = get_majority_mask(
+            explanatory_model=self.explanatory_model,
+            data=list(zip(test_x, test_y)),
+            majority_ceilings=majority_ceilings,  # use ceilings computed from train set
+            device=self.DEVICE,
+            resize_image=self.explanatory_model_resize_image,
+        )
+
+        majority_x_correct_prediction_tables = make_contingency_tables(
+            test_y, majority_mask_test_set, correct_prediction_mask_test_set
+        )
+
+        log_lines = []  # sent back to scenario for logging
+
+        for class_id in self.class_labels:
+            self.majority_x_class_prediction_chi2_metrics[class_id].add_results(
+                majority_x_correct_prediction_tables[class_id]
+            )
+            self.majority_x_class_prediction_spd_metrics[class_id].add_results(
+                majority_x_correct_prediction_tables[class_id]
+            )
+            self.scenario.results[
+                f"metric_2.1_chi^2_p_value_{str(class_id).zfill(2)}"
+            ] = self.majority_x_class_prediction_chi2_metrics[class_id].mean()
+            self.scenario.results[
+                f"metric_2.1_spd_{str(class_id).zfill(2)}"
+            ] = self.majority_x_class_prediction_spd_metrics[class_id].mean()
+            log_lines.append(
+                f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}"
+            )
+            log_lines.append(
+                f"Metric 2.1 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.4f}"
+            )
+
+        # Metric 2 Filter bias (only if filtering defense)
+        # Compares rate of filtering between binary clusters of each class
+        if self.is_filtering_defense:
+            kept_mask = np.zeros_like(y_poison, dtype=np.bool_)
+            kept_mask[predicted_clean_indices] = True
+            kept_mask_unpoisoned = kept_mask[~poisoned_mask]
+            y_unpoisoned_pred = self.scenario.model.predict(
+                x_unpoisoned, **self.scenario.predict_kwargs
+            ).argmax(1)
+            correct_prediction_mask_unpoisoned = y_unpoisoned == y_unpoisoned_pred
+
+            majority_x_passed_filter_tables = make_contingency_tables(
+                y_unpoisoned, majority_mask_unpoisoned, kept_mask_unpoisoned
+            )
+
+            for class_id in self.class_labels:
+                self.majority_x_passed_filter_chi2_metrics[class_id].add_results(
+                    majority_x_passed_filter_tables[class_id]
+                )
+                self.majority_x_passed_filter_spd_metrics[class_id].add_results(
+                    majority_x_passed_filter_tables[class_id]
+                )
+                self.scenario.results[
+                    f"metric_2.2_chi^2_p_value_{str(class_id).zfill(2)}"
+                ] = self.majority_x_passed_filter_chi2_metrics[class_id].mean()
+                self.scenario.results[
+                    f"metric_2.2_spd_{str(class_id).zfill(2)}"
+                ] = self.majority_x_passed_filter_spd_metrics[class_id].mean()
+                log_lines.append(
+                    f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}"
+                )
+                log_lines.append(
+                    f"Metric 2.2 Table for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.4f}"
+                )
+
+        return log_lines
