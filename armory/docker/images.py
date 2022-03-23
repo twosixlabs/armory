@@ -24,11 +24,3 @@ IMAGE_MAP = {
     "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
     "tf2": TF2,
 }
-
-
-# TODO is_old is used by the two implementations of `armory clean` in clean()
-# with the advent of setuptools_scm, this no longer makes sense. Since
-# I don't know if `armory clean` is used anywhere else, NotImplemented is a rude
-# way to find out
-def is_old(tag: str):
-    raise NotImplementedError
