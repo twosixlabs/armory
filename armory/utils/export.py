@@ -528,30 +528,33 @@ class AudioExporter(SampleExporter):
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            self._export_audio(x_i, type="benign")
+            self._export_audio(x_i, name="benign")
 
             if x_adv is not None:
                 x_i_adv = x_adv[i]
-                self._export_audio(x_i_adv, type="adversarial")
+                self._export_audio(x_i_adv, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_audio(self, x_i, type="benign"):
+    def _export_audio(self, x_i, name="benign"):
         x_i_copy = deepcopy(x_i)
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
+
+        if not np.isfinite(x_i_copy).all():
+            posinf, neginf = 1, -1
+            log.warning(
+                f"audio vector has infinite values. Mapping nan to 0, -inf to {neginf}, inf to {posinf}."
             )
+            x_i_copy = np.nan_to_num(x_i_copy, posinf=posinf, neginf=neginf)
 
         if x_i_copy.min() < -1.0 or x_i_copy.max() > 1.0:
             log.warning(
-                "input out of expected range, normalizing by the max absolute value"
+                "audio vector out of expected [-1, 1] range, normalizing by the max absolute value"
             )
             x_i_copy = x_i_copy / np.abs(x_i_copy).max()
 
         wavfile.write(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.wav"),
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.wav"),
             rate=self.sample_rate,
             data=x_i_copy,
         )
