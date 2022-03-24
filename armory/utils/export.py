@@ -538,25 +538,29 @@ class AudioExporter(SampleExporter):
         self.saved_batches += 1
 
     def _export_audio(self, x_i, type="benign"):
+        x_i_copy = deepcopy(x_i)
         if type not in ["benign", "adversarial"]:
             raise ValueError(
                 f"type must be one of ['benign', 'adversarial'], received '{type}'."
             )
 
-        if x_i.min() < -1.0 or x_i.max() > 1.0:
-            log.warning("input out of expected range. Clipping to [-1, 1]")
+        if x_i_copy.min() < -1.0 or x_i_copy.max() > 1.0:
+            log.warning(
+                "input out of expected range, normalizing by the max absolute value"
+            )
+            x_i_copy = x_i_copy / np.abs(x_i_copy).max()
 
         wavfile.write(
             os.path.join(self.output_dir, f"{self.saved_samples}_{type}.wav"),
             rate=self.sample_rate,
-            data=np.clip(x_i, -1.0, 1.0),
+            data=x_i_copy,
         )
 
     @staticmethod
     def get_sample(x_i, dataset_context):
         """
 
-        :param x_i: floating point np array of shape (sequence_length,) in [0.0, 1.0]
+        :param x_i: floating point np array of shape (sequence_length,) in [-1.0, 1.0]
         :param dataset_context: armory.data.datasets AudioContext object
         :return: int np array of shape (sequence_length, )
         """
