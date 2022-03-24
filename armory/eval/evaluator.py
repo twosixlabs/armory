@@ -123,6 +123,8 @@ class Evaluator(object):
         try:
             os.rmdir(self.output_dir)
             log.warning(f"removed output_dir {self.output_dir} because it was empty")
+        except FileNotFoundError:
+            log.warning(f"output_dir {self.output_dir} was deleted or never created")
         except OSError:
             jsons = [x for x in os.listdir(self.output_dir) if x.endswith(".json")]
             if len(jsons) == 1:
