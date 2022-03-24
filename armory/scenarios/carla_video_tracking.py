@@ -27,10 +27,10 @@ class CarlaVideoTracking(Scenario):
 
     def next(self):
         super().next()
-        self.y_object, self.y_patch_metadata = self.y
+        self.y, self.y_patch_metadata = self.y
 
     def run_benign(self):
-        x, y = self.x, self.y_object
+        x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
@@ -39,7 +39,7 @@ class CarlaVideoTracking(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y = self.x, self.y_object
+        x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -72,17 +72,9 @@ class CarlaVideoTracking(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
+        export_kwargs = {"with_boxes": True}
         return VideoTrackingExporter(
-            self.scenario_output_dir, frame_rate=self.test_dataset.context.frame_rate,
-        )
-
-    def export_samples(self):
-        self._check_x("export_samples")
-        self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            y=self.y_object,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
-            with_boxes=True,
+            self.scenario_output_dir,
+            frame_rate=self.test_dataset.context.frame_rate,
+            export_kwargs=export_kwargs,
         )

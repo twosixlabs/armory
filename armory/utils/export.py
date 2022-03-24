@@ -12,18 +12,17 @@ from armory.logs import log
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir):
+    def __init__(self, base_output_dir, export_kwargs={}):
         self.base_output_dir = base_output_dir
         self.saved_batches = 0
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
+        self.export_kwargs = export_kwargs
 
         self._make_output_dir()
 
-    def export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
+    def export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
         self.y_dict[self.saved_samples] = {
             "y": y,
             "y_pred_clean": y_pred_clean,
@@ -35,7 +34,7 @@ class SampleExporter:
             y=y,
             y_pred_adv=y_pred_adv,
             y_pred_clean=y_pred_clean,
-            **kwargs,
+            **self.export_kwargs,
         )
 
     @abc.abstractmethod
@@ -334,8 +333,8 @@ class DApricotExporter(ObjectDetectionExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, frame_rate):
-        super().__init__(base_output_dir)
+    def __init__(self, base_output_dir, frame_rate, export_kwargs={}):
+        super().__init__(base_output_dir, export_kwargs=export_kwargs)
         self.frame_rate = frame_rate
 
     def _export(

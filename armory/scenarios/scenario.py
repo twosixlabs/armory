@@ -323,16 +323,6 @@ class Scenario:
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def export_samples(self):
-        self._check_x("export_samples")
-        self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            y=self.y,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
-        )
-
     def evaluate_current(self):
         self._check_x("evaluate_current")
         if not self.skip_benign:
@@ -340,7 +330,13 @@ class Scenario:
         if not self.skip_attack:
             self.run_attack()
         if self.num_export_batches > self.sample_exporter.saved_batches:
-            self.export_samples()
+            self.sample_exporter.export(
+                x=self.x,
+                x_adv=self.x_adv,
+                y=self.y,
+                y_pred_clean=self.y_pred,
+                y_pred_adv=self.y_pred_adv,
+            )
 
     def finalize_results(self):
         metrics_logger = self.metrics_logger

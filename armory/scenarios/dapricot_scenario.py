@@ -69,7 +69,7 @@ class ObjectDetectionTask(Scenario):
 
     def next(self):
         super().next()
-        self.y_object, self.y_patch_metadata = self.y
+        self.y, self.y_patch_metadata = self.y
 
     def load_model(self, defended=True):
         model_config = self.config["model"]
@@ -98,7 +98,7 @@ class ObjectDetectionTask(Scenario):
         raise NotImplementedError("D-APRICOT has no benign task")
 
     def run_attack(self):
-        x, y = self.x, self.y_object
+        x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
 
@@ -133,15 +133,5 @@ class ObjectDetectionTask(Scenario):
         self.results = self.metrics_logger.results()
 
     def _load_sample_exporter(self):
-        return DApricotExporter(self.scenario_output_dir)
-
-    def export_samples(self):
-        self._check_x("export_samples")
-        self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            with_boxes=True,
-            y=self.y_object,
-            classes_to_skip=[12],
-            y_pred_adv=self.y_pred_adv,
-        )
+        export_kwargs = {"with_boxes": True}
+        return DApricotExporter(self.scenario_output_dir, export_kwargs=export_kwargs)

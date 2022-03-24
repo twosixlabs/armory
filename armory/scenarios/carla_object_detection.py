@@ -84,18 +84,9 @@ class CarlaObjectDetectionTask(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
-        return ObjectDetectionExporter(self.scenario_output_dir)
-
-    def export_samples(self):
-        self._check_x("export_samples")
-        self.sample_exporter.export(
-            self.x,
-            x_adv=self.x_adv,
-            y=self.y_object,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
-            classes_to_skip=[4],
-            with_boxes=True,
+        export_kwargs = {"with_boxes": True, "classes_to_skip": [4]}
+        return ObjectDetectionExporter(
+            self.scenario_output_dir, export_kwargs=export_kwargs
         )
 
     def finalize_results(self):
