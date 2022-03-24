@@ -14,88 +14,103 @@ from armory.utils.export import (
 pytestmark = pytest.mark.unit
 
 
-def test_image_classification_export(tmp_path):
-    random_x = np.random.rand(32, 32, 3)
-    exporter = ImageClassificationExporter(base_output_dir=tmp_path)
-    pil_img = exporter.get_sample(random_x)
-    assert isinstance(pil_img, PIL.Image.Image)
+# Image Classification test input
+random_img = np.random.rand(32, 32, 3)
+
+# Object Detection test inputs
+obj_det_y_i = {
+    "labels": np.array([1.0]),
+    "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
+}
+obj_det_y_i_pred = {
+    "scores": np.array([1.0]),
+    "labels": np.array([1.0]),
+    "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
+}
+
+# Video Test Inputs
+num_frames = 10
+random_video = np.random.rand(num_frames, 32, 32, 3)
+video_tracking_y = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
+video_tracking_y_pred = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
+
+# So2Sat Test Input
+random_so2sat_img = np.random.rand(32, 32, 14)
 
 
-def test_object_detection_export(tmp_path):
-    random_x = np.random.rand(32, 32, 3)
-    exporter = ObjectDetectionExporter(base_output_dir=tmp_path)
-    pil_img = exporter.get_sample(random_x)
-    assert isinstance(pil_img, PIL.Image.Image)
+@pytest.mark.parametrize(
+    "exporter_class, class_kwargs, input_array, fn_kwargs, expected_output_type",
+    [
+        (ImageClassificationExporter, {}, random_img, {}, PIL.Image.Image),
+        (ObjectDetectionExporter, {}, random_img, {}, PIL.Image.Image),
+        (
+            ObjectDetectionExporter,
+            {},
+            random_img,
+            {"with_boxes": True, "y_i": obj_det_y_i, "y_i_pred": obj_det_y_i_pred},
+            PIL.Image.Image,
+        ),
+        (
+            ObjectDetectionExporter,
+            {},
+            random_img,
+            {"with_boxes": True, "y_i": obj_det_y_i},
+            PIL.Image.Image,
+        ),
+        (
+            ObjectDetectionExporter,
+            {},
+            random_img,
+            {"with_boxes": True, "y_i_pred": obj_det_y_i_pred},
+            PIL.Image.Image,
+        ),
+        (VideoClassificationExporter, {"frame_rate": 10}, random_video, {}, list),
+        (VideoTrackingExporter, {"frame_rate": 10}, random_video, {}, list),
+        (
+            VideoTrackingExporter,
+            {"frame_rate": 10},
+            random_video,
+            {
+                "with_boxes": True,
+                "y_i": video_tracking_y,
+                "y_i_pred": video_tracking_y_pred,
+            },
+            list,
+        ),
+        (
+            VideoTrackingExporter,
+            {"frame_rate": 10},
+            random_video,
+            {"with_boxes": True, "y_i_pred": video_tracking_y_pred},
+            list,
+        ),
+        (
+            VideoTrackingExporter,
+            {"frame_rate": 10},
+            random_video,
+            {"with_boxes": True, "y_i": video_tracking_y},
+            list,
+        ),
+        (So2SatExporter, {}, random_so2sat_img, {"modality": "vh"}, PIL.Image.Image),
+        (So2SatExporter, {}, random_so2sat_img, {"modality": "vv"}, PIL.Image.Image),
+        (So2SatExporter, {}, random_so2sat_img, {"modality": "eo"}, list),
+    ],
+)
+def test_exporter(
+    exporter_class, class_kwargs, input_array, fn_kwargs, expected_output_type
+):
+    exporter = exporter_class(base_output_dir="tmp", **class_kwargs)
+    sample = exporter.get_sample(input_array, **fn_kwargs)
+    assert isinstance(sample, expected_output_type)
 
-    y = {
-        "labels": np.array([1.0]),
-        "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
-    }
-    y_pred = {
-        "scores": np.array([1.0]),
-        "labels": np.array([1.0]),
-        "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
-    }
+    # For video scenarios, check that the list contains num_frames elements and each is a PIL Image
+    if exporter_class in [VideoClassificationExporter, VideoTrackingExporter]:
+        assert len(sample) == num_frames
+        for i in sample:
+            assert isinstance(i, PIL.Image.Image)
 
-    pil_img_with_both_boxes = exporter.get_sample(
-        random_x, with_boxes=True, y_i=y, y_i_pred=y_pred
-    )
-    assert isinstance(pil_img_with_both_boxes, PIL.Image.Image)
-
-    pil_img_with_gt_boxes = exporter.get_sample(random_x, with_boxes=True, y_i=y)
-    assert isinstance(pil_img_with_gt_boxes, PIL.Image.Image)
-
-    pil_img_with_pred_boxes = exporter.get_sample(
-        random_x, with_boxes=True, y_i_pred=y_pred
-    )
-    assert isinstance(pil_img_with_pred_boxes, PIL.Image.Image)
-
-
-def test_video_classification_export(tmp_path):
-    num_frames = 12
-    random_x = np.random.rand(num_frames, 32, 32, 3)
-    exporter = VideoClassificationExporter(base_output_dir=tmp_path, frame_rate=10)
-    pil_img_list = exporter.get_sample(random_x)
-    assert isinstance(pil_img_list, list)
-    assert len(pil_img_list) == num_frames
-    for img in pil_img_list:
-        assert isinstance(img, PIL.Image.Image)
-
-
-def test_video_tracking_export(tmp_path):
-    num_frames = 12
-    random_x = np.random.rand(num_frames, 32, 32, 3)
-    exporter = VideoTrackingExporter(base_output_dir=tmp_path, frame_rate=10)
-    pil_img_list = exporter.get_sample(random_x)
-    assert isinstance(pil_img_list, list)
-    assert len(pil_img_list) == num_frames
-    for img in pil_img_list:
-        assert isinstance(img, PIL.Image.Image)
-
-    y = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
-    y_pred = {"boxes": np.ones((num_frames, 4)).astype(np.float32)}
-
-    pil_img_with_boxes_list = exporter.get_sample(
-        random_x, with_boxes=True, y_i_pred=y_pred, y_i=y
-    )
-
-    assert isinstance(pil_img_with_boxes_list, list)
-    assert len(pil_img_list) == num_frames
-    for img in pil_img_list:
-        assert isinstance(img, PIL.Image.Image)
-
-
-def test_so2sat_export(tmp_path):
-    random_x = np.random.rand(32, 32, 14)
-    exporter = So2SatExporter(base_output_dir=tmp_path)
-    sample_vh = exporter.get_sample(random_x, modality="vh")
-    assert isinstance(sample_vh, PIL.Image.Image)
-
-    sample_vv = exporter.get_sample(random_x, modality="vv")
-    assert isinstance(sample_vv, PIL.Image.Image)
-
-    samples_eo = exporter.get_sample(random_x, modality="eo")
-    assert isinstance(samples_eo, list)
-    assert len(samples_eo) == 10
-    for i in samples_eo:
-        assert isinstance(i, PIL.Image.Image)
+    # For the so2sat eo test, check that the list contains 10 elements and each is a PIL Image
+    if exporter_class == So2SatExporter and fn_kwargs["modality"] == "eo":
+        assert len(sample) == 10
+        for i in sample:
+            assert isinstance(i, PIL.Image.Image)
