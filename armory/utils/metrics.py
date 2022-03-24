@@ -11,7 +11,7 @@ import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
-from typing import Callable, Dict, List
+from typing import Dict, List
 
 import cProfile
 import pstats
@@ -53,7 +53,7 @@ def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
         _, chi2_p_value, _, _ = stats.chi2_contingency(
             contingency_table, correction=False
         )
-    except ValueError as e:
+    except ValueError:
         chi2_p_value = np.nan
     return [chi2_p_value]
 

@@ -477,21 +477,3 @@ class Evaluator(object):
         )
         options = "".join(f", {str(k)}={str(v)}" for k, v in kwargs.items() if v)
         return options
-
-    def _constructor_options(
-        self,
-        check_run=False,
-        num_eval_batches=None,
-        skip_benign=None,
-        skip_attack=None,
-        skip_misclassified=None,
-    ):
-        kwargs = dict(
-            check_run=check_run,
-            num_eval_batches=num_eval_batches,
-            skip_benign=skip_benign,
-            skip_attack=skip_attack,
-            skip_misclassified=skip_misclassified,
-        )
-        options = "".join(f", {str(k)}={str(v)}" for k, v in kwargs.items() if v)
-        return options

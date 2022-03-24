@@ -2,7 +2,7 @@ from importlib import import_module
 import logging
 
 logger = logging.getLogger(__name__)
-from typing import *
+from typing import NamedTuple, Iterable, Dict, List, Tuple, Optional
 
 
 import numpy as np
@@ -156,7 +156,7 @@ def load_explanatory_model(model_config):
         weights_path = None
     try:
         model = model_fn(weights_path)
-    except TypeError as e:
+    except TypeError:
         model = model_fn(weights_path, model_config["model_kwargs"])
     if not weights_file and not model_config["fit"]:
         logger.warning(
@@ -266,7 +266,7 @@ class FairnessMetrics:
         predicted_clean_indices: np.ndarray,
     ):
         """ Compute filter perplexity, add it to the results dict in the calling scenario, and return data for logging
-            
+
             y_clean: the labels for the clean dataset
             poison_index: the indices of the poisoned samples
             predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
@@ -354,10 +354,6 @@ class FairnessMetrics:
             kept_mask = np.zeros_like(y_poison, dtype=np.bool_)
             kept_mask[predicted_clean_indices] = True
             kept_mask_unpoisoned = kept_mask[~poisoned_mask]
-            y_unpoisoned_pred = self.scenario.model.predict(
-                x_unpoisoned, **self.scenario.predict_kwargs
-            ).argmax(1)
-            correct_prediction_mask_unpoisoned = y_unpoisoned == y_unpoisoned_pred
 
             majority_x_passed_filter_tables = make_contingency_tables(
                 y_unpoisoned, majority_mask_unpoisoned, kept_mask_unpoisoned

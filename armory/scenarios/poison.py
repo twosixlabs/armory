@@ -373,7 +373,7 @@ class Poison(Scenario):
         log.info(
             f"Unpoisoned validation accuracy on targeted class: {self.target_class_benign_metric.mean():.2%}"
         )
-        results = {
+        self.results = {
             "benign_validation_accuracy": self.benign_validation_metric.mean(),
             "benign_validation_accuracy_targeted_class": self.target_class_benign_metric.mean(),
         }
