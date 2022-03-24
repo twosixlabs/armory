@@ -1,12 +1,7 @@
-import logging
-
 from art.attacks.evasion import ProjectedGradientDescent
 import numpy as np
 
 from armory.logs import log
-
-
-logger = logging.getLogger(__name__)
 
 
 class PGDPatch(ProjectedGradientDescent):

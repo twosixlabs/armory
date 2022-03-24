@@ -66,11 +66,6 @@ if __version__ is None:
 __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 
 
-# typedef for a widely used JSON-like configuration specification
-from typing import Dict, Any
-
-Config = Dict[str, Any]
-
 # Submodule imports
 try:
     from armory import art_experimental

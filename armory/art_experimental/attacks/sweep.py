@@ -1,4 +1,4 @@
-wrom importlib import import_module
+from importlib import import_module
 
 import numpy as np
 from art.attacks import EvasionAttack
