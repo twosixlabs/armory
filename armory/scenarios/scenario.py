@@ -234,10 +234,9 @@ class Scenario:
         self.num_export_batches = num_export_batches
         self.sample_exporter = self._load_sample_exporter()
 
-    @abc.abstractmethod
     def _load_sample_exporter(self):
         raise NotImplementedError(
-            f"_load_sample_exporter() method should be defined for scenario {self.__class__}"
+            f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"
         )
 
     def load(self):
