@@ -6,8 +6,6 @@ Outputs are lists of python variables amenable to JSON serialization:
     numpy data types and tensors generally fail to serialize
 """
 
-import logging
-from multiprocessing.sharedctypes import Value
 import numpy as np
 import time
 from contextlib import contextmanager
@@ -21,9 +19,20 @@ from scipy import stats
 
 from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
+from armory.logs import log
 
 
-logger = logging.getLogger(__name__)
+def abstains(y, y_pred):
+    """
+    For each sample in y_pred:
+        return 1 for i if y_pred[i] is all 0s (an abstention), return 0 otherwise
+        returns a list of (0, 1) elements
+    """
+    del y
+    y_pred = np.asarray(y_pred)
+    if y_pred.ndim != 2:
+        raise ValueError(f"y_pred {y_pred} is not 2-dimensional")
+    return [int(x) for x in (y_pred == 0.0).all(axis=1)]
 
 
 def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
@@ -150,16 +159,16 @@ def filter_perplexity_fps_benign(
     y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray
 ) -> List[float]:
     """
-    Measure one possible aspect of bias by seeing how closely the distribution of false 
-    positives matches the distribution of unpoisoned data.  The intuition is that bias 
-    depends not on how much of the poison the filter finds, but only what the filter does 
-    to the rest of the data.  That is, if it removes clean data, it should do so in 
+    Measure one possible aspect of bias by seeing how closely the distribution of false
+    positives matches the distribution of unpoisoned data.  The intuition is that bias
+    depends not on how much of the poison the filter finds, but only what the filter does
+    to the rest of the data.  That is, if it removes clean data, it should do so in
     proportion to class frequency, removing roughly the same fraction of each class.
 
-    In particular, we do not expect that _everything_ removed by the filter should match 
-    the original class distribution, because we do not expect that the poison was applied 
-    evenly to the whole dataset in the first place.  
-    
+    In particular, we do not expect that _everything_ removed by the filter should match
+    the original class distribution, because we do not expect that the poison was applied
+    evenly to the whole dataset in the first place.
+
     Args:
         y_clean:            The class labels of the original dataset
         poison_index:       The indices of elements in y_clean that were actually poisoned
@@ -483,7 +492,7 @@ def resource_context(name="Name", profiler=None, computational_resource_dict=Non
     if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
     if profiler == "Deterministic":
-        logger.warn(
+        log.warning(
             "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
         )
         pr = cProfile.Profile()
@@ -540,7 +549,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
     if (x_i == x_adv_i).mean() < 0.5:
-        logger.warning(
+        log.warning(
             f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
             "indices. image_circle_patch_area may not be accurate"
         )
@@ -551,7 +560,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     # Determine which indices (along the spatial dimension) are perturbed
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
     if len(pert_spatial_indices) == 0:
-        logger.warning("x_i == x_adv_i. image_circle_patch_area is 0")
+        log.warning("x_i == x_adv_i. image_circle_patch_area is 0")
         return 0
 
     # Find which indices (preceding the patch's max index) are unperturbed, in order
@@ -568,7 +577,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
 
     # If there are any perturbed indices outside the range of the patch just computed
     if min(pert_spatial_indices) < min_ind_of_patch:
-        logger.warning("Multiple regions of the image have been perturbed")
+        log.warning("Multiple regions of the image have been perturbed")
 
     diameter = max_ind_of_patch - min_ind_of_patch + 1
     spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
@@ -659,9 +668,7 @@ def _intersection_over_union(box_1, box_2):
     if all(i <= 1.0 for i in box_1[np.where(box_1 > 0)]) ^ all(
         i <= 1.0 for i in box_2[np.where(box_2 > 0)]
     ):
-        logger.warning(
-            "One set of boxes appears to be normalized while the other is not"
-        )
+        log.warning("One set of boxes appears to be normalized while the other is not")
 
     # Determine coordinates of intersection box
     x_left = max(box_1[1], box_2[1])
@@ -1741,6 +1748,8 @@ class MetricList:
         return list(self._values)
 
     def mean(self):
+        if not self._values:
+            return float("nan")
         return sum(float(x) for x in self._values) / len(self._values)
 
     def append_input_label(self, label):
@@ -1802,7 +1811,7 @@ class MetricsLogger:
         self.full = bool(record_metric_per_sample)
         self.computational_resource_dict = {}
         if not self.means and not self.full:
-            logger.warning(
+            log.warning(
                 "No per-sample metric results will be produced. "
                 "To change this, set 'means' or 'record_metric_per_sample' to True."
             )
@@ -1812,10 +1821,40 @@ class MetricsLogger:
             and not self.adversarial_tasks
             and not self.targeted_tasks
         ):
-            logger.warning(
+            log.warning(
                 "No metric results will be produced. "
                 "To change this, set one or more 'task' or 'perturbation' metrics"
             )
+        # the following metrics must be computed at once after all predictions have been obtained
+        self.non_elementwise_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+        self.mean_ap_metrics = [
+            "object_detection_AP_per_class",
+            "apricot_patch_targeted_AP_per_class",
+            "dapricot_patch_targeted_AP_per_class",
+            "carla_od_AP_per_class",
+        ]
+
+        self.task_kwargs = task_kwargs
+        if task_kwargs:
+            if not isinstance(task_kwargs, list):
+                raise TypeError(
+                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
+                )
+            if len(task_kwargs) != len(task):
+                raise ValueError(
+                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
+                )
+
+        # This designation only affects logging formatting
+        self.quantity_metrics = [
+            "object_detection_hallucinations_per_image",
+            "carla_od_hallucinations_per_image",
+        ]
 
         self.task_kwargs = task_kwargs
         if task_kwargs:
@@ -1895,7 +1934,11 @@ class MetricsLogger:
         for metric in self.perturbations:
             metric.add_results(x, x_adv)
 
-    def log_task(self, adversarial=False, targeted=False):
+    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
+        if used_preds_as_labels and not adversarial:
+            raise ValueError("benign task shouldn't use benign predictions as labels")
+        if used_preds_as_labels and targeted:
+            raise ValueError("targeted task shouldn't use benign predictions as labels")
         if targeted:
             if adversarial:
                 metrics = self.targeted_tasks
@@ -1905,7 +1948,10 @@ class MetricsLogger:
                 raise ValueError("benign task cannot be targeted")
         elif adversarial:
             metrics = self.adversarial_tasks
-            wrt = "ground truth"
+            if used_preds_as_labels:
+                wrt = "benign predictions as"
+            else:
+                wrt = "ground truth"
             task_type = "adversarial"
         else:
             metrics = self.tasks
@@ -1915,7 +1961,7 @@ class MetricsLogger:
         for task_idx, metric in enumerate(metrics):
             # Do not calculate mean WER, calcuate total WER
             if metric.name == "word_error_rate":
-                logger.info(
+                log.success(
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
@@ -1926,23 +1972,28 @@ class MetricsLogger:
                     )
                 else:
                     metric_result = metric.compute_non_elementwise_metric()
-                logger.info(
+                log.success(
                     f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric_result}"
                 )
                 if metric.name in self.mean_ap_metrics:
-                    logger.info(
+                    log.success(
                         f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
                         f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
                     )
             elif metric.name in self.quantity_metrics:
                 # Don't include % symbol
-                logger.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2}"
                 )
+                if metric.name in self.mean_ap_metrics:
+                    log.success(
+                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
+                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
+                    )
             else:
-                logger.info(
+                log.success(
                     f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
                     f"{metric.mean():.2%}"
                 )

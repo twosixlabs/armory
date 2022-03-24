@@ -76,13 +76,12 @@ _LABELS = [
 class LibrispeechConfig(tfds.core.BuilderConfig):
     """BuilderConfig for Librispeech."""
 
-    @tfds.core.disallow_positional_args
-    def __init__(self, text_encoder_config=None, **kwargs):
+    def __init__(self, *, text_encoder_config=None, **kwargs):
         """Constructs a LibrispeechConfig.
 
         Args:
-          text_encoder_config: `tfds.features.text.TextEncoderConfig`, configuration
-            for the `tfds.features.text.TextEncoder` used for the text feature.
+          text_encoder_config: `tfds.deprecated.text.TextEncoderConfig`, configuration
+            for the `tfds.deprecated.text.TextEncoder` used for the text feature.
           **kwargs: keyword arguments forwarded to super.
         """
         name = kwargs.get("name")
@@ -115,14 +114,14 @@ def _make_builder_configs():
     """
     text_encoder_configs = [
         None,
-        tfds.features.text.TextEncoderConfig(
+        tfds.deprecated.text.TextEncoderConfig(
             name="subwords8k",
-            encoder_cls=tfds.features.text.SubwordTextEncoder,
+            encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
             vocab_size=2 ** 13,
         ),
-        tfds.features.text.TextEncoderConfig(
+        tfds.deprecated.text.TextEncoderConfig(
             name="subwords32k",
-            encoder_cls=tfds.features.text.SubwordTextEncoder,
+            encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
             vocab_size=2 ** 15,
         ),
     ]

@@ -1,11 +1,12 @@
 {
-    "_description": "XView object detection, contributed by MITRE Corporation",
+    "_description": "CARLA multimodality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "max_iter": 10,
+            "learning_rate": 0.01,
+            "max_iter": 20000,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_patch",
@@ -48,8 +49,8 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
-        "external_github_repo": "colour-science/colour",
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": "colour-science/colour@v0.3.16",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,

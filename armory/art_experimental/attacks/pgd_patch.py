@@ -3,6 +3,8 @@ import logging
 from art.attacks.evasion import ProjectedGradientDescent
 import numpy as np
 
+from armory.logs import log
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +37,13 @@ class PGDPatch(ProjectedGradientDescent):
         if "ymin" in generate_kwargs:
             ymin = generate_kwargs["ymin"]
         else:
-            logger.info("Selecting random value for patch ymin coordinate.")
+            log.info("Selecting random value for patch ymin coordinate.")
             ymin = np.random.randint(int(x.shape[-3] - patch_height))
 
         if "xmin" in generate_kwargs:
             xmin = generate_kwargs["xmin"]
         else:
-            logger.info("Selecting random value for patch xmin coordinate.")
+            log.info("Selecting random value for patch xmin coordinate.")
             xmin = np.random.randint(int(x.shape[-2] - patch_width))
 
         assert x.ndim in [

@@ -14,8 +14,8 @@
         "target_class": 5,
         "train_epochs": 200,
         "use_poison_filtering_defense": false,
-        "compute_fairness_metrics":true,
-        "explanatory_model":"resisc10_silhouette_model"
+        "compute_fairness_metrics": true,
+        "explanatory_model": "resisc10_silhouette_model"
     },
     "attack": {
         "knowledge": "black",
@@ -116,7 +116,7 @@
         "name": "RESISC10"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

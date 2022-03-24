@@ -53,8 +53,8 @@
         "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.14.0",
-        "external_github_repo": "colour-science/colour",
+        "docker_image": "twosixarmory/tf2",
+        "external_github_repo": "colour-science/colour@v0.3.16",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
