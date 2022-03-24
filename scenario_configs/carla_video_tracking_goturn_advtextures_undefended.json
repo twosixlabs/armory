@@ -5,8 +5,8 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "max_iter": 10,
-            "step_size": 0.1,
+            "max_iter": 100,
+            "step_size": 0.02,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_adversarial_texture",
@@ -44,7 +44,7 @@
         "name": "CarlaVideoTracking"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.0",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": "amoudgl/pygoturn",
         "gpus": "all",
         "output_dir": null,

@@ -13,9 +13,7 @@
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 30,
-        "use_poison_filtering_defense": true,
-        "compute_fairness_metrics":true,
-        "explanatory_model":"gtsrb_silhouette_model"
+        "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
@@ -60,7 +58,7 @@
         "name": "GTSRB"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1:0.14.0",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

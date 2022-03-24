@@ -1,8 +1,7 @@
-import logging
 import subprocess
 import os
 
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class HostArmoryInstance:
@@ -16,9 +15,9 @@ class HostArmoryInstance:
             raise ValueError("HostArmoryInstance does not support the user input")
         completion = subprocess.run(cmd, env=self.env, shell=True)
         if completion.returncode:
-            logger.error("Command did not finish cleanly")
+            log.error(f"command {cmd} did not finish cleanly")
         else:
-            logger.info("Command exited cleanly")
+            log.success("command exited cleanly")
         return completion.returncode
 
 

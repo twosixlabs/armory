@@ -4,14 +4,11 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-import logging
 
 import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-
-logger = logging.getLogger(__name__)
 
 
 class CarlaVideoTracking(Scenario):
@@ -70,6 +67,8 @@ class CarlaVideoTracking(Scenario):
         self.metrics_logger.update_perturbation(x, x_adv)
 
         if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
+            self.sample_exporter.export(
+                x, x_adv, y_object, y_pred_adv, self.y_pred, plot_bboxes=True
+            )
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv

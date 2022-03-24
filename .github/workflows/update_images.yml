@@ -1,0 +1,26 @@
+---
+# This workflow allows for manual updating of
+# armory docker images from github actions.
+
+name: armory-image-update
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: "Specify Arguments"
+jobs:
+  update-image:
+    name: Update Image
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Build image
+        run: |
+          echo ${{github.event.inputs.tags}}
+          bash docker/update_registry.sh ${{github.event.inputs.tags}}

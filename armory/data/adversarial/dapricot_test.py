@@ -3,10 +3,11 @@
 import collections
 import json
 import os
-import pandas
 
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
+
+from armory.data.adversarial import pandas_proxy
 
 _DESCRIPTION = """
 LEGAL
@@ -223,32 +224,24 @@ class DapricotTest(tfds.core.GeneratorBasedBuilder):
                 # get colorchecker color box values. There are 24 color boxes, so output shape is (24, 3)
                 def get_cc(ground_truth=True, scene=None, camera=None):
                     if ground_truth:
-                        return (
-                            pandas.read_csv(
-                                os.path.join(
-                                    path,
-                                    "annotations",
-                                    "xrite_passport_colors_sRGB-GMB-2005.csv",
-                                ),
-                                header=None,
-                            )
-                            .to_numpy()
-                            .astype("float32")
+                        return pandas_proxy.read_csv_to_numpy_float32(
+                            os.path.join(
+                                path,
+                                "annotations",
+                                "xrite_passport_colors_sRGB-GMB-2005.csv",
+                            ),
+                            header=None,
                         )
                     else:
-                        return (
-                            pandas.read_csv(
-                                os.path.join(
-                                    path,
-                                    "annotations",
-                                    "scene_{}_camera_{}_CC_values.csv".format(
-                                        scene, camera
-                                    ),
+                        return pandas_proxy.read_csv_to_numpy_float32(
+                            os.path.join(
+                                path,
+                                "annotations",
+                                "scene_{}_camera_{}_CC_values.csv".format(
+                                    scene, camera
                                 ),
-                                header=None,
-                            )
-                            .to_numpy()
-                            .astype("float32")
+                            ),
+                            header=None,
                         )
 
                 example = {
