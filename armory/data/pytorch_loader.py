@@ -33,3 +33,10 @@ class TFToTorchGenerator(torch.utils.data.IterableDataset):
                 y_torch = torch.from_numpy(y.numpy())
 
             yield x_torch, y_torch
+
+
+def get_pytorch_data_loader(ds):
+    torch_ds = TFToTorchGenerator(ds)
+    return torch.utils.data.DataLoader(
+        torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
+    )

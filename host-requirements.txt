@@ -47,7 +47,6 @@ opencv-python==4.5.5.62
 loguru
 docker
 jsonschema
-pymongo
 requests
 pytest
 

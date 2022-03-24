@@ -104,7 +104,6 @@ def get(
     config_json,
     from_file=True,
     check_run=False,
-    mongo_host=None,
     num_eval_batches=None,
     skip_benign=None,
     skip_attack=None,
@@ -125,7 +124,6 @@ def get(
     kwargs.update(
         dict(
             check_run=check_run,
-            mongo_host=mongo_host,
             num_eval_batches=num_eval_batches,
             skip_benign=skip_benign,
             skip_attack=skip_attack,
@@ -173,13 +171,6 @@ if __name__ == "__main__":
         dest="from_file",
         action="store_false",
         help="If the config argument is a base64 serialized JSON instead of a filepath",
-    )
-    # TODO: Figure out if this should be removed/deprecated
-    parser.add_argument(
-        "--mongo",
-        dest="mongo_host",
-        default=None,
-        help="Send scenario results to a MongoDB instance at the given host (eg mongodb://DOCKER_REPOSITORY:PASS@5.6.7.8')",
     )
     parser.add_argument(
         "--check",
@@ -236,7 +227,6 @@ if __name__ == "__main__":
             args.config,
             from_file=args.from_file,
             check_run=args.check,
-            mongo_host=args.mongo_host,
             num_eval_batches=args.num_eval_batches,
             skip_benign=args.skip_benign,
             skip_attack=args.skip_attack,
