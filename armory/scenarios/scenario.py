@@ -345,7 +345,7 @@ class Scenario:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
 
-        if self.sample_exporter is not None:
+        if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
 
     def _evaluate(self) -> dict:
