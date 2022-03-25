@@ -30,11 +30,11 @@ class CarlaObjectDetectionTask(Scenario):
 
     def next(self):
         super().next()
-        self.y_object = [self.y[0]]
         self.y_patch_metadata = [self.y[1]]
+        self.y = [self.y[0]]
 
     def run_benign(self):
-        x, y = self.x, self.y_object
+        x, y = self.x, self.y
 
         x.flags.writeable = False
 
@@ -44,7 +44,7 @@ class CarlaObjectDetectionTask(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
-        x, y = self.x, self.y_object
+        x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.use_label:
