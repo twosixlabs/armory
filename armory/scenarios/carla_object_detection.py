@@ -30,8 +30,7 @@ class CarlaObjectDetectionTask(Scenario):
 
     def next(self):
         super().next()
-        self.y_patch_metadata = [self.y[1]]
-        self.y = [self.y[0]]
+        self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
 
     def run_benign(self):
         x, y = self.x, self.y
