@@ -16,12 +16,6 @@ from typing import Callable, Union, Tuple, List
 import numpy as np
 from armory.logs import log
 
-# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
-#     all CPU resources when num_workers > 1
-try:
-    import torch  # noqa: F401
-except ImportError:
-    pass
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
@@ -422,8 +416,10 @@ def _generator_from_tfds(
             download_and_prepare_kwargs=download_and_prepare_kwargs,
             shuffle_files=shuffle_files,
         )
-    except AssertionError as e:
-        if not str(e).startswith("Unrecognized instruction format: "):
+    except (AssertionError, ValueError) as e:
+        if not str(e).startswith(
+            "Unrecognized instruction format: "
+        ) and "Unrecognized split format: " not in str(e):
             raise
         log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
         log.warning(f"Attempting to parse split {split}")
@@ -536,10 +532,9 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = _get_pytorch_dataset(ds)
-        generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
-        )
+        from armory.data import pytorch_loader
+
+        generator = pytorch_loader.get_pytorch_data_loader(ds)
 
     else:
         raise ValueError(
@@ -1859,11 +1854,3 @@ def _download_data(dataset_name):
         log.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         log.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _get_pytorch_dataset(ds):
-    import armory.data.pytorch_loader as ptl
-
-    ds = ptl.TFToTorchGenerator(ds)
-
-    return ds

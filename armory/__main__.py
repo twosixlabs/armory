@@ -27,7 +27,6 @@ from armory import arguments
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
-from armory.utils import docker_api
 from armory.utils.configuration import load_config, load_config_stdin
 import armory.logs
 
@@ -403,7 +402,8 @@ def _pull_docker_images(docker_client=None):
         except docker.errors.ImageNotFound:
             try:
                 log.info(f"Image {image} was not found. Downloading...")
-                docker_api.pull_verbose(docker_client, image)
+                repository, tag = ":".split(image)
+                images.pull_verbose(docker_client, repository, tag=tag)
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "
@@ -472,49 +472,6 @@ def download(command_args, prog, description):
     )
     exit_code = rig.run(command=f"python -c '{cmd}'")
     sys.exit(exit_code)
-
-
-def clean(command_args, prog, description):
-    parser = argparse.ArgumentParser(prog=prog, description=description)
-    _debug(parser)
-    parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="Whether to remove images of running containers",
-    )
-    parser.add_argument(
-        "--no-download",
-        dest="download",
-        action="store_false",
-        help="If set, will not attempt to pull images before removing existing",
-    )
-
-    args = parser.parse_args(command_args)
-    armory.logs.update_filters(args.log_level, args.debug)
-
-    docker_client = docker.from_env(version="auto")
-    if args.download:
-        log.info("Pulling the latest docker images")
-        _pull_docker_images(docker_client)
-
-    log.info("Deleting old docker images")
-    tags = set()
-    for image in docker_client.images.list():
-        tags.update(image.tags)
-
-    # If dev version, only remove old dev-tagged containers
-    for tag in sorted(tags):
-        if images.is_old(tag):
-            log.info(f"Attempting to remove tag {tag}")
-            try:
-                docker_client.images.remove(tag, force=args.force)
-                log.info(f"* Tag {tag} removed")
-            except docker.errors.APIError as e:
-                if not args.force and "(must force)" in str(e):
-                    log.exception(f"Cannot delete tag {tag}. Must use `--force`")
-                else:
-                    raise
 
 
 def _get_path(name, default_path, absolute_required=True):
@@ -759,7 +716,6 @@ COMMANDS = {
         download,
         "download datasets and model weights used for a given evaluation scenario",
     ),
-    "clean": (clean, "download new and remove all old armory docker images"),
     "configure": (configure, "set up armory and dataset paths"),
     "launch": (launch, "launch a given docker container in armory"),
     "exec": (exec, "run a single exec command in the container"),

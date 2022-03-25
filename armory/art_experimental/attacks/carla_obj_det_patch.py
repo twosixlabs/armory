@@ -1,10 +1,17 @@
-import numpy as np
-import cv2
-import colour
 import random
 
 from armory.logs import log
 from art.attacks.evasion import RobustDPatch
+import cv2
+import numpy as np
+
+from armory.utils.external_repo import ExternalRepoImport
+
+with ExternalRepoImport(
+    repo="colour-science/colour@v0.3.16",
+    experiment="carla_obj_det_dpatch_undefended.json",
+):
+    import colour
 
 
 def calculate_ccm(im_np, gt_np, gamma=2.2, Vandermonde=True, degree=1):
