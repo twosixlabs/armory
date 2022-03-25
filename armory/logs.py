@@ -85,6 +85,9 @@ def format_log(record) -> str:
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
         "{message}\n"
     )
+    if record["exception"] is not None:
+        message += "\n{exception}"
+
     return message
 
 
@@ -149,7 +152,13 @@ def add_sink(sink, colorize=True):
     # set the base logging level to TRACE because we are using filter= to control which
     # messages are sent to the sink, so we want the level to be wide open
     new_logger = loguru.logger.add(
-        sink, format=format_log, level="TRACE", filter=filters, colorize=colorize
+        sink,
+        format=format_log,
+        level="TRACE",
+        filter=filters,
+        colorize=colorize,
+        backtrace=True,
+        diagnose=True,
     )
     return new_logger
 
@@ -219,6 +228,14 @@ if __name__ == "__main__":
     for level in "trace debug info success warning error critical".split():
         log.log(level.upper(), f"message at {level}")
 
+    def child():
+        log.info("child")
+        raise Exception("child")
+
+    def parent():
+        log.info("parent")
+        child()
+
     def library_messages():
         # this should induce a flurry of log messages through the InterceptHandler
         import boto3
@@ -237,6 +254,11 @@ if __name__ == "__main__":
     update_filters(["s3transfer:DEBUG"])
     log.info("logging s3:DEBUG")
     library_messages()
+    try:
+        parent()
+    except Exception:
+        log.exception("parent failed")
+
 
 # need to instantiate the filters early, replacing the default
 log.remove()
