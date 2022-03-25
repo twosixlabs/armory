@@ -20,9 +20,10 @@ class SampleExporter:
         self.y_dict = {}
         self.export_kwargs = export_kwargs
 
-        self._make_output_dir()
-
     def export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+        if self.saved_batches == 0:
+            self._make_output_dir()
+
         self.y_dict[self.saved_samples] = {
             "y": y,
             "y_pred_clean": y_pred_clean,
