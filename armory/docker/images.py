@@ -30,14 +30,6 @@ IMAGE_MAP = {
 }
 
 
-# TODO is_old is used by the two implementations of `armory clean` in clean()
-# with the advent of setuptools_scm, this no longer makes sense. Since
-# I don't know if `armory clean` is used anywhere else, NotImplemented is a rude
-# way to find out
-def is_old(tag: str):
-    raise NotImplementedError
-
-
 def split_name(name: str):
     """
     Return the components of user/repo:tag as (user, repo, tag)
@@ -77,6 +69,8 @@ def is_armory(image_name: str):
     user, repo, _ = split_name(image_name)
     if user and user != DOCKER_REPOSITORY:
         return False
+    if repo == "tf1":
+        raise ValueError("tf1 docker image is deprecated. Use Armory version < 0.15.0")
     return repo in IMAGE_MAP
 
 
