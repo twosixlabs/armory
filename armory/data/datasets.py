@@ -353,7 +353,9 @@ def _generator_from_tfds(
     builder = tfds.core.builder_from_directory(dataset_folder)
 
     ds_info = builder.info
-    ds = builder.as_dataset(split="train", shuffle_files=shuffle_files, as_supervised=as_supervised)
+    ds = builder.as_dataset(
+        split="train", shuffle_files=shuffle_files, as_supervised=as_supervised
+    )
 
     # ds, ds_info = tfds.load(
     #     dataset_name,
