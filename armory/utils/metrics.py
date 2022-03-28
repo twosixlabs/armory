@@ -89,11 +89,11 @@ def compute_spd(contingency_table: np.ndarray) -> List[float]:
 
     the Statistical Parity Difference computed by
 
-    SPD = a / (a + b) - c / (c + d)
+    SPD = b / (a + b) - d / (c + d)
 
     is one measure of the impact being flagged by A has on being flagged by B.
     """
-    numerators = contingency_table[:, 0]
+    numerators = contingency_table[:, 1]
     denominators = contingency_table.sum(1)
     numerators[denominators == 0] = 0  # Handle division by zero:
     denominators[denominators == 0] = 1  # 0/0 => 0/1.
