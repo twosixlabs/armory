@@ -18,7 +18,7 @@ class Probe:
         self._warned = False
         self.measured = set()
 
-    def add_meter(self, meter):
+    def connect(self, meter):
         self.meters.append(meter)
 
     def update(self, *preprocessing, **named_values):
@@ -120,6 +120,9 @@ class Meter:
         if not isinstance(step, int):
             raise ValueError(f"'step' must be an int, not {type(step)}")
         self.step = step
+
+    def measure(self, *args, **kwargs):
+        raise NotImplementedError("Implement in subclasses of Meter if needed")
 
 
 class NullMeter(Meter):
@@ -400,6 +403,6 @@ def get_probe(name=None):
     return _PROBES[name]
 
 
-def add_meter(meter, name=None):
+def connect(meter, name=None):
     probe = get_probe(name=name)
-    probe.add_meter(meter)
+    probe.connect(meter)
