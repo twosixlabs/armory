@@ -57,6 +57,7 @@ if __version__ is None:
         __version__ = version("armory-testbed")
     except PackageNotFoundError:
         log.critical("armory package is not pip installed and not locally cloned")
+        __version__ = "EXPERIMENTAL_UNSUPPORTED"
         raise
 __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 
