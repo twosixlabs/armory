@@ -176,7 +176,10 @@ class So2SatClassification(Scenario):
             (x[..., 0] + 1j * x[..., 1], x[..., 2] + 1j * x[..., 3]), axis=3
         )
         x_adv_sar = np.stack(
-            (x_adv[..., 0] + 1j * x_adv[..., 1], x_adv[..., 2] + 1j * x_adv[..., 3],),
+            (
+                x_adv[..., 0] + 1j * x_adv[..., 1],
+                x_adv[..., 2] + 1j * x_adv[..., 3],
+            ),
             axis=3,
         )
         x_eo = x[..., 4:]

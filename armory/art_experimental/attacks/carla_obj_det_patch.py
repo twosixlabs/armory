@@ -355,7 +355,10 @@ class CARLADapricotPatch(RobustDPatch):
         return x_patch, patch_target, transformations
 
     def _untransform_gradients(
-        self, gradients, transforms, channels_first,
+        self,
+        gradients,
+        transforms,
+        channels_first,
     ):
         """
         Revert transformation on gradients using perspective transform

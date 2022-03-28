@@ -195,7 +195,10 @@ class Ucf101MarsPerturbationAndPatchAdversarial112x112(tfds.core.GeneratorBasedB
         dl_path = dl_manager.download_and_extract(_DL_URL)
         return [
             tfds.core.SplitGenerator(
-                name="adversarial", gen_kwargs={"data_dir_path": dl_path,},
+                name="adversarial",
+                gen_kwargs={
+                    "data_dir_path": dl_path,
+                },
             ),
         ]
 

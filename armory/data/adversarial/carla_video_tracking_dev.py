@@ -40,7 +40,8 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
         features = tfds.features.FeaturesDict(
             {
                 "video": tfds.features.Video(
-                    (None, 600, 800, 3), encoding_format="png",
+                    (None, 600, 800, 3),
+                    encoding_format="png",
                 ),
                 "bboxes": tfds.features.Sequence(
                     tfds.features.Tensor(
@@ -85,7 +86,8 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
 
         return [
             tfds.core.SplitGenerator(
-                name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
+                name="dev",
+                gen_kwargs={"path": os.path.join(path, "dev")},
             )
         ]
 
@@ -189,13 +191,20 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
                 if ground_truth:
                     return pandas_proxy.read_csv_to_numpy_float32(
                         os.path.join(
-                            path, video, "xrite_passport_colors_sRGB-GMB-2005.csv",
+                            path,
+                            video,
+                            "xrite_passport_colors_sRGB-GMB-2005.csv",
                         ),
                         header=None,
                     )
                 else:
                     return pandas_proxy.read_csv_to_numpy_float32(
-                        os.path.join(path, video, "CC.csv",), header=None,
+                        os.path.join(
+                            path,
+                            video,
+                            "CC.csv",
+                        ),
+                        header=None,
                     )
 
             #################################################################

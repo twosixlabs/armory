@@ -43,16 +43,16 @@ class SampleExporter:
         plot_bboxes=False,
         classes_to_skip=None,
     ):
-        """ x: the clean sample
-            x_adv: the adversarial sample
-            y: the clean label
-            y_pred_adv: the predicted label on the adversarial sample
-            y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
-            plot_bboxes: Boolean which can be set True for object detection and video
-                tracking scenarios, in which case samples are also exported with
-                ground-truth and predicted boxes drawn on
-            classes_to_skip: int or list of ints, classes not to draw boxes for. Only relevant
-                when plot_bboxes is set to True
+        """x: the clean sample
+        x_adv: the adversarial sample
+        y: the clean label
+        y_pred_adv: the predicted label on the adversarial sample
+        y_pred_clean: the predicted label on the clean sample, useful for plotting bboxes
+        plot_bboxes: Boolean which can be set True for object detection and video
+            tracking scenarios, in which case samples are also exported with
+            ground-truth and predicted boxes drawn on
+        classes_to_skip: int or list of ints, classes not to draw boxes for. Only relevant
+            when plot_bboxes is set to True
         """
 
         if self.saved_samples < self.num_samples:
@@ -68,8 +68,8 @@ class SampleExporter:
                 self.export_fn(x, x_adv)
 
     def write(self):
-        """ Pickle the y_dict built up during each export() call.
-            Called at end of scenario.
+        """Pickle the y_dict built up during each export() call.
+        Called at end of scenario.
         """
 
         with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
