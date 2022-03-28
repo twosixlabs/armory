@@ -34,7 +34,10 @@ and can be referenced like:
 
 ### Custom Images
 When creating custom images, it is important to extend from the armory `base`
-image to ensure that armory will function properly.  Once a custom image has been created, 
+image to ensure that armory will function properly.  If possible, using one of the armory `derived` images
+(e.g. `twosixarmory/pytorch`) will provide the most consistency.  If you find that you are consistently
+extending armory containers, please let us know and we can look into incorporating those changes.
+Once a custom image has been created, 
 it is a good idea to run the armory `unit` test suite in the container to make sure that 
 armory is functioning as desired.  For more information on how to do this, see [Armory Testing](developers/testing.md)
 
@@ -185,11 +188,11 @@ armory exec pytorch --gpus=0 -- nvidia-smi
 The TensorFlow versions we support require CUDA 10+ and the pre-built armory containers 
 currently utilize CUDA 11.3.  
 
-While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
+While PyTorch does support CUDA 9, Armory no longer supports CUDA 9. We do not recommend using it unless strictly necessary
 due to an inability to upgrade your local server, and we do not have it baked in to our docker
-containers. To use CUDA 9, you will need to rebuilt the armory images locally.  First
+containers.   To use CUDA < 11.3, you will need to rebuilt the armory images locally.  First
 you will need to edit the [Dockerfile-base](../docker/Dockerfile-base) file replacing `cudatoolkit=11.3` 
-with `cudatoolkit=9.2`.  Then follow the instructions [above](#building-images-from-source) to rebuild
+with the desired version.  Then follow the instructions [above](#building-images-from-source) to rebuild
 the armory images locally.
 
 ## Docker Setup

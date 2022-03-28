@@ -27,20 +27,21 @@ FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 SCRIPT_DIR = Path(__file__).parent
 
 
-def main(args):
-    print(f"armory docker builder version {armory.__version__}")
-    if args.framework == "all":
+def main(framework, repo, tag, base_tag, no_cache, no_pull, dry_run, docker_verbose):
+    print(f"armory docker builder version: {armory.__version__}")
+    if framework == "all":
         frameworks = ["base"] + FRAMEWORKS
-    elif args.framework == "derived":
+    elif framework == "derived":
         frameworks = FRAMEWORKS
-    elif args.framework in FRAMEWORKS or args.framework == "base":
-        frameworks = [args.framework]
+    elif framework in FRAMEWORKS or framework == "base":
+        frameworks = [framework]
     else:
-        raise ValueError(f"unknown framework {args.framework}")
+        raise ValueError(f"unknown framework {framework}")
 
     for framework in frameworks:
         dockerfile = SCRIPT_DIR / f"Dockerfile-{framework}"
-        tag = args.tag if framework != "base" else args.base_tag
+        tag = tag if framework != "base" else base_tag
+        print(f"\nBuilding docker image: {repo}/{framework}:{tag} using {dockerfile}\n")
         if not dockerfile.exists():
             print("make sure you run this script from the root of the armory repo")
             raise ValueError(f"Dockerfile not found: {dockerfile}")
@@ -51,23 +52,23 @@ def main(args):
             "--file",
             str(dockerfile),
             "--tag",
-            f"{args.repo}/{framework}:{tag}",
+            f"{repo}/{framework}:{tag}",
             "--build-arg",
-            f"base_image_tag={args.base_tag}",
+            f"base_image_tag={base_tag}",
             "--build-arg",
             f"armory_version={armory.__version__}",
             "--force-rm",
-            f"{args.verbose}",
+            f"{docker_verbose}",
         ]
-        if args.no_cache:
+        if no_cache:
             cmd.append("--no-cache")
-        if not args.no_pull:
+        if not no_pull:
             cmd.append("--pull")
 
         cmd.append(os.getcwd())
 
         print("about to run: ", " ".join(cmd))
-        if args.dry_run:
+        if dry_run:
             print("dry-run requested, not executing build")
         else:
             subprocess.run(cmd)
@@ -112,4 +113,5 @@ if __name__ == "__main__":
         help="framework to build.  `derived` specifies all images except base",
     )
     args = parser.parse_args()
-    main(args)
+    main(args.framework, args.repo, args.tag, args.base_tag, args.no_cache, args.no_pull,
+         args.dry_run, args.verbose)
