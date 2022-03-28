@@ -378,17 +378,6 @@ def run(command_args, prog, description):
     if args.classes:
         config["dataset"]["class_ids"] = args.classes
 
-    if args.num_eval_batches and args.index:
-        raise ValueError("Cannot have --num-eval-batches and --index")
-    if args.index and config["dataset"].get("index"):
-        log.info("Overriding index in config with command line argument")
-    if args.index:
-        config["dataset"]["index"] = args.index
-    if args.classes and config["dataset"].get("class_ids"):
-        log.info("Overriding class_ids in config with command line argument")
-    if args.classes:
-        config["dataset"]["class_ids"] = args.classes
-
     rig = Evaluator(config, no_docker=args.no_docker, root=args.root)
     exit_code = rig.run(
         interactive=args.interactive,
