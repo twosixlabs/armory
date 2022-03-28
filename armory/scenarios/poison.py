@@ -394,11 +394,6 @@ class Poison(Scenario):
             )
 
             # The following functions will add data to self.results
-            log_lines = self.fairness_metrics.add_filter_perplexity(
-                self.y_clean, self.poison_index, self.indices_to_keep
-            )
-            for line in log_lines:
-                log.info(line)
             log_lines = self.fairness_metrics.add_cluster_metrics(
                 self.x_poison,
                 self.y_poison,
@@ -408,3 +403,9 @@ class Poison(Scenario):
             )
             for line in log_lines:
                 log.info(line)
+            if self.use_filtering_defense:
+                log_lines = self.fairness_metrics.add_filter_perplexity(
+                    self.y_clean, self.poison_index, self.indices_to_keep
+                )
+                for line in log_lines:
+                    log.info(line)
