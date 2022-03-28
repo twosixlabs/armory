@@ -1,7 +1,6 @@
 from importlib import import_module
-import logging
+from armory.logs import log
 
-logger = logging.getLogger(__name__)
 from typing import NamedTuple, Iterable, Dict, List, Tuple, Optional
 
 
@@ -159,7 +158,7 @@ def load_explanatory_model(model_config):
     except TypeError:
         model = model_fn(weights_path, model_config["model_kwargs"])
     if not weights_file and not model_config["fit"]:
-        logger.warning(
+        log.warning(
             "No weights file was provided and the model is not configured to train. "
             "Are you loading model weights from an online repository?"
         )
