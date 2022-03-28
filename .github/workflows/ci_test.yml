@@ -105,7 +105,8 @@ jobs:
           pip install -r requirements.txt
           pip install -r test-requirements.txt
           pip install -r armory-base-requirements.txt
-          pytest -m "not docker_required and unit" ./tests/
+          # Must use python -m here since we don't install the package
+          python -m pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
     name: Docker Pytorch Unit Tests
     runs-on: ubuntu-18.04
