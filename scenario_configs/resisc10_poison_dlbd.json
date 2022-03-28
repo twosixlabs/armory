@@ -13,7 +13,9 @@
         "split_id": 0,
         "target_class": 5,
         "train_epochs": 200,
-        "use_poison_filtering_defense": false
+        "use_poison_filtering_defense": false,
+        "compute_fairness_metrics": true,
+        "explanatory_model": "resisc10_silhouette_model"
     },
     "attack": {
         "knowledge": "black",

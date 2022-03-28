@@ -12,7 +12,9 @@
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 50,
-        "use_poison_filtering_defense": false
+        "use_poison_filtering_defense": false,
+        "compute_fairness_metrics": true,
+        "explanatory_model": "gtsrb_silhouette_model"
     },
     "attack": {
         "knowledge": "black",
