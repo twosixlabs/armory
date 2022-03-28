@@ -1,24 +1,26 @@
-# The logging level defaults to INFO, rather than WARNING because logs are the main way
-# that armory communicates to the user.
-#
-# console log messages are currently sent to stdout rather than stderr, mimicing the
-# behavior of the previous coloredlogs package. I have kept this for now because I don't
-# know what external tools are consuming the console output and I don't want to break
-# them.
-#
-# This module creates the stdout sink at initialization, so `log.debug()` and friends
-# are available at import. The files
-#   1. output_dir/colored-log.txt
-#   2. output_dir/armory-log.txt
-#
-# cannot be created until after argument parsing completes so we know where to put them.
-# As soon as __main__ sets armory.paths to DOCKER or NO_DOCKER, it can call
-# make_logfiles(directory) to create the sink files. After make_logfiles is called,
-# all three sinks are receive the same messages.
-#
-# The armory-log.txt file does not include ansi color codes for easier parsing. This may
-# be considered redundant, but I don't expect the near-duplication to be particularly
-# costly.
+""" Armory Logging Utility
+The logging level defaults to INFO, rather than WARNING because logs are the main way
+that armory communicates to the user.
+
+console log messages are currently sent to stdout rather than stderr, mimicing the
+behavior of the previous coloredlogs package. I have kept this for now because I don't
+know what external tools are consuming the console output and I don't want to break
+them.
+
+This module creates the stdout sink at initialization, so `log.debug()` and friends
+are available at import. The files
+  1. output_dir/colored-log.txt
+  2. output_dir/armory-log.txt
+
+cannot be created until after argument parsing completes so we know where to put them.
+As soon as __main__ sets armory.paths to DOCKER or NO_DOCKER, it can call
+make_logfiles(directory) to create the sink files. After make_logfiles is called,
+all three sinks are receive the same messages.
+
+The armory-log.txt file does not include ansi color codes for easier parsing. This may
+be considered redundant, but I don't expect the near-duplication to be particularly
+costly.
+"""
 
 import sys
 import datetime

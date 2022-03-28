@@ -86,6 +86,26 @@ jobs:
           pip install -e .
           armory configure --use-defaults
           pytest -m "not docker_required and unit" ./tests/
+  native-all-unit-no-install:
+    name: Native Mode All unit tests armory not installed
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-18.04', 'macos-latest']
+        python-version: ['3.7']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run armory host tests
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install -r test-requirements.txt
+          pip install -r armory-base-requirements.txt
+          pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
     name: Docker Pytorch Unit Tests
     runs-on: ubuntu-18.04
