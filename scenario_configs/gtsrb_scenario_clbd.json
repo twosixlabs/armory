@@ -1,20 +1,20 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
+        "compute_fairness_metrics": true,
         "detection_kwargs": {
             "nb_clusters": 2,
             "nb_dims": 43,
             "reduce": "PCA"
         },
         "experiment_id": 0,
+        "explanatory_model": "gtsrb_silhouette_model",
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 20,
-        "use_poison_filtering_defense": false,
-        "compute_fairness_metrics": true,
-        "explanatory_model": "gtsrb_silhouette_model"
+        "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
