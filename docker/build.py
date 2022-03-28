@@ -113,5 +113,13 @@ if __name__ == "__main__":
         help="framework to build.  `derived` specifies all images except base",
     )
     args = parser.parse_args()
-    main(args.framework, args.repo, args.tag, args.base_tag, args.no_cache, args.no_pull,
-         args.dry_run, args.verbose)
+    main(
+        args.framework,
+        args.repo,
+        args.tag,
+        args.base_tag,
+        args.no_cache,
+        args.no_pull,
+        args.dry_run,
+        args.verbose,
+    )
