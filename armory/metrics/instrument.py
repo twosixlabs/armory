@@ -29,7 +29,7 @@ class Probe:
         """
         self.measured.update(named_values)
         if not self.meters and not self._warned:
-            logger.warning("No Meter set up!")
+            log.warning("No Meter set up!")
             self._warned = True
             return
 
@@ -146,7 +146,7 @@ class LogMeter(Meter):
     def update(self, **named_values):
         for name, value in named_values.items():
             self.values[name] = value
-            logger.info(
+            log.info(
                 f"LogMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}"
             )
 
@@ -176,7 +176,7 @@ class LogMeter(Meter):
 #        targeted=False,
 #    ):
 #        if not record_metric_per_sample:
-#            logger.warning("record_metric_per_sample overridden to True")
+#            log.warning("record_metric_per_sample overridden to True")
 #
 #        m = cls()
 #        kwargs = dict(aggregator="mean" if bool(means) else None,)
@@ -314,7 +314,7 @@ class LogMeter(Meter):
 #        for description, (metric, _) in self.metrics_dict.items():
 #            sub_results = metric.results()
 #            if not results.keys().isdisjoint(sub_results):
-#                logger.error(
+#                log.error(
 #                    f"Overwritting duplicate keys in {list(results)} and {list(sub_results)}"
 #                )
 #            results.update(sub_results)
