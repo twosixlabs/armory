@@ -1,7 +1,7 @@
 Armory Style Guide
 =====================
 The following describes the stlying approach used during `armory` development.  If you plan to make
-contributions to armory, please follow these style guidelines.  Note: Some of these are enforced by 
+contributions to armory, please follow these style guidelines.  Note: Some of these are enforced by
 our CI process and we have provided some `git hooks` to help with the formatting.  For more information
 see [Pre-commit Hooks](#pre-commit-hooks) below.
 
@@ -9,7 +9,7 @@ see [Pre-commit Hooks](#pre-commit-hooks) below.
 # Formatting
 All contributions to the repository must be formatted with [black](https://github.com/psf/black).
 ```
-pip install black==19.10b0
+pip install black~=22.3
 black .
 ```
 
