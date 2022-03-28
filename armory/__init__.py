@@ -51,11 +51,6 @@ def get_dynamic_version():
     return version
 
 
-# typedef for a widely used JSON-like configuration specification
-from typing import Dict, Any
-
-Config = Dict[str, Any]
-
 __version__ = get_dynamic_version()
 if __version__ is None:
     try:
