@@ -5,6 +5,8 @@ from torch import Tensor
 import logging
 from typing import Optional
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 logger = logging.getLogger(__name__)
 
 nclasses = 43  # GTSRB has 43 classes
@@ -53,9 +55,6 @@ class Micronnet(nn.Module):
         x = self.dense1_bn(x)
         x = self.fc2(x)
         return h, x
-
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class get_model(nn.Module):
