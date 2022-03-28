@@ -59,13 +59,12 @@ hydra-core
 google-cloud-storage
 sox
 ### End Pytorch required libraries
-###
 
 ### Begin TF2 required libraries (only needed for object detection)
 #tf-models-official==2.8
 #
 # protobuf=3  # Note: Conda or binary install
-#
+# 
 #       The TF2 object detection API requires separate installation, which
 #       is not simply handled by pip. Instructions can be found at
 #       https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf2/setup.py
@@ -76,15 +75,3 @@ sox
 #cp object_detection/packages/tf2/setup.py .
 #pip install --use-feature=in-tree-build .
 ### End TF2 required libraries
-
-###
-### Begin TF1 required libraries
-###
-# tensorflow-gpu==1.15.0
-#       The TF1 object detection API requires separate installation, which
-#       is not simply handled by pip. Instructions can be found at
-#       https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1.md#python-package-installation
-#       Commit hash 79354e14a4b41ff9019f4a5ebd12cfa498917182
-###
-### End TF1 required libraries
-###
