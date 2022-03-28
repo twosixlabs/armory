@@ -1,14 +1,12 @@
 """
 ResNet18 model to be used for data interpretations
 """
-import logging
 from typing import Optional
 
 import torch
 from torchvision.models.resnet import ResNet as resnet
 from torchvision.models.resnet import BasicBlock
 
-logger = logging.getLogger(__name__)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

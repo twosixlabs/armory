@@ -2,12 +2,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-import logging
 from typing import Optional
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-logger = logging.getLogger(__name__)
 
 nclasses = 43  # GTSRB has 43 classes
 
