@@ -87,7 +87,7 @@ jobs:
           armory configure --use-defaults
           pytest -m "not docker_required and unit" ./tests/
   native-all-unit-no-install:
-    name: Native Mode All unit tests armory not installed
+    name: Native-NoInstall Mode All unit tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
