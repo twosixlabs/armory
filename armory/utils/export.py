@@ -13,21 +13,22 @@ from armory.logs import log
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir):
+    def __init__(self, base_output_dir, export_kwargs={}):
         self.base_output_dir = base_output_dir
         self.saved_batches = 0
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
+        self.export_kwargs = export_kwargs
 
-        self._make_output_dir()
+    def export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+        if self.saved_batches == 0:
+            self._make_output_dir()
 
-    def export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
         self.y_dict[self.saved_samples] = {
-            "ground truth": y,
-            "predicted": y_pred_adv,
+            "y": y,
+            "y_pred_clean": y_pred_clean,
+            "y_pred_adv": y_pred_adv,
         }
         self._export(
             x=x,
@@ -35,14 +36,22 @@ class SampleExporter:
             y=y,
             y_pred_adv=y_pred_adv,
             y_pred_clean=y_pred_clean,
-            **kwargs,
+            **self.export_kwargs,
         )
 
     @abc.abstractmethod
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
-        raise NotImplementedError
+        raise NotImplementedError(
+            f"_export() method should be defined for export class {self.__class__}"
+        )
+
+    @abc.abstractmethod
+    def get_sample(self):
+        raise NotImplementedError(
+            f"get_sample() method should be defined for export class {self.__class__}"
+        )
 
     def write(self):
         """ Pickle the y_dict built up during each export() call.
@@ -73,29 +82,36 @@ class SampleExporter:
 class ImageClassificationExporter(SampleExporter):
     def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
         for i, x_i in enumerate(x):
-            self._export_image(x_i, type="benign")
+            self._export_image(x_i, name="benign")
 
             # Export adversarial image x_adv_i if present
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, type="adversarial")
+                self._export_image(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_image(self, x_i, type="benign"):
+    def _export_image(self, x_i, name="benign"):
         self.image = self.get_sample(x_i)
         self.image.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.png")
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.png")
         )
         if x_i.shape[-1] == 6:
-            self.depth_image = self.get_depth_sample(x_i)
+            self.depth_image = self.get_sample(x_i[..., 3:])
             self.depth_image.save(
-                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{type}.png")
+                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{name}.png")
             )
 
     @staticmethod
     def get_sample(x_i):
+        """
+
+        :param x_i: floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+                3 (RGB), or 6 (RGB-Depth)
+        :return: PIL.Image.Image
+        """
+
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("Image out of expected range. Clipping to [0, 1].")
 
@@ -114,20 +130,10 @@ class ImageClassificationExporter(SampleExporter):
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
 
-    @staticmethod
-    def get_depth_sample(x_i):
-        if x_i.shape[-1] != 6:
-            raise ValueError(f"Expected 6 channels, found {x_i.shape[-1]}")
-        x_i_depth = x_i[..., 3:]
-        depth_image = Image.fromarray(
-            np.uint8(np.clip(x_i_depth, 0.0, 1.0) * 255.0), "RGB"
-        )
-        return depth_image
-
 
 class ObjectDetectionExporter(ImageClassificationExporter):
-    def __init__(self, base_output_dir, num_samples):
-        super().__init__(base_output_dir, num_samples)
+    def __init__(self, base_output_dir, export_kwargs={}):
+        super().__init__(base_output_dir, export_kwargs)
         self.ground_truth_coco_data = []
         self.benign_preds_coco_data = []
         self.adv_preds_coco_data = []
@@ -136,106 +142,153 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         self,
         x,
         x_adv=None,
+        with_boxes=False,
         y=None,
         y_pred_adv=None,
         y_pred_clean=None,
+        score_threshold=0.5,
         classes_to_skip=None,
     ):
         for i, x_i in enumerate(x):
-            self._export_image(x_i, type="benign")
+            self._export_image(x_i, name="benign")
 
-            y_i = y[i]
-            y_i_pred_clean = y_pred_clean[i]
-            self._export_image_with_boxes(
-                self.image,
-                y_i,
-                y_i_pred_clean,
-                type="benign",
-                classes_to_skip=classes_to_skip,
-            )
+            if with_boxes:
+                y_i = y[i] if y is not None else None
+                y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
+                self._export_image(
+                    x_i,
+                    name="benign",
+                    with_boxes=True,
+                    y_i=y_i,
+                    y_i_pred=y_i_pred_clean,
+                    score_threshold=score_threshold,
+                    classes_to_skip=classes_to_skip,
+                )
 
             # Export adversarial image x_adv_i if present
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, type="adversarial")
-                y_i_pred_adv = y_pred_adv[i]
-                self._export_image_with_boxes(
-                    self.image,
-                    y_i,
-                    y_i_pred_adv,
-                    type="adversarial",
-                    classes_to_skip=classes_to_skip,
-                )
+                self._export_image(x_adv_i, name="adversarial")
+                if with_boxes:
+                    y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
+                    self._export_image(
+                        x_adv_i,
+                        name="adversarial",
+                        with_boxes=True,
+                        y_i=y_i,
+                        y_i_pred=y_i_pred_adv,
+                        score_threshold=score_threshold,
+                        classes_to_skip=classes_to_skip,
+                    )
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    @staticmethod
-    def get_sample_with_boxes(
-        image, y_i, y_i_pred, classes_to_skip=None, score_threshold=0.5,
-    ):
-        if isinstance(classes_to_skip, int):
-            classes_to_skip = [classes_to_skip]
-        box_layer = ImageDraw.Draw(image)
-
-        bboxes_true = y_i["boxes"]
-        labels_true = y_i["labels"]
-        image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
-        bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
-        labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
-        scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-
-        for true_box, label in zip(bboxes_true, labels_true):
-            if classes_to_skip is not None and label in classes_to_skip:
-                continue
-            box_layer.rectangle(true_box, outline="red", width=2)
-            if (
-                type == "benign"
-            ):  # these will be the same for adversarial; only do it one time.
-                xmin, ymin, xmax, ymax = true_box
-                coco_result = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                }
-                self.ground_truth_coco_data.append(coco_result)
-
-        for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
-            box_layer.rectangle(pred_box, outline="white", width=2)
-            xmin, ymin, xmax, ymax = pred_box
-            coco_result = {
-                "image_id": int(image_id),
-                "category_id": int(label),
-                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                "score": float(score),
-            }
-
-            if type == "benign":
-                self.benign_preds_coco_data.append(coco_result)
-            elif type == "adversarial":
-                self.adv_preds_coco_data.append(coco_result)
-
-        return image
-
-    def _export_image_with_boxes(
+    def _export_image(
         self,
-        image,
-        y_i,
-        y_i_pred,
-        classes_to_skip=None,
-        type="benign",
+        x_i,
+        name="benign",
+        with_boxes=False,
+        y_i=None,
+        y_i_pred=None,
         score_threshold=0.5,
+        classes_to_skip=None,
     ):
-        self.image_with_boxes = self.get_sample_with_boxes(
-            image=image,
+        if not with_boxes:
+            super()._export_image(x_i=x_i, name=name)
+            return
+
+        self.image_with_boxes, gt_boxes_coco, pred_boxes_coco = self.get_sample(
+            x_i=x_i,
+            with_boxes=True,
             y_i=y_i,
             y_i_pred=y_i_pred,
             classes_to_skip=classes_to_skip,
             score_threshold=score_threshold,
         )
         self.image_with_boxes.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}_with_boxes.png")
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
         )
+
+        # Add coco box dictionaries to correct lists
+        if name == "benign":
+            for coco_box in pred_boxes_coco:
+                self.benign_preds_coco_data.append(coco_box)
+            for coco_box in gt_boxes_coco:
+                self.ground_truth_coco_data.append(coco_box)
+        elif name == "adversarial":
+            # don't save gt boxes here since they are the same as for benign
+            for coco_box in pred_boxes_coco:
+                self.adv_preds_coco_data.append(coco_box)
+
+
+    def get_sample(
+        self,
+        x_i,
+        with_boxes=False,
+        y_i=None,
+        y_i_pred=None,
+        score_threshold=0.5,
+        classes_to_skip=None,
+    ):
+        """
+
+        :param x_i:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+                3 (RGB), or 6 (RGB-Depth)
+        :param with_boxes: boolean indicating whether to display bounding boxes
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :param score_threshold: float in [0, 1]; boxes with confidence > score_threshold are displayed
+        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be displayed
+        :return: PIL.Image.Image, and, if with_boxes == True, lists of coco data for ground truth and predicted labels
+        """
+        image = super().get_sample(x_i)
+        if not with_boxes:
+            return image
+
+        if y_i is None and y_i_pred is None:
+            raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
+        box_layer = ImageDraw.Draw(image)
+
+        gt_coco_items = []
+        pred_coco_items = []
+
+        if y_i is not None:
+            bboxes_true = y_i["boxes"]
+            labels_true = y_i["labels"]
+            image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+
+            for true_box, label in zip(bboxes_true, labels_true):
+                if classes_to_skip is not None and label in classes_to_skip:
+                    continue
+                box_layer.rectangle(true_box, outline="red", width=2)
+                xmin, ymin, xmax, ymax = true_box
+                gt_coco_result = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+                }
+                gt_coco_items.append(gt_coco_result)
+
+        if y_i_pred is not None:
+            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
+            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
+            image_id = y_i["image_id"][0]  # All boxes in y_i_pred are for the same image as y_i
+
+            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
+                box_layer.rectangle(pred_box, outline="white", width=2)
+                xmin, ymin, xmax, ymax = pred_box
+                pred_coco_result = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+                    "score": float(score),
+                }
+                pred_coco_items.append(pred_coco_result)
+
+        return image, gt_coco_items, pred_coco_items
+
 
     def write(self):
         super().write()
@@ -247,12 +300,12 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         if len(self.benign_preds_coco_data) > 0:
             json.dump(
                 self.benign_preds_coco_data,
-                open(os.path.join(self.output_dir, "benign_preds_coco_data.json"), "w"),
+                open(os.path.join(self.output_dir, "benign_predictions_coco_data.json"), "w"),
             )
         if len(self.adv_preds_coco_data) > 0:
             json.dump(
                 self.adv_preds_coco_data,
-                open(os.path.join(self.output_dir, "adv_preds_coco_data.json"), "w"),
+                open(os.path.join(self.output_dir, "adv_predictions_coco_data.json"), "w"),
             )
 
 
@@ -261,63 +314,69 @@ class DApricotExporter(ObjectDetectionExporter):
         self,
         x,
         x_adv=None,
+        with_boxes=False,
         y=None,
         y_pred_adv=None,
         y_pred_clean=None,
-        classes_to_skip=None,
+        score_threshold=0.5,
+        classes_to_skip=[12],  # class of green-screen
     ):
         if x_adv is None:
             raise TypeError("Expected x_adv to not be None for DApricot scenario.")
         x_adv_angle_1 = x_adv[0]
-        self._export_image(x_adv_angle_1, type="adversarial_angle_1")
+        self._export_image(x_adv_angle_1, name="adversarial_angle_1")
 
         x_adv_angle_2 = x_adv[1]
-        self._export_image(x_adv_angle_2, type="adversarial_angle_2")
+        self._export_image(x_adv_angle_2, name="adversarial_angle_2")
 
         x_adv_angle_3 = x_adv[2]
-        self._export_image(x_adv_angle_3, type="adversarial_angle_3")
+        self._export_image(x_adv_angle_3, name="adversarial_angle_3")
 
-        y_angle_1 = y[0]
-        y_pred_angle_1 = deepcopy(y_pred_adv[0])
-        y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_1, y_pred_angle_1["boxes"]
-        )
-        pil_image_angle_1 = Image.fromarray(np.uint8(x_adv_angle_1 * 255.0))
-        self._export_image_with_boxes(
-            pil_image_angle_1,
-            y_angle_1,
-            y_pred_angle_1,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_1",
-        )
+        if with_boxes:
+            y_angle_1 = y[0]
+            y_pred_angle_1 = deepcopy(y_pred_adv[0])
+            y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_1, y_pred_angle_1["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_1,
+                with_boxes=True,
+                y_i=y_angle_1,
+                y_i_pred=y_pred_angle_1,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_1",
+            )
 
-        y_angle_2 = y[1]
-        y_pred_angle_2 = deepcopy(y_pred_adv[1])
-        y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_2, y_pred_angle_2["boxes"]
-        )
-        pil_image_angle_2 = Image.fromarray(np.uint8(x_adv_angle_2 * 255.0))
-        self._export_image_with_boxes(
-            pil_image_angle_2,
-            y_angle_2,
-            y_pred_angle_2,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_2",
-        )
+            y_angle_2 = y[1]
+            y_pred_angle_2 = deepcopy(y_pred_adv[1])
+            y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_2, y_pred_angle_2["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_2,
+                with_boxes=True,
+                y_i=y_angle_2,
+                y_i_pred=y_pred_angle_2,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_2",
+            )
 
-        y_angle_3 = y[2]
-        y_pred_angle_3 = deepcopy(y_pred_adv[2])
-        y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
-            x_adv_angle_3, y_pred_angle_3["boxes"]
-        )
-        pil_image_angle_3 = Image.fromarray(np.uint8(x_adv_angle_3 * 255.0))
-        self._export_image_with_boxes(
-            pil_image_angle_3,
-            y_angle_3,
-            y_pred_angle_3,
-            classes_to_skip=classes_to_skip,
-            type="adversarial_angle_3",
-        )
+            y_angle_3 = y[2]
+            y_pred_angle_3 = deepcopy(y_pred_adv[2])
+            y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
+                x_adv_angle_3, y_pred_angle_3["boxes"]
+            )
+            self._export_image(
+                x_adv_angle_3,
+                with_boxes=True,
+                y_i=y_angle_3,
+                y_i_pred=y_pred_angle_3,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+                name="adversarial_angle_3",
+            )
 
         self.saved_samples += 1
         self.saved_batches += 1
@@ -335,28 +394,24 @@ class DApricotExporter(ObjectDetectionExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, frame_rate):
-        super().__init__(base_output_dir)
+    def __init__(self, base_output_dir, frame_rate, export_kwargs={}):
+        super().__init__(base_output_dir, export_kwargs=export_kwargs)
         self.frame_rate = frame_rate
 
     def _export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            self._export_video(x_i, type="benign")
+            self._export_video(x_i, name="benign")
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, type="adversarial")
+                self._export_video(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_video(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
+    def _export_video(self, x_i, name="benign"):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
@@ -368,7 +423,7 @@ class VideoClassificationExporter(SampleExporter):
                 s=f"{x_i.shape[2]}x{x_i.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{type}.mp4"),
+                os.path.join(self.output_dir, folder, f"video_{name}.mp4"),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -383,7 +438,7 @@ class VideoClassificationExporter(SampleExporter):
             pixels = np.array(frame)
             ffmpeg_process.stdin.write(pixels.tobytes())
             frame.save(
-                os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{type}.png")
+                os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{name}.png")
             )
 
         ffmpeg_process.stdin.close()
@@ -391,6 +446,11 @@ class VideoClassificationExporter(SampleExporter):
 
     @staticmethod
     def get_sample(x_i):
+        """
+
+        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :return: List[PIL.Image.Image] of length equal to num_frames
+        """
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0, 1]")
 
@@ -404,31 +464,50 @@ class VideoClassificationExporter(SampleExporter):
 
 class VideoTrackingExporter(VideoClassificationExporter):
     def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+        self,
+        x,
+        x_adv=None,
+        with_boxes=False,
+        y=None,
+        y_pred_adv=None,
+        y_pred_clean=None,
     ):
         for i, x_i in enumerate(x):
-            self._export_video(x_i, type="benign")
+            self._export_video(x_i, name="benign")
 
-            y_i = y[i]
-            y_i_pred_clean = y_pred_clean[i]
-            self._export_video_with_boxes(x_i, y_i, y_i_pred_clean, type="benign")
+            if with_boxes:
+                y_i = y[i] if y is not None else None
+                y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
+                self._export_video(
+                    x_i,
+                    with_boxes=True,
+                    y_i=y_i,
+                    y_i_pred=y_i_pred_clean,
+                    name="benign",
+                )
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, type="adversarial")
-                y_i_pred_adv = y_pred_adv[i]
-                self._export_video_with_boxes(
-                    x_adv_i, y_i, y_i_pred_adv, type="adversarial"
-                )
+                self._export_video(x_adv_i, name="adversarial")
+                if with_boxes:
+                    y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
+                    self._export_video(
+                        x_adv_i,
+                        with_boxes=True,
+                        y_i=y_i,
+                        y_i_pred=y_i_pred_adv,
+                        name="adversarial",
+                    )
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_video_with_boxes(self, x_i, y_i, y_i_pred, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
+    def _export_video(
+        self, x_i, with_boxes=False, y_i=None, y_i_pred=None, name="benign"
+    ):
+        if not with_boxes:
+            super()._export_video(x_i, name=name)
+            return
 
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
@@ -441,7 +520,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
                 s=f"{x_i.shape[2]}x{x_i.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{type}_with_boxes.mp4"),
+                os.path.join(self.output_dir, folder, f"video_{name}_with_boxes.mp4"),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -450,15 +529,15 @@ class VideoTrackingExporter(VideoClassificationExporter):
             .run_async(pipe_stdin=True, quiet=True)
         )
 
-        self.frames_with_boxes = self.get_sample_with_boxes(
-            x_i=x_i, y_i=y_i, y_i_pred=y_i_pred
+        self.frames_with_boxes = self.get_sample(
+            x_i, with_boxes=True, y_i=y_i, y_i_pred=y_i_pred
         )
         for n_frame, frame, in enumerate(self.frames_with_boxes):
             frame.save(
                 os.path.join(
                     self.output_dir,
                     folder,
-                    f"frame_{n_frame:04d}_{type}_with_boxes.png",
+                    f"frame_{n_frame:04d}_{name}_with_boxes.png",
                 )
             )
             pixels_with_boxes = np.array(frame)
@@ -467,8 +546,20 @@ class VideoTrackingExporter(VideoClassificationExporter):
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
 
-    @staticmethod
-    def get_sample_with_boxes(x_i, y_i, y_i_pred):
+    def get_sample(self, x_i, with_boxes=False, y_i=None, y_i_pred=None):
+        """
+
+        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :param with_boxes: boolean indicating whether to display bounding boxes
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :return: List[PIL.Image.Image] of length equal to num_frames
+        """
+        if not with_boxes:
+            return super().get_sample(x_i)
+
+        if y_i is None and y_i_pred is None:
+            raise TypeError("Both y_i and y_pred are None, but with_boxes is True.")
         if x_i.min() < 0.0 or x_i.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
 
@@ -477,10 +568,12 @@ class VideoTrackingExporter(VideoClassificationExporter):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
-            bbox_true = y_i["boxes"][n_frame].astype("float32")
-            bbox_pred = y_i_pred["boxes"][n_frame]
-            box_layer.rectangle(bbox_true, outline="red", width=2)
-            box_layer.rectangle(bbox_pred, outline="white", width=2)
+            if y_i is not None:
+                bbox_true = y_i["boxes"][n_frame].astype("float32")
+                box_layer.rectangle(bbox_true, outline="red", width=2)
+            if y_i_pred is not None:
+                bbox_pred = y_i_pred["boxes"][n_frame]
+                box_layer.rectangle(bbox_pred, outline="white", width=2)
             pil_frames.append(image)
 
         return pil_frames
@@ -495,32 +588,45 @@ class AudioExporter(SampleExporter):
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
     ):
         for i, x_i in enumerate(x):
-            self._export_audio(x_i, type="benign")
+            self._export_audio(x_i, name="benign")
 
             if x_adv is not None:
                 x_i_adv = x_adv[i]
-                self._export_audio(x_i_adv, type="adversarial")
+                self._export_audio(x_i_adv, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_audio(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
+    def _export_audio(self, x_i, name="benign"):
+        x_i_copy = deepcopy(x_i)
 
-        if x_i.min() < -1.0 or x_i.max() > 1.0:
-            log.warning("input out of expected range. Clipping to [-1, 1]")
+        if not np.isfinite(x_i_copy).all():
+            posinf, neginf = 1, -1
+            log.warning(
+                f"audio vector has infinite values. Mapping nan to 0, -inf to {neginf}, inf to {posinf}."
+            )
+            x_i_copy = np.nan_to_num(x_i_copy, posinf=posinf, neginf=neginf)
+
+        if x_i_copy.min() < -1.0 or x_i_copy.max() > 1.0:
+            log.warning(
+                "audio vector out of expected [-1, 1] range, normalizing by the max absolute value"
+            )
+            x_i_copy = x_i_copy / np.abs(x_i_copy).max()
 
         wavfile.write(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{type}.wav"),
+            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.wav"),
             rate=self.sample_rate,
-            data=np.clip(x_i, -1.0, 1.0),
+            data=x_i_copy,
         )
 
     @staticmethod
     def get_sample(x_i, dataset_context):
+        """
+
+        :param x_i: floating point np array of shape (sequence_length,) in [-1.0, 1.0]
+        :param dataset_context: armory.data.datasets AudioContext object
+        :return: int np array of shape (sequence_length, )
+        """
         return np.int16(x_i * dataset_context.quantization)
 
 
@@ -530,99 +636,87 @@ class So2SatExporter(SampleExporter):
     ):
 
         for i, x_i in enumerate(x):
-            self._export_so2sat_image(x_i, type="benign")
+            self._export_so2sat_image(x_i, name="benign")
 
             if x_adv is not None:
                 x_adv_i = x_adv[i]
-                self._export_so2sat_image(x_adv_i, type="adversarial")
+                self._export_so2sat_image(x_adv_i, name="adversarial")
 
             self.saved_samples += 1
         self.saved_batches += 1
 
-    def _export_so2sat_image(self, x_i, type="benign"):
-        if type not in ["benign", "adversarial"]:
-            raise ValueError(
-                f"type must be one of ['benign', 'adversarial'], received '{type}'."
-            )
-
+    def _export_so2sat_image(self, x_i, name="benign"):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
-        self.vh_image = self.get_vh_sample(x_i)
-        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{type}.png"))
+        self.vh_image = self.get_sample(x_i, modality="vh")
+        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{name}.png"))
 
-        self.vv_image = self.get_vv_sample(x_i)
-        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{type}.png"))
+        self.vv_image = self.get_sample(x_i, modality="vv")
+        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{name}.png"))
 
-        self.eo_images = self.get_eo_samples(x_i)
+        self.eo_images = self.get_sample(x_i, modality="eo")
         for i in range(10):
             eo_image = self.eo_images[i]
-            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{type}.png"))
+            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{name}.png"))
 
     @staticmethod
-    def get_vh_sample(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
+    def get_sample(x_i, modality):
+        """
 
+        :param x_i: floating point np array of shape (H, W, C=14) in [0.0, 1.0]
+        :param modality: one of {'vv', 'vh', 'eo'}
+        :return: PIL.Image.Image, or List[PIL.Image.Image] if modality == "eo"
+        """
         sar_eps = 1e-9 + 1j * 1e-9
-        x_vh = np.log10(
-            np.abs(
-                np.complex128(
-                    np.clip(x_i[..., 0], -1.0, 1.0)
-                    + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+
+        if modality == "vh":
+            x_vh = np.log10(
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 0], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+                    )
+                    + sar_eps
                 )
-                + sar_eps
             )
-        )
-        sar_min = x_vh.min()
-        sar_max = x_vh.max()
-        sar_scale = 255.0 / (sar_max - sar_min)
+            sar_min = x_vh.min()
+            sar_max = x_vh.max()
+            sar_scale = 255.0 / (sar_max - sar_min)
 
-        vh_image = Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
-        return vh_image
+            return Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
 
-    @staticmethod
-    def get_vv_sample(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
-
-        sar_eps = 1e-9 + 1j * 1e-9
-        x_vv = np.log10(
-            np.abs(
-                np.complex128(
-                    np.clip(x_i[..., 2], -1.0, 1.0)
-                    + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+        elif modality == "vv":
+            x_vv = np.log10(
+                np.abs(
+                    np.complex128(
+                        np.clip(x_i[..., 2], -1.0, 1.0)
+                        + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+                    )
+                    + sar_eps
                 )
-                + sar_eps
             )
-        )
-        sar_min = x_vv.min()
-        sar_max = x_vv.max()
-        sar_scale = 255.0 / (sar_max - sar_min)
+            sar_min = x_vv.min()
+            sar_max = x_vv.max()
+            sar_scale = 255.0 / (sar_max - sar_min)
 
-        vv_image = Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
-        return vv_image
+            return Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
 
-    @staticmethod
-    def get_eo_samples(x_i):
-        if x_i[..., :4].min() < -1.0 or x_i[..., :4].max() > 1.0:
-            log.warning("SAR image out of expected range. Clipping to [-1, 1].")
-        if x_i[..., 4:].min() < 0.0 or x_i[..., 4:].max() > 1.0:
-            log.warning("EO image out of expected range. Clipping to [0, 1].")
+        elif modality == "eo":
+            eo_images = []
 
-        eo_images = []
+            eo_min = x_i[..., 4:].min()
+            eo_max = x_i[..., 4:].max()
+            eo_scale = 255.0 / (eo_max - eo_min)
+            for c in range(4, 14):
+                eo = Image.fromarray(
+                    np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+                )
+                eo_images.append(eo)
 
-        eo_min = x_i[..., 4:].min()
-        eo_max = x_i[..., 4:].max()
-        eo_scale = 255.0 / (eo_max - eo_min)
-        for c in range(4, 14):
-            eo = Image.fromarray(
-                np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+            return eo_images
+
+        else:
+            raise ValueError(
+                f"modality must be one of ('vh', 'vv', 'eo'), received {modality}"
             )
-            eo_images.append(eo)
-
-        return eo_images

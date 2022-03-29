@@ -16,12 +16,6 @@ from typing import Callable, Union, Tuple, List
 import numpy as np
 from armory.logs import log
 
-# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
-#     all CPU resources when num_workers > 1
-try:
-    import torch  # noqa: F401
-except ImportError:
-    pass
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
@@ -409,8 +403,6 @@ def _generator_from_tfds(
             dataset_dir, dataset_name=dataset_name,
         )
 
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
-
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
 
@@ -424,8 +416,10 @@ def _generator_from_tfds(
             download_and_prepare_kwargs=download_and_prepare_kwargs,
             shuffle_files=shuffle_files,
         )
-    except AssertionError as e:
-        if not str(e).startswith("Unrecognized instruction format: "):
+    except (AssertionError, ValueError) as e:
+        if not str(e).startswith(
+            "Unrecognized instruction format: "
+        ) and "Unrecognized split format: " not in str(e):
             raise
         log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
         log.warning(f"Attempting to parse split {split}")
@@ -521,9 +515,9 @@ def _generator_from_tfds(
         )
 
     if framework == "numpy":
-        ds = tfds.as_numpy(ds, graph=default_graph)
+        ds = tfds.as_numpy(ds)
         generator = ArmoryDataGenerator(
-            ds,
+            iter(ds),
             size=dataset_size,
             batch_size=batch_size,
             epochs=epochs,
@@ -538,10 +532,9 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = _get_pytorch_dataset(ds)
-        generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
-        )
+        from armory.data import pytorch_loader
+
+        generator = pytorch_loader.get_pytorch_data_loader(ds)
 
     else:
         raise ValueError(
@@ -1155,6 +1148,7 @@ def librispeech_full(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_full dataset"
         )
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1164,6 +1158,7 @@ def librispeech_full(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1204,8 +1199,19 @@ def librispeech(
                 f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
 
+    # TODO: make less hacky by updating dataset to librispeech 2.1.0
+    # Begin Hack
+    # make symlink to ~/.armory/datasets/librispeech/plain_text/1.1.0 from ~/.armory/datasets/librispeech/2.1.0 (required for TFDS v4)
+    base = os.path.join(paths.runtime_paths().dataset_dir, "librispeech")
+    os.makedirs(base, exist_ok=True)
+    src = os.path.join(base, "plain_text", "1.1.0")
+    dst = os.path.join(base, "2.1.0")
+    if not os.path.exists(dst):
+        os.symlink(src, dst)
+    # End Hack
+
     return _generator_from_tfds(
-        "librispeech/plain_text:1.1.0",
+        "librispeech:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1848,11 +1854,3 @@ def _download_data(dataset_name):
         log.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
         log.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _get_pytorch_dataset(ds):
-    import armory.data.pytorch_loader as ptl
-
-    ds = ptl.TFToTorchGenerator(ds)
-
-    return ds

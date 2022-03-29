@@ -9,7 +9,6 @@ import time
 import datetime
 import sys
 
-import docker
 import requests
 
 import armory
@@ -18,7 +17,6 @@ from armory.docker import images
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
-from armory.utils import docker_api
 from armory import paths
 from armory import environment
 from armory.logs import log, is_debug, added_filters
@@ -66,62 +64,13 @@ class Evaluator(object):
         if self.no_docker:
             if self.root:
                 raise ValueError("running with --root is incompatible with --no-docker")
+            if kwargs["image_name"] is not None:
+                log.warning("Running in --no-docker mode. Setting 'image_name' to None")
+            kwargs["image_name"] = None
             self.manager = HostManagementInstance()
-            return
-
-        kwargs["image_name"] = self.ensure_image_present(image_name)
-        self.manager = ManagementInstance(**kwargs)
-
-    def ensure_image_present(self, image_name: str) -> str:
-        """if image_name is available, return it. Otherwise, pull it from dockerhub"""
-        # TODO This seems like it still needs docker even in no docker mode
-        #  we should fix this
-
-        log.trace(f"ensure_image_present {image_name}")
-
-        docker_client = docker.from_env()
-
-        # look first for  the versioned and then the unversioned, return if hit
-        # if there is a tag present, use that. otherwise add the current version
-        if ":" in image_name:
-            check = image_name
         else:
-            check = f"{image_name}:{armory.__version__}"
-
-        log.trace(f"asking local docker for image {check}")
-        try:
-            docker_client.images.get(check)
-            log.success(f"found docker image {image_name} as {check}")
-            return check
-        except docker.errors.ImageNotFound:
-            log.trace(f"image {check} not found")
-        except requests.exceptions.HTTPError:
-            log.trace(f"http error when looking for image {check}")
-            raise
-
-        log.info(f"image {image_name} not found. downloading...")
-        try:
-            docker_api.pull_verbose(docker_client, image_name)
-            return image_name
-        except docker.errors.NotFound:
-            if image_name in images.ALL:
-                raise ValueError(
-                    "You are attempting to pull an unpublished armory docker image.\n"
-                    "This is likely because you're running armory from a dev branch. "
-                    "If you want a stable release with "
-                    "published docker images try pip installing 'armory-testbed' "
-                    "or using out one of the release branches on the git repository. "
-                    "If you'd like to continue working on the developer image please "
-                    "build it from source on your machine as described here:\n"
-                    "https://armory.readthedocs.io/en/latest/contributing/#development-docker-containers\n"
-                    "python docker/build.py --help"
-                )
-            else:
-                log.error(f"Image {image_name} could not be downloaded")
-                raise
-        except requests.exceptions.ConnectionError:
-            log.error("Docker connection refused. Is Docker Daemon running?")
-            raise
+            kwargs["image_name"] = images.ensure_image_present(image_name)
+            self.manager = ManagementInstance(**kwargs)
 
     def _gather_env_variables(self):
         """
@@ -174,8 +123,16 @@ class Evaluator(object):
         try:
             os.rmdir(self.output_dir)
             log.warning(f"removed output_dir {self.output_dir} because it was empty")
+        except FileNotFoundError:
+            log.warning(f"output_dir {self.output_dir} was deleted or never created")
         except OSError:
-            pass
+            jsons = [x for x in os.listdir(self.output_dir) if x.endswith(".json")]
+            if len(jsons) == 1:
+                json = jsons[0]
+            else:
+                json = ""
+            output_path = os.path.join(self.output_dir, json)
+            log.info(f"results output written to:\n{output_path}")
 
     def run(
         self,

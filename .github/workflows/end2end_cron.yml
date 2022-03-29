@@ -26,13 +26,9 @@ jobs:
       - name: Build Docker
         id: docker-build
         run: |
-          python setup.py --version
           pip install -r requirements.txt
           pip install -e .
-          imageTag=$(python setup.py --version | sed  -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-          echo "Image Tag -> $imageTag"
-          echo "::set-output name=imageTag::$imageTag"
-          bash docker/build.sh base pytorch pytorch-deepspeech tf2 --tag $imageTag --base-tag $imageTag
+          python docker/build.py all
     outputs:
       imageTag: ${{ steps.docker-build.outputs.imageTag }}
   docker-pytorch-end2end:

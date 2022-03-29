@@ -25,9 +25,12 @@ class ObjectDetectionTask(ImageClassificationTask):
             # Sample exporting needs access to benign predictions to include bounding boxes
             if self.skip_benign:
                 raise ValueError(
-                    "--skip-benign should not be set for object_detection scenario if export_samples is enabled."
+                    "--skip-benign should not be set for object_detection scenario if export_batches is enabled."
                 )
         super().load_sample_exporter()
 
     def _load_sample_exporter(self):
-        return ObjectDetectionExporter(self.scenario_output_dir)
+        export_kwargs = {"with_boxes": True}
+        return ObjectDetectionExporter(
+            self.scenario_output_dir, export_kwargs=export_kwargs
+        )

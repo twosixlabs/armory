@@ -25,26 +25,28 @@ class CarlaVideoTracking(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
 
+    def next(self):
+        super().next()
+        self.y, self.y_patch_metadata = self.y
+
     def run_benign(self):
         x, y = self.x, self.y
-        y_object, y_patch_metadata = y
-        y_init = np.expand_dims(y_object[0]["boxes"][0], axis=0)
+        y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred)
+        self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
 
     def run_attack(self):
         x, y = self.x, self.y
-        self.y_object, self.y_patch_metadata = y
-        y_init = np.expand_dims(self.y_object[0]["boxes"][0], axis=0)
+        y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
             if self.use_label:
-                y_target = self.y_object
+                y_target = y
             elif self.targeted:
-                y_target = self.label_targeter.generate(self.y_object)
+                y_target = self.label_targeter.generate(y)
             else:
                 y_target = None
 
@@ -60,7 +62,7 @@ class CarlaVideoTracking(Scenario):
 
         y_pred_adv = self.model.predict(x_adv, y_init=y_init, **self.predict_kwargs)
 
-        self.metrics_logger.update_task(self.y_object, y_pred_adv, adversarial=True)
+        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
         if self.targeted:
             self.metrics_logger.update_task(
                 y_target, y_pred_adv, adversarial=True, targeted=True
@@ -70,19 +72,9 @@ class CarlaVideoTracking(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
+        export_kwargs = {"with_boxes": True}
         return VideoTrackingExporter(
-            self.scenario_output_dir, frame_rate=self.test_dataset.context.frame_rate,
-        )
-
-    def export_samples(self):
-        if not hasattr(self, "x"):
-            raise AttributeError(
-                f"{type(self).__name__} has no attribute 'x'. Be sure to call next() and evaluate_current() before attempting to export samples. "
-            )
-        self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            y=self.y_object,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
+            self.scenario_output_dir,
+            frame_rate=self.test_dataset.context.frame_rate,
+            export_kwargs=export_kwargs,
         )

@@ -8,7 +8,6 @@ import os
 import sys
 import time
 from typing import Optional
-import abc
 
 from tqdm import tqdm
 
@@ -32,7 +31,6 @@ class Scenario:
         skip_benign: Optional[bool] = False,
         skip_attack: Optional[bool] = False,
         skip_misclassified: Optional[bool] = False,
-        mongo_host: Optional[str] = None,
         check_run: bool = False,
     ):
         self.check_run = bool(check_run)
@@ -62,10 +60,7 @@ class Scenario:
             log.info("Skipping benign classification...")
         if skip_attack:
             log.info("Skipping attack generation...")
-        self.mongo_host = mongo_host
         self.time_stamp = time.time()
-        if self.mongo_host is not None:  # fail fast if pymongo is not installed
-            from armory.scenarios import mongo  # noqa: F401
 
     def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
@@ -238,10 +233,9 @@ class Scenario:
         self.num_export_batches = num_export_batches
         self.sample_exporter = self._load_sample_exporter()
 
-    @abc.abstractmethod
     def _load_sample_exporter(self):
         raise NotImplementedError(
-            f"_load_sample_exporter() method should be defined for scenario {self.__class__}"
+            f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"
         )
 
     def load(self):
@@ -267,7 +261,12 @@ class Scenario:
         self.i, self.x, self.y = i, x, y
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
+    def _check_x(self, function_name):
+        if not hasattr(self, "x"):
+            raise ValueError(f"Run `next()` before `{function_name}()`")
+
     def run_benign(self):
+        self._check_x("run_benign")
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
@@ -279,6 +278,7 @@ class Scenario:
             self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
 
     def run_attack(self):
+        self._check_x("run_attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -322,26 +322,20 @@ class Scenario:
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def export_samples(self):
-        if not hasattr(self, "x"):
-            raise AttributeError(
-                f"{type(self).__name__} has no attribute 'x'. Be sure to call next() and evaluate_current() before attempting to export samples. "
-            )
-        self.sample_exporter.export(
-            x=self.x,
-            x_adv=self.x_adv,
-            y=self.y,
-            y_pred_clean=self.y_pred,
-            y_pred_adv=self.y_pred_adv,
-        )
-
     def evaluate_current(self):
+        self._check_x("evaluate_current")
         if not self.skip_benign:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
         if self.num_export_batches > self.sample_exporter.saved_batches:
-            self.export_samples()
+            self.sample_exporter.export(
+                x=self.x,
+                x_adv=self.x_adv,
+                y=self.y,
+                y_pred_clean=self.y_pred,
+                y_pred_adv=self.y_pred_adv,
+            )
 
     def finalize_results(self):
         metrics_logger = self.metrics_logger
@@ -351,7 +345,7 @@ class Scenario:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
 
-        if self.sample_exporter is not None:
+        if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
 
     def _evaluate(self) -> dict:
@@ -384,12 +378,10 @@ class Scenario:
             log.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(self.config, results)
         self._save(output)
-        if self.mongo_host is not None:
-            self._send_to_mongo(self.mongo_host, output)
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
-        Build the JSON results blob for _save() and _send_to_mongo()
+        Build the JSON results blob for _save()
 
         adv_examples are (optional) instances of the actual examples used.
             They will be saved in a binary format.
@@ -421,11 +413,3 @@ class Scenario:
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
-
-    def _send_to_mongo(self, output: dict):
-        """
-        Send results to a Mongo database at mongo_host
-        """
-        import mongo
-
-        mongo.send_to_db(output, self.mongo_host)

@@ -82,10 +82,6 @@ class Results:
             json_dict = json.load(f)
         return cls(json_dict, name=name)
 
-    @classmethod
-    def from_mongo(cls, *args, **kwargs):
-        raise NotImplementedError("mongo DB connector")
-
     def perturbation_accuracy(self, targeted):
         if targeted:
             return perturbation_accuracy(
