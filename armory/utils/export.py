@@ -252,15 +252,23 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         gt_coco_items = []
         pred_coco_items = []
 
+        if y_i is None or y_i_pred is None:
+            log.warning("Cannot export some coco jsons due to missing data.")
+
         if y_i is not None:
             bboxes_true = y_i["boxes"]
             labels_true = y_i["labels"]
-            image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+            try:
+                image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+            except:
+                image_id = None
+                log.warning("Cannot export some coco jsons due to missing data.")
 
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
                 box_layer.rectangle(true_box, outline="red", width=2)
+                if image_id is None: continue
                 xmin, ymin, xmax, ymax = true_box
                 gt_coco_result = {
                     "image_id": int(image_id),
@@ -273,12 +281,16 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
             labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
             scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-            image_id = y_i["image_id"][
-                0
-            ]  # All boxes in y_i_pred are for the same image as y_i
+            try:
+                image_id = y_i["image_id"][0]
+                # All boxes in y_i_pred are for the same image as y_i
+            except:
+                image_id = None
+                log.warning("Cannot export some coco jsons due to missing data.")
 
             for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
                 box_layer.rectangle(pred_box, outline="white", width=2)
+                if image_id is None: continue
                 xmin, ymin, xmax, ymax = pred_box
                 pred_coco_result = {
                     "image_id": int(image_id),
