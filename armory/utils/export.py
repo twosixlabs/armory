@@ -260,7 +260,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             labels_true = y_i["labels"]
             try:
                 image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
-            except:
+            except Exception:
                 image_id = None
                 log.warning("Cannot export some coco jsons due to missing data.")
 
@@ -268,7 +268,8 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
                 box_layer.rectangle(true_box, outline="red", width=2)
-                if image_id is None: continue
+                if image_id is None:
+                    continue
                 xmin, ymin, xmax, ymax = true_box
                 gt_coco_result = {
                     "image_id": int(image_id),
@@ -284,13 +285,14 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             try:
                 image_id = y_i["image_id"][0]
                 # All boxes in y_i_pred are for the same image as y_i
-            except:
+            except Exception:
                 image_id = None
                 log.warning("Cannot export some coco jsons due to missing data.")
 
             for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
                 box_layer.rectangle(pred_box, outline="white", width=2)
-                if image_id is None: continue
+                if image_id is None:
+                    continue
                 xmin, ymin, xmax, ymax = pred_box
                 pred_coco_result = {
                     "image_id": int(image_id),
@@ -472,7 +474,7 @@ class VideoClassificationExporter(SampleExporter):
             log.warning("video out of expected range. Clipping to [0, 1]")
 
         pil_frames = []
-        for n_frame, x_frame, in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x_i):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
@@ -549,7 +551,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
         self.frames_with_boxes = self.get_sample(
             x_i, with_boxes=True, y_i=y_i, y_i_pred=y_i_pred
         )
-        for n_frame, frame, in enumerate(self.frames_with_boxes):
+        for n_frame, frame in enumerate(self.frames_with_boxes):
             frame.save(
                 os.path.join(
                     self.output_dir,
@@ -581,7 +583,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
             log.warning("video out of expected range. Clipping to [0,1]")
 
         pil_frames = []
-        for n_frame, x_frame, in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x_i):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
