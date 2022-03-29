@@ -18,6 +18,11 @@ pytestmark = pytest.mark.unit
 random_img = np.random.rand(32, 32, 3)
 
 # Object Detection test inputs
+obj_det_y_i_image_id = {
+    "labels": np.array([1.0]),
+    "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
+    "image_id": 1,
+}
 obj_det_y_i = {
     "labels": np.array([1.0]),
     "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
@@ -62,6 +67,20 @@ random_so2sat_img = np.random.rand(32, 32, 14)
             {},
             random_img,
             {"with_boxes": True, "y_i_pred": obj_det_y_i_pred},
+            PIL.Image.Image,
+        ),
+        (
+            ObjectDetectionExporter,
+            {},
+            random_img,
+            {"with_boxes": True, "y_i": obj_det_y_i_image_id, "y_i_pred": obj_det_y_i_pred},
+            PIL.Image.Image,
+        ),
+        (
+            ObjectDetectionExporter,
+            {},
+            random_img,
+            {"with_boxes": True, "y_i": obj_det_y_i_image_id},
             PIL.Image.Image,
         ),
         (VideoClassificationExporter, {"frame_rate": 10}, random_video, {}, list),
