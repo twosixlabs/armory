@@ -572,8 +572,8 @@ class AudioExporter(SampleExporter):
 
         return np.clip(
             np.int16(x_i * dataset_context.quantization),
-            dataset_context.input_min + 1,
-            dataset_context.input_max - 1,
+            dataset_context.input_min,
+            dataset_context.input_max,
         )
 
 
