@@ -6,7 +6,6 @@ import pickle
 import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
-import json
 from copy import deepcopy
 
 from armory.logs import log
@@ -132,12 +131,6 @@ class ImageClassificationExporter(SampleExporter):
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
-    def __init__(self, base_output_dir, export_kwargs={}):
-        super().__init__(base_output_dir, export_kwargs)
-        self.ground_truth_coco_data = []
-        self.benign_preds_coco_data = []
-        self.adv_preds_coco_data = []
-
     def _export(
         self,
         x,
@@ -198,7 +191,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             super()._export_image(x_i=x_i, name=name)
             return
 
-        self.image_with_boxes, gt_boxes_coco, pred_boxes_coco = self.get_sample(
+        self.image_with_boxes = self.get_sample(
             x_i=x_i,
             with_boxes=True,
             y_i=y_i,
@@ -209,18 +202,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         self.image_with_boxes.save(
             os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
         )
-
-        # Add coco box dictionaries to correct lists
-        if name == "benign":
-            for coco_box in pred_boxes_coco:
-                self.benign_preds_coco_data.append(coco_box)
-            for coco_box in gt_boxes_coco:
-                self.ground_truth_coco_data.append(coco_box)
-        elif name == "adversarial":
-            # don't save gt boxes here since they are the same as for benign
-            for coco_box in pred_boxes_coco:
-                self.adv_preds_coco_data.append(coco_box)
-
 
     def get_sample(
         self,
@@ -240,7 +221,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         :param y_i_pred: predicted label dict
         :param score_threshold: float in [0, 1]; boxes with confidence > score_threshold are displayed
         :param classes_to_skip: List[Int] containing class ID's for which boxes should not be displayed
-        :return: PIL.Image.Image, and, if with_boxes == True, lists of coco data for ground truth and predicted labels
+        :return: PIL.Image.Image
         """
         image = super().get_sample(x_i)
         if not with_boxes:
@@ -250,63 +231,22 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
-        gt_coco_items = []
-        pred_coco_items = []
-
         if y_i is not None:
             bboxes_true = y_i["boxes"]
             labels_true = y_i["labels"]
-            image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
 
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
                 box_layer.rectangle(true_box, outline="red", width=2)
-                xmin, ymin, xmax, ymax = true_box
-                gt_coco_result = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                }
-                gt_coco_items.append(gt_coco_result)
 
         if y_i_pred is not None:
             bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
-            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
-            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-            image_id = y_i["image_id"][0]  # All boxes in y_i_pred are for the same image as y_i
 
-            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
+            for pred_box in bboxes_pred:
                 box_layer.rectangle(pred_box, outline="white", width=2)
-                xmin, ymin, xmax, ymax = pred_box
-                pred_coco_result = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                    "score": float(score),
-                }
-                pred_coco_items.append(pred_coco_result)
 
-        return image, gt_coco_items, pred_coco_items
-
-
-    def write(self):
-        super().write()
-        if len(self.ground_truth_coco_data) > 0:
-            json.dump(
-                self.ground_truth_coco_data,
-                open(os.path.join(self.output_dir, "ground_truth_coco_data.json"), "w"),
-            )
-        if len(self.benign_preds_coco_data) > 0:
-            json.dump(
-                self.benign_preds_coco_data,
-                open(os.path.join(self.output_dir, "benign_predictions_coco_data.json"), "w"),
-            )
-        if len(self.adv_preds_coco_data) > 0:
-            json.dump(
-                self.adv_preds_coco_data,
-                open(os.path.join(self.output_dir, "adv_predictions_coco_data.json"), "w"),
-            )
+        return image
 
 
 class DApricotExporter(ObjectDetectionExporter):
