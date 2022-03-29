@@ -221,7 +221,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             for coco_box in pred_boxes_coco:
                 self.adv_preds_coco_data.append(coco_box)
 
-
     def get_sample(
         self,
         x_i,
@@ -274,7 +273,9 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
             labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
             scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-            image_id = y_i["image_id"][0]  # All boxes in y_i_pred are for the same image as y_i
+            image_id = y_i["image_id"][
+                0
+            ]  # All boxes in y_i_pred are for the same image as y_i
 
             for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
                 box_layer.rectangle(pred_box, outline="white", width=2)
@@ -289,7 +290,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
         return image, gt_coco_items, pred_coco_items
 
-
     def write(self):
         super().write()
         if len(self.ground_truth_coco_data) > 0:
@@ -300,12 +300,17 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         if len(self.benign_preds_coco_data) > 0:
             json.dump(
                 self.benign_preds_coco_data,
-                open(os.path.join(self.output_dir, "benign_predictions_coco_data.json"), "w"),
+                open(
+                    os.path.join(self.output_dir, "benign_predictions_coco_data.json"),
+                    "w",
+                ),
             )
         if len(self.adv_preds_coco_data) > 0:
             json.dump(
                 self.adv_preds_coco_data,
-                open(os.path.join(self.output_dir, "adv_predictions_coco_data.json"), "w"),
+                open(
+                    os.path.join(self.output_dir, "adv_predictions_coco_data.json"), "w"
+                ),
             )
 
 
