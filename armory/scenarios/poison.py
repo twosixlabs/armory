@@ -10,7 +10,7 @@ import random
 import numpy as np
 
 from armory.utils.poisoning import FairnessMetrics
-from armory.utils.export import SampleExporter
+from armory.utils.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
@@ -285,15 +285,6 @@ class Poison(Scenario):
         )
         self.i = -1
 
-        export_samples = self.config["scenario"].get("export_samples")
-        if export_samples is not None and export_samples > 0:
-            sample_exporter = SampleExporter(
-                self.scenario_output_dir, self.test_dataset.context, export_samples
-            )
-        else:
-            sample_exporter = None
-        self.sample_exporter = sample_exporter
-
     def load_metrics(self):
         self.benign_validation_metric = metrics.MetricList("categorical_accuracy")
         self.target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -312,6 +303,9 @@ class Poison(Scenario):
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
 
+    def _load_sample_exporter(self):
+        return ImageClassificationExporter(self.scenario_output_dir)
+
     def load(self):
         self.set_random_seed()
         self.set_dataset_kwargs()
@@ -323,6 +317,7 @@ class Poison(Scenario):
         self.filter_dataset()
         self.fit()
         self.load_dataset()
+        self.load_sample_exporter()
 
     def run_benign(self):
         x, y = self.x, self.y
@@ -354,10 +349,6 @@ class Poison(Scenario):
                 [self.target_class] * source.sum(), y_pred_adv[source]
             )
 
-        # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
-
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
 
@@ -365,6 +356,16 @@ class Poison(Scenario):
         self.run_benign()
         if self.use_poison:
             self.run_attack()
+
+        if self.num_export_batches > self.sample_exporter.saved_batches:
+            # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
+            self.sample_exporter.export(
+                x=self.x,
+                x_adv=self.x_adv,
+                y=self.y,
+                y_pred_clean=self.y_pred,
+                y_pred_adv=self.y_pred_adv,
+            )
 
     def finalize_results(self):
         log.info(
