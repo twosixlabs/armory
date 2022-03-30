@@ -1,0 +1,3 @@
+tensorflow-datasets==4.5.*
+loguru
+pydub
