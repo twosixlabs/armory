@@ -156,6 +156,7 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.x_clean, self.y_clean = (np.concatenate(z, axis=0) for z in zip(*list(ds)))
+        self.class_accuracy_dict = {y:[] for y in np.unique(self.y_clean)} # store accuracy results per class
 
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
@@ -339,6 +340,9 @@ class Poison(Scenario):
         self.y_pred = y_pred
         self.source = source
 
+        for y_, y_pred_ in zip(y, y_pred):
+            self.class_accuracy_dict[y_].append(y_ == np.argmax(y_pred_, axis=-1))
+
     def run_attack(self):
         x, y = self.x, self.y
         source = self.source
@@ -386,6 +390,46 @@ class Poison(Scenario):
             log.info(
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
+        
+        self.results["N_poisoned_data"] = int(len(self.poison_index))
+
+        if self.use_filtering_defense:
+           
+            filtered = (1 - self.indices_to_keep).astype(np.bool)
+            poisoned = np.zeros_like(self.y_clean).astype(np.bool)
+            poisoned[self.poison_index] = True
+
+            false_negatives = int(np.sum(~filtered & poisoned))
+            true_positives = int(np.sum(filtered & poisoned))
+            true_negatives = int(np.sum(~filtered & ~poisoned))
+            false_positives = int(np.sum(filtered & ~poisoned))
+            
+            false_negative_rate = false_negatives / np.sum(poisoned)
+            true_positive_rate = true_positives / np.sum(poisoned)
+            true_negative_rate = true_negatives / np.sum(~poisoned)
+            false_positive_rate = false_positives / np.sum(~poisoned)
+            
+            f1_score = true_positives / (true_positives + .5 * (false_positives + false_negatives))
+            
+            self.results["filter_true_positives"] = true_positives
+            self.results["filter_false_positives"] = false_positives
+            self.results["filter_true_negatives"] = true_negatives
+            self.results["filter_false_negatives"] = false_negatives
+            self.results["filter_true_positive_rate"] = true_positive_rate
+            self.results["filter_false_positive_rate"] = false_positive_rate
+            self.results["filter_true_negative_rate"] = true_negative_rate
+            self.results["filter_false_negative_rate"] = false_negative_rate
+            self.results["filter_f1_score"] = f1_score
+
+            self.results["fraction_data_removed_by_filter"] = filtered.mean()
+            self.results["N_datapoints_removed_by_filter"] = int(filtered.sum())
+            
+
+        for y in np.unique(self.y_clean):
+            self.results[f"N_samples_in_class_{y}"] = int(np.sum(self.y_clean == y))
+            self.results[f"unpoisoned_accuracy_on_class_{y}"] = np.mean(self.class_accuracy_dict[y])
+           
+
         if hasattr(self, "fairness_metrics") and not self.check_run:
             # Get unpoisoned test set
             dataset_config = self.config["dataset"]
