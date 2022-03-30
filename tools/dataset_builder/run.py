@@ -38,6 +38,10 @@ SUPPORTED_DATASETS = {
         "type": "source",
         "class_file": os.path.join(os.path.dirname(__file__), "digit", "digit.py"),
     },
+    "carla_obj_det_train": {
+        "type": "source",
+        "class_file": os.path.join(os.path.dirname(__file__), "carla_obj_det_train", "carla_obj_det_train.py"),
+    },
 }
 
 
