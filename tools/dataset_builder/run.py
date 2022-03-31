@@ -6,7 +6,6 @@ import sys
 from loguru import logger as log
 import subprocess
 import itertools
-import pathlib
 
 SUPPORTED_DATASETS = {
     "mnist": {
@@ -35,6 +34,7 @@ SUPPORTED_DATASETS = {
     },
     "cifar10": {"type": "tfds", "feature_dict": None},
     "cifar100": {"type": "tfds", "feature_dict": None},
+    "imagenette/full-size": {"type": "tfds", "feature_dict": None},
     "carla_obj_det_train": {
         "type": "source",
         "class_file": os.path.join(
@@ -91,7 +91,6 @@ SUPPORTED_DATASETS = {
             os.path.dirname(__file__), "build_classes", "xview.py"
         ),
     },
-
     # TODO:  These are `Adversarial` Datasets from armory... need to
     #  determine if we need to do anything different here
     "apricot_dev": {
@@ -109,32 +108,43 @@ SUPPORTED_DATASETS = {
     "carla_obj_det_dev": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "carla_obj_det_dev.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "carla_obj_det_dev.py",
         ),
     },
     "carla_obj_det_test": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "carla_obj_det_test.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "carla_obj_det_test.py",
         ),
     },
     "carla_video_tracking_dev": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "carla_video_tracking_dev.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "carla_video_tracking_dev.py",
         ),
     },
     "carla_video_tracking_test": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "carla_video_tracking_test.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "carla_video_tracking_test.py",
         ),
     },
     # TODO: dapricot builds fine but complains on construction about "ragged_flat_values" slice metod
     #  need to figure out what is going on there...for now commenting out
     #  TypeError: Only integers, slices (`:`), ellipsis (`...`), tf.newaxis (`None`) and scalar
     #  tf.int32/tf.int64 tensors are valid indices, got 'ragged_flat_values'
-
     "dapricot_dev": {
         "type": "source",
         "class_file": os.path.join(
@@ -144,21 +154,61 @@ SUPPORTED_DATASETS = {
     "dapricot_test": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "dapricot_test.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "dapricot_test.py",
         ),
     },
     "gtsrb_bh_poison_micronnet": {
         "type": "source",
         "class_file": os.path.join(
-            os.path.dirname(__file__), "build_classes", "adversarial", "gtsrb_bh_poison_micronnet.py"
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "gtsrb_bh_poison_micronnet.py",
         ),
     },
-    # TODO: gtsrb
-    # TODO: imagenet
-    # TODO: librispeech_adv
-    # TODO: resis45_dense...
-    # TODO: ucf101...
-
+    "imagenet_adversarial": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "imagenet_adversarial.py",
+        ),
+    },
+    "librispeech_adversarial": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "librispeech_adversarial.py",
+        ),
+    },
+    # TODO: Note the change where `_` is removed between adversarial and 224x224
+    #  ask if this will be an issue
+    "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224.py",
+        ),
+    },
+    # TODO: Note the change where `_` is removed between adversarial and 224x224
+    #  ask if this will be an issue
+    "ucf101_mars_perturbation_and_patch_adversarial112x112": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__),
+            "build_classes",
+            "adversarial",
+            "ucf101_mars_perturbation_and_patch_adversarial112x112.py",
+        ),
+    },
 }
 
 
@@ -269,23 +319,24 @@ def build(
         )
 
 
-def load(dataset_directory: str):
-    if not os.path.isdir(dataset_directory):
+def load(dataset_name: str, dataset_directory: str):
+    ds_path = get_ds_path(dataset_name, dataset_directory)
+    expected_name = ds_path.replace(f"{dataset_directory}/", "")
+    if not os.path.isdir(ds_path):
         raise ValueError(
-            f"Dataset Directory: {dataset_directory} does not exist...cannot construct!!"
+            f"Dataset Directory: {ds_path} does not exist...cannot construct!!"
         )
-    log.info(f"Attempting to Load Dataset from local directory: {dataset_directory}")
+    log.info(
+        f"Attempting to Load Dataset: {dataset_name} from local directory: {dataset_directory}"
+    )
     log.debug("Generating Builder object...")
-    builder = tfds.core.builder_from_directory(dataset_directory)
-    expected_dataset_full_name = str(
-        pathlib.Path(*pathlib.PurePath(dataset_directory).parts[-2:])
-    )
+    builder = tfds.core.builder_from_directory(ds_path)
     log.debug(
-        f"Dataset Full Name: `{builder.info.full_name}`  Expected_from_directory: `{expected_dataset_full_name}`"
+        f"Dataset Full Name: `{builder.info.full_name}`  Expected: `{expected_name}`"
     )
-    if expected_dataset_full_name != builder.info.full_name:
+    if expected_name != builder.info.full_name:
         raise RuntimeError(
-            f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_dataset_full_name}"
+            f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_name}"
             "...make sure that the build_class_file name matches the class name!!"
             "NOTE:  tfds converts camel case class names to lowercase separated by `_`"
         )
@@ -364,9 +415,10 @@ if __name__ == "__main__":
         ds_path = build(ds_name, ds_config, args.output_directory, args.clean)
         print("\n")
         try:
-            ds_info, ds = load(ds_path)
+            ds_info, ds = load(ds_name, args.output_directory)
         except Exception as e:
             log.exception(f"Could not reconstruct dataset located at {ds_path}!!")
             log.exception(e)
+            raise e
 
     log.success("\t ALL Builds Complete !!")
