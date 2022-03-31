@@ -54,7 +54,6 @@ SUPPORTED_DATASETS = {
         ),
     },
     # TODO Add Librispeech (structure seems strange, used deprecated builder, and errors with connection timeout)
-
     # "librispeech_full": {
     #     "type": "source",
     #     "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "librispeech_full.py"),
@@ -75,13 +74,11 @@ SUPPORTED_DATASETS = {
             os.path.dirname(__file__), "build_classes", "resisc45_split.py"
         ),
     },
-
     # TODO:  UCF clean complaining about SSL Error
-    #  equests.exceptions.SSLError: HTTPSConnectionPool(host='www.crcv.ucf.edu', port=443):
+    #  requests.exceptions.SSLError: HTTPSConnectionPool(host='www.crcv.ucf.edu', port=443):
     #  Max retries exceeded with url: /data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip
     #  (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify
     #  failed: unable to get local issuer certificate (_ssl.c:1091)')))
-
     # "ucf101_clean": {
     #     "type": "source",
     #     "class_file": os.path.join(
@@ -94,6 +91,74 @@ SUPPORTED_DATASETS = {
             os.path.dirname(__file__), "build_classes", "xview.py"
         ),
     },
+
+    # TODO:  These are `Adversarial` Datasets from armory... need to
+    #  determine if we need to do anything different here
+    "apricot_dev": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "apricot_dev.py"
+        ),
+    },
+    "apricot_test": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "apricot_test.py"
+        ),
+    },
+    "carla_obj_det_dev": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "carla_obj_det_dev.py"
+        ),
+    },
+    "carla_obj_det_test": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "carla_obj_det_test.py"
+        ),
+    },
+    "carla_video_tracking_dev": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "carla_video_tracking_dev.py"
+        ),
+    },
+    "carla_video_tracking_test": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "carla_video_tracking_test.py"
+        ),
+    },
+    # TODO: dapricot builds fine but complains on construction about "ragged_flat_values" slice metod
+    #  need to figure out what is going on there...for now commenting out
+    #  TypeError: Only integers, slices (`:`), ellipsis (`...`), tf.newaxis (`None`) and scalar
+    #  tf.int32/tf.int64 tensors are valid indices, got 'ragged_flat_values'
+
+    "dapricot_dev": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "dapricot_dev.py"
+        ),
+    },
+    "dapricot_test": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "dapricot_test.py"
+        ),
+    },
+    "gtsrb_bh_poison_micronnet": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "adversarial", "gtsrb_bh_poison_micronnet.py"
+        ),
+    },
+    # TODO: gtsrb
+    # TODO: imagenet
+    # TODO: librispeech_adv
+    # TODO: resis45_dense...
+    # TODO: ucf101...
+
 }
 
 
