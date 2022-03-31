@@ -35,6 +35,8 @@ SUPPORTED_DATASETS = {
     "cifar10": {"type": "tfds", "feature_dict": None},
     "cifar100": {"type": "tfds", "feature_dict": None},
     "imagenette/full-size": {"type": "tfds", "feature_dict": None},
+    "coco/2017": {"type": "tfds", "feature_dict": None},
+    "so2sat/all": {"type": "tfds", "feature_dict": None},
     "carla_obj_det_train": {
         "type": "source",
         "class_file": os.path.join(
@@ -199,7 +201,7 @@ SUPPORTED_DATASETS = {
         ),
     },
     # TODO: Note the change where `_` is removed between adversarial and 224x224
-    #  ask if this will be an issue
+    #  ask if this will be an issue...otherwise this works
     "ucf101_mars_perturbation_and_patch_adversarial112x112": {
         "type": "source",
         "class_file": os.path.join(
