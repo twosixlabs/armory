@@ -43,13 +43,18 @@ SUPPORTED_DATASETS = {
     },
     "digit": {
         "type": "source",
-        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "digit.py"),
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "digit.py"
+        ),
     },
     "german_traffic_sign": {
         "type": "source",
-        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "german_traffic_sign.py"),
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "german_traffic_sign.py"
+        ),
     },
     # TODO Add Librispeech (structure seems strange, used deprecated builder, and errors with connection timeout)
+
     # "librispeech_full": {
     #     "type": "source",
     #     "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "librispeech_full.py"),
@@ -60,9 +65,35 @@ SUPPORTED_DATASETS = {
     # },
     "resisc10_poison": {
         "type": "source",
-        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "resisc10_poison.py"),
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "resisc10_poison.py"
+        ),
+    },
+    "resisc45_split": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "resisc45_split.py"
+        ),
     },
 
+    # TODO:  UCF clean complaining about SSL Error
+    #  equests.exceptions.SSLError: HTTPSConnectionPool(host='www.crcv.ucf.edu', port=443):
+    #  Max retries exceeded with url: /data/UCF101/UCF101TrainTestSplits-RecognitionTask.zip
+    #  (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify
+    #  failed: unable to get local issuer certificate (_ssl.c:1091)')))
+
+    # "ucf101_clean": {
+    #     "type": "source",
+    #     "class_file": os.path.join(
+    #         os.path.dirname(__file__), "build_classes", "ucf101_clean.py"
+    #     ),
+    # },
+    "xview": {
+        "type": "source",
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "xview.py"
+        ),
+    },
 }
 
 
@@ -181,12 +212,18 @@ def load(dataset_directory: str):
     log.info(f"Attempting to Load Dataset from local directory: {dataset_directory}")
     log.debug("Generating Builder object...")
     builder = tfds.core.builder_from_directory(dataset_directory)
-    expected_dataset_full_name = str(pathlib.Path(*pathlib.PurePath(dataset_directory).parts[-2:]))
-    log.debug(f"Dataset Full Name: `{builder.info.full_name}`  Expected_from_directory: `{expected_dataset_full_name}`")
+    expected_dataset_full_name = str(
+        pathlib.Path(*pathlib.PurePath(dataset_directory).parts[-2:])
+    )
+    log.debug(
+        f"Dataset Full Name: `{builder.info.full_name}`  Expected_from_directory: `{expected_dataset_full_name}`"
+    )
     if expected_dataset_full_name != builder.info.full_name:
-        raise RuntimeError(f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_dataset_full_name}"
-                           "...make sure that the build_class_file name matches the class name!!"
-                           "NOTE:  tfds converts camel case class names to lowercase separated by `_`")
+        raise RuntimeError(
+            f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_dataset_full_name}"
+            "...make sure that the build_class_file name matches the class name!!"
+            "NOTE:  tfds converts camel case class names to lowercase separated by `_`"
+        )
     log.debug("Converting to dataset")
     ds = builder.as_dataset()
 
