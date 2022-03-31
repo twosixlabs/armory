@@ -156,7 +156,6 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.x_clean, self.y_clean = (np.concatenate(z, axis=0) for z in zip(*list(ds)))
-        self.class_accuracy_dict = {y:[] for y in np.unique(self.y_clean)} # store accuracy results per class
 
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
@@ -249,7 +248,6 @@ class Poison(Scenario):
             )
             indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
 
-        # TODO: measure TP and FP rates for filtering
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
@@ -304,6 +302,7 @@ class Poison(Scenario):
                 "categorical_accuracy"
             )
 
+        self.benign_accuracy_per_class = {y:[] for y in np.unique(self.y_clean)} # store accuracy results for each class
         if self.config["adhoc"].get("compute_fairness_metrics", False):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
@@ -341,7 +340,7 @@ class Poison(Scenario):
         self.source = source
 
         for y_, y_pred_ in zip(y, y_pred):
-            self.class_accuracy_dict[y_].append(y_ == np.argmax(y_pred_, axis=-1))
+            self.benign_accuracy_per_class[y_].append(y_ == np.argmax(y_pred_, axis=-1))
 
     def run_attack(self):
         x, y = self.x, self.y
@@ -420,15 +419,14 @@ class Poison(Scenario):
             self.results["filter_true_negative_rate"] = true_negative_rate
             self.results["filter_false_negative_rate"] = false_negative_rate
             self.results["filter_f1_score"] = f1_score
-
-            self.results["fraction_data_removed_by_filter"] = filtered.mean()
-            self.results["N_datapoints_removed_by_filter"] = int(filtered.sum())
+            self.results["filter_fraction_data_removed"] = filtered.mean()
+            self.results["filter_N_datapoints_removed"] = int(filtered.sum())
             
-
-        for y in np.unique(self.y_clean):
-            self.results[f"N_samples_in_class_{y}"] = int(np.sum(self.y_clean == y))
-            self.results[f"unpoisoned_accuracy_on_class_{y}"] = np.mean(self.class_accuracy_dict[y])
-           
+        for y in self.benign_accuracy_per_class.keys():
+            self.results[f"class_{y}_N_samples"] = int(np.sum(self.y_clean == y))
+            self.results[f"class_{y}_N_filtered"] = int(np.sum(self.y_clean[filtered] == y))
+            self.results[f"class_{y}_unpoisoned_accuracy"] = np.mean(self.benign_accuracy_per_class[y])
+            
 
         if hasattr(self, "fairness_metrics") and not self.check_run:
             # Get unpoisoned test set
