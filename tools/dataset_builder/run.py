@@ -6,6 +6,7 @@ import sys
 from loguru import logger as log
 import subprocess
 import itertools
+import pathlib
 
 SUPPORTED_DATASETS = {
     "mnist": {
@@ -34,14 +35,34 @@ SUPPORTED_DATASETS = {
     },
     "cifar10": {"type": "tfds", "feature_dict": None},
     "cifar100": {"type": "tfds", "feature_dict": None},
-    "digit": {
-        "type": "source",
-        "class_file": os.path.join(os.path.dirname(__file__), "digit", "digit.py"),
-    },
     "carla_obj_det_train": {
         "type": "source",
-        "class_file": os.path.join(os.path.dirname(__file__), "carla_obj_det_train", "carla_obj_det_train.py"),
+        "class_file": os.path.join(
+            os.path.dirname(__file__), "build_classes", "carla_obj_det_train.py"
+        ),
     },
+    "digit": {
+        "type": "source",
+        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "digit.py"),
+    },
+    "german_traffic_sign": {
+        "type": "source",
+        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "german_traffic_sign.py"),
+    },
+    # TODO Add Librispeech (structure seems strange, used deprecated builder, and errors with connection timeout)
+    # "librispeech_full": {
+    #     "type": "source",
+    #     "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "librispeech_full.py"),
+    # },
+    # "librispeech_dev_clean_split": {
+    #     "type": "source",
+    #     "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "librispeech_dev_clean_split.py"),
+    # },
+    "resisc10_poison": {
+        "type": "source",
+        "class_file": os.path.join(os.path.dirname(__file__), "build_classes", "resisc10_poison.py"),
+    },
+
 }
 
 
@@ -157,11 +178,18 @@ def load(dataset_directory: str):
         raise ValueError(
             f"Dataset Directory: {dataset_directory} does not exist...cannot construct!!"
         )
-    log.info("Attempting to Load Dataset from local directory artifacts")
+    log.info(f"Attempting to Load Dataset from local directory: {dataset_directory}")
     log.debug("Generating Builder object...")
     builder = tfds.core.builder_from_directory(dataset_directory)
+    expected_dataset_full_name = str(pathlib.Path(*pathlib.PurePath(dataset_directory).parts[-2:]))
+    log.debug(f"Dataset Full Name: `{builder.info.full_name}`  Expected_from_directory: `{expected_dataset_full_name}`")
+    if expected_dataset_full_name != builder.info.full_name:
+        raise RuntimeError(f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_dataset_full_name}"
+                           "...make sure that the build_class_file name matches the class name!!"
+                           "NOTE:  tfds converts camel case class names to lowercase separated by `_`")
     log.debug("Converting to dataset")
     ds = builder.as_dataset()
+
     log.success("Loading Complete!!")
     return builder.info, ds
 
