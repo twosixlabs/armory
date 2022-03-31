@@ -743,30 +743,23 @@ def usage():
     return "\n".join(lines)
 
 
-# def main():
-#     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
-#         print(usage())
-#         sys.exit(1)
-#     elif sys.argv[1] in ("-v", "--version", "version"):
-#         print(f"{armory.__version__}")
-#         sys.exit(0)
-#
-#     parser = argparse.ArgumentParser(prog="armory", usage=usage())
-#     parser.add_argument(
-#         "command", metavar="<command>", type=str, help="armory command", action=Command,
-#     )
-#     args = parser.parse_args(sys.argv[1:2])
-#
-#     func, description = COMMANDS[args.command]
-#     prog = f"{PROGRAM} {args.command}"
-#     func(sys.argv[2:], prog, description)
-
-
 def main():
-    from armory.cli import cli
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
+        print(usage())
+        sys.exit(1)
+    elif sys.argv[1] in ("-v", "--version", "version"):
+        print(f"{armory.__version__}")
+        sys.exit(0)
 
-    cli()
+    parser = argparse.ArgumentParser(prog="armory", usage=usage())
+    parser.add_argument(
+        "command", metavar="<command>", type=str, help="armory command", action=Command,
+    )
+    args = parser.parse_args(sys.argv[1:2])
 
+    func, description = COMMANDS[args.command]
+    prog = f"{PROGRAM} {args.command}"
+    func(sys.argv[2:], prog, description)
 
 if __name__ == "__main__":
     main()
