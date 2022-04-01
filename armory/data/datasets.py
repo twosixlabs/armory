@@ -9,7 +9,7 @@ The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
 import os
-from typing import Callable, Union, Tuple, List
+from typing import Callable, Union, Tuple, List, Optional
 
 import numpy as np
 from armory.logs import log
@@ -35,7 +35,8 @@ from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
 
-
+# TODO: Consider moving this to armory.logs?
+#  This reduces verbosity of tensorflow spinning up additional threads (maybe more)
 os.environ["KMP_WARNINGS"] = "0"
 
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
@@ -167,6 +168,8 @@ class ArmoryDataGenerator(DataGenerator):
         return self.batches_per_epoch * self.epochs
 
 
+# TODO:  David tried to refactor this at one point but ran into some issues
+# but probably not insurmounting
 class EvalGenerator(DataGenerator):
     """
     Wraps a specified number of batches in a DataGenerator to allow for evaluating on
@@ -305,6 +308,80 @@ def filter_by_str_slice(dataset: "tf.data.Dataset", index: str, dataset_size: in
     return dataset.enumerate().filter(slice_index).map(lambda i, x: x), indexed_size
 
 
+def expand_cached_dataset(cache_file, dataset_location):
+    """"""
+    # TODO: Implement This
+    #  basically tar xzvf tarfile to the dataset_location
+
+    # TODO: Add into error message how to build a dataset locally
+    raise NotImplementedError("Not yet....")
+
+
+def get_cached_dataset_from_s3(dataset_name, dataset_version, cache_location):
+    # TODO: Implement this
+    #  download based on name:version to cache_location
+    #  modify tar.gz name as appropriate
+    #  return tar_file full path
+
+    # TODO:  Ask if we really have to check checksums and have them in version control here
+    raise NotImplementedError("Not yet....")
+
+
+# TODO TFDS makes name => name:version
+def get_tf_dataset(
+    dataset_name: str,
+    dataset_version: str,
+    dataset_folder: str,
+    dataset_cache_folder: str,
+    download: bool = True,
+    split: Optional[str] = None,  # Consider typing from tfds as opposed to these?
+    batch_size: Optional[int] = None,
+    shuffle_files: bool = False,
+    as_supervised: bool = True,  # TODO remove this and always make it false
+    # consider decoders and read_config
+) -> tf.data.Dataset:
+    """Returns a tf.data.Dataset object
+    Parameters:
+            dataset_name (str):                 The name of the dataset (e.g. `mnist`)
+            dataset_version (str):              The version of the dataset (e.g. `3.0.2`)
+            dataset_folder (str):               Path to the datasets directory (e.g. ~/.armory/datasets)
+            dataset_cache_folder (str):         Path the the cache directory (e.g. ~/.armory/datasets/cache)
+            download (bool):                    Attempt to download from armory s3 (if not found locally)
+
+    Returns:
+            dataset (tf.data.Dataset):          TFDS4 Dataset Object
+    """
+    ds_path = os.path.join(dataset_folder, dataset_name, dataset_version)
+    cache_path = os.path.join(
+        dataset_cache_folder, f"{dataset_version}_{dataset_version}"
+    )
+
+    # Attempting to get Dataset into `ds_path`
+    if not os.path.isdir(ds_path) and not os.path.isfile(cache_path):
+        if download:
+            cache_path = get_cached_dataset_from_s3(
+                dataset_name, dataset_version, cache_path
+            )
+            expand_cached_dataset(cache_path, ds_path)
+        else:
+            raise ValueError(
+                f"Cannot load {dataset_name}:{dataset_version}... "
+                f"doesn't exist locally and download is set to {download}"
+            )
+    elif not os.path.isdir(ds_path):
+        expand_cached_dataset(cache_path, ds_path)
+
+    builder = tfds.core.builder_from_directory(ds_path)
+    ds_info = builder.info
+    ds = builder.as_dataset(
+        split=split,
+        batch_size=batch_size,
+        shuffle_files=shuffle_files,
+        as_supervised=as_supervised,
+    )
+    return ds_info, ds
+
+
 def _generator_from_tfds(
     dataset_name: str,
     split: str = "train",
@@ -314,7 +391,7 @@ def _generator_from_tfds(
     preprocessing_fn: Callable = None,
     label_preprocessing_fn: Callable = None,
     as_supervised: bool = True,
-    supervised_xy_keys: bool = None,
+    supervised_xy_keys: Optional[tuple] = None,
     download_and_prepare_kwargs=None,
     variable_length: bool = False,
     variable_y: bool = False,
@@ -367,6 +444,8 @@ def _generator_from_tfds(
     #     shuffle_files=shuffle_files,
     # )
 
+    # TODO: Ask David what this is trying to accomplish
+    #  Move this all to Lambda map (maybe actually just use custom decoder
     if not as_supervised:
         try:
             x_key, y_key = supervised_xy_keys
@@ -401,6 +480,9 @@ def _generator_from_tfds(
             ds = ds.map(lambda x: (x[x_key], tuple(x[k] for k in y_key)))
         else:
             ds = ds.map(lambda x: (x[x_key], x[y_key]))
+
+    # TODO:  Remove , thesea are just notes
+    #  this shows up in so2stat call
     if lambda_map is not None:
         ds = ds.map(lambda_map)
 
@@ -413,6 +495,14 @@ def _generator_from_tfds(
                 "Filtering by class entails iterating over the whole dataset and thus "
                 "can be very slow if using the 'train' split"
             )
+
+        # TODO: Why not use TFDS filter ?? (https://www.tensorflow.org/datasets/decode#only_decode_a_sub-set_of_the_features)
+
+        # TODO: Remove when done
+        #  Issue with filtering, to know the len you have to iterate the entire dataset, doesn't appear in metadata
+        #  Filter by index is fast, filter by stringslice is very slow
+        #  Figure out why we need the full dataset size
+        #  Add to ArmoryDataGenerator -> add_filter that removes samples at execution time based on filter
         if isinstance(class_ids, list):
             ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
         elif isinstance(class_ids, int):
@@ -431,6 +521,9 @@ def _generator_from_tfds(
         raise ValueError(f"index must be a list, str, or None, not {type(index)}")
 
     ds = ds.repeat(epochs)
+    # TODO: Why is this here since builder does this already??
+    #  shuffle files is a part of original builder but not during execution
+    #  maybe not needed if we shuffle the files at build time
     if shuffle_files:
         ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
     if variable_length or variable_y and batch_size > 1:
@@ -439,6 +532,10 @@ def _generator_from_tfds(
         ds = ds.batch(batch_size, drop_remainder=False)
     ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
+    # TODO: Separate this into separate translation function
+    #  fit_preprocessing_fn is generally just supposed to change what gets passed in during train vs test
+    #  sometimes dataset structure is not what you want interms of format
+    #
     if framework != "numpy" and (
         preprocessing_fn is not None or label_preprocessing_fn is not None
     ):
@@ -510,6 +607,10 @@ def check_shapes(actual, target):
     for a, t in zip(actual, target):
         if a != t and t is not None:
             raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+# TODO: What is this context for??  Appears to only be for exporter to know what
+#  type of thing it is..... am I missimg something? and then also for pre-process
 
 
 class ImageContext:
@@ -682,6 +783,8 @@ class AudioContext:
         self.output_max = 1.0
 
 
+# TODO: Why do we need to do all of this assert business every time we use the
+#  dataset?  Can we move to more of a "trusted" dataset architecture??
 def canonical_audio_preprocess(context, batch):
     if batch.dtype == np.object:
         for x in batch:
