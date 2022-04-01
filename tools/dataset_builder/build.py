@@ -1,3 +1,11 @@
+"""ARMORY Dataset Builder Script
+
+This script is intended to be used to construct Armory Datasets from
+the original data artifacts.  It can also be used to construct a dataset
+from a local class_file + data artifacts using the `-lcs` options described
+below.  The result is a `TFDS` style directory containing `tfrecord` files.
+
+"""
 import tensorflow_datasets as tfds
 import os
 import json
@@ -6,6 +14,7 @@ import sys
 from loguru import logger as log
 import subprocess
 import itertools
+import tools
 
 SUPPORTED_DATASETS = {
     "mnist": {
@@ -214,27 +223,13 @@ SUPPORTED_DATASETS = {
 }
 
 
-def get_ds_path(dataset_name: str, dataset_directory: str) -> str:
-    ds_path = os.path.join(dataset_directory, dataset_name)
-    if not os.path.isdir(ds_path):
-        raise ValueError(
-            f"Dataset: {dataset_directory}/{dataset_name} does not exist!!"
-        )
-    versions = next(os.walk(ds_path))[1]
-    if len(versions) != 1:
-        raise RuntimeError(
-            f"Dataset: {dataset_directory}/{dataset_name} has len(versions) == {len(versions)} != 1!!"
-        )
-    return os.path.join(ds_path, versions[0])
-
-
 def build_tfds_dataset(dataset_name: str, local_path: str, feature_dict=None) -> str:
     log.info(f"Building Dataset: {dataset_name} from TFDS artifacts")
     log.debug("Constructing Builder Object")
     builder = tfds.builder(dataset_name, data_dir=local_path)
     log.debug("Downloading artifacts...")
     builder.download_and_prepare()
-    ds_path = get_ds_path(dataset_name, local_path)
+    ds_path = tools.get_ds_path(dataset_name, local_path)
     if "features.json" not in os.listdir(ds_path):
         if feature_dict is None:
             raise RuntimeError(
@@ -265,7 +260,7 @@ def build_source_dataset(dataset_class_file: str, local_path: str) -> str:
     subprocess.run(cmd, shell=True, check=True)
 
     try:
-        ds_path = get_ds_path(dataset_name, local_path)
+        ds_path = tools.get_ds_path(dataset_name, local_path)
     except (ValueError, RuntimeError) as e:
         log.error(
             "Something went wrong with tfds build... no dataset directory resulted"
@@ -281,18 +276,20 @@ def build_source_dataset(dataset_class_file: str, local_path: str) -> str:
 def build(
     dataset_name: str, dataset_config, local_path: str, clean: bool = True
 ) -> str:
-    log.info(f"Constructing Dataset: {dataset_name}")
+    log.info(f"Building Dataset: {dataset_name}")
     log.debug(f"\t using Config: {dataset_config}")
     ds_path = os.path.join(
         local_path, dataset_name
-    )  # Not sure it exists...don't use get_ds_path
+    )  # Not sure it exists...don't use tools.get_ds_path
+    log.trace(f"Initial ds_path: {ds_path}")
     if os.path.isdir(ds_path):
         log.info(f"Dataset: {dataset_name} already exists at {ds_path}")
         if not clean:
             log.warning("...skipping build. To overwrite use `--clean`")
-            ds_path = get_ds_path(
+            ds_path = tools.get_ds_path(
                 dataset_name, local_path
             )  # We want actual path with version
+            log.debug(f"Returning ds_path: {ds_path}")
             return ds_path
         else:
             log.warning(f"Removing old dataset: {ds_path}!!")
@@ -321,45 +318,29 @@ def build(
         )
 
 
-def load(dataset_name: str, dataset_directory: str):
-    ds_path = get_ds_path(dataset_name, dataset_directory)
-    expected_name = ds_path.replace(f"{dataset_directory}/", "")
-    if not os.path.isdir(ds_path):
-        raise ValueError(
-            f"Dataset Directory: {ds_path} does not exist...cannot construct!!"
-        )
-    log.info(
-        f"Attempting to Load Dataset: {dataset_name} from local directory: {dataset_directory}"
-    )
-    log.debug("Generating Builder object...")
-    builder = tfds.core.builder_from_directory(ds_path)
-    log.debug(
-        f"Dataset Full Name: `{builder.info.full_name}`  Expected: `{expected_name}`"
-    )
-    if expected_name != builder.info.full_name:
-        raise RuntimeError(
-            f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_name}"
-            "...make sure that the build_class_file name matches the class name!!"
-            "NOTE:  tfds converts camel case class names to lowercase separated by `_`"
-        )
-    log.debug("Converting to dataset")
-    ds = builder.as_dataset()
-
-    log.success("Loading Complete!!")
-    return builder.info, ds
-
-
 if __name__ == "__main__":
     import argparse
-
-    parser = argparse.ArgumentParser()
+    epilog = "\n".join([
+        "To Construct all datasets locally use:",
+        "\t python build.py -ds all --clean",
+        "or if you only want to build `mnist`, `digit, `cifar10`: ",
+        "\t python build.py -ds mnist digit cifar10",
+        "If you have a local class file and data at [my_data_dir] you can use:",
+        "\t python build.py -lcs [my_data_dir] --clean",
+        "\nNOTE: You must provide one and only one of `-ds`, `-lcs` `--list`."
+    ])
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     usage="%(prog)s [options]",
+                                     epilog=epilog)
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
         "-ds",
         "--dataset",
         choices=["all"] + list(SUPPORTED_DATASETS.keys()),
         action="append",
-        nargs="*",
+        nargs="+",
+        metavar="DATASET",
         default=None,
         help="Dataset name to generate",
     )
@@ -369,10 +350,16 @@ if __name__ == "__main__":
         type=str,
         action="append",
         default=None,
-        nargs="*",
+        nargs="+",
+        metavar="CLASS_FILE",
         help="Paths to files that contain TFDS builder classes",
     )
-
+    group.add_argument(
+        "--list",
+        action="store_true",
+        default=None,
+        help="List SUPPORTED_DATASETS that can be built"
+    )
     parser.add_argument(
         "--clean", action="store_true", help="Generate the dataset from scratch"
     )
@@ -380,7 +367,7 @@ if __name__ == "__main__":
         "-o",
         "--output-directory",
         default=os.path.expanduser(os.path.join("~", ".armory", "dataset_builds")),
-        help="Directory to Store built datasets",
+        help="Directory to Store built datasets (Default: %(default)s )",
     )
     parser.add_argument(
         "-v",
@@ -388,12 +375,21 @@ if __name__ == "__main__":
         type=str,
         choices=["trace", "debug", "info", "warning", "error"],
         default="info",
-        help="Set Output log level",
+        help="Set Output log level (Default: %(default)s)",
     )
     args = parser.parse_args()
 
+    # Setting up Logger to stdout with chosen level
+    log.remove()
+    log.add(sys.stdout, level=args.verbosity.upper())
+
+    # Listing SUPPORTED_DATASETS
+    if args.list:
+        print("Supported Datasets:\n\t" + "\n\t".join(SUPPORTED_DATASETS.keys()))
+        exit()
+
     if args.dataset is not None:
-        args.dataset = list(itertools.chain(*args.dataset))
+        args.dataset = list(itertools.chain(*args.dataset)) # Flatten list
         if "all" in args.dataset:
             dataset_dict = SUPPORTED_DATASETS
         else:
@@ -408,16 +404,15 @@ if __name__ == "__main__":
             for k in args.local_class_path
         }
 
-    # Setting up Logger to stdout with chosen level
-    log.remove()
-    log.add(sys.stdout, level=args.verbosity.upper())
+    if len(dataset_dict.keys()) == 0:
+        log.error("Must provide at least 1 dataset/class_file")
+        raise ValueError("Must provide at least 1 dataset/class_file")
 
     log.info(f"Attempting to Build Datasets: {dataset_dict.keys()}")
     for ds_name, ds_config in dataset_dict.items():
         ds_path = build(ds_name, ds_config, args.output_directory, args.clean)
-        print("\n")
         try:
-            ds_info, ds = load(ds_name, args.output_directory)
+            ds_info, ds = tools.load(ds_name, args.output_directory)
         except Exception as e:
             log.exception(f"Could not reconstruct dataset located at {ds_path}!!")
             log.exception(e)
