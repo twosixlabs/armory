@@ -120,7 +120,7 @@ def update_filters(specs: List[str], armory_debug=None):
 
     if armory_debug:
         specs.append("armory:debug")
-        log.trace("added armory:debug to {specs}")
+        log.trace(f"added armory:debug to {specs}")
 
     for spec in specs:
         if ":" in spec:

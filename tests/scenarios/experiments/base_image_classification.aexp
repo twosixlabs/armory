@@ -1,0 +1,42 @@
+# ###################################################################
+#                  Base Image Classification Experiment
+# This just creates a model and a dataset with no Attack
+# or defense
+####################################################################
+---
+_meta:
+  name: base_image_classification.json
+  author: S. Henshaw
+  description: Blah
+
+poison: null
+
+attack: null
+
+dataset:
+  batch_size: 64
+  framework: "numpy"
+  module: "armory.data.datasets"
+  name: "mnist"
+
+metric: null
+
+model:
+  fit: true
+  fit_kwargs:
+    nb_epoch: 3
+  model_kwargs: {}
+  module: "armory.baseline_models.pytorch.mnist"
+  name: "get_art_model"
+  weights_file: null
+  wrapper_kwargs: {}
+
+scenario:
+  kwargs: {}
+  module_name: "armory.scenarios.image_classification"
+  function_name: "ImageClassificationTask"
+
+overrides: []
+#
+#sysconfig:
+#  null

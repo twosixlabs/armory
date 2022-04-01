@@ -16,7 +16,7 @@ which is a bit ungainly.
 try:
     from importlib.metadata import version, PackageNotFoundError
 except ModuleNotFoundError:
-    from importlib_metadata import version, PackageNotFoundError
+    from importlib_metadata import version, PackageNotFoundError  # noqa
 
 import pathlib
 import re

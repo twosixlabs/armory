@@ -55,6 +55,10 @@ class ArmoryInstance(object):
             container_args["user"] = user
         if envs:
             container_args["environment"] = envs
+        log.info("Running Armory in Container using Image: {}\n".format(image_name))
+        msg = "\nContainer Args:\n"
+        msg += "\n".join(["\t{}: {}".format(k, v) for k, v in container_args.items()])
+        log.debug(msg)
         self.docker_container = self.docker_client.containers.run(
             image_name, **container_args
         )

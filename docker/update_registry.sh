@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     -*|--*)
       echo "Unknown option $1"
       echo "For more info try: update_registry.sh -h"
-      return 1
+      exit 1
       ;;
     *)
       POSITIONAL_ARGS+=("$1") # save positional arg
