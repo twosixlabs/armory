@@ -1,24 +1,24 @@
 # Adversarial Datasets
 
-The `armory.data.adversarial_datasets` module implements functionality to return adversarial datasets of 
-various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which 
-implements the methods needed  by the ART framework. 
+The `armory.data.adversarial_datasets` module implements functionality to return adversarial datasets of
+various data modalities. By default, this is a NumPy `ArmoryDataGenerator` which
+implements the methods needed  by the ART framework.
 
 There are two kinds of adversarial datasets in Armory: *preloaded* as well as *green-screen*. Preloaded datasets contain
-examples with universal adversarial perturbations. For preloaded adversarial datasets, `get_batch()` returns 
-a tuple of `((data_clean, data_adversarial), label_clean)` for a specified batch size in numpy format, 
-where `data_clean` and `label_clean` represent a clean example and its true label, and `data_adversarial` 
+examples with universal adversarial perturbations. For preloaded adversarial datasets, `get_batch()` returns
+a tuple of `((data_clean, data_adversarial), label_clean)` for a specified batch size in numpy format,
+where `data_clean` and `label_clean` represent a clean example and its true label, and `data_adversarial`
 represents the corresponding adversarially attacked example. The lone exception is the APRICOT dataset, which is preloaded
 but returns a tuple of `(data_adversarial, label_adversarial)` as the images don't have benign counterparts.
 
-The green-screen adversarial datasets in Armory are DAPRICOT and CARLA. Each image in these datasets contains a 
+The green-screen adversarial datasets in Armory are DAPRICOT and CARLA. Each image in these datasets contains a
 green-screen, for which adversarial patches generated during an attack are inserted onto. For these datasets
-`get_batch()` returns a tuple of `(data_adversarial, (objects_label, green_screen_label))`. 
+`get_batch()` returns a tuple of `(data_adversarial, (objects_label, green_screen_label))`.
 
 
 
-Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files. 
-If the files are not already present locally in your `dataset_dir` directory, Armory will download them 
+Currently, datasets are loaded using TensorFlow Datasets from cached tfrecord files.
+If the files are not already present locally in your `dataset_dir` directory, Armory will download them
 from Two Six's public S3 dataset repository.
 
 
@@ -39,7 +39,7 @@ from Two Six's public S3 dataset repository.
 
 
 ##### D-APRICOT
-The D-APRICOT dataset does NOT contain labels/bounding boxes for COCO objects, which may occasionally appear in the 
+The D-APRICOT dataset does NOT contain labels/bounding boxes for COCO objects, which may occasionally appear in the
 background (e.g. car). Each image contains one green screen intended for patch insertion. The green screen shapes vary
 between diamond, rectangle, and octagon. A dataset example consists of three images, each of a different camera
  angle of the same scene and green screen. The intended threat model is a targeted attack where the inserted patch
@@ -56,12 +56,12 @@ is specified in the dataset_config as such:
     "modality": "rgb",
 }
 ```
-When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 600, 800, 6)` where `x[..., :3]` are 
+When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 600, 800, 6)` where `x[..., :3]` are
 the rgb channels and `x[..., 3:]` the depth channels.
 
 ### Usage of Preloaded Adversarial Datasets
-To use a preloaded adversarial dataset for evaluation, set `attack_config["type"]` to `"preloaded"` and specify 
-the desired values for the `name` and `adversarial_key` keywords in the `attack` module of a scenario configuration. 
+To use a preloaded adversarial dataset for evaluation, set `attack_config["type"]` to `"preloaded"` and specify
+the desired values for the `name` and `adversarial_key` keywords in the `attack` module of a scenario configuration.
 Valid values for each keyword are given in the table below.
 
 Example attack module for image classification scenario:
@@ -90,9 +90,9 @@ Example attack module for image classification scenario:
 
 ##### APRICOT
 Note: the APRICOT dataset contains splits for ["frcnn", "ssd", "retinanet"] rather than adversarial keys. See example below.
-The APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches. 
-The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in 
-[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial 
+The APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches.
+The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in
+[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial
 patch and a varying number of COCO objects (in some cases zero). COCO object class labels are one-indexed (start from 1)
 in Armory <= 0.13.1 and zero-indexed in Armory > 0.13.1.
 

@@ -9,6 +9,8 @@ import random
 
 import numpy as np
 
+from armory.utils.poisoning import FairnessMetrics
+from armory.utils.export import SampleExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
@@ -117,6 +119,9 @@ class Poison(Scenario):
                 )
         self.model = model
         self.predict_kwargs = model_config.get("predict_kwargs", {})
+        self.use_filtering_defense = self.config["adhoc"].get(
+            "use_poison_filtering_defense", False
+        )
 
     def set_dataset_kwargs(self):
         self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
@@ -231,15 +236,17 @@ class Poison(Scenario):
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             log.info(f"Total clean data points: {np.sum(is_clean)}")
+            is_dirty = is_clean.astype(np.int64) == 0
+            log.info(f"Total dirty data points: {np.sum(is_dirty)}")
 
             log.info("Filtering out detected poisoned samples")
-            indices_to_keep = is_clean == 1  # TODO: redundant?
+            indices_to_keep = is_clean == 1
 
         else:
             log.info(
                 "Defense does not require filtering. Model fitting will use all data."
             )
-            indices_to_keep = ...
+            indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
 
         # TODO: measure TP and FP rates for filtering
         self.x_train = self.x_poison[indices_to_keep]
@@ -278,6 +285,15 @@ class Poison(Scenario):
         )
         self.i = -1
 
+        export_samples = self.config["scenario"].get("export_samples")
+        if export_samples is not None and export_samples > 0:
+            sample_exporter = SampleExporter(
+                self.scenario_output_dir, self.test_dataset.context, export_samples
+            )
+        else:
+            sample_exporter = None
+        self.sample_exporter = sample_exporter
+
     def load_metrics(self):
         self.benign_validation_metric = metrics.MetricList("categorical_accuracy")
         self.target_class_benign_metric = metrics.MetricList("categorical_accuracy")
@@ -285,6 +301,15 @@ class Poison(Scenario):
             self.poisoned_test_metric = metrics.MetricList("categorical_accuracy")
             self.poisoned_targeted_test_metric = metrics.MetricList(
                 "categorical_accuracy"
+            )
+
+        if self.config["adhoc"].get("compute_fairness_metrics", False):
+            self.fairness_metrics = FairnessMetrics(
+                self.config["adhoc"], self.use_filtering_defense, self
+            )
+        else:
+            log.warning(
+                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
 
     def load(self):
@@ -329,6 +354,10 @@ class Poison(Scenario):
                 [self.target_class] * source.sum(), y_pred_adv[source]
             )
 
+        # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
+        if self.sample_exporter is not None:
+            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
+
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
 
@@ -344,17 +373,39 @@ class Poison(Scenario):
         log.info(
             f"Unpoisoned validation accuracy on targeted class: {self.target_class_benign_metric.mean():.2%}"
         )
-        results = {
+        self.results = {
             "benign_validation_accuracy": self.benign_validation_metric.mean(),
             "benign_validation_accuracy_targeted_class": self.target_class_benign_metric.mean(),
         }
         if self.use_poison:
-            results["poisoned_test_accuracy"] = self.poisoned_test_metric.mean()
-            results[
+            self.results["poisoned_test_accuracy"] = self.poisoned_test_metric.mean()
+            self.results[
                 "poisoned_targeted_misclassification_accuracy"
             ] = self.poisoned_targeted_test_metric.mean()
             log.info(f"Test accuracy: {self.poisoned_test_metric.mean():.2%}")
             log.info(
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
-        self.results = results
+        if hasattr(self, "fairness_metrics") and not self.check_run:
+            # Get unpoisoned test set
+            dataset_config = self.config["dataset"]
+            test_dataset = config_loading.load_dataset(
+                dataset_config, split="test", num_batches=None, **self.dataset_kwargs,
+            )
+
+            # The following functions will add data to self.results
+            log_lines = self.fairness_metrics.add_cluster_metrics(
+                self.x_poison,
+                self.y_poison,
+                self.poison_index,
+                self.indices_to_keep,
+                test_dataset,
+            )
+            for line in log_lines:
+                log.info(line)
+            if self.use_filtering_defense:
+                log_lines = self.fairness_metrics.add_filter_perplexity(
+                    self.y_clean, self.poison_index, self.indices_to_keep
+                )
+                for line in log_lines:
+                    log.info(line)
