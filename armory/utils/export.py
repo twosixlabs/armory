@@ -646,7 +646,14 @@ class AudioExporter(SampleExporter):
         :param dataset_context: armory.data.datasets AudioContext object
         :return: int np array of shape (sequence_length, )
         """
-        return np.int16(x_i * dataset_context.quantization)
+        assert dataset_context.input_type == np.int64
+        assert dataset_context.quantization == 2 ** 15
+
+        return np.clip(
+            np.int16(x_i * dataset_context.quantization),
+            dataset_context.input_min,
+            dataset_context.input_max,
+        )
 
 
 class So2SatExporter(SampleExporter):
