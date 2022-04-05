@@ -31,11 +31,7 @@ if __name__ == "__main__":
         usage="%(prog)s [options]",
         epilog=epilog,
     )
-    parser.add_argument(
-        "directory",
-        nargs="*",
-        help="TFDS Style Dataset Directory"
-    )
+    parser.add_argument("directory", nargs="*", help="TFDS Style Dataset Directory")
     parser.add_argument(
         "-p",
         "--parent",
