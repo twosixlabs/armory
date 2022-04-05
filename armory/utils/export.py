@@ -134,9 +134,9 @@ class ImageClassificationExporter(SampleExporter):
 class ObjectDetectionExporter(ImageClassificationExporter):
     def __init__(self, base_output_dir, export_kwargs={}):
         super().__init__(base_output_dir, export_kwargs)
-        self.ground_truth_coco_data = []
-        self.benign_preds_coco_data = []
-        self.adv_preds_coco_data = []
+        self.ground_truth_boxes_coco_format = []
+        self.benign_predicted_boxes_coco_format = []
+        self.adversarial_predicted_boxes_coco_format = []
 
     def _export(
         self,
@@ -198,7 +198,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             super()._export_image(x_i=x_i, name=name)
             return
 
-        self.image_with_boxes, gt_boxes_coco, pred_boxes_coco = self.get_sample(
+        self.image_with_boxes = self.get_sample(
             x_i=x_i,
             with_boxes=True,
             y_i=y_i,
@@ -210,16 +210,85 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
         )
 
+        gt_boxes_coco, pred_boxes_coco = self.get_coco_formatted_bounding_box_data(
+            y_i=y_i,
+            y_i_pred=y_i_pred,
+            classes_to_skip=classes_to_skip,
+            score_threshold=score_threshold,
+        )
+
         # Add coco box dictionaries to correct lists
         if name == "benign":
             for coco_box in pred_boxes_coco:
-                self.benign_preds_coco_data.append(coco_box)
+                self.benign_predicted_boxes_coco_format.append(coco_box)
             for coco_box in gt_boxes_coco:
-                self.ground_truth_coco_data.append(coco_box)
+                self.ground_truth_boxes_coco_format.append(coco_box)
         elif name == "adversarial":
             # don't save gt boxes here since they are the same as for benign
             for coco_box in pred_boxes_coco:
-                self.adv_preds_coco_data.append(coco_box)
+                self.adversarial_predicted_boxes_coco_format.append(coco_box)
+
+    def get_coco_formatted_bounding_box_data(
+        self, y_i=None, y_i_pred=None, score_threshold=0.5, classes_to_skip=None
+    ):
+        """
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :param score_threshold: float in [0, 1]; predicted boxes with confidence > score_threshold are exported
+        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be exported
+        :return: Two lists of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
+        """
+
+        ground_truth_boxes_coco_format = []
+        predicted_boxes_coco_format = []
+
+        try:
+            image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+        except KeyError:
+            log.warning(
+                "Exported sample is missing image_id.  Coco bounding box data cannot be exported."
+            )
+            return ground_truth_boxes_coco_format, predicted_boxes_coco_format
+
+        if y_i is not None:
+            bboxes_true = y_i["boxes"]
+            labels_true = y_i["labels"]
+
+            for true_box, label in zip(bboxes_true, labels_true):
+                if classes_to_skip is not None and label in classes_to_skip:
+                    continue
+                xmin, ymin, xmax, ymax = true_box
+                ground_truth_box_coco = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+                }
+                ground_truth_boxes_coco_format.append(ground_truth_box_coco)
+        else:
+            log.warning(
+                "Exported sample is missing ground truth y value.  Some coco bounding box data cannot be exported."
+            )
+
+        if y_i_pred is not None:
+            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
+            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
+
+            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
+                xmin, ymin, xmax, ymax = pred_box
+                predicted_box_coco = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+                    "score": float(score),
+                }
+                predicted_boxes_coco_format.append(predicted_box_coco)
+        else:
+            log.warning(
+                "Exported sample is missing a predicted y value.  Some coco bounding box data cannot be exported."
+            )
+
+        return ground_truth_boxes_coco_format, predicted_boxes_coco_format
 
     def get_sample(
         self,
@@ -231,7 +300,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         classes_to_skip=None,
     ):
         """
-
         :param x_i:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
                 3 (RGB), or 6 (RGB-Depth)
         :param with_boxes: boolean indicating whether to display bounding boxes
@@ -239,7 +307,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         :param y_i_pred: predicted label dict
         :param score_threshold: float in [0, 1]; boxes with confidence > score_threshold are displayed
         :param classes_to_skip: List[Int] containing class ID's for which boxes should not be displayed
-        :return: PIL.Image.Image, and, if with_boxes == True, lists of coco data for ground truth and predicted labels
+        :return: PIL.Image.Image
         """
         image = super().get_sample(x_i)
         if not with_boxes:
@@ -249,81 +317,53 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
-        gt_coco_items = []
-        pred_coco_items = []
-
-        if y_i is None or y_i_pred is None:
-            log.warning("Cannot export some coco jsons due to missing data.")
-
         if y_i is not None:
             bboxes_true = y_i["boxes"]
             labels_true = y_i["labels"]
-            try:
-                image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
-            except Exception:
-                image_id = None
-                log.warning("Cannot export some coco jsons due to missing data.")
 
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
                 box_layer.rectangle(true_box, outline="red", width=2)
-                if image_id is None:
-                    continue
-                xmin, ymin, xmax, ymax = true_box
-                gt_coco_result = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                }
-                gt_coco_items.append(gt_coco_result)
 
         if y_i_pred is not None:
             bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
-            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
-            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-            try:
-                image_id = y_i["image_id"][0]
-                # All boxes in y_i_pred are for the same image as y_i
-            except Exception:
-                image_id = None
-                log.warning("Cannot export some coco jsons due to missing data.")
 
-            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
+            for pred_box in bboxes_pred:
                 box_layer.rectangle(pred_box, outline="white", width=2)
-                if image_id is None:
-                    continue
-                xmin, ymin, xmax, ymax = pred_box
-                pred_coco_result = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                    "score": float(score),
-                }
-                pred_coco_items.append(pred_coco_result)
 
-        return image, gt_coco_items, pred_coco_items
+        return image
 
     def write(self):
         super().write()
-        if len(self.ground_truth_coco_data) > 0:
+        if len(self.ground_truth_boxes_coco_format) > 0:
             json.dump(
-                self.ground_truth_coco_data,
-                open(os.path.join(self.output_dir, "ground_truth_coco_data.json"), "w"),
-            )
-        if len(self.benign_preds_coco_data) > 0:
-            json.dump(
-                self.benign_preds_coco_data,
+                self.ground_truth_boxes_coco_format,
                 open(
-                    os.path.join(self.output_dir, "benign_predictions_coco_data.json"),
+                    os.path.join(
+                        self.output_dir, "ground_truth_boxes_coco_format.json"
+                    ),
                     "w",
                 ),
             )
-        if len(self.adv_preds_coco_data) > 0:
+        if len(self.benign_predicted_boxes_coco_format) > 0:
             json.dump(
-                self.adv_preds_coco_data,
+                self.benign_predicted_boxes_coco_format,
                 open(
-                    os.path.join(self.output_dir, "adv_predictions_coco_data.json"), "w"
+                    os.path.join(
+                        self.output_dir, "benign_predicted_boxes_coco_format.json"
+                    ),
+                    "w",
+                ),
+            )
+        if len(self.adversarial_predicted_boxes_coco_format) > 0:
+            json.dump(
+                self.adversarial_predicted_boxes_coco_format,
+                open(
+                    os.path.join(
+                        self.output_dir, "adversarial_predicted_boxes_coco_format.json"
+                    ),
+                    "w",
                 ),
             )
 
