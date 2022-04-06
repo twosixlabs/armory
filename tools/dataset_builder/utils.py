@@ -379,6 +379,16 @@ def resolve_dataset_directories(
     return data_dirs
 
 
+def load_from_directory(dataset_full_path: str) -> (dict, dict):
+    log.info(f"Attempting to Load Dataset from local directory: {dataset_full_path}")
+    log.debug("Generating Builder object...")
+    builder = tfds.core.builder_from_directory(dataset_full_path)
+    log.debug(f"Dataset Full Name: `{builder.info.full_name}`")
+    ds = builder.as_dataset()
+    log.success("Loading Complete!!")
+    return builder.info, ds
+
+
 def load(dataset_name: str, dataset_directory: str):
     """Loads the TFDS Dataset using `tfds.core.builder_from_directory` method
     Parameters:
@@ -396,25 +406,18 @@ def load(dataset_name: str, dataset_directory: str):
         raise ValueError(
             f"Dataset Directory: {ds_path} does not exist...cannot construct!!"
         )
-    log.info(
-        f"Attempting to Load Dataset: {dataset_name} from local directory: {dataset_directory}"
-    )
-    log.debug("Generating Builder object...")
-    builder = tfds.core.builder_from_directory(ds_path)
-    log.debug(
-        f"Dataset Full Name: `{builder.info.full_name}`  Expected: `{expected_name}`"
-    )
-    if expected_name != builder.info.full_name:
+
+    ds_info, ds = load_from_directory(ds_path)
+
+    if expected_name != ds_info.full_name:
         raise RuntimeError(
-            f"Dataset Full Name: {builder.info.full_name}  differs from expected: {expected_name}"
+            f"Dataset Full Name: {ds_info.full_name}  differs from expected: {expected_name}"
             "...make sure that the build_class_file name matches the class name!!"
             "NOTE:  tfds converts camel case class names to lowercase separated by `_`"
         )
     log.debug("Converting to dataset")
-    ds = builder.as_dataset()
 
-    log.success("Loading Complete!!")
-    return builder.info, ds
+    return ds_info, ds
 
 
 class ProgressPercentageUpload(object):

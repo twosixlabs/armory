@@ -158,6 +158,25 @@ def test_resolve_dataset_directories(tmp_path):
     assert set(dirs) == set(dirs2)
 
 
+def test_load_from_directory():
+    example_dataset_directory = os.path.join(
+        os.path.dirname(__file__),
+        "resources",
+        "example_built_datasets",
+        "my_dataset",
+        "1.0.0",
+    )
+    ds_info, ds = utils.load_from_directory(example_dataset_directory)
+    assert ds_info.name == "my_dataset"
+    assert ds_info.full_name == "my_dataset/1.0.0"
+    sample = next(iter(ds["train"]))
+    assert "image" in sample.keys()
+    assert "label" in sample.keys()
+
+    assert sample["image"].shape == (512, 640, 3)
+    assert sample["label"].numpy() == 1
+
+
 def test_load():
     example_dataset_directory = os.path.join(
         os.path.dirname(__file__), "resources", "example_built_datasets"
