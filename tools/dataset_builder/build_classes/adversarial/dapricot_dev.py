@@ -7,7 +7,7 @@ import os
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
-from armory.data.adversarial import pandas_proxy
+import pandas_proxy
 
 _DESCRIPTION = """
 LEGAL

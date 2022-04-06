@@ -1,0 +1,36 @@
+{
+    "description": "Description is **formatted** as markdown.\n\nIt should also contain any processing which has been applied (if any),\n(e.g. corrupted example skipped, images cropped,...):",
+    "fileFormat": "tfrecord",
+    "location": {
+        "urls": [
+            "https://dataset-homepage/"
+        ]
+    },
+    "moduleName": "my_dataset",
+    "name": "my_dataset",
+    "releaseNotes": {
+        "1.0.0": "Initial release."
+    },
+    "splits": [
+        {
+            "name": "train",
+            "numBytes": "207602",
+            "shardLengths": [
+                "1"
+            ]
+        }
+    ],
+    "supervisedKeys": {
+        "tuple": {
+            "items": [
+                {
+                    "featureKey": "image"
+                },
+                {
+                    "featureKey": "label"
+                }
+            ]
+        }
+    },
+    "version": "1.0.0"
+}

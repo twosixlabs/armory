@@ -10,7 +10,10 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
-from armory.data.adversarial import pandas_proxy
+# from armory.data.adversarial import pandas_proxy
+# from . import pandas_proxy
+import pandas_proxy
+
 
 _DESCRIPTION = """
 Synthetic multimodality (RGB, depth) dataset generated using CARLA (https://carla.org).
