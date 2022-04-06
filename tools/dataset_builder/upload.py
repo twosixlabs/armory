@@ -10,7 +10,57 @@ import itertools
 import os
 import sys
 from loguru import logger as log
-import tools
+import glob
+
+
+def setup_logger(level="info", suppress_tfds_progress=False):
+    log.remove()
+    log.add(sys.stdout, level=args.verbosity.upper())
+
+
+def resolve_data_directories(datasets, parents):
+
+    log.debug(f"Requested Dataset Directories: {datasets}")
+    data_dirs = list(datasets)
+
+    tmp = list(itertools.chain(*list(parents)))
+    log.debug(f"Requested Parents: {tmp}")
+
+    if len(tmp) > 0:
+        for d in tmp:
+            data_dirs += [os.path.join(d, subd) for subd in next(os.walk(d))[1]]
+
+    data_dirs = [os.path.abspath(os.path.expanduser(p)) for p in data_dirs]
+    log.debug(f"Resolved Data Directories: {data_dirs}")
+
+    if len(data_dirs) == 0:
+        log.error("Must provide at least one Dataset!!")
+        exit(1)
+
+    for p in data_dirs:
+        if not os.path.isdir(p):
+            log.error(f"Dataset: {p} does not exist or is not a directory!!")
+            exit(1)
+
+        tfrecords = glob.glob(os.path.join(p, "*.tfrecord*"))
+        if len(tfrecords) == 0:
+            log.warning(
+                f"Dataset: {p} does not contain any `tfrecord` files...checking to see if this is a parent!!"
+            )
+
+            exit(1)
+
+        meta = [os.path.basename(i) for i in glob.glob(os.path.join(p, "*.json"))]
+        if "features.json" not in meta:
+            log.error(f"Dataset: {p} does not contain `features.json` file!!")
+            exit(1)
+
+        if "dataset_info.json" not in meta:
+            log.error(f"Dataset: {p} does not contain `dataset_info.json` file!!")
+            exit(1)
+
+    return data_dirs
+
 
 if __name__ == "__main__":
     import argparse
@@ -63,25 +113,30 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Setting up Logger to stdout with chosen level
-    log.remove()
-    log.add(sys.stdout, level=args.verbosity.upper())
+    setup_logger(
+        level=args.verbosity.upper(),
+        suppress_tfds_progress=True
+        if args.verbosity in ["warning", "error"]
+        else False,
+    )
 
     # Getting List of all Dataset Directories
-    data_dirs = args.directory
-    args.parent = list(itertools.chain(*args.parent))  # Flatten list
-    for d in args.parent:
-        data_dirs += [os.path.join(d, subd) for subd in next(os.walk(d))[1]]
-
-    if len(data_dirs) == 0:
-        log.error("Must provide at least one Dataset!!")
-        exit(1)
+    data_dirs = resolve_data_directories(args.directory, args.parent)
+    # data_dirs = args.directory
+    # args.parent = list(itertools.chain(*args.parent))  # Flatten list
+    # for d in args.parent:
+    #     data_dirs += [os.path.join(d, subd) for subd in next(os.walk(d))[1]]
+    #
+    # if len(data_dirs) == 0:
+    #     log.error("Must provide at least one Dataset!!")
+    #     exit(1)
 
     log.info(f"Dataset Directories Selected: {data_dirs}")
-    for ds in data_dirs:
-        ds = ds.rstrip("/")
-        log.info(f"Processing Dataset: {ds}")
-        if not args.dont_validate:
-            tools.load(os.path.basename(ds), os.path.dirname(ds))
-
-        fname = tools.get_ds_archive_name(os.path.basename(ds), os.path.dirname(ds))
-        tools.prepare_and_upload(fname, ds, bucket=args.bucket)
+    # for ds in data_dirs:
+    #     ds = ds.rstrip("/")
+    #     log.info(f"Processing Dataset: {ds}")
+    #     if not args.dont_validate:
+    #         tools.load(os.path.basename(ds), os.path.dirname(ds))
+    #
+    #     fname = tools.get_ds_archive_name(os.path.basename(ds), os.path.dirname(ds))
+    #     tools.prepare_and_upload(fname, ds, bucket=args.bucket)
