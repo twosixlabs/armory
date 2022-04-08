@@ -242,13 +242,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         ground_truth_boxes_coco_format = []
         predicted_boxes_coco_format = []
 
-        try:
-            image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
-        except KeyError:
-            log.warning(
-                "Exported sample is missing image_id.  Coco bounding box data cannot be exported."
-            )
-            return ground_truth_boxes_coco_format, predicted_boxes_coco_format
+        image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
 
         if y_i is not None:
             bboxes_true = y_i["boxes"]
