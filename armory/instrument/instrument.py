@@ -12,11 +12,11 @@ _PROBES = {}
 
 
 class Probe:
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.meters = []
         self._hooks = {}
         self._warned = False
-        self.measured = set()
 
     def connect(self, meter):
         self.meters.append(meter)
@@ -31,22 +31,36 @@ class Probe:
             To add attributes, you could do:
                 probe.update(data_point=(x_i, is_poisoned))
         """
-        self.measured.update(named_values)
         if not self.meters and not self._warned:
-            log.warning("No Meter set up!")
+            log.warning(f"No Meter set up for probe {self.name}!")
             self._warned = True
             return
 
-        for name, value in named_values.items():
-            if not any(meter.is_measuring(name) for meter in self.meters):
-                continue
-
-            for p in preprocessing:
-                value = p(value)
-
+        # Determine what values are being measured
+        measured = []
+        for name in named_values:
             for meter in self.meters:
                 if meter.is_measuring(name):
-                    meter.update(**{name: value})
+                    measured.append(name)
+                    break
+
+        # Preprocess measured values
+        output_values = {}
+        for name in measured:
+            value = named_values[name]
+            for p in preprocessing:
+                value = p(value)
+            output_values[name] = value
+
+        # Output values to meters
+        for meter in self.meters:
+            meter.update(
+                **{
+                    name: value
+                    for name, value in output_values
+                    if meter.is_measuring(name)
+                }
+            )
 
     def hook(self, module, *preprocessing, input=None, output=None, mode="pytorch"):
         if mode == "pytorch":
@@ -101,11 +115,14 @@ class Probe:
         else:
             raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
         self._hooks.pop(module)
-        self._hooks[module].remove()
+        self._hooks[module].remove()  # TODO: this seems wrong
 
 
 class Meter:
     def is_measuring(self, name):
+        """
+        Return whether the meter is measuring the given name
+        """
         return False
 
     def update(self, **named_values):
@@ -144,24 +161,85 @@ class LogMeter(Meter):
             )
 
 
-class Procedure:  # instead of "Process" or "Experiment", which are overloaded
-    """
-    Provides context for meter and probes
-    """
-
-    def __init__(self, *, stage="", step=0):
-        self.set_stage(stage)
-        self.set_step(step)
-
-    def set_stage(self, stage: str):
-        if not isinstance(stage, str):
-            raise ValueError(f"'stage' must be a str, not {type(stage)}")
-        self.stage = stage
-
-    def set_step(self, step: int):
-        if not isinstance(step, int):
-            raise ValueError(f"'step' must be an int, not {type(step)}")
-        self.step = step
+# class Procedure:  # instead of "Process" or "Experiment", which are overloaded
+#    """
+#    Provides context for meter and probes
+#    """
+#
+#    def __init__(self, *, stage="", step=0):
+#        self.set_stage(stage)
+#        self.set_step(step)
+#
+#    def set_stage(self, stage: str):
+#        if not isinstance(stage, str):
+#            raise ValueError(f"'stage' must be a str, not {type(stage)}")
+#        self.stage = stage
+#
+#    def set_step(self, step: int):
+#        if not isinstance(step, int):
+#            raise ValueError(f"'step' must be an int, not {type(step)}")
+#        self.step = step
+#
+#
+# #Measure the L2 distance at the preprocessor output between the benign and adversarial instances
+# #In model code:
+#  from armory import instrument
+#  probe = instrument.get_probe("model")
+# # ...
+#  output = preprocessor(x_data)
+#  probe.update(lambda x: x.detach().cpu().numpy(), prep_output=output)
+#
+# # In own code?
+#  meter = instrument.AdvMeter("model.x", "model.y")  # --> "model.adv_x", "model.adv_y"
+#  meter = instrument.LogMeter("benign:model.prep_output", "adv:model.prep_output", np.linalg.norm2)
+# # where does it go?
+#
+#
+# class AdvMeter(Meter):
+#    STAGES = "benign", "adversary"
+#    def __init__(self, *names):
+#        self.names = names
+#        self.values = {}
+#        self.stage = None
+#        for name in self.names:
+#            for stage in self.STAGES:
+#                self.values[self._full_name(name, stage)] = None
+#
+#    def _full_name(self, name, stage=None):
+#        if stage is None:
+#            stage = self.stage
+#            if stage is None:
+#                raise ValueError("must call set_stage")
+#        return f"{stage}:{name}"
+#
+#    def is_measuring(self, name):
+#        return name in self.names
+#
+#    def set_stage(self, stage):
+#        if stage not in self.STAGES:
+#            raise ValueError(f"stage {stage} not in {self.STAGES}")
+#        self.stage = stage
+#
+#    def update(self, **named_values):
+#        for name, value in named_values.items():
+#            self.values[self._full_name(name)] = value
+#
+#
+# "model.x[stage=adv], model.x[stage=ben]"
+# probe.connect(meter)
+#
+#
+#
+# # outputs:
+# (sample=i, metric_name)
+#
+#
+# class GlobalMeter(Meter):
+#    def __init__(self):
+#        self.values = []
+#
+#    def update(self):
+#        self.values.append()
 
 
 # class MetricsMeter(Meter):
