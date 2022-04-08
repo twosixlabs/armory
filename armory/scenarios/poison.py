@@ -124,7 +124,7 @@ class Poison(Scenario):
         )
 
     def set_dataset_kwargs(self):
-        self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
+        self.dataset_kwargs = dict(epochs=1, shuffle_files=False)
 
     def load_train_dataset(self, train_split_default=None):
         """
@@ -248,7 +248,6 @@ class Poison(Scenario):
             )
             indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
 
-        # TODO: measure TP and FP rates for filtering
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
@@ -303,6 +302,9 @@ class Poison(Scenario):
                 "categorical_accuracy"
             )
 
+        self.benign_test_accuracy_per_class = (
+            {}
+        )  # store accuracy results for each class
         if self.config["adhoc"].get("compute_fairness_metrics", False):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
@@ -338,6 +340,14 @@ class Poison(Scenario):
 
         self.y_pred = y_pred
         self.source = source
+
+        for y_, y_pred_ in zip(y, y_pred):
+            if y_ not in self.benign_test_accuracy_per_class.keys():
+                self.benign_test_accuracy_per_class[y_] = []
+
+            self.benign_test_accuracy_per_class[y_].append(
+                y_ == np.argmax(y_pred_, axis=-1)
+            )
 
     def run_attack(self):
         x, y = self.x, self.y
@@ -386,11 +396,69 @@ class Poison(Scenario):
             log.info(
                 f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
             )
+
+        n_poisoned = int(len(self.poison_index))
+        n_clean = (
+            len(self.y_clean) - n_poisoned
+        )  # self.y_clean is the whole pre-poison train set
+        self.results["N_poisoned_train_samples"] = n_poisoned
+        self.results["N_clean_train_samples"] = n_clean
+        train_set_class_labels = sorted(list(np.unique(self.y_clean)))
+        test_set_class_labels = sorted(list(self.benign_test_accuracy_per_class.keys()))
+        if test_set_class_labels != train_set_class_labels:
+            log.warning(
+                "Test set contains a strict subset of train set classes.  Some metrics for missing classes may not be computed."
+            )
+
+        if self.use_filtering_defense:
+
+            removed = (1 - self.indices_to_keep).astype(np.bool)
+            poisoned = np.zeros_like(self.y_clean).astype(np.bool)
+            poisoned[self.poison_index.astype(np.int64)] = True
+
+            false_negatives = int(np.sum(~removed & poisoned))
+            true_positives = int(np.sum(removed & poisoned))
+            true_negatives = int(np.sum(~removed & ~poisoned))
+            false_positives = int(np.sum(removed & ~poisoned))
+
+            false_negative_rate = 0 if n_poisoned == 0 else false_negatives / n_poisoned
+            true_positive_rate = 0 if n_poisoned == 0 else true_positives / n_poisoned
+            true_negative_rate = true_negatives / n_clean
+            false_positive_rate = false_positives / n_clean
+
+            f1_score = true_positives / (
+                true_positives + 0.5 * (false_positives + false_negatives)
+            )
+
+            self.results["filter_true_positives"] = true_positives
+            self.results["filter_false_positives"] = false_positives
+            self.results["filter_true_negatives"] = true_negatives
+            self.results["filter_false_negatives"] = false_negatives
+            self.results["filter_true_positive_rate"] = true_positive_rate
+            self.results["filter_false_positive_rate"] = false_positive_rate
+            self.results["filter_true_negative_rate"] = true_negative_rate
+            self.results["filter_false_negative_rate"] = false_negative_rate
+            self.results["filter_f1_score"] = f1_score
+            self.results["filter_fraction_data_removed"] = removed.mean()
+            self.results["filter_N_samples_removed"] = int(removed.sum())
+
+            for y in train_set_class_labels:
+                self.results[f"class_{y}_N_train_samples_removed"] = int(
+                    np.sum(self.y_clean[removed] == y)
+                )
+
+        for y in train_set_class_labels:
+            self.results[f"class_{y}_N_train_samples"] = int(np.sum(self.y_clean == y))
+        for y in test_set_class_labels:
+            self.results[f"class_{y}_unpoisoned_test_accuracy"] = np.mean(
+                self.benign_test_accuracy_per_class[y]
+            )
+
         if hasattr(self, "fairness_metrics") and not self.check_run:
             # Get unpoisoned test set
             dataset_config = self.config["dataset"]
             test_dataset = config_loading.load_dataset(
-                dataset_config, split="test", num_batches=None, **self.dataset_kwargs,
+                dataset_config, split="test", num_batches=None, **self.dataset_kwargs
             )
 
             # The following functions will add data to self.results
@@ -400,6 +468,8 @@ class Poison(Scenario):
                 self.poison_index,
                 self.indices_to_keep,
                 test_dataset,
+                train_set_class_labels,
+                test_set_class_labels,
             )
             for line in log_lines:
                 log.info(line)

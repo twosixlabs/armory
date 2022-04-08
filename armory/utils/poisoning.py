@@ -227,7 +227,6 @@ class FairnessMetrics:
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
         self.scenario = scenario
-        self.class_labels = np.unique(self.scenario.y_clean)
 
         explanatory_model_name = poisoning_config.get("explanatory_model", None)
         if explanatory_model_name not in explanatory_model_configs.keys():
@@ -241,23 +240,6 @@ class FairnessMetrics:
             "resize_image", True
         )
 
-        self.majority_x_class_prediction_chi2_metrics = {
-            class_id: MetricList("poison_chi2_p_value")
-            for class_id in self.class_labels
-        }
-        self.majority_x_class_prediction_spd_metrics = {
-            class_id: MetricList("poison_spd") for class_id in self.class_labels
-        }
-        if is_filtering_defense:
-            self.filter_perplexity = MetricList("filter_perplexity_fps_benign")
-            self.majority_x_passed_filter_chi2_metrics = {
-                class_id: MetricList("poison_chi2_p_value")
-                for class_id in self.class_labels
-            }
-            self.majority_x_passed_filter_spd_metrics = {
-                class_id: MetricList("poison_spd") for class_id in self.class_labels
-            }
-
     def add_filter_perplexity(
         self,
         y_clean: np.ndarray,
@@ -270,6 +252,7 @@ class FairnessMetrics:
             poison_index: the indices of the poisoned samples
             predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
         """
+        self.filter_perplexity = MetricList("filter_perplexity_fps_benign")
         is_dirty_mask = np.ones_like(y_clean)
         is_dirty_mask[predicted_clean_indices] = 0
         self.filter_perplexity.add_results(y_clean, poison_index, is_dirty_mask)
@@ -278,7 +261,14 @@ class FairnessMetrics:
         return log_lines
 
     def add_cluster_metrics(
-        self, x_poison, y_poison, poison_index, predicted_clean_indices, test_dataset
+        self,
+        x_poison,
+        y_poison,
+        poison_index,
+        predicted_clean_indices,
+        test_dataset,
+        train_set_class_labels,
+        test_set_class_labels,
     ):
         """ Compute two metrics based on comparing two binary distributions.
             Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
@@ -327,7 +317,15 @@ class FairnessMetrics:
 
         log_lines = []  # sent back to scenario for logging
 
-        for class_id in self.class_labels:
+        self.majority_x_class_prediction_chi2_metrics = {
+            class_id: MetricList("poison_chi2_p_value")
+            for class_id in test_set_class_labels
+        }
+        self.majority_x_class_prediction_spd_metrics = {
+            class_id: MetricList("poison_spd") for class_id in test_set_class_labels
+        }
+
+        for class_id in test_set_class_labels:
             self.majority_x_class_prediction_chi2_metrics[class_id].add_results(
                 majority_x_correct_prediction_tables[class_id]
             )
@@ -358,7 +356,16 @@ class FairnessMetrics:
                 y_unpoisoned, majority_mask_unpoisoned, kept_mask_unpoisoned
             )
 
-            for class_id in self.class_labels:
+            self.majority_x_passed_filter_chi2_metrics = {
+                class_id: MetricList("poison_chi2_p_value")
+                for class_id in train_set_class_labels
+            }
+            self.majority_x_passed_filter_spd_metrics = {
+                class_id: MetricList("poison_spd")
+                for class_id in train_set_class_labels
+            }
+
+            for class_id in train_set_class_labels:
                 self.majority_x_passed_filter_chi2_metrics[class_id].add_results(
                     majority_x_passed_filter_tables[class_id]
                 )
