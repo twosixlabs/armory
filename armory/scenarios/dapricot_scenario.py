@@ -7,6 +7,7 @@ import copy
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
 from armory.logs import log
+from armory.utils.export import DApricotExporter
 
 
 class ObjectDetectionTask(Scenario):
@@ -66,6 +67,10 @@ class ObjectDetectionTask(Scenario):
             )
         super().load_dataset()
 
+    def next(self):
+        super().next()
+        self.y, self.y_patch_metadata = self.y
+
     def load_model(self, defended=True):
         model_config = self.config["model"]
         generate_kwargs = self.config["attack"]["generate_kwargs"]
@@ -101,11 +106,10 @@ class ObjectDetectionTask(Scenario):
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
             x = x[0]
-            y_object, y_patch_metadata = y
 
             generate_kwargs = copy.deepcopy(self.generate_kwargs)
-            generate_kwargs["y_patch_metadata"] = y_patch_metadata
-            y_target = self.label_targeter.generate(y_object)
+            generate_kwargs["y_patch_metadata"] = self.y_patch_metadata
+            y_target = self.label_targeter.generate(y)
             generate_kwargs["y_object"] = y_target
 
             x_adv = self.attack.generate(x=x, **generate_kwargs)
@@ -113,7 +117,7 @@ class ObjectDetectionTask(Scenario):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv)
-        for img_idx in range(len(y_object)):
+        for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
             self.metrics_logger.update_task(
@@ -122,10 +126,12 @@ class ObjectDetectionTask(Scenario):
 
         self.metrics_logger.update_perturbation(x, x_adv)
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y_object, y_pred_adv)
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def finalize_results(self):
         self.metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = self.metrics_logger.results()
+
+    def _load_sample_exporter(self):
+        export_kwargs = {"with_boxes": True}
+        return DApricotExporter(self.scenario_output_dir, export_kwargs=export_kwargs)

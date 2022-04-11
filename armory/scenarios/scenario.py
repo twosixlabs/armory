@@ -14,7 +14,6 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.utils import config_loading, metrics
-from armory.utils.export import SampleExporter
 from armory.logs import log
 
 
@@ -220,16 +219,24 @@ class Scenario:
             computational_resource_dict=metrics_logger.computational_resource_dict,
         )
 
-        export_samples = self.config["scenario"].get("export_samples")
-        if export_samples is not None and export_samples > 0:
-            sample_exporter = SampleExporter(
-                self.scenario_output_dir, self.test_dataset.context, export_samples
-            )
-        else:
-            sample_exporter = None
-
         self.metrics_logger = metrics_logger
-        self.sample_exporter = sample_exporter
+
+    def load_sample_exporter(self):
+        if self.config["scenario"].get("export_samples") is not None:
+            log.warning(
+                "The export_samples field was deprecated in Armory 0.15.0. Please use export_batches instead."
+            )
+
+        num_export_batches = self.config["scenario"].get("export_batches", 0)
+        if num_export_batches is True:
+            num_export_batches = len(self.test_dataset)
+        self.num_export_batches = num_export_batches
+        self.sample_exporter = self._load_sample_exporter()
+
+    def _load_sample_exporter(self):
+        raise NotImplementedError(
+            f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"
+        )
 
     def load(self):
         self.load_model()
@@ -239,6 +246,7 @@ class Scenario:
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
+        self.load_sample_exporter()
         return self
 
     def evaluate_all(self):
@@ -312,9 +320,6 @@ class Scenario:
             )
         self.metrics_logger.update_perturbation(x, x_adv)
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
-
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def evaluate_current(self):
@@ -323,6 +328,14 @@ class Scenario:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
+        if self.num_export_batches > self.sample_exporter.saved_batches:
+            self.sample_exporter.export(
+                x=self.x,
+                x_adv=self.x_adv,
+                y=self.y,
+                y_pred_clean=self.y_pred,
+                y_pred_adv=self.y_pred_adv,
+            )
 
     def finalize_results(self):
         metrics_logger = self.metrics_logger
@@ -332,7 +345,7 @@ class Scenario:
             metrics_logger.log_task(adversarial=True, targeted=True)
         self.results = metrics_logger.results()
 
-        if self.sample_exporter is not None:
+        if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
 
     def _evaluate(self) -> dict:
