@@ -123,7 +123,7 @@ Traceback (most recent call last):
 TypeError: Both y_i and y_pred are None, but with_boxes is True
 
 ```
-If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for for only `y_i` (or only `y_i_pred`).
+If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for only `y_i` (or only `y_i_pred`).
 
 For object detection, if `with_boxes` is `True`, the sample_exporter will also generate json files containing coco-formatted bounding box annotations.  These are saved in the scenario output directory as 
 "ground_truth_boxes_coco_format.json", "benign_predicted_boxes_coco_format.json", and "adversarial_predicted_boxes_coco_format.json".
