@@ -7,8 +7,8 @@
             "batch_size": 1,
             "learning_rate": 0.01,
             "max_iter": 1000,
-            "targeted": false,
             "optimizer": "pgd",
+            "targeted": false,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
