@@ -13,15 +13,20 @@ from armory.logs import log
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, export_kwargs={}):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
         self.base_output_dir = base_output_dir
         self.saved_batches = 0
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
-        self.export_kwargs = export_kwargs
+        self.default_export_kwargs = default_export_kwargs
 
-    def export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+    def export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+        export_kwargs = dict(
+            list(self.default_export_kwargs.items()) + list(kwargs.items())
+        )
         if self.saved_batches == 0:
             self._make_output_dir()
 
@@ -36,7 +41,7 @@ class SampleExporter:
             y=y,
             y_pred_adv=y_pred_adv,
             y_pred_clean=y_pred_clean,
-            **self.export_kwargs,
+            **export_kwargs,
         )
 
     @abc.abstractmethod
@@ -132,8 +137,8 @@ class ImageClassificationExporter(SampleExporter):
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
-    def __init__(self, base_output_dir, export_kwargs={}):
-        super().__init__(base_output_dir, export_kwargs)
+    def __init__(self, base_output_dir, default_export_kwargs={}):
+        super().__init__(base_output_dir, default_export_kwargs)
         self.ground_truth_boxes_coco_format = []
         self.benign_predicted_boxes_coco_format = []
         self.adversarial_predicted_boxes_coco_format = []
@@ -443,8 +448,8 @@ class DApricotExporter(ObjectDetectionExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, frame_rate, export_kwargs={}):
-        super().__init__(base_output_dir, export_kwargs=export_kwargs)
+    def __init__(self, base_output_dir, frame_rate, default_export_kwargs={}):
+        super().__init__(base_output_dir, default_export_kwargs=default_export_kwargs)
         self.frame_rate = frame_rate
 
     def _export(

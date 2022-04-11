@@ -30,7 +30,7 @@ class ObjectDetectionTask(ImageClassificationTask):
         super().load_sample_exporter()
 
     def _load_sample_exporter(self):
-        export_kwargs = {"with_boxes": True}
+        default_export_kwargs = {"with_boxes": True}
         return ObjectDetectionExporter(
-            self.scenario_output_dir, export_kwargs=export_kwargs
+            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
         )
