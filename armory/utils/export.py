@@ -242,26 +242,26 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         ground_truth_boxes_coco_format = []
         predicted_boxes_coco_format = []
 
+        if y_i is None:
+            # We can't export anything without y_i, because
+            # even exporting y_i_pred requires y_i['image_id'].
+            log.warning("Cannot export bounding box annotations due to missing image_id")
+            return ground_truth_boxes_coco_format, predicted_boxes_coco_format
+
         image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+        bboxes_true = y_i["boxes"]
+        labels_true = y_i["labels"]
 
-        if y_i is not None:
-            bboxes_true = y_i["boxes"]
-            labels_true = y_i["labels"]
-
-            for true_box, label in zip(bboxes_true, labels_true):
-                if classes_to_skip is not None and label in classes_to_skip:
-                    continue
-                xmin, ymin, xmax, ymax = true_box
-                ground_truth_box_coco = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                }
-                ground_truth_boxes_coco_format.append(ground_truth_box_coco)
-        else:
-            log.warning(
-                "Exported sample is missing ground truth y value.  Some coco bounding box data cannot be exported."
-            )
+        for true_box, label in zip(bboxes_true, labels_true):
+            if classes_to_skip is not None and label in classes_to_skip:
+                continue
+            xmin, ymin, xmax, ymax = true_box
+            ground_truth_box_coco = {
+                "image_id": int(image_id),
+                "category_id": int(label),
+                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+            }
+            ground_truth_boxes_coco_format.append(ground_truth_box_coco)
 
         if y_i_pred is not None:
             bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
@@ -279,7 +279,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 predicted_boxes_coco_format.append(predicted_box_coco)
         else:
             log.warning(
-                "Exported sample is missing a predicted y value.  Some coco bounding box data cannot be exported."
+                "Annotations for predicted bounding boxes will not be exported.  Provide y_i_pred if this is not desired."
             )
 
         return ground_truth_boxes_coco_format, predicted_boxes_coco_format
