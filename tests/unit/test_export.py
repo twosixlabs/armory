@@ -18,14 +18,10 @@ pytestmark = pytest.mark.unit
 random_img = np.random.rand(32, 32, 3)
 
 # Object Detection test inputs
-obj_det_y_i_image_id = {
-    "labels": np.array([1.0]),
-    "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
-    "image_id": 1,
-}
 obj_det_y_i = {
     "labels": np.array([1.0]),
     "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
+    "image_id": np.array([1]),
 }
 obj_det_y_i_pred = {
     "scores": np.array([1.0]),
@@ -69,20 +65,6 @@ random_so2sat_img = np.random.rand(32, 32, 14)
             {"with_boxes": True, "y_i_pred": obj_det_y_i_pred},
             PIL.Image.Image,
         ),
-        (
-            ObjectDetectionExporter,
-            {},
-            random_img,
-            {"with_boxes": True, "y_i": obj_det_y_i_image_id, "y_i_pred": obj_det_y_i_pred},
-            PIL.Image.Image,
-        ),
-        (
-            ObjectDetectionExporter,
-            {},
-            random_img,
-            {"with_boxes": True, "y_i": obj_det_y_i_image_id},
-            PIL.Image.Image,
-        ),
         (VideoClassificationExporter, {"frame_rate": 10}, random_video, {}, list),
         (VideoTrackingExporter, {"frame_rate": 10}, random_video, {}, list),
         (
@@ -121,6 +103,12 @@ def test_exporter(
     exporter = exporter_class(base_output_dir=tmp_path, **class_kwargs)
     sample = exporter.get_sample(input_array, **fn_kwargs)
     assert isinstance(sample, expected_output_type)
+
+    # For object detection, check that coco annotations can be created
+    if exporter_class == ObjectDetectionExporter:
+        box_data_lists = exporter.get_coco_formatted_bounding_box_data(fn_kwargs.get("y_i", None), fn_kwargs.get("y_i_pred", None))
+        for box_list in box_data_lists:
+            assert isinstance(box_list, list)
 
     # For video scenarios, check that the list contains num_frames elements and each is a PIL Image
     if exporter_class in [VideoClassificationExporter, VideoTrackingExporter]:
