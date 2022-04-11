@@ -210,26 +210,28 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
         )
 
-        gt_boxes_coco, pred_boxes_coco = self.get_coco_formatted_bounding_box_data(
-            y_i=y_i,
-            y_i_pred=y_i_pred,
-            classes_to_skip=classes_to_skip,
-            score_threshold=score_threshold,
-        )
+        if y_i is not None:
+            # Can only export box annotations if we have 'image_id' from y_i
+            gt_boxes_coco, pred_boxes_coco = self.get_coco_formatted_bounding_box_data(
+                y_i=y_i,
+                y_i_pred=y_i_pred,
+                classes_to_skip=classes_to_skip,
+                score_threshold=score_threshold,
+            )
 
-        # Add coco box dictionaries to correct lists
-        if name == "benign":
-            for coco_box in pred_boxes_coco:
-                self.benign_predicted_boxes_coco_format.append(coco_box)
-            for coco_box in gt_boxes_coco:
-                self.ground_truth_boxes_coco_format.append(coco_box)
-        elif name == "adversarial":
-            # don't save gt boxes here since they are the same as for benign
-            for coco_box in pred_boxes_coco:
-                self.adversarial_predicted_boxes_coco_format.append(coco_box)
+            # Add coco box dictionaries to correct lists
+            if name == "benign":
+                for coco_box in pred_boxes_coco:
+                    self.benign_predicted_boxes_coco_format.append(coco_box)
+                for coco_box in gt_boxes_coco:
+                    self.ground_truth_boxes_coco_format.append(coco_box)
+            elif name == "adversarial":
+                # don't save gt boxes here since they are the same as for benign
+                for coco_box in pred_boxes_coco:
+                    self.adversarial_predicted_boxes_coco_format.append(coco_box)
 
     def get_coco_formatted_bounding_box_data(
-        self, y_i=None, y_i_pred=None, score_threshold=0.5, classes_to_skip=None
+        self, y_i, y_i_pred=None, score_threshold=0.5, classes_to_skip=None
     ):
         """
         :param y_i: ground-truth label dict
@@ -241,12 +243,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
         ground_truth_boxes_coco_format = []
         predicted_boxes_coco_format = []
-
-        if y_i is None:
-            # We can't export anything without y_i, because
-            # even exporting y_i_pred requires y_i['image_id'].
-            log.warning("Cannot export bounding box annotations due to missing image_id")
-            return ground_truth_boxes_coco_format, predicted_boxes_coco_format
 
         image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
         bboxes_true = y_i["boxes"]
