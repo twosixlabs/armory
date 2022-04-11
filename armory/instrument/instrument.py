@@ -3,6 +3,44 @@ OOP structure for Armory logging
 
 This roughly follows the python logging (Logger / Handler) framework,
 with some key differences
+
+Example 1:
+    Use case - measure L2 distance of post-preprocessing for benign and adversarial
+    Code:
+        # in model
+        from armory import instrument
+        probe = instrument.get_probe("model")
+        ...
+        x_post = model_preprocessor(x)
+        probe.update(lambda x: x.detach().cpu().numpy(), x_post=x_post)
+
+        # outside of model code
+        probe.hook(model, lambda x: x.detach().cpu().numpy(), x_post=x_post)
+
+
+        model.x_post
+
+        # elsewhere (could be reasonably defined in a config file as well)
+        from armory import instrument
+        from armory import metrics
+        meter = instrument.MetricMeter(metrics.L2, "model.x_post[ben, i=:10]", "model.x_post[adv, i=:10]")
+        meter = instrument.MetricMeter(metrics.L2("model.x_post[ben, i]", "model.x_post[adv, i]" if i == 10))
+        # meter.connect_probe("model")
+        meter.add_handler(PrintHandler())
+        meter.add_context(instrument.get_procedure("scenario"))
+
+Design goals:
+    probe - very lightweight, minimal or no code (hooking) in target model
+        namespace addressable
+
+Functionalities
+    probe - pull info from data source
+    translation - map from probe output, using context, to meter inputs
+    meter - measure quantity at specified intervals
+    handler - take meter outputs and send them somewhere (file, log, etc.)
+    context - store experimental context (sample, stage, PGD iteration, etc.)
+    config? - how do we setup the entire process and connections?
+
 """
 
 from armory import log
