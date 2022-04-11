@@ -12,7 +12,7 @@
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
-        "name": "CARLAAdversarialPatch",
+        "name": "CARLAAdversarialPatchPyTorch",
         "use_label": true
     },
     "dataset": {

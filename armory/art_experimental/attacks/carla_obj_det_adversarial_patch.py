@@ -9,7 +9,7 @@ import torch
 from armory.utils.evaluation import patch_method
 
 
-class CARLAAdversarialPatch(AdversarialPatchPyTorch):
+class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
     def __init__(self, estimator, **kwargs):
 
         # Maximum depth perturbation from a flat patch
