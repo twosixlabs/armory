@@ -308,7 +308,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             return image
 
         if y_i is None and y_i_pred is None:
-            raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
+            raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
         if y_i is not None:
