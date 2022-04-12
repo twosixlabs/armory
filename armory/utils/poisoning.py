@@ -231,7 +231,8 @@ class FairnessMetrics:
         explanatory_model_name = poisoning_config.get("explanatory_model", None)
         if explanatory_model_name not in explanatory_model_configs.keys():
             raise ValueError(
-                f"Config should specify model for fairness metrics.  Set adhoc/explanatory_model to one of {list(explanatory_model_configs.keys())}"
+                f"Config should specify model for fairness metrics.  Set adhoc/explanatory_model to one of {list(explanatory_model_configs.keys())}, "
+                + "or set adhoc/compute_fairness_metrics to false if these are not desired."
             )
         explanatory_model_config = explanatory_model_configs[explanatory_model_name]
         explanatory_model, _ = load_explanatory_model(explanatory_model_config)
