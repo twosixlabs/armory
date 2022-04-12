@@ -125,10 +125,10 @@ TypeError: Both y_i and y_pred are None, but with_boxes is True
 ```
 If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for only `y_i` (or only `y_i_pred`).
 
-For object detection, if `with_boxes` is `True`, the sample_exporter will also generate json files containing coco-formatted bounding box annotations.  These are saved in the scenario output directory as 
+For object detection, if `with_boxes=True` is passed to `export()`, the sample_exporter will also generate json files 
+containing coco-formatted bounding box annotations.  These are saved in the scenario output directory as 
 "ground_truth_boxes_coco_format.json", "benign_predicted_boxes_coco_format.json", and "adversarial_predicted_boxes_coco_format.json".
-In interactive mode, these files will be created once you call `sample_exporter.write()`.  Note that in the interactive case, 
-they will contain data for images saved through the `sample_exporter.export()` method, and not for images accessed by `sample_exporter.get_sample()`.
+In interactive mode, these files will be generated once you call `sample_exporter.write()`.
 
 ### Exporting Multimodal Data
 #### Multimodal CARLA Object Detection
