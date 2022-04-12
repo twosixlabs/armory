@@ -1,5 +1,5 @@
 {
-    "_description": "RESISC10 poison image classification, contributed by MITRE Corporation",
+    "_description": "CIFAR10 poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "compute_fairness_metrics": true,
         "detection_kwargs": {
@@ -41,7 +41,7 @@
         "batch_size": 512,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "resisc10"
+        "name": "cifar10"
     },
     "defense": {
         "data_augmentation": {
@@ -85,30 +85,13 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {
-            "data_means": [
-                0.37853524,
-                0.38404912,
-                0.36049628
-            ],
-            "data_stds": [
-                0.18050115,
-                0.17266262,
-                0.173474
-            ],
             "num_classes": 10,
             "pretrained": false
         },
-        "module": "armory.baseline_models.pytorch.resnet18",
+        "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
         "weights_file": null,
-        "wrapper_kwargs": {
-            "input_shape": [
-                64,
-                64,
-                3
-            ],
-            "nb_classes": 10
-        }
+        "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
