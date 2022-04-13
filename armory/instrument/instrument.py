@@ -73,7 +73,7 @@ class Probe:
 
         # Prepend probe name
         if self.name != "":
-            named_values = {f"{self.name}.k": v for k, v in named_values.items()}
+            named_values = {f"{self.name}.{k}": v for k, v in named_values.items()}
 
         for name, value in named_values.items():
             if self.sink.is_measuring(name):
@@ -81,7 +81,7 @@ class Probe:
                 for p in preprocessing:
                     value = p(value)
                 # Push to sink
-                self.sink.update(value)
+                self.sink.update(name, value)
 
     def hook(self, module, *preprocessing, input=None, output=None, mode="pytorch"):
         if mode == "pytorch":
@@ -171,9 +171,9 @@ class ProbeMapper:
     def connect_meter(self, meter):
         for arg in meter.get_arg_names():
             probe_variable, stage_filter = process_meter_arg(arg)
-            if probe_variable not in self.probe_meter_map:
-                self.probe_filter_meter[probe_variable] = {}
-            filter_map = self.probe_filter_meter[probe_variable]
+            if probe_variable not in self.probe_filter_meter_arg:
+                self.probe_filter_meter_arg[probe_variable] = {}
+            filter_map = self.probe_filter_meter_arg[probe_variable]
             if stage_filter not in filter_map:
                 filter_map[stage_filter] = []
             meters_args = filter_map[stage_filter]
@@ -190,7 +190,10 @@ class ProbeMapper:
         """
         Return a list of (meter, arg) that are using the current variable
         """
-        return self.probe_filter_meter.get(probe_variable, {}).get(stage, [])
+        filter_map = self.probe_filter_meter_arg.get(probe_variable, {})
+        meters = filter_map.get(stage, [])
+        meters.extend(filter_map.get(None, []))  # no stage filter (default)
+        return meters
 
     def get_meters(self):
         return self.meters[:]
@@ -215,10 +218,10 @@ class Context:  # NOTE: may need to rename to something like Experiment or Proce
         self.batch += 1
 
     def is_measuring(self, probe_variable):
-        return bool(self.mapper.get_meters_args(probe_variable, self.batch))
+        return bool(self.mapper.get_meters_args(probe_variable, self.stage))
 
     def update(self, probe_variable, value):
-        meters_args = self.mapper.get_meters_args(probe_variable, self.batch)
+        meters_args = self.mapper.get_meters_args(probe_variable, self.stage)
         if not meters_args:
             raise ValueError("No meters are measuring")
         for meter, arg in meters_args:
@@ -276,6 +279,7 @@ class Meter:
         self.writers = []
         self.auto_measure = bool(auto_measure)
         self._warned = False
+        self.keep_results = bool(keep_results)
         # TODO: final metric (mean) [and global metrics]
         # TODO: do we need to handle metric kwargs?
         # TODO:
@@ -309,7 +313,7 @@ class Meter:
         self.values[i] = value
         self.values_set[i] = True
         self.batches[i] = batch
-        if self.auto_measure and self.ready():
+        if self.auto_measure and self.is_ready():
             self.measure()
 
     def is_ready(self, raise_error=False):
@@ -360,7 +364,7 @@ class Meter:
 class Writer:
     def write(self, record):
         name, batch, result = record
-        return self._writer(name, batch, result)
+        return self._write(name, batch, result)
 
     def _write(self, name, batch, result):
         raise NotImplementedError("Implement _write or override write in subclass")
@@ -439,6 +443,11 @@ def connect_meter(meter):
     _METERS.append(meter)
 
 
+def add_meter(*args, **kwargs):
+    meter = Meter(*args, **kwargs)
+    connect_meter(meter)
+
+
 def get_meters():
     """
     return all meters that have been instantiated and connected
@@ -472,24 +481,37 @@ def main():
             x_prep = self.preprocessor * x
             # if pytorch Tensor: probe.update(lambda x: x.detach().cpu().numpy(), prep_output=x_prep)
             probe.update(lambda x: np.expand_dims(x, 0), prep_output=x_prep)
-            logits = np.dot(self.predictor, x_prep)
+            logits = np.dot(self.predictor.transpose(), x_prep)
             return logits
 
     # End model file
 
     # Begin metric setup (could happen anywhere)
 
-    # from armory.instrument import add_writer, Meter, connect_meter
+    # from armory.instrument import add_writer, add_meter
     from armory.utils import metrics
 
     add_writer(PrintWriter())
-    connect_meter(
-        Meter(
-            "postprocessed_l2_distance",
-            metrics.l2,
-            "model.prep_output[benign]",
-            "model.prep_output[adversarial]",
-        )
+    add_meter(
+        "postprocessed_l2_distance",
+        metrics.l2,
+        "model.prep_output[benign]",
+        "model.prep_output[adversarial]",
+    )
+    add_meter(  # TODO: enable adding context for iteration number of attack
+        "sum of x_adv", np.sum, "attack.x_adv",  # could also do "attack.x_adv[attack]"
+    )
+    add_meter(
+        "categorical_accuracy",
+        metrics.categorical_accuracy,
+        "scenario.y",
+        "scenario.y_pred",
+    )
+    add_meter(  # Never measured, since 'y_target' is never set
+        "targeted_categorical_accuracy",
+        metrics.categorical_accuracy,
+        "scenario.y_target",
+        "scenario.y_pred",
     )
 
     # End metric setup
@@ -497,27 +519,33 @@ def main():
     # Update stages and batches in scecnario loop (this would happen in main scenario file)
     context = get_context()
     model = Model()
+    # Normally, model, attack, and scenario probes would be defined in different files
+    #    and therefore just be called 'probe'
+    attack_probe = get_probe("attack")
+    scenario_probe = get_probe("scenario")
+    not_connected_probe = Probe("not_connected")
     for i in range(10):
         context.set_stage("get_batch")
-        context.set_batch(0)
+        context.set_batch(i)
         x = np.random.random(100)
         y = np.random.randint(10)
-        print(y)
+        scenario_probe.update(x=x, y=y)
+        not_connected_probe.update(x)  # should send a warning once
 
         context.set_stage("benign")
         y_pred = model.predict(x)
-        print(y_pred)
+        scenario_probe.update(y_pred=y_pred)
 
         context.set_stage("attack")
         x_adv = x
         for j in range(5):
-            y_pred_j = model.predict(x_adv)
-            print(y_pred_j)
+            model.predict(x_adv)
             x_adv = x_adv + np.random.random(100) * 0.1
+            attack_probe.update(x_adv=x_adv)
 
         context.set_stage("adversarial")
         y_pred_adv = model.predict(x_adv)
-        print(y_pred_adv)
+        scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
 
 
 if __name__ == "__main__":
