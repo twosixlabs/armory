@@ -1,9 +1,6 @@
 """
 OOP structure for Armory logging
 
-This roughly follows the python logging (Logger / Handler) framework,
-with some key differences
-
 Example 1:
     Use case - measure L2 distance of post-preprocessing for benign and adversarial
     Code:
@@ -17,47 +14,47 @@ Example 1:
         # outside of model code
         probe.hook(model, lambda x: x.detach().cpu().numpy(), x_post=x_post)
 
-
-        model.x_post
-
         # elsewhere (could be reasonably defined in a config file as well)
         from armory import instrument
         from armory import metrics
-        meter = instrument.MetricMeter(metrics.L2, "model.x_post[ben, i=:10]", "model.x_post[adv, i=:10]")
-        meter = instrument.MetricMeter(metrics.L2("model.x_post[ben, i]", "model.x_post[adv, i]" if i == 10))
-        # meter.connect_probe("model")
-        meter.add_handler(PrintHandler())
-        meter.add_context(instrument.get_procedure("scenario"))
+        meter = instrument.MetricMeter("l2_dist_postprocess", metrics.L2, "model.x_post[benign]", "model.x_post[adversarial]")
+        instrument.add_meter(meter)
+        instrument.add_writer(PrintWriter())
 
 Design goals:
     probe - very lightweight, minimal or no code (hooking) in target model
         namespace addressable
 
 Functionalities
-    probe - pull info from data source
-    translation - map from probe output, using context, to meter inputs
-    meter - measure quantity at specified intervals
-    handler - take meter outputs and send them somewhere (file, log, etc.)
-    context - store experimental context (sample, stage, PGD iteration, etc.)
-    config? - how do we setup the entire process and connections?
-
+    Probe - pull info from data source
+    ProbeMapper - map from probe output, using provided context, to meter inputs
+    Meter - measure quantity at specified intervals
+    Writer - takes measured outputs from meters and pushed them to print/file/etc.
+    Context - stores context and state for meters and writers, essentially a Hub
 """
+
+import copy
 
 from armory import log
 
 
+_CONTEXT = None
 _PROBES = {}
+_METERS = []
 
 
 class Probe:
-    def __init__(self, name):
+    def __init__(self, name="", sink=None):
         self.name = name
-        self.meters = []
+        self.sink = sink
         self._hooks = {}
         self._warned = False
 
-    def connect(self, meter):
-        self.meters.append(meter)
+    def set_sink(self, sink):
+        """
+        Sink must implement 'is_measuring' and 'update' APIs
+        """
+        self.sink = sink
 
     def update(self, *preprocessing, **named_values):
         """
@@ -69,36 +66,22 @@ class Probe:
             To add attributes, you could do:
                 probe.update(data_point=(x_i, is_poisoned))
         """
-        if not self.meters and not self._warned:
-            log.warning(f"No Meter set up for probe {self.name}!")
+        if self.sink is None and not self._warned:
+            log.warning(f"No sink set up for probe {self.name}!")
             self._warned = True
             return
 
-        # Determine what values are being measured
-        measured = []
-        for name in named_values:
-            for meter in self.meters:
-                if meter.is_measuring(name):
-                    measured.append(name)
-                    break
+        # Prepend probe name
+        if self.name != "":
+            named_values = {f"{self.name}.k": v for k, v in named_values.items()}
 
-        # Preprocess measured values
-        output_values = {}
-        for name in measured:
-            value = named_values[name]
-            for p in preprocessing:
-                value = p(value)
-            output_values[name] = value
-
-        # Output values to meters
-        for meter in self.meters:
-            meter.update(
-                **{
-                    name: value
-                    for name, value in output_values
-                    if meter.is_measuring(name)
-                }
-            )
+        for name, value in named_values.items():
+            if self.sink.is_measuring(name):
+                # Apply value preprocessing
+                for p in preprocessing:
+                    value = p(value)
+                # Push to sink
+                self.sink.update(value)
 
     def hook(self, module, *preprocessing, input=None, output=None, mode="pytorch"):
         if mode == "pytorch":
@@ -145,390 +128,397 @@ class Probe:
         self._hooks[module] = (hook, "pytorch")
 
     def unhook(self, module):
-        hook, mode = self._hooks[module]
+        hook, mode = self._hooks.pop(module)
         if mode == "pytorch":
             hook.remove()
         elif mode == "tf":
             raise NotImplementedError()
         else:
             raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
-        self._hooks.pop(module)
-        self._hooks[module].remove()  # TODO: this seems wrong
+
+
+def process_meter_arg(arg: str):
+    """
+    Return the probe variable and stage_filter
+
+    Example strings: 'model.x2[adversarial]', 'scenario.y_pred'
+    """
+    if "[" in arg:
+        if arg.count("[") != 1 and arg.count("]") != 1:
+            raise ValueError(f"arg {arg} must have a single matching [] or none")
+        arg, filt = arg.split("[")
+        if filt[-1] != "]":
+            raise ValueError(f"arg {arg} cannot have chars after final ']'")
+        stage_filter = filt[:-1].strip()
+        # tokens = [x.strip() for x in filt.split(",")]
+    else:
+        stage_filter = None
+    probe_variable = arg
+
+    return probe_variable, stage_filter
+
+
+class ProbeMapper:
+    """
+    Map from probe outputs to meters
+    """
+
+    def __init__(self, context=None):
+        # nested dicts - {probe_variable: {stage_filter: [(meter, arg)]}}
+        self.probe_filter_meter_arg = {}
+        self.meters = []
+
+    def connect_meter(self, meter):
+        for arg in meter.get_arg_names():
+            probe_variable, stage_filter = process_meter_arg(arg)
+            if probe_variable not in self.probe_meter_map:
+                self.probe_filter_meter[probe_variable] = {}
+            filter_map = self.probe_filter_meter[probe_variable]
+            if stage_filter not in filter_map:
+                filter_map[stage_filter] = []
+            meters_args = filter_map[stage_filter]
+            if (meter, arg) in meters_args:
+                log.warning(
+                    f"(meter, arg) pair ({meter}, {arg}) already connected, not adding"
+                )
+            else:
+                meters_args.append((meter, arg))
+        if meter not in self.meters:
+            self.meters.append(meter)
+
+    def get_meters_args(self, probe_variable, stage):
+        """
+        Return a list of (meter, arg) that are using the current variable
+        """
+        return self.probe_filter_meter.get(probe_variable, {}).get(stage, [])
+
+    def get_meters(self):
+        return self.meters[:]
+
+
+class Context:  # NOTE: may need to rename to something like Experiment or Procedure
+    def __init__(self):
+        self.batch = -1
+        self.stage = ""
+        self.mapper = ProbeMapper()
+        self.writers = []
+        self.closed = False
+
+    def set_stage(self, stage: str):
+        self.stage = stage
+
+    def set_batch(self, batch: int):
+        # NOTE: batch could be a set of sample indices
+        self.batch = batch
+
+    def increment_batch(self):
+        self.batch += 1
+
+    def is_measuring(self, probe_variable):
+        return bool(self.mapper.get_meters_args(probe_variable, self.batch))
+
+    def update(self, probe_variable, value):
+        meters_args = self.mapper.get_meters_args(probe_variable, self.batch)
+        if not meters_args:
+            raise ValueError("No meters are measuring")
+        for meter, arg in meters_args:
+            meter.set(arg, value, self.batch)
+
+    def connect_meter(self, meter):
+        self.mapper.connect_meter(meter)
+        for writer in self.writers:
+            meter.add_writer(writer)
+
+    def add_writer(self, writer):
+        """
+        Convenience method to add writer to all meters in this context
+        """
+        for meter in self.mapper.get_meters():
+            meter.add_writer(writer)
+        if writer not in self.writers:
+            self.writers.append(writer)
+
+    def close(self):
+        if self.closed:
+            return
+
+        for meter in self.mapper.get_meters():
+            meter.finalize()
+        for writer in self.writers():
+            writer.close()
+
+        self.closed = True
 
 
 class Meter:
-    def is_measuring(self, name):
+    def __init__(
+        self,
+        name,
+        metric,
+        *metric_arg_names,
+        auto_measure=True,
+        final="mean",
+        keep_results=True,
+    ):
         """
-        Return whether the meter is measuring the given name
-        """
-        return False
+        StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
 
-    def update(self, **named_values):
+        auto_measure - whether to measure when all of the variables are present
+            if False, 'measure()' must be called externally
+        """
+        self.name = str(name)
+        self.metric = metric
+        if not len(metric_arg_names):
+            raise ValueError("metric_arg_names cannot be empty list")
+        self.arg_index = {arg: i for i, arg in enumerate(metric_arg_names)}
+        self.clear()
+        self._results = []
+        self.writers = []
+        self.auto_measure = bool(auto_measure)
+        self._warned = False
+        # TODO: final metric (mean) [and global metrics]
+        # TODO: do we need to handle metric kwargs?
+        # TODO:
+        # TODO: Add some sort of sampling rate (every batch, every x iterations, etc.)
+
+    def get_arg_names(self):
+        return list(self.arg_index)
+
+    def clear(self):
+        """
+        Clear all of the current values
+        """
+        self.values = [None] * len(self.arg_index)
+        self.values_set = [False] * len(self.arg_index)
+        self.batches = [None] * len(self.arg_index)
+
+    def add_writer(self, writer):
+        """
+        Add a writer to emit outputs to.
+        """
+        if writer not in self.writers:
+            self.writers.append(writer)
+
+    def set(self, name, value, batch):
+        """
+        Set the value for the arg name
+        """
+        if name not in self.arg_index:
+            raise ValueError(f"{name} not a valid arg name from {self.arg_index}")
+        i = self.arg_index[name]
+        self.values[i] = value
+        self.values_set[i] = True
+        self.batches[i] = batch
+        if self.auto_measure and self.ready():
+            self.measure()
+
+    def is_ready(self, raise_error=False):
+        """
+        Return True if all values have been set and batch numbers match
+            if raise_error is True, raise ValueError instead of returning False
+        """
+        if not all(self.values_set):
+            if raise_error:
+                raise ValueError(f"Not all values have been set: {self.values_set}")
+            return False
+        if any(self.batches[0] != batch for batch in self.batches):
+            if raise_error:
+                raise ValueError("Batch numbers are mismatched: {self.batches}")
+            return False
+        return True
+
+    def measure(self, clear_values=True):
+        self.is_ready(raise_error=True)
+        result = self.metric(*self.values)
+        record = (self.name, self.batches[0], result)
+        if self.keep_results:
+            self._results.append(record)
+        for writer in self.writers:
+            writer.write(record)
+        if not self.keep_results and not self.writers and not self._warned:
+            log.warning(
+                f"Meter {self.name} has no writer added and keep_results is False"
+            )
+            self._warned = True
+        if clear_values:
+            self.clear()
+
+    def finalize(self):
+        """
+        Primarily intended for metrics of metrics, like mean or stdev of results
+        """
+        pass  # TODO
+        # raise NotImplementedError()
+
+    def results(self):
+        if not self.keep_results:
+            raise ValueError("keep_results is False")
+        return copy.deepcopy(self._results)
+
+
+# NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow
+class Writer:
+    def write(self, record):
+        name, batch, result = record
+        return self._writer(name, batch, result)
+
+    def _write(self, name, batch, result):
+        raise NotImplementedError("Implement _write or override write in subclass")
+
+    def close(self):
         pass
 
-    def measure(self, *args, **kwargs):
-        raise NotImplementedError("Implement in subclasses of Meter if needed")
+
+class NullWriter(Writer):
+    def write(self, record):
+        pass
 
 
-class NullMeter(Meter):
-    """
-    Ensure probe preprocessing is all done, but otherwise do nothing.
-    """
-
-    def is_measuring(self, name):
-        return True
+class PrintWriter(Writer):
+    def _write(self, name, batch, result):
+        print(f"Meter Record: name={name}, batch={batch}, result={result}")
 
 
-class LogMeter(Meter):
-    """
-    Log all probed values
-    """
+class LogWriter(Writer):
+    def __init__(self, log_level: str = "INFO"):
+        """
+        log_level - one of the uppercase log levels allowed by armory.logs.log
+        """
+        log.log(log_level, f"LogWriter set to armory.logs.log at level {log_level}")
+        self.log_level = log_level
 
-    def __init__(self):
-        super().__init__()
-        self.values = {}
-
-    def is_measuring(self, name):
-        return True
-
-    def update(self, **named_values):
-        for name, value in named_values.items():
-            self.values[name] = value
-            log.info(
-                f"LogMeter: step {self.step}, {self.stage}_{name} = {value}, type = {type(value)}"
-            )
-
-
-# class Procedure:  # instead of "Process" or "Experiment", which are overloaded
-#    """
-#    Provides context for meter and probes
-#    """
-#
-#    def __init__(self, *, stage="", step=0):
-#        self.set_stage(stage)
-#        self.set_step(step)
-#
-#    def set_stage(self, stage: str):
-#        if not isinstance(stage, str):
-#            raise ValueError(f"'stage' must be a str, not {type(stage)}")
-#        self.stage = stage
-#
-#    def set_step(self, step: int):
-#        if not isinstance(step, int):
-#            raise ValueError(f"'step' must be an int, not {type(step)}")
-#        self.step = step
-#
-#
-# #Measure the L2 distance at the preprocessor output between the benign and adversarial instances
-# #In model code:
-#  from armory import instrument
-#  probe = instrument.get_probe("model")
-# # ...
-#  output = preprocessor(x_data)
-#  probe.update(lambda x: x.detach().cpu().numpy(), prep_output=output)
-#
-# # In own code?
-#  meter = instrument.AdvMeter("model.x", "model.y")  # --> "model.adv_x", "model.adv_y"
-#  meter = instrument.LogMeter("benign:model.prep_output", "adv:model.prep_output", np.linalg.norm2)
-# # where does it go?
-#
-#
-# class AdvMeter(Meter):
-#    STAGES = "benign", "adversary"
-#    def __init__(self, *names):
-#        self.names = names
-#        self.values = {}
-#        self.stage = None
-#        for name in self.names:
-#            for stage in self.STAGES:
-#                self.values[self._full_name(name, stage)] = None
-#
-#    def _full_name(self, name, stage=None):
-#        if stage is None:
-#            stage = self.stage
-#            if stage is None:
-#                raise ValueError("must call set_stage")
-#        return f"{stage}:{name}"
-#
-#    def is_measuring(self, name):
-#        return name in self.names
-#
-#    def set_stage(self, stage):
-#        if stage not in self.STAGES:
-#            raise ValueError(f"stage {stage} not in {self.STAGES}")
-#        self.stage = stage
-#
-#    def update(self, **named_values):
-#        for name, value in named_values.items():
-#            self.values[self._full_name(name)] = value
-#
-#
-# "model.x[stage=adv], model.x[stage=ben]"
-# probe.connect(meter)
-#
-#
-#
-# # outputs:
-# (sample=i, metric_name)
-#
-#
-# class GlobalMeter(Meter):
-#    def __init__(self):
-#        self.values = []
-#
-#    def update(self):
-#        self.values.append()
-
-
-# class MetricsMeter(Meter):
-#    def __init__(self, **kwargs):
-#        super().__init__(**kwargs)
-#        self.probes = set()
-#        self.values = {}
-#        self.metrics_dict = {}
-#        self.stages_mapping = {}
-#
-#    @classmethod
-#    def from_config(cls, config, skip_benign=False, skip_attack=False, targeted=False):
-#        return cls.from_kwargs(**config)
-#
-#    @classmethod
-#    def from_kwargs(
-#        cls,
-#        means=True,
-#        perturbation="linf",
-#        profiler_type=None,  # Ignored
-#        record_metric_per_sample=True,
-#        task=("categorical_accuracy",),
-#        skip_benign=None,
-#        skip_attack=None,
-#        targeted=False,
-#    ):
-#        if not record_metric_per_sample:
-#            log.warning("record_metric_per_sample overridden to True")
-#
-#        m = cls()
-#        kwargs = dict(aggregator="mean" if bool(means) else None,)
-#
-#        if isinstance(perturbation, str):
-#            perturbation = [perturbation]
-#        for metric in perturbation:
-#            m.add_metric(
-#                f"perturbation_{metric}",
-#                metric,
-#                "x",
-#                "x_adv",
-#                stages="perturbation",
-#                **kwargs,
-#            )
-#        for metric in task:
-#            if not skip_benign:
-#                m.add_metric(
-#                    f"benign_{metric}",
-#                    metric,
-#                    "y",
-#                    "y_pred",
-#                    stages="benign_task",
-#                    **kwargs,
-#                )
-#            if not skip_attack:
-#                m.add_metric(
-#                    f"adversarial_{metric}",
-#                    metric,
-#                    "y",
-#                    "y_pred_adv",
-#                    stages="adversarial_task",
-#                    **kwargs,
-#                )
-#                if targeted:
-#                    m.add_metric(
-#                        f"targeted_{metric}",
-#                        metric,
-#                        "y_target",
-#                        "y_pred_adv",
-#                        stages="adversarial_task",
-#                        **kwargs,
-#                    )
-#
-#        return m
-#
-#    def is_measuring(self, name):
-#        return name in self.probes
-#
-#    def update(self, **probe_named_values):
-#        for probe_name in probe_named_values:
-#            if not self.is_measuring(probe_name):
-#                raise ValueError(f"{probe_name} is not being measured")
-#
-#        for probe_name, value in probe_named_values.items():
-#            # NOTE: ignore step for now
-#            self.values[probe_name] = value
-#
-#    def add_metric(
-#        self,
-#        description,
-#        metric,
-#        *probe_names,
-#        stages=None,
-#        aggregator="mean",
-#        record_metric_per_sample=True,
-#        elementwise=True,
-#    ):
-#        """
-#        Add a metric. Example usage:
-#            metrics_meter = MetricsMeter()
-#            metrics_meter.add_metric("benign_categorical_accuracy", "categorical_accuracy", "y", "y_pred")
-#
-#            metrics_meter.add_metric("mean_output", lambda x: x.mean(), "y_pred")
-#            metrics_meter.add_metric("l2 perturbation", metrics.perturbation.l2, "x", "adv_x")
-#            metrics_meter.add_metric("constant", lambda: 1)
-#        """
-#        if description in self.metrics_dict:
-#            raise ValueError(f"Metric description '{description}' already exists")
-#        if not isinstance(metric, MetricList):
-#            metric = MetricList(description, function=metric, aggregator=aggregator,)
-#
-#        if stages is None:
-#            stages = []
-#        elif isinstance(stages, str):
-#            stages = [stages]
-#        else:
-#            stages = list(stages)
-#        stages.append(description)
-#
-#        self.probes.update(probe_names)
-#        self.metrics_dict[description] = (metric, probe_names)
-#        for stage in stages:
-#            self.stages_mapping[stage] = description
-#
-#    def measure(self, *names):
-#        """
-#        Measure the metrics based on the current values
-#
-#        names - list of named metrics to measure
-#            if empty, measure all metrics
-#        """
-#
-#        if not names:
-#            descriptions = list(self.metrics_dict)
-#            probes = self.probes
-#        else:
-#            descriptions = []
-#            probes = set()
-#            for name in names:
-#                if name not in self.stages_mapping:
-#                    raise ValueError(f"metric or stage {name} has not been added")
-#                description = self.stages_mapping[name]
-#                descriptions.append(description)
-#                _, probe_names = self.metrics_dict[description]
-#                probes.update(probe_names)
-#
-#        for p in probes:
-#            if p not in self.values:
-#                raise ValueError(f"probe {p} value has not been set")
-#
-#        for name in descriptions:
-#            metric, probe_names = self.metrics_dict[name]
-#            metric.update(*(self.values[x] for x in probe_names))
-#
-#    def finalize(self):
-#        """
-#        Finalize all metric computations
-#        """
-#        for metric, _ in self.metrics_dict.values():
-#            metric.finalize()
-#
-#    def results(self):
-#        results = {}
-#        for description, (metric, _) in self.metrics_dict.items():
-#            sub_results = metric.results()
-#            if not results.keys().isdisjoint(sub_results):
-#                log.error(
-#                    f"Overwritting duplicate keys in {list(results)} and {list(sub_results)}"
-#                )
-#            results.update(sub_results)
-#        return results
-#
-#
-# class MetricList:
-#    """
-#    Keeps track of all results from a single metric
-#    """
-#
-#    def __init__(self, name, function=None, aggregator="mean"):
-#        if callable(function):
-#            self.function = function
-#        elif isinstance(function, str):
-#            self.function = metrics.get(function)
-#        elif function is None:
-#            self.function = metrics.get(name)
-#        else:
-#            raise ValueError(f"function must be callable or None, not {function}")
-#
-#        self.name = name
-#        self.elementwise = True
-#        if name == "word_error_rate":
-#            self.aggregator = metrics.task.aggregate.total_wer
-#            self.aggregator_name = "total_wer"
-#        elif name in (
-#            "object_detection_AP_per_class",
-#            "apricot_patch_targeted_AP_per_class",
-#            "dapricot_patch_targeted_AP_per_class",
-#        ):
-#            self.aggregator = metrics.task.aggregate.mean_ap
-#            self.aggregator_name = "mean_" + self.name
-#            self.elementwise = False
-#        elif aggregator == "mean":
-#            self.aggregator = metrics.task.aggregate.mean
-#            self.aggregator_name = "mean_" + self.name
-#        elif not aggregator:
-#            self.aggregator = None
-#        else:
-#            raise ValueError(f"Aggregator {aggregator} not recognized")
-#        self._values = []
-#        self._results = {}
-#
-#    def update(self, *function_args):
-#        if self.elementwise:
-#            self._values.extend(self.function(*function_args))
-#        else:
-#            self._values.extend(zip(*function_args))
-#
-#    def finalize(self):
-#        r = {}
-#        if self.elementwise:
-#            r[self.name] = list(self._values)
-#            if self.aggregator is not None:
-#                r[self.aggregator_name] = self.aggregator(self._values)
-#        else:
-#            computed_values = self.function(*zip(*self._values))
-#            r[self.name] = computed_values
-#            if self.aggregator is not None:
-#                r[self.aggregator_name] = self.aggregator(computed_values)
-#        self._results = r
-#
-#    def results(self):
-#        return self._results
-#
-#    def results_keys(self):
-#        if self.aggregator is None:
-#            return set([self.name, self.aggregator_name])
-#        return set([self.name])
-
-
-def get_probe(name=None):
-    if not name:
-        name = None
-    if name is not None:
-        raise NotImplementedError(
-            "name hierarchy not implemented yet. Set name to None"
+    def _write(self, name, batch, result):
+        log.log(
+            self.log_level, f"Meter Record: name={name}, batch={batch}, result={result}"
         )
-    global _PROBES
+
+
+class ResultsWriter(Writer):
+    def __init__(self, filepath, file_format="json"):
+        self.filepath = filepath
+        self.file_format = file_format
+        # TODO: checking
+
+    def _write(self, name, batch, result):
+        raise NotImplementedError()
+
+    def close(self):
+        raise NotImplementedError()
+
+
+# GLOBAL CONTEXT METHODS #
+
+
+def get_context():
+    """
+    Get the context state object for the experimental procedure
+    """
+    global _CONTEXT
+    if _CONTEXT is None:
+        _CONTEXT = Context()
+    return _CONTEXT
+
+
+def get_probe(name: str = ""):
+    """
+    Get a probe with specified name, creating it if needed
+    """
+    if name != "" and not str.isidentifier(name):
+        raise ValueError(f"name {name} should be an identifier or the empty string")
+
     if name not in _PROBES:
-        _PROBES[name] = Probe()
+        probe = Probe(name)
+        probe.set_sink(get_context())
+        _PROBES[name] = probe
     return _PROBES[name]
 
 
-def connect(meter, name=None):
-    probe = get_probe(name=name)
-    probe.connect(meter)
+def connect_meter(meter):
+    context = get_context()
+    context.connect_meter(meter)
+    _METERS.append(meter)
+
+
+def get_meters():
+    """
+    return all meters that have been instantiated and connected
+    """
+    return _METERS
+
+
+def add_writer(writer):
+    context = get_context()
+    context.add_writer(writer)
+
+
+def main():
+    """
+    Just for current WIP demonstration
+    """
+    # Begin model file
+    import numpy as np
+
+    # from armory.instrument import get_probe
+    probe = get_probe("model")
+
+    class Model:
+        def __init__(self, input_dim=100, classes=10):
+            self.input_dim = input_dim
+            self.classes = classes
+            self.preprocessor = np.random.random(self.input_dim)
+            self.predictor = np.random.random((self.input_dim, self.classes))
+
+        def predict(self, x):
+            x_prep = self.preprocessor * x
+            # if pytorch Tensor: probe.update(lambda x: x.detach().cpu().numpy(), prep_output=x_prep)
+            probe.update(lambda x: np.expand_dims(x, 0), prep_output=x_prep)
+            logits = np.dot(self.predictor, x_prep)
+            return logits
+
+    # End model file
+
+    # Begin metric setup (could happen anywhere)
+
+    # from armory.instrument import add_writer, Meter, connect_meter
+    from armory.utils import metrics
+
+    add_writer(PrintWriter())
+    connect_meter(
+        Meter(
+            "postprocessed_l2_distance",
+            metrics.l2,
+            "model.prep_output[benign]",
+            "model.prep_output[adversarial]",
+        )
+    )
+
+    # End metric setup
+
+    # Update stages and batches in scecnario loop (this would happen in main scenario file)
+    context = get_context()
+    model = Model()
+    for i in range(10):
+        context.set_stage("get_batch")
+        context.set_batch(0)
+        x = np.random.random(100)
+        y = np.random.randint(10)
+        print(y)
+
+        context.set_stage("benign")
+        y_pred = model.predict(x)
+        print(y_pred)
+
+        context.set_stage("attack")
+        x_adv = x
+        for j in range(5):
+            y_pred_j = model.predict(x_adv)
+            print(y_pred_j)
+            x_adv = x_adv + np.random.random(100) * 0.1
+
+        context.set_stage("adversarial")
+        y_pred_adv = model.predict(x_adv)
+        print(y_pred_adv)
+
+
+if __name__ == "__main__":
+    main()
