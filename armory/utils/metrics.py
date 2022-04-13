@@ -22,6 +22,39 @@ from armory.data.adversarial.apricot_metadata import (
     APRICOT_PATCHES,
 )
 from armory.logs import log
+from armory.utils.external_repo import ExternalRepoImport
+
+
+class Entailment:
+    # TEST Reference (from Mike):
+    # For reference, on the first 100 benign predictions, I got 94 entailment and 6 contradictions. The Eval 5 target phrases should produce 100 contradictions.
+
+    # Install fairseq - https://github.com/pytorch/fairseq#requirements-and-installation
+    # The following steps should suffice:
+    # git clone https://github.com/pytorch/fairseq
+    # cd fairseq
+    # pip install --editable ./
+
+    def __init__(self):
+        import torch
+
+        with ExternalRepoImport(
+            repo="pytorch/fairseq", experiment="librispeech_asr_entailment.json",
+        ):
+            import fairseq  # noqa: F401
+
+        # TODO: FIX torch hub pathing
+        self.roberta = torch.hub.load("pytorch/fairseq", "roberta.large.mnli")
+        self.roberta.eval()  # disable dropout for evaluation
+
+    def __call__(self, y, y_pred):
+        # In Armory, y is stored as byte strings, and y_pred is stored as strings
+        y = np.array([y_i.decode("utf-8") for y_i in y if isinstance(y_i, bytes)])
+        tokens = self.roberta.encode(y, y_pred)
+        prediction = self.roberta.predict("mnli", tokens).argmax()
+        # 0: 'contradiction', 1: 'neutral', 2: 'entailment'
+        # TODO: Final metric should count # of 0, 1, and 2
+        return prediction
 
 
 def abstains(y, y_pred):
@@ -1644,6 +1677,7 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 SUPPORTED_METRICS = {
+    "entailment": Entailment,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1713,6 +1747,17 @@ for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
         SUPPORTED_METRICS[new_metric_name] = new_metric
 
 
+def get_supported_metric(name):
+    try:
+        function = SUPPORTED_METRICS[name]
+    except KeyError:
+        raise KeyError(f"{name} is not part of armory.utils.metrics")
+    if isinstance(function, type) and issubclass(function, object):
+        # If a class is given, instantiate it
+        function = function()
+    assert callable(function), f"function {name} is not callable"
+
+
 class MetricList:
     """
     Keeps track of all results from a single metric
@@ -1720,10 +1765,7 @@ class MetricList:
 
     def __init__(self, name, function=None):
         if function is None:
-            try:
-                self.function = SUPPORTED_METRICS[name]
-            except KeyError:
-                raise KeyError(f"{name} is not part of armory.utils.metrics")
+            function = get_supported_metric(name)
         elif callable(function):
             self.function = function
         else:
