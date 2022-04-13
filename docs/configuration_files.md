@@ -62,6 +62,7 @@ All configuration files are verified against the jsonschema definition at run ti
     kwargs: [Object] Keyword arguments to pass to Scenario instatiation
     module: [String] Python module to load scenario from 
     name: [String] Name of the scenario class to be ran
+    export_batches: [Optional Int or Bool] Number of batches of data to export
   }
 `sysconfig` [Object]
   {
@@ -167,6 +168,9 @@ Some metric functions in [armory/utils/metrics.py](../armory/utils/metrics.py) r
 ```
 Note that the length of `"task_kwargs"` should be equal to that of `"task"`, as `task_kwargs[i]` corresponds
 to `task[i]`.
+
+### Exporting Data
+Please see [exporting_data.md](exporting_data.md).
 
 ### Additional configuration settings for poisoning scenario
 
