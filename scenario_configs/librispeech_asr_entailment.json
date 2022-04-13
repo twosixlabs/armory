@@ -20,8 +20,8 @@
         "targeted_labels": {
             "kwargs": {
                 "dtype": "str",
-                "import_from": "armory.attacks.librispeech_targeted_labels",
-                "value": "entailment_100"
+                "import_from": "armory.attacks.librispeech_target_labels",
+                "values": "entailment_100"
             },
             "module": "armory.utils.labels",
             "name": "ManualTargeter"
@@ -73,7 +73,10 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch-deepspeech",
-        "external_github_repo": "SeanNaren/deepspeech.pytorch@V3.0",
+        "external_github_repo": [
+            "pytorch/fairseq@83e615d66905b8ca7483122a37da1a85f13f4b8e",
+            "SeanNaren/deepspeech.pytorch@V3.0"
+        ],
         "gpus": "all",
         "local_repo_path": null,
         "num_eval_batches": 100,

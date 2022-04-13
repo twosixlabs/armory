@@ -1765,7 +1765,7 @@ class MetricList:
 
     def __init__(self, name, function=None):
         if function is None:
-            function = get_supported_metric(name)
+            self.function = get_supported_metric(name)
         elif callable(function):
             self.function = function
         else:

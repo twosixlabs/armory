@@ -19,7 +19,7 @@
         "targeted": true,
         "targeted_labels": {
             "kwargs": {
-                "import_from": "armory.attacks.librispeech_targeted_labels",
+                "import_from": "armory.attacks.librispeech_target_labels",
                 "transcripts": "matched_length"
             },
             "module": "armory.utils.labels",
