@@ -8,22 +8,28 @@
         },
         "experiment_id": 0,
         "poison_dataset": true,
-        "fraction_poisoned": 0.1,
+        "fraction_poisoned": 0.05,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 30,
-        "use_poison_filtering_defense": true
+        "train_epochs": 5,
+        "use_poison_filtering_defense": true,
+        "trigger_index":56
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
+            "max_trials":1,
+            "max_epochs":10,
+            "verbose":1,
+            "learning_rate_schedule":[[1e-1, 1e-2, 1e-3, 1e-4, 1e-5], [250, 350, 400, 430, 460]],
+            "data_filepath":"gradient_matching_cifar_precomputed.npz"
         },
         "module": "armory.art_experimental.attacks.gradient_matching",
         "name": "GradientMatchingWrapper"
     },
     "dataset": {
-        "batch_size": 512,
+        "batch_size": 32,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "cifar10"
