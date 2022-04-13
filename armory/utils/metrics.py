@@ -721,6 +721,47 @@ def video_tracking_mean_iou(y, y_pred):
     return mean_ious
 
 
+def video_tracking_mean_success_rate(y, y_pred):
+    """
+    Mean success rate averaged over all thresholds in {0, 0.05, 0.1, ..., 1.0} and all frames.
+    This function expects to receive a single video's labels/prediction as input.
+
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    """
+    _check_video_tracking_input(y, y_pred)
+    if len(y_pred) > 1:
+        raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
+
+    thresholds = np.arange(0, 1.05, 0.05)
+    mean_success_rates = (
+        []
+    )  # initialize list that will have length num_videos, which currently is forced to be 1
+    for video_idx in range(len(y_pred)):
+        success = np.zeros(len(thresholds))
+
+        # Selecting first element since y_pred is forced to have length 1
+        y_pred_boxes = y_pred[0]["boxes"]
+        y_boxes = y[0]["boxes"]
+
+        num_frames = y_pred_boxes.shape[0]
+
+        # begin with 2nd frame to skip y_init in metric calculation
+        ious = [
+            _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+            for i in range(1, num_frames)
+        ]
+        for thresh_idx in range(len(thresholds)):
+            success[thresh_idx] = np.sum(ious > thresholds[thresh_idx]) / float(
+                num_frames - 1
+            )  # subtract by 1 since we ignore first frame
+        mean_success_rates.append(success.mean())
+
+    return mean_success_rates
+
+
 def object_detection_AP_per_class(
     y_list, y_pred_list, iou_threshold=0.5, class_list=None
 ):
@@ -1657,6 +1698,7 @@ SUPPORTED_METRICS = {
     "lp": lp,
     "linf": linf,
     "video_tracking_mean_iou": video_tracking_mean_iou,
+    "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
