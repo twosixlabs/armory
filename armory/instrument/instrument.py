@@ -345,7 +345,6 @@ class Meter:
         if final is None:
             if final_name is not None:
                 final_name = str(final_name)
-                log.warning(f"ignoring final_name {final_name} as final is None")
         else:
             if not callable(final):
                 raise ValueError(f"final {final} must be callable")
@@ -417,6 +416,7 @@ class Meter:
         if self.keep_results:
             # Assume metric is sample-wise, but computed on a batch of samples
             self._results.extend(record)
+            # TODO: only global?
         for writer in self.writers:
             writer.write(record)
         if not self.keep_results and not self.writers and not self._warned:
@@ -497,7 +497,9 @@ class FileWriter(Writer):
 class ResultsWriter(Writer):
     KEEP_MODES = ("first", "all", "last")
 
-    def __init__(self, filepath, file_format="json", keep="all"):
+    def __init__(self, sink, filepath, file_format="json", keep="all"):
+        # TODO: fix sink to callable function
+        self.sink = sink
         self.filepath = filepath
         self.file_format = file_format
         if keep not in self.KEEP_MODES:
