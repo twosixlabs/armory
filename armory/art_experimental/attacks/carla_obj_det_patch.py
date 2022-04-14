@@ -122,7 +122,9 @@ def apply_ccm(patch, ccm, gamma=2.2, Vandermonde=True, degree=1):
     return corrected_RGB
 
 
-def insert_transformed_patch(patch, image, gs_shape, rgb, patch_coords=[], image_coords=[]):
+def insert_transformed_patch(
+    patch, image, gs_shape, rgb, patch_coords=[], image_coords=[]
+):
     """
     Insert patch to image based on given or selected coordinates
 
@@ -224,7 +226,9 @@ def insert_patch(
         # resize patch
         scale = (np.amax(gs_coords[:, 1]) - np.amin(gs_coords[:, 1])) / patch.shape[0]
         patch = cv2.resize(
-            patch, (int(patch.shape[1] * scale), int(patch.shape[0] * scale)), interpolation=cv2.INTER_CUBIC
+            patch,
+            (int(patch.shape[1] * scale), int(patch.shape[0] * scale)),
+            interpolation=cv2.INTER_CUBIC,
         )
 
         # datatype correction
@@ -279,9 +283,13 @@ class CARLADapricotPatch(RobustDPatch):
         """
         channel_index = 1 if self.estimator.channels_first else x.ndim - 1
         if x.shape[channel_index] != self.patch_shape[channel_index - 1]:
-            raise ValueError("The color channel index of the images and the patch have to be identical.")
+            raise ValueError(
+                "The color channel index of the images and the patch have to be identical."
+            )
         if y is None and self.targeted:
-            raise ValueError("The targeted version of RobustDPatch attack requires target labels provided to `y`.")
+            raise ValueError(
+                "The targeted version of RobustDPatch attack requires target labels provided to `y`."
+            )
         if y is not None and not self.targeted:
             raise ValueError("The RobustDPatch attack does not use target labels.")
         if x.ndim != 4:  # pragma: no cover
@@ -309,15 +317,21 @@ class CARLADapricotPatch(RobustDPatch):
                         or x_2 > image_width - self.crop_range[1] + 1
                         or y_2 > image_height - self.crop_range[0] + 1
                     ):
-                        raise ValueError("Cropping is intersecting with at least one box, reduce `crop_range`.")
+                        raise ValueError(
+                            "Cropping is intersecting with at least one box, reduce `crop_range`."
+                        )
 
         if (  # pragma: no cover
-            self.patch_location[0] + self.patch_shape[0] > image_height - self.crop_range[0]
-            or self.patch_location[1] + self.patch_shape[1] > image_width - self.crop_range[1]
+            self.patch_location[0] + self.patch_shape[0]
+            > image_height - self.crop_range[0]
+            or self.patch_location[1] + self.patch_shape[1]
+            > image_width - self.crop_range[1]
         ):
             raise ValueError("The patch (partially) lies outside the cropped image.")
 
-        for i_step in trange(self.max_iter, desc="RobustDPatch iteration", disable=not self.verbose):
+        for i_step in trange(
+            self.max_iter, desc="RobustDPatch iteration", disable=not self.verbose
+        ):
             num_batches = math.ceil(x.shape[0] / self.batch_size)
             patch_gradients_old = np.zeros_like(self._patch)
 
@@ -333,18 +347,25 @@ class CARLADapricotPatch(RobustDPatch):
                         y_batch = y[i_batch_start:i_batch_end]
 
                     # Sample and apply the random transformations:
-                    patched_images, patch_target, transforms = self._augment_images_with_patch(
-                        x[i_batch_start:i_batch_end], y_batch, self._patch, channels_first=self.estimator.channels_first
+                    (
+                        patched_images,
+                        patch_target,
+                        transforms,
+                    ) = self._augment_images_with_patch(
+                        x[i_batch_start:i_batch_end],
+                        y_batch,
+                        self._patch,
+                        channels_first=self.estimator.channels_first,
                     )
 
                     gradients = self.estimator.loss_gradient(
-                        x=patched_images,
-                        y=patch_target,
-                        standardise_output=True,
+                        x=patched_images, y=patch_target, standardise_output=True,
                     )
 
                     gradients = self._untransform_gradients(
-                        gradients, transforms, channels_first=self.estimator.channels_first
+                        gradients,
+                        transforms,
+                        channels_first=self.estimator.channels_first,
                     )
 
                     patch_gradients = patch_gradients_old + np.sum(gradients, axis=0)
@@ -369,12 +390,26 @@ class CARLADapricotPatch(RobustDPatch):
                 )
 
             if patch_gradients.shape[2] == 6:
-                patch_gradients[:, :, 3:] = np.mean(patch_gradients[:, :, 3:], axis=2, keepdims=True)
+                patch_gradients[:, :, 3:] = np.mean(
+                    patch_gradients[:, :, 3:], axis=2, keepdims=True
+                )
 
-            self._patch[:, :, :3] = self._patch[:, :, :3] + np.sign(patch_gradients[:, :, :3]) * (1 - 2 * int(self.targeted)) * self.learning_rate                
-            
-            if patch_gradients.shape[2] == 6: # depth uses a different learning rate than rgb
-                self._patch[:, :, 3:] = self._patch[:, :, 3:] + np.sign(patch_gradients[:, :, 3:]) * (1 - 2 * int(self.targeted)) * self.learning_rate_depth
+            self._patch[:, :, :3] = (
+                self._patch[:, :, :3]
+                + np.sign(patch_gradients[:, :, :3])
+                * (1 - 2 * int(self.targeted))
+                * self.learning_rate
+            )
+
+            if (
+                patch_gradients.shape[2] == 6
+            ):  # depth uses a different learning rate than rgb
+                self._patch[:, :, 3:] = (
+                    self._patch[:, :, 3:]
+                    + np.sign(patch_gradients[:, :, 3:])
+                    * (1 - 2 * int(self.targeted))
+                    * self.learning_rate_depth
+                )
 
             if self.estimator.clip_values is not None:
                 self._patch = np.clip(
@@ -384,10 +419,8 @@ class CARLADapricotPatch(RobustDPatch):
                 )
 
             if self._patch.shape[-1] == 6:
-                self._patch[:,:,3:] = np.clip(
-                    self._patch[:,:,3:],
-                    a_min=self.min_depth,
-                    a_max=self.max_depth,
+                self._patch[:, :, 3:] = np.clip(
+                    self._patch[:, :, 3:], a_min=self.min_depth, a_max=self.max_depth,
                 )
 
         if self.summary_writer is not None:
@@ -552,6 +585,7 @@ class CARLADapricotPatch(RobustDPatch):
             ith dictionary contains bounding boxes, class labels, and class scores
         param y_patch_metadata: Patch metadata. List of N dictionaries, ith dictionary contains patch metadata for x[i]
         """
+
         def in_polygon(x, y, vertices):
             """
             Determine if a point (x,y) is inside a polygon with given vertices
@@ -664,7 +698,7 @@ class CARLADapricotPatch(RobustDPatch):
                     avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
                 else:  # backward compatible with Eval 4 metadata
                     avg_patch_depth = get_avg_depth_value(x[i][:, :, 3], gs_coords)
-                
+
                 avg_patch_depth_meters = log_to_linear(avg_patch_depth)
                 max_depth_meters = avg_patch_depth_meters + self.depth_delta_meters
                 min_depth_meters = avg_patch_depth_meters - self.depth_delta_meters
