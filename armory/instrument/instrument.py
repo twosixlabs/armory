@@ -33,14 +33,13 @@ Functionalities
     Context - stores context and state for meters and writers, essentially a Hub
 """
 
-import copy
+import json
 
 from armory import log
 
 
 _CONTEXT = None
 _PROBES = {}
-_METERS = []
 
 
 class Probe:
@@ -163,12 +162,27 @@ class ProbeMapper:
     Map from probe outputs to meters
     """
 
-    def __init__(self, context=None):
+    def __init__(self):
         # nested dicts - {probe_variable: {stage_filter: [(meter, arg)]}}
         self.probe_filter_meter_arg = {}
-        self.meters = []
+
+    def __len__(self):
+        """
+        Return the number of (meter, arg) pairs
+        """
+        count = 0
+        for probe_variable, filter_map in self.probe_filter_meter_arg.items():
+            for stage_filter, meters_args in filter_map.items():
+                count += len(meters_args)
+        return count
+
+    def __str__(self):
+        return f"{type(self)} : {self.probe_filter_meter_arg}"
 
     def connect_meter(self, meter):
+        """
+        Connect meter to probes; idempotent
+        """
         for arg in meter.get_arg_names():
             probe_variable, stage_filter = process_meter_arg(arg)
             if probe_variable not in self.probe_filter_meter_arg:
@@ -183,27 +197,45 @@ class ProbeMapper:
                 )
             else:
                 meters_args.append((meter, arg))
-        if meter not in self.meters:
-            self.meters.append(meter)
 
-    def get_meters_args(self, probe_variable, stage):
+    def disconnect_meter(self, meter):
         """
-        Return a list of (meter, arg) that are using the current variable
+        Disconnect meter from probes; idempotent
+        """
+        for arg in meter.get_arg_names():
+            probe_variable, stage_filter = process_meter_arg(arg)
+            if probe_variable not in self.probe_filter_meter_arg:
+                continue
+            filter_map = self.probe_filter_meter_arg[probe_variable]
+
+            if stage_filter not in filter_map:
+                continue
+            meters_args = filter_map[stage_filter]
+
+            if (meter, arg) in meters_args:
+                meters_args.remove((meter, arg))
+                if not meters_args:
+                    filter_map.pop(stage_filter)
+                if not filter_map:
+                    self.probe_filter_meter_arg.pop(probe_variable)
+
+    def map_to_meters_args(self, probe_variable, stage):
+        """
+        Return a list of (meter, arg) that are using the current probe_variable
         """
         filter_map = self.probe_filter_meter_arg.get(probe_variable, {})
         meters = filter_map.get(stage, [])
         meters.extend(filter_map.get(None, []))  # no stage filter (default)
         return meters
 
-    def get_meters(self):
-        return self.meters[:]
-
 
 class Context:  # NOTE: may need to rename to something like Experiment or Procedure
-    def __init__(self):
+    def __init__(self, name="global"):
+        self.name = name
         self.batch = -1
         self.stage = ""
         self.mapper = ProbeMapper()
+        self.meters = []
         self.writers = []
         self.closed = False
 
@@ -218,34 +250,44 @@ class Context:  # NOTE: may need to rename to something like Experiment or Proce
         self.batch += 1
 
     def is_measuring(self, probe_variable):
-        return bool(self.mapper.get_meters_args(probe_variable, self.stage))
+        return bool(self.mapper.map_to_meters_args(probe_variable, self.stage))
 
     def update(self, probe_variable, value):
-        meters_args = self.mapper.get_meters_args(probe_variable, self.stage)
+        meters_args = self.mapper.map_to_meters_args(probe_variable, self.stage)
         if not meters_args:
             raise ValueError("No meters are measuring")
         for meter, arg in meters_args:
             meter.set(arg, value, self.batch)
 
     def connect_meter(self, meter):
+        if meter in self.meters:
+            return
+
+        self.meters.append(meter)
         self.mapper.connect_meter(meter)
         for writer in self.writers:
             meter.add_writer(writer)
+
+    def get_meters(self):
+        return self.meters
 
     def add_writer(self, writer):
         """
         Convenience method to add writer to all meters in this context
         """
-        for meter in self.mapper.get_meters():
+        if writer in self.writers:
+            log.warning(f"writer {writer} already connected to {self.name} context")
+            return
+
+        self.writers.append(writer)
+        for meter in self.meters:
             meter.add_writer(writer)
-        if writer not in self.writers:
-            self.writers.append(writer)
 
     def close(self):
         if self.closed:
             return
 
-        for meter in self.mapper.get_meters():
+        for meter in self.meters:
             meter.finalize()
         for writer in self.writers():
             writer.close()
@@ -261,6 +303,7 @@ class Meter:
         *metric_arg_names,
         auto_measure=True,
         final="mean",
+        final_name=None,
         keep_results=True,
     ):
         """
@@ -335,6 +378,7 @@ class Meter:
         self.is_ready(raise_error=True)
         result = self.metric(*self.values)
         record = (self.name, self.batches[0], result)
+        # TODO: if the metric is sample-wise, extend instead of append
         if self.keep_results:
             self._results.append(record)
         for writer in self.writers:
@@ -357,7 +401,7 @@ class Meter:
     def results(self):
         if not self.keep_results:
             raise ValueError("keep_results is False")
-        return copy.deepcopy(self._results)
+        return self._results
 
 
 # NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow
@@ -397,17 +441,53 @@ class LogWriter(Writer):
         )
 
 
-class ResultsWriter(Writer):
-    def __init__(self, filepath, file_format="json"):
+class FileWriter(Writer):
+    def __init__(self, filepath):
         self.filepath = filepath
-        self.file_format = file_format
-        # TODO: checking
+        self.file = open(self.filepath, "w")
 
     def _write(self, name, batch, result):
-        raise NotImplementedError()
+        record_json = json.dumps([name, batch, result])
+        # TODO: fix numpy output conversion issues
+        self.file.write(record_json + "\n")
+
+
+class ResultsWriter(Writer):
+    KEEP_MODES = ("first", "all", "last")
+
+    def __init__(self, filepath, file_format="json", keep="all"):
+        self.filepath = filepath
+        self.file_format = file_format
+        if keep not in self.KEEP_MODES:
+            raise ValueError(f"keep {keep} not one of {self.KEEP_MODES}")
+        if keep != "all":
+            raise NotImplementedError(f"keep={keep}, use 'all'")
+        self.keep = keep
+        self.records = []
+        # TODO: checking
+
+    def set_filepath(self, filepath):
+        self.filepath = filepath
+
+    def _write(self, name, batch, result):
+        self.records.append((name, batch, result))
+
+    def collate_results(self):
+        """
+        Return a map from name to output, in original order.
+        """
+        output = {}
+        for name, batch, result in self.records:
+            if name not in output:
+                output[name] = []
+            output[name].append(result)
+        return output
 
     def close(self):
-        raise NotImplementedError()
+        output = self.collate_results()
+        with open(self.filepath, "w") as f:
+            json.dump(output, f)
+        # TODO: push to results dictionary?
 
 
 # GLOBAL CONTEXT METHODS #
@@ -438,9 +518,7 @@ def get_probe(name: str = ""):
 
 
 def connect_meter(meter):
-    context = get_context()
-    context.connect_meter(meter)
-    _METERS.append(meter)
+    get_context().connect_meter(meter)
 
 
 def add_meter(*args, **kwargs):
@@ -449,15 +527,11 @@ def add_meter(*args, **kwargs):
 
 
 def get_meters():
-    """
-    return all meters that have been instantiated and connected
-    """
-    return _METERS
+    return get_context().get_meters()
 
 
 def add_writer(writer):
-    context = get_context()
-    context.add_writer(writer)
+    get_context().add_writer(writer)
 
 
 def main():
