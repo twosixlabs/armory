@@ -5,7 +5,7 @@ from armory.utils import config_loading
 from armory import paths
 from art.utils import to_categorical 
 import numpy as np
-
+import copy
 
 
 class DatasetPoisonerWitchesBrew():
@@ -38,25 +38,11 @@ class DatasetPoisonerWitchesBrew():
         y_trigger  = to_categorical([self.target_class], nb_classes=len(np.unique(y_train)))
 
         # TODO is armory data oriented and scaled right for art_experimental
-        poison_x, poison_y, poison_index, returned_trigger_index = self.attack.poison(self.data_filepath, x_trigger, y_trigger, x_train, y_train, trigger_index) 
+        poison_x, poison_y, poison_index = self.attack.poison(self.data_filepath, x_trigger, y_trigger, x_train, y_train, trigger_index) 
         
-
-        if returned_trigger_index != trigger_index:
-            # We loaded a presaved dataset, but it was trained for a different trigger
-            # TODO move this into attack.poison probably
-            # TODO also check that target and source class are the same...
-            raise ValueError(f"The trigger image index requested in the config ({trigger_index}) "
-            + f"does not match the trigger image index from the saved adversarial dataset ({returned_trigger_index}).  "
-            + "Please clarify your intent by updating adhoc['trigger_index'] or attack['kwargs']['data_filepath'] in the config. "
-            )
-
-        # Return trigger_index to make sure 
         if return_index:
-            return poison_x, poison_y, trigger_index, poison_index
-        return poison_x, poison_y, trigger_index
-
-
-# TODO Config: decide what goes in adhoc vs attack kwargs
+            return poison_x, poison_y, poison_index
+        return poison_x, poison_y,
 
 
 class CifarWitchesBrew(Poison):
@@ -91,6 +77,8 @@ class CifarWitchesBrew(Poison):
         if self.use_poison:
 
             attack_config["kwargs"]["percent_poison"] = adhoc_config["fraction_poisoned"]
+            attack_config["kwargs"]["source_class"] = self.source_class
+            attack_config["kwargs"]["target_class"] = self.target_class
             
             data_filepath = attack_config['kwargs'].pop('data_filepath') if 'data_filepath' in attack_config['kwargs'].keys() else None
 
@@ -113,7 +101,7 @@ class CifarWitchesBrew(Poison):
             (
                 self.x_poison,
                 self.y_poison,
-                self.trigger_index,
+                # self.trigger_index,
                 self.poison_index,
             ) = self.poisoner.poison_dataset(
                 self.x_clean, self.y_clean, self.trigger_index, return_index=True
@@ -143,7 +131,8 @@ class CifarWitchesBrew(Poison):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
 
         dataset_config = self.config["dataset"]
-        dataset_config['batch_size'] = 1 # TODO see if this persists to results config, if so make copy of dataset_config here
+        dataset_config = copy.deepcopy(dataset_config)
+        dataset_config['batch_size'] = 1
         eval_split = dataset_config.get("eval_split", eval_split_default)
         log.info(f"Loading test dataset {dataset_config['name']}...")
         self.test_dataset = config_loading.load_dataset(
