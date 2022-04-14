@@ -301,32 +301,68 @@ class Meter:
         name,
         metric,
         *metric_arg_names,
+        metric_kwargs=None,
         auto_measure=True,
-        final="mean",
+        final=None,
         final_name=None,
+        final_kwargs=None,
         keep_results=True,
     ):
         """
         StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
 
+        metric_kwargs - kwargs that are constant across measurements
         auto_measure - whether to measure when all of the variables are present
             if False, 'measure()' must be called externally
+
+        final - metric that takes in list of results as input
+            Example: np.mean
+        final_name - if final is not None, this is the name associated with the record
+            if not specified, it defaults to f'{final}_{name}'
+
+        keep_results - whether to locally store results
+            if final is not None, keep_results is set to True
         """
         self.name = str(name)
+        if not callable(metric):
+            raise ValueError(f"metric {metric} must be callable")
         self.metric = metric
         if not len(metric_arg_names):
-            raise ValueError("metric_arg_names cannot be empty list")
+            log.warning("metric_arg_names is an empty list")
         self.arg_index = {arg: i for i, arg in enumerate(metric_arg_names)}
+        self.metric_kwargs = metric_kwargs or {}
+        if not isinstance(self.metric_kwargs, dict):
+            raise ValueError(
+                f"metric_kwargs must be None or a dict, not {metric_kwargs}"
+            )
         self.clear()
         self._results = []
         self.writers = []
         self.auto_measure = bool(auto_measure)
         self._warned = False
-        self.keep_results = bool(keep_results)
-        # TODO: final metric (mean) [and global metrics]
-        # TODO: do we need to handle metric kwargs?
-        # TODO:
-        # TODO: Add some sort of sampling rate (every batch, every x iterations, etc.)
+
+        keep_results = bool(keep_results)
+        if final is None:
+            if final_name is not None:
+                final_name = str(final_name)
+                log.warning(f"ignoring final_name {final_name} as final is None")
+        else:
+            if not callable(final):
+                raise ValueError(f"final {final} must be callable")
+            if final_name is None:
+                final_name = f"{final}_{name}"
+            else:
+                final_name = str(final_name)
+            if not keep_results:
+                log.warning("final is not None. Overriding keep_results to True")
+                keep_results = True
+        self.final = final
+        self.final_name = final_name
+        self.final_kwargs = final_kwargs or {}
+        self.final_result = None
+        if not isinstance(self.final_kwargs, dict):
+            raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
+        self.keep_results = keep_results
 
     def get_arg_names(self):
         return list(self.arg_index)
@@ -376,11 +412,11 @@ class Meter:
 
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
-        result = self.metric(*self.values)
+        result = self.metric(*self.values, **self.metric_kwargs)
         record = (self.name, self.batches[0], result)
-        # TODO: if the metric is sample-wise, extend instead of append
         if self.keep_results:
-            self._results.append(record)
+            # Assume metric is sample-wise, but computed on a batch of samples
+            self._results.extend(record)
         for writer in self.writers:
             writer.write(record)
         if not self.keep_results and not self.writers and not self._warned:
@@ -395,8 +431,14 @@ class Meter:
         """
         Primarily intended for metrics of metrics, like mean or stdev of results
         """
-        pass  # TODO
-        # raise NotImplementedError()
+        if self.final is None:
+            return
+
+        result = self.final(self.results, **self.final_kwargs)
+        record = (self.final_name, None, result)
+        self.final_result = result
+        for writer in self.writers:
+            writer.write(record)
 
     def results(self):
         if not self.keep_results:
