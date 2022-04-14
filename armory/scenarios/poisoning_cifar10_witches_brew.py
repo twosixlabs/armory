@@ -44,6 +44,7 @@ class DatasetPoisonerWitchesBrew():
         if returned_trigger_index != trigger_index:
             # We loaded a presaved dataset, but it was trained for a different trigger
             # TODO move this into attack.poison probably
+            # TODO also check that target and source class are the same...
             raise ValueError(f"The trigger image index requested in the config ({trigger_index}) "
             + f"does not match the trigger image index from the saved adversarial dataset ({returned_trigger_index}).  "
             + "Please clarify your intent by updating adhoc['trigger_index'] or attack['kwargs']['data_filepath'] in the config. "
@@ -77,9 +78,13 @@ class CifarWitchesBrew(Poison):
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
         # TODO how to pick or set trigger images
-        self.trigger_index = adhoc_config["trigger_index"]
-        # self.trigger_index = np.where(y_test==self.source_class)[0][5].
-        if y_test[self.trigger_index] != self.source_class:
+        trigger_index = adhoc_config["trigger_index"]
+        if isinstance(trigger_index, int):
+            trigger_index = [trigger_index]
+        self.trigger_index = trigger_index
+
+
+        if (y_test[self.trigger_index] != self.source_class).any():
             raise ValueError(f"Trigger image does not belong to source class (class {y_test[self.trigger_index]} != class {self.source_class})")
 
 
@@ -134,23 +139,86 @@ class CifarWitchesBrew(Poison):
         self.load_dataset()
 
 
-    def evaluate_current(self):
+    def load_dataset(self, eval_split_default="test"):
+        # Over-ridden because we need batch_size = 1 for the test set for this attack.
+
+        dataset_config = self.config["dataset"]
+        dataset_config['batch_size'] = 1 # TODO see if this persists to results config, if so make copy of dataset_config here
+        eval_split = dataset_config.get("eval_split", eval_split_default)
+        log.info(f"Loading test dataset {dataset_config['name']}...")
+        self.test_dataset = config_loading.load_dataset(
+            dataset_config,
+            split=eval_split,
+            num_batches=self.num_eval_batches,
+            **self.dataset_kwargs,
+        )
+        self.i = -1
+
+
+    def run_benign(self):
+        # Called for all non-triggers
 
         x, y = self.x, self.y
-
-        # TODO do triggers and non-triggers separately
-        # need to build self.benign_test_accuracy_per_class for validation accuracy?
 
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
         self.benign_validation_metric.add_results(y, y_pred)
-        source = y == self.source_class
-        # NOTE: uses source->target trigger
-        if source.any():
-            self.target_class_benign_metric.add_results(y[source], y_pred[source])
+        # source = y == self.source_class
+        # # NOTE: uses source->target trigger
+        # if source.any():
+        #     self.target_class_benign_metric.add_results(y[source], y_pred[source])
 
-        self.y_pred = y_pred
-        self.source = source
+        # self.y_pred = y_pred
+        # self.source = source
+        # TODO I don't _think_ we need the above for this attack, but we need to discuss metrics more with the group
+
+        for y_, y_pred_ in zip(y, y_pred):
+            if y_ not in self.benign_test_accuracy_per_class.keys():
+                self.benign_test_accuracy_per_class[y_] = []
+
+            self.benign_test_accuracy_per_class[y_].append(
+                y_ == np.argmax(y_pred_, axis=-1)
+            )
+
+    def run_attack(self):
+        # Only called for the trigger images
+
+        x, y = self.x, self.y
+        print(y)
+        print(self.source_class)
+
+        
+        x.flags.writeable = False
+        y_pred_adv = self.model.predict(x, **self.predict_kwargs)
+        print(y_pred_adv)
+        print(self.target_class)
+
+        self.poisoned_test_metric.add_results(y, y_pred_adv)
+        # # NOTE: uses source->target trigger
+        # if source.any():
+        #     self.poisoned_targeted_test_metric.add_results(
+        #         [self.target_class] * source.sum(), y_pred_adv[source]
+        #     )
+        # Pretty positive we don't need the above, since this is only called for images from source class anyway, that's all poisoned_test_metric will have.
+
+
+        self.y_pred_adv = y_pred_adv
+
+
+    def evaluate_current(self):
+        # plan
+        # use test set batch size of 1
+        # if self.i is not in trigger_index:
+        #   run_benign
+        # otherwise,
+        #   run attack
+
+        if self.i in self.trigger_index:
+            self.run_attack()
+        else:
+            self.run_benign()
+
+
 
 
