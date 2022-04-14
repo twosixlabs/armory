@@ -205,10 +205,26 @@ resisc10_silhouette_clustering_config = {
     "wrapper_kwargs": {},
 }
 
+cifar10_silhouette_clustering_config = {
+    "fit": False,
+    "fit_kwargs": {},
+    "model_kwargs": {
+        "data_means": [0.4914, 0.4822, 0.4465],
+        "data_stds": [0.2471, 0.2435, 0.2616],
+        "num_classes": 10,
+    },
+    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",#??????????
+    "name": "get_model",
+    "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
+    "wrapper_kwargs": {},
+}
+
+
 # An armory user will request one of these explanatory models under 'adhoc'/'explanatory_model'
 explanatory_model_configs = {
     "gtsrb_silhouette_model": gtsrb_silhouette_clustering_config,
     "resisc10_silhouette_model": resisc10_silhouette_clustering_config,
+    "cifar10_silhouette_model": cifar10_silhouette_clustering_config,
 }
 
 
