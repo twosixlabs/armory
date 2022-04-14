@@ -197,7 +197,7 @@ def insert_transformed_patch(
         im_cp_two[mask_out != 0] = 0
         final = im_cp_two.astype("float32") + im_out.astype("float32")
     else:
-        final = None
+        final = before
 
     return before, final
 
@@ -346,7 +346,6 @@ class CARLADapricotPatch(RobustDPatch):
                     else:
                         y_batch = y[i_batch_start:i_batch_end]
 
-                    # Sample and apply the random transformations:
                     (
                         patched_images,
                         patch_target,
@@ -389,11 +388,6 @@ class CARLADapricotPatch(RobustDPatch):
                     targeted=self.targeted,
                 )
 
-            if patch_gradients.shape[2] == 6:
-                patch_gradients[:, :, 3:] = np.mean(
-                    patch_gradients[:, :, 3:], axis=2, keepdims=True
-                )
-
             self._patch[:, :, :3] = (
                 self._patch[:, :, :3]
                 + np.sign(patch_gradients[:, :, :3])
@@ -401,9 +395,12 @@ class CARLADapricotPatch(RobustDPatch):
                 * self.learning_rate
             )
 
-            if (
-                patch_gradients.shape[2] == 6
-            ):  # depth uses a different learning rate than rgb
+            if patch_gradients.shape[-1] == 6:
+                patch_gradients[:, :, 3:] = np.mean(
+                    patch_gradients[:, :, 3:], axis=2, keepdims=True
+                )
+
+                # Depth uses a different learning rate than rgb
                 self._patch[:, :, 3:] = (
                     self._patch[:, :, 3:]
                     + np.sign(patch_gradients[:, :, 3:])
@@ -411,16 +408,16 @@ class CARLADapricotPatch(RobustDPatch):
                     * self.learning_rate_depth
                 )
 
+                # clip Depth channels so perturbation is constrained by meters
+                self._patch[:, :, 3:] = np.clip(
+                    self._patch[:, :, 3:], a_min=self.min_depth, a_max=self.max_depth,
+                )
+
             if self.estimator.clip_values is not None:
                 self._patch = np.clip(
                     self._patch,
                     a_min=self.estimator.clip_values[0],
                     a_max=self.estimator.clip_values[1],
-                )
-
-            if self._patch.shape[-1] == 6:
-                self._patch[:, :, 3:] = np.clip(
-                    self._patch[:, :, 3:], a_min=self.min_depth, a_max=self.max_depth,
                 )
 
         if self.summary_writer is not None:
@@ -512,7 +509,7 @@ class CARLADapricotPatch(RobustDPatch):
         if self.crop_range[0] != 0 and self.crop_range[1] != 0:
             log.warning("crop_range argument not used.")
 
-        # 2) rotate images:
+        # 2) rotate images
         if sum(self.rotation_weights[1:]) > 0:
             raise ValueError("Non-zero rotations not correctly supported at this time.")
 
@@ -569,12 +566,6 @@ class CARLADapricotPatch(RobustDPatch):
             )
             gradients_tmp.append(grads_tmp)
         gradients = np.asarray(gradients_tmp)
-
-        # # get channels not attacked and then set the gradients of those channels to zero
-        # non_attacked_channels = list(
-        #     set(range(gradients.shape[-1])) - set(self.attacked_channels)
-        # )
-        # gradients[..., non_attacked_channels] = 0.0
 
         return gradients
 
@@ -692,7 +683,7 @@ class CARLADapricotPatch(RobustDPatch):
             self.gs_coords = [gs_coords]
 
             if (
-                self.patch_shape[2] == 6
+                self.patch_shape[-1] == 6
             ):  # initialize depth patch with average depth value of green screen
                 if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 5+ metadata
                     avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
