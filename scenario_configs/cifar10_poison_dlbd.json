@@ -8,7 +8,7 @@
             "reduce": "PCA"
         },
         "experiment_id": 0,
-        "explanatory_model": "resisc10_silhouette_model",
+        "explanatory_model": "cifar10_silhouette_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 1,
