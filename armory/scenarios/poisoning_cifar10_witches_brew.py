@@ -1,9 +1,9 @@
 import os
 from armory.scenarios.poison import Poison
 from armory.logs import log
-from armory.utils import config_loading
+from armory.utils import config_loading, metrics
 from armory import paths
-from art.utils import to_categorical 
+from art.utils import to_categorical
 import numpy as np
 import copy
 
@@ -113,6 +113,22 @@ class CifarWitchesBrew(Poison):
                 np.array([]),
             )
 
+    def load_metrics(self):
+        self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
+        self.trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
+
+        self.benign_test_accuracy_per_class = (
+            {}
+        )  # store accuracy results for each class
+        if self.config["adhoc"].get("compute_fairness_metrics", False):
+            self.fairness_metrics = FairnessMetrics(
+                self.config["adhoc"], self.use_filtering_defense, self
+            )
+        else:
+            log.warning(
+                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
+            )
+
 
     def load(self):
         self.set_random_seed()
@@ -152,15 +168,7 @@ class CifarWitchesBrew(Poison):
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
-        self.benign_validation_metric.add_results(y, y_pred)
-        # source = y == self.source_class
-        # # NOTE: uses source->target trigger
-        # if source.any():
-        #     self.target_class_benign_metric.add_results(y[source], y_pred[source])
-
-        # self.y_pred = y_pred
-        # self.source = source
-        # TODO I don't _think_ we need the above for this attack, but we need to discuss metrics more with the group
+        self.non_trigger_accuracy_metric.add_results(y, y_pred)
 
         for y_, y_pred_ in zip(y, y_pred):
             if y_ not in self.benign_test_accuracy_per_class.keys():
@@ -174,34 +182,15 @@ class CifarWitchesBrew(Poison):
         # Only called for the trigger images
 
         x, y = self.x, self.y
-        print(y)
-        print(self.source_class)
 
-        
         x.flags.writeable = False
         y_pred_adv = self.model.predict(x, **self.predict_kwargs)
-        print(y_pred_adv)
-        print(self.target_class)
 
-        self.poisoned_test_metric.add_results(y, y_pred_adv)
-        # # NOTE: uses source->target trigger
-        # if source.any():
-        #     self.poisoned_targeted_test_metric.add_results(
-        #         [self.target_class] * source.sum(), y_pred_adv[source]
-        #     )
-        # Pretty positive we don't need the above, since this is only called for images from source class anyway, that's all poisoned_test_metric will have.
+        self.trigger_accuracy_metric.add_results(y, y_pred_adv)
 
-
-        self.y_pred_adv = y_pred_adv
 
 
     def evaluate_current(self):
-        # plan
-        # use test set batch size of 1
-        # if self.i is not in trigger_index:
-        #   run_benign
-        # otherwise,
-        #   run attack
 
         if self.i in self.trigger_index:
             self.run_attack()
@@ -209,5 +198,30 @@ class CifarWitchesBrew(Poison):
             self.run_benign()
 
 
+    def _add_accuracy_metrics_results(self): # TODO
+        """ Adds the main accuracy results to self.results: 
+            poisoned and benign performance on whole test set and on source class # TODO is it source?
+        """
+        self.results["accuracy_non_trigger_images"] = self.non_trigger_accuracy_metric.mean()
+        log.info(f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}")
+
+        self.results["accuracy_trigger_images"] = self.trigger_accuracy_metric.mean()
+        log.info(f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}")
+
+
+
+
+    def finalize_results(self):
+        self.results = {}
+
+        self._add_accuracy_metrics_results()
+
+        self._add_supplementary_metrics_results()
+
+        if self.use_filtering_defense:
+            self._add_filter_metrics_results()
+
+        if hasattr(self, "fairness_metrics") and not self.check_run:
+            self._add_fairness_metrics_results()
 
 
