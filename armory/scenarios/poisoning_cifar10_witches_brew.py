@@ -1,15 +1,21 @@
 import os
+import copy
+
+import numpy as np
+from art.utils import to_categorical
+
 from armory.scenarios.poison import Poison
+from armory.utils.poisoning import FairnessMetrics
 from armory.logs import log
 from armory.utils import config_loading, metrics
 from armory import paths
-from art.utils import to_categorical
-import numpy as np
-import copy
 
 
-class DatasetPoisonerWitchesBrew():
-    def __init__(self, attack, x_test, y_test, source_class, target_class, data_filepath):
+
+class DatasetPoisonerWitchesBrew:
+    def __init__(
+        self, attack, x_test, y_test, source_class, target_class, data_filepath
+    ):
         """
         Individual source-class triggers are chosen from x_test.  At poison time, the
         train set is modified to induce misclassification of the triggers as target_class.
@@ -22,7 +28,6 @@ class DatasetPoisonerWitchesBrew():
         self.target_class = target_class
         self.data_filepath = data_filepath
 
-
     def poison_dataset(self, x_train, y_train, trigger_index, return_index=True):
         """
         Return a poisoned version of dataset x, y
@@ -30,23 +35,26 @@ class DatasetPoisonerWitchesBrew():
         """
         if len(x_train) != len(y_train):
             raise ValueError("Sizes of x and y do not match")
-        
+
         x_trigger = self.x_test[trigger_index]
         if len(x_trigger.shape) == 3:
             x_trigger = np.expand_dims(x_trigger, axis=0)
 
-        y_trigger  = to_categorical([self.target_class], nb_classes=len(np.unique(y_train)))
+        y_trigger = to_categorical(
+            [self.target_class], nb_classes=len(np.unique(y_train))
+        )
 
         # TODO is armory data oriented and scaled right for art_experimental
-        poison_x, poison_y, poison_index = self.attack.poison(self.data_filepath, x_trigger, y_trigger, x_train, y_train, trigger_index) 
-        
+        poison_x, poison_y, poison_index = self.attack.poison(
+            self.data_filepath, x_trigger, y_trigger, x_train, y_train, trigger_index
+        )
+
         if return_index:
             return poison_x, poison_y, poison_index
-        return poison_x, poison_y,
+        return poison_x, poison_y
 
 
 class CifarWitchesBrew(Poison):
-
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
@@ -59,7 +67,7 @@ class CifarWitchesBrew(Poison):
 
         dataset_config = self.config["dataset"]
         test_dataset = config_loading.load_dataset(
-            dataset_config, split="test", num_batches=None, **self.dataset_kwargs,
+            dataset_config, split="test", num_batches=None, **self.dataset_kwargs
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
@@ -69,22 +77,30 @@ class CifarWitchesBrew(Poison):
             trigger_index = [trigger_index]
         self.trigger_index = trigger_index
 
-
         if (y_test[self.trigger_index] != self.source_class).any():
-            raise ValueError(f"Trigger image does not belong to source class (class {y_test[self.trigger_index]} != class {self.source_class})")
-
+            raise ValueError(
+                f"Trigger image does not belong to source class (class {y_test[self.trigger_index]} != class {self.source_class})"
+            )
 
         if self.use_poison:
 
-            attack_config["kwargs"]["percent_poison"] = adhoc_config["fraction_poisoned"]
+            attack_config["kwargs"]["percent_poison"] = adhoc_config[
+                "fraction_poisoned"
+            ]
             attack_config["kwargs"]["source_class"] = self.source_class
             attack_config["kwargs"]["target_class"] = self.target_class
-            
-            data_filepath = attack_config['kwargs'].pop('data_filepath') if 'data_filepath' in attack_config['kwargs'].keys() else None
+
+            data_filepath = (
+                attack_config["kwargs"].pop("data_filepath")
+                if "data_filepath" in attack_config["kwargs"].keys()
+                else None
+            )
 
             attack = config_loading.load_attack(attack_config, self.model)
             if data_filepath is not None:
-                data_filepath = os.path.join(paths.runtime_paths().dataset_dir, data_filepath)
+                data_filepath = os.path.join(
+                    paths.runtime_paths().dataset_dir, data_filepath
+                )
             self.poisoner = DatasetPoisonerWitchesBrew(
                 attack,
                 x_test,
@@ -96,7 +112,7 @@ class CifarWitchesBrew(Poison):
             self.test_poisoner = self.poisoner
 
     def poison_dataset(self):
-        
+
         if self.use_poison:
             (
                 self.x_poison,
@@ -129,7 +145,6 @@ class CifarWitchesBrew(Poison):
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
 
-
     def load(self):
         self.set_random_seed()
         self.set_dataset_kwargs()
@@ -142,13 +157,12 @@ class CifarWitchesBrew(Poison):
         self.fit()
         self.load_dataset()
 
-
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
 
         dataset_config = self.config["dataset"]
         dataset_config = copy.deepcopy(dataset_config)
-        dataset_config['batch_size'] = 1
+        dataset_config["batch_size"] = 1
         eval_split = dataset_config.get("eval_split", eval_split_default)
         log.info(f"Loading test dataset {dataset_config['name']}...")
         self.test_dataset = config_loading.load_dataset(
@@ -158,7 +172,6 @@ class CifarWitchesBrew(Poison):
             **self.dataset_kwargs,
         )
         self.i = -1
-
 
     def run_benign(self):
         # Called for all non-triggers
@@ -188,8 +201,6 @@ class CifarWitchesBrew(Poison):
 
         self.trigger_accuracy_metric.add_results(y, y_pred_adv)
 
-
-
     def evaluate_current(self):
 
         if self.i in self.trigger_index:
@@ -197,19 +208,20 @@ class CifarWitchesBrew(Poison):
         else:
             self.run_benign()
 
-
-    def _add_accuracy_metrics_results(self): # TODO
-        """ Adds the main accuracy results to self.results: 
-            poisoned and benign performance on whole test set and on source class # TODO is it source?
+    def _add_accuracy_metrics_results(self):
+        """ Adds accuracy results for trigger and non-trigger images
         """
-        self.results["accuracy_non_trigger_images"] = self.non_trigger_accuracy_metric.mean()
-        log.info(f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}")
+        self.results[
+            "accuracy_non_trigger_images"
+        ] = self.non_trigger_accuracy_metric.mean()
+        log.info(
+            f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
+        )
 
         self.results["accuracy_trigger_images"] = self.trigger_accuracy_metric.mean()
-        log.info(f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}")
-
-
-
+        log.info(
+            f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
+        )
 
     def finalize_results(self):
         self.results = {}
@@ -223,5 +235,3 @@ class CifarWitchesBrew(Poison):
 
         if hasattr(self, "fairness_metrics") and not self.check_run:
             self._add_fairness_metrics_results()
-
-

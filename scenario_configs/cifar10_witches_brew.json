@@ -2,23 +2,38 @@
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "experiment_id": 0,
-        "poison_dataset": true,
         "fraction_poisoned": 0.05,
+        "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 5,
-        "use_poison_filtering_defense": true,
-        "trigger_index":56
+        "train_epochs": 200,
+        "trigger_index": 56,
+        "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "max_trials":1,
-            "max_epochs":10,
-            "verbose":1,
-            "learning_rate_schedule":[[1e-1, 1e-2, 1e-3, 1e-4, 1e-5], [250, 350, 400, 430, 460]],
-            "data_filepath":"gradient_matching_cifar_precomputed.npz"
+            "data_filepath": "gradient_matching_cifar_precomputed.npz",
+            "learning_rate_schedule": [
+                [
+                    0.1,
+                    0.01,
+                    0.001,
+                    0.0001,
+                    1e-05
+                ],
+                [
+                    250,
+                    350,
+                    400,
+                    430,
+                    460
+                ]
+            ],
+            "max_epochs": 500,
+            "max_trials": 1,
+            "verbose": 1
         },
         "module": "armory.art_experimental.attacks.gradient_matching",
         "name": "GradientMatchingWrapper"
@@ -57,7 +72,7 @@
         "name": "CifarWitchesBrew"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.2",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

@@ -378,10 +378,10 @@ class Poison(Scenario):
             )
 
     def _add_filter_metrics_results(self):
-        """ Adds filter-specific metrics to self.results: 
+        """ Adds filter-specific metrics to self.results:
         Number of samples removed total and per class, true and false positives, F1 score
         """
-        
+
         removed = (1 - self.indices_to_keep).astype(np.bool)
         poisoned = np.zeros_like(self.y_clean).astype(np.bool)
         poisoned[self.poison_index.astype(np.int64)] = True
@@ -391,8 +391,12 @@ class Poison(Scenario):
         true_negatives = int(np.sum(~removed & ~poisoned))
         false_positives = int(np.sum(removed & ~poisoned))
 
-        false_negative_rate = 0 if self.n_poisoned == 0 else false_negatives / self.n_poisoned
-        true_positive_rate = 0 if self.n_poisoned == 0 else true_positives / self.n_poisoned
+        false_negative_rate = (
+            0 if self.n_poisoned == 0 else false_negatives / self.n_poisoned
+        )
+        true_positive_rate = (
+            0 if self.n_poisoned == 0 else true_positives / self.n_poisoned
+        )
         true_negative_rate = true_negatives / self.n_clean
         false_positive_rate = false_positives / self.n_clean
 
@@ -447,13 +451,16 @@ class Poison(Scenario):
             for line in log_lines:
                 log.info(line)
 
- 
     def _add_accuracy_metrics_results(self):
-        """ Adds the main accuracy results to self.results: 
+        """ Adds the main accuracy results to self.results:
             poisoned and benign performance on whole test set and on source class # TODO is it source?
         """
-        self.results["benign_validation_accuracy"] = self.benign_validation_metric.mean()
-        self.results["benign_validation_accuracy_targeted_class"] = self.target_class_benign_metric.mean()
+        self.results[
+            "benign_validation_accuracy"
+        ] = self.benign_validation_metric.mean()
+        self.results[
+            "benign_validation_accuracy_targeted_class"
+        ] = self.target_class_benign_metric.mean()
         log.info(
             f"Unpoisoned validation accuracy: {self.benign_validation_metric.mean():.2%}"
         )
@@ -463,11 +470,14 @@ class Poison(Scenario):
 
         if self.use_poison:
             self.results["poisoned_test_accuracy"] = self.poisoned_test_metric.mean()
-            self.results["poisoned_targeted_misclassification_accuracy"] = self.poisoned_targeted_test_metric.mean()
+            self.results[
+                "poisoned_targeted_misclassification_accuracy"
+            ] = self.poisoned_targeted_test_metric.mean()
             log.info(f"Test accuracy: {self.poisoned_test_metric.mean():.2%}")
-            log.info(f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}")
+            log.info(
+                f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
+            )
 
-    
     def _add_supplementary_metrics_results(self):
         """ Adds additional metrics  to self.results:
         N poisoned, N clean, N samples per class, benign accuracy per class
@@ -479,11 +489,14 @@ class Poison(Scenario):
         self.results["N_poisoned_train_samples"] = self.n_poisoned
         self.results["N_clean_train_samples"] = self.n_clean
 
-
         self.train_set_class_labels = sorted(list(np.unique(self.y_clean)))
-        self.test_set_class_labels = sorted(list(self.benign_test_accuracy_per_class.keys()))
+        self.test_set_class_labels = sorted(
+            list(self.benign_test_accuracy_per_class.keys())
+        )
         if self.test_set_class_labels != self.train_set_class_labels:
-            log.warning("Test set contains a strict subset of train set classes.  Some metrics for missing classes may not be computed.")
+            log.warning(
+                "Test set contains a strict subset of train set classes.  Some metrics for missing classes may not be computed."
+            )
         for y in self.train_set_class_labels:
             self.results[f"class_{y}_N_train_samples"] = int(np.sum(self.y_clean == y))
         for y in self.test_set_class_labels:
@@ -498,11 +511,8 @@ class Poison(Scenario):
 
         self._add_supplementary_metrics_results()
 
-
         if self.use_filtering_defense:
             self._add_filter_metrics_results()
 
         if hasattr(self, "fairness_metrics") and not self.check_run:
             self._add_fairness_metrics_results()
-
-
