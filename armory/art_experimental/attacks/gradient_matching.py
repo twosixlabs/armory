@@ -9,21 +9,14 @@ from armory.logs import log
 class GradientMatchingWrapper(GradientMatchingAttack):
     def __init__(self, classifier, **kwargs):
         self.attack_kwargs = kwargs
-        percent_poison = kwargs.pop("percent_poison")
         self.source_class = kwargs.pop("source_class")
         self.target_class = kwargs.pop("target_class")
-        learning_rates, schedule = kwargs.pop("learning_rate_schedule")
-        learning_rate_schedule = (np.array(learning_rates), schedule)
-
-        epsilon = 0.01  # TODO: this depended on the dataset, in the notebook
+        learning_rate_schedule = tuple(kwargs.pop("learning_rate_schedule"))
 
         super().__init__(
             classifier=classifier,
-            percent_poison=percent_poison,
-            # max_epochs=50, # TODO reset to 500 or something in the config
             # clip_values=(min_,max_),  get this somewhere
-            learning_rate_schedule=learning_rate_schedule,
-            epsilon=epsilon,
+            learning_rate_schedule= learning_rate_schedule,
             **kwargs,
         )
 
@@ -49,9 +42,10 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 poison_npz["poison_index"],
                 poison_npz["trigger_index"],
             )
-            target_class, percent_poison = (
+            target_class, percent_poison, epsilon = (
                 poison_npz["target_class"],
                 poison_npz["percent_poison"],
+                poison_npz["epsilon"]
             )
 
             if load_trigger_index != trigger_index:
@@ -65,6 +59,10 @@ class GradientMatchingWrapper(GradientMatchingAttack):
             if percent_poison != self.percent_poison:
                 raise ValueError(
                     f"Adversarial dataset at filepath {filepath} has a poison frequency of {percent_poison}, not {self.percent_poison} as requested by the config."
+                )
+            if epsilon != self.epsilon:
+                raise ValueError(
+                    f"Adversarial dataset at filepath {filepath} has a L_inf perturbation bound of {epsilon}, not {self.epsilon} as requested by the config."
                 )
             # No need to verify source class, since it will match if the trigger_index matched
 
@@ -87,6 +85,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                     source_class=self.source_class,
                     target_class=self.target_class,
                     percent_poison=self.percent_poison,
+                    epsilon=self.epsilon
                 )
             log.info(f"Poisoned dataset saved to {filepath}")
 

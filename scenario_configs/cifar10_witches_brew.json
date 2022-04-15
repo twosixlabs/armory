@@ -15,6 +15,7 @@
         "knowledge": "black",
         "kwargs": {
             "data_filepath": "gradient_matching_cifar_precomputed.npz",
+            "epsilon": 0.1,
             "learning_rate_schedule": [
                 [
                     0.1,
