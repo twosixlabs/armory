@@ -377,6 +377,7 @@ class Meter:
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
         self.keep_results = keep_results
+        self.never_measured = True
 
     def get_arg_names(self):
         return list(self.arg_index)
@@ -441,11 +442,18 @@ class Meter:
             self._warned = True
         if clear_values:
             self.clear()
+        self.never_measured = False
 
     def finalize(self):
         """
         Primarily intended for metrics of metrics, like mean or stdev of results
         """
+        if self.never_measured:
+            unset = [arg for arg, i in self.arg_index.items() if not self.values_set[i]]
+            log.warning(
+                f"Meter {self.name} was never measured. "
+                f"The following args were never set: {unset}"
+            )
         if self.final is None:
             return
 
