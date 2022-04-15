@@ -436,7 +436,7 @@ class Meter:
             writer.write(record)
         if not self.keep_results and not self.writers and not self._warned:
             log.warning(
-                f"Meter {self.name} has no writer added and keep_results is False"
+                f"Meter '{self.name}' has no writer added and keep_results is False"
             )
             self._warned = True
         if clear_values:
@@ -450,7 +450,7 @@ class Meter:
         if self.never_measured:
             unset = [arg for arg, i in self.arg_index.items() if not self.values_set[i]]
             log.warning(
-                f"Meter {self.name} was never measured. "
+                f"Meter '{self.name}' was never measured. "
                 f"The following args were never set: {unset}"
             )
 
