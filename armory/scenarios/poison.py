@@ -232,7 +232,7 @@ class Poison(Scenario):
                 self.label_function(self.y_poison),
             )
 
-            detection_kwargs = adhoc_config.get("detection_kwargs", {})
+            detection_kwargs = defense_config.get("kwargs", {})
             _, is_clean = defense.detect_poison(**detection_kwargs)
             is_clean = np.array(is_clean)
             log.info(f"Total clean data points: {np.sum(is_clean)}")
