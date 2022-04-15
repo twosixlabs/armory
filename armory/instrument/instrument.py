@@ -430,7 +430,10 @@ class Meter:
         record = (self.name, self.batches[0], result)
         if self.keep_results:
             # Assume metric is sample-wise, but computed on a batch of samples
-            self._results.extend(record)
+            try:
+                self._results.extend(result)
+            except TypeError:
+                self._results.append(result)
             # TODO: only global?
         for writer in self.writers:
             writer.write(record)
