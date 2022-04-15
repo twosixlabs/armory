@@ -14,7 +14,7 @@ from armory import paths
 
 class DatasetPoisonerWitchesBrew:
     def __init__(
-        self, attack, x_test, y_test, source_class, target_class, data_filepath
+        self, attack, x_test, y_test, source_class, target_class, trigger_index, data_filepath
     ):
         """
         Individual source-class triggers are chosen from x_test.  At poison time, the
@@ -26,9 +26,10 @@ class DatasetPoisonerWitchesBrew:
         self.y_test = y_test
         self.source_class = source_class
         self.target_class = target_class
+        self.trigger_index = trigger_index
         self.data_filepath = data_filepath
 
-    def poison_dataset(self, x_train, y_train, trigger_index, return_index=True):
+    def poison_dataset(self, x_train, y_train, return_index=True):
         """
         Return a poisoned version of dataset x, y
             if return_index, return x, y, index
@@ -36,17 +37,15 @@ class DatasetPoisonerWitchesBrew:
         if len(x_train) != len(y_train):
             raise ValueError("Sizes of x and y do not match")
 
-        x_trigger = self.x_test[trigger_index]
+        x_trigger = self.x_test[self.trigger_index]
         if len(x_trigger.shape) == 3:
             x_trigger = np.expand_dims(x_trigger, axis=0)
 
-        y_trigger = to_categorical(
-            [self.target_class], nb_classes=len(np.unique(y_train))
-        )
+        y_trigger = [self.target_class] * len(self.trigger_index) # TODO assuming all images have same target.
 
         # TODO is armory data oriented and scaled right for art_experimental
         poison_x, poison_y, poison_index = self.attack.poison(
-            self.data_filepath, x_trigger, y_trigger, x_train, y_train, trigger_index
+            self.data_filepath, x_trigger, y_trigger, x_train, y_train, self.trigger_index
         )
 
         if return_index:
@@ -55,6 +54,7 @@ class DatasetPoisonerWitchesBrew:
 
 
 class CifarWitchesBrew(Poison):
+
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
@@ -77,10 +77,13 @@ class CifarWitchesBrew(Poison):
             trigger_index = [trigger_index]
         self.trigger_index = trigger_index
 
-        if (y_test[self.trigger_index] != self.source_class).any():
-            raise ValueError(
-                f"Trigger image does not belong to source class (class {y_test[self.trigger_index]} != class {self.source_class})"
-            )
+        print (np.where(y_test == self.source_class)[0][:15])
+
+        for i in self.trigger_index:
+            if y_test[i] != self.source_class:
+                raise ValueError(
+                    f"Trigger image {i} does not belong to source class (class {y_test[i]} != class {self.source_class})"
+                )
 
         if self.use_poison:
 
@@ -107,27 +110,11 @@ class CifarWitchesBrew(Poison):
                 y_test,
                 self.source_class,
                 self.target_class,
+                self.trigger_index,
                 data_filepath,
             )
             self.test_poisoner = self.poisoner
 
-    def poison_dataset(self):
-
-        if self.use_poison:
-            (
-                self.x_poison,
-                self.y_poison,
-                # self.trigger_index,
-                self.poison_index,
-            ) = self.poisoner.poison_dataset(
-                self.x_clean, self.y_clean, self.trigger_index, return_index=True
-            )
-        else:
-            self.x_poison, self.y_poison, self.poison_index = (
-                self.x_clean,
-                self.y_clean,
-                np.array([]),
-            )
 
     def load_metrics(self):
         self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
@@ -145,17 +132,8 @@ class CifarWitchesBrew(Poison):
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
 
-    def load(self):
-        self.set_random_seed()
-        self.set_dataset_kwargs()
-        self.load_model()
-        self.load_train_dataset()
-        self.load_poisoner()
-        self.load_metrics()
-        self.poison_dataset()
-        self.filter_dataset()
-        self.fit()
-        self.load_dataset()
+    # TODO think about sample exporting?
+
 
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.

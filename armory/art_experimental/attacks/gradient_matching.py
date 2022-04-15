@@ -48,9 +48,11 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 poison_npz["epsilon"]
             )
 
-            if load_trigger_index != trigger_index:
+            # if load_trigger_index != trigger_index:
+            # if not (len(load_trigger_index) == len(trigger_index) and [i==k for i, k in zip(load_trigger_index, trigger_index)].all()):
+            if sorted(load_trigger_index) != sorted(trigger_index):
                 raise ValueError(
-                    f"Adversarial dataset at filepath {filepath} was trained for trigger image {load_trigger_index}, not {trigger_index} as requested by the config."
+                    f"Adversarial dataset at filepath {filepath} was trained for trigger image(s) {load_trigger_index}, not {trigger_index} as requested by the config."
                 )
             if target_class != self.target_class:
                 raise ValueError(
