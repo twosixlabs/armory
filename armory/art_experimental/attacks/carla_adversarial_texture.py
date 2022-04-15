@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 from art.attacks.evasion import AdversarialTexturePyTorch
-from armory.logs import log
+
 
 class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
     """
@@ -12,7 +12,7 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
     def __init__(self, estimator, **kwargs):
         # self.attack_kwargs = kwargs
         # super(AdversarialTexturePyTorch, self).__init__(estimator=estimator)
-        
+
         # use dummy patch height/width for initialization
         super().__init__(estimator=estimator, patch_height=1, patch_width=1, **kwargs)
 
@@ -28,7 +28,7 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
                   - gs_coords: the coordinates of the patch in [top_left, top_right, bottom_right, bottom_left] format
                   - cc_ground_truth: ground truth color information stored as np.ndarray with shape (24,3)
                   - cc_scene: scene color information stored as np.ndarray with shape (24,3)
-                  - masks: binarized masks of the patch, where masks[n,x,y] == 1 means patch pixel in frame n and at position (x,y)        
+                  - masks: binarized masks of the patch, where masks[n,x,y] == 1 means patch pixel in frame n and at position (x,y)
         """
 
         if x.shape[0] > 1:
@@ -43,17 +43,19 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
         y_min = int(np.min(gs_coords[:, 0]))
 
         self.patch_height = patch_height
-        self.patch_width = patch_width        
+        self.patch_width = patch_width
         self.x_min = x_min
         self.y_min = y_min
 
         # reinitialize patch
         self.patch_shape = (patch_height, patch_width, 3)
-        mean_value = (self.estimator.clip_values[1] - self.estimator.clip_values[0]) / 2.0 + self.estimator.clip_values[
-            0
-        ]
+        mean_value = (
+            self.estimator.clip_values[1] - self.estimator.clip_values[0]
+        ) / 2.0 + self.estimator.clip_values[0]
         self._initial_value = np.ones(self.patch_shape) * mean_value
-        self._patch = torch.tensor(self._initial_value, requires_grad=True, device=self.estimator.device)
+        self._patch = torch.tensor(
+            self._initial_value, requires_grad=True, device=self.estimator.device
+        )
 
         # this masked to embed patch into the background in the event of occlusion
         foreground = y_patch_metadata[0]["masks"]
@@ -61,16 +63,16 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
 
         # create patch points indicating locations of the four corners of the patch in each frame
         patch_points = []
-        if gs_coords.ndim == 2: # same location for all frames
-            patch_points = np.tile(gs_coords[:,::-1], (x.shape[1], 1, 1))            
+        if gs_coords.ndim == 2:  # same location for all frames
+            patch_points = np.tile(gs_coords[:, ::-1], (x.shape[1], 1, 1))
         else:
-            patch_points = gs_coords[:,:,::-1]   
+            patch_points = gs_coords[:, :, ::-1]
 
         generate_kwargs = {
             "y_init": y[0]["boxes"][0:1],
             "foreground": foreground,
             "shuffle": kwargs.get("shuffle", False),
-            "patch_points": patch_points
+            "patch_points": patch_points,
         }
         generate_kwargs = {**generate_kwargs, **kwargs}
 
