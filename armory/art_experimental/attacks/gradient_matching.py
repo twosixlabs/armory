@@ -16,7 +16,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         super().__init__(
             classifier=classifier,
             # clip_values=(min_,max_),  get this somewhere
-            learning_rate_schedule= learning_rate_schedule,
+            learning_rate_schedule=learning_rate_schedule,
             **kwargs,
         )
 
@@ -45,7 +45,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
             target_class, percent_poison, epsilon = (
                 poison_npz["target_class"],
                 poison_npz["percent_poison"],
-                poison_npz["epsilon"]
+                poison_npz["epsilon"],
             )
 
             # if load_trigger_index != trigger_index:
@@ -87,7 +87,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                     source_class=self.source_class,
                     target_class=self.target_class,
                     percent_poison=self.percent_poison,
-                    epsilon=self.epsilon
+                    epsilon=self.epsilon,
                 )
             log.info(f"Poisoned dataset saved to {filepath}")
 

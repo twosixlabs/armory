@@ -2,7 +2,6 @@ import os
 import copy
 
 import numpy as np
-from art.utils import to_categorical
 
 from armory.scenarios.poison import Poison
 from armory.utils.poisoning import FairnessMetrics
@@ -11,10 +10,16 @@ from armory.utils import config_loading, metrics
 from armory import paths
 
 
-
 class DatasetPoisonerWitchesBrew:
     def __init__(
-        self, attack, x_test, y_test, source_class, target_class, trigger_index, data_filepath
+        self,
+        attack,
+        x_test,
+        y_test,
+        source_class,
+        target_class,
+        trigger_index,
+        data_filepath,
     ):
         """
         Individual source-class triggers are chosen from x_test.  At poison time, the
@@ -41,11 +46,18 @@ class DatasetPoisonerWitchesBrew:
         if len(x_trigger.shape) == 3:
             x_trigger = np.expand_dims(x_trigger, axis=0)
 
-        y_trigger = [self.target_class] * len(self.trigger_index) # TODO assuming all images have same target.
+        y_trigger = [self.target_class] * len(
+            self.trigger_index
+        )  # TODO assuming all images have same target.
 
         # TODO is armory data oriented and scaled right for art_experimental
         poison_x, poison_y, poison_index = self.attack.poison(
-            self.data_filepath, x_trigger, y_trigger, x_train, y_train, self.trigger_index
+            self.data_filepath,
+            x_trigger,
+            y_trigger,
+            x_train,
+            y_train,
+            self.trigger_index,
         )
 
         if return_index:
@@ -54,7 +66,6 @@ class DatasetPoisonerWitchesBrew:
 
 
 class CifarWitchesBrew(Poison):
-
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
@@ -77,7 +88,7 @@ class CifarWitchesBrew(Poison):
             trigger_index = [trigger_index]
         self.trigger_index = trigger_index
 
-        print (np.where(y_test == self.source_class)[0][:15])
+        print(np.where(y_test == self.source_class)[0][:15])
 
         for i in self.trigger_index:
             if y_test[i] != self.source_class:
@@ -115,7 +126,6 @@ class CifarWitchesBrew(Poison):
             )
             self.test_poisoner = self.poisoner
 
-
     def load_metrics(self):
         self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
         self.trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
@@ -133,7 +143,6 @@ class CifarWitchesBrew(Poison):
             )
 
     # TODO think about sample exporting?
-
 
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
