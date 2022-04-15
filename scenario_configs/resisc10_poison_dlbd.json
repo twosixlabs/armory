@@ -9,7 +9,7 @@
         "source_class": 1,
         "split_id": 0,
         "target_class": 5,
-        "train_epochs": 1,
+        "train_epochs": 200,
         "use_poison_filtering_defense": false
     },
     "attack": {
@@ -111,7 +111,7 @@
         "name": "RESISC10"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.14.2",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
