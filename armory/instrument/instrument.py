@@ -43,7 +43,11 @@ _PROBES = {}
 
 
 class Probe:
-    def __init__(self, name="", sink=None):
+    def __init__(self, name: str = "", sink=None):
+        if name:
+            tokens = name.split(".")
+            if not all(tokens.isidentifier()):
+                raise ValueError(f"name {name} must be '' or '.'-separated identifiers")
         self.name = name
         self.sink = sink
         self._hooks = {}
@@ -61,14 +65,23 @@ class Probe:
 
         Example: probe.update(lambda x: x.detach().cpu().numpy(), a=layer_3_output)
 
-        named_values can be any object, tuple, dict, etc.
-            To add attributes, you could do:
-                probe.update(data_point=(x_i, is_poisoned))
+        named_values:
+            names must be valid python identifiers
+            values can be any object, tuple, dict, etc.
+
+        probe.update(data_point=(x_i, is_poisoned)) would enable downstream meters
+            to measure (x_i, is_poisoned) from f"{probe.name}.data_point"
         """
         if self.sink is None and not self._warned:
             log.warning(f"No sink set up for probe {self.name}!")
             self._warned = True
             return
+
+        for name in named_values:
+            if not name.isidentifier():
+                raise ValueError(
+                    f"named_values must be valid python identifiers, not {name}"
+                )
 
         # Prepend probe name
         if self.name != "":
@@ -143,11 +156,13 @@ def process_meter_arg(arg: str):
     Example strings: 'model.x2[adversarial]', 'scenario.y_pred'
     """
     if "[" in arg:
-        if arg.count("[") != 1 and arg.count("]") != 1:
-            raise ValueError(f"arg {arg} must have a single matching [] or none")
+        if arg.count("[") != 1 or arg.count("]") != 1:
+            raise ValueError(
+                f"arg '{arg}' must have a single matching '[]' pair or none"
+            )
         arg, filt = arg.split("[")
         if filt[-1] != "]":
-            raise ValueError(f"arg {arg} cannot have chars after final ']'")
+            raise ValueError(f"arg '{arg}' cannot have chars after final ']'")
         stage_filter = filt[:-1].strip()
         # tokens = [x.strip() for x in filt.split(",")]
     else:
