@@ -72,6 +72,13 @@ probe.update(name=value)
 However, this will fall on the floor unless a meter is connected to record values.
 
 
+When you call
+```
+probe.update(arbitrary_name=value)
+```
+you are defining `arbitrary_name` as a name that can then be used when passing a string `"probe_name.arbitrary_name"` to `add_meter()`.
+
+
 ### Preprocessing
 
 Probes can perform preprocessing of the updating values.
