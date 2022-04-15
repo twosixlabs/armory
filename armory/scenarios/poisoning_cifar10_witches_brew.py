@@ -46,9 +46,7 @@ class DatasetPoisonerWitchesBrew:
         if len(x_trigger.shape) == 3:
             x_trigger = np.expand_dims(x_trigger, axis=0)
 
-        y_trigger = [self.target_class] * len(
-            self.trigger_index
-        )  # TODO assuming all images have same target.
+        y_trigger = self.target_class
 
         # TODO is armory data oriented and scaled right for art_experimental
         poison_x, poison_y, poison_index = self.attack.poison(
@@ -73,8 +71,6 @@ class CifarWitchesBrew(Poison):
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
         self.use_poison = bool(adhoc_config["poison_dataset"])
-        self.source_class = adhoc_config["source_class"]
-        self.target_class = adhoc_config["target_class"]
 
         dataset_config = self.config["dataset"]
         test_dataset = config_loading.load_dataset(
@@ -88,12 +84,34 @@ class CifarWitchesBrew(Poison):
             trigger_index = [trigger_index]
         self.trigger_index = trigger_index
 
-        print(np.where(y_test == self.source_class)[0][:15])
+        target_class = adhoc_config["target_class"]
+        if isinstance(target_class, int):
+            target_class = [target_class] * len(self.trigger_index)
+        if len(target_class) == 1:
+            target_class = target_class * len(self.trigger_index)
+        self.target_class = target_class
 
-        for i in self.trigger_index:
-            if y_test[i] != self.source_class:
+        source_class = adhoc_config["source_class"]
+        if isinstance(source_class, int):
+            source_class = [source_class] * len(self.trigger_index)
+        if len(source_class) == 1:
+            source_class = source_class * len(self.trigger_index)
+        self.source_class = source_class
+
+        if len(self.target_class) != len(self.trigger_index):
+            raise ValueError(
+                "target_class should have one element or be the same length as trigger_index"
+            )
+
+        if len(self.source_class) != len(self.trigger_index):
+            raise ValueError(
+                "source_class should have one element or be the same length as trigger_index"
+            )
+
+        for i, trigger_ind in enumerate(self.trigger_index):
+            if y_test[trigger_ind] != self.source_class[i]:
                 raise ValueError(
-                    f"Trigger image {i} does not belong to source class (class {y_test[i]} != class {self.source_class})"
+                    f"Trigger image {i} does not belong to source class (class {y_test[trigger_ind]} != class {self.source_class[i]})"
                 )
 
         if self.use_poison:
