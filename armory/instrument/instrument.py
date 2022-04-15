@@ -303,7 +303,7 @@ class Context:  # NOTE: may need to rename to something like Experiment or Proce
 
         for meter in self.meters:
             meter.finalize()
-        for writer in self.writers():
+        for writer in self.writers:
             writer.close()
 
         self.closed = True
@@ -453,6 +453,7 @@ class Meter:
                 f"Meter {self.name} was never measured. "
                 f"The following args were never set: {unset}"
             )
+
         if self.final is None:
             return
 
@@ -686,6 +687,7 @@ def main():
         context.set_stage("adversarial")
         y_pred_adv = model.predict(x_adv)
         scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+    context.close()
 
 
 if __name__ == "__main__":
