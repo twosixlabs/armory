@@ -45,8 +45,7 @@ _PROBES = {}
 class Probe:
     def __init__(self, name: str = "", sink=None):
         if name:
-            tokens = name.split(".")
-            if not all(tokens.isidentifier()):
+            if not all(token.isidentifier() for token in name.split(".")):
                 raise ValueError(f"name {name} must be '' or '.'-separated identifiers")
         self.name = name
         self.sink = sink
