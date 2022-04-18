@@ -76,8 +76,8 @@
     "scenario": {
         "export_batches": 1,
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_cifar10_witches_brew",
-        "name": "CifarWitchesBrew"
+        "module": "armory.scenarios.poisoning_witches_brew",
+        "name": "WitchesBrewScenario"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
