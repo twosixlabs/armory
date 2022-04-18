@@ -23,6 +23,9 @@ class GradientMatchingWrapper(GradientMatchingAttack):
     def poison(self, filepath, x_trigger, y_trigger, x_train, y_train, trigger_index):
         """
         Return a dataset poisoned to cause misclassification of x_trigger.
+        If "filepath" already exists, will attempt to load pre-poisoned dataset from that location.
+        Otherwise, generates poisoned dataset and saves to "filepath".
+        If "filepath" is None, generates dataset but does not save it.
 
         filepath, string: path to load data from (if it exists) or save it to (if it doesn't)
         x_trigger, array: Images from the test set that we hope to misclassify
@@ -92,6 +95,10 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                     percent_poison=self.percent_poison,
                     epsilon=self.epsilon,
                 )
-            log.info(f"Poisoned dataset saved to {filepath}")
+                log.info(f"Poisoned dataset saved to {filepath}")
+            else:
+                log.warning(
+                    "If you wish the poisoned dataset to be saved, please set attack/kwargs/data_filepath in the config."
+                )
 
         return x_poison, y_poison, poison_index

@@ -214,8 +214,10 @@ class CifarWitchesBrew(Poison):
         else:
             self.run_benign()
 
-        # TODO Needs discussion--what is useful to export
-        # This just exports clean test samples, and all the triggers.
+        # TODO Needs discussion--what is useful to export.
+        # This just exports clean test samples up to num_eval_batches, and all the triggers.
+        # The use of sample_exporter is nonconventional since in this attack,
+        # we don't have benign and adversarial versions of the same test image.
         if (
             self.num_export_batches > self.sample_exporter.saved_batches
         ) or self.i in self.trigger_index:
