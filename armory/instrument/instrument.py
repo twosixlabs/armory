@@ -484,11 +484,12 @@ class Meter:
                 f"Meter '{self.name}' was never measured. "
                 f"The following args were never set: {unset}"
             )
+            return  # Do not compute final if never_measured
 
         if self.final is None:
             return
 
-        result = self.final(self.results, **self.final_kwargs)
+        result = self.final(self._results, **self.final_kwargs)
         record = (self.final_name, None, result)
         self.final_result = result
         for writer in self.writers:
@@ -549,23 +550,16 @@ class FileWriter(Writer):
 
 
 class ResultsWriter(Writer):
-    KEEP_MODES = ("first", "all", "last")
+    """
+    Write results to dictionary
+    """
 
-    def __init__(self, sink, filepath, file_format="json", keep="all"):
-        # TODO: fix sink to callable function
+    def __init__(self, sink):
+        """
+        sink is a callable that takes the output results dict as input
+        """
         self.sink = sink
-        self.filepath = filepath
-        self.file_format = file_format
-        if keep not in self.KEEP_MODES:
-            raise ValueError(f"keep {keep} not one of {self.KEEP_MODES}")
-        if keep != "all":
-            raise NotImplementedError(f"keep={keep}, use 'all'")
-        self.keep = keep
         self.records = []
-        # TODO: checking
-
-    def set_filepath(self, filepath):
-        self.filepath = filepath
 
     def _write(self, name, batch, result):
         self.records.append((name, batch, result))
@@ -583,9 +577,7 @@ class ResultsWriter(Writer):
 
     def close(self):
         output = self.collate_results()
-        with open(self.filepath, "w") as f:
-            json.dump(output, f)
-        # TODO: push to results dictionary?
+        self.sink(output)
 
 
 # GLOBAL CONTEXT METHODS #

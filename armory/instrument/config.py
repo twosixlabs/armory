@@ -136,15 +136,16 @@ def perturbation_metrics(names, use_mean=True):
 
     hub = get_hub()
     for name in names:
-        metric = metrics.get_supported_metric(name)
+        metric = metrics.SUPPORTED_METRICS[name]
+        # metric = metrics.get_supported_metric(name)
         hub.connect_meter(
             Meter(
-                name,
+                f"perturbation_{name}",
                 metric,
                 "scenario.x",
                 "scenario.x_adv",
                 final=final,
-                final_name=f"mean_{name}",
+                final_name=f"perturbation_mean_{name}",
             )
         )
 
@@ -251,14 +252,15 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
     Return list of meters generated for this specific task
     """
     meters = []
-    metric = metrics.get_supported_metric(name)
+    metric = metrics.SUPPORTED_METRICS[name]
+    # metric = metrics.get_supported_metric(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
         final = MeanAP(metric)
         final_kwargs = metric_kwargs
 
-        name = "input_to_{name}"
+        name = f"input_to_{name}"
         metric = identity
         metric_kwargs = None
     elif name == "word_error_rate":
@@ -266,7 +268,7 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final_suffix = "total_word_error_rate"
     elif use_mean:
         final = np.mean
-        final_suffix = "mean_{name}"
+        final_suffix = f"mean_{name}"
     else:
         final = None
         final_suffix = ""
