@@ -63,6 +63,48 @@ class DatasetPoisonerWitchesBrew:
 
 
 class WitchesBrewScenario(Poison):
+    def _validate_attack_args(self, adhoc_config, y_test):
+
+        # TODO Needs discussion -- how are we actually going to pick trigger images.
+        trigger_index = adhoc_config["trigger_index"]
+        if isinstance(trigger_index, int):
+            trigger_index = [trigger_index]
+
+        target_class = adhoc_config["target_class"]
+        if isinstance(target_class, int):
+            target_class = [target_class] * len(trigger_index)
+        if len(target_class) == 1:
+            target_class = target_class * len(trigger_index)
+
+        source_class = adhoc_config["source_class"]
+        if isinstance(source_class, int):
+            source_class = [source_class] * len(trigger_index)
+        if len(source_class) == 1:
+            source_class = source_class * len(trigger_index)
+
+        if len(target_class) != len(trigger_index):
+            raise ValueError(
+                "target_class should have one element or be the same length as trigger_index"
+            )
+
+        if len(source_class) != len(trigger_index):
+            raise ValueError(
+                "source_class should have one element or be the same length as trigger_index"
+            )
+
+        for i, trigger_ind in enumerate(trigger_index):
+            if y_test[trigger_ind] != source_class[i]:
+                raise ValueError(
+                    f"Trigger image {i} does not belong to source class (class {y_test[trigger_ind]} != class {source_class[i]})"
+                )
+
+        if sum([t == s for t, s in zip(target_class, source_class)]) > 0:
+            raise ValueError(
+                f" No target class may equal source class; got target = {target_class} and source = {source_class}"
+            )
+
+        return trigger_index, target_class, source_class
+
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
@@ -73,48 +115,13 @@ class WitchesBrewScenario(Poison):
 
         dataset_config = self.config["dataset"]
         test_dataset = config_loading.load_dataset(
-            dataset_config, split="test", num_batches=None, shuffle_files=False, **self.dataset_kwargs
+            dataset_config, split="test", num_batches=None, **self.dataset_kwargs
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
-        # TODO Needs discussion -- how are we actually going to pick trigger images.
-        trigger_index = adhoc_config["trigger_index"]
-        if isinstance(trigger_index, int):
-            trigger_index = [trigger_index]
-        self.trigger_index = trigger_index
-
-        target_class = adhoc_config["target_class"]
-        if isinstance(target_class, int):
-            target_class = [target_class] * len(self.trigger_index)
-        if len(target_class) == 1:
-            target_class = target_class * len(self.trigger_index)
-        self.target_class = target_class
-
-        source_class = adhoc_config["source_class"]
-        if isinstance(source_class, int):
-            source_class = [source_class] * len(self.trigger_index)
-        if len(source_class) == 1:
-            source_class = source_class * len(self.trigger_index)
-        self.source_class = source_class
-
-        if len(self.target_class) != len(self.trigger_index):
-            raise ValueError(
-                "target_class should have one element or be the same length as trigger_index"
-            )
-
-        if len(self.source_class) != len(self.trigger_index):
-            raise ValueError(
-                "source_class should have one element or be the same length as trigger_index"
-            )
-
-        for i, trigger_ind in enumerate(self.trigger_index):
-            if y_test[trigger_ind] != self.source_class[i]:
-                raise ValueError(
-                    f"Trigger image {i} does not belong to source class (class {y_test[trigger_ind]} != class {self.source_class[i]})"
-                )
-
-        if sum([t==s for t, s in zip(self.target_class, self.source_class)]) > 0:
-            raise ValueError(f" No target class may equal source class; got target = {self.target_class} and source = {self.source_class}")
+        self.trigger_index, self.target_class, self.source_class = self._validate_attack_args(
+            adhoc_config, y_test
+        )
 
         if self.use_poison:
 
@@ -161,7 +168,6 @@ class WitchesBrewScenario(Poison):
             dataset_config,
             split=eval_split,
             num_batches=self.num_eval_batches,
-            shuffle_files=False,
             **self.dataset_kwargs,
         )
         self.i = -1
@@ -252,4 +258,3 @@ class WitchesBrewScenario(Poison):
         log.info(
             f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
         )
-
