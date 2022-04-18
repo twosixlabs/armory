@@ -62,7 +62,7 @@ class DatasetPoisonerWitchesBrew:
         return poison_x, poison_y
 
 
-class CifarWitchesBrew(Poison):
+class WitchesBrewScenario(Poison):
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
