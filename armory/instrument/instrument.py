@@ -171,6 +171,51 @@ def process_meter_arg(arg: str):
     return probe_variable, stage_filter
 
 
+class Hub:
+    """
+    Map between probes, meters, and writers
+
+    Keep 'context' as a namespace inside Hub?
+        Use the indexing method as a way to filter
+
+    model.x_post[benign]
+    probe_name.probe_variable[stage]
+    """
+
+    def __init__(self):
+        pass
+
+    def is_measuring(self, probe_variable):
+        pass
+
+    def update(self, probe_variable, value):
+        pass
+
+    def map_probe_update_to_meter_input(self, probe_variable):
+        pass
+
+    def connect_meter(self, meter):
+        pass
+
+    def disconnect_meter(self, meter):
+        pass
+
+    def set_context(self, name, value):
+        pass
+
+    def get_context(self, name, value):
+        pass
+
+    def connect_writer(self, writer):
+        pass
+
+    def disconnect_writer(self, writer):
+        pass
+
+    def close(self):
+        pass
+
+
 class ProbeMapper:
     """
     Map from probe outputs to meters

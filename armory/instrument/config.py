@@ -6,10 +6,12 @@ import numpy as np
 
 from armory.instrument import (
     add_meter,
+    connect_meter,
     add_writer,
     ResultsWriter,
     get_context,
     LogWriter,
+    Meter,
 )
 from armory.logs import log
 from armory.utils import metrics
@@ -264,11 +266,7 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final = None
         final_suffix = ""
 
-    # TODO: Add ResultsLogWriter to each of these meters
-    #   benign = ResultsLogWriter()
-    #   adversarial = ResultsLogWriter(adversarial=True)
-    #   targeted = ResultsLogWriter(adversarial=True, targeted=True)
-    add_meter(
+    m = Meter(
         f"benign_{name}",
         metric,
         "scenario.y",
@@ -278,7 +276,9 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final_name=f"benign_{final_suffix}",
         final_kwargs=final_kwargs,
     )
-    add_meter(
+    m.add_writer(ResultsLogWriter())
+    connect_meter(m)
+    m = Meter(
         f"adversarial_{name}",
         metric,
         "scenario.y",
@@ -288,8 +288,10 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final_name=f"adversarial_{final_suffix}",
         final_kwargs=final_kwargs,
     )
+    m.add_writer(ResultsLogWriter(adversarial=True))
+    connect_meter(m)
     if include_target:
-        add_meter(
+        m = Meter(
             f"targeted_{name}",
             metric,
             "scenario.y_target",
@@ -299,6 +301,8 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
             final_name=f"targeted_{final_suffix}",
             final_kwargs=final_kwargs,
         )
+        m.add_writer(ResultsLogWriter(adversarial=True, targeted=True))
+        connect_meter(m)
 
 
 def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
