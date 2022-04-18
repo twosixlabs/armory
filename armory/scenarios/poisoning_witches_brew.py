@@ -130,11 +130,14 @@ class WitchesBrewScenario(Poison):
                 else None
             )
 
+            attack_dir = os.path.join(paths.runtime_paths().saved_model_dir, "attacks")
+            os.makedirs(attack_dir, exist_ok=True)
+
             attack = config_loading.load_attack(attack_config, self.model)
+
             if data_filepath is not None:
-                data_filepath = os.path.join(
-                    paths.runtime_paths().dataset_dir, data_filepath
-                )
+                data_filepath = os.path.join(attack_dir, data_filepath)
+
             self.poisoner = DatasetPoisonerWitchesBrew(
                 attack,
                 x_test,
