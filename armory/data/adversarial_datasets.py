@@ -23,13 +23,7 @@ from armory.data.adversarial import (  # noqa: F401
     carla_video_tracking_dev as cvtd,
     carla_video_tracking_test as cvtt,
 )
-
-
-# The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this
-# number may correspond to real classes in other datasets, we convert this label 12 in the
-# APRICOT dataset to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID. We choose a negative integer
-# since it is unlikely that such a number represents the ID of a class in another dataset
-ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
+from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
 
 imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
@@ -364,7 +358,9 @@ def dapricot_label_preprocessing(x, y):
     for i in range(num_imgs_per_ex):
         y_object_img = {}
         for k, v in y_object.items():
-            y_object_img[k] = np.array(y_object[k].flat_values[i])
+            y_object_img[k] = np.expand_dims(
+                np.array(y_object[k].flat_values[i]), axis=0
+            )
         y_object_list.append(y_object_img)
 
         y_patch_metadata_img = {
