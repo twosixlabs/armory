@@ -48,7 +48,6 @@ class DatasetPoisonerWitchesBrew:
 
         y_trigger = self.target_class
 
-        # TODO is armory data oriented and scaled right for art_experimental
         poison_x, poison_y, poison_index = self.attack.poison(
             self.data_filepath,
             x_trigger,
@@ -61,6 +60,7 @@ class DatasetPoisonerWitchesBrew:
         if return_index:
             return poison_x, poison_y, poison_index
         return poison_x, poison_y
+
 
 
 class CifarWitchesBrew(Poison):
@@ -78,7 +78,7 @@ class CifarWitchesBrew(Poison):
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
-        # TODO how to pick or set trigger images
+        # TODO Needs discussion -- how are we actually going to pick trigger images.
         trigger_index = adhoc_config["trigger_index"]
         if isinstance(trigger_index, int):
             trigger_index = [trigger_index]
@@ -160,8 +160,6 @@ class CifarWitchesBrew(Poison):
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
 
-    # TODO think about sample exporting?
-
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
 
@@ -196,6 +194,8 @@ class CifarWitchesBrew(Poison):
                 y_ == np.argmax(y_pred_, axis=-1)
             )
 
+        self.y_pred = y_pred # for exporting when function returns
+
     def run_attack(self):
         # Only called for the trigger images
 
@@ -206,12 +206,24 @@ class CifarWitchesBrew(Poison):
 
         self.trigger_accuracy_metric.add_results(y, y_pred_adv)
 
+        self.y_pred_adv = y_pred_adv # for exporting when function returns
+
     def evaluate_current(self):
 
         if self.i in self.trigger_index:
             self.run_attack()
         else:
             self.run_benign()
+
+        # TODO Needs discussion--what is useful to export
+        # This just exports clean test samples, and all the triggers.
+        if (self.num_export_batches > self.sample_exporter.saved_batches) or self.i in self.trigger_index :
+            if self.sample_exporter.saved_samples == 0:
+                self.sample_exporter._make_output_dir()
+            name = "trigger" if self.i in self.trigger_index else "non-trigger"
+            self.sample_exporter._export_image(self.x[0], name=name)
+            self.sample_exporter.saved_samples += 1
+            self.sample_exporter.saved_batches = self.sample_exporter.saved_samples // self.config["dataset"]["batch_size"]
 
     def _add_accuracy_metrics_results(self):
         """ Adds accuracy results for trigger and non-trigger images
