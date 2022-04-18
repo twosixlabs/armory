@@ -62,7 +62,6 @@ class DatasetPoisonerWitchesBrew:
         return poison_x, poison_y
 
 
-
 class CifarWitchesBrew(Poison):
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
@@ -194,7 +193,7 @@ class CifarWitchesBrew(Poison):
                 y_ == np.argmax(y_pred_, axis=-1)
             )
 
-        self.y_pred = y_pred # for exporting when function returns
+        self.y_pred = y_pred  # for exporting when function returns
 
     def run_attack(self):
         # Only called for the trigger images
@@ -206,7 +205,7 @@ class CifarWitchesBrew(Poison):
 
         self.trigger_accuracy_metric.add_results(y, y_pred_adv)
 
-        self.y_pred_adv = y_pred_adv # for exporting when function returns
+        self.y_pred_adv = y_pred_adv  # for exporting when function returns
 
     def evaluate_current(self):
 
@@ -217,13 +216,18 @@ class CifarWitchesBrew(Poison):
 
         # TODO Needs discussion--what is useful to export
         # This just exports clean test samples, and all the triggers.
-        if (self.num_export_batches > self.sample_exporter.saved_batches) or self.i in self.trigger_index :
+        if (
+            self.num_export_batches > self.sample_exporter.saved_batches
+        ) or self.i in self.trigger_index:
             if self.sample_exporter.saved_samples == 0:
                 self.sample_exporter._make_output_dir()
             name = "trigger" if self.i in self.trigger_index else "non-trigger"
             self.sample_exporter._export_image(self.x[0], name=name)
             self.sample_exporter.saved_samples += 1
-            self.sample_exporter.saved_batches = self.sample_exporter.saved_samples // self.config["dataset"]["batch_size"]
+            self.sample_exporter.saved_batches = (
+                self.sample_exporter.saved_samples
+                // self.config["dataset"]["batch_size"]
+            )
 
     def _add_accuracy_metrics_results(self):
         """ Adds accuracy results for trigger and non-trigger images

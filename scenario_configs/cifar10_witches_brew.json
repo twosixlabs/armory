@@ -2,19 +2,25 @@
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "experiment_id": 0,
-        "fraction_poisoned": 0.05,
+        "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 200,
-        "trigger_index": 56,
+        "train_epochs": 100,
+        "trigger_index": [
+            5,
+            28,
+            37,
+            40,
+            52
+        ],
         "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "data_filepath": "gradient_matching_cifar_precomputed.npz",
+            "data_filepath": "witches_brew_source1_target2_eps10_fp05_triggers5,28,37,40,52.npz",
             "epsilon": 0.1,
             "learning_rate_schedule": [
                 [
@@ -68,6 +74,7 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
+        "export_batches": 1,
         "kwargs": {},
         "module": "armory.scenarios.poisoning_cifar10_witches_brew",
         "name": "CifarWitchesBrew"
