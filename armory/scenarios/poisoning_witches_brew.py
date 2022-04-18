@@ -252,15 +252,3 @@ class WitchesBrewScenario(Poison):
             f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
         )
 
-    def finalize_results(self):
-        self.results = {}
-
-        self._add_accuracy_metrics_results()
-
-        self._add_supplementary_metrics_results()
-
-        if self.use_filtering_defense:
-            self._add_filter_metrics_results()
-
-        if hasattr(self, "fairness_metrics") and not self.check_run:
-            self._add_fairness_metrics_results()
