@@ -113,6 +113,9 @@ class WitchesBrewScenario(Poison):
                     f"Trigger image {i} does not belong to source class (class {y_test[trigger_ind]} != class {self.source_class[i]})"
                 )
 
+        if sum([t==s for t, s in zip(self.target_class, self.source_class)]) > 0:
+            raise ValueError(f" No target class may equal source class; got target = {self.target_class} and source = {self.source_class}")
+
         if self.use_poison:
 
             attack_config["kwargs"]["percent_poison"] = adhoc_config[
