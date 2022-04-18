@@ -4,11 +4,11 @@ Set up the meters from a standard config file
 
 import numpy as np
 
-from armory.instrument import (
-    get_hub,
+from armory.instrument.instrument import (
     LogWriter,
     Meter,
     ResultsWriter,
+    get_hub,
 )
 from armory.logs import log
 from armory.utils import metrics
