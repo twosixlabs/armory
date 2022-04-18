@@ -207,7 +207,7 @@ class Scenario:
             )
 
         metrics_config = self.config["metric"]
-        metrics_logger = MetricsLogger.from_config(metrics_config,)
+        metrics_logger = MetricsLogger.from_config(metrics_config)
 
         self.profiler_kwargs = dict(
             profiler=metrics_config.get("profiler_type"),
