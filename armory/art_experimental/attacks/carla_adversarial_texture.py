@@ -48,10 +48,18 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
 
         if patch_points is None:
             pad_h_before = self.x_min
-            pad_h_after = int(videos.shape[self.i_h + 1] - pad_h_before - image_mask.shape[self.i_h_patch + 1])
+            pad_h_after = int(
+                videos.shape[self.i_h + 1]
+                - pad_h_before
+                - image_mask.shape[self.i_h_patch + 1]
+            )
 
             pad_w_before = self.y_min
-            pad_w_after = int(videos.shape[self.i_w + 1] - pad_w_before - image_mask.shape[self.i_w_patch + 1])
+            pad_w_after = int(
+                videos.shape[self.i_w + 1]
+                - pad_w_before
+                - image_mask.shape[self.i_w_patch + 1]
+            )
 
             image_mask = image_mask.permute(0, 3, 1, 2)
 
@@ -80,13 +88,20 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
             padded_patch = padded_patch.permute(0, 2, 3, 1)
 
             padded_patch = torch.unsqueeze(padded_patch, dim=1)
-            padded_patch = torch.repeat_interleave(padded_patch, dim=1, repeats=nb_frames)
+            padded_patch = torch.repeat_interleave(
+                padded_patch, dim=1, repeats=nb_frames
+            )
 
             padded_patch = padded_patch.float()
 
         else:
 
-            startpoints = [[0, 0], [frame_width, 0], [frame_width, frame_height], [0, frame_height]]
+            startpoints = [
+                [0, 0],
+                [frame_width, 0],
+                [frame_width, frame_height],
+                [0, frame_height],
+            ]
             endpoints = np.zeros_like(patch_points)
             endpoints[:, :, 0] = patch_points[:, :, 1]
             endpoints[:, :, 1] = patch_points[:, :, 0]
@@ -145,7 +160,10 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
             padded_patch = padded_patch.float()
 
         inverted_mask = (
-            torch.from_numpy(np.ones(shape=image_mask.shape, dtype=np.float32)).to(self.estimator.device) - image_mask
+            torch.from_numpy(np.ones(shape=image_mask.shape, dtype=np.float32)).to(
+                self.estimator.device
+            )
+            - image_mask
         )
 
         # Adjust green screen brightness
