@@ -73,7 +73,7 @@ class WitchesBrewScenario(Poison):
 
         dataset_config = self.config["dataset"]
         test_dataset = config_loading.load_dataset(
-            dataset_config, split="test", num_batches=None, **self.dataset_kwargs
+            dataset_config, split="test", num_batches=None, shuffle_files=False, **self.dataset_kwargs
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
@@ -161,6 +161,7 @@ class WitchesBrewScenario(Poison):
             dataset_config,
             split=eval_split,
             num_batches=self.num_eval_batches,
+            shuffle_files=False,
             **self.dataset_kwargs,
         )
         self.i = -1
