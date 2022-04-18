@@ -5,13 +5,10 @@ Set up the meters from a standard config file
 import numpy as np
 
 from armory.instrument import (
-    add_meter,
-    connect_meter,
-    add_writer,
-    ResultsWriter,
-    get_context,
+    get_hub,
     LogWriter,
     Meter,
+    ResultsWriter,
 )
 from armory.logs import log
 from armory.utils import metrics
@@ -22,6 +19,7 @@ from armory.utils import metrics
 #    2) replace old MetricsLogger with this one
 #    3) remove old MetricsLogger deprecated calls
 #    4) remove old code from armory.utils.metrics
+#    5) add test suite for measurement
 class MetricsLogger:
     """
     Uses the set of task and perturbation metrics given to it.
@@ -62,7 +60,7 @@ class MetricsLogger:
                 perturbation = [perturbation]
             perturbation_metrics(perturbation, use_mean=means)
 
-        add_writer(ResultsWriter(sink=self._sink))
+        get_hub().connect_writer(ResultsWriter(sink=self._sink))
 
         self.metric_results = None
         self.computational_resource_dict = {}
@@ -99,7 +97,7 @@ class MetricsLogger:
         self.metric_results = results_dict
 
     def _metric_results(self):
-        get_context().close()
+        get_hub().close()
         if self.metric_results is None:
             log.warning("No metric results received from ResultsWriter")
             return {}
@@ -136,15 +134,18 @@ def perturbation_metrics(names, use_mean=True):
     else:
         final = None
 
+    hub = get_hub()
     for name in names:
         metric = metrics.get_supported_metric(name)
-        add_meter(
-            name,
-            metric,
-            "scenario.x",
-            "scenario.x_adv",
-            final=final,
-            final_name=f"mean_{name}",
+        hub.connect_meter(
+            Meter(
+                name,
+                metric,
+                "scenario.x",
+                "scenario.x_adv",
+                final=final,
+                final_name=f"mean_{name}",
+            )
         )
 
 
@@ -246,6 +247,10 @@ class ResultsLogWriter(LogWriter):
 
 
 def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
+    """
+    Return list of meters generated for this specific task
+    """
+    meters = []
     metric = metrics.get_supported_metric(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
@@ -253,7 +258,7 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final = MeanAP(metric)
         final_kwargs = metric_kwargs
 
-        name = "identity"
+        name = "input_to_{name}"
         metric = identity
         metric_kwargs = None
     elif name == "word_error_rate":
@@ -266,43 +271,44 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final = None
         final_suffix = ""
 
-    m = Meter(
-        f"benign_{name}",
-        metric,
-        "scenario.y",
-        "scenario.y_pred",
-        metric_kwargs=metric_kwargs,
-        final=final,
-        final_name=f"benign_{final_suffix}",
-        final_kwargs=final_kwargs,
-    )
-    m.add_writer(ResultsLogWriter())
-    connect_meter(m)
-    m = Meter(
-        f"adversarial_{name}",
-        metric,
-        "scenario.y",
-        "scenario.y_pred_adv",
-        metric_kwargs=metric_kwargs,
-        final=final,
-        final_name=f"adversarial_{final_suffix}",
-        final_kwargs=final_kwargs,
-    )
-    m.add_writer(ResultsLogWriter(adversarial=True))
-    connect_meter(m)
-    if include_target:
-        m = Meter(
-            f"targeted_{name}",
+    meters.append(
+        Meter(
+            f"benign_{name}",
             metric,
-            "scenario.y_target",
+            "scenario.y",
+            "scenario.y_pred",
+            metric_kwargs=metric_kwargs,
+            final=final,
+            final_name=f"benign_{final_suffix}",
+            final_kwargs=final_kwargs,
+        )
+    )
+    meters.append(
+        Meter(
+            f"adversarial_{name}",
+            metric,
+            "scenario.y",
             "scenario.y_pred_adv",
             metric_kwargs=metric_kwargs,
             final=final,
-            final_name=f"targeted_{final_suffix}",
+            final_name=f"adversarial_{final_suffix}",
             final_kwargs=final_kwargs,
         )
-        m.add_writer(ResultsLogWriter(adversarial=True, targeted=True))
-        connect_meter(m)
+    )
+    if include_target:
+        meters.append(
+            Meter(
+                f"targeted_{name}",
+                metric,
+                "scenario.y_target",
+                "scenario.y_pred_adv",
+                metric_kwargs=metric_kwargs,
+                final=final,
+                final_name=f"targeted_{final_suffix}",
+                final_kwargs=final_kwargs,
+            )
+        )
+    return meters
 
 
 def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
@@ -310,8 +316,27 @@ def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
         task_kwargs = [None] * len(names)
     elif len(names) != len(task_kwargs):
         raise ValueError(f"{len(names)} tasks but {len(task_kwargs)} task_kwargs")
+    hub = get_hub()
 
+    tuples = []
     for name, metric_kwargs in zip(names, task_kwargs):
-        _task_metric(
+        task = _task_metric(
             name, metric_kwargs, use_mean=use_mean, include_target=include_target
+        )
+        tuples.append(task)
+
+    if include_target:
+        benign, adversarial, targeted = zip(*tuples)
+    else:
+        benign, adversarial = zip(*tuples)
+    meters = [m for tup in tuples for m in tup]  # unroll list of tuples
+
+    for m in meters:
+        hub.connect_meter(m)
+
+    hub.connect_writer(ResultsLogWriter(), meters=benign)
+    hub.connect_writer(ResultsLogWriter(adversarial=True), meters=adversarial)
+    if include_target:
+        hub.connect_writer(
+            ResultsLogWriter(adversarial=True, targeted=True), meters=targeted
         )

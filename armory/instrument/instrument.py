@@ -38,8 +38,8 @@ import json
 from armory import log
 
 
-_CONTEXT = None
 _PROBES = {}
+_HUB = None
 
 
 class Probe:
@@ -171,54 +171,9 @@ def process_meter_arg(arg: str):
     return probe_variable, stage_filter
 
 
-class Hub:
-    """
-    Map between probes, meters, and writers
-
-    Keep 'context' as a namespace inside Hub?
-        Use the indexing method as a way to filter
-
-    model.x_post[benign]
-    probe_name.probe_variable[stage]
-    """
-
-    def __init__(self):
-        pass
-
-    def is_measuring(self, probe_variable):
-        pass
-
-    def update(self, probe_variable, value):
-        pass
-
-    def map_probe_update_to_meter_input(self, probe_variable):
-        pass
-
-    def connect_meter(self, meter):
-        pass
-
-    def disconnect_meter(self, meter):
-        pass
-
-    def set_context(self, name, value):
-        pass
-
-    def get_context(self, name, value):
-        pass
-
-    def connect_writer(self, writer):
-        pass
-
-    def disconnect_writer(self, writer):
-        pass
-
-    def close(self):
-        pass
-
-
 class ProbeMapper:
     """
-    Map from probe outputs to meters
+    Map from probe outputs to meters. For internal use by Hub object.
     """
 
     def __init__(self):
@@ -278,7 +233,7 @@ class ProbeMapper:
                 if not filter_map:
                     self.probe_filter_meter_arg.pop(probe_variable)
 
-    def map_to_meters_args(self, probe_variable, stage):
+    def map_probe_update_to_meter_input(self, probe_variable, stage):
         """
         Return a list of (meter, arg) that are using the current probe_variable
         """
@@ -288,35 +243,46 @@ class ProbeMapper:
         return meters
 
 
-class Context:  # NOTE: may need to rename to something like Experiment or Procedure
-    def __init__(self, name="global"):
-        self.name = name
-        self.batch = -1
-        self.stage = ""
+class Hub:
+    """
+    Map between probes, meters, and writers
+
+    Maintains context of overall experiment in hub.context
+    """
+
+    def __init__(self):
+        self.context = dict(batch=-1, stage="",)
         self.mapper = ProbeMapper()
         self.meters = []
         self.writers = []
         self.closed = False
 
-    def set_stage(self, stage: str):
-        self.stage = stage
+    def set_context(self, **kwargs):
+        for k in kwargs:
+            if k not in ("stage", "batch"):
+                log.warning(f"set_context kwarg {k} not currently used by Hub")
+            if not k.isidentifier():
+                raise ValueError(
+                    f"set_context kwargs must be valid identifiers, not {k}"
+                )
+        self.context.update(kwargs)
 
-    def set_batch(self, batch: int):
-        # NOTE: batch could be a set of sample indices
-        self.batch = batch
-
-    def increment_batch(self):
-        self.batch += 1
-
+    # is_measuring and update implement the sink interface
     def is_measuring(self, probe_variable):
-        return bool(self.mapper.map_to_meters_args(probe_variable, self.stage))
+        return bool(
+            self.mapper.map_probe_update_to_meter_input(
+                probe_variable, self.context["stage"]
+            )
+        )
 
     def update(self, probe_variable, value):
-        meters_args = self.mapper.map_to_meters_args(probe_variable, self.stage)
+        meters_args = self.mapper.map_probe_update_to_meter_input(
+            probe_variable, self.context["stage"]
+        )
         if not meters_args:
             raise ValueError("No meters are measuring")
         for meter, arg in meters_args:
-            meter.set(arg, value, self.batch)
+            meter.set(arg, value, self.context["batch"])
 
     def connect_meter(self, meter):
         if meter in self.meters:
@@ -324,23 +290,37 @@ class Context:  # NOTE: may need to rename to something like Experiment or Proce
 
         self.meters.append(meter)
         self.mapper.connect_meter(meter)
-        for writer in self.writers:
+
+    def connect_writer(self, writer, meters=None):
+        """
+        Convenience method to add writer to all (or a subset of meters)
+
+        meters - if None, add to all current meters
+            otherwise, meters should be a list of names and/or Meter objects
+                the writer is connected to those meters
+            if meters is an empty list, the writer will be added but no meters connected
+        """
+        if meters is None:
+            meters_list = self.meters
+        else:
+            # parse meters list
+            meters_list = []
+            for m in meters:
+                if isinstance(m, str):
+                    pass
+                elif isinstance(m, Meter):
+                    if m in self.meters:
+                        meters_list.append(m)
+                else:
+                    raise ValueError(
+                        f"meters includes {m}, which is neither a str nor Meter"
+                    )
+
+        for meter in meters_list:
             meter.add_writer(writer)
 
-    def get_meters(self):
-        return self.meters
-
-    def add_writer(self, writer):
-        """
-        Convenience method to add writer to all meters in this context
-        """
-        if writer in self.writers:
-            log.warning(f"writer {writer} already connected to {self.name} context")
-            return
-
-        self.writers.append(writer)
-        for meter in self.meters:
-            meter.add_writer(writer)
+        if writer not in self.writers:
+            self.writers.append(writer)
 
     def close(self):
         if self.closed:
@@ -348,6 +328,7 @@ class Context:  # NOTE: may need to rename to something like Experiment or Proce
 
         for meter in self.meters:
             meter.finalize()
+
         for writer in self.writers:
             writer.close()
 
@@ -369,6 +350,8 @@ class Meter:
     ):
         """
         StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
+
+        probe_name.probe_variable[stage]
 
         metric_kwargs - kwargs that are constant across measurements
         auto_measure - whether to measure when all of the variables are present
@@ -608,14 +591,14 @@ class ResultsWriter(Writer):
 # GLOBAL CONTEXT METHODS #
 
 
-def get_context():
+def get_hub():
     """
-    Get the context state object for the experimental procedure
+    Get the global hub and context object for the measurement procedure
     """
-    global _CONTEXT
-    if _CONTEXT is None:
-        _CONTEXT = Context()
-    return _CONTEXT
+    global _HUB
+    if _HUB is None:
+        _HUB = Hub()
+    return _HUB
 
 
 def get_probe(name: str = ""):
@@ -627,26 +610,9 @@ def get_probe(name: str = ""):
 
     if name not in _PROBES:
         probe = Probe(name)
-        probe.set_sink(get_context())
+        probe.set_sink(get_hub())
         _PROBES[name] = probe
     return _PROBES[name]
-
-
-def connect_meter(meter):
-    get_context().connect_meter(meter)
-
-
-def add_meter(*args, **kwargs):
-    meter = Meter(*args, **kwargs)
-    connect_meter(meter)
-
-
-def get_meters():
-    return get_context().get_meters()
-
-
-def add_writer(writer):
-    get_context().add_writer(writer)
 
 
 def main():
@@ -680,33 +646,43 @@ def main():
     # from armory.instrument import add_writer, add_meter
     from armory.utils import metrics
 
-    add_writer(PrintWriter())
-    add_meter(
-        "postprocessed_l2_distance",
-        metrics.l2,
-        "model.prep_output[benign]",
-        "model.prep_output[adversarial]",
+    hub = get_hub()
+    hub.connect_meter(
+        Meter(
+            "postprocessed_l2_distance",
+            metrics.l2,
+            "model.prep_output[benign]",
+            "model.prep_output[adversarial]",
+        )
     )
-    add_meter(  # TODO: enable adding context for iteration number of attack
-        "sum of x_adv", np.sum, "attack.x_adv",  # could also do "attack.x_adv[attack]"
+    hub.connect_meter(
+        Meter(  # TODO: enable adding context for iteration number of attack
+            "sum of x_adv",
+            np.sum,
+            "attack.x_adv",  # could also do "attack.x_adv[attack]"
+        )
     )
-    add_meter(
-        "categorical_accuracy",
-        metrics.categorical_accuracy,
-        "scenario.y",
-        "scenario.y_pred",
+    hub.connect_meter(
+        Meter(
+            "categorical_accuracy",
+            metrics.categorical_accuracy,
+            "scenario.y",
+            "scenario.y_pred",
+        )
     )
-    add_meter(  # Never measured, since 'y_target' is never set
-        "targeted_categorical_accuracy",
-        metrics.categorical_accuracy,
-        "scenario.y_target",
-        "scenario.y_pred",
+    hub.connect_meter(
+        Meter(  # Never measured, since 'y_target' is never set
+            "targeted_categorical_accuracy",
+            metrics.categorical_accuracy,
+            "scenario.y_target",
+            "scenario.y_pred",
+        )
     )
+    hub.connect_writer(PrintWriter())
 
     # End metric setup
 
-    # Update stages and batches in scecnario loop (this would happen in main scenario file)
-    context = get_context()
+    # Update stages and batches in scenario loop (this would happen in main scenario file)
     model = Model()
     # Normally, model, attack, and scenario probes would be defined in different files
     #    and therefore just be called 'probe'
@@ -714,28 +690,27 @@ def main():
     scenario_probe = get_probe("scenario")
     not_connected_probe = Probe("not_connected")
     for i in range(10):
-        context.set_stage("get_batch")
-        context.set_batch(i)
+        hub.set_context(stage="get_batch", batch=i)
         x = np.random.random(100)
         y = np.random.randint(10)
         scenario_probe.update(x=x, y=y)
         not_connected_probe.update(x)  # should send a warning once
 
-        context.set_stage("benign")
+        hub.set_context(stage="benign")
         y_pred = model.predict(x)
         scenario_probe.update(y_pred=y_pred)
 
-        context.set_stage("attack")
+        hub.set_context(stage="benign")
         x_adv = x
         for j in range(5):
             model.predict(x_adv)
             x_adv = x_adv + np.random.random(100) * 0.1
             attack_probe.update(x_adv=x_adv)
 
-        context.set_stage("adversarial")
+        hub.set_context(stage="benign")
         y_pred_adv = model.predict(x_adv)
         scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
-    context.close()
+    hub.close()
 
 
 if __name__ == "__main__":
