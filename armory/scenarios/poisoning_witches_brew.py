@@ -149,22 +149,6 @@ class WitchesBrewScenario(Poison):
             )
             self.test_poisoner = self.poisoner
 
-    def load_metrics(self):
-        self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
-        self.trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
-
-        self.benign_test_accuracy_per_class = (
-            {}
-        )  # store accuracy results for each class
-        if self.config["adhoc"].get("compute_fairness_metrics", False):
-            self.fairness_metrics = FairnessMetrics(
-                self.config["adhoc"], self.use_filtering_defense, self
-            )
-        else:
-            log.warning(
-                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
-            )
-
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
 
@@ -180,6 +164,22 @@ class WitchesBrewScenario(Poison):
             **self.dataset_kwargs,
         )
         self.i = -1
+
+    def load_metrics(self):
+        self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
+        self.trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
+
+        self.benign_test_accuracy_per_class = (
+            {}
+        )  # store accuracy results for each class
+        if self.config["adhoc"].get("compute_fairness_metrics", False):
+            self.fairness_metrics = FairnessMetrics(
+                self.config["adhoc"], self.use_filtering_defense, self
+            )
+        else:
+            log.warning(
+                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
+            )
 
     def run_benign(self):
         # Called for all non-triggers
