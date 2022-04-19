@@ -89,18 +89,6 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
-def test_entailment():
-    metric = Entailment()
-    from armory.attacks.librispeech_target_labels import (
-        ground_truth_100,
-        entailment_100,
-    )
-
-    gt = metric(ground_truth_100, ground_truth_100)
-    gt_en = metric(ground_truth_100, entailment_100)
-    return gt, gt_en
-
-
 def abstains(y, y_pred):
     """
     For each sample in y_pred:
