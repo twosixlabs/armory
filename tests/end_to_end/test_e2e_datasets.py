@@ -535,14 +535,14 @@ def test_dapricot_test():
 def test_carla_obj_det_train():
 
     dataset = datasets.carla_obj_det_train(split="train")
-    assert dataset.size == 4727
+    assert dataset.size == 3496
     # Testing batch_size > 1
     batch_size = 2
     for modality in ["rgb", "depth", "both"]:
         expected_shape = (
-            (batch_size, 600, 800, 6)
+            (batch_size, 960, 1280, 6)
             if modality == "both"
-            else (batch_size, 600, 800, 3)
+            else (batch_size, 960, 1280, 3)
         )
         ds_batch_size2 = datasets.carla_obj_det_train(
             split="train", batch_size=batch_size, modality=modality
