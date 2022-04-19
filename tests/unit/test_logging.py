@@ -1,4 +1,3 @@
-import pytest
 from armory.logs import log
 
 # test the loguru based logs module for proper pytest caplog behavior
