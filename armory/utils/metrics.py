@@ -11,50 +11,94 @@ import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
+import os
 from typing import Dict, List
 
 import cProfile
 import pstats
 from scipy import stats
 
+from armory import paths
 from armory.data.adversarial.apricot_metadata import (
     ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
     APRICOT_PATCHES,
 )
 from armory.logs import log
-from armory.utils.external_repo import ExternalRepoImport
+from armory.utils.external_repo import ExternalPipInstalledImport
+
+# TODO: update label_mapping with total counts after measurement PR
+_ENTAILMENT_MODEL = None
 
 
 class Entailment:
     # TEST Reference (from Mike):
     # For reference, on the first 100 benign predictions, I got 94 entailment and 6 contradictions. The Eval 5 target phrases should produce 100 contradictions.
+    def __init__(self, model_name="roberta-large-mnli", cache_dir=None):
+        # Don't generate multiple entailment models
+        global _ENTAILMENT_MODEL
+        if _ENTAILMENT_MODEL is not None:
+            if model_name == _ENTAILMENT_MODEL[0]:
+                log.info(f"Using existing entailment model {model_name} for metric")
+                self.tokenizer, self.model, self.label_mapping = _ENTAILMENT_MODEL[2:]
+                return
+            else:
+                log.warning(
+                    f"Creating new entailment model {model_name} though {_ENTAILMENT_MODEL[0]} exists"
+                )
 
-    # Install fairseq - https://github.com/pytorch/fairseq#requirements-and-installation
-    # The following steps should suffice:
-    # git clone https://github.com/pytorch/fairseq
-    # cd fairseq
-    # pip install --editable ./
+        if cache_dir is None:
+            cache_dir = os.path.join(
+                paths.runtime_paths().saved_model_dir, "huggingface"
+            )
 
-    def __init__(self):
-        import torch
-
-        with ExternalRepoImport(
-            repo="pytorch/fairseq", experiment="librispeech_asr_entailment.json",
+        with ExternalPipInstalledImport(
+            package="transformers", dockerimage="twosixarmory/pytorch-deepspeech",
         ):
-            import fairseq  # noqa: F401
+            from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
-        # TODO: FIX torch hub pathing
-        self.roberta = torch.hub.load("pytorch/fairseq", "roberta.large.mnli")
-        self.roberta.eval()  # disable dropout for evaluation
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, cache_dir=cache_dir
+        )
+        self.model.eval()
+        # self.label_mapping = ['contradiction', 'neutral', 'entailment']
+        self.label_mapping = [0, 1, 2]
+        _ENTAILMENT_MODEL = (
+            model_name,
+            cache_dir,
+            self.tokenizer,
+            self.model,
+            self.label_mapping,
+        )
 
     def __call__(self, y, y_pred):
+        import torch
+
         # In Armory, y is stored as byte strings, and y_pred is stored as strings
-        y = np.array([y_i.decode("utf-8") for y_i in y if isinstance(y_i, bytes)])
-        tokens = self.roberta.encode(y, y_pred)
-        prediction = self.roberta.predict("mnli", tokens).argmax()
-        # 0: 'contradiction', 1: 'neutral', 2: 'entailment'
-        # TODO: Final metric should count # of 0, 1, and 2
-        return prediction
+        y = np.array(
+            [y_i.decode("utf-8") if isinstance(y_i, bytes) else y_i for y_i in y]
+        )
+        sentence_pairs = list(zip(y, y_pred))
+        features = self.tokenizer(
+            sentence_pairs, padding=True, truncation=True, return_tensors="pt"
+        )
+        with torch.no_grad():
+            scores = self.model(**features).logits
+            labels = [self.label_mapping[i] for i in scores.argmax(dim=1)]
+
+        return labels  # return list of labels, not (0, 1, 2)
+
+
+def test_entailment():
+    metric = Entailment()
+    from armory.attacks.librispeech_target_labels import (
+        ground_truth_100,
+        entailment_100,
+    )
+
+    gt = metric(ground_truth_100, ground_truth_100)
+    gt_en = metric(ground_truth_100, entailment_100)
+    return gt, gt_en
 
 
 def abstains(y, y_pred):
@@ -1756,6 +1800,7 @@ def get_supported_metric(name):
         # If a class is given, instantiate it
         function = function()
     assert callable(function), f"function {name} is not callable"
+    return function
 
 
 class MetricList:
@@ -2053,6 +2098,13 @@ class MetricsLogger:
                         raise ZeroDivisionError(
                             f"No values to calculate WER in {prefix}_{metric.name}"
                         )
+                if metric.name == "entailment":
+                    c = Counter()
+                    entailment_map = ["contradiction", "neutral", "entailment"]
+                    values = [entailment_map[x] for x in metric.values()]
+                    c.update(values)
+                    c["total"] = len(values)
+                    results[f"{prefix}_total_{metric.name}"] = c
 
         for name in self.computational_resource_dict:
             entry = self.computational_resource_dict[name]

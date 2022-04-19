@@ -74,7 +74,6 @@
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch-deepspeech",
         "external_github_repo": [
-            "pytorch/fairseq@83e615d66905b8ca7483122a37da1a85f13f4b8e",
             "SeanNaren/deepspeech.pytorch@V3.0"
         ],
         "gpus": "all",
