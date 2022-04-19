@@ -891,7 +891,7 @@ def carla_obj_det_train(
     )
 
     return _generator_from_tfds(
-        "carla_obj_det_train:1.0.1",
+        "carla_obj_det_train:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
