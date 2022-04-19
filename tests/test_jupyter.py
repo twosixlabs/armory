@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-pytestmark = pytest.mark.manual_jupyter
+pytestmark = pytest.mark.jupyter_manual
 
 
 TEST_DATA_DIR = os.path.join("tests", "test_data")
