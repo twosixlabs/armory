@@ -31,8 +31,16 @@ _ENTAILMENT_MODEL = None
 
 
 class Entailment:
-    # TEST Reference (from Mike):
-    # For reference, on the first 100 benign predictions, I got 94 entailment and 6 contradictions. The Eval 5 target phrases should produce 100 contradictions.
+    """
+    Entailment measures the relationship between the premise y and hypothesis y_pred
+    It can be categorized as three values:
+        0 - "contradiction" - the hypothesis contradicts the premise
+        1 - "neutral" - the hypothesis is logically unrelated to the premise
+        2 - "entailment" - the hypothesis follows from the premise
+
+    See: https://towardsdatascience.com/fine-tuning-pre-trained-transformer-models-for-sentence-entailment-d87caf9ec9db
+    """
+
     def __init__(self, model_name="roberta-large-mnli", cache_dir=None):
         # Don't generate multiple entailment models
         global _ENTAILMENT_MODEL
