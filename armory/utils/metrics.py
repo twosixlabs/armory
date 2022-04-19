@@ -2019,6 +2019,18 @@ class MetricsLogger:
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
+            elif metric.name == "entailment":
+                c = Counter()
+                entailment_map = ["contradiction", "neutral", "entailment"]
+                values = [entailment_map[x] for x in metric.values()]
+                c.update(values)
+                total = len(values)
+                log.success(
+                    f"Entailment results on {task_type} test examples relative to {wrt} labels: "
+                    f"contradiction: {c['contradiction']}/{total}, "
+                    f"neutral: {c['neutral']}/{total}, "
+                    f"entailment: {c['entailment']}/{total}"
+                )
             elif metric.name in self.non_elementwise_metrics:
                 if self.task_kwargs:
                     metric_result = metric.compute_non_elementwise_metric(
@@ -2077,6 +2089,15 @@ class MetricsLogger:
                             metric_result.values(), dtype=float
                         ).mean()
                     continue
+                if metric.name == "entailment":
+                    c = Counter()
+                    entailment_map = ["contradiction", "neutral", "entailment"]
+                    values = [entailment_map[x] for x in metric.values()]
+                    c.update(values)
+                    c["total"] = len(values)
+                    results[f"{prefix}_{metric.name}"] = values
+                    results[f"{prefix}_total_{metric.name}"] = c
+                    continue
 
                 if self.full:
                     results[f"{prefix}_{metric.name}"] = metric.values()
@@ -2094,13 +2115,6 @@ class MetricsLogger:
                         raise ZeroDivisionError(
                             f"No values to calculate WER in {prefix}_{metric.name}"
                         )
-                if metric.name == "entailment":
-                    c = Counter()
-                    entailment_map = ["contradiction", "neutral", "entailment"]
-                    values = [entailment_map[x] for x in metric.values()]
-                    c.update(values)
-                    c["total"] = len(values)
-                    results[f"{prefix}_total_{metric.name}"] = c
 
         for name in self.computational_resource_dict:
             entry = self.computational_resource_dict[name]
