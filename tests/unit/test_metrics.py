@@ -62,7 +62,7 @@ def test_entailment():
     #     'MAY WE SEE GATES AT ONCE ASKED KENNETH
     #     >>> entailment_100[38]
     #     'MAY WE SEE GATES TOMORROW ASKED KENNETH'
-    assert c["entailment"] >= 98
+    assert c["contradiction"] >= 98
 
 
 def test_abstains():
