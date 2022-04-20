@@ -108,5 +108,8 @@ class CarlaObjectDetectionTask(Scenario):
             if k in metric_config
         }
         self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
-            subset_config, skip_benign=True, targeted=False
+            subset_config,
+            skip_benign=True,
+            targeted=False,
+            skip_attack=self.skip_attack,
         )
