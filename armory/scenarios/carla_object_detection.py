@@ -30,7 +30,10 @@ class CarlaObjectDetectionTask(Scenario):
 
     def next(self):
         super().next()
-        self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
+        # The CARLA dev and test sets (as opposed to train/val) contain green-screens
+        # and thus have a tuple of two types of labels that we separate here
+        if isinstance(self.y, tuple):
+            self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
 
     def run_benign(self):
         x, y = self.x, self.y
@@ -43,6 +46,11 @@ class CarlaObjectDetectionTask(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
+        if not hasattr(self, "y_patch_metadata"):
+            raise AttributeError(
+                "y_patch_metadata attribute does not exist. Please set --skip-attack if using "
+                "CARLA train set"
+            )
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
