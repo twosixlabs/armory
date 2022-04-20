@@ -266,7 +266,7 @@ class ResultsLogWriter(LogWriter):
         #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
         if "word_error_rate" in name and "total_word_error_rate" not in name:
             if "total_word_error_rate" not in name:
-                result = total_wer(result) 
+                result = total_wer(result)
             total, (num, denom) = total_wer(result)
             f_result = f"total={total:.2%}, {num}/{denom}"
         elif any(m in name for m in MEAN_AP_METRICS):
