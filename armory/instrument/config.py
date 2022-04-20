@@ -213,8 +213,11 @@ def total_wer(sample_wers):
 
 
 # TODO: move to armory.utils.metrics
-def identity(*args):
-    return args
+def identity_unzip(*args):
+    """
+    Map batchwise args to a list of sample-wise args
+    """
+    return list(zip(*args))
 
 
 # TODO: move to armory.utils.metrics
@@ -222,7 +225,8 @@ class MeanAP:
     def __init__(self, ap_metric):
         self.ap_metric = ap_metric
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, values, **kwargs):
+        args = [list(x) for x in zip(*values)]
         ap = self.ap_metric(*args, **kwargs)
         mean_ap = np.fromiter(ap.values(), dtype=float).mean()
         return {"mean": mean_ap, "class": ap}
@@ -258,12 +262,22 @@ class ResultsLogWriter(LogWriter):
             self.task_type = "benign"
 
     def _write(self, name, batch, result):
-        if name == "word_error_rate":
+        # TODO: once metrics have also been updated, rewrite to be less error prone
+        #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
+        if "word_error_rate" in name and "total_word_error_rate" not in name:
+            if "total_word_error_rate" not in name:
+                result = total_wer(result) 
             total, (num, denom) = total_wer(result)
             f_result = f"total={total:.2%}, {num}/{denom}"
-        elif name in MEAN_AP_METRICS:
+        elif any(m in name for m in MEAN_AP_METRICS):
+            if "input_to" in name:
+                for m in MEAN_AP_METRICS:
+                    if m in name:
+                        metric = metrics.SUPPORTED_METRICS[m]
+                        result = MeanAP(metric)(result)
+                        break
             f_result = f"{result}"
-        elif name in QUANTITY_METRICS:
+        elif any(m in name for m in QUANTITY_METRICS):
             # Don't include % symbol
             f_result = f"{np.mean(result):.2}"
         else:
@@ -294,7 +308,7 @@ def _task_metric(
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = identity
+        metric = identity_unzip
         metric_kwargs = None
     elif name == "word_error_rate":
         final = total_wer
@@ -414,7 +428,7 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = identity
+        metric = identity_unzip
         metric_kwargs = None
     elif name == "word_error_rate":
         final = total_wer

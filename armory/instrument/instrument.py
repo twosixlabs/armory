@@ -474,7 +474,6 @@ class Meter:
                 self._results.extend(result)
             except TypeError:
                 self._results.append(result)
-            # TODO: only global?
         for writer in self.writers:
             writer.write(record)
         if not self.keep_results and not self.writers and not self._warned:

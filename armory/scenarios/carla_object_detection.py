@@ -34,6 +34,7 @@ class CarlaObjectDetectionTask(Scenario):
         # and thus have a tuple of two types of labels that we separate here
         if isinstance(self.y, tuple):
             self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
+            self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_attack(self):
         self._check_x("run_attack")
