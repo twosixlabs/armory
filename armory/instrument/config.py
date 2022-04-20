@@ -20,7 +20,15 @@ class MetricsLogger:
     """
 
     def __init__(
-        self, task=None, task_kwargs=None, perturbation=None, means=True, **kwargs,
+        self,
+        task=None,
+        task_kwargs=None,
+        perturbation=None,
+        means=True,
+        include_benign=True,
+        include_adversarial=True,
+        include_targeted=True,
+        **kwargs,
     ):
         """
         task - single metric or list of metrics
@@ -28,6 +36,9 @@ class MetricsLogger:
         perturbation - single metric or list of metrics
         means - whether to return the mean value for each metric
         record_metric_per_sample - whether to return metric values for each sample
+        include_benign - whether to include benign task metrics
+        include_adversarial - whether to include adversarial task metrics
+        include_targeted - whether to include targeted task metrics
         """
         if kwargs.pop("record_metric_per_sample", None) is not None:
             log.warning(
@@ -43,6 +54,9 @@ class MetricsLogger:
         self.task_kwargs = task_kwargs
         self.perturbation = perturbation
         self.means = means
+        self.include_benign = include_benign
+        self.include_adversarial = include_adversarial
+        self.include_targeted = include_targeted
         if task is not None:
             if isinstance(task, str):
                 self.task = [task]
@@ -52,7 +66,9 @@ class MetricsLogger:
             task_metrics(
                 self.task,
                 use_mean=means,
-                include_target=True,
+                include_benign=self.include_benign,
+                include_adversarial=self.include_adversarial,
+                include_targeted=self.include_targeted,
                 task_kwargs=self.task_kwargs,
             )
         if perturbation is not None:
@@ -77,10 +93,7 @@ class MetricsLogger:
             )
 
     @classmethod
-    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
-        del skip_benign
-        del skip_attack
-        del targeted
+    def from_config(cls, config):
         return cls(**config)
 
     def _computational_results(self):
@@ -260,7 +273,14 @@ class ResultsLogWriter(LogWriter):
         )
 
 
-def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
+def _task_metric(
+    name,
+    metric_kwargs,
+    use_mean=True,
+    include_benign=True,
+    include_adversarial=True,
+    include_targeted=True,
+):
     """
     Return list of meters generated for this specific task
     """
@@ -286,31 +306,37 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
         final = None
         final_suffix = ""
 
-    meters.append(
-        Meter(
-            f"benign_{name}",
-            metric,
-            "scenario.y",
-            "scenario.y_pred",
-            metric_kwargs=metric_kwargs,
-            final=final,
-            final_name=f"benign_{final_suffix}",
-            final_kwargs=final_kwargs,
+    if include_benign:
+        meters.append(
+            Meter(
+                f"benign_{name}",
+                metric,
+                "scenario.y",
+                "scenario.y_pred",
+                metric_kwargs=metric_kwargs,
+                final=final,
+                final_name=f"benign_{final_suffix}",
+                final_kwargs=final_kwargs,
+            )
         )
-    )
-    meters.append(
-        Meter(
-            f"adversarial_{name}",
-            metric,
-            "scenario.y",
-            "scenario.y_pred_adv",
-            metric_kwargs=metric_kwargs,
-            final=final,
-            final_name=f"adversarial_{final_suffix}",
-            final_kwargs=final_kwargs,
+    else:
+        meters.append(None)
+    if include_adversarial:
+        meters.append(
+            Meter(
+                f"adversarial_{name}",
+                metric,
+                "scenario.y",
+                "scenario.y_pred_adv",
+                metric_kwargs=metric_kwargs,
+                final=final,
+                final_name=f"adversarial_{final_suffix}",
+                final_kwargs=final_kwargs,
+            )
         )
-    )
-    if include_target:
+    else:
+        meters.append(None)
+    if include_targeted:
         meters.append(
             Meter(
                 f"targeted_{name}",
@@ -323,10 +349,21 @@ def _task_metric(name, metric_kwargs, use_mean=True, include_target=True):
                 final_kwargs=final_kwargs,
             )
         )
+    else:
+        meters.append(None)
     return meters
 
 
-def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
+def task_metrics(
+    names,
+    use_mean=True,
+    include_benign=True,
+    include_adversarial=True,
+    include_targeted=True,
+    task_kwargs=None,
+):
+    if not any([include_benign, include_adversarial, include_targeted]):
+        return
     if task_kwargs is None:
         task_kwargs = [None] * len(names)
     elif len(names) != len(task_kwargs):
@@ -336,22 +373,28 @@ def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
     tuples = []
     for name, metric_kwargs in zip(names, task_kwargs):
         task = _task_metric(
-            name, metric_kwargs, use_mean=use_mean, include_target=include_target
+            name,
+            metric_kwargs,
+            use_mean=use_mean,
+            include_benign=include_benign,
+            include_adversarial=include_adversarial,
+            include_targeted=include_targeted,
         )
         tuples.append(task)
 
-    if include_target:
-        benign, adversarial, targeted = zip(*tuples)
-    else:
-        benign, adversarial = zip(*tuples)
-    meters = [m for tup in tuples for m in tup]  # unroll list of tuples
+    benign, adversarial, targeted = zip(*tuples)
+    meters = [
+        m for tup in tuples for m in tup if m is not None
+    ]  # unroll list of tuples
 
     for m in meters:
         hub.connect_meter(m)
 
-    hub.connect_writer(ResultsLogWriter(), meters=benign)
-    hub.connect_writer(ResultsLogWriter(adversarial=True), meters=adversarial)
-    if include_target:
+    if include_benign:
+        hub.connect_writer(ResultsLogWriter(), meters=benign)
+    if include_adversarial:
+        hub.connect_writer(ResultsLogWriter(adversarial=True), meters=adversarial)
+    if include_targeted:
         hub.connect_writer(
             ResultsLogWriter(adversarial=True, targeted=True), meters=targeted
         )
