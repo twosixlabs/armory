@@ -119,6 +119,9 @@ class MetricsLogger:
     def clear(self):
         self._deprecation_error("clear")
 
+    def update_task(self, y, y_pred, adversarial=False, targeted=False):
+        self._deprecation_error("update_task")
+
     def update_perturbation(self, x, x_adv):
         self._deprecation_error("update_perturbation")
 
