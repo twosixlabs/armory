@@ -35,22 +35,14 @@ class CarlaObjectDetectionTask(Scenario):
         if isinstance(self.y, tuple):
             self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
 
-    def run_benign(self):
-        x, y = self.x, self.y
-
-        x.flags.writeable = False
-
-        with metrics.resource_context(name="Inference", **self.profiler_kwargs):
-            y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(y, y_pred)
-        self.y_pred = y_pred
-
     def run_attack(self):
+        self._check_x("run_attack")
         if not hasattr(self, "y_patch_metadata"):
             raise AttributeError(
                 "y_patch_metadata attribute does not exist. Please set --skip-attack if using "
                 "CARLA train set"
             )
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -69,17 +61,13 @@ class CarlaObjectDetectionTask(Scenario):
             )
 
         # Ensure that input sample isn't overwritten by model
+        self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
-        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
-        self.metrics_logger_wrt_benign_preds.update_task(
-            self.y_pred, y_pred_adv, adversarial=True
-        )
+
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
-            self.metrics_logger.update_task(
-                y_target, y_pred_adv, adversarial=True, targeted=True
-            )
-        self.metrics_logger.update_perturbation(x, x_adv)
+            self.probe.update(y_target=y_target)
 
         # If using multimodal input, add a warning if depth channels are perturbed
         if x.shape[-1] == 6:
@@ -94,30 +82,7 @@ class CarlaObjectDetectionTask(Scenario):
             self.scenario_output_dir, default_export_kwargs=default_export_kwargs
         )
 
-    def finalize_results(self):
-        super(CarlaObjectDetectionTask, self).finalize_results()
-
-        self.metrics_logger_wrt_benign_preds.log_task(
-            adversarial=True, used_preds_as_labels=True
-        )
-        self.results_wrt_benign_preds = {
-            metric_name + "_wrt_benign_preds": result
-            for metric_name, result in self.metrics_logger_wrt_benign_preds.results().items()
-        }
-        self.results = {**self.results, **self.results_wrt_benign_preds}
-
     def load_metrics(self):
         super().load_metrics()
-        # Add a MetricsLogger to measure adversarial results using benign predictions as labels
-        metric_config = self.config["metric"]
-        subset_config = {
-            k: metric_config[k]
-            for k in ("means", "record_metric_per_sample", "task", "task_kwargs")
-            if k in metric_config
-        }
-        self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
-            subset_config,
-            skip_benign=True,
-            targeted=False,
-            skip_attack=self.skip_attack,
-        )
+        # measure adversarial results using benign predictions as labels
+        self.metrics_logger.add_tasks_wrt_benign_predictions()

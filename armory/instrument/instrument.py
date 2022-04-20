@@ -255,6 +255,7 @@ class Hub:
         self.mapper = ProbeMapper()
         self.meters = []
         self.writers = []
+        self.default_writers = []
         self.closed = False
 
     def set_context(self, **kwargs):
@@ -284,14 +285,21 @@ class Hub:
         for meter, arg in meters_args:
             meter.set(arg, value, self.context["batch"])
 
-    def connect_meter(self, meter):
+    def connect_meter(self, meter, use_default_writers=True):
+        """
+        Connect meter. If use_default_writers, connect to all default writers as well
+        """
+        if use_default_writers:
+            for writer in self.default_writers:
+                meter.add_writer(writer)
+
         if meter in self.meters:
             return
 
         self.meters.append(meter)
         self.mapper.connect_meter(meter)
 
-    def connect_writer(self, writer, meters=None):
+    def connect_writer(self, writer, meters=None, default=False):
         """
         Convenience method to add writer to all (or a subset of meters)
 
@@ -299,6 +307,8 @@ class Hub:
             otherwise, meters should be a list of names and/or Meter objects
                 the writer is connected to those meters
             if meters is an empty list, the writer will be added but no meters connected
+
+        default - if True, writer is automatically added to each new meter added
         """
         if meters is None:
             meters_list = self.meters
@@ -319,6 +329,8 @@ class Hub:
         for meter in meters_list:
             meter.add_writer(writer)
 
+        if default and writer not in self.default_writers:
+            self.default_writers.append(writer)
         if writer not in self.writers:
             self.writers.append(writer)
 

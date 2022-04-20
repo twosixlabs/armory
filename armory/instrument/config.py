@@ -14,12 +14,6 @@ from armory.logs import log
 from armory.utils import metrics
 
 
-# Major TODO:
-#    1) add probe.update() calls in scenarios
-#    2) replace old MetricsLogger with this one
-#    3) remove old MetricsLogger deprecated calls
-#    4) remove old code from armory.utils.metrics
-#    5) add test suite for measurement
 class MetricsLogger:
     """
     Uses the set of task and perturbation metrics given to it.
@@ -45,25 +39,42 @@ class MetricsLogger:
             )
         if kwargs:
             raise ValueError(f"Unexpected keyword arguments: {kwargs}")
-
+        self.task = task
+        self.task_kwargs = task_kwargs
+        self.perturbation = perturbation
+        self.means = means
         if task is not None:
             if isinstance(task, str):
-                task = [task]
+                self.task = [task]
             if isinstance(task_kwargs, dict):
-                task_kwargs = [task_kwargs]
+                self.task_kwargs = [task_kwargs]
 
             task_metrics(
-                task, use_mean=means, include_target=True, task_kwargs=task_kwargs
+                self.task,
+                use_mean=means,
+                include_target=True,
+                task_kwargs=self.task_kwargs,
             )
         if perturbation is not None:
             if isinstance(perturbation, str):
                 perturbation = [perturbation]
             perturbation_metrics(perturbation, use_mean=means)
 
-        get_hub().connect_writer(ResultsWriter(sink=self._sink))
+        self.results_writer = ResultsWriter(sink=self._sink)
+        get_hub().connect_writer(self.results_writer, default=True)
 
         self.metric_results = None
         self.computational_resource_dict = {}
+
+    def add_tasks_wrt_benign_predictions(self):
+        """
+        Measure adversarial predictions w.r.t. benign predictions
+            Convenience method for CARLA object detection scenario
+        """
+        if self.task is not None:
+            task_metrics_wrt_benign_predictions(
+                self.task, use_mean=self.means, task_kwargs=self.task_kwargs
+            )
 
     @classmethod
     def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
@@ -164,7 +175,6 @@ QUANTITY_METRICS = [
     "object_detection_hallucinations_per_image",
     "carla_od_hallucinations_per_image",
 ]
-# TODO: fix used_preds_as_labels usage (only used in CARLA scenario)
 
 
 # TODO: move to armory.utils.metrics
@@ -345,3 +355,63 @@ def task_metrics(names, use_mean=True, include_target=True, task_kwargs=None):
         hub.connect_writer(
             ResultsLogWriter(adversarial=True, targeted=True), meters=targeted
         )
+
+
+def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
+    """
+    Return the meter generated for this specific task
+    Return list of meters generated for this specific task
+    """
+    metric = metrics.SUPPORTED_METRICS[name]
+    # metric = metrics.get_supported_metric(name)
+    final_kwargs = {}
+    if name in MEAN_AP_METRICS:
+        final_suffix = name
+        final = MeanAP(metric)
+        final_kwargs = metric_kwargs
+
+        name = f"input_to_{name}"
+        metric = identity
+        metric_kwargs = None
+    elif name == "word_error_rate":
+        final = total_wer
+        final_suffix = "total_word_error_rate"
+    elif use_mean:
+        final = np.mean
+        final_suffix = f"mean_{name}"
+    else:
+        final = None
+        final_suffix = ""
+
+    return Meter(
+        f"adversarial_{name}_wrt_benign_preds",
+        metric,
+        "scenario.y_pred",
+        "scenario.y_pred_adv",
+        metric_kwargs=metric_kwargs,
+        final=final,
+        final_name=f"adversarial_{final_suffix}_wrt_benign_preds",
+        final_kwargs=final_kwargs,
+    )
+
+
+def task_metrics_wrt_benign_predictions(names, use_mean=True, task_kwargs=None):
+    if task_kwargs is None:
+        task_kwargs = [None] * len(names)
+    elif len(names) != len(task_kwargs):
+        raise ValueError(f"{len(names)} tasks but {len(task_kwargs)} task_kwargs")
+    hub = get_hub()
+
+    meters = []
+    for name, metric_kwargs in zip(names, task_kwargs):
+        meter = _task_metric_wrt_benign_predictions(
+            name, metric_kwargs, use_mean=use_mean,
+        )
+        meters.append(meter)
+
+    for m in meters:
+        hub.connect_meter(m)
+
+    hub.connect_writer(
+        ResultsLogWriter(adversarial=True, used_preds_as_labels=True,), meters=meters
+    )
