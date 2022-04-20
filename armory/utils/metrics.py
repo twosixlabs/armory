@@ -743,8 +743,8 @@ def video_tracking_mean_success_rate(y, y_pred):
         success = np.zeros(len(thresholds))
 
         # Selecting first element since y_pred is forced to have length 1
-        y_pred_boxes = y_pred[0]["boxes"]
-        y_boxes = y[0]["boxes"]
+        y_pred_boxes = y_pred[video_idx]["boxes"]
+        y_boxes = y[video_idx]["boxes"]
 
         num_frames = y_pred_boxes.shape[0]
 
