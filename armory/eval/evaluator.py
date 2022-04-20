@@ -418,19 +418,29 @@ class Evaluator(object):
                 )
             ),
             "",
-            bold("# To run, inside of a notebook:"),
-            bold(
-                red(
-                    "from armory.scenarios.main import get as get_scenario\n"
-                    f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
-                    "s.evaluate()"
-                )
-            ),
-            "",
-            bold("# To gracefully shut down container, press: Ctrl-C"),
-            "",
-            "Jupyter notebook log:",
         ]
+        if "scenario" in self.config:
+            # If not, config is not valid to load into scenario
+            lines.extend(
+                [
+                    bold("# To run, inside of a notebook:"),
+                    bold(
+                        red(
+                            "from armory.scenarios.main import get as get_scenario\n"
+                            f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
+                            "s.evaluate()"
+                        )
+                    ),
+                    "",
+                ]
+            )
+        lines.extend(
+            [
+                bold("# To gracefully shut down container, press: Ctrl-C"),
+                "",
+                "Jupyter notebook log:",
+            ]
+        )
         log.info("\n".join(lines))
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser",
