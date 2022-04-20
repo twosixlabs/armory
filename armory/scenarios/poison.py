@@ -285,13 +285,19 @@ class Poison(Scenario):
         self.i = -1
 
     def load_metrics(self):
-        self.benign_validation_metric = metrics.MetricList("categorical_accuracy")
-        self.target_class_benign_metric = metrics.MetricList("categorical_accuracy")
+        self.accuracy_on_benign_data_all_classes = metrics.MetricList(
+            "categorical_accuracy"
+        )
+        self.accuracy_on_benign_data_source_class = metrics.MetricList(
+            "categorical_accuracy"
+        )
         if self.use_poison:
-            self.poisoned_test_metric = metrics.MetricList("categorical_accuracy")
-            self.poisoned_targeted_test_metric = metrics.MetricList(
+            self.accuracy_on_poisoned_data_all_classes = metrics.MetricList(
                 "categorical_accuracy"
             )
+            self.attack_success_rate = metrics.MetricList("categorical_accuracy")
+            # attack_success_rate is not just 1 - (accuracy on poisoned source class)
+            # because it only counts examples misclassified as target, and no others.
 
         self.benign_test_accuracy_per_class = (
             {}
@@ -327,11 +333,13 @@ class Poison(Scenario):
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
-        self.benign_validation_metric.add_results(y, y_pred)
+        self.accuracy_on_benign_data_all_classes.add_results(y, y_pred)
         source = y == self.source_class
         # NOTE: uses source->target trigger
         if source.any():
-            self.target_class_benign_metric.add_results(y[source], y_pred[source])
+            self.accuracy_on_benign_data_source_class.add_results(
+                y[source], y_pred[source]
+            )
 
         self.y_pred = y_pred
         self.source = source
@@ -352,12 +360,12 @@ class Poison(Scenario):
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
-        self.poisoned_test_metric.add_results(y, y_pred_adv)
+        self.accuracy_on_poisoned_data_all_classes.add_results(y, y_pred_adv)
         # NOTE: uses source->target trigger
         if source.any():
-            self.poisoned_targeted_test_metric.add_results(
+            self.attack_success_rate.add_results(
                 [self.target_class] * source.sum(), y_pred_adv[source]
-            )
+            )  # counts number of source images classified as target
 
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
@@ -453,30 +461,32 @@ class Poison(Scenario):
 
     def _add_accuracy_metrics_results(self):
         """ Adds the main accuracy results to self.results:
-            poisoned and benign performance on whole test set and on source class # TODO is it source?
+            poisoned and benign performance on whole test set and on source class
         """
         self.results[
-            "benign_validation_accuracy"
-        ] = self.benign_validation_metric.mean()
+            "accuracy_on_benign_data_all_classes"
+        ] = self.accuracy_on_benign_data_all_classes.mean()
         self.results[
-            "benign_validation_accuracy_targeted_class"
-        ] = self.target_class_benign_metric.mean()
+            "accuracy_on_benign_data_source_class"
+        ] = self.accuracy_on_benign_data_source_class.mean()
         log.info(
-            f"Unpoisoned validation accuracy: {self.benign_validation_metric.mean():.2%}"
+            f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
         )
         log.info(
-            f"Unpoisoned validation accuracy on targeted class: {self.target_class_benign_metric.mean():.2%}"
+            f"Accuracy on benign data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
         )
 
         if self.use_poison:
-            self.results["poisoned_test_accuracy"] = self.poisoned_test_metric.mean()
             self.results[
-                "poisoned_targeted_misclassification_accuracy"
-            ] = self.poisoned_targeted_test_metric.mean()
-            log.info(f"Test accuracy: {self.poisoned_test_metric.mean():.2%}")
+                "accuracy_on_poisoned_data_all_classes"
+            ] = self.accuracy_on_poisoned_data_all_classes.mean()
+            self.results["attack_success_rate"] = self.attack_success_rate.mean()
             log.info(
-                f"Test targeted misclassification accuracy: {self.poisoned_targeted_test_metric.mean():.2%}"
+                f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
             )
+            log.info(
+                f"Attack success rate: {self.attack_success_rate.mean():.2%}"
+            )  # percent of poisoned source examples that get classified as target
 
     def _add_supplementary_metrics_results(self):
         """ Adds additional metrics  to self.results:
