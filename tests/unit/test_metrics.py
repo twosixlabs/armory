@@ -214,3 +214,30 @@ def test_object_detection_metrics():
     assert isinstance(hallucinations_per_img, list)
     assert len(hallucinations_per_img) == 1
     assert hallucinations_per_img[0] == 1
+
+
+def test_video_tracking_metrics():
+    # Recall that first box isn't counted towards metrics. Second box has IoU of 1.0,
+    # third box has IoU of 0
+    y = [
+        {
+            "boxes": np.array(
+                [[0.0, 0.0, 0.5, 0.5], [0.1, 0.0, 0.6, 0.5], [0.0, 0.0, 0.3, 0.3]]
+            )
+        }
+    ]
+    y_pred = [
+        {
+            "boxes": np.array(
+                [[0.0, 0.0, 0.5, 0.5], [0.1, 0.0, 0.6, 0.5], [0.8, 0.8, 1.0, 1.0]]
+            )
+        }
+    ]
+
+    mean_iou = metrics.video_tracking_mean_iou(y, y_pred)
+    mean_success = metrics.video_tracking_mean_success_rate(y, y_pred)
+
+    for result in [mean_success, mean_iou]:
+        assert isinstance(result, list)
+        assert len(result) == len(y)
+        assert result[0] == 0.5
