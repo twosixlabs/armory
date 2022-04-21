@@ -201,8 +201,8 @@ def total_wer(sample_wers):
         total_edit_distance = 0
         total_words = 0
         for wer_tuple in sample_wers:
-            total_edit_distance += wer_tuple[0]
-            total_words += wer_tuple[1]
+            total_edit_distance += int(wer_tuple[0])
+            total_words += int(wer_tuple[1])
         if total_words:
             global_wer = float(total_edit_distance / total_words)
         else:
@@ -264,10 +264,10 @@ class ResultsLogWriter(LogWriter):
     def _write(self, name, batch, result):
         # TODO: once metrics have also been updated, rewrite to be less error prone
         #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
-        if "word_error_rate" in name and "total_word_error_rate" not in name:
+        if "word_error_rate" in name:
             if "total_word_error_rate" not in name:
                 result = total_wer(result)
-            total, (num, denom) = total_wer(result)
+            total, (num, denom) = result
             f_result = f"total={total:.2%}, {num}/{denom}"
         elif any(m in name for m in MEAN_AP_METRICS):
             if "input_to" in name:
