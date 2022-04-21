@@ -182,6 +182,12 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
                 - padded_patch * values_ratio * ~foreground.bool()
                 + videos * ~foreground.bool() * image_mask
             )
+
+            combined = torch.clamp(
+                combined,
+                min=self.estimator.clip_values[0],
+                max=self.estimator.clip_values[1],
+            )
         else:
             combined = videos * inverted_mask + padded_patch * values_ratio * image_mask
 
