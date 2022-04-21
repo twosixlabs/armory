@@ -3,7 +3,6 @@ Primary class for scenario
 """
 
 import copy
-import json
 import os
 import sys
 import time
@@ -14,7 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, MetricsLogger
-from armory.utils import config_loading, metrics
+from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
 
@@ -407,4 +406,4 @@ class Scenario:
             "inside container."
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
-            f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+            json_utils.dump(output, f)
