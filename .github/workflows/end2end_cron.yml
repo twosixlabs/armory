@@ -13,11 +13,13 @@ on:
       - develop
   schedule:
     - cron: 0 0 * * * # At Midnight Every Day
+  workflow_dispatch:
+
 
 jobs:
   docker-build:
     name: Build Docker Image
-    runs-on: ubuntu-18.04
+    runs-on: [self-hosted,gpu]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -34,7 +36,7 @@ jobs:
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
-    runs-on: ubuntu-18.04
+    runs-on: [self-hosted,gpu]
     steps:
       - name: Run Tests Torch Docker
         run: |
@@ -44,7 +46,7 @@ jobs:
   docker-tf2-end2end:
     name: Docker TF2 End2End
     needs: docker-build
-    runs-on: ubuntu-18.04
+    runs-on: [self-hosted,gpu]
     steps:
       - name: Run Tests TF2 Docker
         run: |
@@ -54,20 +56,18 @@ jobs:
   docker-deepspeech-end2end:
     name: Docker Deepspeech End2End
     needs: docker-build
-    runs-on: ubuntu-18.04
+    runs-on: [self-hosted,gpu]
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
           imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-  docker-remove:
-    name: Remove Docker Images
-    needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
-    runs-on: ubuntu-18.04
+
+  # TODO: the until time might need to be reduced depending on measured usage
+  docker-prune:
+    name: remove docker images older than one week
+    runs-on: [self-hosted,gpu]
     steps:
-      - name: Run Tests Torch Docker
-        run: |
-          docker rmi twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
-          docker rmi twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+      - run: docker image prune -a --force --filter "until=168h"
+
