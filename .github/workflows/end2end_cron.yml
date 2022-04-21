@@ -31,9 +31,14 @@ jobs:
                   pip install -r requirements.txt
                   pip install .
                   python docker/build.py all
+            - name: get imageTag version
+              id: image-version
+              run: \
                   echo "::set-output imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
+            - name: show imageTag --version
+              run: echo ${{ steps.image-version.outputs.imageTag }}
         outputs:
-            imageTag: ${{ steps.docker-build.outputs.imageTag }}
+            imageTag: ${{ steps.image-version.outputs.imageTag }}
     docker-pytorch-end2end:
         name: Docker Torch End2End
         needs: docker-build
@@ -41,7 +46,7 @@ jobs:
         steps:
             - name: Run Tests Torch Docker
               run: |
-                  imageName=twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
+                  imageName=twosixarmory/pytorch:${{ needs.image-version.outputs.imageTag }}
                   echo "Running Tests with Image -> $imageName"
                   docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
     docker-tf2-end2end:
