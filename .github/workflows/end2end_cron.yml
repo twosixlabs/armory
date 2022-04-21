@@ -2,17 +2,16 @@
 name: End-to-End Tests
 
 on:
+    # because these run on the self-hosted gpu instance which does single threaded
+    # job processing we explicitly don't trigger on pushes or PRs to develop.
+    # also because `schedule` only builds on master that's of little use to us
+    # presently
     push:
         branches:
             - master
-            - develop
-
     pull_request:
         branches:
             - master
-            - develop
-    schedule:
-        - cron: 0 0 * * * # At Midnight Every Day
     workflow_dispatch:
 
 jobs:
@@ -30,8 +29,9 @@ jobs:
               id: docker-build
               run: |
                   pip install -r requirements.txt
-                  pip install -e .
+                  pip install .
                   python docker/build.py all
+                  echo "::set-output imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
         outputs:
             imageTag: ${{ steps.docker-build.outputs.imageTag }}
     docker-pytorch-end2end:
@@ -68,6 +68,12 @@ jobs:
     # TODO: the until time might need to be reduced depending on measured usage
     docker-prune:
         name: remove docker images older than one week
+        needs:
+            [
+                docker-pytorch-end2end,
+                docker-tf2-end2end,
+                docker-deepspeech-end2end,
+            ]
         runs-on: [self-hosted, gpu]
         steps:
             - run: docker image prune -a --force --filter "until=168h"
