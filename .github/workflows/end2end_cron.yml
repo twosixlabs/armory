@@ -49,7 +49,7 @@ jobs:
         steps:
             - name: Run Tests Torch Docker
               run: |
-                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
+                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
                   imageName=twosixarmory/pytorch:$imageTag
                   echo "Running Tests with Image -> $imageName"
                   docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
@@ -60,7 +60,8 @@ jobs:
         steps:
             - name: Run Tests TF2 Docker
               run: |
-                  imageName=twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
+                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+                  imageName=twosixarmory/tf2:$imageTag
                   echo "Running Tests with Image -> $imageName"
                   docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
     docker-deepspeech-end2end:
@@ -70,7 +71,8 @@ jobs:
         steps:
             - name: Run Tests Deepspeech Docker
               run: |
-                  imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+                  imageName=twosixarmory/pytorch-deepspeech:$imageTag
                   echo "Running Tests with Image -> $imageName"
                   docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
