@@ -20,7 +20,7 @@ jobs:
         name: Build Docker Image
         runs-on: [self-hosted, gpu]
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3
               with:
                   fetch-depth: 0
             - uses: actions/setup-python@v2
