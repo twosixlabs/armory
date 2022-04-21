@@ -8,7 +8,7 @@ from armory.utils import json_utils
 pytestmark = pytest.mark.unit
 
 JSON_INPUT = {"hi": np.array([1, 2, 3, 4]), "there": np.float32(5.0), "you": [1, 2, 3]}
-JSON_OUTPUT = """'{\n    "hi": [\n        1,\n        2,\n        3,\n        4\n    ],\n    "there": 5.0,\n    "you": [\n        1,\n        2,\n        3\n    ]\n}\n'"""
+JSON_OUTPUT = '{\n    "hi": [\n        1,\n        2,\n        3,\n        4\n    ],\n    "there": 5.0,\n    "you": [\n        1,\n        2,\n        3\n    ]\n}\n'
 
 
 def test_dumps(inp=JSON_INPUT, out=JSON_OUTPUT):
