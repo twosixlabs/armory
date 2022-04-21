@@ -20,12 +20,10 @@ def test_entailment():
     """
     Slow due to 1 GB file download and multiple model predictions
     """
-    print("Loading Entailment Model")
     metric = metrics.Entailment()
     metric_repeat = metrics.Entailment()
     assert metric.model is metric_repeat.model
 
-    print("Loading Target Transcripts")
     from armory.attacks.librispeech_target_labels import (
         ground_truth_100,
         entailment_100,
@@ -35,21 +33,17 @@ def test_entailment():
     assert len(ground_truth_100) == num_samples
     assert len(entailment_100) == num_samples
 
-    print("Calculating Entailment for Ground Truth")
     from collections import Counter
 
     label_mapping = ["contradiction", "neutral", "entailment"]
     gt_gt = metric(ground_truth_100, ground_truth_100)
     gt_gt = [label_mapping[i] if i in (0, 1, 2) else i for i in gt_gt]
-    print(gt_gt)
     c = Counter()
     c.update(gt_gt)
     assert c["entailment"] == num_samples
 
-    print("Calculating Entailment for Entailment Targets")
     gt_en = metric(ground_truth_100, entailment_100)
     gt_en = [label_mapping[i] if i in (0, 1, 2) else i for i in gt_en]
-    print(gt_en)
     c = Counter()
     c.update(gt_en)
     # NOTE: currently, i=6 is entailment and i=38 is neutral
