@@ -735,7 +735,7 @@ def video_tracking_mean_success_rate(y, y_pred):
     if len(y_pred) > 1:
         raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
 
-    thresholds = np.arange(0, 1.05, 0.05)
+    thresholds = np.arange(0, 1.0, 0.05)
     mean_success_rates = (
         []
     )  # initialize list that will have length num_videos, which currently is forced to be 1
