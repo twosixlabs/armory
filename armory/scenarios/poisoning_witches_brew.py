@@ -65,7 +65,6 @@ class DatasetPoisonerWitchesBrew:
 class WitchesBrewScenario(Poison):
     def _validate_attack_args(self, adhoc_config, y_test):
 
-        # TODO Needs discussion -- how are we actually going to pick trigger images.
         trigger_index = adhoc_config["trigger_index"]
         if isinstance(trigger_index, int):
             trigger_index = [trigger_index]
@@ -227,10 +226,7 @@ class WitchesBrewScenario(Poison):
         else:
             self.run_benign()
 
-        # TODO Needs discussion--what is useful to export.
         # This just exports clean test samples up to num_eval_batches, and all the triggers.
-        # The use of sample_exporter is nonconventional since in this attack,
-        # we don't have benign and adversarial versions of the same test image.
         if (
             self.num_export_batches > self.sample_exporter.saved_batches
         ) or self.i in self.trigger_index:
