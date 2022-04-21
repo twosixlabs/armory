@@ -118,9 +118,11 @@ class WitchesBrewScenario(Poison):
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
-        self.trigger_index, self.target_class, self.source_class = self._validate_attack_args(
-            adhoc_config, y_test
-        )
+        (
+            self.trigger_index,
+            self.target_class,
+            self.source_class,
+        ) = self._validate_attack_args(adhoc_config, y_test)
 
         if self.use_poison:
 

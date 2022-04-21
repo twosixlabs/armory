@@ -62,6 +62,8 @@ RUN /opt/conda/bin/conda install \
 RUN /opt/conda/bin/conda install \
     scikit-learn=1.0 \
     jupyterlab \
+    jupyterlab_widgets \
+    ipywidgets \
     matplotlib \
     ffmpeg \
     -c conda-forge \
