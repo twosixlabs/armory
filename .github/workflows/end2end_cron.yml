@@ -9,9 +9,13 @@ on:
     push:
         branches:
             - master
+            # TODO remove 1422-.. branch when testing complete
+            - 1422-re-enable-end-to-end-ci-tests
     pull_request:
         branches:
             - master
+            # TODO remove 1422-.. branch when testing complete
+            - 1422-re-enable-end-to-end-ci-tests
     workflow_dispatch:
 
 jobs:
