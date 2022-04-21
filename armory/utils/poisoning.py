@@ -3,13 +3,11 @@ from armory.logs import log
 
 from typing import NamedTuple, Iterable, Dict, List, Tuple, Optional
 
-
 import numpy as np
 import torch
 from PIL import Image
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
-
 
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils.metrics import MetricList, make_contingency_tables
