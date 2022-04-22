@@ -11,17 +11,90 @@ import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
+import os
 from typing import Dict, List
 
 import cProfile
 import pstats
 from scipy import stats
 
+from armory import paths
 from armory.data.adversarial.apricot_metadata import (
     ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
     APRICOT_PATCHES,
 )
 from armory.logs import log
+from armory.utils.external_repo import ExternalPipInstalledImport
+
+# TODO: update label_mapping with total counts after measurement PR
+_ENTAILMENT_MODEL = None
+
+
+class Entailment:
+    """
+    Entailment measures the relationship between the premise y and hypothesis y_pred
+    It can be categorized as three values:
+        0 - "contradiction" - the hypothesis contradicts the premise
+        1 - "neutral" - the hypothesis is logically unrelated to the premise
+        2 - "entailment" - the hypothesis follows from the premise
+
+    See: https://towardsdatascience.com/fine-tuning-pre-trained-transformer-models-for-sentence-entailment-d87caf9ec9db
+    """
+
+    def __init__(self, model_name="roberta-large-mnli", cache_dir=None):
+        # Don't generate multiple entailment models
+        global _ENTAILMENT_MODEL
+        if _ENTAILMENT_MODEL is not None:
+            if model_name == _ENTAILMENT_MODEL[0]:
+                log.info(f"Using existing entailment model {model_name} for metric")
+                self.tokenizer, self.model, self.label_mapping = _ENTAILMENT_MODEL[2:]
+                return
+            else:
+                log.warning(
+                    f"Creating new entailment model {model_name} though {_ENTAILMENT_MODEL[0]} exists"
+                )
+
+        if cache_dir is None:
+            cache_dir = os.path.join(
+                paths.runtime_paths().saved_model_dir, "huggingface"
+            )
+
+        with ExternalPipInstalledImport(
+            package="transformers", dockerimage="twosixarmory/pytorch-deepspeech",
+        ):
+            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, cache_dir=cache_dir
+        )
+        self.model.eval()
+        # self.label_mapping = ['contradiction', 'neutral', 'entailment']
+        self.label_mapping = [0, 1, 2]
+        _ENTAILMENT_MODEL = (
+            model_name,
+            cache_dir,
+            self.tokenizer,
+            self.model,
+            self.label_mapping,
+        )
+
+    def __call__(self, y, y_pred):
+        import torch
+
+        # In Armory, y is stored as byte strings, and y_pred is stored as strings
+        y = np.array(
+            [y_i.decode("utf-8") if isinstance(y_i, bytes) else y_i for y_i in y]
+        )
+        sentence_pairs = list(zip(y, y_pred))
+        features = self.tokenizer(
+            sentence_pairs, padding=True, truncation=True, return_tensors="pt"
+        )
+        with torch.no_grad():
+            scores = self.model(**features).logits
+            labels = [self.label_mapping[i] for i in scores.argmax(dim=1)]
+
+        return labels  # return list of labels, not (0, 1, 2)
 
 
 def abstains(y, y_pred):
@@ -719,6 +792,47 @@ def video_tracking_mean_iou(y, y_pred):
         )
 
     return mean_ious
+
+
+def video_tracking_mean_success_rate(y, y_pred):
+    """
+    Mean success rate averaged over all thresholds in {0, 0.05, 0.1, ..., 1.0} and all frames.
+    This function expects to receive a single video's labels/prediction as input.
+
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    """
+    _check_video_tracking_input(y, y_pred)
+    if len(y_pred) > 1:
+        raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
+
+    thresholds = np.arange(0, 1.0, 0.05)
+    mean_success_rates = (
+        []
+    )  # initialize list that will have length num_videos, which currently is forced to be 1
+    for video_idx in range(len(y_pred)):
+        success = np.zeros(len(thresholds))
+
+        # Selecting first element since y_pred is forced to have length 1
+        y_pred_boxes = y_pred[video_idx]["boxes"]
+        y_boxes = y[video_idx]["boxes"]
+
+        num_frames = y_pred_boxes.shape[0]
+
+        # begin with 2nd frame to skip y_init in metric calculation
+        ious = [
+            _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+            for i in range(1, num_frames)
+        ]
+        for thresh_idx in range(len(thresholds)):
+            success[thresh_idx] = np.sum(ious > thresholds[thresh_idx]) / float(
+                num_frames - 1
+            )  # subtract by 1 since we ignore first frame
+        mean_success_rates.append(success.mean())
+
+    return mean_success_rates
 
 
 def object_detection_AP_per_class(
@@ -1644,6 +1758,7 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 SUPPORTED_METRICS = {
+    "entailment": Entailment,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1657,6 +1772,7 @@ SUPPORTED_METRICS = {
     "lp": lp,
     "linf": linf,
     "video_tracking_mean_iou": video_tracking_mean_iou,
+    "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
@@ -1713,6 +1829,18 @@ for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
         SUPPORTED_METRICS[new_metric_name] = new_metric
 
 
+def get_supported_metric(name):
+    try:
+        function = SUPPORTED_METRICS[name]
+    except KeyError:
+        raise KeyError(f"{name} is not part of armory.utils.metrics")
+    if isinstance(function, type) and issubclass(function, object):
+        # If a class is given, instantiate it
+        function = function()
+    assert callable(function), f"function {name} is not callable"
+    return function
+
+
 class MetricList:
     """
     Keeps track of all results from a single metric
@@ -1720,10 +1848,7 @@ class MetricList:
 
     def __init__(self, name, function=None):
         if function is None:
-            try:
-                self.function = SUPPORTED_METRICS[name]
-            except KeyError:
-                raise KeyError(f"{name} is not part of armory.utils.metrics")
+            self.function = get_supported_metric(name)
         elif callable(function):
             self.function = function
         else:
@@ -1936,6 +2061,18 @@ class MetricsLogger:
                     f"Word error rate on {task_type} examples relative to {wrt} labels: "
                     f"{metric.total_wer():.2%}"
                 )
+            elif metric.name == "entailment":
+                c = Counter()
+                entailment_map = ["contradiction", "neutral", "entailment"]
+                values = [entailment_map[x] for x in metric.values()]
+                c.update(values)
+                total = len(values)
+                log.success(
+                    f"Entailment results on {task_type} test examples relative to {wrt} labels: "
+                    f"contradiction: {c['contradiction']}/{total}, "
+                    f"neutral: {c['neutral']}/{total}, "
+                    f"entailment: {c['entailment']}/{total}"
+                )
             elif metric.name in self.non_elementwise_metrics:
                 if self.task_kwargs:
                     metric_result = metric.compute_non_elementwise_metric(
@@ -1993,6 +2130,15 @@ class MetricsLogger:
                         results[f"{prefix}_mean_{metric.name}"] = np.fromiter(
                             metric_result.values(), dtype=float
                         ).mean()
+                    continue
+                if metric.name == "entailment":
+                    c = Counter()
+                    entailment_map = ["contradiction", "neutral", "entailment"]
+                    values = [entailment_map[x] for x in metric.values()]
+                    c.update(values)
+                    c["total"] = len(values)
+                    results[f"{prefix}_{metric.name}"] = values
+                    results[f"{prefix}_total_{metric.name}"] = c
                     continue
 
                 if self.full:
