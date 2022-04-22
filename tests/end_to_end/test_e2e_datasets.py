@@ -632,7 +632,7 @@ def test_carla_video_tracking_dev():
     assert dataset.size == 20
     for x, y in dataset:
         assert x.shape[0] == 1
-        assert x.shape[2:] == (600, 800, 3)
+        assert x.shape[2:] == (960, 1280, 3)
         assert isinstance(y, tuple)
         assert len(y) == 2
         y_object, y_patch_metadata = y
