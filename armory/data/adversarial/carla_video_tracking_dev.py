@@ -7,8 +7,6 @@ from PIL import Image
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
-from armory.data.adversarial import pandas_proxy
-
 _DESCRIPTION = """
 Synthetic single modality dataset generated using CARLA (https://carla.org).
 """
@@ -32,7 +30,7 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version("2.0.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
-        "2.0.0": "Eval 5 CARLA single object tracking data with higher resolution, HD texture, higher frame rate, multiple non-tracked objects, and camera motion"
+        "2.0.0": "Eval 5 CARLA single object tracking data with higher resolution, HD texture, higher frame rate, multiple non-tracked objects, and camera motion",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -54,7 +52,9 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
                         "gs_coords": tfds.features.Tensor(
                             shape=[None, 4, 2], dtype=tf.int64
                         ),
-                        "masks": tfds.features.Tensor(shape=[None, 960, 1280, 3], dtype=tf.uint8),
+                        "masks": tfds.features.Tensor(
+                            shape=[None, 960, 1280, 3], dtype=tf.uint8
+                        ),
                     }
                 ),
             }
@@ -82,7 +82,7 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
 
         videos = os.listdir(path)
         videos.sort()
-        print('videos: {}'.format(videos))
+        print("videos: {}".format(videos))
 
         for vi, video in enumerate(videos):
             # Get all frames in a video
@@ -107,16 +107,16 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
             for mf in mask_frames:
                 mask = Image.open(os.path.join(path, video, mf)).convert("RGB")
                 mask = np.array(mask, dtype=np.uint8)
-                mask[np.all(mask == [255,255,255], axis=-1)] = 1
+                mask[np.all(mask == [255, 255, 255], axis=-1)] = 1
                 masks.append(mask)
 
             example = {
                 "video": rgb_frames,
-                "bboxes": np.load(os.path.join(path, video, 'gt_boxes.npy')),
+                "bboxes": np.load(os.path.join(path, video, "gt_boxes.npy")),
                 "patch_metadata": {
-                    "gs_coords": np.load(os.path.join(path, video, 'gs_coords.npy')),                    
+                    "gs_coords": np.load(os.path.join(path, video, "gs_coords.npy")),
                     "masks": masks,
                 },
-            }                
+            }
 
             yield vi, example
