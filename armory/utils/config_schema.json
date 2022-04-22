@@ -239,6 +239,7 @@
                 "mean_linf",
                 "max_linf",
                 "video_tracking_mean_iou",
+                "video_tracking_mean_success_rate",
                 "mean_image_circle_patch_diameter",
                 "max_image_circle_patch_diameter",
                 "word_error_rate",
