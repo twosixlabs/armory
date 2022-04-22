@@ -48,7 +48,7 @@ class DatasetPoisonerWitchesBrew:
 
         y_trigger = self.target_class
 
-        poison_x, poison_y, poison_index = self.attack.poison(
+        poison_x, poison_y, poison_index, loaded_trigger_index = self.attack.poison(
             self.data_filepath,
             x_trigger,
             y_trigger,
@@ -57,39 +57,129 @@ class DatasetPoisonerWitchesBrew:
             self.trigger_index,
         )
 
+        self.trigger_index = loaded_trigger_index
+        # attack.poison() may have modified trigger, if it was
+        # None in the config, and loaded from a pre-saved file.
+
         if return_index:
-            return poison_x, poison_y, poison_index
-        return poison_x, poison_y
+            return poison_x, poison_y, self.trigger_index, poison_index
+        return poison_x, poison_y, self.trigger_index
 
 
 class WitchesBrewScenario(Poison):
     def _validate_attack_args(self, adhoc_config, y_test):
 
+        ###
+        # A word of explanation.
+        #
+        # We have three lists: target_class, trigger_index, source_class.
+        # If source (or target) contains only 1 value, but either of the other lists contains more,
+        # that source (or target) value is repeated to the length of the longer list.
+        #
+        # Source or trigger may be None.
+        # If trigger_index is None, choose randomly from source class.
+        # If source_class is None, infer from trigger_index.
+        # Target_class may not be None.  It would be possible to choose this randomly as well,
+        # but that was not something the poison group asked for and it significantly complicates things.
+        ###
+
         trigger_index = adhoc_config["trigger_index"]
-        if isinstance(trigger_index, int):
+        if not isinstance(trigger_index, list):
             trigger_index = [trigger_index]
 
         target_class = adhoc_config["target_class"]
-        if isinstance(target_class, int):
-            target_class = [target_class] * len(trigger_index)
-        if len(target_class) == 1:
-            target_class = target_class * len(trigger_index)
+        if not isinstance(target_class, list):
+            target_class = [target_class]
 
         source_class = adhoc_config["source_class"]
-        if isinstance(source_class, int):
-            source_class = [source_class] * len(trigger_index)
+        if not isinstance(source_class, list):
+            source_class = [source_class]
+
+        if None in target_class:
+            raise ValueError("Please specify target_class in the config.")
+
+        if None in source_class and None in trigger_index:
+            raise ValueError(
+                "Either source_class or trigger_index may be None but not both; please specify one."
+            )
+
+        # Now, target is not None, and only one of source or trigger is None.
+
+        lengths = [len(trigger_index), len(target_class), len(source_class)]
+        names = ["trigger_index", "target_class", "source_class"]
+        max_name = names[np.argmax(lengths)]
+        N = max(lengths)
+
+        # Can't accept single int trigger_index if N > 1
+        if N > 1 and len(trigger_index) == 1 and trigger_index[0] is not None:
+            raise ValueError(
+                f"trigger_index must have {N} unique elements to match {max_name}"
+            )
+        # now, trigger is one None, many Nones, or many ints.  Or one int if N is 1.
+        if len(trigger_index) == 1:
+            trigger_index = trigger_index * N
+        # now, trigger is N Nones or N ints, or a wrong number
+        if len(trigger_index) != N:
+            if None in trigger_index:
+                raise ValueError(
+                    f"trigger_index should be 'null' or a list of {N} 'null's to match {max_name}"
+                )
+            else:
+                raise
+        # now, trigger is N Nones or N ints.
+        if None not in trigger_index:
+            if len(np.unique(trigger_index)) != len(trigger_index):
+                raise ValueError("All elements of trigger_index must be unique")
+        # now, trigger is N Nones or N unique ints.  As we need it.
+
+        if len(target_class) == 1:
+            target_class = target_class * N
+        elif len(target_class) != N:
+            raise ValueError(
+                f"target_class must have one element or as many as {max_name}"
+            )
+
         if len(source_class) == 1:
-            source_class = source_class * len(trigger_index)
-
-        if len(target_class) != len(trigger_index):
+            source_class = source_class * N
+        elif len(source_class) != N:
             raise ValueError(
-                "target_class should have one element or be the same length as trigger_index"
+                f"source_class must have one element or as many as {max_name}"
             )
 
-        if len(source_class) != len(trigger_index):
-            raise ValueError(
-                "source_class should have one element or be the same length as trigger_index"
+        # Now, source, target, and trigger have length N.  Either source or trigger may be lists of None, but not both.
+        # If source or trigger contain None, select randomly, but set a flag for reference in attack.
+
+        triggers_chosen_randomly = False
+
+        if None in trigger_index:
+            log.info("Selecting random trigger images according to source_class")
+            triggers_chosen_randomly = True
+            used = []  # want to avoid using any trigger twice
+            for i, class_i in enumerate(source_class):
+                if class_i not in y_test:
+                    raise ValueError(
+                        f"Test set contains no examples of class {class_i}"
+                    )
+                options = [
+                    index
+                    for index in np.where(y_test == class_i)[0]
+                    if index not in used
+                ]
+                trig_ind = np.random.choice(options)
+                used.append(trig_ind)
+                trigger_index[i] = trig_ind
+
+            if len(np.unique(trigger_index)) != len(trigger_index):
+                raise ValueError(
+                    "Selected same trigger image multiple times.  If this happens, there is a bug in the 'for' block preceding this line of code"
+                )
+
+        if None in source_class:
+            log.info(
+                "Inferring source_class from the classes of the chosen trigger images"
             )
+            for i, trig_ind in enumerate(trigger_index):
+                source_class[i] = y_test[trig_ind]
 
         for i, trigger_ind in enumerate(trigger_index):
             if y_test[trigger_ind] != source_class[i]:
@@ -102,11 +192,11 @@ class WitchesBrewScenario(Poison):
                 f" No target class may equal source class; got target = {target_class} and source = {source_class}"
             )
 
-        return trigger_index, target_class, source_class
+        return trigger_index, target_class, source_class, triggers_chosen_randomly
 
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
-        attack_config = self.config["attack"]
+        attack_config = copy.deepcopy(self.config["attack"])
         if attack_config.get("type") == "preloaded":
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
@@ -118,7 +208,7 @@ class WitchesBrewScenario(Poison):
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
-        self.trigger_index, self.target_class, self.source_class = self._validate_attack_args(
+        self.trigger_index, self.target_class, self.source_class, triggers_chosen_randomly = self._validate_attack_args(
             adhoc_config, y_test
         )
 
@@ -129,6 +219,9 @@ class WitchesBrewScenario(Poison):
             ]
             attack_config["kwargs"]["source_class"] = self.source_class
             attack_config["kwargs"]["target_class"] = self.target_class
+            attack_config["kwargs"][
+                "triggers_chosen_randomly"
+            ] = triggers_chosen_randomly
 
             data_filepath = (
                 attack_config["kwargs"].pop("data_filepath")
@@ -154,6 +247,29 @@ class WitchesBrewScenario(Poison):
                 data_filepath,
             )
             self.test_poisoner = self.poisoner
+
+    def poison_dataset(self):
+        # Over-ridden because poisoner returns a possibly-modified trigger_index
+
+        if self.use_poison:
+            (
+                self.x_poison,
+                self.y_poison,
+                self.trigger_index,
+                self.poison_index,
+            ) = self.poisoner.poison_dataset(
+                self.x_clean, self.y_clean, return_index=True
+            )
+        else:
+            self.x_poison, self.y_poison, self.poison_index = (
+                self.x_clean,
+                self.y_clean,
+                np.array([]),
+            )
+
+        # make sure config has updated and serializable versions of source and trigger
+        self.config["adhoc"]["trigger_index"] = [int(t) for t in self.trigger_index]
+        self.config["adhoc"]["source_class"] = [int(c) for c in self.source_class]
 
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
@@ -227,18 +343,19 @@ class WitchesBrewScenario(Poison):
             self.run_benign()
 
         # This just exports clean test samples up to num_eval_batches, and all the triggers.
-        if (
-            self.num_export_batches > self.sample_exporter.saved_batches
-        ) or self.i in self.trigger_index:
-            if self.sample_exporter.saved_samples == 0:
-                self.sample_exporter._make_output_dir()
-            name = "trigger" if self.i in self.trigger_index else "non-trigger"
-            self.sample_exporter._export_image(self.x[0], name=name)
-            self.sample_exporter.saved_samples += 1
-            self.sample_exporter.saved_batches = (
-                self.sample_exporter.saved_samples
-                // self.config["dataset"]["batch_size"]
-            )
+        if self.config["scenario"].get("export_batches"):
+            if (
+                self.num_export_batches > self.sample_exporter.saved_batches
+            ) or self.i in self.trigger_index:
+                if self.sample_exporter.saved_samples == 0:
+                    self.sample_exporter._make_output_dir()
+                name = "trigger" if self.i in self.trigger_index else "non-trigger"
+                self.sample_exporter._export_image(self.x[0], name=name)
+                self.sample_exporter.saved_samples += 1
+                self.sample_exporter.saved_batches = (
+                    self.sample_exporter.saved_samples
+                    // self.config["dataset"]["batch_size"]
+                )
 
     def _add_accuracy_metrics_results(self):
         """ Adds accuracy results for trigger and non-trigger images
