@@ -30,7 +30,10 @@ class CarlaObjectDetectionTask(Scenario):
 
     def next(self):
         super().next()
-        self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
+        # The CARLA dev and test sets (as opposed to train/val) contain green-screens
+        # and thus have a tuple of two types of labels that we separate here
+        if isinstance(self.y, tuple):
+            self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
 
     def run_benign(self):
         x, y = self.x, self.y
@@ -43,6 +46,11 @@ class CarlaObjectDetectionTask(Scenario):
         self.y_pred = y_pred
 
     def run_attack(self):
+        if not hasattr(self, "y_patch_metadata"):
+            raise AttributeError(
+                "y_patch_metadata attribute does not exist. Please set --skip-attack if using "
+                "CARLA train set"
+            )
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -81,9 +89,9 @@ class CarlaObjectDetectionTask(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
-        export_kwargs = {"with_boxes": True, "classes_to_skip": [4]}
+        default_export_kwargs = {"with_boxes": True, "classes_to_skip": [4]}
         return ObjectDetectionExporter(
-            self.scenario_output_dir, export_kwargs=export_kwargs
+            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
         )
 
     def finalize_results(self):
@@ -108,5 +116,8 @@ class CarlaObjectDetectionTask(Scenario):
             if k in metric_config
         }
         self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
-            subset_config, skip_benign=True, targeted=False
+            subset_config,
+            skip_benign=True,
+            targeted=False,
+            skip_attack=self.skip_attack,
         )

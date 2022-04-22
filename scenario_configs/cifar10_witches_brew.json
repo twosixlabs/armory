@@ -1,42 +1,55 @@
 {
     "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
     "adhoc": {
-        "compute_fairness_metrics": true,
         "experiment_id": 0,
-        "explanatory_model": "gtsrb_silhouette_model",
+        "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 20,
+        "train_epochs": 100,
+        "trigger_index": [
+            5,
+            28,
+            37,
+            40,
+            52
+        ],
         "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "backdoor_kwargs": {
-                "poison_module": "art.attacks.poisoning.perturbations",
-                "poison_type": "pattern"
-            },
-            "eps": 2.6,
-            "eps_step": 0.1,
-            "max_iter": 100,
-            "n_classes": 43,
-            "norm": 2,
-            "num_random_init": 0,
-            "pp_poison": 0.1,
-            "target": 2
+            "data_filepath": "witches_brew_source1_target2_eps10_fp05_triggers5,28,37,40,52.npz",
+            "epsilon": 0.1,
+            "learning_rate_schedule": [
+                [
+                    0.1,
+                    0.01,
+                    0.001,
+                    0.0001,
+                    1e-05
+                ],
+                [
+                    250,
+                    350,
+                    400,
+                    430,
+                    460
+                ]
+            ],
+            "max_epochs": 500,
+            "max_trials": 1,
+            "verbose": 1
         },
-        "module": "armory.art_experimental.attacks.poison_loader_clbd",
-        "name": "poison_loader_clbd",
-        "type": "clbd",
-        "use_adversarial_trainer": false
+        "module": "armory.art_experimental.attacks.gradient_matching",
+        "name": "GradientMatchingWrapper"
     },
     "dataset": {
-        "batch_size": 512,
+        "batch_size": 32,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "german_traffic_sign"
+        "name": "cifar10"
     },
     "defense": {
         "kwargs": {
@@ -55,15 +68,16 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.micronnet_gtsrb",
+        "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
+        "export_batches": 1,
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_clbd",
-        "name": "GTSRB_CLBD"
+        "module": "armory.scenarios.poisoning_witches_brew",
+        "name": "WitchesBrewScenario"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",

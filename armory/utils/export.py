@@ -6,21 +6,27 @@ import pickle
 import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
+import json
 from copy import deepcopy
 
 from armory.logs import log
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, export_kwargs={}):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
         self.base_output_dir = base_output_dir
         self.saved_batches = 0
         self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
-        self.export_kwargs = export_kwargs
+        self.default_export_kwargs = default_export_kwargs
 
-    def export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+    def export(
+        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
+    ):
+        export_kwargs = dict(
+            list(self.default_export_kwargs.items()) + list(kwargs.items())
+        )
         if self.saved_batches == 0:
             self._make_output_dir()
 
@@ -35,7 +41,7 @@ class SampleExporter:
             y=y,
             y_pred_adv=y_pred_adv,
             y_pred_clean=y_pred_clean,
-            **self.export_kwargs,
+            **export_kwargs,
         )
 
     @abc.abstractmethod
@@ -131,6 +137,12 @@ class ImageClassificationExporter(SampleExporter):
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
+        super().__init__(base_output_dir, default_export_kwargs)
+        self.ground_truth_boxes_coco_format = []
+        self.benign_predicted_boxes_coco_format = []
+        self.adversarial_predicted_boxes_coco_format = []
+
     def _export(
         self,
         x,
@@ -203,6 +215,76 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
         )
 
+        if y_i is not None:
+            # Can only export box annotations if we have 'image_id' from y_i
+            gt_boxes_coco, pred_boxes_coco = self.get_coco_formatted_bounding_box_data(
+                y_i=y_i,
+                y_i_pred=y_i_pred,
+                classes_to_skip=classes_to_skip,
+                score_threshold=score_threshold,
+            )
+
+            # Add coco box dictionaries to correct lists
+            if name == "benign":
+                for coco_box in pred_boxes_coco:
+                    self.benign_predicted_boxes_coco_format.append(coco_box)
+                for coco_box in gt_boxes_coco:
+                    self.ground_truth_boxes_coco_format.append(coco_box)
+            elif name == "adversarial":
+                # don't save gt boxes here since they are the same as for benign
+                for coco_box in pred_boxes_coco:
+                    self.adversarial_predicted_boxes_coco_format.append(coco_box)
+
+    def get_coco_formatted_bounding_box_data(
+        self, y_i, y_i_pred=None, score_threshold=0.5, classes_to_skip=None
+    ):
+        """
+        :param y_i: ground-truth label dict
+        :param y_i_pred: predicted label dict
+        :param score_threshold: float in [0, 1]; predicted boxes with confidence > score_threshold are exported
+        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be exported
+        :return: Two lists of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
+        """
+
+        ground_truth_boxes_coco_format = []
+        predicted_boxes_coco_format = []
+
+        image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
+        bboxes_true = y_i["boxes"]
+        labels_true = y_i["labels"]
+
+        for true_box, label in zip(bboxes_true, labels_true):
+            if classes_to_skip is not None and label in classes_to_skip:
+                continue
+            xmin, ymin, xmax, ymax = true_box
+            ground_truth_box_coco = {
+                "image_id": int(image_id),
+                "category_id": int(label),
+                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+            }
+            ground_truth_boxes_coco_format.append(ground_truth_box_coco)
+
+        if y_i_pred is not None:
+            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
+            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
+
+            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
+                xmin, ymin, xmax, ymax = pred_box
+                predicted_box_coco = {
+                    "image_id": int(image_id),
+                    "category_id": int(label),
+                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+                    "score": float(score),
+                }
+                predicted_boxes_coco_format.append(predicted_box_coco)
+        else:
+            log.warning(
+                "Annotations for predicted bounding boxes will not be exported.  Provide y_i_pred if this is not desired."
+            )
+
+        return ground_truth_boxes_coco_format, predicted_boxes_coco_format
+
     def get_sample(
         self,
         x_i,
@@ -213,7 +295,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         classes_to_skip=None,
     ):
         """
-
         :param x_i:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
                 3 (RGB), or 6 (RGB-Depth)
         :param with_boxes: boolean indicating whether to display bounding boxes
@@ -228,7 +309,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             return image
 
         if y_i is None and y_i_pred is None:
-            raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
+            raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
         if y_i is not None:
@@ -247,6 +328,39 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 box_layer.rectangle(pred_box, outline="white", width=2)
 
         return image
+
+    def write(self):
+        super().write()
+        if len(self.ground_truth_boxes_coco_format) > 0:
+            json.dump(
+                self.ground_truth_boxes_coco_format,
+                open(
+                    os.path.join(
+                        self.output_dir, "ground_truth_boxes_coco_format.json"
+                    ),
+                    "w",
+                ),
+            )
+        if len(self.benign_predicted_boxes_coco_format) > 0:
+            json.dump(
+                self.benign_predicted_boxes_coco_format,
+                open(
+                    os.path.join(
+                        self.output_dir, "benign_predicted_boxes_coco_format.json"
+                    ),
+                    "w",
+                ),
+            )
+        if len(self.adversarial_predicted_boxes_coco_format) > 0:
+            json.dump(
+                self.adversarial_predicted_boxes_coco_format,
+                open(
+                    os.path.join(
+                        self.output_dir, "adversarial_predicted_boxes_coco_format.json"
+                    ),
+                    "w",
+                ),
+            )
 
 
 class DApricotExporter(ObjectDetectionExporter):
@@ -334,8 +448,8 @@ class DApricotExporter(ObjectDetectionExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, frame_rate, export_kwargs={}):
-        super().__init__(base_output_dir, export_kwargs=export_kwargs)
+    def __init__(self, base_output_dir, frame_rate, default_export_kwargs={}):
+        super().__init__(base_output_dir, default_export_kwargs=default_export_kwargs)
         self.frame_rate = frame_rate
 
     def _export(
@@ -395,7 +509,7 @@ class VideoClassificationExporter(SampleExporter):
             log.warning("video out of expected range. Clipping to [0, 1]")
 
         pil_frames = []
-        for n_frame, x_frame, in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x_i):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
@@ -472,7 +586,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
         self.frames_with_boxes = self.get_sample(
             x_i, with_boxes=True, y_i=y_i, y_i_pred=y_i_pred
         )
-        for n_frame, frame, in enumerate(self.frames_with_boxes):
+        for n_frame, frame in enumerate(self.frames_with_boxes):
             frame.save(
                 os.path.join(
                     self.output_dir,
@@ -504,7 +618,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
             log.warning("video out of expected range. Clipping to [0,1]")
 
         pil_frames = []
-        for n_frame, x_frame, in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x_i):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
