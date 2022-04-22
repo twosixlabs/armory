@@ -16,6 +16,9 @@ from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
 from armory.logs import log
 
+from armory.instrument import Meter
+from armory.utils.metrics import get_supported_metric
+
 
 class DatasetPoisoner:
     def __init__(self, attack, source_class, target_class, fraction=1.0):
@@ -177,6 +180,7 @@ class Poison(Scenario):
             self.test_poisoner = self.poisoner
 
     def poison_dataset(self):
+        self.hub.set_context(stage="poison")
         if self.use_poison:
             (
                 self.x_poison,
@@ -193,6 +197,7 @@ class Poison(Scenario):
             )
 
     def filter_dataset(self):
+        self.hub.set_context(stage="filter")
         adhoc_config = self.config["adhoc"]
         # filtering defense requires more than a single batch to run properly
         if (
@@ -248,12 +253,14 @@ class Poison(Scenario):
             )
             indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
 
+        self.probe.update(indices_to_keep=indices_to_keep)
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
 
     def fit(self):
         if len(self.x_train):
+            self.hub.set_context(stage="fit")
             log.info("Fitting model")
             self.model.fit(
                 self.x_train,
@@ -285,23 +292,70 @@ class Poison(Scenario):
         self.i = -1
 
     def load_metrics(self):
-        self.accuracy_on_benign_data_all_classes = metrics.MetricList(
-            "categorical_accuracy"
-        )
-        self.accuracy_on_benign_data_source_class = metrics.MetricList(
-            "categorical_accuracy"
-        )
-        if self.use_poison:
-            self.accuracy_on_poisoned_data_all_classes = metrics.MetricList(
-                "categorical_accuracy"
+        self.hub.connect_meter(
+            Meter(
+                "sample_accuracy_on_benign_data_all_classes",
+                get_supported_metric("categorical_accuracy"),
+                "scenario.y[benign]",
+                "scenario.y_pred[benign]",
+                final=np.mean,
+                final_name="accuracy_on_benign_data_all_classes",
             )
-            self.attack_success_rate = metrics.MetricList("categorical_accuracy")
+        )
+        self.hub.connect_meter(
+            Meter(
+                "sample_accuracy_on_benign_data_source_class",  # TODO:
+                get_supported_metric("categorical_accuracy"),
+                "scenario.y_source[benign]",
+                "scenario.y_pred_source[benign]",
+                final=np.mean,
+                final_name="accuracy_on_benign_data_source_class",
+            )
+        )
+        # TODO: set up ResultsLogWriter? Only printed at end of scenario
+        # log.info(
+        #    f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
+        # )
+        # log.info(
+        #    f"Accuracy on benign data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
+        # )
+        # log.info(
+        #    f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
+        # )
+        # log.info(
+        #    f"Attack success rate: {self.attack_success_rate.mean():.2%}"
+        #    )  # percent of poisoned source examples that get classified as target
+
+        if self.use_poison:
+            self.hub.connect_meter(
+                Meter(
+                    "sample_accuracy_on_poisoned_data_all_classes",
+                    metrics.get_supported_metric("categorical_accuracy"),
+                    "scenario.y[benign]",
+                    "scenario.y_pred_adv[adversarial]",
+                    final=np.mean,
+                    final_name="accuracy_on_poisoned_data_all_classes",
+                )
+            )
+            # counts number of source images classified as target
+            self.hub.connect_meter(
+                Meter(
+                    "sample_attack_success_rate",
+                    metrics.get_supported_metric("categorical_accuracy"),
+                    "scenario.target_class_source",
+                    "scenario.y_pred_adv_source",
+                    final=np.mean,
+                    final_name="attack_success_rate",
+                )
+            )
             # attack_success_rate is not just 1 - (accuracy on poisoned source class)
             # because it only counts examples misclassified as target, and no others.
 
-        self.benign_test_accuracy_per_class = (
-            {}
-        )  # store accuracy results for each class
+        # TODO: this one is more complicated...
+        self.benign_test_accuracy_per_class = {}
+        # store accuracy results for each class
+
+        # TODO: this one is REALLY complicated...
         if self.config["adhoc"].get("compute_fairness_metrics", False):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
@@ -328,18 +382,17 @@ class Poison(Scenario):
         self.load_sample_exporter()
 
     def run_benign(self):
+        self.hub.set_context(stage="benign")
         x, y = self.x, self.y
 
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
-        self.accuracy_on_benign_data_all_classes.add_results(y, y_pred)
+        self.probe.update(y_pred=y_pred)
         source = y == self.source_class
         # NOTE: uses source->target trigger
         if source.any():
-            self.accuracy_on_benign_data_source_class.add_results(
-                y[source], y_pred[source]
-            )
+            self.probe.update(y_source=y[source], y_pred_source=y_pred[source])
 
         self.y_pred = y_pred
         self.source = source
@@ -348,24 +401,29 @@ class Poison(Scenario):
             if y_ not in self.benign_test_accuracy_per_class.keys():
                 self.benign_test_accuracy_per_class[y_] = []
 
+            # TODO
             self.benign_test_accuracy_per_class[y_].append(
                 y_ == np.argmax(y_pred_, axis=-1)
             )
 
     def run_attack(self):
+        self.hub.set_context(stage="attack")  # ???  TODO
         x, y = self.x, self.y
         source = self.source
 
         x_adv, _ = self.test_poisoner.poison_dataset(x, y, fraction=1.0)
+
+        self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
 
-        self.accuracy_on_poisoned_data_all_classes.add_results(y, y_pred_adv)
         # NOTE: uses source->target trigger
         if source.any():
-            self.attack_success_rate.add_results(
-                [self.target_class] * source.sum(), y_pred_adv[source]
-            )  # counts number of source images classified as target
+            self.probe.update(
+                target_class_source=[self.target_class] * source.sum(),
+                y_pred_adv_source=y_pred_adv[source],
+            )
 
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
@@ -389,40 +447,14 @@ class Poison(Scenario):
         """ Adds filter-specific metrics to self.results:
         Number of samples removed total and per class, true and false positives, F1 score
         """
-
         removed = (1 - self.indices_to_keep).astype(np.bool)
         poisoned = np.zeros_like(self.y_clean).astype(np.bool)
         poisoned[self.poison_index.astype(np.int64)] = True
 
-        false_negatives = int(np.sum(~removed & poisoned))
-        true_positives = int(np.sum(removed & poisoned))
-        true_negatives = int(np.sum(~removed & ~poisoned))
-        false_positives = int(np.sum(removed & ~poisoned))
-
-        false_negative_rate = (
-            0 if self.n_poisoned == 0 else false_negatives / self.n_poisoned
-        )
-        true_positive_rate = (
-            0 if self.n_poisoned == 0 else true_positives / self.n_poisoned
-        )
-        true_negative_rate = true_negatives / self.n_clean
-        false_positive_rate = false_positives / self.n_clean
-
-        f1_score = true_positives / (
-            true_positives + 0.5 * (false_positives + false_negatives)
-        )
-
-        self.results["filter_true_positives"] = true_positives
-        self.results["filter_false_positives"] = false_positives
-        self.results["filter_true_negatives"] = true_negatives
-        self.results["filter_false_negatives"] = false_negatives
-        self.results["filter_true_positive_rate"] = true_positive_rate
-        self.results["filter_false_positive_rate"] = false_positive_rate
-        self.results["filter_true_negative_rate"] = true_negative_rate
-        self.results["filter_false_negative_rate"] = false_negative_rate
-        self.results["filter_f1_score"] = f1_score
-        self.results["filter_fraction_data_removed"] = removed.mean()
-        self.results["filter_N_samples_removed"] = int(removed.sum())
+        filter_results = metrics.filter_rates(poisoned, removed)
+        filter_results["fraction_data_removed"] = removed.mean()
+        filter_results["N_samples_removed"] = int(removed.sum())
+        self.results["filter"] = filter_results
 
         for y in self.train_set_class_labels:
             self.results[f"class_{y}_N_train_samples_removed"] = int(
@@ -459,35 +491,6 @@ class Poison(Scenario):
             for line in log_lines:
                 log.info(line)
 
-    def _add_accuracy_metrics_results(self):
-        """ Adds the main accuracy results to self.results:
-            poisoned and benign performance on whole test set and on source class
-        """
-        self.results[
-            "accuracy_on_benign_data_all_classes"
-        ] = self.accuracy_on_benign_data_all_classes.mean()
-        self.results[
-            "accuracy_on_benign_data_source_class"
-        ] = self.accuracy_on_benign_data_source_class.mean()
-        log.info(
-            f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
-        )
-        log.info(
-            f"Accuracy on benign data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
-        )
-
-        if self.use_poison:
-            self.results[
-                "accuracy_on_poisoned_data_all_classes"
-            ] = self.accuracy_on_poisoned_data_all_classes.mean()
-            self.results["attack_success_rate"] = self.attack_success_rate.mean()
-            log.info(
-                f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
-            )
-            log.info(
-                f"Attack success rate: {self.attack_success_rate.mean():.2%}"
-            )  # percent of poisoned source examples that get classified as target
-
     def _add_supplementary_metrics_results(self):
         """ Adds additional metrics  to self.results:
         N poisoned, N clean, N samples per class, benign accuracy per class
@@ -516,8 +519,9 @@ class Poison(Scenario):
 
     def finalize_results(self):
         self.results = {}
-
-        self._add_accuracy_metrics_results()
+        self.hub.finalize()  # TODO; see scenarios.py
+        # self.metrics_logger.results()  # TODO
+        # self.results = self.metrics_logger.results()
 
         self._add_supplementary_metrics_results()
 

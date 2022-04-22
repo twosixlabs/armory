@@ -371,6 +371,7 @@ class Meter:
         final_name=None,
         final_kwargs=None,
         keep_results=True,
+        record_final_only=False,
     ):
         """
         StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
@@ -388,6 +389,8 @@ class Meter:
 
         keep_results - whether to locally store results
             if final is not None, keep_results is set to True
+
+        record_final_only - if True, do not record results to writers except in finalize
         """
         self.name = str(name)
         if not callable(metric):
@@ -411,6 +414,8 @@ class Meter:
         if final is None:
             if final_name is not None:
                 final_name = str(final_name)
+            if record_final_only:
+                raise ValueError("record_final_only cannot be True if final is None")
         else:
             if not callable(final):
                 raise ValueError(f"final {final} must be callable")
@@ -428,6 +433,7 @@ class Meter:
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
         self.keep_results = keep_results
+        self.record_final_only = record_final_only
         self.never_measured = True
 
     def get_arg_names(self):
@@ -486,8 +492,9 @@ class Meter:
                 self._results.extend(result)
             except TypeError:
                 self._results.append(result)
-        for writer in self.writers:
-            writer.write(record)
+        if not self.record_final_only:
+            for writer in self.writers:
+                writer.write(record)
         if not self.keep_results and not self.writers and not self._warned:
             log.warning(
                 f"Meter '{self.name}' has no writer added and keep_results is False"

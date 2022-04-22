@@ -26,7 +26,6 @@ from armory.data.adversarial.apricot_metadata import (
 from armory.logs import log
 from armory.utils.external_repo import ExternalPipInstalledImport
 
-# TODO: update label_mapping with total counts after measurement PR
 _ENTAILMENT_MODEL = None
 
 
@@ -94,6 +93,61 @@ class Entailment:
             labels = [self.label_mapping[i] for i in scores.argmax(dim=1)]
 
         return labels  # return list of labels, not (0, 1, 2)
+
+
+def filter_rates(true_values, positives):
+    """
+    true_values and positives should be equal length boolean np arrays
+
+    Returns a dict containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, F1 Score
+    """
+    true_values, positives = [
+        np.asarray(x, dtype=np.bool) for x in (true_values, positives)
+    ]
+    if true_values.shape != positives.shape:
+        raise ValueError(
+            f"inputs must have equal shape. {true_values.shape} != {positives.shape}"
+        )
+    if true_values.ndim != 1:
+        raise ValueError(f"inputs must be 1-dimensional, not {true_values.ndim}")
+
+    true_positives = int(np.sum(positives & true_values))
+    true_negatives = int(np.sum(~positives & ~true_values))
+    false_positives = int(np.sum(positives & ~true_values))
+    false_negatives = int(np.sum(~positives & true_values))
+
+    n_true_values = true_positives + true_negatives
+    if n_true_values > 0:
+        true_positive_rate = true_positives / n_true_values
+        false_negative_rate = false_negatives / n_true_values
+    else:
+        true_positive_rate = false_negative_rate = float("nan")
+
+    n_false_values = false_positives + false_negatives
+    if n_false_values > 0:
+        false_positive_rate = false_positives / n_false_values
+        true_negative_rate = true_negatives / n_false_values
+    else:
+        false_positive_rate = true_negative_rate = float("nan")
+
+    if true_positives or false_positives or false_negatives:
+        f1_score = true_positives / (
+            true_positives + 0.5 * (false_positives + false_negatives)
+        )
+    else:
+        f1_score = float("nan")
+
+    return dict(
+        true_positives=true_positives,
+        true_negatives=true_negatives,
+        false_positives=false_positives,
+        false_negatives=false_negatives,
+        true_positive_rate=true_positive_rate,
+        false_positive_rate=false_positive_rate,
+        false_negative_rate=false_negative_rate,
+        true_negative_rate=true_negative_rate,
+        f1_score=f1_score,
+    )
 
 
 def abstains(y, y_pred):
@@ -1758,6 +1812,7 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 SUPPORTED_METRICS = {
     "entailment": Entailment,
+    "filter_rates": filter_rates,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
