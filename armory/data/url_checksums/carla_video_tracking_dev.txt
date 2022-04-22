@@ -1,1 +1,1 @@
-carla_object_tracking_dev.tar.gz 1278862237 8b23ca76bd9602a8e3ff4058335b7fb8ca665660a8a958852715e9a26ffbef20
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_dev_2.0.0.tar.gz 1278862237 8b23ca76bd9602a8e3ff4058335b7fb8ca665660a8a958852715e9a26ffbef20
