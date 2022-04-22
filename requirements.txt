@@ -3,3 +3,5 @@ docker
 jsonschema
 requests
 pytest # needed by armory.scenarios.main line 93
+# wheel is needed for all setuptools builds but isn't loaded on the CI runners
+wheel

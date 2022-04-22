@@ -58,13 +58,6 @@ jobs:
     #               pip install -r requirements.txt
     #               pip install .
     #               python docker/build.py all
-    #         - name: get imageTag version
-    #           id: image-version
-    #           run: echo "::set-output imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
-    #         - name: show imageTag --version
-    #           run: echo ${{ steps.image-version.outputs.imageTag }}
-    #     outputs:
-    #         imageTag: ${{ steps.image-version.outputs.imageTag }}
     check-paths:
         runs-on: [self-hosted]
         steps:
@@ -82,7 +75,7 @@ jobs:
             - name: check paths
               run: |
                   tag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-                  docker run -w /workspace/ twosixarmory/pytorch:$tag pytest tests/test_paths.py
+                  docker run -w /armory-repo/ twosixarmory/pytorch:$tag pytest tests/test_paths.py
     # docker-pytorch-end2end:
     #     name: Docker Torch End2End
     #     needs: docker-build
