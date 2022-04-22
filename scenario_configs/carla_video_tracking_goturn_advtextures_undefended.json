@@ -26,7 +26,8 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "video_tracking_mean_iou"
+            "video_tracking_mean_iou",
+	    "video_tracking_mean_success_rate"
         ]
     },
     "model": {
