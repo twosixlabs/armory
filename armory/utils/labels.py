@@ -2,10 +2,22 @@
 Label-related utilties
 """
 
+import importlib
+
 import numpy as np
 
 
 # Targeters assume a numpy 1D array as input to generate
+
+
+def import_from_module(name, attribute):
+    if not isinstance(name, str) or not isinstance(attribute, str):
+        raise ValueError(
+            "When 'import_from' is used, it and the attribute must be of type str,"
+            f" not {name} and {attribute}"
+        )
+    module = importlib.import_module(name)
+    return getattr(module, attribute)
 
 
 class FixedLabelTargeter:
@@ -54,12 +66,15 @@ class RoundRobinTargeter:
 
 
 class ManualTargeter:
-    def __init__(self, *, values, repeat=False):
+    def __init__(self, *, values, import_from=False, repeat=False, dtype=int):
+        if import_from:
+            values = import_from_module(import_from, values)
         if not values:
             raise ValueError('"values" cannot be an empty list')
         self.values = values
         self.repeat = bool(repeat)
         self.current = 0
+        self.dtype = dtype
 
     def _generate(self, y_i):
         if self.current == len(self.values):
@@ -76,7 +91,7 @@ class ManualTargeter:
         y_target = []
         for y_i in y:
             y_target.append(self._generate(y_i))
-        return np.array(y_target, dtype=int)
+        return np.array(y_target, dtype=self.dtype)
 
 
 class IdentityTargeter:
@@ -118,7 +133,9 @@ class MatchedTranscriptLengthTargeter:
     If two labels are tied in length, then it pseudorandomly picks one.
     """
 
-    def __init__(self, *, transcripts):
+    def __init__(self, *, transcripts, import_from=False):
+        if import_from:
+            transcripts = import_from_module(import_from, transcripts)
         if not transcripts:
             raise ValueError('"transcripts" cannot be None or an empty list')
         for t in transcripts:
