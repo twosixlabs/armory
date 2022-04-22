@@ -60,22 +60,6 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             raise ValueError(
                 "Adam optimizer for CARLA Adversarial Patch not supported."
             )
-            self._optimizer.step()
-
-            with torch.no_grad():
-                if self._patch.shape[0] == 6:
-                    self._patch[3:, :, :] = torch.mean(
-                        self._patch[3:, :, :], dim=0, keepdim=True
-                    )
-                    self._patch[3:, :, :] = torch.clamp(
-                        self._patch[3:, :, :], min=self.min_depth, max=self.max_depth
-                    )
-
-                self._patch[:] = torch.clamp(
-                    self._patch,
-                    min=self.estimator.clip_values[0],
-                    max=self.estimator.clip_values[1],
-                )
 
         return loss
 
