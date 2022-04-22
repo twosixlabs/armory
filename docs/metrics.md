@@ -1,9 +1,21 @@
-# Metrics
+# Measurement Overview
+
+Armory contains a number of functions to use as metrics as well as flexible measurement instrumentation.
+
+For measuring and logging standard perturbation (e.g., `Lp` norms) and task metrics (e.g., `categorical_accuracy`) for model inputs and outputs, standard config usage will likely suffice.
+For custom metrics and measuring intermediate values (e.g., outputs after a certain preprocessing layer), see the Instrumentation section below.
+
+## Metrics
 
 The `armory.utils.metrics` module implements functionality to measure both
 task and perturbation metrics. 
 
+### Config Usage
+
+
 ### MetricsLogger
+
+
 
 The `MetricsLogger` class pairs with scenarios to account for task performance
 against benign and adversarial data as well as measure the perturbations of
@@ -48,60 +60,76 @@ metrics, to prevent expanding the required set of dependencies. Please see [armo
 
 For targeted attacks, each metric will be reported twice for adversarial data: once relative to the ground truth labels and once relative to the target labels.  For untargeted attacks, each metric is only reported relative to the ground truth labels.  Performance relative to ground truth measures the effectiveness of the defense, indicating the ability of the model to make correct predictions despite the perturbed input.  Performance relative to target labels measures the effectiveness of the attack, indicating the ability of the attacker to force the model to make predictions that are not only incorrect, but that align with the attackers chosen output.
 
-# Instrumentation
+## Instrumentation
 
-The `armory.metrics.instrument` module implements functionality to flexibly capture values for measurement.
+The `armory.instrument` module implements functionality to flexibly capture values for measurement.
 
-## Usage
+The primary mechanisms are largely based off of the logging paradigm of loggers and handlers, though with significant differences on the handling side.
 
-The primary mechanisms are largely based off of the logging paradigm of loggers and handlers.
-Loggers here are referred to as probes, and handlers are referred to as meters.
+Probe - object to capture data and publish them for measurement.
+Meter - object to measure a single metric with given captured data and output records
+Writer - object to take meter output records and send them standard outputs (files, loggers, results dictionaries, etc.)
+Hub - object to route captured probe data to meter inputs and route meter outputs to writers
+There is typically only a single hub, where there can be numerous of the other types of objects.
 
-To capture values in-line, use probe:
+### Probes
+
+To get a new Probe (connected to the default Hub):
 ```
 # Module imports section
-from armory.metrics import instrument
-probe = instrument.get_probe()
+from armory.instrument import get_probe
+probe = get_probe(name)
+```
+The arg `name` can be any `str` that is a valid python identifier, or can be blank, which defaults to the empty string `""`.
+Similarly to `logging.getLogger`, this provides a namespace to place variables, and inputs like `__name__` can also be used.
+Calls to `get_probe` using the same name will return the same Probe object.
+The recommended approach is to set a probe at the top of the file of interest and use it for all captures in that file.
 
+To capture values in-line, use `update`:
+```
 # ...
-
 # In the code
 probe.update(name=value)
 ```
 
-However, this will fall on the floor unless a meter is connected to record values.
-
-
-When you call
+This will publish the given value(s) to the given name(s) (also called probe variables) in the probe namespace of the connected Hub.
+To be more concrete:
 ```
-probe.update(arbitrary_name=value)
+probe = get_probe("my.probe_name")
+probe.update(arbitrary_variable_name=15)
 ```
-you are defining `arbitrary_name` as a name that can then be used when passing a string `"probe_name.arbitrary_name"` to `add_meter()`.
+will push the value 15 to `"my.probe_name.arbitrary_variable_name"`.
+These names will be used when instantiating `Meter` objects.
 
+However, this will fall on the floor (`del`, effectively) unless a meter is connected to the Hub to record values.
+This is analogous to having a `logging.Logger` without an appropriate `logging.Handler`.
 
-### Preprocessing
-
-Probes can perform preprocessing of the updating values.
-This involves specifying a function or sequence of functions to perform when a value is updated.
-However, this is done lazily - it is only performed if a meter is connected and is measuring.
-
-For instance, to extract a pytorch tensor `layer_3_output`, you could do:
+Multiple variables can be updated simultaneously with a single function call (utilizing all kwargs given):
 ```
-probe.update(lambda x: x.detach().cpu().numpy(), a=layer_3_output)
-```
-Or in a longer form:
-```
-probe.update(lambda x: x.detach(), lambda x: x.cpu().numpy(), a=layer_3_output)
+probe.update(a=x, b=y, c=z)
 ```
 
-This can also apply to multiple inputs:
-
+Sometimes it is helpful to perform preprocessing on the variables before publishing.
+For instance, if the variable `y` was a pytorch tensor, it might be helpful to map to numpy via `y.detach().cpu().numpy()`.
+However, it would be a waste of computation of nothing was set up to measure that value.
+Therefore, probes leverage `args` to perform preprocessing on the input only when meters are connected.
+For instance,
 ```
-probe.update(lambda x: x.detach().cpu().numpy(), a=layer_3_output, b=layer_4_output)
+probe.update(lambda x: x.detach().cpu().numpy(), my_var=y)
 ```
+Or, less succinctly,
+```
+probe.update(lambda x: x.detach(), lambda x: x.cpu(), lambda x: x.numpy(), my_var=y)
+```
+More generally,
+```
+probe.update(func1, func2, func3, my_var=y)
+```
+will publish the value `func3(func2(func1(y)))`. 
 
-### Hooking
+#### Hooking
 
+Probes can also hook models to enable capturing values without modifying the target code.
 Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roadmap.
 
 To hook a model module, you can use the `hook` function.
@@ -110,14 +138,68 @@ For instance,
 # probe.hook(module, *preprocessing, input=None, output=None)
 probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
 ```
-
 This essentially wraps the `probe.update` call with a hooking function.
 This is intended for usage that cannot or does not modify the target codebase.
 
 More general hooking (e.g., for python methods) is TBD.
 
-## Meter
+#### Interactive Testing
 
+An easy way to test probe outputs is to set the probe to a `MockSink` interface.
+This can be done as follows:
+```
+from armory.instrument import get_probe, MockSink
+probe = get_probe(name)
+probe.set_sink(MockSink())
+```
+This will print all probe variables to the screen.
+
+### Meter
+
+A Meter is used to measure values output by probes.
+It is essentially a wrapper around the functions of `armory.utils.metrics`.
+
+To instantiate a Meter:
+```
+from armory.instrument import Meter
+meter = Meter( 
+        self,
+        name,
+        metric,
+        *metric_arg_names,
+        metric_kwargs=None,
+        auto_measure=True,
+        final=None,
+        final_name=None,
+        final_kwargs=None,
+        keep_results=True,
+)
+```
+It then needs to be connected to the hub:
+```
+from armory.instrument import get_hub
+hub = get_hub()
+hub.connect_meter(meter)
+
+
+        StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
+
+        probe_name.probe_variable[stage]
+
+        metric_kwargs - kwargs that are constant across measurements
+        auto_measure - whether to measure when all of the variables are present
+            if False, 'measure()' must be called externally
+
+        final - metric that takes in list of results as input
+            Example: np.mean
+        final_name - if final is not None, this is the name associated with the record
+            if not specified, it defaults to f'{final}_{name}'
+
+        keep_results - whether to locally store results
+            if final is not None, keep_results is set to True
+
+
+```
 To set up a meter, you need to connect it to the probe.
 This can be done as follows:
 ```
