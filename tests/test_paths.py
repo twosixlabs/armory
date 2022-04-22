@@ -22,5 +22,5 @@ def test_config_present():
     assert config.exists()
     body = config.read_text()
     assert body.startswith("{")
-    assert body.endswith("}")
+    assert body.endswith("}\n")
     assert "tmp_dir" in body
