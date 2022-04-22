@@ -2,6 +2,8 @@
 Set up the meters from a standard config file
 """
 
+from collections import Counter
+
 import numpy as np
 
 from armory.instrument.instrument import (
@@ -212,6 +214,26 @@ def total_wer(sample_wers):
 
 
 # TODO: move to armory.utils.metrics
+def total_entailment(sample_results):
+    """
+    Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
+        Return a dictionary of counts for each label
+    """
+    entailment_map = ["contradiction", "neutral", "entailment"]
+    for i in range(sample_results):
+        sample = sample_results[i]
+        if sample in (0, 1, 2):
+            log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
+            sample_results[i] = entailment_map[sample]
+        elif sample not in entailment_map:
+            raise ValueError(f"result {sample} not a valid entailment label")
+
+    c = Counter()
+    c.update(sample_results)
+    c = dict(c)  # ensure JSON-able
+
+
+# TODO: move to armory.utils.metrics
 def identity_unzip(*args):
     """
     Map batchwise args to a list of sample-wise args
@@ -268,6 +290,15 @@ class ResultsLogWriter(LogWriter):
                 result = total_wer(result)
             total, (num, denom) = result
             f_result = f"total={total:.2%}, {num}/{denom}"
+        elif "entailment" in name:
+            if "total_entailment" not in name:
+                result = total_entailment(result)
+            total = len(result)
+            f_result = (
+                f"contradiction: {result['contradiction']}/{total}, "
+                f"neutral: {result['neutral']}/{total}, "
+                f"entailment: {result['entailment']}/{total}"
+            )
         elif any(m in name for m in MEAN_AP_METRICS):
             if "input_to" in name:
                 for m in MEAN_AP_METRICS:
@@ -308,6 +339,9 @@ def _task_metric(
         name = f"input_to_{name}"
         metric = identity_unzip
         metric_kwargs = None
+    elif name == "entailment":
+        final = total_entailment
+        final_suffix = "total_entailment"
     elif name == "word_error_rate":
         final = total_wer
         final_suffix = "total_word_error_rate"
@@ -427,6 +461,9 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
         name = f"input_to_{name}"
         metric = identity_unzip
         metric_kwargs = None
+    elif name == "entailment":
+        final = total_entailment
+        final_suffix = "total_entailment"
     elif name == "word_error_rate":
         final = total_wer
         final_suffix = "total_word_error_rate"

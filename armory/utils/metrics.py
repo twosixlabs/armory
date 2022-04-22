@@ -69,8 +69,7 @@ class Entailment:
             model_name, cache_dir=cache_dir
         )
         self.model.eval()
-        # self.label_mapping = ['contradiction', 'neutral', 'entailment']
-        self.label_mapping = [0, 1, 2]
+        self.label_mapping = ["contradiction", "neutral", "entailment"]
         _ENTAILMENT_MODEL = (
             model_name,
             cache_dir,
