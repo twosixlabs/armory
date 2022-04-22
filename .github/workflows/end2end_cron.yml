@@ -1,6 +1,29 @@
 ---
 name: End-to-End Tests
 
+# TODO
+# because of the duo-era changes container layout, the mounted ~/.armory directories
+# are not used in containers but need to be.
+# Inside the container there are mounts on /armory/datasets, outputs, saved_models, etc.
+# but without a config.json, fallbacks to $HOME/.armory where HOME=/tmp in the
+# container.
+#
+# /dev/nvme0n1p2 on /workspace type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /armory/datasets type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /armory/git type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /armory/outputs type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /armory/saved_models type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /armory/tmp type ext4 (rw,relatime,errors=remount-ro)
+# /dev/nvme0n1p2 on /etc/resolv.conf type ext4 (rw,relatime,errors=remount-ro)
+#
+# Related: with no config.json, art_config:set_data_path reports both
+#  0s INFO     art.config:set_data_path:55 set ART_DATA_PATH to /tmp/.art/data
+#  2s INFO     art.config:set_data_path:55 set ART_DATA_PATH to /armory/saved_models/art
+# This set+reset suggests that set_art_data_path was called twice, the first with
+# HOME=/tmp and the second with set_mode(mode="docker")
+#
+# Tracing which path gets accessed by these tests is the first step
+
 on:
     # because these run on the self-hosted gpu instance which does single threaded
     # job processing we explicitly don't trigger on pushes or PRs to develop.
@@ -42,39 +65,47 @@ jobs:
               run: echo ${{ steps.image-version.outputs.imageTag }}
         outputs:
             imageTag: ${{ steps.image-version.outputs.imageTag }}
-    docker-pytorch-end2end:
-        name: Docker Torch End2End
-        needs: docker-build
-        runs-on: [self-hosted, gpu]
+    check-paths:
+        needs: [docker-build]
+        runs-on: gpu
         steps:
-            - name: Run Tests Torch Docker
+            - name: check paths
               run: |
-                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-                  imageName=twosixarmory/pytorch:$imageTag
-                  echo "Running Tests with Image -> $imageName"
-                  docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
-    docker-tf2-end2end:
-        name: Docker TF2 End2End
-        needs: docker-build
-        runs-on: [self-hosted, gpu]
-        steps:
-            - name: Run Tests TF2 Docker
-              run: |
-                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-                  imageName=twosixarmory/tf2:$imageTag
-                  echo "Running Tests with Image -> $imageName"
-                  docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
-    docker-deepspeech-end2end:
-        name: Docker Deepspeech End2End
-        needs: docker-build
-        runs-on: [self-hosted, gpu]
-        steps:
-            - name: Run Tests Deepspeech Docker
-              run: |
-                  imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
-                  imageName=twosixarmory/pytorch-deepspeech:$imageTag
-                  echo "Running Tests with Image -> $imageName"
-                  docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
+                  tag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+                  docker run twosixarmory/pytorch:$tag pytest tests/test_paths.py
+    # docker-pytorch-end2end:
+    #     name: Docker Torch End2End
+    #     needs: docker-build
+    #     runs-on: [self-hosted, gpu]
+    #     steps:
+    #         - name: Run Tests Torch Docker
+    #           run: |
+    #               imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+    #               imageName=twosixarmory/pytorch:$imageTag
+    #               echo "Running Tests with Image -> $imageName"
+    #               docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
+    # docker-tf2-end2end:
+    #     name: Docker TF2 End2End
+    #     needs: docker-build
+    #     runs-on: [self-hosted, gpu]
+    #     steps:
+    #         - name: Run Tests TF2 Docker
+    #           run: |
+    #               imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+    #               imageName=twosixarmory/tf2:$imageTag
+    #               echo "Running Tests with Image -> $imageName"
+    #               docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
+    # docker-deepspeech-end2end:
+    #     name: Docker Deepspeech End2End
+    #     needs: docker-build
+    #     runs-on: [self-hosted, gpu]
+    #     steps:
+    #         - name: Run Tests Deepspeech Docker
+    #           run: |
+    #               imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+    #               imageName=twosixarmory/pytorch-deepspeech:$imageTag
+    #               echo "Running Tests with Image -> $imageName"
+    #               docker run -w /armory-repo/ $imageName pytest -m "not docker_required and end_to_end" ./tests/
 
     # TODO: the until time might need to be reduced depending on measured usage
     docker-prune:
