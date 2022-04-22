@@ -163,8 +163,7 @@ def perturbation_metrics(names, use_mean=True):
 
     hub = get_hub()
     for name in names:
-        metric = metrics.SUPPORTED_METRICS[name]
-        # metric = metrics.get_supported_metric(name)
+        metric = metrics.get_supported_metric(name)
         hub.connect_meter(
             Meter(
                 f"perturbation_{name}",
@@ -273,7 +272,7 @@ class ResultsLogWriter(LogWriter):
             if "input_to" in name:
                 for m in MEAN_AP_METRICS:
                     if m in name:
-                        metric = metrics.SUPPORTED_METRICS[m]
+                        metric = metrics.get_supported_metric(m)
                         result = MeanAP(metric)(result)
                         break
             f_result = f"{result}"
@@ -299,8 +298,7 @@ def _task_metric(
     Return list of meters generated for this specific task
     """
     meters = []
-    metric = metrics.SUPPORTED_METRICS[name]
-    # metric = metrics.get_supported_metric(name)
+    metric = metrics.get_supported_metric(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
@@ -419,8 +417,7 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
     Return the meter generated for this specific task
     Return list of meters generated for this specific task
     """
-    metric = metrics.SUPPORTED_METRICS[name]
-    # metric = metrics.get_supported_metric(name)
+    metric = metrics.get_supported_metric(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name

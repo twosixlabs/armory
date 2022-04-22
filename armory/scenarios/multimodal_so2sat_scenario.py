@@ -92,7 +92,7 @@ class So2SatClassification(Scenario):
             final = None
         for mode in modes:
             for name in self.perturbation_metrics:
-                metric = metrics.SUPPORTED_METRICS[name]
+                metric = metrics.get_supported_metric(name)
                 m = Meter(
                     f"{mode}_perturbation_{name}",
                     metric,
