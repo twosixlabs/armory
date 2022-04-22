@@ -6,7 +6,7 @@
         "kwargs": {
             "batch_size": 1,
             "learning_rate": 0.01,
-            "max_iter": 10000,
+            "max_iter": 2000,
             "verbose": true
         },
         "module": "armory.art_experimental.attacks.carla_obj_det_patch",
