@@ -4,7 +4,11 @@
         "experiment_id": 0,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": [1,2,3],
+        "source_class": [
+            1,
+            2,
+            3
+        ],
         "split_id": 0,
         "target_class": 9,
         "train_epochs": 100,
