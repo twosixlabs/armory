@@ -4,6 +4,7 @@ from armory.instrument.instrument import (
     LogWriter,
     Hub,
     Meter,
+    MockSink,
     Probe,
     PrintWriter,
     ResultsWriter,

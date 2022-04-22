@@ -148,6 +148,18 @@ class Probe:
             raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
 
 
+class MockSink:
+    """
+    Measures all probe inputs and prints to screen
+    """
+
+    def is_measuring(self, probe_variable):
+        return True
+
+    def update(self, probe_variable, value):
+        print(f"update probe variable {probe_variable} to {value}")
+
+
 def process_meter_arg(arg: str):
     """
     Return the probe variable and stage_filter
