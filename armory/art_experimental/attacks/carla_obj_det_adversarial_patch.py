@@ -4,9 +4,8 @@ from armory.logs import log
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
-from typing import Optional, List, Union, Tuple, Dict
+from typing import Optional
 import torch
-from armory.utils.evaluation import patch_method
 
 
 class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
