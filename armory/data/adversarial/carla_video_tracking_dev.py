@@ -21,7 +21,7 @@ _CITATION = """
 }
 """
 
-_URLS = "/nfs/gard/ytan/Eval5/carla_video_tracking/carla_object_tracking_dev.tar.gz"
+_URLS = "carla_object_tracking_dev.tar.gz"
 
 
 class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
