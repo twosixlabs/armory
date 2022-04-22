@@ -664,8 +664,8 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_single_modal_context = ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(960, 1280, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -831,7 +831,7 @@ def carla_obj_det_label_preprocessing(x, y):
     for i, label_dict in enumerate(y):
         orig_boxes = label_dict["boxes"].reshape((-1, 4))
         converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
-        height, width = x[i].shape[1:3]  # shape is (2, 600, 800, 3)
+        height, width = x[i].shape[1:3] 
         converted_boxes *= [width, height, width, height]
         label_dict["boxes"] = converted_boxes
         label_dict["labels"] = label_dict["labels"].reshape((-1,))
@@ -891,7 +891,7 @@ def carla_obj_det_train(
     )
 
     return _generator_from_tfds(
-        "carla_obj_det_train:1.0.1",
+        "carla_obj_det_train:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
