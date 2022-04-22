@@ -342,7 +342,6 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                 patch_init, requires_grad=True, device=self.estimator.device
             )
 
-            log.info("y_gt: {}".format(y_gt))
             patch, _ = super().generate(np.expand_dims(x[i], axis=0), y=[y_gt])
 
             # Patch image
