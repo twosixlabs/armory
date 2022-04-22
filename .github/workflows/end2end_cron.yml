@@ -42,35 +42,38 @@ on:
     workflow_dispatch:
 
 jobs:
-    docker-build:
-        name: Build Docker Image
-        runs-on: [self-hosted, gpu]
-        steps:
-            - uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
-            - uses: actions/setup-python@v2
-              with:
-                  python-version: "3.7"
-            - name: Build Docker
-              id: docker-build
-              run: |
-                  pip install -r requirements.txt
-                  pip install .
-                  python docker/build.py all
-            - name: get imageTag version
-              id: image-version
-              run: echo "::set-output imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
-            - name: show imageTag --version
-              run: echo ${{ steps.image-version.outputs.imageTag }}
-        outputs:
-            imageTag: ${{ steps.image-version.outputs.imageTag }}
+    # docker-build:
+    #     name: Build Docker Image
+    #     runs-on: [self-hosted, gpu]
+    #     steps:
+    #         - uses: actions/checkout@v3
+    #           with:
+    #               fetch-depth: 0
+    #         - uses: actions/setup-python@v2
+    #           with:
+    #               python-version: "3.7"
+    #         - name: Build Docker
+    #           id: docker-build
+    #           run: |
+    #               pip install -r requirements.txt
+    #               pip install .
+    #               python docker/build.py all
+    #         - name: get imageTag version
+    #           id: image-version
+    #           run: echo "::set-output imageTag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')"
+    #         - name: show imageTag --version
+    #           run: echo ${{ steps.image-version.outputs.imageTag }}
+    #     outputs:
+    #         imageTag: ${{ steps.image-version.outputs.imageTag }}
     check-paths:
         needs: [docker-build]
-        runs-on: gpu
+        runs-on: [self-hosted]
         steps:
             - name: check paths
               run: |
+                  pip install -r requirements.txt
+                  pip install .
+                  python docker/build.py pytorch
                   tag=$(python setup.py --version | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
                   docker run -w /armory-repo/ twosixarmory/pytorch:$tag pytest tests/test_paths.py
     # docker-pytorch-end2end:

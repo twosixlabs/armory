@@ -1,19 +1,26 @@
-import armory.paths as ap
+from pathlib import Path
 import os
+import armory.paths as ap
 
 # these look at the paths selected to debug CI
 # they are expected to fail but give clues about the runtime environment
 
 
-def test_path_mode():
+def test_starting_config():
+    # these all pass in a container at startup
     assert ap.NO_DOCKER
-    assert not ap.NO_DOCKER
-
-
-def test_toplevel_path():
-    assert ap.runtime_paths().cwd == "/workspace"
+    assert ap.runtime_paths().cwd == "/armory-repo"
     assert ap.runtime_paths().cwd == os.getcwd()
+    assert ap.runtime_paths().armory_dir == "/root/.armory"
 
 
-def test_armory_dir():
-    assert ap.runtime_paths().armory_dir == "/workspace/.armory"
+def test_config_present():
+    armory = Path(ap.runtime_paths().armory_dir)
+    assert armory.exists()
+    assert armory.is_dir()
+    config = armory / "config.json"
+    assert config.exists()
+    body = config.read_text()
+    assert body.startswith("{")
+    assert body.endswith("}")
+    assert "tmp_dir" in body

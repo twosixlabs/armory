@@ -60,6 +60,7 @@ class DockerPaths:
         self.tmp_dir = armory_dir + "/tmp"
         self.output_dir = armory_dir + "/outputs"
         self.external_repo_dir = self.tmp_dir + "/external"
+        self.armory_dir = armory_dir
 
 
 class HostDefaultPaths:
