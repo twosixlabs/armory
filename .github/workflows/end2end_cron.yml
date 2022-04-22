@@ -66,7 +66,6 @@ jobs:
     #     outputs:
     #         imageTag: ${{ steps.image-version.outputs.imageTag }}
     check-paths:
-        needs: [docker-build]
         runs-on: [self-hosted]
         steps:
             - name: check paths
