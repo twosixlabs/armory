@@ -272,9 +272,12 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
+        is_dirty_mask = np.ones_like(self.y_clean)
+        is_dirty_mask[self.indices_to_keep] = 0
+        self.is_dirty_mask = is_dirty_mask
 
         removed = (1 - self.indices_to_keep).astype(np.bool)
-        self.probe.update(removed=removed)
+        self.probe.update(removed=removed, is_dirty_mask=is_dirty_mask)
         self.hub.record("fraction_data_removed", removed.mean())
         self.hub.record("N_samples_removed", removed.sum())
         self.removed = removed
@@ -409,11 +412,13 @@ class Poison(Scenario):
             )
         )
 
-        # TODO: this one is REALLY complicated...
         if self.config["adhoc"].get("compute_fairness_metrics", False):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
             )
+            if not self.check_run:
+                self.fairness_metrics.add_filter_perplexity()
+                # log.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
         else:
             log.warning(
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
@@ -491,10 +496,6 @@ class Poison(Scenario):
 
     def finalize_results(self):
         self.results = {}
-        self.hub.finalize()  # TODO; see scenarios.py
-        # self.metrics_logger.results()  # TODO
-        # self.results = self.metrics_logger.results()
-
         if hasattr(self, "fairness_metrics") and not self.check_run:
             self.test_set_class_labels = sorted(self.test_set_class_labels)
             if self.train_set_class_labels != self.test_set_class_labels:
@@ -517,7 +518,6 @@ class Poison(Scenario):
                 self.train_set_class_labels,
                 self.test_set_class_labels,
             )
-            if self.use_filtering_defense:
-                self.fairness_metrics.add_filter_perplexity(
-                    self.y_clean, self.poison_index, self.indices_to_keep
-                )
+        self.hub.finalize()  # TODO; see scenarios.py
+        # self.metrics_logger.results()  # TODO
+        # self.results = self.metrics_logger.results()
