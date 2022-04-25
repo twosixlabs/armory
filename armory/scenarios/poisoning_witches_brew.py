@@ -58,7 +58,14 @@ class DatasetPoisonerWitchesBrew:
 
             y_trigger = self.target_class
 
-        poison_x, poison_y, poison_index, new_trigger_index, new_source_class, new_target_class = self.attack.poison(
+        (
+            poison_x,
+            poison_y,
+            poison_index,
+            new_trigger_index,
+            new_source_class,
+            new_target_class,
+        ) = self.attack.poison(
             self.data_filepath,
             x_trigger,
             y_trigger,
@@ -247,9 +254,12 @@ class WitchesBrewScenario(Poison):
         )
         x_test, y_test = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
 
-        self.trigger_index, self.target_class, self.source_class, triggers_chosen_randomly = self._validate_attack_args(
-            adhoc_config, y_test
-        )
+        (
+            self.trigger_index,
+            self.target_class,
+            self.source_class,
+            triggers_chosen_randomly,
+        ) = self._validate_attack_args(adhoc_config, y_test)
 
         if self.use_poison:
 
