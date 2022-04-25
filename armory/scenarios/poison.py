@@ -285,14 +285,14 @@ class Poison(Scenario):
         self.i = -1
 
     def load_metrics(self):
-        self.accuracy_on_benign_test_data_all_classes = metrics.MetricList(
+        self.accuracy_on_benign_data_all_classes = metrics.MetricList(
             "categorical_accuracy"
         )
-        self.accuracy_on_benign_test_data_source_class = metrics.MetricList(
+        self.accuracy_on_benign_data_source_class = metrics.MetricList(
             "categorical_accuracy"
         )
         if self.use_poison:
-            self.accuracy_on_poisoned_test_data_all_classes = metrics.MetricList(
+            self.accuracy_on_poisoned_data_all_classes = metrics.MetricList(
                 "categorical_accuracy"
             )
             self.attack_success_rate = metrics.MetricList("categorical_accuracy")
@@ -333,11 +333,11 @@ class Poison(Scenario):
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
-        self.accuracy_on_benign_test_data_all_classes.add_results(y, y_pred)
+        self.accuracy_on_benign_data_all_classes.add_results(y, y_pred)
         source = y == self.source_class
         # NOTE: uses source->target trigger
         if source.any():
-            self.accuracy_on_benign_test_data_source_class.add_results(
+            self.accuracy_on_benign_data_source_class.add_results(
                 y[source], y_pred[source]
             )
 
@@ -360,7 +360,7 @@ class Poison(Scenario):
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
-        self.accuracy_on_poisoned_test_data_all_classes.add_results(y, y_pred_adv)
+        self.accuracy_on_poisoned_data_all_classes.add_results(y, y_pred_adv)
         # NOTE: uses source->target trigger
         if source.any():
             self.attack_success_rate.add_results(
@@ -464,25 +464,25 @@ class Poison(Scenario):
             poisoned and benign performance on whole test set and on source class
         """
         self.results[
-            "accuracy_on_benign_test_data_all_classes"
-        ] = self.accuracy_on_benign_test_data_all_classes.mean()
+            "accuracy_on_benign_data_all_classes"
+        ] = self.accuracy_on_benign_data_all_classes.mean()
         self.results[
-            "accuracy_on_benign_test_data_source_class"
-        ] = self.accuracy_on_benign_test_data_source_class.mean()
+            "accuracy_on_benign_data_source_class"
+        ] = self.accuracy_on_benign_data_source_class.mean()
         log.info(
-            f"Accuracy on benign test data--all classes: {self.accuracy_on_benign_test_data_all_classes.mean():.2%}"
+            f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
         )
         log.info(
-            f"Accuracy on benign test data--source class: {self.accuracy_on_benign_test_data_source_class.mean():.2%}"
+            f"Accuracy on benign data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
         )
 
         if self.use_poison:
             self.results[
-                "accuracy_on_poisoned_test_data_all_classes"
-            ] = self.accuracy_on_poisoned_test_data_all_classes.mean()
+                "accuracy_on_poisoned_data_all_classes"
+            ] = self.accuracy_on_poisoned_data_all_classes.mean()
             self.results["attack_success_rate"] = self.attack_success_rate.mean()
             log.info(
-                f"Accuracy on poisoned test data--all classes: {self.accuracy_on_poisoned_test_data_all_classes.mean():.2%}"
+                f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
             )
             log.info(
                 f"Attack success rate: {self.attack_success_rate.mean():.2%}"
