@@ -38,8 +38,7 @@ class Scenario:
             raise ValueError("num_eval_batches cannot be negative")
         if self.check_run:
             if num_eval_batches:
-                log.warning("check_run overriding num_eval_batches")
-                num_eval_batches = None
+                raise ValueError("check_run and num_eval_batches are incompatible")
             # Modify dataset entries
             if config["model"]["fit"]:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
