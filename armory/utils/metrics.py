@@ -95,7 +95,7 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
-def filter_rates(true_values, positives):
+def tpr_fpr(true_values, positives):
     """
     true_values and positives should be equal length boolean np arrays
 
@@ -148,6 +148,31 @@ def filter_rates(true_values, positives):
         true_negative_rate=true_negative_rate,
         f1_score=f1_score,
     )
+
+
+def per_class_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    y, y_pred = (np.asarray(i) for i in (y, y_pred))
+    if y.ndim != 1:
+        raise ValueError("y should be a list of classes")
+    if y.ndim + 1 != y_pred.ndim:
+        raise ValueError("y_pred should be a matrix of probabilities")
+
+    results = {}
+    for i in range(y_pred.shape[1]):
+        if i in y:
+            index = y == i
+            results[i] = categorical_accuracy(y[index], y_pred[index])
+        else:
+            results[i] = float("nan")
+
+    return results
 
 
 def abstains(y, y_pred):
@@ -1812,7 +1837,7 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 SUPPORTED_METRICS = {
     "entailment": Entailment,
-    "filter_rates": filter_rates,
+    "tpr_fpr": tpr_fpr,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,

@@ -346,6 +346,15 @@ class Hub:
         if writer not in self.writers:
             self.writers.append(writer)
 
+    def record(self, name, result):
+        """
+        Push a record to the default writers
+        """
+        if not self.default_writers:
+            log.warning(f"No default writers to record {name}:{result} to")
+        for writer in self.default_writers:
+            writer.write((name, self.context["batch"], result))
+
     def close(self):
         if self.closed:
             return

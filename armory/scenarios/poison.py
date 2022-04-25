@@ -196,6 +196,21 @@ class Poison(Scenario):
                 np.array([]),
             )
 
+        self.n_poisoned = int(len(self.poison_index))
+        self.n_clean = (
+            len(self.y_clean) - self.n_poisoned
+        )  # self.y_clean is the whole pre-poison train set
+        poisoned = np.zeros_like(self.y_clean, np.bool)
+        poisoned[self.poison_index.astype(np.int64)] = True
+        self.probe.update(poisoned=poisoned)
+        self.hub.record("N_poisoned_train_samples", self.n_poisoned)
+        self.hub.record("N_clean_train_samples", self.n_clean)
+        self.train_set_class_labels = sorted(np.unique(self.y_clean))
+        for y in self.train_set_class_labels:
+            self.hub.record(
+                f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
+            )
+
     def filter_dataset(self):
         self.hub.set_context(stage="filter")
         adhoc_config = self.config["adhoc"]
@@ -258,6 +273,19 @@ class Poison(Scenario):
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
 
+        removed = (1 - self.indices_to_keep).astype(np.bool)
+        self.probe.update(removed=removed)
+        self.hub.record("fraction_data_removed", removed.mean())
+        self.hub.record("N_samples_removed", removed.sum())
+        self.removed = removed
+
+        if self.use_filtering_defense:
+            for y in self.train_set_class_labels:
+                self.hub.record(
+                    f"class_{y}_N_train_samples_removed",
+                    int(np.sum(self.y_clean[self.removed] == y)),
+                )
+
     def fit(self):
         if len(self.x_train):
             self.hub.set_context(stage="fit")
@@ -290,8 +318,20 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.i = -1
+        self.test_set_class_labels = set()
 
     def load_metrics(self):
+        if self.use_filtering_defense:
+            # Filtering metrics
+            self.hub.connect_meter(
+                Meter(
+                    "filter",
+                    metrics.get_supported_metric("tpr_fpr"),
+                    "scenario.poisoned",
+                    "scenario.removed",
+                )
+            )
+
         self.hub.connect_meter(
             Meter(
                 "sample_accuracy_on_benign_data_all_classes",
@@ -300,6 +340,7 @@ class Poison(Scenario):
                 "scenario.y_pred[benign]",
                 final=np.mean,
                 final_name="accuracy_on_benign_data_all_classes",
+                record_final_only=True,
             )
         )
         self.hub.connect_meter(
@@ -310,8 +351,10 @@ class Poison(Scenario):
                 "scenario.y_pred_source[benign]",
                 final=np.mean,
                 final_name="accuracy_on_benign_data_source_class",
+                record_final_only=True,
             )
         )
+
         # TODO: set up ResultsLogWriter? Only printed at end of scenario
         # log.info(
         #    f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
@@ -335,6 +378,7 @@ class Poison(Scenario):
                     "scenario.y_pred_adv[adversarial]",
                     final=np.mean,
                     final_name="accuracy_on_poisoned_data_all_classes",
+                    record_final_only=True,
                 )
             )
             # counts number of source images classified as target
@@ -346,14 +390,24 @@ class Poison(Scenario):
                     "scenario.y_pred_adv_source",
                     final=np.mean,
                     final_name="attack_success_rate",
+                    record_final_only=True,
                 )
             )
             # attack_success_rate is not just 1 - (accuracy on poisoned source class)
             # because it only counts examples misclassified as target, and no others.
 
-        # TODO: this one is more complicated...
-        self.benign_test_accuracy_per_class = {}
-        # store accuracy results for each class
+        # TODO: write GlobalMeter ???
+        self.hub.connect_meter(
+            Meter(
+                "sample_benign_test_accuracy_per_class",
+                metrics.get_supported_metric("identity_unzip"),
+                "scenario.y",
+                "scenario.y_pred",
+                final=metrics.get_supported_metric("per_class_accuracy"),
+                final_name="unpoisoned_test_accuracy_per_class",
+                record_final_only=True,
+            )
+        )
 
         # TODO: this one is REALLY complicated...
         if self.config["adhoc"].get("compute_fairness_metrics", False):
@@ -390,24 +444,16 @@ class Poison(Scenario):
 
         self.probe.update(y_pred=y_pred)
         source = y == self.source_class
-        # NOTE: uses source->target trigger
+        # uses source->target trigger
         if source.any():
             self.probe.update(y_source=y[source], y_pred_source=y_pred[source])
 
         self.y_pred = y_pred
         self.source = source
-
-        for y_, y_pred_ in zip(y, y_pred):
-            if y_ not in self.benign_test_accuracy_per_class.keys():
-                self.benign_test_accuracy_per_class[y_] = []
-
-            # TODO
-            self.benign_test_accuracy_per_class[y_].append(
-                y_ == np.argmax(y_pred_, axis=-1)
-            )
+        self.test_set_class_labels.update(y)
 
     def run_attack(self):
-        self.hub.set_context(stage="attack")  # ???  TODO
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
         source = self.source
 
@@ -418,7 +464,7 @@ class Poison(Scenario):
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
 
-        # NOTE: uses source->target trigger
+        # uses source->target trigger
         if source.any():
             self.probe.update(
                 target_class_source=[self.target_class] * source.sum(),
@@ -443,90 +489,40 @@ class Poison(Scenario):
                 y_pred_adv=self.y_pred_adv,
             )
 
-    def _add_filter_metrics_results(self):
-        """ Adds filter-specific metrics to self.results:
-        Number of samples removed total and per class, true and false positives, F1 score
-        """
-        removed = (1 - self.indices_to_keep).astype(np.bool)
-        poisoned = np.zeros_like(self.y_clean).astype(np.bool)
-        poisoned[self.poison_index.astype(np.int64)] = True
-
-        filter_results = metrics.filter_rates(poisoned, removed)
-        filter_results["fraction_data_removed"] = removed.mean()
-        filter_results["N_samples_removed"] = int(removed.sum())
-        self.results["filter"] = filter_results
-
-        for y in self.train_set_class_labels:
-            self.results[f"class_{y}_N_train_samples_removed"] = int(
-                np.sum(self.y_clean[removed] == y)
-            )
-
-    def _add_fairness_metrics_results(self):
-        """ Adds fairness metrics to self.results:
-            model bias and filter bias on class subpopulations
-        """
-
-        # Get unpoisoned test set
-        dataset_config = self.config["dataset"]
-        test_dataset = config_loading.load_dataset(
-            dataset_config, split="test", num_batches=None, **self.dataset_kwargs
-        )
-
-        # The following functions will add data to self.results
-        log_lines = self.fairness_metrics.add_cluster_metrics(
-            self.x_poison,
-            self.y_poison,
-            self.poison_index,
-            self.indices_to_keep,
-            test_dataset,
-            self.train_set_class_labels,
-            self.test_set_class_labels,
-        )
-        for line in log_lines:
-            log.info(line)
-        if self.use_filtering_defense:
-            log_lines = self.fairness_metrics.add_filter_perplexity(
-                self.y_clean, self.poison_index, self.indices_to_keep
-            )
-            for line in log_lines:
-                log.info(line)
-
-    def _add_supplementary_metrics_results(self):
-        """ Adds additional metrics  to self.results:
-        N poisoned, N clean, N samples per class, benign accuracy per class
-        """
-        self.n_poisoned = int(len(self.poison_index))
-        self.n_clean = (
-            len(self.y_clean) - self.n_poisoned
-        )  # self.y_clean is the whole pre-poison train set
-        self.results["N_poisoned_train_samples"] = self.n_poisoned
-        self.results["N_clean_train_samples"] = self.n_clean
-
-        self.train_set_class_labels = sorted(list(np.unique(self.y_clean)))
-        self.test_set_class_labels = sorted(
-            list(self.benign_test_accuracy_per_class.keys())
-        )
-        if self.test_set_class_labels != self.train_set_class_labels:
-            log.warning(
-                "Test set contains a strict subset of train set classes.  Some metrics for missing classes may not be computed."
-            )
-        for y in self.train_set_class_labels:
-            self.results[f"class_{y}_N_train_samples"] = int(np.sum(self.y_clean == y))
-        for y in self.test_set_class_labels:
-            self.results[f"class_{y}_unpoisoned_test_accuracy"] = np.mean(
-                self.benign_test_accuracy_per_class[y]
-            )
-
     def finalize_results(self):
         self.results = {}
         self.hub.finalize()  # TODO; see scenarios.py
         # self.metrics_logger.results()  # TODO
         # self.results = self.metrics_logger.results()
 
-        self._add_supplementary_metrics_results()
-
-        if self.use_filtering_defense:
-            self._add_filter_metrics_results()
-
         if hasattr(self, "fairness_metrics") and not self.check_run:
-            self._add_fairness_metrics_results()
+            self.test_set_class_labels = sorted(self.test_set_class_labels)
+            if self.train_set_class_labels != self.test_set_class_labels:
+                log.warning(
+                    "Test set contains a strict subset of train set classes. "
+                    "Some metrics for missing classes may not be computed."
+                )
+            log_lines = self.fairness_metrics.add_cluster_metrics(
+                self.x_poison,
+                self.y_poison,
+                self.poison_index,
+                self.indices_to_keep,
+                # Get unpoisoned test set
+                config_loading.load_dataset(
+                    self.config["dataset"],
+                    split="test",
+                    num_batches=None,
+                    **self.dataset_kwargs,
+                ),
+                self.train_set_class_labels,
+                self.test_set_class_labels,
+            )
+            if self.use_filtering_defense:
+                log_lines.extend(
+                    self.fairness_metrics.add_filter_perplexity(
+                        self.y_clean, self.poison_index, self.indices_to_keep
+                    )
+                )
+            # TODO: log lines should be handled by Writers
+            for line in log_lines:
+                log.info(line)

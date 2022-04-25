@@ -59,6 +59,44 @@ def test_entailment():
     assert c["contradiction"] >= 98
 
 
+def test_tpr_fpr():
+    true_values = [0] * 10 + [1] * 10
+    positives = [0] * 4 + [1] * 6 + [0] * 3 + [1] * 7
+    results = metrics.tpr_fpr(true_values, positives)
+    for k, v in [
+        ("true_positives", 7),
+        ("true_negatives", 4),
+        ("false_positives", 6),
+        ("false_negatives", 3),
+        ("true_positive_rate", 0.7),
+        ("true_negative_rate", 0.4),
+        ("false_positive_rate", 0.6),
+        ("false_negative_rate", 0.3),
+        ("f1_score", 7 / (7 + 0.5 * (6 + 3))),
+    ]:
+        assert results[k] == v
+
+    results = metrics.tpr_fpr([], [])
+    for k, v in [
+        ("true_positives", 0),
+        ("true_negatives", 0),
+        ("false_positives", 0),
+        ("false_negatives", 0),
+        ("true_positive_rate", float("nan")),
+        ("true_negative_rate", float("nan")),
+        ("false_positive_rate", float("nan")),
+        ("false_negative_rate", float("nan")),
+        ("f1_score", float("nan")),
+    ]:
+        assert results[k] == v
+
+    with pytest.raises(ValueError):
+        metrics.tpr_fpr(true_values, [positives])
+    for array in 0, [[0, 1], [1, 0]]:
+        with pytest.raises(ValueError):
+            metrics.tpr_fpr(array, array)
+
+
 def test_abstains():
     y = [0, 1, 2, 3, 4]
     y_pred = np.zeros((5, 10))
