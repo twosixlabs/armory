@@ -502,7 +502,7 @@ class Poison(Scenario):
                     "Test set contains a strict subset of train set classes. "
                     "Some metrics for missing classes may not be computed."
                 )
-            log_lines = self.fairness_metrics.add_cluster_metrics(
+            self.fairness_metrics.add_cluster_metrics(
                 self.x_poison,
                 self.y_poison,
                 self.poison_index,
@@ -518,11 +518,6 @@ class Poison(Scenario):
                 self.test_set_class_labels,
             )
             if self.use_filtering_defense:
-                log_lines.extend(
-                    self.fairness_metrics.add_filter_perplexity(
-                        self.y_clean, self.poison_index, self.indices_to_keep
-                    )
+                self.fairness_metrics.add_filter_perplexity(
+                    self.y_clean, self.poison_index, self.indices_to_keep
                 )
-            # TODO: log lines should be handled by Writers
-            for line in log_lines:
-                log.info(line)

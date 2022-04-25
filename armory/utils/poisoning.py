@@ -1,15 +1,14 @@
 from importlib import import_module
-from armory.logs import log
-
 from typing import NamedTuple, Iterable, Dict, List, Tuple, Optional
 
 import numpy as np
-import torch
 from PIL import Image
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
+import torch
 
 from armory.data.utils import maybe_download_weights_from_s3
+from armory.logs import log
 from armory.utils.metrics import MetricList, make_contingency_tables
 
 
@@ -255,8 +254,7 @@ class FairnessMetrics:
         is_dirty_mask[predicted_clean_indices] = 0
         self.filter_perplexity.add_results(y_clean, poison_index, is_dirty_mask)
         self.scenario.results["filter_perplexity"] = self.filter_perplexity.mean()
-        log_lines = [f"Normalized filter perplexity: {self.filter_perplexity.mean()}"]
-        return log_lines
+        log.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
 
     def add_cluster_metrics(
         self,
@@ -313,8 +311,6 @@ class FairnessMetrics:
             test_y, majority_mask_test_set, correct_prediction_mask_test_set
         )
 
-        log_lines = []  # sent back to scenario for logging
-
         self.majority_x_class_prediction_chi2_metrics = {
             class_id: MetricList("poison_chi2_p_value")
             for class_id in test_set_class_labels
@@ -336,10 +332,10 @@ class FairnessMetrics:
             self.scenario.results[
                 f"model_bias_spd_{str(class_id).zfill(2)}"
             ] = self.majority_x_class_prediction_spd_metrics[class_id].mean()
-            log_lines.append(
+            log.info(
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_class_prediction_chi2_metrics[class_id].mean():.4f}"
             )
-            log_lines.append(
+            log.info(
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_class_prediction_spd_metrics[class_id].mean():.4f}"
             )
 
@@ -376,11 +372,9 @@ class FairnessMetrics:
                 self.scenario.results[
                     f"filter_bias_spd_{str(class_id).zfill(2)}"
                 ] = self.majority_x_passed_filter_spd_metrics[class_id].mean()
-                log_lines.append(
+                log.info(
                     f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {self.majority_x_passed_filter_chi2_metrics[class_id].mean():.4f}"
                 )
-                log_lines.append(
+                log.info(
                     f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {self.majority_x_passed_filter_spd_metrics[class_id].mean():.4f}"
                 )
-
-        return log_lines
