@@ -1,0 +1,6 @@
+# build-system taken from https://github.com/pypa/setuptools_scm/#pyprojecttoml-usage
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+
+[tool.setuptools_scm]
+# this empty section is needed to make the plugin work
