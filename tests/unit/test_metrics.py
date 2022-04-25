@@ -2,6 +2,8 @@
 Test cases for Armory metrics.
 """
 
+import math
+
 import pytest
 import numpy as np
 
@@ -86,7 +88,10 @@ def test_tpr_fpr():
         ("false_negative_rate", float("nan")),
         ("f1_score", float("nan")),
     ]:
-        assert results[k] == v, "k"
+        if math.isnan(v):
+            assert math.isnan(results[k]), f"{k}"
+        else:
+            assert results[k] == v, f"{k}"
 
     with pytest.raises(ValueError):
         metrics.tpr_fpr(actual_conditions, [predicted_conditions])
