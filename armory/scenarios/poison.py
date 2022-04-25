@@ -334,7 +334,7 @@ class Poison(Scenario):
 
         self.hub.connect_meter(
             Meter(
-                "sample_accuracy_on_benign_data_all_classes",
+                "sample_accuracy_on_benign_test_data_all_classes",
                 get_supported_metric("categorical_accuracy"),
                 "scenario.y[benign]",
                 "scenario.y_pred[benign]",
@@ -345,7 +345,7 @@ class Poison(Scenario):
         )
         self.hub.connect_meter(
             Meter(
-                "sample_accuracy_on_benign_data_source_class",  # TODO:
+                "sample_accuracy_on_benign_test_data_source_class",
                 get_supported_metric("categorical_accuracy"),
                 "scenario.y_source[benign]",
                 "scenario.y_pred_source[benign]",
@@ -357,10 +357,10 @@ class Poison(Scenario):
 
         # TODO: set up ResultsLogWriter? Only printed at end of scenario
         # log.info(
-        #    f"Accuracy on benign data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
+        #    f"Accuracy on benign test data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
         # )
         # log.info(
-        #    f"Accuracy on benign data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
+        #    f"Accuracy on benign test data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
         # )
         # log.info(
         #    f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
