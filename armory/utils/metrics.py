@@ -95,38 +95,38 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
-def tpr_fpr(true_values, positives):
+def tpr_fpr(actual_conditions, predicted_conditions):
     """
-    true_values and positives should be equal length boolean np arrays
+    actual_conditions and predicted_conditions should be equal length boolean np arrays
 
     Returns a dict containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, F1 Score
     """
-    true_values, positives = [
-        np.asarray(x, dtype=np.bool) for x in (true_values, positives)
+    actual_conditions, predicted_conditions = [
+        np.asarray(x, dtype=np.bool) for x in (actual_conditions, predicted_conditions)
     ]
-    if true_values.shape != positives.shape:
+    if actual_conditions.shape != predicted_conditions.shape:
         raise ValueError(
-            f"inputs must have equal shape. {true_values.shape} != {positives.shape}"
+            f"inputs must have equal shape. {actual_conditions.shape} != {predicted_conditions.shape}"
         )
-    if true_values.ndim != 1:
-        raise ValueError(f"inputs must be 1-dimensional, not {true_values.ndim}")
+    if actual_conditions.ndim != 1:
+        raise ValueError(f"inputs must be 1-dimensional, not {actual_conditions.ndim}")
 
-    true_positives = int(np.sum(positives & true_values))
-    true_negatives = int(np.sum(~positives & ~true_values))
-    false_positives = int(np.sum(positives & ~true_values))
-    false_negatives = int(np.sum(~positives & true_values))
+    true_positives = int(np.sum(predicted_conditions & actual_conditions))
+    true_negatives = int(np.sum(~predicted_conditions & ~actual_conditions))
+    false_positives = int(np.sum(predicted_conditions & ~actual_conditions))
+    false_negatives = int(np.sum(~predicted_conditions & actual_conditions))
 
-    n_true_values = true_positives + true_negatives
-    if n_true_values > 0:
-        true_positive_rate = true_positives / n_true_values
-        false_negative_rate = false_negatives / n_true_values
+    actual_positives = true_positives + false_negatives
+    if actual_positives > 0:
+        true_positive_rate = true_positives / actual_positives
+        false_negative_rate = false_negatives / actual_positives
     else:
         true_positive_rate = false_negative_rate = float("nan")
 
-    n_false_values = false_positives + false_negatives
-    if n_false_values > 0:
-        false_positive_rate = false_positives / n_false_values
-        true_negative_rate = true_negatives / n_false_values
+    actual_negatives = true_negatives + false_positives
+    if actual_negatives > 0:
+        false_positive_rate = false_positives / actual_negatives
+        true_negative_rate = true_negatives / actual_negatives
     else:
         false_positive_rate = true_negative_rate = float("nan")
 

@@ -58,9 +58,9 @@ def test_entailment():
 
 
 def test_tpr_fpr():
-    true_values = [0] * 10 + [1] * 10
-    positives = [0] * 4 + [1] * 6 + [0] * 3 + [1] * 7
-    results = metrics.tpr_fpr(true_values, positives)
+    actual_conditions = [0] * 10 + [1] * 10
+    predicted_conditions = [0] * 4 + [1] * 6 + [0] * 3 + [1] * 7
+    results = metrics.tpr_fpr(actual_conditions, predicted_conditions)
     for k, v in [
         ("true_positives", 7),
         ("true_negatives", 4),
@@ -72,7 +72,7 @@ def test_tpr_fpr():
         ("false_negative_rate", 0.3),
         ("f1_score", 7 / (7 + 0.5 * (6 + 3))),
     ]:
-        assert results[k] == v
+        assert results[k] == v, "k"
 
     results = metrics.tpr_fpr([], [])
     for k, v in [
@@ -86,10 +86,10 @@ def test_tpr_fpr():
         ("false_negative_rate", float("nan")),
         ("f1_score", float("nan")),
     ]:
-        assert results[k] == v
+        assert results[k] == v, "k"
 
     with pytest.raises(ValueError):
-        metrics.tpr_fpr(true_values, [positives])
+        metrics.tpr_fpr(actual_conditions, [predicted_conditions])
     for array in 0, [[0, 1], [1, 0]]:
         with pytest.raises(ValueError):
             metrics.tpr_fpr(array, array)
