@@ -168,19 +168,25 @@ armory exec pytorch --gpus=0 -- nvidia-smi
 ### CUDA
 
 The TensorFlow versions we support require CUDA 10+.
+Our Docker images are currently based off of CUDA 11.3.
 
-While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
-due to an inability to upgrade your local server, and we do not have it baked in to our docker
-containers. To use CUDA 9 in our docker container, you will need to replace the line
+If CUDA 10 is needed, the base dockerfile `docker/Dockerfile-base` will need to be modified here:
 ```
- cudatoolkit=10.1 -c pytorch && \
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 ```
-with
+and here:
 ```
- cudatoolkit=9.2 -c pytorch && \
+RUN /opt/conda/bin/conda install \
+    pytorch=1.10 \
+    torchvision \
+    torchaudio \
+    cudatoolkit=11.3 \
+    -c pytorch \
+    && /opt/conda/bin/conda clean --all
 ```
-in `docker/pytorch/Dockerfile` and build the pytorch container locally.
+to the desired CUDA versions and toolkit.
 
+While PyTorch does support CUDA 9, we do not provide support in armory due to TFDS dependencies and do not recommend using.
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for
