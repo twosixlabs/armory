@@ -16,7 +16,7 @@ from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
 from armory.logs import log
 
-from armory.instrument import Meter
+from armory.instrument import Meter, LogWriter, ResultsWriter
 from armory.utils.metrics import get_supported_metric
 
 
@@ -423,6 +423,9 @@ class Poison(Scenario):
             log.warning(
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
+        self.results_writer = ResultsWriter(sink=None)
+        self.hub.connect_writer(self.results_writer, default=True)
+        self.hub.connect_writer(LogWriter(), default=True)
 
     def _load_sample_exporter(self):
         return ImageClassificationExporter(self.scenario_output_dir)
@@ -495,7 +498,6 @@ class Poison(Scenario):
             )
 
     def finalize_results(self):
-        self.results = {}
         if hasattr(self, "fairness_metrics") and not self.check_run:
             self.test_set_class_labels = sorted(self.test_set_class_labels)
             if self.train_set_class_labels != self.test_set_class_labels:
@@ -518,6 +520,5 @@ class Poison(Scenario):
                 self.train_set_class_labels,
                 self.test_set_class_labels,
             )
-        self.hub.finalize()  # TODO; see scenarios.py
-        # self.metrics_logger.results()  # TODO
-        # self.results = self.metrics_logger.results()
+        self.hub.close()
+        self.results = self.results_writer.get_output()

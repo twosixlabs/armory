@@ -135,27 +135,6 @@ class MetricsLogger:
         results.update(self._metric_results())
         return results
 
-    # DEPRECATED METHODS
-    def _deprecation_error(self, name):
-        log.exception(
-            f"Deprecation. Using old armory.utils.metrics.MetricsLogger.{name} API. "
-            "Ignoring. Will cause error in version 0.16. Please update code!"
-        )
-
-    def clear(self):
-        self._deprecation_error("clear")
-
-    def update_task(self, y, y_pred, adversarial=False, targeted=False):
-        self._deprecation_error("update_task")
-
-    def update_perturbation(self, x, x_adv):
-        self._deprecation_error("update_perturbation")
-
-    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
-        self._deprecation_error("log_task")
-
-    # END DEPRECATED METHODS
-
 
 def perturbation_metrics(names, use_mean=True):
     if use_mean:

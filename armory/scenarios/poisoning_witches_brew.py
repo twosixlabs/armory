@@ -8,6 +8,7 @@ from armory.utils.poisoning import FairnessMetrics
 from armory.logs import log
 from armory.utils import config_loading, metrics
 from armory import paths
+from armory.instrument import Meter
 
 
 class DatasetPoisonerWitchesBrew:
@@ -298,6 +299,7 @@ class WitchesBrewScenario(Poison):
             self.test_poisoner = self.poisoner
 
     def poison_dataset(self):
+        self.hub.set_context(stage="poison")
         # Over-ridden because poisoner returns possibly-modified trigger_index, target_class, source_class
 
         if self.use_poison:
@@ -340,12 +342,49 @@ class WitchesBrewScenario(Poison):
         self.i = -1
 
     def load_metrics(self):
-        self.non_trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
-        self.trigger_accuracy_metric = metrics.MetricList("categorical_accuracy")
+        self.hub.connect_meter(
+            Meter(
+                "mean_accuracy_non_trigger_images",
+                metrics.get_supported_metric("categorical_accuracy"),
+                "scenario.y[benign]",
+                "scenario.y_pred[benign]",
+                final=np.mean,
+                final_name="mean_accuracy_non_trigger_images",
+                record_final_only=False,
+            )
+        )
+        self.hub.connect_meter(
+            Meter(
+                "accuracy_trigger_images",
+                metrics.get_supported_metric("categorical_accuracy"),
+                "scenario.y[adversarial]",
+                "scenario.y_pred[adversarial]",
+                final=np.mean,
+                final_name="mean_accuracy_trigger_images",
+                record_final_only=False,
+            )
+        )
+        self.hub.connect_meter(
+            Meter(
+                "sample_benign_test_accuracy_per_class",
+                metrics.get_supported_metric("identity_unzip"),
+                "scenario.y[benign]",
+                "scenario.y_pred[benign]",
+                final=metrics.get_supported_metric("per_class_accuracy"),
+                final_name="non-trigger mean test accuracy per class",
+                record_final_only=True,
+            )
+        )
 
-        self.benign_test_accuracy_per_class = (
-            {}
-        )  # store accuracy results for each class
+        # TODO:
+        # log.info(
+        #     f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
+        # )
+
+        # log.info(
+        #     f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
+        # )
+
         if self.config["adhoc"].get("compute_fairness_metrics", False):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
@@ -356,6 +395,7 @@ class WitchesBrewScenario(Poison):
             )
 
     def run_benign(self):
+        self.hub.set_context(stage="benign")
         # Called for all non-triggers
 
         x, y = self.x, self.y
@@ -363,19 +403,12 @@ class WitchesBrewScenario(Poison):
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
 
-        self.non_trigger_accuracy_metric.add_results(y, y_pred)
-
-        for y_, y_pred_ in zip(y, y_pred):
-            if y_ not in self.benign_test_accuracy_per_class.keys():
-                self.benign_test_accuracy_per_class[y_] = []
-
-            self.benign_test_accuracy_per_class[y_].append(
-                y_ == np.argmax(y_pred_, axis=-1)
-            )
+        self.probe.update(y=y, y_pred=y_pred)
 
         self.y_pred = y_pred  # for exporting when function returns
 
     def run_attack(self):
+        self.hub.set_context(stage="adversarial")
         # Only called for the trigger images
 
         x, y = self.x, self.y
@@ -383,12 +416,11 @@ class WitchesBrewScenario(Poison):
         x.flags.writeable = False
         y_pred_adv = self.model.predict(x, **self.predict_kwargs)
 
-        self.trigger_accuracy_metric.add_results(y, y_pred_adv)
+        self.probe.update(y=y, y_pred=y_pred_adv, y_pred_adv=y_pred_adv)
 
         self.y_pred_adv = y_pred_adv  # for exporting when function returns
 
     def evaluate_current(self):
-
         if self.i in self.trigger_index:
             self.run_attack()
         else:
@@ -408,18 +440,3 @@ class WitchesBrewScenario(Poison):
                     self.sample_exporter.saved_samples
                     // self.config["dataset"]["batch_size"]
                 )
-
-    def _add_accuracy_metrics_results(self):
-        """ Adds accuracy results for trigger and non-trigger images
-        """
-        self.results[
-            "accuracy_non_trigger_images"
-        ] = self.non_trigger_accuracy_metric.mean()
-        log.info(
-            f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
-        )
-
-        self.results["accuracy_trigger_images"] = self.trigger_accuracy_metric.mean()
-        log.info(
-            f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
-        )

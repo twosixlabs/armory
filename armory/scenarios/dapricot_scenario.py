@@ -123,11 +123,7 @@ class ObjectDetectionTask(Scenario):
         for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
-            # self.metrics_logger.update_task(
-            #    [y_i_target], [y_i_pred], adversarial=True, targeted=True
-            # )
             self.probe.update(y_target=[y_i_target], y_pred=[y_i_pred])
-        # self.probe.update(y_target=y_target, y_pred=y_pred)
         self.probe.update(x_adv=x_adv)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv

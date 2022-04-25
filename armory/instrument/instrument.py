@@ -593,12 +593,14 @@ class ResultsWriter(Writer):
     Write results to dictionary
     """
 
-    def __init__(self, sink):
+    def __init__(self, sink=None):
         """
         sink is a callable that takes the output results dict as input
+            if sink is None, call get_output after close to get results dict
         """
         self.sink = sink
         self.records = []
+        self.output = None
 
     def _write(self, name, batch, result):
         self.records.append((name, batch, result))
@@ -616,7 +618,15 @@ class ResultsWriter(Writer):
 
     def close(self):
         output = self.collate_results()
-        self.sink(output)
+        if self.sink is None:
+            self.output = output
+        else:
+            self.sink(output)
+
+    def get_output(self):
+        if self.output is None:
+            raise ValueError("must call `close` before `get_output`")
+        return self.output
 
 
 # GLOBAL CONTEXT METHODS #
