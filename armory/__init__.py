@@ -20,6 +20,7 @@ except ModuleNotFoundError:
 
 import pathlib
 import re
+import sys
 import subprocess
 
 from armory.logs import log
@@ -60,6 +61,15 @@ if __version__ is None:
         raise
 __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 
+
+# If just querying version, stop and exit
+if (
+    len(sys.argv) == 2
+    and (sys.argv[0] == "-m" or pathlib.Path(sys.argv[0]).stem == "armory")
+    and sys.argv[1] in ("-v", "--version", "version")
+):
+    print(f"{__version__}")
+    sys.exit(0)
 
 # Handle PyTorch / TensorFlow interplay
 
