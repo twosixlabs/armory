@@ -129,6 +129,7 @@ def test_exporter(
             assert isinstance(i, PIL.Image.Image)
 
 
+@pytest.mark.docker_required
 def test_ffmpeg_library():
     completed = subprocess.run(["ffmpeg", "-encoders"], capture_output=True)
     assert "libx264" in completed.stdout.decode("utf-8")
