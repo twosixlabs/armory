@@ -55,7 +55,14 @@ class GradientMatchingWrapper(GradientMatchingAttack):
 
             if len(x_trigger) == 0 and len(y_trigger) == 0:
                 # Config didn't give attack parameters so we can just return the loaded data
-                return x_poison, y_poison, poison_index, load_trigger_index, load_source_class, load_target_class
+                return (
+                    x_poison,
+                    y_poison,
+                    poison_index,
+                    load_trigger_index,
+                    load_source_class,
+                    load_target_class,
+                )
 
             # Check that config parameters are consistent with pre-poisoned dataset
 
@@ -112,8 +119,10 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         else:
             if len(x_trigger) == 0 and len(y_trigger) == 0:
                 # Config didn't give attack parameters but there was no saved dataset
-                raise ValueError("Config must contain either a filepath to an existing presaved dataset, or values for trigger_index, source_class, and target_class")
-                
+                raise ValueError(
+                    "Config must contain either a filepath to an existing presaved dataset, or values for trigger_index, source_class, and target_class"
+                )
+
             # Generate from scratch and save to file
             log.info("Generating poisoned dataset . . .")
             x_poison, y_poison = super().poison(x_trigger, y_trigger, x_train, y_train)
@@ -143,4 +152,11 @@ class GradientMatchingWrapper(GradientMatchingAttack):
             target_class = self.target_class
 
         # Return source, target, and trigger in case they were None/empty and modified by this function
-        return x_poison, y_poison, poison_index, trigger_index, source_class, target_class
+        return (
+            x_poison,
+            y_poison,
+            poison_index,
+            trigger_index,
+            source_class,
+            target_class,
+        )

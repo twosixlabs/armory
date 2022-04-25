@@ -33,7 +33,6 @@ class DatasetPoisonerWitchesBrew:
         self.target_class = target_class
         self.trigger_index = trigger_index
         self.data_filepath = data_filepath
-        
 
     def poison_dataset(self, x_train, y_train, return_index=True):
         """
@@ -43,11 +42,15 @@ class DatasetPoisonerWitchesBrew:
         if len(x_train) != len(y_train):
             raise ValueError("Sizes of x and y do not match")
 
-        if None in self.source_class and None in self.target_class and None in self.trigger_index:
+        if (
+            None in self.source_class
+            and None in self.target_class
+            and None in self.trigger_index
+        ):
             # In this case we just want to use the saved dataset, use empty x_trigger and y_trigger to signal that
             x_trigger = []
             y_trigger = []
-        
+
         else:
             x_trigger = self.x_test[self.trigger_index]
             if len(x_trigger.shape) == 3:
@@ -64,16 +67,28 @@ class DatasetPoisonerWitchesBrew:
             self.trigger_index,
         )
 
-        # attack.poison() may have modified trigger, source, and target, 
+        # attack.poison() may have modified trigger, source, and target,
         # if they were None in the config, and loaded from a pre-saved file.
         self.trigger_index = new_trigger_index
         self.source_class = new_source_class
         self.target_class = new_target_class
-        
 
         if return_index:
-            return poison_x, poison_y, self.trigger_index, self.source_class, self.target_class, poison_index
-        return poison_x, poison_y, self.trigger_index, self.source_class, self.target_class
+            return (
+                poison_x,
+                poison_y,
+                self.trigger_index,
+                self.source_class,
+                self.target_class,
+                poison_index,
+            )
+        return (
+            poison_x,
+            poison_y,
+            self.trigger_index,
+            self.source_class,
+            self.target_class,
+        )
 
 
 class WitchesBrewScenario(Poison):
@@ -81,8 +96,8 @@ class WitchesBrewScenario(Poison):
         """ Ensures that the attack parameters from the config are valid and
             sufficient to create a poisoned dataset.
 
-            Returns a standardized version of trigger_index, source_class, and 
-            target_class from the config, as well as a bool indicating whether 
+            Returns a standardized version of trigger_index, source_class, and
+            target_class from the config, as well as a bool indicating whether
             the triggers were selected randomly.
         """
 
@@ -97,7 +112,7 @@ class WitchesBrewScenario(Poison):
         # If trigger_index is None, choose randomly from source class.
         # If source_class is None, infer from trigger_index.
         #
-        # Target_class may only be None if the other two are also both None.  
+        # Target_class may only be None if the other two are also both None.
         # In this case, the scenario expects to load a presaved dataset specified elsewhere in the config.
         # It would be possible to choose target_class randomly as well,
         # but that was not something the poison group asked for and it significantly complicates things.
