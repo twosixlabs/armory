@@ -2,8 +2,6 @@
 Test cases for ARMORY datasets.
 """
 
-import json
-
 import pytest
 import numpy as np
 
@@ -203,41 +201,6 @@ def test_snr_spectrogram():
         metrics.snr(x[:1], x[1:])
     with pytest.raises(ValueError):
         metrics.snr(x, np.array([1]))
-
-
-def test_metric_list():
-    metric_list = metrics.MetricList("categorical_accuracy")
-    metric_list.add_results([1], [1])
-    metric_list.add_results([1, 2, 3], [1, 0, 2])
-    assert metric_list.mean() == 0.5
-    assert metric_list.values() == [1, 1, 0, 0]
-
-
-def test_metrics_logger():
-    metrics_config = {
-        "record_metric_per_sample": True,
-        "means": True,
-        "perturbation": "l1",
-        "task": ["categorical_accuracy"],
-    }
-    metrics_logger = metrics.MetricsLogger.from_config(metrics_config)
-    metrics_logger.clear()
-    metrics_logger.update_task([0, 1, 2, 3], [0, 1, 2, 2])
-    metrics_logger.update_task([0, 1, 2, 3], [3, 2, 1, 3], adversarial=True)
-    metrics_logger.update_perturbation([[0, 0, 0, 0]], [[0, 0, 1, 1]])
-    metrics_logger.log_task()
-    metrics_logger.log_task(adversarial=False)
-    results = metrics_logger.results()
-
-    # ensure that results are a json encodable dict
-    assert isinstance(results, dict)
-    json.dumps(results)
-    assert results["benign_mean_categorical_accuracy"] == 0.75
-    assert results["adversarial_mean_categorical_accuracy"] == 0.25
-    assert results["perturbation_mean_l1"] == 2
-    assert results["benign_categorical_accuracy"] == [1, 1, 1, 0]
-    assert results["adversarial_categorical_accuracy"] == [0, 0, 0, 1]
-    assert results["perturbation_l1"] == [2]
 
 
 def test_mAP():
