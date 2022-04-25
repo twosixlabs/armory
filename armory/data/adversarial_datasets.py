@@ -37,7 +37,7 @@ dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 carla_obj_det_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
 carla_obj_det_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
 carla_video_tracking_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=10
+    x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 
 
@@ -751,7 +751,7 @@ def carla_video_tracking_dev(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_video_tracking_dev:1.0.0",
+        "carla_video_tracking_dev:2.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,
