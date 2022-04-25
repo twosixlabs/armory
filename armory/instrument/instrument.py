@@ -71,9 +71,10 @@ class Probe:
         probe.update(data_point=(x_i, is_poisoned)) would enable downstream meters
             to measure (x_i, is_poisoned) from f"{probe.name}.data_point"
         """
-        if self.sink is None and not self._warned:
-            log.warning(f"No sink set up for probe {self.name}!")
-            self._warned = True
+        if self.sink is None:
+            if not self._warned:
+                log.warning(f"No sink set up for probe {self.name}!")
+                self._warned = True
             return
 
         for name in named_values:
@@ -646,14 +647,24 @@ def get_probe(name: str = ""):
     """
     Get a probe with specified name, creating it if needed
     """
-    if name != "" and not str.isidentifier(name):
-        raise ValueError(f"name {name} should be an identifier or the empty string")
-
     if name not in _PROBES:
-        probe = Probe(name)
-        probe.set_sink(get_hub())
+        probe = Probe(name, sink=get_hub())
         _PROBES[name] = probe
     return _PROBES[name]
+
+
+def del_globals():
+    """
+    Remove hub and probes from global context
+        Subsequent calls to `get_hub` and `get_probe` will return new objects
+        Must also delete local references and close objects as needed
+
+    NOTE: primarily intended for creating clean contexts for testing
+    """
+    global _PROBES
+    global _HUB
+    _PROBES = {}
+    _HUB = None
 
 
 def main():
