@@ -53,7 +53,11 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 poison_npz["epsilon"],
             )
 
-            # Check that config specifications are consistent with pre-poisoned dataset
+            if len(x_trigger) == 0 and len(y_trigger) == 0:
+                # Config didn't give attack parameters so we can just return the loaded data
+                return x_poison, y_poison, poison_index, load_trigger_index, load_source_class, load_target_class
+
+            # Check that config parameters are consistent with pre-poisoned dataset
 
             if len(load_trigger_index) != len(trigger_index):
                 raise ValueError(
@@ -102,8 +106,14 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 )
 
             trigger_index = list(load_trigger_index)
+            source_class = list(load_source_class)
+            target_class = list(load_target_class)
 
         else:
+            if len(x_trigger) == 0 and len(y_trigger) == 0:
+                # Config didn't give attack parameters but there was no saved dataset
+                raise ValueError("Config must contain either a filepath to an existing presaved dataset, or values for trigger_index, source_class, and target_class")
+                
             # Generate from scratch and save to file
             log.info("Generating poisoned dataset . . .")
             x_poison, y_poison = super().poison(x_trigger, y_trigger, x_train, y_train)
@@ -129,7 +139,8 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 log.warning(
                     "If you wish the poisoned dataset to be saved, please set attack/kwargs/data_filepath in the config."
                 )
+            source_class = self.source_class
+            target_class = self.target_class
 
-        # Have to return trigger_index, in case it was 1) None in the config and
-        # 2) loaded from the pre-saved file in this function.
-        return x_poison, y_poison, poison_index, trigger_index
+        # Return source, target, and trigger in case they were None/empty and modified by this function
+        return x_poison, y_poison, poison_index, trigger_index, source_class, target_class
