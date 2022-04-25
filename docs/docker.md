@@ -185,6 +185,7 @@ RUN /opt/conda/bin/conda install \
     && /opt/conda/bin/conda clean --all
 ```
 to the desired CUDA versions and toolkit.
+This is not actively tested, so it may require further modification of library dependencies.
 
 While PyTorch does support CUDA 9, we do not provide support in armory due to TFDS dependencies and do not recommend using.
 
