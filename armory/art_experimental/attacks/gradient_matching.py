@@ -11,6 +11,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         self.attack_kwargs = kwargs
         self.source_class = kwargs.pop("source_class")
         self.target_class = kwargs.pop("target_class")
+        self.triggers_chosen_randomly = kwargs.pop("triggers_chosen_randomly")
         learning_rate_schedule = tuple(kwargs.pop("learning_rate_schedule"))
 
         super().__init__(
@@ -45,25 +46,63 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 poison_npz["poison_index"],
                 poison_npz["trigger_index"],
             )
-            target_class, percent_poison, epsilon = (
+            load_target_class, load_source_class, percent_poison, epsilon = (
                 poison_npz["target_class"],
+                poison_npz["source_class"],
                 poison_npz["percent_poison"],
                 poison_npz["epsilon"],
             )
 
-            if sorted(load_trigger_index) != sorted(trigger_index):
-                raise ValueError(
-                    f"Adversarial dataset at filepath {filepath} was trained for trigger image(s) {load_trigger_index}, not {trigger_index} as requested by the config."
+            if len(x_trigger) == 0 and len(y_trigger) == 0:
+                # Config didn't give attack parameters so we can just return the loaded data
+                return (
+                    x_poison,
+                    y_poison,
+                    poison_index,
+                    load_trigger_index,
+                    load_source_class,
+                    load_target_class,
                 )
-            # target class must match element-wise, can't sort
+
+            # Check that config parameters are consistent with pre-poisoned dataset
+
+            if len(load_trigger_index) != len(trigger_index):
+                raise ValueError(
+                    f"Adversarial dataset at filepath {filepath} was trained for {len(load_trigger_index)} trigger images, not {len(trigger_index)} as requested by the config."
+                )
+
+            # if random_triggers is True, we can override them with loaded data because user didn't care exactly which trigger images.
+            if not self.triggers_chosen_randomly:
+                if sorted(load_trigger_index) != sorted(trigger_index):
+                    raise ValueError(
+                        f"Adversarial dataset at filepath {filepath} was trained for trigger image(s) {load_trigger_index}, not {trigger_index} as requested by the config."
+                    )
+
+            # source class must match element-wise
             if not (
-                len(target_class) == len(self.target_class)
-                and sum([t1 == t2 for t1, t2 in zip(target_class, self.target_class)])
-                == len(target_class)
+                len(load_source_class) == len(self.target_class)
+                and sum(
+                    [s1 == s2 for s1, s2 in zip(load_source_class, self.source_class)]
+                )
+                == len(load_source_class)
             ):
                 raise ValueError(
-                    f"Adversarial dataset at filepath {filepath} was trained for target class(es) {target_class}, not {self.target_class} as requested by the config."
+                    f"Adversarial dataset at filepath {filepath} was trained for source class(es) {load_source_class}, not {self.source_class} as requested by the config."
                 )
+
+            # target class must match element-wise
+            if not (
+                len(load_target_class) == len(self.target_class)
+                and sum(
+                    [t1 == t2 for t1, t2 in zip(load_target_class, self.target_class)]
+                )
+                == len(load_target_class)
+            ):
+                raise ValueError(
+                    f"Adversarial dataset at filepath {filepath} was trained for target class(es) {load_target_class}, not {self.target_class} as requested by the config."
+                )
+
+            # Fraction poisoned and epsilon must also match
             if percent_poison != self.percent_poison:
                 raise ValueError(
                     f"Adversarial dataset at filepath {filepath} has a poison frequency of {percent_poison}, not {self.percent_poison} as requested by the config."
@@ -72,9 +111,18 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 raise ValueError(
                     f"Adversarial dataset at filepath {filepath} has a L_inf perturbation bound of {epsilon}, not {self.epsilon} as requested by the config."
                 )
-            # No need to verify source class, since it will match if the trigger_index matched
+
+            trigger_index = list(load_trigger_index)
+            source_class = list(load_source_class)
+            target_class = list(load_target_class)
 
         else:
+            if len(x_trigger) == 0 and len(y_trigger) == 0:
+                # Config didn't give attack parameters but there was no saved dataset
+                raise ValueError(
+                    "Config must contain either a filepath to an existing presaved dataset, or values for trigger_index, source_class, and target_class"
+                )
+
             # Generate from scratch and save to file
             log.info("Generating poisoned dataset . . .")
             x_poison, y_poison = super().poison(x_trigger, y_trigger, x_train, y_train)
@@ -100,5 +148,15 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                 log.warning(
                     "If you wish the poisoned dataset to be saved, please set attack/kwargs/data_filepath in the config."
                 )
+            source_class = self.source_class
+            target_class = self.target_class
 
-        return x_poison, y_poison, poison_index
+        # Return source, target, and trigger in case they were None/empty and modified by this function
+        return (
+            x_poison,
+            y_poison,
+            poison_index,
+            trigger_index,
+            source_class,
+            target_class,
+        )
