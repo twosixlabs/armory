@@ -1,5 +1,5 @@
 """
-Test cases for ARMORY datasets.
+Test cases for Armory metrics.
 """
 
 import pytest
