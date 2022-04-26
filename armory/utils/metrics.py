@@ -95,6 +95,65 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
+def total_entailment(sample_results):
+    """
+    Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
+        Return a dictionary of counts for each label
+    """
+    entailment_map = ["contradiction", "neutral", "entailment"]
+    for i in range(sample_results):
+        sample = sample_results[i]
+        if sample in (0, 1, 2):
+            log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
+            sample_results[i] = entailment_map[sample]
+        elif sample not in entailment_map:
+            raise ValueError(f"result {sample} not a valid entailment label")
+
+    c = Counter()
+    c.update(sample_results)
+    c = dict(c)  # ensure JSON-able
+
+
+def total_wer(sample_wers):
+    """
+    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
+        Return global_wer, (total_edit_distance, total_words)
+    """
+    # checks if all values are tuples from the WER metric
+    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        total_edit_distance = 0
+        total_words = 0
+        for wer_tuple in sample_wers:
+            total_edit_distance += int(wer_tuple[0])
+            total_words += int(wer_tuple[1])
+        if total_words:
+            global_wer = float(total_edit_distance / total_words)
+        else:
+            global_wer = float("nan")
+        return global_wer, (total_edit_distance, total_words)
+    else:
+        raise ValueError("total_wer() only for WER metric aggregation")
+
+
+def identity_unzip(*args):
+    """
+    Map batchwise args to a list of sample-wise args
+    """
+    return list(zip(*args))
+
+
+# NOTE: Not registered as a metric due to arg in __init__
+class MeanAP:
+    def __init__(self, ap_metric):
+        self.ap_metric = ap_metric
+
+    def __call__(self, values, **kwargs):
+        args = [list(x) for x in zip(*values)]
+        ap = self.ap_metric(*args, **kwargs)
+        mean_ap = np.fromiter(ap.values(), dtype=float).mean()
+        return {"mean": mean_ap, "class": ap}
+
+
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays
@@ -1837,6 +1896,9 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 SUPPORTED_METRICS = {
     "entailment": Entailment,
+    "total_entailment": total_entailment,
+    "total_wer": total_wer,
+    "identity_unzip": identity_unzip,
     "tpr_fpr": tpr_fpr,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
@@ -1918,63 +1980,3 @@ def get_supported_metric(name):
         function = function()
     assert callable(function), f"function {name} is not callable"
     return function
-
-
-class MetricList:
-    """
-    Keeps track of all results from a single metric
-    """
-
-    def __init__(self, name, function=None):
-        if function is None:
-            self.function = get_supported_metric(name)
-        elif callable(function):
-            self.function = function
-        else:
-            raise ValueError(f"function must be callable or None, not {function}")
-        self.name = name
-        self._values = []
-        self._input_labels = []
-        self._input_preds = []
-
-    def clear(self):
-        self._values.clear()
-
-    def add_results(self, *args, **kwargs):
-        value = self.function(*args, **kwargs)
-        self._values.extend(value)
-
-    def __iter__(self):
-        return self._values.__iter__()
-
-    def __len__(self):
-        return len(self._values)
-
-    def values(self):
-        return list(self._values)
-
-    def mean(self):
-        if not self._values:
-            return float("nan")
-        return sum(float(x) for x in self._values) / len(self._values)
-
-    def append_input_label(self, label):
-        self._input_labels.extend(label)
-
-    def append_input_pred(self, pred):
-        self._input_preds.extend(pred)
-
-    def total_wer(self):
-        # checks if all values are tuples from the WER metric
-        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
-            total_edit_distance = 0
-            total_words = 0
-            for wer_tuple in self._values:
-                total_edit_distance += wer_tuple[0]
-                total_words += wer_tuple[1]
-            return float(total_edit_distance / total_words)
-        else:
-            raise ValueError("total_wer() only for WER metric")
-
-    def compute_non_elementwise_metric(self, **kwargs):
-        return self.function(self._input_labels, self._input_preds, **kwargs)

@@ -2,8 +2,6 @@
 Set up the meters from a standard config file
 """
 
-from collections import Counter
-
 import numpy as np
 
 from armory.instrument.instrument import (
@@ -170,68 +168,6 @@ QUANTITY_METRICS = [
 ]
 
 
-# TODO: move to armory.utils.metrics
-def total_wer(sample_wers):
-    """
-    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
-        Return global_wer, (total_edit_distance, total_words)
-    """
-    # checks if all values are tuples from the WER metric
-    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
-        total_edit_distance = 0
-        total_words = 0
-        for wer_tuple in sample_wers:
-            total_edit_distance += int(wer_tuple[0])
-            total_words += int(wer_tuple[1])
-        if total_words:
-            global_wer = float(total_edit_distance / total_words)
-        else:
-            global_wer = float("nan")
-        return global_wer, (total_edit_distance, total_words)
-    else:
-        raise ValueError("total_wer() only for WER metric aggregation")
-
-
-# TODO: move to armory.utils.metrics
-def total_entailment(sample_results):
-    """
-    Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
-        Return a dictionary of counts for each label
-    """
-    entailment_map = ["contradiction", "neutral", "entailment"]
-    for i in range(sample_results):
-        sample = sample_results[i]
-        if sample in (0, 1, 2):
-            log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
-            sample_results[i] = entailment_map[sample]
-        elif sample not in entailment_map:
-            raise ValueError(f"result {sample} not a valid entailment label")
-
-    c = Counter()
-    c.update(sample_results)
-    c = dict(c)  # ensure JSON-able
-
-
-# TODO: move to armory.utils.metrics
-def identity_unzip(*args):
-    """
-    Map batchwise args to a list of sample-wise args
-    """
-    return list(zip(*args))
-
-
-# TODO: move to armory.utils.metrics
-class MeanAP:
-    def __init__(self, ap_metric):
-        self.ap_metric = ap_metric
-
-    def __call__(self, values, **kwargs):
-        args = [list(x) for x in zip(*values)]
-        ap = self.ap_metric(*args, **kwargs)
-        mean_ap = np.fromiter(ap.values(), dtype=float).mean()
-        return {"mean": mean_ap, "class": ap}
-
-
 class ResultsLogWriter(LogWriter):
     """
     Logs successful results (designed for task metrics)
@@ -266,12 +202,12 @@ class ResultsLogWriter(LogWriter):
         #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
         if "word_error_rate" in name:
             if "total_word_error_rate" not in name:
-                result = total_wer(result)
+                result = metrics.get_supported_metric("total_wer")(result)
             total, (num, denom) = result
             f_result = f"total={total:.2%}, {num}/{denom}"
         elif "entailment" in name:
             if "total_entailment" not in name:
-                result = total_entailment(result)
+                result = metrics.get_supported_metric("total_entailment")(result)
             total = len(result)
             f_result = (
                 f"contradiction: {result['contradiction']}/{total}, "
@@ -283,7 +219,7 @@ class ResultsLogWriter(LogWriter):
                 for m in MEAN_AP_METRICS:
                     if m in name:
                         metric = metrics.get_supported_metric(m)
-                        result = MeanAP(metric)(result)
+                        result = metrics.MeanAP(metric)(result)
                         break
             f_result = f"{result}"
         elif any(m in name for m in QUANTITY_METRICS):
@@ -312,17 +248,17 @@ def _task_metric(
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = MeanAP(metric)
+        final = metrics.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = identity_unzip
+        metric = metrics.get_supported_metric("identity_unzip")
         metric_kwargs = None
     elif name == "entailment":
-        final = total_entailment
+        final = metrics.get_supported_metric("total_entailment")
         final_suffix = "total_entailment"
     elif name == "word_error_rate":
-        final = total_wer
+        final = metrics.get_supported_metric("total_wer")
         final_suffix = "total_word_error_rate"
     elif use_mean:
         final = np.mean
@@ -434,17 +370,17 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = MeanAP(metric)
+        final = metrics.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = identity_unzip
+        metric = metrics.get_supported_metric("identity_unzip")
         metric_kwargs = None
     elif name == "entailment":
-        final = total_entailment
+        final = metrics.get_supported_metric("total_entailment")
         final_suffix = "total_entailment"
     elif name == "word_error_rate":
-        final = total_wer
+        final = metrics.get_supported_metric("total_wer")
         final_suffix = "total_word_error_rate"
     elif use_mean:
         final = np.mean
