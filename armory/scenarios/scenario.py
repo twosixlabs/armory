@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths
-from armory.instrument import get_hub, get_probe, MetricsLogger
+from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
 from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
@@ -372,6 +372,8 @@ class Scenario:
             log.warning(f"{self._evaluate} returned None, not a dict")
         output = self._prepare_results(self.config, results)
         self._save(output)
+        log.info("Clearing global instrumentation variables")
+        del_globals()
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """

@@ -11,4 +11,5 @@ from armory.instrument.instrument import (
     Writer,
     get_hub,
     get_probe,
+    del_globals,
 )
