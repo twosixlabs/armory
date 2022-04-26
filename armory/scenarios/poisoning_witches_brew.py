@@ -346,8 +346,8 @@ class WitchesBrewScenario(Poison):
             Meter(
                 "mean_accuracy_non_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
-                "scenario.y[benign]",
-                "scenario.y_pred[benign]",
+                "scenario.y[non-trigger]",
+                "scenario.y_pred[non-trigger]",
                 final=np.mean,
                 final_name="mean_accuracy_non_trigger_images",
                 record_final_only=False,
@@ -357,8 +357,8 @@ class WitchesBrewScenario(Poison):
             Meter(
                 "accuracy_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
-                "scenario.y[adversarial]",
-                "scenario.y_pred[adversarial]",
+                "scenario.y[trigger]",
+                "scenario.y_pred[trigger]",
                 final=np.mean,
                 final_name="mean_accuracy_trigger_images",
                 record_final_only=False,
@@ -368,12 +368,12 @@ class WitchesBrewScenario(Poison):
         per_class_accuracy = metrics.get_supported_metric("per_class_accuracy")
         self.hub.connect_meter(
             Meter(
-                "sample_benign_test_accuracy_per_class",
+                "sample_non_trigger_test_accuracy_per_class",
                 metrics.get_supported_metric("identity_unzip"),
-                "scenario.y[benign]",
-                "scenario.y_pred[benign]",
+                "scenario.y[non-trigger]",
+                "scenario.y_pred[non-trigger]",
                 final=lambda x: per_class_accuracy(*metrics.identity_zip(x)),
-                final_name="non-trigger mean test accuracy per class",
+                final_name="mean_accuracy_per_class_non_trigger_images",
                 record_final_only=True,
             )
         )
@@ -397,7 +397,7 @@ class WitchesBrewScenario(Poison):
             )
 
     def run_benign(self):
-        self.hub.set_context(stage="benign")
+        self.hub.set_context(stage="non-trigger")
         # Called for all non-triggers
 
         x, y = self.x, self.y
@@ -410,7 +410,7 @@ class WitchesBrewScenario(Poison):
         self.y_pred = y_pred  # for exporting when function returns
 
     def run_attack(self):
-        self.hub.set_context(stage="adversarial")
+        self.hub.set_context(stage="trigger")
         # Only called for the trigger images
 
         x, y = self.x, self.y
