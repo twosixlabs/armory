@@ -583,12 +583,16 @@ class PrintWriter(Writer):
 
 
 class LogWriter(Writer):
+    LOG_LEVELS = ("TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL")
+
     def __init__(self, log_level: str = "INFO"):
         """
         log_level - one of the uppercase log levels allowed by armory.logs.log
         """
         super().__init__()
-        log.log(log_level, f"LogWriter set to armory.logs.log at level {log_level}")
+
+        if log_level not in self.LOG_LEVELS:
+            raise ValueError(f"log_level {log_level} not in {self.LOG_LEVELS}")
         self.log_level = log_level
 
     def _write(self, name, batch, result):
