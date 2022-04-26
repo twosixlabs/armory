@@ -169,6 +169,18 @@ armory exec pytorch --gpus=0 -- nvidia-smi
 
 The TensorFlow versions we support require CUDA 10+.
 
+Our current docker images use CUDA 11.3 as the base image.  To use CUDA 10.2, you will need
+to rebuild the base image and the derived images with the following changes:
+in `docker/Dockerfile-base` change:
+```bash
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+```
+to
+```bash
+FROM nvidia/cuda:10.2-cudnn8-runtime-ubuntu18.04
+```
+and then change `cudatoolkit=11.3 \` to `cudatoolkit=10.2 \`:
+
 While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
 due to an inability to upgrade your local server, and we do not have it baked in to our docker
 containers. To use CUDA 9 in our docker container, you will need to replace the line
