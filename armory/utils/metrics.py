@@ -142,6 +142,11 @@ def identity_unzip(*args):
     return list(zip(*args))
 
 
+def identity_zip(sample_arg_tuples):
+    args = [list(x) for x in zip(*sample_arg_tuples)]
+    return args
+
+
 # NOTE: Not registered as a metric due to arg in __init__
 class MeanAP:
     def __init__(self, ap_metric):
@@ -1899,6 +1904,7 @@ SUPPORTED_METRICS = {
     "total_entailment": total_entailment,
     "total_wer": total_wer,
     "identity_unzip": identity_unzip,
+    "identity_zip": identity_zip,
     "tpr_fpr": tpr_fpr,
     "per_class_accuracy": per_class_accuracy,
     "dapricot_patch_target_success": dapricot_patch_target_success,

@@ -364,13 +364,15 @@ class WitchesBrewScenario(Poison):
                 record_final_only=False,
             )
         )
+
+        per_class_accuracy = metrics.get_supported_metric("per_class_accuracy")
         self.hub.connect_meter(
             Meter(
                 "sample_benign_test_accuracy_per_class",
                 metrics.get_supported_metric("identity_unzip"),
                 "scenario.y[benign]",
                 "scenario.y_pred[benign]",
-                final=metrics.get_supported_metric("per_class_accuracy"),
+                final=lambda x: per_class_accuracy(*metrics.identity_zip(x)),
                 final_name="non-trigger mean test accuracy per class",
                 record_final_only=True,
             )
