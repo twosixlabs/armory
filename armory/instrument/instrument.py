@@ -419,25 +419,23 @@ class Meter:
             )
         self.clear()
         self._results = []
+        self._final_result = None
         self.writers = []
         self.auto_measure = bool(auto_measure)
 
         if final is None:
-            if final_name is not None:
-                final_name = str(final_name)
             if record_final_only:
                 raise ValueError("record_final_only cannot be True if final is None")
         else:
             if not callable(final):
                 raise ValueError(f"final {final} must be callable")
             if final_name is None:
-                final_name = f"{final}_{name}"
+                final_name = f"final_{name}"
             else:
                 final_name = str(final_name)
         self.final = final
         self.final_name = final_name
         self.final_kwargs = final_kwargs or {}
-        self.final_result = None
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
         self.record_final_only = record_final_only
@@ -452,7 +450,7 @@ class Meter:
         """
         self.values = [None] * len(self.arg_index)
         self.values_set = [False] * len(self.arg_index)
-        self.batches = [None] * len(self.arg_index)
+        self.arg_batch_indices = [None] * len(self.arg_index)
 
     def add_writer(self, writer):
         """
@@ -470,7 +468,7 @@ class Meter:
         i = self.arg_index[name]
         self.values[i] = value
         self.values_set[i] = True
-        self.batches[i] = batch
+        self.arg_batch_indices[i] = batch
         if self.auto_measure and self.is_ready():
             self.measure()
 
@@ -483,16 +481,18 @@ class Meter:
             if raise_error:
                 raise ValueError(f"Not all values have been set: {self.values_set}")
             return False
-        if any(self.batches[0] != batch for batch in self.batches):
+        if any(self.arg_batch_indices[0] != batch for batch in self.arg_batch_indices):
             if raise_error:
-                raise ValueError("Batch numbers are mismatched: {self.batches}")
+                raise ValueError(
+                    "Batch numbers are mismatched: {self.arg_batch_indices}"
+                )
             return False
         return True
 
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
         result = self.metric(*self.values, **self.metric_kwargs)
-        record = (self.name, self.batches[0], result)
+        record = (self.name, self.arg_batch_indices[0], result)
         # Assume metric is sample-wise, but computed on a batch of samples
         try:
             self._results.extend(result)
@@ -522,12 +522,15 @@ class Meter:
 
         result = self.final(self._results, **self.final_kwargs)
         record = (self.final_name, None, result)
-        self.final_result = result
+        self._final_result = result
         for writer in self.writers:
             writer.write(record)
 
     def results(self):
         return self._results
+
+    def final_result(self):
+        return self._final_result
 
 
 # NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow

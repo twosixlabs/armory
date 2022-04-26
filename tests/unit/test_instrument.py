@@ -259,9 +259,154 @@ def test_probe_mapper(caplog):
 #     raise NotImplementedError()
 #
 #
-# def test_meter():
-#     metrics.get_supported_metric("tpr_fpr")
-#     raise NotImplementedError()
+
+
+class LastRecordWriter:
+    """
+    Mock test interface for Writer
+    """
+
+    def __init__(self):
+        self.record = None
+        self.num_writes = 0
+
+    def write(self, record):
+        self.record = record
+        self.num_writes += 1
+
+
+def test_meter(caplog):
+    Meter = instrument.Meter
+    with pytest.raises(ValueError):
+        Meter("name", "not callable")
+
+    def f(*x):
+        return sum(x)
+
+    def g(x):
+        return sum(x)
+
+    Meter("name", f)
+    assert "metric_arg_names is an empty list" in caplog.text
+
+    with pytest.raises(ValueError):
+        Meter("name", f, metric_kwargs=["not a dict"])
+
+    with pytest.raises(ValueError):
+        Meter("name", f, "a", record_final_only=True)
+
+    with pytest.raises(ValueError):
+        Meter("name", f, "a", final="not callable")
+
+    with pytest.raises(ValueError):
+        Meter("name", f, "a", final=g, final_kwargs="not a dict")
+
+    m = Meter("name", f, "a", "b", auto_measure=False)
+    assert sorted(m.get_arg_names()) == ["a", "b"]
+
+    with pytest.raises(ValueError):
+        m.set("invalid arg name", 0, 0)
+
+    assert not m.is_ready()
+    with pytest.raises(ValueError):
+        m.is_ready(raise_error=True)
+    m.set("a", 15, 0)
+    assert not m.is_ready()
+    with pytest.raises(ValueError):
+        m.is_ready(raise_error=True)
+
+    m.finalize()
+    assert "The following args were never set:" in caplog.text
+
+    m.set("b", 2, 0)
+    assert m.is_ready()
+    m.is_ready(raise_error=True)
+
+    assert m.results() == []
+    m.measure(clear_values=False)
+    assert m.is_ready()
+    assert m.results() == [17]
+    m.finalize()
+
+    m.set("b", 4, 1)
+    assert not m.is_ready()
+    with pytest.raises(ValueError):
+        m.is_ready(raise_error=True)
+
+    m.clear()
+    m.set("a", 6, 1)
+    with pytest.raises(ValueError):
+        m.measure()
+    m.set("b", 4, 1)
+    m.measure(clear_values=True)
+    assert not m.is_ready()
+    assert m.results() == [17, 10]
+
+    def f_requires_kwargs(*x, **kwargs):
+        if kwargs == {}:
+            raise ValueError("no kwargs passed in!")
+        return sum(x)
+
+    m = Meter("name", f_requires_kwargs, "a", metric_kwargs=None)
+    with pytest.raises(ValueError):
+        m.set("a", 1, 0)
+    m = Meter("name", f_requires_kwargs, "a", metric_kwargs={"kwarg": "anything"})
+    m.set("a", 1, 0)
+
+    # test automeasure and writer
+    m = Meter("name", f, "a", "b")
+    writer = LastRecordWriter()
+    assert writer.num_writes == 0
+    m.add_writer(writer)
+    m.set("a", 4, 0)
+    m.set("b", 6, 0)
+    assert writer.num_writes == 1
+    assert writer.record == ("name", 0, 10)
+    m.add_writer(writer)
+    m.set("a", 4, 1)
+    m.set("b", 6, 1)
+    assert writer.num_writes == 2
+    assert writer.record == ("name", 1, 10)
+
+    def f_list(*x):
+        return [sum(i) for i in list(zip(*x))]
+
+    m = Meter("list", f_list, "a", "b")
+    m.add_writer(writer)
+    m.set("a", [1, 2, 3], 0)
+    m.set("b", [2, 3, 4], 0)
+    assert writer.num_writes == 3
+    assert writer.record == ("list", 0, [3, 5, 7])
+    # test finalize
+
+    # use somethign with final_kwargs
+    for final_name, record_name in [
+        (None, "final_list"),
+        ("different_final_name", "different_final_name"),
+    ]:
+        m = Meter("list", f_list, "a", "b", final=g, final_name=final_name)
+        writer = LastRecordWriter()
+        m.add_writer(writer)
+        m.set("a", [1, 2, 3], 0)
+        m.set("b", [2, 3, 4], 0)
+        assert writer.num_writes == 1
+        m.finalize()
+        assert writer.num_writes == 2
+        assert writer.record == (record_name, None, 15)
+        assert m.final_result() == 15
+
+    m = Meter(
+        "list", f_list, "a", "b", final=g, final_name="final", record_final_only=True
+    )
+    writer = LastRecordWriter()
+    m.add_writer(writer)
+    m.set("a", [1, 2, 3], 0)
+    m.set("b", [2, 3, 4], 0)
+    assert writer.num_writes == 0
+    m.finalize()
+    assert writer.num_writes == 1
+    assert writer.record == ("final", None, 15)
+    assert m.final_result() == 15
 
 
 def test_writer():
