@@ -375,10 +375,10 @@ class Scenario:
 
         if results is None:
             log.warning(f"{self._evaluate} returned None, not a dict")
-        output = self._prepare_results(self.config, results)
-        self._save(output)
-        log.info("Clearing global instrumentation variables")
+        self.output = self._prepare_results(self.config, results)
+        log.debug("Clearing global instrumentation variables")
         del_globals()
+        self._save(self.output)
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
