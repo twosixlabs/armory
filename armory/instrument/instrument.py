@@ -387,7 +387,6 @@ class Meter:
         final=None,
         final_name=None,
         final_kwargs=None,
-        keep_results=True,
         record_final_only=False,
     ):
         """
@@ -403,9 +402,6 @@ class Meter:
             Example: np.mean
         final_name - if final is not None, this is the name associated with the record
             if not specified, it defaults to f'{final}_{name}'
-
-        keep_results - whether to locally store results
-            if final is not None, keep_results is set to True
 
         record_final_only - if True, do not record results to writers except in finalize
         """
@@ -425,9 +421,7 @@ class Meter:
         self._results = []
         self.writers = []
         self.auto_measure = bool(auto_measure)
-        self._warned = False
 
-        keep_results = bool(keep_results)
         if final is None:
             if final_name is not None:
                 final_name = str(final_name)
@@ -440,16 +434,12 @@ class Meter:
                 final_name = f"{final}_{name}"
             else:
                 final_name = str(final_name)
-            if not keep_results:
-                log.warning("final is not None. Overriding keep_results to True")
-                keep_results = True
         self.final = final
         self.final_name = final_name
         self.final_kwargs = final_kwargs or {}
         self.final_result = None
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
-        self.keep_results = keep_results
         self.record_final_only = record_final_only
         self.never_measured = True
 
@@ -503,20 +493,14 @@ class Meter:
         self.is_ready(raise_error=True)
         result = self.metric(*self.values, **self.metric_kwargs)
         record = (self.name, self.batches[0], result)
-        if self.keep_results:
-            # Assume metric is sample-wise, but computed on a batch of samples
-            try:
-                self._results.extend(result)
-            except TypeError:
-                self._results.append(result)
+        # Assume metric is sample-wise, but computed on a batch of samples
+        try:
+            self._results.extend(result)
+        except TypeError:
+            self._results.append(result)
         if not self.record_final_only:
             for writer in self.writers:
                 writer.write(record)
-        if not self.keep_results and not self.writers and not self._warned:
-            log.warning(
-                f"Meter '{self.name}' has no writer added and keep_results is False"
-            )
-            self._warned = True
         if clear_values:
             self.clear()
         self.never_measured = False
@@ -543,8 +527,6 @@ class Meter:
             writer.write(record)
 
     def results(self):
-        if not self.keep_results:
-            raise ValueError("keep_results is False")
         return self._results
 
 
