@@ -187,6 +187,7 @@ containers. To use CUDA 9 in our docker container, you will need execute the pro
 but using `nvidia/cuda:9.1-cudnn7-runtime-ubuntu16.04` and `cudatoolkit=9.1 \` instead of the `10.2` 
 references.
 
+
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for
 docker containers on your system.
