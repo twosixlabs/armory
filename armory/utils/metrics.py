@@ -1900,6 +1900,7 @@ SUPPORTED_METRICS = {
     "total_wer": total_wer,
     "identity_unzip": identity_unzip,
     "tpr_fpr": tpr_fpr,
+    "per_class_accuracy": per_class_accuracy,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
