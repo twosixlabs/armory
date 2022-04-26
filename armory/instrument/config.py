@@ -246,6 +246,7 @@ def _task_metric(
     meters = []
     metric = metrics.get_supported_metric(name)
     final_kwargs = {}
+    record_final_only = False
     if name in MEAN_AP_METRICS:
         final_suffix = name
         final = metrics.MeanAP(metric)
@@ -254,6 +255,7 @@ def _task_metric(
         name = f"input_to_{name}"
         metric = metrics.get_supported_metric("identity_unzip")
         metric_kwargs = None
+        record_final_only = True
     elif name == "entailment":
         final = metrics.get_supported_metric("total_entailment")
         final_suffix = "total_entailment"
@@ -278,6 +280,7 @@ def _task_metric(
                 final=final,
                 final_name=f"benign_{final_suffix}",
                 final_kwargs=final_kwargs,
+                record_final_only=record_final_only,
             )
         )
     else:
@@ -293,6 +296,7 @@ def _task_metric(
                 final=final,
                 final_name=f"adversarial_{final_suffix}",
                 final_kwargs=final_kwargs,
+                record_final_only=record_final_only,
             )
         )
     else:
@@ -308,6 +312,7 @@ def _task_metric(
                 final=final,
                 final_name=f"targeted_{final_suffix}",
                 final_kwargs=final_kwargs,
+                record_final_only=record_final_only,
             )
         )
     else:
