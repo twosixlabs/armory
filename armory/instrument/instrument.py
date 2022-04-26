@@ -1,7 +1,13 @@
 """
-OOP structure for Armory logging
+Flexible measurement instrumentation
 
-Example 1:
+Functionalities
+    Probe - pull info from data source
+    Hub - stores context and state for meters and writers
+    Meter - measure quantity at specified intervals
+    Writer - takes measured outputs from meters and pushed them to print/file/etc.
+
+Example:
     Use case - measure L2 distance of post-preprocessing for benign and adversarial
     Code:
         # in model
@@ -17,20 +23,10 @@ Example 1:
         # elsewhere (could be reasonably defined in a config file as well)
         from armory import instrument
         from armory import metrics
-        meter = instrument.MetricMeter("l2_dist_postprocess", metrics.L2, "model.x_post[benign]", "model.x_post[adversarial]")
-        instrument.add_meter(meter)
-        instrument.add_writer(PrintWriter())
-
-Design goals:
-    probe - very lightweight, minimal or no code (hooking) in target model
-        namespace addressable
-
-Functionalities
-    Probe - pull info from data source
-    ProbeMapper - map from probe output, using provided context, to meter inputs
-    Meter - measure quantity at specified intervals
-    Writer - takes measured outputs from meters and pushed them to print/file/etc.
-    Context - stores context and state for meters and writers, essentially a Hub
+        meter = instrument.Meter("l2_dist_postprocess", metrics.L2, "model.x_post[benign]", "model.x_post[adversarial]")
+        hub = instrument.get_hub()
+        hub.connect_meter(meter)
+        hub.add_writer(instrument.PrintWriter())
 """
 
 try:
