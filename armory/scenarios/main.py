@@ -216,9 +216,8 @@ if __name__ == "__main__":
         paths.set_mode("host")
 
     if args.check and args.num_eval_batches:
-        log.warning(
-            "--num_eval_batches will be overwritten and set to 1 since --check was passed"
-        )
+        log.warning("--num_eval_batches will be overridden since --check was passed")
+        args.num_eval_batches = None
 
     if args.validate_config:
         run_validation(args.config, args.from_file)
