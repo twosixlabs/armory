@@ -1,3 +1,5 @@
+import subprocess
+
 import pytest
 import numpy as np
 import PIL
@@ -21,6 +23,7 @@ random_img = np.random.rand(32, 32, 3)
 obj_det_y_i = {
     "labels": np.array([1.0]),
     "boxes": np.array([[0.0, 0.0, 1.0, 1.0]]).astype(np.float32),
+    "image_id": np.array([1]),
 }
 obj_det_y_i_pred = {
     "scores": np.array([1.0]),
@@ -103,6 +106,16 @@ def test_exporter(
     sample = exporter.get_sample(input_array, **fn_kwargs)
     assert isinstance(sample, expected_output_type)
 
+    # For object detection, check that coco annotations can be created
+    if exporter_class == ObjectDetectionExporter:
+        y_i, y_i_pred = fn_kwargs.get("y_i", None), fn_kwargs.get("y_i_pred", None)
+        if y_i is not None:
+            box_data_lists = exporter.get_coco_formatted_bounding_box_data(
+                y_i, y_i_pred
+            )
+            for box_list in box_data_lists:
+                assert isinstance(box_list, list)
+
     # For video scenarios, check that the list contains num_frames elements and each is a PIL Image
     if exporter_class in [VideoClassificationExporter, VideoTrackingExporter]:
         assert len(sample) == num_frames
@@ -114,3 +127,9 @@ def test_exporter(
         assert len(sample) == 10
         for i in sample:
             assert isinstance(i, PIL.Image.Image)
+
+
+@pytest.mark.docker_required
+def test_ffmpeg_library():
+    completed = subprocess.run(["ffmpeg", "-encoders"], capture_output=True)
+    assert "libx264" in completed.stdout.decode("utf-8")

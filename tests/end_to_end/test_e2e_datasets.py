@@ -533,27 +533,31 @@ def test_dapricot_test():
 
 
 def test_carla_obj_det_train():
-
-    dataset = datasets.carla_obj_det_train(split="train")
-    assert dataset.size == 4727
     # Testing batch_size > 1
     batch_size = 2
-    for modality in ["rgb", "depth", "both"]:
-        expected_shape = (
-            (batch_size, 600, 800, 6)
-            if modality == "both"
-            else (batch_size, 600, 800, 3)
-        )
-        ds_batch_size2 = datasets.carla_obj_det_train(
-            split="train", batch_size=batch_size, modality=modality
-        )
-        x, y = ds_batch_size2.get_batch()
-        assert x.shape == expected_shape
-        assert len(y) == batch_size
-        for label_dict in y:
-            assert isinstance(label_dict, dict)
-            for obj_key in ["labels", "boxes", "area"]:
-                assert obj_key in label_dict
+
+    for split in ["train", "val"]:
+        for modality in ["rgb", "depth", "both"]:
+            expected_shape = (
+                (batch_size, 960, 1280, 6)
+                if modality == "both"
+                else (batch_size, 960, 1280, 3)
+            )
+            ds_batch_size2 = datasets.carla_obj_det_train(
+                split=split, batch_size=batch_size, modality=modality
+            )
+            if split == "train":
+                assert ds_batch_size2.size == 3496
+            elif split == "val":
+                assert ds_batch_size2.size == 1200
+
+            x, y = ds_batch_size2.get_batch()
+            assert x.shape == expected_shape
+            assert len(y) == batch_size
+            for label_dict in y:
+                assert isinstance(label_dict, dict)
+                for obj_key in ["labels", "boxes", "area"]:
+                    assert obj_key in label_dict
 
 
 def test_carla_obj_det_dev():
@@ -628,7 +632,7 @@ def test_carla_video_tracking_dev():
     assert dataset.size == 20
     for x, y in dataset:
         assert x.shape[0] == 1
-        assert x.shape[2:] == (600, 800, 3)
+        assert x.shape[2:] == (960, 1280, 3)
         assert isinstance(y, tuple)
         assert len(y) == 2
         y_object, y_patch_metadata = y

@@ -13,6 +13,52 @@ from armory.utils import metrics
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.docker_required
+@pytest.mark.pytorch_deepspeech
+@pytest.mark.slow
+def test_entailment():
+    """
+    Slow due to 1 GB file download and multiple model predictions
+    """
+    metric = metrics.Entailment()
+    metric_repeat = metrics.Entailment()
+    assert metric.model is metric_repeat.model
+
+    from armory.attacks.librispeech_target_labels import (
+        ground_truth_100,
+        entailment_100,
+    )
+
+    num_samples = 100
+    assert len(ground_truth_100) == num_samples
+    assert len(entailment_100) == num_samples
+
+    from collections import Counter
+
+    label_mapping = ["contradiction", "neutral", "entailment"]
+    gt_gt = metric(ground_truth_100, ground_truth_100)
+    gt_gt = [label_mapping[i] if i in (0, 1, 2) else i for i in gt_gt]
+    c = Counter()
+    c.update(gt_gt)
+    assert c["entailment"] == num_samples
+
+    gt_en = metric(ground_truth_100, entailment_100)
+    gt_en = [label_mapping[i] if i in (0, 1, 2) else i for i in gt_en]
+    c = Counter()
+    c.update(gt_en)
+    # NOTE: currently, i=6 is entailment and i=38 is neutral
+    # TODO: update entailment_100 to make both entailment, then update >= 98 to == 100
+    #     >>> ground_truth_100[6]
+    #     'THIS WAS WHAT DID THE MISCHIEF SO FAR AS THE RUNNING AWAY WAS CONCERNED'
+    #     >>> entailment_100[6]
+    #     'THIS WAS WHAT DID THE MISCHIEF SO FAR AS THE WALKING AWAY WAS CONCERNED'
+    #     >>> ground_truth_100[38]
+    #     'MAY WE SEE GATES AT ONCE ASKED KENNETH
+    #     >>> entailment_100[38]
+    #     'MAY WE SEE GATES TOMORROW ASKED KENNETH'
+    assert c["contradiction"] >= 98
+
+
 def test_abstains():
     y = [0, 1, 2, 3, 4]
     y_pred = np.zeros((5, 10))
@@ -214,3 +260,30 @@ def test_object_detection_metrics():
     assert isinstance(hallucinations_per_img, list)
     assert len(hallucinations_per_img) == 1
     assert hallucinations_per_img[0] == 1
+
+
+def test_video_tracking_metrics():
+    # Recall that first box isn't counted towards metrics. Second box has IoU of 1.0,
+    # third box has IoU of 0
+    y = [
+        {
+            "boxes": np.array(
+                [[0.0, 0.0, 0.5, 0.5], [0.1, 0.0, 0.6, 0.5], [0.0, 0.0, 0.3, 0.3]]
+            )
+        }
+    ]
+    y_pred = [
+        {
+            "boxes": np.array(
+                [[0.0, 0.0, 0.5, 0.5], [0.1, 0.0, 0.6, 0.5], [0.8, 0.8, 1.0, 1.0]]
+            )
+        }
+    ]
+
+    mean_iou = metrics.video_tracking_mean_iou(y, y_pred)
+    mean_success = metrics.video_tracking_mean_success_rate(y, y_pred)
+
+    for result in [mean_success, mean_iou]:
+        assert isinstance(result, list)
+        assert len(result) == len(y)
+        assert result[0] == 0.5

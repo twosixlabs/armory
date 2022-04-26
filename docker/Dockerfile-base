@@ -62,7 +62,10 @@ RUN /opt/conda/bin/conda install \
 RUN /opt/conda/bin/conda install \
     scikit-learn=1.0 \
     jupyterlab \
+    jupyterlab_widgets \
+    ipywidgets \
     matplotlib \
+    ffmpeg \
     -c conda-forge \
     && /opt/conda/bin/conda clean --all
     # ART requires scikit-learn >=0.22.2,<1.1.0
@@ -73,6 +76,10 @@ RUN /opt/conda/bin/conda install \
 # six==1.16.0 \
 # setuptools==52.0.0 \
 # matplotlib==3.5.1 \
+# ffmpeg==4.3.2
+# conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include
+#     this encoder is required for video compression defenses (ART) and video exporting
+#     future work could migrate this to libopenh264 encoder, which is available in both channels
 
 # Conda Install for Channel: Numba
 RUN /opt/conda/bin/conda install \

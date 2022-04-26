@@ -23,13 +23,7 @@ from armory.data.adversarial import (  # noqa: F401
     carla_video_tracking_dev as cvtd,
     carla_video_tracking_test as cvtt,
 )
-
-
-# The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this
-# number may correspond to real classes in other datasets, we convert this label 12 in the
-# APRICOT dataset to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID. We choose a negative integer
-# since it is unlikely that such a number represents the ID of a class in another dataset
-ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
+from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
 
 imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
@@ -43,7 +37,7 @@ dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 carla_obj_det_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
 carla_obj_det_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
 carla_video_tracking_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=10
+    x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 
 
@@ -757,7 +751,7 @@ def carla_video_tracking_dev(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_video_tracking_dev:1.0.0",
+        "carla_video_tracking_dev:2.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,

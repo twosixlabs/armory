@@ -133,5 +133,7 @@ class ObjectDetectionTask(Scenario):
         self.results = self.metrics_logger.results()
 
     def _load_sample_exporter(self):
-        export_kwargs = {"with_boxes": True}
-        return DApricotExporter(self.scenario_output_dir, export_kwargs=export_kwargs)
+        default_export_kwargs = {"with_boxes": True}
+        return DApricotExporter(
+            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
+        )

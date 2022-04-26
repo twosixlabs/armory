@@ -9,12 +9,11 @@ you can expect, based on the scenario:
 | Scenario               | Output File Type(s) | 
 |------------------------|---------------------|
 | audio_asr              | .wav                | 
-| audio_classification   | .wav                | 
-| carla_object_detection | .png                | 
+| audio_classification   | .wav                |          | 
 | carla_video_tracking   | .png, .mp4          | 
 | dapricot_scenario      | .png                | 
 | image_classification   | .png                | 
-| object_detection       | .png                | 
+| object_detection       | .png, .json         | 
 | video_ucf101_scenario  | .png, .mp4          | 
 
 Armory also outputs a pickle file containing ground-truth labels, benign predictions, and adversarial predictions.
@@ -48,8 +47,8 @@ to the container, please see the following code snippets for an example of how t
 
 First, we'll simply load our scenario config and evaluate on one batch of data:
 ```commandline
->>> from armory import scenarios
->>> s = scenarios.get("/armory/tmp/2022-03-18T163008.249437/interactive-config.json").load()  # load cifar10 config
+>>> from armory.scenarios.main import get as get_scenario
+>>> s = get_scenario("/armory/tmp/2022-03-18T163008.249437/interactive-config.json").load()  # load config
 >>> s.next()  # load batch of data
 >>> s.evaluate_current()  # make benign prediction, generate adversarial sample, make adversarial prediction
 ```
@@ -120,11 +119,16 @@ bounding boxes to the image. When this is set to `True`, you must provide values
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/workspace/armory/utils/export.py", line 205, in get_sample
-    raise TypeError("Both y_i and y_pred are None, but with_boxes is True")
+    raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
 TypeError: Both y_i and y_pred are None, but with_boxes is True
 
 ```
-If you'd only like to include ground-truth boxes (or only predicted boxes), don't provide an arg for `y_i` or `y_i_pred`.
+If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for only `y_i` (or only `y_i_pred`).
+
+For object detection, if `with_boxes=True` is passed to `export()`, the sample_exporter will also generate json files 
+containing coco-formatted bounding box annotations.  These are saved in the scenario output directory as 
+"ground_truth_boxes_coco_format.json", "benign_predicted_boxes_coco_format.json", and "adversarial_predicted_boxes_coco_format.json".
+In interactive mode, these files will be generated once you call `sample_exporter.write()`.
 
 ### Exporting Multimodal Data
 #### Multimodal CARLA Object Detection

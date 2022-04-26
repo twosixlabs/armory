@@ -72,9 +72,9 @@ class CarlaVideoTracking(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
-        export_kwargs = {"with_boxes": True}
+        default_export_kwargs = {"with_boxes": True}
         return VideoTrackingExporter(
             self.scenario_output_dir,
             frame_rate=self.test_dataset.context.frame_rate,
-            export_kwargs=export_kwargs,
+            default_export_kwargs=default_export_kwargs,
         )
