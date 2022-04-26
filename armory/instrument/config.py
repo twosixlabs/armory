@@ -28,6 +28,7 @@ class MetricsLogger:
         include_benign=True,
         include_adversarial=True,
         include_targeted=True,
+        record_metric_per_sample=False,
         **kwargs,
     ):
         """
@@ -40,10 +41,6 @@ class MetricsLogger:
         include_adversarial - whether to include adversarial task metrics
         include_targeted - whether to include targeted task metrics
         """
-        if kwargs.pop("record_metric_per_sample", None) is not None:
-            log.warning(
-                "record_metric_per_sample is deprecated: now always treated as True"
-            )
         if kwargs.pop("profiler_type", None) is not None:
             log.warning(
                 "ignoring profiler_type in MetricsLogger instantiation. Use metrics.resource_context to log computational resource usage"
@@ -57,6 +54,7 @@ class MetricsLogger:
         self.include_benign = include_benign
         self.include_adversarial = include_adversarial
         self.include_targeted = include_targeted
+        self.record_final_only = not bool(record_metric_per_sample)
         if task is not None:
             if isinstance(task, str):
                 self.task = [task]
@@ -70,11 +68,14 @@ class MetricsLogger:
                 include_adversarial=self.include_adversarial,
                 include_targeted=self.include_targeted,
                 task_kwargs=self.task_kwargs,
+                record_final_only=self.record_final_only,
             )
         if perturbation is not None:
             if isinstance(perturbation, str):
                 perturbation = [perturbation]
-            perturbation_metrics(perturbation, use_mean=means)
+            perturbation_metrics(
+                perturbation, use_mean=means, record_final_only=self.record_final_only
+            )
 
         self.results_writer = ResultsWriter(sink=self._sink)
         get_hub().connect_writer(self.results_writer, default=True)
@@ -89,12 +90,26 @@ class MetricsLogger:
         """
         if self.task is not None:
             task_metrics_wrt_benign_predictions(
-                self.task, use_mean=self.means, task_kwargs=self.task_kwargs
+                self.task,
+                use_mean=self.means,
+                task_kwargs=self.task_kwargs,
+                record_final_only=self.record_final_only,
             )
 
     @classmethod
-    def from_config(cls, config):
-        return cls(**config)
+    def from_config(
+        cls,
+        config,
+        include_benign=True,
+        include_adversarial=True,
+        include_targeted=True,
+    ):
+        return cls(
+            include_benign=include_benign,
+            include_adversarial=include_adversarial,
+            include_targeted=include_targeted,
+            **config,
+        )
 
     def _computational_results(self):
         results = {}
@@ -134,7 +149,7 @@ class MetricsLogger:
         return results
 
 
-def perturbation_metrics(names, use_mean=True):
+def perturbation_metrics(names, use_mean=True, record_final_only=True):
     if use_mean:
         final = np.mean
     else:
@@ -151,6 +166,7 @@ def perturbation_metrics(names, use_mean=True):
                 "scenario.x_adv",
                 final=final,
                 final_name=f"perturbation_mean_{name}",
+                record_final_only=record_final_only,
             )
         )
 
@@ -239,6 +255,7 @@ def _task_metric(
     include_benign=True,
     include_adversarial=True,
     include_targeted=True,
+    record_final_only=True,
 ):
     """
     Return list of meters generated for this specific task
@@ -246,7 +263,6 @@ def _task_metric(
     meters = []
     metric = metrics.get_supported_metric(name)
     final_kwargs = {}
-    record_final_only = False
     if name in MEAN_AP_METRICS:
         final_suffix = name
         final = metrics.MeanAP(metric)
@@ -268,6 +284,7 @@ def _task_metric(
     else:
         final = None
         final_suffix = ""
+        record_final_only = False
 
     if include_benign:
         meters.append(
@@ -326,6 +343,7 @@ def task_metrics(
     include_benign=True,
     include_adversarial=True,
     include_targeted=True,
+    record_final_only=True,
     task_kwargs=None,
 ):
     if not any([include_benign, include_adversarial, include_targeted]):
@@ -345,6 +363,7 @@ def task_metrics(
             include_benign=include_benign,
             include_adversarial=include_adversarial,
             include_targeted=include_targeted,
+            record_final_only=record_final_only,
         )
         tuples.append(task)
 
@@ -366,14 +385,15 @@ def task_metrics(
         )
 
 
-def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
+def _task_metric_wrt_benign_predictions(
+    name, metric_kwargs, use_mean=True, record_final_only=True
+):
     """
     Return the meter generated for this specific task
     Return list of meters generated for this specific task
     """
     metric = metrics.get_supported_metric(name)
     final_kwargs = {}
-    record_final_only = False
     if name in MEAN_AP_METRICS:
         final_suffix = name
         final = metrics.MeanAP(metric)
@@ -395,6 +415,7 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
     else:
         final = None
         final_suffix = ""
+        record_final_only = False
 
     return Meter(
         f"adversarial_{name}_wrt_benign_preds",
@@ -409,7 +430,9 @@ def _task_metric_wrt_benign_predictions(name, metric_kwargs, use_mean=True):
     )
 
 
-def task_metrics_wrt_benign_predictions(names, use_mean=True, task_kwargs=None):
+def task_metrics_wrt_benign_predictions(
+    names, use_mean=True, task_kwargs=None, record_final_only=True
+):
     if task_kwargs is None:
         task_kwargs = [None] * len(names)
     elif len(names) != len(task_kwargs):
@@ -419,7 +442,7 @@ def task_metrics_wrt_benign_predictions(names, use_mean=True, task_kwargs=None):
     meters = []
     for name, metric_kwargs in zip(names, task_kwargs):
         meter = _task_metric_wrt_benign_predictions(
-            name, metric_kwargs, use_mean=use_mean,
+            name, metric_kwargs, use_mean=use_mean, record_final_only=record_final_only,
         )
         meters.append(meter)
 

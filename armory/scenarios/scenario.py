@@ -206,7 +206,12 @@ class Scenario:
             )
 
         metrics_config = self.config["metric"]
-        metrics_logger = MetricsLogger.from_config(metrics_config)
+        metrics_logger = MetricsLogger.from_config(
+            metrics_config,
+            include_benign=not self.skip_benign,
+            include_adversarial=not self.skip_attack,
+            include_targeted=self.targeted,
+        )
 
         self.profiler_kwargs = dict(
             profiler=metrics_config.get("profiler_type"),
