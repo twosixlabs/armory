@@ -2,12 +2,27 @@
 Test cases for armory.instrument measurement instrumentation
 """
 
+import json
+
 import pytest
 
 from armory.instrument import instrument
 from armory.utils import metrics
 
 pytestmark = pytest.mark.unit
+
+
+def test_del_globals():
+    instrument.del_globals()
+    assert not (instrument._HUB)
+    assert not (instrument._PROBES)
+    instrument.get_hub()
+    instrument.get_probe()
+    assert instrument._HUB
+    assert instrument._PROBES
+    instrument.del_globals()
+    assert not (instrument._HUB)
+    assert not (instrument._PROBES)
 
 
 def test_get_probe():
@@ -97,6 +112,10 @@ def test_probe(caplog):
     probe.update(not_implemented, x=1)
     sink._is_measuring = True
 
+    jax_model = None
+    with pytest.raises(ValueError):
+        probe.hook(jax_model, mode="jax")
+
 
 def get_pytorch_model():
     # Taken from https://pytorch.org/docs/stable/generated/torch.nn.Module.html
@@ -145,5 +164,317 @@ def test_probe_pytorch_hook():
     assert b3 is b2
 
 
-def test_meter():
-    metrics.get_supported_metric("tpr_fpr")
+@pytest.mark.docker_required
+def test_probe_tensorflow_hook():
+    # Once implemented, update test
+    instrument.del_globals()
+    probe = instrument.get_probe()
+    with pytest.raises(NotImplementedError):
+        tf_model = None
+        probe.hook(tf_model, mode="tf")
+
+
+def test_process_meter_arg():
+    for arg in ("x", "scenario.x"):
+        assert instrument.process_meter_arg(arg) == (arg, None)
+
+    for arg, (probe_variable, stage_filter) in [
+        ("x[benign]", ("x", "benign")),
+        ("scenario.x[attack]", ("scenario.x", "attack")),
+    ]:
+        assert instrument.process_meter_arg(arg) == (probe_variable, stage_filter)
+
+    for arg in ("missing[", "missing]", "trailing[]   ", "toomany[[]"):
+        with pytest.raises(ValueError):
+            probe_variable, stage_filter = instrument.process_meter_arg(arg)
+
+
+class MockMeter:
+    """
+    For testing ProbeMapper
+    """
+
+    def __init__(self, *args):
+        self.args = args
+
+    def get_arg_names(self):
+        return self.args
+
+
+def test_probe_mapper(caplog):
+    probe_mapper = instrument.ProbeMapper()
+    assert len(probe_mapper) == 0
+    assert str(probe_mapper).endswith(" : {}")
+
+    meter1 = MockMeter("scenario.x", "scenario.x_adv")
+    probe_mapper.connect_meter(meter1)
+    assert len(probe_mapper) == 2
+
+    warning_substring = "already connected, not adding"
+    probe_mapper.connect_meter(meter1)
+    assert warning_substring in caplog.text
+    assert len(probe_mapper) == 2
+
+    meters = probe_mapper.map_probe_update_to_meter_input("scenario.x", None)
+    print(meters)
+    assert len(meters) == 1
+    meter, arg = meters[0]
+    assert meter is meter1
+
+    probe_mapper.disconnect_meter(meter1)
+    assert len(probe_mapper) == 0
+    probe_mapper.disconnect_meter(meter1)
+
+    meter2 = MockMeter("scenario.x[benign]", "scenario.y[benign]")
+    meter3 = MockMeter()
+    meter4 = MockMeter("x", "scenario.x", "scenario.x[benign]")
+    for m in meter1, meter2, meter3, meter4:
+        probe_mapper.connect_meter(m)
+    assert len(probe_mapper) == 7
+    meters = probe_mapper.map_probe_update_to_meter_input("scenario.x", None)
+    assert len(meters) == 2
+    assert (meter1, "scenario.x") in meters
+    assert (meter4, "scenario.x") in meters
+
+    meters = probe_mapper.map_probe_update_to_meter_input("scenario.x", "benign")
+    assert len(meters) == 4
+    for arg_meter in (
+        (meter1, "scenario.x"),
+        (meter2, "scenario.x[benign]"),
+        (meter4, "scenario.x"),
+        (meter4, "scenario.x[benign]"),
+    ):
+        assert arg_meter in meters
+
+    meters = probe_mapper.map_probe_update_to_meter_input("invalid", None)
+    assert len(meters) == 0
+
+    for m in meter1, meter2, meter3, meter4:
+        probe_mapper.disconnect_meter(m)
+    assert len(probe_mapper) == 0
+
+
+# TODO:
+# def test_hub():
+#     raise NotImplementedError()
+#
+#
+# def test_meter():
+#     metrics.get_supported_metric("tpr_fpr")
+#     raise NotImplementedError()
+
+
+def test_writer():
+    writer = instrument.Writer()
+    with pytest.raises(ValueError):
+        writer.write("invalid record - not a (name, batch, result) tuple")
+    empty_record = ("empty", 0, None)
+    with pytest.raises(NotImplementedError):
+        writer.write(empty_record)
+    writer.close()
+    with pytest.raises(ValueError):
+        writer.write(empty_record)
+    writer.close()
+
+
+def test_null_writer(capsys):
+    writer = instrument.NullWriter()
+    writer.write(("empty", 0, None))
+    captured = capsys.readouterr()
+    assert not captured.out
+    assert not captured.err
+
+
+def test_print_writer(capsys):
+    writer = instrument.PrintWriter()
+    writer.write(("empty", 0, None))
+    captured = capsys.readouterr()
+    assert captured.out == "Meter Record: name=empty, batch=0, result=None\n"
+    assert not captured.err
+    writer.write(("name", 1, [1, 2]))
+    captured = capsys.readouterr()
+    assert captured.out == "Meter Record: name=name, batch=1, result=[1, 2]\n"
+    assert not captured.err
+
+
+def test_log_writer(caplog):
+    writer = instrument.LogWriter(log_level="ERROR")
+    writer.write(("empty", 0, None))
+    for record in caplog.records:
+        assert record.levelname == "ERROR"
+    assert "Meter Record: name=empty, batch=0, result=None" in caplog.text
+
+    with pytest.raises(ValueError):
+        writer = instrument.LogWriter(log_level="NOT A LEVEL")
+
+
+@pytest.mark.docker_required
+def test_file_writer(tmp_path):
+    filepath = tmp_path / "file_writer_output.txt"
+    writer = instrument.FileWriter(filepath, use_numpy_encoder=False)
+    a = ["line", 4, [1, 2, 3]]
+    b = ["l2", 5, 7.45]
+    writer.write(a)
+    writer.write(b)
+    writer.close()
+    with open(filepath) as f:
+        text = f.read()
+        assert text == '["line",4,[1,2,3]]\n["l2",5,7.45]\n'
+        line_a, line_b = text.strip().split("\n")
+        assert json.loads(line_a) == a
+        assert json.loads(line_b) == b
+
+    import numpy as np
+
+    c = ["c", 0, np.array([1, 2])]
+    writer = instrument.FileWriter(filepath, use_numpy_encoder=True)
+    writer.write(a)
+    writer.write(c)
+    writer.close()
+    with open(filepath) as f:
+        text = f.read()
+        assert text == '["line",4,[1,2,3]]\n["c",0,[1,2]]\n'
+        line_a, line_c = text.strip().split("\n")
+        assert json.loads(line_a) == a
+        assert json.loads(line_c) == c[:2] + [list(c[2])]
+
+    # mock a numpy import error
+    json_utils = instrument.json_utils
+    instrument.json_utils = None
+    with pytest.raises(ValueError):
+        writer = instrument.FileWriter(filepath, use_numpy_encoder=True)
+    instrument.json_utils = json_utils
+
+
+class WriterSink:
+    def __call__(self, output):
+        self.output = output
+
+
+def test_results_writer():
+    sink = WriterSink()
+    writer = instrument.ResultsWriter(sink=sink)
+    with pytest.raises(ValueError):
+        writer.get_output()
+    writer.write(("a", 0, None))
+    writer.write(("b", 1, -2))
+    writer.write(("a", 2, -1))
+    writer.close()
+    with pytest.raises(ValueError):
+        writer.get_output()
+    output = sink.output
+    assert sorted(output.keys()) == ["a", "b"]
+    assert len(output) == 2
+    assert output["a"] == [None, -1]
+    assert output["b"] == [-2]
+
+    writer = instrument.ResultsWriter(sink=None)
+    writer.close()
+    assert writer.get_output() == {}
+
+    writer = instrument.ResultsWriter()
+    writer.write(("a", 0, None))
+    writer.write(("b", 1, -2))
+    writer.write(("a", 2, -1))
+    writer.close()
+    output = writer.get_output()
+    assert sorted(output.keys()) == ["a", "b"]
+    assert len(output) == 2
+    assert output["a"] == [None, -1]
+    assert output["b"] == [-2]
+
+
+@pytest.mark.docker_required
+def test_integration():
+    instrument.del_globals()
+    # Begin model file
+    import numpy as np
+
+    # from armory.instrument import get_probe
+    probe = instrument.get_probe("model")
+
+    class Model:
+        def __init__(self, input_dim=100, classes=10):
+            self.input_dim = input_dim
+            self.classes = classes
+            self.preprocessor = np.random.random(self.input_dim)
+            self.predictor = np.random.random((self.input_dim, self.classes))
+
+        def predict(self, x):
+            x_prep = self.preprocessor * x
+            # if pytorch Tensor: probe.update(lambda x: x.detach().cpu().numpy(), prep_output=x_prep)
+            probe.update(lambda x: np.expand_dims(x, 0), prep_output=x_prep)
+            logits = np.dot(self.predictor.transpose(), x_prep)
+            return logits
+
+    # End model file
+
+    # Begin metric setup (could happen anywhere)
+
+    # from armory.instrument import add_writer, add_meter
+
+    hub = instrument.get_hub()
+    hub.connect_meter(
+        instrument.Meter(
+            "postprocessed_l2_distance",
+            metrics.l2,
+            "model.prep_output[benign]",
+            "model.prep_output[adversarial]",
+        )
+    )
+    hub.connect_meter(
+        instrument.Meter(  # TODO: enable adding context for iteration number of attack
+            "sum of x_adv",
+            np.sum,
+            "attack.x_adv",  # could also do "attack.x_adv[attack]"
+        )
+    )
+    hub.connect_meter(
+        instrument.Meter(
+            "categorical_accuracy",
+            metrics.categorical_accuracy,
+            "scenario.y",
+            "scenario.y_pred",
+        )
+    )
+    hub.connect_meter(
+        instrument.Meter(  # Never measured, since 'y_target' is never set
+            "targeted_categorical_accuracy",
+            metrics.categorical_accuracy,
+            "scenario.y_target",
+            "scenario.y_pred",
+        )
+    )
+    hub.connect_writer(instrument.PrintWriter())
+
+    # End metric setup
+
+    # Update stages and batches in scenario loop (this would happen in main scenario file)
+    model = Model()
+    # Normally, model, attack, and scenario probes would be defined in different files
+    #    and therefore just be called 'probe'
+    attack_probe = instrument.get_probe("attack")
+    scenario_probe = instrument.get_probe("scenario")
+    not_connected_probe = instrument.Probe("not_connected")
+    for i in range(10):
+        hub.set_context(stage="get_batch", batch=i)
+        x = np.random.random(100)
+        y = np.random.randint(10)
+        scenario_probe.update(x=x, y=y)
+        not_connected_probe.update(x)  # should send a warning once
+
+        hub.set_context(stage="benign")
+        y_pred = model.predict(x)
+        scenario_probe.update(y_pred=y_pred)
+
+        hub.set_context(stage="benign")
+        x_adv = x
+        for j in range(5):
+            model.predict(x_adv)
+            x_adv = x_adv + np.random.random(100) * 0.1
+            attack_probe.update(x_adv=x_adv)
+
+        hub.set_context(stage="benign")
+        y_pred_adv = model.predict(x_adv)
+        scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+    hub.close()

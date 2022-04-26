@@ -33,6 +33,12 @@ Functionalities
     Context - stores context and state for meters and writers, essentially a Hub
 """
 
+try:
+    # If numpy is available, enable NumpyEncoder for json export
+    from armory.utils import json_utils
+except ImportError:
+    json_utils = None
+
 import json
 
 from armory import log
@@ -167,7 +173,7 @@ def process_meter_arg(arg: str):
 
     Example strings: 'model.x2[adversarial]', 'scenario.y_pred'
     """
-    if "[" in arg:
+    if "[" in arg or "]" in arg:
         if arg.count("[") != 1 or arg.count("]") != 1:
             raise ValueError(
                 f"arg '{arg}' must have a single matching '[]' pair or none"
@@ -252,7 +258,8 @@ class ProbeMapper:
         """
         filter_map = self.probe_filter_meter_arg.get(probe_variable, {})
         meters = filter_map.get(stage, [])
-        meters.extend(filter_map.get(None, []))  # no stage filter (default)
+        if stage is not None:
+            meters = meters + filter_map.get(None, [])  # no stage filter (default)
         return meters
 
 
@@ -264,7 +271,7 @@ class Hub:
     """
 
     def __init__(self):
-        self.context = dict(batch=-1, stage="",)
+        self.context = dict(batch=-1, stage="")
         self.mapper = ProbeMapper()
         self.meters = []
         self.writers = []
@@ -543,7 +550,12 @@ class Meter:
 
 # NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow
 class Writer:
+    def __init__(self):
+        self.closed = False
+
     def write(self, record):
+        if self.closed:
+            raise ValueError("Cannot write to closed Writer")
         name, batch, result = record
         return self._write(name, batch, result)
 
@@ -551,11 +563,17 @@ class Writer:
         raise NotImplementedError("Implement _write or override write in subclass")
 
     def close(self):
+        if self.closed:
+            return
+        self._close()
+        self.closed = True
+
+    def _close(self):
         pass
 
 
 class NullWriter(Writer):
-    def write(self, record):
+    def _write(self, name, batch, result):
         pass
 
 
@@ -569,6 +587,7 @@ class LogWriter(Writer):
         """
         log_level - one of the uppercase log levels allowed by armory.logs.log
         """
+        super().__init__()
         log.log(log_level, f"LogWriter set to armory.logs.log at level {log_level}")
         self.log_level = log_level
 
@@ -579,14 +598,29 @@ class LogWriter(Writer):
 
 
 class FileWriter(Writer):
-    def __init__(self, filepath):
+    """
+    Writes a txt file with line-separated json encoded outputs
+    """
+
+    def __init__(self, filepath, use_numpy_encoder=True):
+        super().__init__()
+        if use_numpy_encoder:
+            if json_utils is None:
+                raise ValueError("Cannot import numpy. Set use_numpy_encoder to False")
+            self.numpy_encoder = json_utils.NumpyEncoder
+        else:
+            self.numpy_encoder = None
         self.filepath = filepath
         self.file = open(self.filepath, "w")
 
     def _write(self, name, batch, result):
-        record_json = json.dumps([name, batch, result])
-        # TODO: fix numpy output conversion issues
-        self.file.write(record_json + "\n")
+        record = [name, batch, result]
+        self.file.write(
+            json.dumps(record, cls=self.numpy_encoder, separators=(",", ":")) + "\n"
+        )
+
+    def _close(self):
+        self.file.close()
 
 
 class ResultsWriter(Writer):
@@ -599,6 +633,7 @@ class ResultsWriter(Writer):
         sink is a callable that takes the output results dict as input
             if sink is None, call get_output after close to get results dict
         """
+        super().__init__()
         self.sink = sink
         self.records = []
         self.output = None
@@ -617,7 +652,7 @@ class ResultsWriter(Writer):
             output[name].append(result)
         return output
 
-    def close(self):
+    def _close(self):
         output = self.collate_results()
         if self.sink is None:
             self.output = output
@@ -627,6 +662,8 @@ class ResultsWriter(Writer):
     def get_output(self):
         if self.output is None:
             raise ValueError("must call `close` before `get_output`")
+        if self.sink is not None:
+            raise ValueError("output only kept if sink is None")
         return self.output
 
 
@@ -665,105 +702,3 @@ def del_globals():
     global _HUB
     _PROBES = {}
     _HUB = None
-
-
-def main():
-    """
-    Just for current WIP demonstration
-    """
-    # Begin model file
-    import numpy as np
-
-    # from armory.instrument import get_probe
-    probe = get_probe("model")
-
-    class Model:
-        def __init__(self, input_dim=100, classes=10):
-            self.input_dim = input_dim
-            self.classes = classes
-            self.preprocessor = np.random.random(self.input_dim)
-            self.predictor = np.random.random((self.input_dim, self.classes))
-
-        def predict(self, x):
-            x_prep = self.preprocessor * x
-            # if pytorch Tensor: probe.update(lambda x: x.detach().cpu().numpy(), prep_output=x_prep)
-            probe.update(lambda x: np.expand_dims(x, 0), prep_output=x_prep)
-            logits = np.dot(self.predictor.transpose(), x_prep)
-            return logits
-
-    # End model file
-
-    # Begin metric setup (could happen anywhere)
-
-    # from armory.instrument import add_writer, add_meter
-    from armory.utils import metrics
-
-    hub = get_hub()
-    hub.connect_meter(
-        Meter(
-            "postprocessed_l2_distance",
-            metrics.l2,
-            "model.prep_output[benign]",
-            "model.prep_output[adversarial]",
-        )
-    )
-    hub.connect_meter(
-        Meter(  # TODO: enable adding context for iteration number of attack
-            "sum of x_adv",
-            np.sum,
-            "attack.x_adv",  # could also do "attack.x_adv[attack]"
-        )
-    )
-    hub.connect_meter(
-        Meter(
-            "categorical_accuracy",
-            metrics.categorical_accuracy,
-            "scenario.y",
-            "scenario.y_pred",
-        )
-    )
-    hub.connect_meter(
-        Meter(  # Never measured, since 'y_target' is never set
-            "targeted_categorical_accuracy",
-            metrics.categorical_accuracy,
-            "scenario.y_target",
-            "scenario.y_pred",
-        )
-    )
-    hub.connect_writer(PrintWriter())
-
-    # End metric setup
-
-    # Update stages and batches in scenario loop (this would happen in main scenario file)
-    model = Model()
-    # Normally, model, attack, and scenario probes would be defined in different files
-    #    and therefore just be called 'probe'
-    attack_probe = get_probe("attack")
-    scenario_probe = get_probe("scenario")
-    not_connected_probe = Probe("not_connected")
-    for i in range(10):
-        hub.set_context(stage="get_batch", batch=i)
-        x = np.random.random(100)
-        y = np.random.randint(10)
-        scenario_probe.update(x=x, y=y)
-        not_connected_probe.update(x)  # should send a warning once
-
-        hub.set_context(stage="benign")
-        y_pred = model.predict(x)
-        scenario_probe.update(y_pred=y_pred)
-
-        hub.set_context(stage="benign")
-        x_adv = x
-        for j in range(5):
-            model.predict(x_adv)
-            x_adv = x_adv + np.random.random(100) * 0.1
-            attack_probe.update(x_adv=x_adv)
-
-        hub.set_context(stage="benign")
-        y_pred_adv = model.predict(x_adv)
-        scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
-    hub.close()
-
-
-if __name__ == "__main__":
-    main()
