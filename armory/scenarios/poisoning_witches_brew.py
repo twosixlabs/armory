@@ -385,7 +385,6 @@ class WitchesBrewScenario(Poison):
             )
         )
 
-        # TODO:
         # log.info(
         #     f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
         # )

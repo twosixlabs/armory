@@ -358,7 +358,6 @@ class Poison(Scenario):
             )
         )
 
-        # TODO: set up ResultsLogWriter? Only printed at end of scenario
         # log.info(
         #    f"Accuracy on benign test data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
         # )
@@ -399,7 +398,6 @@ class Poison(Scenario):
             # attack_success_rate is not just 1 - (accuracy on poisoned source class)
             # because it only counts examples misclassified as target, and no others.
 
-        # TODO: write GlobalMeter ???
         per_class_mean_accuracy = metrics.get_supported_metric(
             "per_class_mean_accuracy"
         )
