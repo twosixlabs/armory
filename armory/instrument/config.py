@@ -70,7 +70,7 @@ class MetricsLogger:
                 task_kwargs=self.task_kwargs,
                 record_final_only=self.record_final_only,
             )
-        if perturbation is not None:
+        if perturbation is not None and self.include_adversarial:
             if isinstance(perturbation, str):
                 perturbation = [perturbation]
             construct_meters_for_perturbation_metrics(
@@ -88,7 +88,7 @@ class MetricsLogger:
         Measure adversarial predictions w.r.t. benign predictions
             Convenience method for CARLA object detection scenario
         """
-        if self.task is not None:
+        if self.task is not None and self.include_adversarial:
             construct_meters_for_task_metrics_wrt_benign_predictions(
                 self.task,
                 use_mean=self.means,

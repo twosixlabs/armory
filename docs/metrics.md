@@ -189,9 +189,9 @@ It is essentially a wrapper around the functions of `armory.utils.metrics`.
 
 To instantiate a Meter:
 ```
+# TODO
 from armory.instrument import Meter
 meter = Meter( 
-        self,
         name,
         metric,
         *metric_arg_names,
@@ -204,6 +204,8 @@ meter = Meter(
 )
 ```
 It then needs to be connected to the hub:
+
+# TODO
 ```
 from armory.instrument import get_hub
 hub = get_hub()
