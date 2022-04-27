@@ -61,7 +61,7 @@ class MetricsLogger:
             if isinstance(task_kwargs, dict):
                 self.task_kwargs = [task_kwargs]
 
-            task_metrics(
+            construct_meters_for_task_metrics(
                 self.task,
                 use_mean=means,
                 include_benign=self.include_benign,
@@ -73,7 +73,7 @@ class MetricsLogger:
         if perturbation is not None:
             if isinstance(perturbation, str):
                 perturbation = [perturbation]
-            perturbation_metrics(
+            construct_meters_for_perturbation_metrics(
                 perturbation, use_mean=means, record_final_only=self.record_final_only
             )
 
@@ -89,7 +89,7 @@ class MetricsLogger:
             Convenience method for CARLA object detection scenario
         """
         if self.task is not None:
-            task_metrics_wrt_benign_predictions(
+            construct_meters_for_task_metrics_wrt_benign_predictions(
                 self.task,
                 use_mean=self.means,
                 task_kwargs=self.task_kwargs,
@@ -149,7 +149,9 @@ class MetricsLogger:
         return results
 
 
-def perturbation_metrics(names, use_mean=True, record_final_only=True):
+def construct_meters_for_perturbation_metrics(
+    names, use_mean=True, record_final_only=True
+):
     if use_mean:
         final = np.mean
     else:
@@ -337,7 +339,7 @@ def _task_metric(
     return meters
 
 
-def task_metrics(
+def construct_meters_for_task_metrics(
     names,
     use_mean=True,
     include_benign=True,
@@ -430,7 +432,7 @@ def _task_metric_wrt_benign_predictions(
     )
 
 
-def task_metrics_wrt_benign_predictions(
+def construct_meters_for_task_metrics_wrt_benign_predictions(
     names, use_mean=True, task_kwargs=None, record_final_only=True
 ):
     if task_kwargs is None:
