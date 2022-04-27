@@ -350,7 +350,7 @@ class WitchesBrewScenario(Poison):
                 "scenario.y_pred[non-trigger]",
                 final=np.mean,
                 final_name="mean_accuracy_non_trigger_images",
-                record_final_only=False,
+                record_final_only=True,
             )
         )
         self.hub.connect_meter(
@@ -361,7 +361,7 @@ class WitchesBrewScenario(Poison):
                 "scenario.y_pred[trigger]",
                 final=np.mean,
                 final_name="mean_accuracy_trigger_images",
-                record_final_only=False,
+                record_final_only=True,
             )
         )
 
