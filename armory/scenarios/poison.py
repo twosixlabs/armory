@@ -400,14 +400,16 @@ class Poison(Scenario):
             # because it only counts examples misclassified as target, and no others.
 
         # TODO: write GlobalMeter ???
-        per_class_accuracy = metrics.get_supported_metric("per_class_accuracy")
+        per_class_mean_accuracy = metrics.get_supported_metric(
+            "per_class_mean_accuracy"
+        )
         self.hub.connect_meter(
             Meter(
                 "sample_benign_test_accuracy_per_class",
                 metrics.get_supported_metric("identity_unzip"),
                 "scenario.y",
                 "scenario.y_pred",
-                final=lambda x: per_class_accuracy(*metrics.identity_zip(x)),
+                final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
                 final_name="unpoisoned_test_accuracy_per_class",
                 record_final_only=True,
             )

@@ -239,6 +239,17 @@ def per_class_accuracy(y, y_pred):
     return results
 
 
+def per_class_mean_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their mean accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
+
+
 def abstains(y, y_pred):
     """
     For each sample in y_pred:
@@ -1907,6 +1918,7 @@ SUPPORTED_METRICS = {
     "identity_zip": identity_zip,
     "tpr_fpr": tpr_fpr,
     "per_class_accuracy": per_class_accuracy,
+    "per_class_mean_accuracy": per_class_mean_accuracy,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
