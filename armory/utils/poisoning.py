@@ -211,7 +211,7 @@ cifar10_silhouette_clustering_config = {
         "data_stds": [0.2471, 0.2435, 0.2616],
         "num_classes": 10,
     },
-    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",#??????????
+    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
     "name": "get_model",
     "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
     "wrapper_kwargs": {},
