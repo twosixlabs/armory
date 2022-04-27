@@ -3,26 +3,37 @@
 Armory contains a number of functions to use as metrics as well as flexible measurement instrumentation.
 
 For measuring and logging standard perturbation (e.g., `Lp` norms) and task metrics (e.g., `categorical_accuracy`) for model inputs and outputs, standard config usage will likely suffice.
+See the Metrics section for more information on available metrics.
 For custom metrics and measuring intermediate values (e.g., outputs after a certain preprocessing layer), see the Instrumentation section below.
+
+## Scenario Config Usage
+
+In scenario configs, described in more detail in [Configuration File](docs/configuration_files.md), standard metrics can be added for measuring tasks and adversarial perturbations.
+When running a scenario, these metrics are measured and output in json format in the results file.
+
+Desired metrics and flags are placed under the key `"metric"` dictionary in the config:
+```
+"metric": {
+    "means": [Bool],
+    "perturbation": List[String] or String or null,
+    "record_metric_per_sample": [Bool],
+    "task": List[String] or String or null,
+}
+```
+The `perturbation` and `task` fields can be null, a single string, or a list of strings.
+Strings must be a valid armory metric from `armory.utils.metrics`, which are also described in the Metrics section below.
+The perturbation metrics measure the difference between the benign and adversarial inputs `x`.
+The task metrics measure the task performance on the predicted value w.r.t the true value `y`, for both benign and adversarial inputs.
+These metrics are called on batches of inputs, but are sample-wise metrics, and so their results are concatenated to form a list over samples.
+
+When `means` is true, the average value for the given metric is also recorded.
+When `record_metric_per_sample` is true, all of the per-sample metrics are recorded.
+If neither is true, a `ValueError` is raised, as nothing is recorded.
 
 ## Metrics
 
 The `armory.utils.metrics` module implements functionality to measure both
 task and perturbation metrics. 
-
-### Config Usage
-
-
-### MetricsLogger
-
-
-
-The `MetricsLogger` class pairs with scenarios to account for task performance
-against benign and adversarial data as well as measure the perturbations of
-adversarial samples. Since our datasets are presented as generators, this has
-`update_task` and `update_perturbation` methods that can update metrics for
-each batch obtained from the generator. The output, which is given by `results`,
-is a JSON-able dict.
 
 ### Metrics
 
