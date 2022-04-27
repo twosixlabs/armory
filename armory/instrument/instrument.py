@@ -320,29 +320,26 @@ class Hub:
         Convenience method to add writer to all (or a subset of meters)
 
         meters - if None, add to all current meters
-            otherwise, meters should be a list of names and/or Meter objects
+            otherwise, meters should be a list of Meter objects
                 the writer is connected to those meters
+                if the meters are not in the hub, they must first be connected
             if meters is an empty list, the writer will be added but no meters connected
 
         default - if True, writer is automatically added to each new meter added
         """
         if meters is None:
-            meters_list = self.meters
+            meters = self.meters
         else:
-            # parse meters list
-            meters_list = []
             for m in meters:
-                if isinstance(m, str):
-                    pass
-                elif isinstance(m, Meter):
-                    if m in self.meters:
-                        meters_list.append(m)
-                else:
+                if not isinstance(m, Meter):
+                    raise ValueError(f"meters includes {m}, which is not a Meter")
+                elif m not in self.meters:
                     raise ValueError(
-                        f"meters includes {m}, which is neither a str nor Meter"
+                        f"meter {m} is not connected to hub. "
+                        "If desired, first call `hub.connect_meter`"
                     )
 
-        for meter in meters_list:
+        for meter in meters:
             meter.add_writer(writer)
 
         if default and writer not in self.default_writers:

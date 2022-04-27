@@ -189,16 +189,31 @@ def test_process_meter_arg():
             probe_variable, stage_filter = instrument.process_meter_arg(arg)
 
 
-class MockMeter:
+class MockMeter(instrument.Meter):
     """
     For testing ProbeMapper
     """
 
     def __init__(self, *args):
         self.args = args
+        self.writers = []
+        self.num_add_writers = 0
+        self.num_finalizes = 0
+        self.num_sets = 0
 
     def get_arg_names(self):
         return self.args
+
+    def add_writer(self, writer):
+        self.num_add_writers += 1
+        if writer not in self.writers:
+            self.writers.append(writer)
+
+    def set(self, name, value, batch):
+        self.num_sets += 1
+
+    def finalize(self):
+        self.num_finalizes += 1
 
 
 def test_probe_mapper(caplog):
@@ -254,13 +269,6 @@ def test_probe_mapper(caplog):
     assert len(probe_mapper) == 0
 
 
-# TODO:
-# def test_hub():
-#     raise NotImplementedError()
-#
-#
-
-
 class LastRecordWriter:
     """
     Mock test interface for Writer
@@ -268,11 +276,92 @@ class LastRecordWriter:
 
     def __init__(self):
         self.record = None
+        self.closed = False
         self.num_writes = 0
+        self.num_closes = 0
 
     def write(self, record):
         self.record = record
         self.num_writes += 1
+
+    def close(self):
+        self.closed = True
+        self.num_closes += 1
+
+
+def test_hub(caplog):
+    Hub = instrument.Hub
+    hub = Hub()
+
+    hub.set_context(not_used=0)
+    assert "set_context kwarg not_used not currently used by Hub" in caplog.text
+
+    hub.set_context(stage="adversarial")
+    hub.set_context(stage="benign", batch=0)
+    with pytest.raises(ValueError):
+        hub.set_context(**{"not a valid identifier": 10})
+
+    assert not hub.is_measuring("x")
+    with pytest.raises(ValueError):
+        hub.update("x", 0)
+
+    name = "no default writer"
+    result = 17
+    hub.record(name, result)
+    assert f"No default writers to record {name}:{result} to" in caplog.text
+
+    w1 = LastRecordWriter()
+    w2 = LastRecordWriter()
+    hub.connect_writer(w1, default=True)
+    hub.connect_writer(w1, default=True)
+    hub.connect_writer(w2)
+    batch = 7
+    hub.set_context(batch=batch)
+    hub.record(name, result)
+    assert w1.record == (name, batch, result)
+    assert w1.num_writes == 1
+    assert w2.num_writes == 0
+
+    m1 = MockMeter("a[benign]")
+    m2 = MockMeter("a", "b[benign]")
+    hub.connect_meter(m1)
+    hub.connect_meter(m1)
+    hub.set_context(stage="attack")
+    hub.connect_meter(m2, use_default_writers=False)
+    assert m1.num_add_writers == 2
+    assert len(m1.writers) == 1
+    assert m2.num_add_writers == 0
+    assert hub.is_measuring("a")
+    assert not hub.is_measuring("b")
+    value = 5
+    hub.update("a", value)
+    assert m1.num_sets == 0
+    assert m2.num_sets == 1
+    hub.set_context(stage="benign")
+    hub.update("a", value)
+    assert m1.num_sets == 1
+    assert m2.num_sets == 2
+
+    hub.connect_writer(LastRecordWriter())
+    assert m1.num_add_writers == 3
+    assert m2.num_add_writers == 1
+    hub.connect_writer(LastRecordWriter(), meters=[m2])
+    assert m1.num_add_writers == 3
+    assert m2.num_add_writers == 2
+
+    with pytest.raises(ValueError):
+        hub.connect_writer(w1, meters=["not a meter"])
+    not_connected_meter = MockMeter("c", "d")
+    with pytest.raises(ValueError):
+        hub.connect_writer(w1, meters=[not_connected_meter])
+
+    hub.close()
+    hub.close()
+    for m in (m1, m2):
+        assert m.num_finalizes == 1
+    for w in (w1, w2):
+        assert w.num_closes == 1
+    assert hub.closed
 
 
 def test_meter(caplog):
