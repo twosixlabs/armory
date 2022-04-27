@@ -103,9 +103,6 @@ jobs:
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
   docker-tf2-unit:
-    # TODO: only this test is failing because the version number is wrong
-    # setting fetch-depth=0 allows all tags to be checked out
-    # why this doesn't affect the other flavors in this file is a mystery
     name: Docker TF2 Unit Tests
     runs-on: ubuntu-18.04
     steps:
