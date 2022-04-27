@@ -23,10 +23,10 @@ Example:
         # elsewhere (could be reasonably defined in a config file as well)
         from armory import instrument
         from armory import metrics
-        meter = instrument.Meter("l2_dist_postprocess", metrics.L2, "model.x_post[benign]", "model.x_post[adversarial]")
+        meter = instrument.Meter("l2_dist_postprocess", metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
         hub = instrument.get_hub()
         hub.connect_meter(meter)
-        hub.add_writer(instrument.PrintWriter())
+        hub.connect_writer(instrument.PrintWriter())
 """
 
 try:
@@ -45,7 +45,25 @@ _HUB = None
 
 
 class Probe:
+    """
+    Probes are used to capture values and route them to the provided sink.
+        If probes are constructed via the global `get_probe(...)` method,
+            the sink provided will be the global hub from `get_hub()`
+
+    Example:
+        >>> from armory.instrument import Probe, MockSink
+        >>> probe = Probe("test_probe", sink=MockSink())
+        >>> probe.update(variable_name=17)
+        update probe variable test_probe.variable_name to 17
+    """
+
     def __init__(self, name: str = "", sink=None):
+        """
+        name - the name of the probe, which must be "" or '.'-separated identifiers
+            If not empty, will prepend the update name via f"{name}.{update_name}"
+        sink - sink object for probe updates; must implement 'is_measuring' and 'update'
+            Currently, the Hub and MockSink objects satisfy this interface
+        """
         if name:
             if not all(token.isidentifier() for token in name.split(".")):
                 raise ValueError(f"name {name} must be '' or '.'-separated identifiers")
@@ -154,6 +172,10 @@ class Probe:
 class MockSink:
     """
     Measures all probe inputs and prints to screen
+
+    Primarily intended for testing whether probes are measuring:
+        probe.set_sink(MockSink())
+        probe.update(my_variable=17)
     """
 
     def is_measuring(self, probe_variable):
@@ -165,6 +187,8 @@ class MockSink:
 
 def process_meter_arg(arg: str):
     """
+    Helper function for ProbeMapper
+
     Return the probe variable and stage_filter
 
     Example strings: 'model.x2[adversarial]', 'scenario.y_pred'
@@ -263,7 +287,21 @@ class Hub:
     """
     Map between probes, meters, and writers
 
-    Maintains context of overall experiment in hub.context
+    Maintains context of overall experiment in terms of 'stage' and 'batch'
+        Example: hub.set_context(batch=1, stage="benign")
+        In current scenarios, stage is a str and batch is an int
+        These are used for filtering probe_variable updates and recording measurements
+        These may be extended in subsequent releases
+
+    `connect_meter` ands `connect_writer` are used for connecting Meter and Writer
+    probes are connected via setting their sink argument to the Hub
+        By default, probes are connected to the hub accessible via the global method `get_hub`
+
+    `record` pushes a single record to the default writers
+        This is useful if only a single measurement is needed for something
+
+    `close` finalizes all meters and subsequently closes all writers
+        This needs to be called before exiting, or some measurements may not be recorded
     """
 
     def __init__(self):
@@ -383,20 +421,26 @@ class Meter:
         record_final_only=False,
     ):
         """
-        StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
+        A meter measures a function over specified input probe_variables for each update
+            If final is not None, it also measures a function over those measurements
+            Records are pushed to Writers for output
 
-        probe_name.probe_variable[stage]
+        name - str name of meter, used when writing records
+        metric - callable function
+        metric_arg_names - str names of probe_variables corresponding to args passed into the metric function
+            Meter(..., "model.x_post[benign]", "model.x_adv_post", ...)
+            Follows the pattern of `probe_name.probe_variable[stage]` (stage is optional)
+        metric_kwargs - kwargs for the metric function that are constant across measurements
 
-        metric_kwargs - kwargs that are constant across measurements
-        auto_measure - whether to measure when all of the variables are present
+        auto_measure - whether to measure when all of the variables have ben set
             if False, 'measure()' must be called externally
 
-        final - metric that takes in list of results as input
-            Example: np.mean
+        final - metric function that takes in the list of results as input (e.g., np.mean)
         final_name - if final is not None, this is the name associated with the record
             if not specified, it defaults to f'{final}_{name}'
-
-        record_final_only - if True, do not record results to writers except in finalize
+        final_kwargs - kwargs for the final function that are constant across measurements
+        record_final_only - if True, do not record the standard metric, only final
+            if record_final_only is True and final is None, no records are emitted
         """
         self.name = str(name)
         if not callable(metric):
@@ -416,10 +460,7 @@ class Meter:
         self.writers = []
         self.auto_measure = bool(auto_measure)
 
-        if final is None:
-            if record_final_only:
-                raise ValueError("record_final_only cannot be True if final is None")
-        else:
+        if final is not None:
             if not callable(final):
                 raise ValueError(f"final {final} must be callable")
             if final_name is None:
@@ -431,7 +472,7 @@ class Meter:
         self.final_kwargs = final_kwargs or {}
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
-        self.record_final_only = record_final_only
+        self.record_final_only = bool(record_final_only)
         self.never_measured = True
 
     def get_arg_names(self):
@@ -528,6 +569,15 @@ class Meter:
 
 # NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow
 class Writer:
+    """
+    Writers take records from Meters in the form (meter_name, batch_num, result)
+        and write them to the desired output (e.g., print to screen, log to file)
+
+    Subclasses implement the writing functionality and should override `_write`
+        If subclasses manage resources like files that need to be closed,
+            `_close` should be overridden to implement that functionality
+    """
+
     def __init__(self):
         self.closed = False
 

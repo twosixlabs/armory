@@ -382,9 +382,6 @@ def test_meter(caplog):
         Meter("name", f, metric_kwargs=["not a dict"])
 
     with pytest.raises(ValueError):
-        Meter("name", f, "a", record_final_only=True)
-
-    with pytest.raises(ValueError):
         Meter("name", f, "a", final="not callable")
 
     with pytest.raises(ValueError):

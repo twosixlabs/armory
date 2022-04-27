@@ -176,8 +176,9 @@ An easy way to test probe outputs is to set the probe to a `MockSink` interface.
 This can be done as follows:
 ```
 from armory.instrument import get_probe, MockSink
-probe = get_probe(name)
+probe = get_probe("my_name")
 probe.set_sink(MockSink())
+probe.update("
 ```
 This will print all probe variables to the screen.
 
@@ -283,6 +284,10 @@ class DiffMeter(Meter):
 David's note:
 Thinking about this more, I think having a third class, like "Bench" or "Experiment" that keeps track of steps and stages would be helpful.
 Where we can have many-to-many relationships between meters and probes, we could have a single bench that keeps track of that sort of overall state.
+
+### Scenario usage
+
+Make it clear that `scenario.x` refers to the `x` variable set in the scenario.
 
 ### Scenario config usage
 
