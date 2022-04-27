@@ -72,6 +72,32 @@ Writer - object to take meter output records and send them standard outputs (fil
 Hub - object to route captured probe data to meter inputs and route meter outputs to writers
 There is typically only a single hub, where there can be numerous of the other types of objects.
 
+### Quick Start
+
+In order to capture and measure values, you need a Probe and a Meter connected to the hub, at a minimum:
+```
+from armory.instrument import get_probe, Meter, get_hub, PrintWriter
+hub = get_hub()  # get global measurement hub
+probe = get_probe("probe_name")  # get probe connected to global hub
+meter = Meter("my_meter", lambda a,b: a+b, "probe_name.a", "probe_name.b")  # construct meter that measures the sum of a and b
+hub.connect_meter(meter)  # connect meter to global hub
+
+# # optionally, add a writer
+writer = PrintWriter()
+hub.connect_writer(writer, default=True)  # default sets all meters to use this writer
+
+# Now, measure
+probe.update(a=2, b=5)  # should also print to screen if PrintWriter is connected
+probe.update(a=3)
+probe.update(b=8)  # now it should print again
+results = meter.results()
+assert results == [7, 11]
+```
+
+Since these all use a global Hub object, it doesn't matter which python files they are instantatied in.
+Probe should be instantiated in the file or class you are trying to measure.
+Meters and writers can be instantiated in your initial setup, and can be connected before probes are constructed.
+
 ### Probes
 
 To get a new Probe (connected to the default Hub):
@@ -101,7 +127,8 @@ probe.update(arbitrary_variable_name=15)
 will push the value 15 to `"my.probe_name.arbitrary_variable_name"`.
 These names will be used when instantiating `Meter` objects.
 
-However, this will fall on the floor (`del`, effectively) unless a meter is connected to the Hub to record values.
+However, this will fall on the floor (`del`, effectively) unless a meter is constructed and connected to the Hub to record values via `connect_meter`.
+See the Quick Start section above or the Meters section below for more details.
 This is analogous to having a `logging.Logger` without an appropriate `logging.Handler`.
 
 Multiple variables can be updated simultaneously with a single function call (utilizing all kwargs given):
