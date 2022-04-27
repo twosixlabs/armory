@@ -8,7 +8,7 @@ from armory.utils.poisoning import FairnessMetrics
 from armory.logs import log
 from armory.utils import config_loading, metrics
 from armory import paths
-from armory.instrument import Meter
+from armory.instrument import Meter, LogWriter, ResultsWriter
 
 
 class DatasetPoisonerWitchesBrew:
@@ -324,6 +324,11 @@ class WitchesBrewScenario(Poison):
         self.config["adhoc"]["trigger_index"] = [int(t) for t in self.trigger_index]
         self.config["adhoc"]["source_class"] = [int(c) for c in self.source_class]
         self.config["adhoc"]["target_class"] = [int(c) for c in self.target_class]
+        self.train_set_class_labels = sorted(np.unique(self.y_clean))
+        for y in self.train_set_class_labels:
+            self.hub.record(
+                f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
+            )
 
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
@@ -391,10 +396,15 @@ class WitchesBrewScenario(Poison):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
             )
+            if not self.check_run and self.use_filtering_defense:
+                self.fairness_metrics.add_filter_perplexity()
         else:
             log.warning(
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
             )
+        self.results_writer = ResultsWriter(sink=None)
+        self.hub.connect_writer(self.results_writer, default=True)
+        self.hub.connect_writer(LogWriter(), default=True)
 
     def run_benign(self):
         self.hub.set_context(stage="non-trigger")

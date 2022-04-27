@@ -417,7 +417,7 @@ class Poison(Scenario):
             self.fairness_metrics = FairnessMetrics(
                 self.config["adhoc"], self.use_filtering_defense, self
             )
-            if not self.check_run:
+            if not self.check_run and self.use_filtering_defense:
                 self.fairness_metrics.add_filter_perplexity()
                 # log.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
         else:
