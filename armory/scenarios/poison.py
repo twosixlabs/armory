@@ -339,8 +339,8 @@ class Poison(Scenario):
             Meter(
                 "sample_accuracy_on_benign_test_data_all_classes",
                 get_supported_metric("categorical_accuracy"),
-                "scenario.y[benign]",
-                "scenario.y_pred[benign]",
+                "scenario.y",
+                "scenario.y_pred",
                 final=np.mean,
                 final_name="accuracy_on_benign_data_all_classes",
                 record_final_only=True,
@@ -350,8 +350,8 @@ class Poison(Scenario):
             Meter(
                 "sample_accuracy_on_benign_test_data_source_class",
                 get_supported_metric("categorical_accuracy"),
-                "scenario.y_source[benign]",
-                "scenario.y_pred_source[benign]",
+                "scenario.y_source",
+                "scenario.y_pred_source",
                 final=np.mean,
                 final_name="accuracy_on_benign_data_source_class",
                 record_final_only=True,
@@ -377,8 +377,8 @@ class Poison(Scenario):
                 Meter(
                     "sample_accuracy_on_poisoned_data_all_classes",
                     metrics.get_supported_metric("categorical_accuracy"),
-                    "scenario.y[benign]",
-                    "scenario.y_pred_adv[adversarial]",
+                    "scenario.y",
+                    "scenario.y_pred_adv",
                     final=np.mean,
                     final_name="accuracy_on_poisoned_data_all_classes",
                     record_final_only=True,

@@ -342,8 +342,10 @@ class FairnessMetrics:
             majority_x = majority_x_correct_prediction_tables[class_id]
             chi2 = np.mean(chi2_metric(majority_x))
             spd = np.mean(spd_metric(majority_x))
-            self.hub.record(f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
-            self.hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
+            self.scenario.hub.record(
+                f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
+            )
+            self.scenario.hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
             log.info(
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
             )
@@ -366,10 +368,12 @@ class FairnessMetrics:
                 majority_x = majority_x_passed_filter_tables[class_id]
                 chi2 = np.mean(chi2_metric(majority_x))
                 spd = np.mean(spd_metric(majority_x))
-                self.hub.record(
+                self.scenario.hub.record(
                     f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
                 )
-                self.hub.record(f"filter_bias_spd_{str(class_id).zfill(2)}", spd)
+                self.scenario.hub.record(
+                    f"filter_bias_spd_{str(class_id).zfill(2)}", spd
+                )
                 log.info(
                     f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
                 )
