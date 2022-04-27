@@ -178,9 +178,10 @@ This can be done as follows:
 from armory.instrument import get_probe, MockSink
 probe = get_probe("my_name")
 probe.set_sink(MockSink())
-probe.update("
+probe.update(variable_name=17)
+# update probe variable my_name.variable_name to 17 
 ```
-This will print all probe variables to the screen.
+This will print all probe updates to the screen.
 
 ### Meter
 
