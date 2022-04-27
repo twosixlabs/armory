@@ -120,6 +120,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
           python docker/build.py tf2
+          echo "armory version: $(armory --version)"
       - name: Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
