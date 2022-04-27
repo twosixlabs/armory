@@ -1,14 +1,14 @@
 {
-    "_description": "RESISC10 poison image classification, contributed by MITRE Corporation",
+    "_description": "CIFAR10 poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
-        "explanatory_model": "resisc10_silhouette_model",
+        "explanatory_model": "cifar10_silhouette_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 1,
+        "source_class": 0,
         "split_id": 0,
-        "target_class": 5,
+        "target_class": 2,
         "train_epochs": 200,
         "use_poison_filtering_defense": false
     },
@@ -16,17 +16,17 @@
         "knowledge": "black",
         "kwargs": {
             "backdoor_packaged_with_armory": true,
-            "backdoor_path": "./armory/utils/triggers/letter_A.png",
-            "base_img_size_x": 64,
-            "base_img_size_y": 64,
-            "blend": 0.8,
+            "backdoor_path": "./armory/utils/triggers/watermarking.png",
+            "base_img_size_x": 32,
+            "base_img_size_y": 32,
+            "blend": 1.0,
             "channels_first": false,
             "mode": "RGB",
             "poison_module": "art.attacks.poisoning.perturbations",
             "poison_type": "image",
             "size": [
-                10,
-                10
+                32,
+                32
             ]
         },
         "module": "armory.art_experimental.attacks.poison_loader",
@@ -36,34 +36,9 @@
         "batch_size": 512,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "resisc10"
+        "name": "cifar10"
     },
     "defense": {
-        "data_augmentation": {
-            "rotation": {
-                "kwargs": {
-                    "apply_fit": false,
-                    "apply_predict": false,
-                    "clip_values": [
-                        0.0,
-                        1.0
-                    ],
-                    "degree": 0.0,
-                    "nb_samples": 1,
-                    "scale": [
-                        0.8,
-                        1.2
-                    ],
-                    "translate": [
-                        0.1,
-                        0.1
-                    ]
-                },
-                "module": "armory.art_experimental.defences.random_affine_pytorch",
-                "name": "EoTRandomAffinePyTorch",
-                "type": "Preprocessor"
-            }
-        },
         "kwargs": {
             "cluster_analysis": "smaller",
             "clustering_method": "KMeans",
@@ -81,14 +56,14 @@
         "fit_kwargs": {},
         "model_kwargs": {
             "data_means": [
-                0.37853524,
-                0.38404912,
-                0.36049628
+                0.4914,
+                0.4822,
+                0.4465
             ],
             "data_stds": [
-                0.18050115,
-                0.17266262,
-                0.173474
+                0.247,
+                0.2435,
+                0.2616
             ],
             "num_classes": 10,
             "pretrained": false
@@ -98,10 +73,11 @@
         "weights_file": null,
         "wrapper_kwargs": {
             "input_shape": [
-                64,
-                64,
+                32,
+                32,
                 3
             ],
+            "learning_rate": 0.001,
             "nb_classes": 10
         }
     },
