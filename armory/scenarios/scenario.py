@@ -378,7 +378,7 @@ class Scenario:
 
         self.save()
 
-    def prepare_output(self) -> dict:
+    def prepare_results(self) -> dict:
         """
         Build the JSON results blob for _save()
 
@@ -400,7 +400,7 @@ class Scenario:
         return output
 
     def save(self):
-        output = self.prepare_output()
+        output = self.prepare_results()
 
         override_name = output["config"]["sysconfig"].get("output_filename", None)
         scenario_name = (
