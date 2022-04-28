@@ -31,7 +31,7 @@ the commands to attach to the container in a separate terminal and run the
 configuration file end to end while attached to the container. Similar to 
 non-interactive mode, results from the evaluation can be found in the output 
 directory. To later close the interactive container simply run CTRL+C from the 
-terminal where this command was ran.
+terminal where this command was ran. Please see [running_armory_scenarios_interactively.ipynb](../notebooks/running_armory_scenarios_interactively.ipynb) for a tutorial on running Armory interactively.
 
 2) `armory launch`
 

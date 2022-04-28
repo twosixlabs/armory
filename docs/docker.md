@@ -70,6 +70,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
+Please see [running_armory_scenarios_interactively.ipynb](../notebooks/running_armory_scenarios_interactively.ipynb) for a tutorial on running Armory interactively.
+
 Note: We do not recommend using `--interactive` mode for installing custom requirements. You may
 run into permissions issues, as everything is installed as root, but the armory user is not run
 as root, to prevent potential security issues. Instead, we recommend creating a custom Docker image,
