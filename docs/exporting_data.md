@@ -42,7 +42,7 @@ Note: If using Armory < 0.15.0, please instead use the `"export_samples"` field 
 
 ### Exporting/Viewing Data Interactively
 If you are running Armory with the `--interactive` flag, you can interactively view and/or save off data examples. 
-Please see [docker.md](docker.md#interactive-use) for instructions on how to run Armory interactively. Once you've attached
+Please see [docker.md](docker.md#interactive-use) for instructions on how to run Armory interactively and [running_armory_scenarios_interactively.ipynb](../notebooks/running_armory_scenarios_interactively.ipynb) for a tutorial which includes instructions for exporting samples. Once you've attached
 to the container, please see the following code snippets for an example of how to view and/or save off data examples:
 
 First, we'll simply load our scenario config and evaluate on one batch of data:
