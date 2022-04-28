@@ -5,6 +5,7 @@ from armory.instrument.instrument import (
     Hub,
     Meter,
     MockSink,
+    NullWriter,
     Probe,
     PrintWriter,
     ResultsWriter,

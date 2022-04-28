@@ -77,11 +77,11 @@ The `armory.instrument` module implements functionality to flexibly capture valu
 
 The primary mechanisms are largely based off of the logging paradigm of loggers and handlers, though with significant differences on the handling side.
 
-Probe - object to capture data and publish them for measurement.
-Meter - object to measure a single metric with given captured data and output records
-Writer - object to take meter output records and send them standard outputs (files, loggers, results dictionaries, etc.)
-Hub - object to route captured probe data to meter inputs and route meter outputs to writers
-There is typically only a single hub, where there can be numerous of the other types of objects.
+- Probe - object to capture data and publish them for measurement.
+- Meter - object to measure a single metric with given captured data and output records
+- Writer - object to take meter output records and send them standard outputs (files, loggers, results dictionaries, etc.)
+- Hub - object to route captured probe data to meter inputs and route meter outputs to writers
+- There is typically only a single hub, where there can be numerous of the other types of objects.
 
 ### Quick Start
 
@@ -93,7 +93,7 @@ probe = get_probe("probe_name")  # get probe connected to global hub
 meter = Meter("my_meter", lambda a,b: a+b, "probe_name.a", "probe_name.b")  # construct meter that measures the sum of a and b
 hub.connect_meter(meter)  # connect meter to global hub
 
-# # optionally, add a writer
+# optionally, add a writer
 writer = PrintWriter()
 hub.connect_writer(writer, default=True)  # default sets all meters to use this writer
 
@@ -197,84 +197,172 @@ This will print all probe updates to the screen.
 ### Meter
 
 A Meter is used to measure values output by probes.
-It is essentially a wrapper around the functions of `armory.utils.metrics`.
+It is essentially a wrapper around the functions of `armory.utils.metrics`, though it can employ any callable object.
+You will need to construct a meter, connect it to a hub, and (optionally) add a writer.
+
+#### Meter Construction
 
 To instantiate a Meter:
 ```
-# TODO
 from armory.instrument import Meter
 meter = Meter( 
-        name,
-        metric,
-        *metric_arg_names,
-        metric_kwargs=None,
-        auto_measure=True,
-        final=None,
-        final_name=None,
-        final_kwargs=None,
-        keep_results=True,
+    name,
+    metric,
+    *metric_arg_names,
+    metric_kwargs=None,
+    auto_measure=True,
+    final=None,
+    final_name=None,
+    final_kwargs=None,
+    record_final_only=False,
+)
+"""
+A meter measures a function over specified input probe_variables for each update
+    If final is not None, it also measures a function over those measurements
+    Records are pushed to Writers for output
+
+name - str name of meter, used when writing records
+metric - callable function
+metric_arg_names - str names of probe_variables corresponding to args passed into the metric function
+    Meter(..., "model.x_post[benign]", "model.x_adv_post", ...)
+    Follows the pattern of `probe_name.probe_variable[stage]` (stage is optional)
+metric_kwargs - kwargs for the metric function that are constant across measurements
+
+auto_measure - whether to measure when all of the variables have ben set
+    if False, 'measure()' must be called externally
+
+final - metric function that takes in the list of results as input (e.g., np.mean)
+final_name - if final is not None, this is the name associated with the record
+    if not specified, it defaults to f'{final}_{name}'
+final_kwargs - kwargs for the final function that are constant across measurements
+record_final_only - if True, do not record the standard metric, only final
+    if record_final_only is True and final is None, no records are emitted
+"""
+```
+
+For example, if you have a metric `diff`,
+```
+def diff(a, b):
+    return a - b
+```
+and you want to use it to measure the difference between `w` and `z` output from Probe `"my_probe"`, then you could do:
+```
+meter = Meter(
+    "my_meter_name",
+    diff,
+    "my_probe.w",
+    "my_probe.z",
 )
 ```
-It then needs to be connected to the hub:
+This will effectively call `diff(value["my_probe.w"], value["my_probe.z"])` once for each time both of those values are set.
 
-# TODO
+If you wanted to take the average of diff over all the samples and only record that value, you would need to set final.
+```
+meter = Meter(
+    "name not recorded because record_final_only is True",
+    diff,
+    "my_probe.w",
+    "my_probe.z",
+    final=np.mean,
+    final_name="mean_meter",  # actual recorded name
+    final_kwargs=None,
+    record_final_only=True,
+)
+``` 
+
+The `metric_kwargs` and `final_kwargs` are a set of kwargs that are passed to each call of the corresponding function, but are assumed to be constant.
+For example, this could be the `p` parameter in a generic `l_p` norm:
+```
+def lp(x, x_adv, p=2):
+    return np.linalg.norm(x-x_adv, ord=p, axis=1)
+
+meter = Meter(
+    "lp_perturbation",
+    lp,
+    "scenario.x",
+    "scenario.x_adv",
+    metric_kwargs={"p": 4},
+)
+```
+
+#### Connecting Meter to Hub and Receiving Probe Updates
+
+A constructed meter needs to be connected to a hub to receive `probe_variable` updates:
 ```
 from armory.instrument import get_hub
-hub = get_hub()
+hub = get_hub()  # use global hub
 hub.connect_meter(meter)
-
-
-        StandardMeter(metrics.l2, "model.x_post[benign]", "model.x_post[adversarial]")
-
-        probe_name.probe_variable[stage]
-
-        metric_kwargs - kwargs that are constant across measurements
-        auto_measure - whether to measure when all of the variables are present
-            if False, 'measure()' must be called externally
-
-        final - metric that takes in list of results as input
-            Example: np.mean
-        final_name - if final is not None, this is the name associated with the record
-            if not specified, it defaults to f'{final}_{name}'
-
-        keep_results - whether to locally store results
-            if final is not None, keep_results is set to True
-
-
-```
-To set up a meter, you need to connect it to the probe.
-This can be done as follows:
-```
-from armory.metrics import instrument
-meter = instrument.LogMeter()
-probe.connect(meter)
 ```
 
-When a probe value is updated, it first calls `is_measuring`.
-If `False`, nothing is done.
-If `True`, preprocessing is run on the probe data and `meter.update` is called with it.
+Updates are propagated to meters via the hub based on a simple filtering process.
+If a probe named `probe_name` is updating a value `my_value` to 42, the call looks like this:
+```
+get_probe("probe_name").update(my_value=42)
+```
+The hub then looks for a corresponding name from the lists of `metric_arg_names` from connected meters.
+If the name is found, then the hub will call `set` on each of those meters, updating that argument value:
+```
+meter.set("probe_name.my_value", 42, batch)
+```
+The `batch` arg is mainly used to track which iteration the meter is on, and is set automatically in scenarios.
 
-The default `NullMeter` and `LogMeter` classes always return `True` when `is_measuring` is called.
-In custom Meters, it may be desirable to override this function to reduce computational cost.
+Once all of the args have been set for a meter, it will call `self.measure()` if `auto_measure=True` (the default).
+If `auto_measure=False`, then the user will need to explicitly call `meter.measure()`
 
-### Update and Measure
+NOTE: if `meter_arg_names` are misspelled, the meter will not measure anything.
+This will log a warning if nothing has been called when meter.finalize() is called (typically via `hub.close()`), such as:
+```
+Meter 'my_meter_name' was never measured. The following args were never set: ['probe_name.my_value']
+```
 
-When the probes update and it passes the `is_measuring` check, the `update` method is called.
-This can be used to directly process the values as they change.
+#### Retrieving Results and Records
 
-Alternatively, the `measure` method can be used to process the current set of values.
-This can be helpful when the calling program has more control over the executing code.
+After measurement, the results are saved in a local list on the Meter and send records to any connected writers.
+Similarly, after finalize is called, the final metric (if it is not `None`) will be applied to the results and saved in a local list, with a record sent to connected writers.
 
-### Stages and Steps
+To retrieve a list of the values measured thus far, call `meter.results()`.
+To retrieve the value computed by the final metric, call `meter.final_result()`.
+If `measure` and `finalize` have not been called, respectively, then these will instead return `[]` and `None`.
+
+Records are sent as 3-tuples to connected writers:
+```
+(name, batch, result)
+```
+where `name` is the name given to the Meter, batch is the number set by the hub, and result is the result from calling the metric.
+Final records are also 3-tuples:
+```
+(final_name, None, final_result)
+```
+Note that the results stored by the meter are not the record tuples, but simply the raw results.
+
+#### Connecting Writers
+
+Armory scenarios will set up a default `ResultsWriter` that will take all connected meter records and write them to the output results json.
+If additional outputs are desired, other Writer objects can be instantiated and connected to meters via the hub.
+
+For instance, attaching a simple writer that prints all records to stdout:
+```
+hub.connect_writer(PrintWriter(), default=True)
+```
+
+However, this can be quite verbose, so if you just want to add it to a particular meter, you can do this:
+```
+hub.connect_meter(meter)  # meter must be connected before connecting a writer to it
+hub.connect_writer(PrintWriter(), meters=[meter])
+```
+
+The are a number of different standard Writer objects:
+- `Writer` - base class other writers are derived from
+- `NullWriter` - writer that does nothing (writes to null)
+- `LogWriter` - writer that writes to armory log in the given log level. Example: `LogWriter("WARNING")`
+- `FileWriter` - writer that writes each record as a json-encoded line in the target file. Example: `FileWriter("records.txt")`
+- `ResultsWriter` - writer that collates the records and outputs them as a dictionary. Used by scenarios as default.
+
+To create a new Writer, simply subclass Writer and override the `_write` method (and optionally the `_close` method).
+
+#### Stages and Update Filters
 
 Conditional code may want to take advantage of being able to measure only at certain points in time or compare different stages of a scenario.
-
-Probes are deliberately "dumb" - they do not have knowledge or context, beyond their construction.
-This is in contrast to TensorBoard, which requires steps to be directly input in-line.
-The TensorBoard approach can be very difficult to use when that context is unavailable or hard to provide.
-
-An example is probing an intermediate model value and comparing benign and adversarial activations.
-Since the model doesn't know whether it is being attacked, it would require passing that in from outside.
 
 The `Meter` class has `set_stage` and `set_step` methods for setting where an experiment is at currently.
 These can then be used to provide more granular measurement.
@@ -299,18 +387,6 @@ David's note:
 Thinking about this more, I think having a third class, like "Bench" or "Experiment" that keeps track of steps and stages would be helpful.
 Where we can have many-to-many relationships between meters and probes, we could have a single bench that keeps track of that sort of overall state.
 
-### Scenario usage
+### Default Scenario Instrumentation
 
 Make it clear that `scenario.x` refers to the `x` variable set in the scenario.
-
-### Scenario config usage
-
-TBD - I would like to get the machinery done separate from scenarios, then integrate.
-
-To set one up (for scenarios) from a config, you can do:
-```
-# TBD
-# instrument.MetricsMeter.from_config(config["metrics"])
-```
-
-
