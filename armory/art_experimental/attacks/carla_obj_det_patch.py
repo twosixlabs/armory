@@ -473,7 +473,7 @@ class CARLADapricotPatch(RobustDPatch):
                 self.patch_geometric_shape,
                 cc_gt=self.cc_gt,
                 cc_scene=self.cc_scene,
-                apply_realistic_effects=False,
+                apply_realistic_effects=self.apply_realistic_effects,
                 rgb=True,
             )
 
@@ -616,6 +616,11 @@ class CARLADapricotPatch(RobustDPatch):
             self.cc_gt = y_patch_metadata[i].get("cc_ground_truth", None)
             self.cc_scene = y_patch_metadata[i].get("cc_scene", None)
 
+            if self.cc_gt is None or self.cc_scene is None:
+                self.apply_realistic_effects = False
+            else:
+                self.apply_realistic_effects = True
+
             # self._patch needs to be re-initialized with the correct shape
             if self.estimator.clip_values is None:
                 self._patch = np.zeros(shape=self.patch_shape)
@@ -662,7 +667,7 @@ class CARLADapricotPatch(RobustDPatch):
                 self.patch_geometric_shape,
                 cc_gt=self.cc_gt,
                 cc_scene=self.cc_scene,
-                apply_realistic_effects=False,
+                apply_realistic_effects=self.apply_realistic_effects,
                 rgb=True,
             )
 
