@@ -86,7 +86,7 @@ The primary mechanisms are largely based off of the logging paradigm of loggers 
 ### Quick Start
 
 In order to capture and measure values, you need a Probe and a Meter connected to the hub, at a minimum:
-```
+```python
 from armory.instrument import get_probe, Meter, get_hub, PrintWriter
 hub = get_hub()  # get global measurement hub
 probe = get_probe("probe_name")  # get probe connected to global hub
@@ -112,7 +112,7 @@ Meters and writers can be instantiated in your initial setup, and can be connect
 ### Probes
 
 To get a new Probe (connected to the default Hub):
-```
+```python
 # Module imports section
 from armory.instrument import get_probe
 probe = get_probe(name)
@@ -123,7 +123,7 @@ Calls to `get_probe` using the same name will return the same Probe object.
 The recommended approach is to set a probe at the top of the file of interest and use it for all captures in that file.
 
 To capture values in-line, use `update`:
-```
+```python
 # ...
 # In the code
 probe.update(name=value)
@@ -131,7 +131,7 @@ probe.update(name=value)
 
 This will publish the given value(s) to the given name(s) (also called probe variables) in the probe namespace of the connected Hub.
 To be more concrete:
-```
+```python
 probe = get_probe("my.probe_name")
 probe.update(arbitrary_variable_name=15)
 ```
@@ -143,7 +143,7 @@ See the Quick Start section above or the Meters section below for more details.
 This is analogous to having a `logging.Logger` without an appropriate `logging.Handler`.
 
 Multiple variables can be updated simultaneously with a single function call (utilizing all kwargs given):
-```
+```python
 probe.update(a=x, b=y, c=z)
 ```
 
@@ -152,15 +152,15 @@ For instance, if the variable `y` was a pytorch tensor, it might be helpful to m
 However, it would be a waste of computation of nothing was set up to measure that value.
 Therefore, probes leverage `args` to perform preprocessing on the input only when meters are connected.
 For instance,
-```
+```python
 probe.update(lambda x: x.detach().cpu().numpy(), my_var=y)
 ```
 Or, less succinctly,
-```
+```python
 probe.update(lambda x: x.detach(), lambda x: x.cpu(), lambda x: x.numpy(), my_var=y)
 ```
 More generally,
-```
+```python
 probe.update(func1, func2, func3, my_var=y)
 ```
 will publish the value `func3(func2(func1(y)))`. 
@@ -172,7 +172,7 @@ Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roa
 
 To hook a model module, you can use the `hook` function.
 For instance, 
-```
+```python
 # probe.hook(module, *preprocessing, input=None, output=None)
 probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
 ```
@@ -185,7 +185,7 @@ More general hooking (e.g., for python methods) is TBD.
 
 An easy way to test probe outputs is to set the probe to a `MockSink` interface.
 This can be done as follows:
-```
+```python
 from armory.instrument import get_probe, MockSink
 probe = get_probe("my_name")
 probe.set_sink(MockSink())
@@ -193,6 +193,20 @@ probe.update(variable_name=17)
 # update probe variable my_name.variable_name to 17 
 ```
 This will print all probe updates to the screen.
+
+### Default Scenario Probe Values
+
+The standard scenarios provide probe updates for the following variables:
+- `i` - the current batch
+- `x` - current batch of inputs
+- `y` - current batch of ground truth labels
+- `y_pred` - prediction of model on `x`
+- `x_adv` - inputs perturbed by the current attack
+- `y_pred_adv` - prediction of model on `x_adv`
+- `y_target` (conditional) - target labels for attack, if attack is targeted
+
+The standard probe used in scenarios is named `"scenario"`, so to access these, prepend the variable with `"scenario."`.
+For example, the variable `x` set in the scenario can be referenced as `"scenario.x"`.
 
 ### Meter
 
@@ -203,7 +217,7 @@ You will need to construct a meter, connect it to a hub, and (optionally) add a 
 #### Meter Construction
 
 To instantiate a Meter:
-```
+```python
 from armory.instrument import Meter
 meter = Meter( 
     name,
@@ -241,12 +255,12 @@ record_final_only - if True, do not record the standard metric, only final
 ```
 
 For example, if you have a metric `diff`,
-```
+```python
 def diff(a, b):
     return a - b
 ```
 and you want to use it to measure the difference between `w` and `z` output from Probe `"my_probe"`, then you could do:
-```
+```python
 meter = Meter(
     "my_meter_name",
     diff,
@@ -257,7 +271,7 @@ meter = Meter(
 This will effectively call `diff(value["my_probe.w"], value["my_probe.z"])` once for each time both of those values are set.
 
 If you wanted to take the average of diff over all the samples and only record that value, you would need to set final.
-```
+```python
 meter = Meter(
     "name not recorded because record_final_only is True",
     diff,
@@ -272,7 +286,7 @@ meter = Meter(
 
 The `metric_kwargs` and `final_kwargs` are a set of kwargs that are passed to each call of the corresponding function, but are assumed to be constant.
 For example, this could be the `p` parameter in a generic `l_p` norm:
-```
+```python
 def lp(x, x_adv, p=2):
     return np.linalg.norm(x-x_adv, ord=p, axis=1)
 
@@ -288,7 +302,7 @@ meter = Meter(
 #### Connecting Meter to Hub and Receiving Probe Updates
 
 A constructed meter needs to be connected to a hub to receive `probe_variable` updates:
-```
+```python
 from armory.instrument import get_hub
 hub = get_hub()  # use global hub
 hub.connect_meter(meter)
@@ -296,12 +310,12 @@ hub.connect_meter(meter)
 
 Updates are propagated to meters via the hub based on a simple filtering process.
 If a probe named `probe_name` is updating a value `my_value` to 42, the call looks like this:
-```
+```python
 get_probe("probe_name").update(my_value=42)
 ```
 The hub then looks for a corresponding name from the lists of `metric_arg_names` from connected meters.
 If the name is found, then the hub will call `set` on each of those meters, updating that argument value:
-```
+```python
 meter.set("probe_name.my_value", 42, batch)
 ```
 The `batch` arg is mainly used to track which iteration the meter is on, and is set automatically in scenarios.
@@ -311,7 +325,7 @@ If `auto_measure=False`, then the user will need to explicitly call `meter.measu
 
 NOTE: if `meter_arg_names` are misspelled, the meter will not measure anything.
 This will log a warning if nothing has been called when meter.finalize() is called (typically via `hub.close()`), such as:
-```
+```python
 Meter 'my_meter_name' was never measured. The following args were never set: ['probe_name.my_value']
 ```
 
@@ -325,12 +339,12 @@ To retrieve the value computed by the final metric, call `meter.final_result()`.
 If `measure` and `finalize` have not been called, respectively, then these will instead return `[]` and `None`.
 
 Records are sent as 3-tuples to connected writers:
-```
+```python
 (name, batch, result)
 ```
 where `name` is the name given to the Meter, batch is the number set by the hub, and result is the result from calling the metric.
 Final records are also 3-tuples:
-```
+```python
 (final_name, None, final_result)
 ```
 Note that the results stored by the meter are not the record tuples, but simply the raw results.
@@ -341,12 +355,12 @@ Armory scenarios will set up a default `ResultsWriter` that will take all connec
 If additional outputs are desired, other Writer objects can be instantiated and connected to meters via the hub.
 
 For instance, attaching a simple writer that prints all records to stdout:
-```
+```python
 hub.connect_writer(PrintWriter(), default=True)
 ```
 
 However, this can be quite verbose, so if you just want to add it to a particular meter, you can do this:
-```
+```python
 hub.connect_meter(meter)  # meter must be connected before connecting a writer to it
 hub.connect_writer(PrintWriter(), meters=[meter])
 ```
@@ -364,29 +378,46 @@ To create a new Writer, simply subclass Writer and override the `_write` method 
 
 Conditional code may want to take advantage of being able to measure only at certain points in time or compare different stages of a scenario.
 
-The `Meter` class has `set_stage` and `set_step` methods for setting where an experiment is at currently.
-These can then be used to provide more granular measurement.
+The `Hub` class contains context information that can be leveraged to filter out probe updates.
+These are set by the `hub.set_context` method, and are automatically set by scenarios.
+Currently, context contains the keys `batch` (number) and `stage`, which are respectively set to `int` and `str` values.
+Future updates may extend the use of context information for more advanced filtering or measurement.
 
-Here is an example meter:
+The batch number is incremented once per batch, is typically set to -1 prior to the first batch, and is primarily used internally by Meters to synchronize their measurements across stages.
+The stage is intented primarily for filtering, starts with an empty string for a value, and is updated with logical parts of the scenario.
+The primarily used scenario contexts (at present) for evasion attacks are:
+- "next" - data iteration (get `x`, `y`, `i`, etc.)
+- "benign" - model prediction on `x`
+- "attack" - attack to generate `x_adv` from `x`
+- "adversarial" - model prediction on `x_adv`
+- "finished" - indicates that all benign and adversarial batches have been evaluated
+Scenario contexts for poisoning scenarios are varied - see the scenarios for specifics.
+
+We do not recommend directly setting context while running a scenario, or it will interfere with the standard meters.
+However, these will likely need to be set when running a custom scenario and overriding standard methods like `next`, `run_benign`, and `run_attack`.
+
+Probe updates can be filtered by meters by using a single bracketed string in the args list.
+For instance, `"probe_name.probe_variable[adversarial]"` will only measure the value from `"probe_name.probe_variable"` when `stage = "adversarial"`.
+
+This can be helpful when you want to measure something internal to a model but only during certain stages.
+For instance, if you have a two stage model that applies preprocessing followed by estimation, and you want to measure the value after preprocessing:
+```python
+probe = get_probe("my_model")
+
+def forward(self, x):
+    x_proc = preprocessing(x)
+    probe.update(x_after_preprocess=x_proc)
+    y_pred = estimation(x_proc)
+    return y_pred
 ```
-class DiffMeter(Meter):
-    def is_measuring(self, name):
-        return (name == "z" and self.stage in ("run_benign", "predict_attack"))
-
-    def update(self, z=None):
-        if self.stage == "run_benign":
-            self.z = z
-        elif self.stage == "predict_attack":
-            self.z_adv = z
-            diff = np.abs((z - z_adv)).sum()
-            log.info(f"diff is {diff}")
-
+You may want to compare the "linf" distance of `x_proc` in the benign case to `x_proc` for the corresponding adversarial case.
+However, the model does not know the present context (whether it is being attacked or in otherwise), so measuring `"my_model.x_after_preprocess"` will get all of the forward passes caused by PGD.
+In contrast, the following will directly measure the desired values:
+```python
+meter = Meter(
+    "linf of x_proc benign vs adversarial",
+    metrics.linf,
+    "my_model.x_after_preprocess[benign]",
+    "my_model.x_after_preprocess[adversarial]",
+)
 ```
-
-David's note:
-Thinking about this more, I think having a third class, like "Bench" or "Experiment" that keeps track of steps and stages would be helpful.
-Where we can have many-to-many relationships between meters and probes, we could have a single bench that keeps track of that sort of overall state.
-
-### Default Scenario Instrumentation
-
-Make it clear that `scenario.x` refers to the `x` variable set in the scenario.
