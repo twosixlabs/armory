@@ -44,10 +44,12 @@ def get_art_model(
 
     model = OuterModel(weights_path=weights_path, **model_kwargs)
 
+    lr = wrapper_kwargs.pop("learning_rate", 0.1)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss(),
-        optimizer=torch.optim.SGD(model.parameters(), lr=0.2, momentum=0.9),
+        optimizer=torch.optim.Adam(model.parameters(), lr=lr),
         input_shape=wrapper_kwargs.pop(
             "input_shape", (224, 224, 3)
         ),  # default to imagenet shape
