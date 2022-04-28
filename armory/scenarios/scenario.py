@@ -376,10 +376,10 @@ class Scenario:
 
         if results is None:
             log.warning(f"{self._evaluate} returned None, not a dict")
-        output = self._prepare_results(self.config, results)
-        self._save(output)
 
-    def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
+        self.save()
+
+    def _prepare_output(self, adv_examples=None) -> dict:
         """
         Build the JSON results blob for _save()
 
@@ -391,16 +391,15 @@ class Scenario:
 
         output = {
             "armory_version": armory.__version__,
-            "config": config,
-            "results": results,
+            "config": self.config,
+            "results": self.results,
             "timestamp": int(self.time_stamp),
         }
         return output
 
-    def _save(self, output: dict):
-        """
-        Save json-formattable output to a file
-        """
+    def save(self):
+        output = self._prepare_output()
+
         override_name = output["config"]["sysconfig"].get("output_filename", None)
         scenario_name = (
             override_name if override_name else output["config"]["scenario"]["name"]
