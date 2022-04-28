@@ -61,6 +61,7 @@ class Scenario:
         if skip_attack:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
+        self.results = None
 
     def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
@@ -350,7 +351,7 @@ class Scenario:
 
     def _evaluate(self) -> dict:
         """
-        Evaluate the config and return a results dict
+        Evaluate the config and set the results dict self.results
         """
         self.load()
         self.evaluate_all()
@@ -358,7 +359,7 @@ class Scenario:
 
     def evaluate(self):
         """
-        Evaluate a config for robustness against attack.
+        Evaluate a config for robustness against attack and save results JSON
         """
         try:
             self._evaluate()
@@ -374,16 +375,13 @@ class Scenario:
             sys.exit(1)
 
         if self.results is None:
-            log.warning(f"{self._evaluate} returned None, not a dict")
+            log.warning(f"{self._evaluate} did not set self.results to a dict")
 
         self.save()
 
     def prepare_results(self) -> dict:
         """
-        Build the JSON results blob for _save()
-
-        adv_examples are (optional) instances of the actual examples used.
-            They will be saved in a binary format.
+        Return the JSON results blob to be used in save() method
         """
         if not hasattr(self, "results"):
             raise AttributeError(
@@ -400,6 +398,9 @@ class Scenario:
         return output
 
     def save(self):
+        """
+        Write results JSON file to Armory scenario output directory
+        """
         output = self.prepare_results()
 
         override_name = output["config"]["sysconfig"].get("output_filename", None)
