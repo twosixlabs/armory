@@ -379,16 +379,13 @@ class Scenario:
 
         self.save()
 
-    def _prepare_output(self, adv_examples=None) -> dict:
+    def _prepare_output(self) -> dict:
         """
         Build the JSON results blob for _save()
 
         adv_examples are (optional) instances of the actual examples used.
             They will be saved in a binary format.
         """
-        if adv_examples is not None:
-            raise NotImplementedError("saving adversarial examples")
-
         if not hasattr(self, "results"):
             raise AttributeError(
                 "Results have not been finalized. Please call "
