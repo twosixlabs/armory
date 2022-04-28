@@ -202,10 +202,11 @@ class Poison(Scenario):
         )  # self.y_clean is the whole pre-poison train set
         poisoned = np.zeros_like(self.y_clean, np.bool)
         poisoned[self.poison_index.astype(np.int64)] = True
-        self.probe.update(poisoned=poisoned)
+        self.probe.update(poisoned=poisoned, poison_index=self.poison_index)
         self.hub.record("N_poisoned_train_samples", self.n_poisoned)
         self.hub.record("N_clean_train_samples", self.n_clean)
         self.train_set_class_labels = sorted(np.unique(self.y_clean))
+        self.probe.update(y_clean=self.y_clean)
         for y in self.train_set_class_labels:
             self.hub.record(
                 f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
