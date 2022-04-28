@@ -358,7 +358,6 @@ class WitchesBrewScenario(Poison):
         self.i = -1
         self.test_set_class_labels = set()
 
-
     def load_metrics(self):
         if self.use_filtering_defense:
             # Filtering metrics
@@ -373,23 +372,23 @@ class WitchesBrewScenario(Poison):
 
         self.hub.connect_meter(
             Meter(
-                "mean_accuracy_non_trigger_images",
+                "accuracy_on_non_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
                 final=np.mean,
-                final_name="mean_accuracy_non_trigger_images",
+                final_name="accuracy_on_non_trigger_images",
                 record_final_only=True,
             )
         )
         self.hub.connect_meter(
             Meter(
-                "accuracy_trigger_images",
+                "accuracy_on_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
                 "scenario.y[trigger]",
                 "scenario.y_pred[trigger]",
                 final=np.mean,
-                final_name="mean_accuracy_trigger_images",
+                final_name="accuracy_on_trigger_images",
                 record_final_only=True,
             )
         )
@@ -399,12 +398,12 @@ class WitchesBrewScenario(Poison):
         )
         self.hub.connect_meter(
             Meter(
-                "sample_non_trigger_test_accuracy_per_class",
+                "accuracy_on_non_trigger_images_per_class",
                 metrics.get_supported_metric("identity_unzip"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
                 final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
-                final_name="mean_accuracy_per_class_non_trigger_images",
+                final_name="accuracy_on_non_trigger_images_per_class",
                 record_final_only=True,
             )
         )
