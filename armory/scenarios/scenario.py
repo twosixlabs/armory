@@ -61,6 +61,7 @@ class Scenario:
         if skip_attack:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
+        self.results = None
 
     def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
@@ -350,19 +351,18 @@ class Scenario:
 
     def _evaluate(self) -> dict:
         """
-        Evaluate the config and return a results dict
+        Evaluate the config and set the results dict self.results
         """
         self.load()
         self.evaluate_all()
         self.finalize_results()
-        return self.results
 
     def evaluate(self):
         """
-        Evaluate a config for robustness against attack.
+        Evaluate a config for robustness against attack and save results JSON
         """
         try:
-            results = self._evaluate()
+            self._evaluate()
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 log.exception(
@@ -374,33 +374,35 @@ class Scenario:
                 log.exception("Encountered error during scenario evaluation.")
             sys.exit(1)
 
-        if results is None:
-            log.warning(f"{self._evaluate} returned None, not a dict")
-        output = self._prepare_results(self.config, results)
-        self._save(output)
+        if self.results is None:
+            log.warning(f"{self._evaluate} did not set self.results to a dict")
 
-    def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
-        """
-        Build the JSON results blob for _save()
+        self.save()
 
-        adv_examples are (optional) instances of the actual examples used.
-            They will be saved in a binary format.
+    def prepare_results(self) -> dict:
         """
-        if adv_examples is not None:
-            raise NotImplementedError("saving adversarial examples")
+        Return the JSON results blob to be used in save() method
+        """
+        if not hasattr(self, "results"):
+            raise AttributeError(
+                "Results have not been finalized. Please call "
+                "finalize_results() before saving output."
+            )
 
         output = {
             "armory_version": armory.__version__,
-            "config": config,
-            "results": results,
+            "config": self.config,
+            "results": self.results,
             "timestamp": int(self.time_stamp),
         }
         return output
 
-    def _save(self, output: dict):
+    def save(self):
         """
-        Save json-formattable output to a file
+        Write results JSON file to Armory scenario output directory
         """
+        output = self.prepare_results()
+
         override_name = output["config"]["sysconfig"].get("output_filename", None)
         scenario_name = (
             override_name if override_name else output["config"]["scenario"]["name"]
