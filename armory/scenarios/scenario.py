@@ -3,7 +3,6 @@ Primary class for scenario
 """
 
 import copy
-import json
 import os
 import sys
 import time
@@ -13,7 +12,8 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths
-from armory.utils import config_loading, metrics
+from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
+from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
 
@@ -33,6 +33,8 @@ class Scenario:
         skip_misclassified: Optional[bool] = False,
         check_run: bool = False,
     ):
+        self.probe = get_probe("scenario")
+        self.hub = get_hub()
         self.check_run = bool(check_run)
         if num_eval_batches is not None and num_eval_batches < 0:
             raise ValueError("num_eval_batches cannot be negative")
@@ -199,20 +201,17 @@ class Scenario:
         self.i = -1
 
     def load_metrics(self):
-        if hasattr(self, "targeted"):
-            targeted = self.targeted
-        else:
-            targeted = False
+        if not hasattr(self, "targeted"):
             log.warning(
                 "Run 'load_attack' before 'load_metrics' if not just doing benign inference"
             )
 
         metrics_config = self.config["metric"]
-        metrics_logger = metrics.MetricsLogger.from_config(
+        metrics_logger = MetricsLogger.from_config(
             metrics_config,
-            skip_benign=self.skip_benign,
-            skip_attack=self.skip_attack,
-            targeted=targeted,
+            include_benign=not self.skip_benign,
+            include_adversarial=not self.skip_attack,
+            include_targeted=self.targeted,
         )
 
         self.profiler_kwargs = dict(
@@ -255,11 +254,15 @@ class Scenario:
         for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
             self.next()
             self.evaluate_current()
+        self.hub.set_context(stage="finished")
 
     def next(self):
+        self.hub.set_context(stage="next")
         x, y = next(self.test_dataset)
         i = self.i + 1
+        self.hub.set_context(batch=i)
         self.i, self.x, self.y = i, x, y
+        self.probe.update(i=i, x=x, y=y)
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
     def _check_x(self, function_name):
@@ -268,18 +271,21 @@ class Scenario:
 
     def run_benign(self):
         self._check_x("run_benign")
+        self.hub.set_context(stage="benign")
+
         x, y = self.x, self.y
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
+        self.probe.update(y_pred=y_pred)
 
         if self.skip_misclassified:
             self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
 
     def run_attack(self):
         self._check_x("run_attack")
+        self.hub.set_context(stage="attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
@@ -307,6 +313,7 @@ class Scenario:
 
                 x_adv = self.attack.generate(x=x, y=y_target, **self.generate_kwargs)
 
+        self.hub.set_context(stage="adversarial")
         if self.skip_misclassified and self.misclassified:
             y_pred_adv = y_pred
         else:
@@ -314,12 +321,9 @@ class Scenario:
             x_adv.flags.writeable = False
             y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
-        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
-            self.metrics_logger.update_task(
-                y_target, y_pred_adv, adversarial=True, targeted=True
-            )
-        self.metrics_logger.update_perturbation(x, x_adv)
+            self.probe.update(y_target=y_target)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
@@ -339,12 +343,7 @@ class Scenario:
             )
 
     def finalize_results(self):
-        metrics_logger = self.metrics_logger
-        metrics_logger.log_task()
-        metrics_logger.log_task(adversarial=True)
-        if self.targeted:
-            metrics_logger.log_task(adversarial=True, targeted=True)
-        self.results = metrics_logger.results()
+        self.results = self.metrics_logger.results()
 
         if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
@@ -356,6 +355,8 @@ class Scenario:
         self.load()
         self.evaluate_all()
         self.finalize_results()
+        log.debug("Clearing global instrumentation variables")
+        del_globals()
 
     def evaluate(self):
         """
@@ -414,4 +415,4 @@ class Scenario:
             "inside container."
         )
         with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
-            f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+            json_utils.dump(output, f)

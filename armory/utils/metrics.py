@@ -26,7 +26,6 @@ from armory.data.adversarial.apricot_metadata import (
 from armory.logs import log
 from armory.utils.external_repo import ExternalPipInstalledImport
 
-# TODO: update label_mapping with total counts after measurement PR
 _ENTAILMENT_MODEL = None
 
 
@@ -69,8 +68,7 @@ class Entailment:
             model_name, cache_dir=cache_dir
         )
         self.model.eval()
-        # self.label_mapping = ['contradiction', 'neutral', 'entailment']
-        self.label_mapping = [0, 1, 2]
+        self.label_mapping = ["contradiction", "neutral", "entailment"]
         _ENTAILMENT_MODEL = (
             model_name,
             cache_dir,
@@ -95,6 +93,161 @@ class Entailment:
             labels = [self.label_mapping[i] for i in scores.argmax(dim=1)]
 
         return labels  # return list of labels, not (0, 1, 2)
+
+
+def total_entailment(sample_results):
+    """
+    Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
+        Return a dictionary of counts for each label
+    """
+    entailment_map = ["contradiction", "neutral", "entailment"]
+    for i in range(sample_results):
+        sample = sample_results[i]
+        if sample in (0, 1, 2):
+            log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
+            sample_results[i] = entailment_map[sample]
+        elif sample not in entailment_map:
+            raise ValueError(f"result {sample} not a valid entailment label")
+
+    c = Counter()
+    c.update(sample_results)
+    c = dict(c)  # ensure JSON-able
+
+
+def total_wer(sample_wers):
+    """
+    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
+        Return global_wer, (total_edit_distance, total_words)
+    """
+    # checks if all values are tuples from the WER metric
+    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        total_edit_distance = 0
+        total_words = 0
+        for wer_tuple in sample_wers:
+            total_edit_distance += int(wer_tuple[0])
+            total_words += int(wer_tuple[1])
+        if total_words:
+            global_wer = float(total_edit_distance / total_words)
+        else:
+            global_wer = float("nan")
+        return global_wer, (total_edit_distance, total_words)
+    else:
+        raise ValueError("total_wer() only for WER metric aggregation")
+
+
+def identity_unzip(*args):
+    """
+    Map batchwise args to a list of sample-wise args
+    """
+    return list(zip(*args))
+
+
+def identity_zip(sample_arg_tuples):
+    args = [list(x) for x in zip(*sample_arg_tuples)]
+    return args
+
+
+# NOTE: Not registered as a metric due to arg in __init__
+class MeanAP:
+    def __init__(self, ap_metric):
+        self.ap_metric = ap_metric
+
+    def __call__(self, values, **kwargs):
+        args = [list(x) for x in zip(*values)]
+        ap = self.ap_metric(*args, **kwargs)
+        mean_ap = np.fromiter(ap.values(), dtype=float).mean()
+        return {"mean": mean_ap, "class": ap}
+
+
+def tpr_fpr(actual_conditions, predicted_conditions):
+    """
+    actual_conditions and predicted_conditions should be equal length boolean np arrays
+
+    Returns a dict containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, F1 Score
+    """
+    actual_conditions, predicted_conditions = [
+        np.asarray(x, dtype=np.bool) for x in (actual_conditions, predicted_conditions)
+    ]
+    if actual_conditions.shape != predicted_conditions.shape:
+        raise ValueError(
+            f"inputs must have equal shape. {actual_conditions.shape} != {predicted_conditions.shape}"
+        )
+    if actual_conditions.ndim != 1:
+        raise ValueError(f"inputs must be 1-dimensional, not {actual_conditions.ndim}")
+
+    true_positives = int(np.sum(predicted_conditions & actual_conditions))
+    true_negatives = int(np.sum(~predicted_conditions & ~actual_conditions))
+    false_positives = int(np.sum(predicted_conditions & ~actual_conditions))
+    false_negatives = int(np.sum(~predicted_conditions & actual_conditions))
+
+    actual_positives = true_positives + false_negatives
+    if actual_positives > 0:
+        true_positive_rate = true_positives / actual_positives
+        false_negative_rate = false_negatives / actual_positives
+    else:
+        true_positive_rate = false_negative_rate = float("nan")
+
+    actual_negatives = true_negatives + false_positives
+    if actual_negatives > 0:
+        false_positive_rate = false_positives / actual_negatives
+        true_negative_rate = true_negatives / actual_negatives
+    else:
+        false_positive_rate = true_negative_rate = float("nan")
+
+    if true_positives or false_positives or false_negatives:
+        f1_score = true_positives / (
+            true_positives + 0.5 * (false_positives + false_negatives)
+        )
+    else:
+        f1_score = float("nan")
+
+    return dict(
+        true_positives=true_positives,
+        true_negatives=true_negatives,
+        false_positives=false_positives,
+        false_negatives=false_negatives,
+        true_positive_rate=true_positive_rate,
+        false_positive_rate=false_positive_rate,
+        false_negative_rate=false_negative_rate,
+        true_negative_rate=true_negative_rate,
+        f1_score=f1_score,
+    )
+
+
+def per_class_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    y, y_pred = (np.asarray(i) for i in (y, y_pred))
+    if y.ndim != 1:
+        raise ValueError("y should be a list of classes")
+    if y.ndim + 1 != y_pred.ndim:
+        raise ValueError("y_pred should be a matrix of probabilities")
+
+    results = {}
+    for i in range(y_pred.shape[1]):
+        if i in y:
+            index = y == i
+            results[i] = categorical_accuracy(y[index], y_pred[index])
+        else:
+            results[i] = float("nan")
+
+    return results
+
+
+def per_class_mean_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their mean accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
 
 
 def abstains(y, y_pred):
@@ -1759,6 +1912,13 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 SUPPORTED_METRICS = {
     "entailment": Entailment,
+    "total_entailment": total_entailment,
+    "total_wer": total_wer,
+    "identity_unzip": identity_unzip,
+    "identity_zip": identity_zip,
+    "tpr_fpr": tpr_fpr,
+    "per_class_accuracy": per_class_accuracy,
+    "per_class_mean_accuracy": per_class_mean_accuracy,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1839,337 +1999,3 @@ def get_supported_metric(name):
         function = function()
     assert callable(function), f"function {name} is not callable"
     return function
-
-
-class MetricList:
-    """
-    Keeps track of all results from a single metric
-    """
-
-    def __init__(self, name, function=None):
-        if function is None:
-            self.function = get_supported_metric(name)
-        elif callable(function):
-            self.function = function
-        else:
-            raise ValueError(f"function must be callable or None, not {function}")
-        self.name = name
-        self._values = []
-        self._input_labels = []
-        self._input_preds = []
-
-    def clear(self):
-        self._values.clear()
-
-    def add_results(self, *args, **kwargs):
-        value = self.function(*args, **kwargs)
-        self._values.extend(value)
-
-    def __iter__(self):
-        return self._values.__iter__()
-
-    def __len__(self):
-        return len(self._values)
-
-    def values(self):
-        return list(self._values)
-
-    def mean(self):
-        if not self._values:
-            return float("nan")
-        return sum(float(x) for x in self._values) / len(self._values)
-
-    def append_input_label(self, label):
-        self._input_labels.extend(label)
-
-    def append_input_pred(self, pred):
-        self._input_preds.extend(pred)
-
-    def total_wer(self):
-        # checks if all values are tuples from the WER metric
-        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
-            total_edit_distance = 0
-            total_words = 0
-            for wer_tuple in self._values:
-                total_edit_distance += wer_tuple[0]
-                total_words += wer_tuple[1]
-            return float(total_edit_distance / total_words)
-        else:
-            raise ValueError("total_wer() only for WER metric")
-
-    def compute_non_elementwise_metric(self, **kwargs):
-        return self.function(self._input_labels, self._input_preds, **kwargs)
-
-
-class MetricsLogger:
-    """
-    Uses the set of task and perturbation metrics given to it.
-    """
-
-    def __init__(
-        self,
-        task=None,
-        perturbation=None,
-        means=True,
-        record_metric_per_sample=False,
-        profiler_type=None,
-        computational_resource_dict=None,
-        skip_benign=None,
-        skip_attack=None,
-        targeted=False,
-        task_kwargs=None,
-        **kwargs,
-    ):
-        """
-        task - single metric or list of metrics
-        perturbation - single metric or list of metrics
-        means - whether to return the mean value for each metric
-        record_metric_per_sample - whether to return metric values for each sample
-        """
-        self.tasks = [] if skip_benign else self._generate_counters(task)
-        self.adversarial_tasks = [] if skip_attack else self._generate_counters(task)
-        self.targeted_tasks = (
-            self._generate_counters(task) if targeted and not skip_attack else []
-        )
-        self.perturbations = (
-            [] if skip_attack else self._generate_counters(perturbation)
-        )
-        self.means = bool(means)
-        self.full = bool(record_metric_per_sample)
-        self.computational_resource_dict = {}
-        if not self.means and not self.full:
-            log.warning(
-                "No per-sample metric results will be produced. "
-                "To change this, set 'means' or 'record_metric_per_sample' to True."
-            )
-        if (
-            not self.tasks
-            and not self.perturbations
-            and not self.adversarial_tasks
-            and not self.targeted_tasks
-        ):
-            log.warning(
-                "No metric results will be produced. "
-                "To change this, set one or more 'task' or 'perturbation' metrics"
-            )
-        # the following metrics must be computed at once after all predictions have been obtained
-        self.non_elementwise_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-        self.mean_ap_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-
-        self.task_kwargs = task_kwargs
-        if task_kwargs:
-            if not isinstance(task_kwargs, list):
-                raise TypeError(
-                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
-                )
-            if len(task_kwargs) != len(task):
-                raise ValueError(
-                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
-                )
-
-        # This designation only affects logging formatting
-        self.quantity_metrics = [
-            "object_detection_hallucinations_per_image",
-            "carla_od_hallucinations_per_image",
-        ]
-
-    def _generate_counters(self, names):
-        if names is None:
-            names = []
-        elif isinstance(names, str):
-            names = [names]
-        elif not isinstance(names, list):
-            raise ValueError(
-                f"{names} must be one of (None, str, list), not {type(names)}"
-            )
-        return [MetricList(x) for x in names]
-
-    @classmethod
-    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
-        if skip_benign:
-            config["skip_benign"] = skip_benign
-        if skip_attack:
-            config["skip_attack"] = skip_attack
-        return cls(**config, targeted=targeted)
-
-    def clear(self):
-        for metric in self.tasks + self.adversarial_tasks + self.perturbations:
-            metric.clear()
-
-    def update_task(self, y, y_pred, adversarial=False, targeted=False):
-        if targeted and not adversarial:
-            raise ValueError("benign task cannot be targeted")
-        tasks = (
-            self.targeted_tasks
-            if targeted
-            else self.adversarial_tasks
-            if adversarial
-            else self.tasks
-        )
-        for task_idx, metric in enumerate(tasks):
-            if metric.name in self.non_elementwise_metrics:
-                metric.append_input_label(y)
-                metric.append_input_pred(y_pred)
-            else:
-                if self.task_kwargs:
-                    metric.add_results(y, y_pred, **self.task_kwargs[task_idx])
-                else:
-                    metric.add_results(y, y_pred)
-
-    def update_perturbation(self, x, x_adv):
-        for metric in self.perturbations:
-            metric.add_results(x, x_adv)
-
-    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
-        if used_preds_as_labels and not adversarial:
-            raise ValueError("benign task shouldn't use benign predictions as labels")
-        if used_preds_as_labels and targeted:
-            raise ValueError("targeted task shouldn't use benign predictions as labels")
-        if targeted:
-            if adversarial:
-                metrics = self.targeted_tasks
-                wrt = "target"
-                task_type = "adversarial"
-            else:
-                raise ValueError("benign task cannot be targeted")
-        elif adversarial:
-            metrics = self.adversarial_tasks
-            if used_preds_as_labels:
-                wrt = "benign predictions as"
-            else:
-                wrt = "ground truth"
-            task_type = "adversarial"
-        else:
-            metrics = self.tasks
-            wrt = "ground truth"
-            task_type = "benign"
-
-        for task_idx, metric in enumerate(metrics):
-            # Do not calculate mean WER, calcuate total WER
-            if metric.name == "word_error_rate":
-                log.success(
-                    f"Word error rate on {task_type} examples relative to {wrt} labels: "
-                    f"{metric.total_wer():.2%}"
-                )
-            elif metric.name == "entailment":
-                c = Counter()
-                entailment_map = ["contradiction", "neutral", "entailment"]
-                values = [entailment_map[x] for x in metric.values()]
-                c.update(values)
-                total = len(values)
-                log.success(
-                    f"Entailment results on {task_type} test examples relative to {wrt} labels: "
-                    f"contradiction: {c['contradiction']}/{total}, "
-                    f"neutral: {c['neutral']}/{total}, "
-                    f"entailment: {c['entailment']}/{total}"
-                )
-            elif metric.name in self.non_elementwise_metrics:
-                if self.task_kwargs:
-                    metric_result = metric.compute_non_elementwise_metric(
-                        **self.task_kwargs[task_idx]
-                    )
-                else:
-                    metric_result = metric.compute_non_elementwise_metric()
-                log.success(
-                    f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric_result}"
-                )
-                if metric.name in self.mean_ap_metrics:
-                    log.success(
-                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
-                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
-                    )
-            elif metric.name in self.quantity_metrics:
-                # Don't include % symbol
-                log.success(
-                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric.mean():.2}"
-                )
-                if metric.name in self.mean_ap_metrics:
-                    log.success(
-                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
-                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
-                    )
-            else:
-                log.success(
-                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric.mean():.2%}"
-                )
-
-    def results(self):
-        """
-        Return dict of results
-        """
-        results = {}
-        for metrics, prefix in [
-            (self.tasks, "benign"),
-            (self.adversarial_tasks, "adversarial"),
-            (self.targeted_tasks, "targeted"),
-            (self.perturbations, "perturbation"),
-        ]:
-            for task_idx, metric in enumerate(metrics):
-                if metric.name in self.non_elementwise_metrics:
-                    if self.task_kwargs:
-                        metric_result = metric.compute_non_elementwise_metric(
-                            **self.task_kwargs[task_idx]
-                        )
-                    else:
-                        metric_result = metric.compute_non_elementwise_metric()
-                    results[f"{prefix}_{metric.name}"] = metric_result
-                    if metric.name in self.mean_ap_metrics:
-                        results[f"{prefix}_mean_{metric.name}"] = np.fromiter(
-                            metric_result.values(), dtype=float
-                        ).mean()
-                    continue
-                if metric.name == "entailment":
-                    c = Counter()
-                    entailment_map = ["contradiction", "neutral", "entailment"]
-                    values = [entailment_map[x] for x in metric.values()]
-                    c.update(values)
-                    c["total"] = len(values)
-                    results[f"{prefix}_{metric.name}"] = values
-                    results[f"{prefix}_total_{metric.name}"] = c
-                    continue
-
-                if self.full:
-                    results[f"{prefix}_{metric.name}"] = metric.values()
-                if self.means:
-                    try:
-                        results[f"{prefix}_mean_{metric.name}"] = metric.mean()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate mean in {prefix}_{metric.name}"
-                        )
-                if metric.name == "word_error_rate":
-                    try:
-                        results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate WER in {prefix}_{metric.name}"
-                        )
-
-        for name in self.computational_resource_dict:
-            entry = self.computational_resource_dict[name]
-            if "execution_count" not in entry or "total_time" not in entry:
-                raise ValueError(
-                    "Computational resource dictionary entry corrupted, missing data."
-                )
-            total_time = entry["total_time"]
-            execution_count = entry["execution_count"]
-            average_time = total_time / execution_count
-            results[
-                f"Avg. CPU time (s) for {execution_count} executions of {name}"
-            ] = average_time
-            if "stats" in entry:
-                results[f"{name} profiler stats"] = entry["stats"]
-        return results

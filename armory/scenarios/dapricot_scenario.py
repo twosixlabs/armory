@@ -90,18 +90,20 @@ class ObjectDetectionTask(Scenario):
         )
 
     def load_metrics(self):
+        # The D-APRICOT scenario only has targeted adversarial tasks
+        self.config["metrics"]["include_benign"] = False
+        self.config["metrics"]["include_adversarial"] = False
         super().load_metrics()
-        # The D-APRICOT scenario has no non-targeted tasks
-        self.metrics_logger.adversarial_tasks = []
 
     def run_benign(self):
         raise NotImplementedError("D-APRICOT has no benign task")
 
     def run_attack(self):
+        self._check_x("run_attack")
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
-
             if x.shape[0] != 1:
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
@@ -114,23 +116,17 @@ class ObjectDetectionTask(Scenario):
 
             x_adv = self.attack.generate(x=x, **generate_kwargs)
 
+        self.hub.set_context(stage="adversarial")
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv)
         for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
-            self.metrics_logger.update_task(
-                [y_i_target], [y_i_pred], adversarial=True, targeted=True
-            )
-
-        self.metrics_logger.update_perturbation(x, x_adv)
+            self.probe.update(y_target=[y_i_target], y_pred=[y_i_pred])
+        self.probe.update(x_adv=x_adv)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
-
-    def finalize_results(self):
-        self.metrics_logger.log_task(adversarial=True, targeted=True)
-        self.results = self.metrics_logger.results()
 
     def _load_sample_exporter(self):
         default_export_kwargs = {"with_boxes": True}

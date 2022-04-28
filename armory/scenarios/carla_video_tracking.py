@@ -28,17 +28,22 @@ class CarlaVideoTracking(Scenario):
     def next(self):
         super().next()
         self.y, self.y_patch_metadata = self.y
+        self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_benign(self):
+        self._check_x("run_benign")
+        self.hub.set_context(stage="benign")
         x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
         x.flags.writeable = False
         with metrics.resource_context(name="Inference", **self.profiler_kwargs):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
-        self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
+        self.probe.update(y_pred=y_pred)
 
     def run_attack(self):
+        self._check_x("run_attack")
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
 
@@ -57,17 +62,15 @@ class CarlaVideoTracking(Scenario):
                 **self.generate_kwargs,
             )
 
+        self.hub.set_context(stage="adversarial")
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
 
         y_pred_adv = self.model.predict(x_adv, y_init=y_init, **self.predict_kwargs)
 
-        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
-            self.metrics_logger.update_task(
-                y_target, y_pred_adv, adversarial=True, targeted=True
-            )
-        self.metrics_logger.update_perturbation(x, x_adv)
+            self.probe.update(y_target=y_target)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
