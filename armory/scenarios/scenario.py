@@ -355,14 +355,13 @@ class Scenario:
         self.load()
         self.evaluate_all()
         self.finalize_results()
-        return self.results
 
     def evaluate(self):
         """
         Evaluate a config for robustness against attack.
         """
         try:
-            results = self._evaluate()
+            self._evaluate()
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 log.exception(
@@ -374,7 +373,7 @@ class Scenario:
                 log.exception("Encountered error during scenario evaluation.")
             sys.exit(1)
 
-        if results is None:
+        if self.results is None:
             log.warning(f"{self._evaluate} returned None, not a dict")
 
         self.save()
