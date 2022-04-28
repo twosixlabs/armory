@@ -389,6 +389,12 @@ class Scenario:
         if adv_examples is not None:
             raise NotImplementedError("saving adversarial examples")
 
+        if not hasattr(self, "results"):
+            raise AttributeError(
+                "Results have not been finalized. Please call "
+                "finalize_results() before saving output."
+            )
+
         output = {
             "armory_version": armory.__version__,
             "config": self.config,
