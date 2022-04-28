@@ -12,11 +12,19 @@
             "max_iter": 500,
             "norm": "snr",
             "num_random_init": 0,
-            "targeted": false
+            "targeted": true
         },
         "module": "armory.art_experimental.attacks.snr_pgd",
         "name": "SNR_PGD_Numpy",
-        "targeted": false,
+        "targeted": true,
+        "targeted_labels": {
+            "kwargs": {
+                "import_from": "armory.attacks.librispeech_target_labels",
+                "transcripts": "matched_length"
+            },
+            "module": "armory.utils.labels",
+            "name": "MatchedTranscriptLengthTargeter"
+        },
         "use_label": false
     },
     "dataset": {
@@ -27,18 +35,7 @@
         "name": "librispeech",
         "train_split": "train_clean100"
     },
-    "defense": {
-        "kwargs": {
-            "apply_fit": false,
-            "apply_predict": true,
-            "channels_first": false,
-            "sample_rate": 16000,
-            "verbose": false
-        },
-        "module": "art.defences.preprocessor",
-        "name": "Mp3Compression",
-        "type": "Preprocessor"
-    },
+    "defense": null,
     "metric": {
         "means": false,
         "perturbation": "linf",

@@ -12,7 +12,7 @@
             "max_iter": 500,
             "norm": "snr",
             "num_random_init": 0,
-            "targeted": true
+            "targeted": false
         },
         "module": "armory.art_experimental.attacks.snr_pgd",
         "name": "SNR_PGD_Numpy",
