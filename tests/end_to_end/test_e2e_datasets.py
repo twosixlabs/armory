@@ -565,12 +565,13 @@ def test_carla_obj_det_dev():
     ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
     ds_multimodal = adversarial_datasets.carla_obj_det_dev(split="dev", modality="both")
+
     for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
         for x, y in ds:
             if i == 0:
-                assert x.shape == (1, 600, 800, 6)
+                assert x.shape == (1, 960, 1280, 6)
             else:
-                assert x.shape == (1, 600, 800, 3)
+                assert x.shape == (1, 960, 1280, 3)
 
             y_object, y_patch_metadata = y
             assert isinstance(y_object, dict)

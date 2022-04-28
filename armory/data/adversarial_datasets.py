@@ -34,8 +34,8 @@ resisc45_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 ucf101_adversarial_context = datasets.ImageContext(x_shape=(None, 112, 112, 3))
 apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
-carla_obj_det_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
 carla_video_tracking_context = datasets.VideoContext(
     x_shape=(None, 960, 1280, 3), frame_rate=10
 )
@@ -631,7 +631,7 @@ def carla_obj_det_dev(
     )
 
     return datasets._generator_from_tfds(
-        "carla_obj_det_dev:1.0.1",
+        "carla_obj_det_dev:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
