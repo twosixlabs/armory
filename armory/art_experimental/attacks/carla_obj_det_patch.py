@@ -616,6 +616,9 @@ class CARLADapricotPatch(RobustDPatch):
             self.cc_gt = y_patch_metadata[i].get("cc_ground_truth", None)
             self.cc_scene = y_patch_metadata[i].get("cc_scene", None)
 
+            # Prior to Eval 5 (dev set version 2.0.0), this was set to True. It's now being
+            # set False to be more aligned with AdversarialPatch attack. This line is essentially
+            # 'if dev set version >= 2.0.0', since these variables are None as of 2.0.0 / Eval 5
             if self.cc_gt is None or self.cc_scene is None:
                 self.apply_realistic_effects = False
             else:
