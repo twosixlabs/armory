@@ -473,7 +473,7 @@ class CARLADapricotPatch(RobustDPatch):
                 self.patch_geometric_shape,
                 cc_gt=self.cc_gt,
                 cc_scene=self.cc_scene,
-                apply_realistic_effects=True,
+                apply_realistic_effects=False,
                 rgb=True,
             )
 
@@ -606,14 +606,15 @@ class CARLADapricotPatch(RobustDPatch):
                 x.shape[-1],
             )
 
-            self.patch_geometric_shape = str(y_patch_metadata[i]["shape"])
+            patch_geometric_shape = y_patch_metadata[i].get("shape", "rect")
+            self.patch_geometric_shape = str(patch_geometric_shape)
 
             # this masked to embed patch into the background in the event of occlusion
             self.binarized_patch_mask = y_patch_metadata[i]["mask"]
 
             # get colorchecker information from ground truth and scene
-            self.cc_gt = y_patch_metadata[i]["cc_ground_truth"]
-            self.cc_scene = y_patch_metadata[i]["cc_scene"]
+            self.cc_gt = y_patch_metadata[i].get("cc_ground_truth", None)
+            self.cc_scene = y_patch_metadata[i].get("cc_scene", None)
 
             # self._patch needs to be re-initialized with the correct shape
             if self.estimator.clip_values is None:
@@ -661,7 +662,7 @@ class CARLADapricotPatch(RobustDPatch):
                 self.patch_geometric_shape,
                 cc_gt=self.cc_gt,
                 cc_scene=self.cc_scene,
-                apply_realistic_effects=True,
+                apply_realistic_effects=False,
                 rgb=True,
             )
 
