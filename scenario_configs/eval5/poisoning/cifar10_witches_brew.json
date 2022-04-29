@@ -1,17 +1,15 @@
 {
-    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "_description": "CIFAR10 poison image classification, contributed by MITRE Corporation",
     "adhoc": {
         "experiment_id": 0,
+        "compute_fairness_metrics":true,
+        "explanatory_model":"cifar10_explanatory_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": [
-            1,
-            2,
-            3
-        ],
+        "source_class": 1,
         "split_id": 0,
-        "target_class": 9,
-        "train_epochs": 100,
+        "target_class": 2,
+        "train_epochs": 200,
         "trigger_index": null,
         "use_poison_filtering_defense": true
     },
@@ -65,11 +63,32 @@
     "model": {
         "fit": true,
         "fit_kwargs": {},
-        "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.cifar",
+        "model_kwargs": {
+            "data_means": [
+                0.4914,
+                0.4822,
+                0.4465
+            ],
+            "data_stds": [
+                0.247,
+                0.2435,
+                0.2616
+            ],
+            "num_classes": 10,
+            "pretrained": false
+        },
+        "module": "armory.baseline_models.pytorch.resnet18",
         "name": "get_art_model",
         "weights_file": null,
-        "wrapper_kwargs": {}
+        "wrapper_kwargs": {
+            "input_shape": [
+                32,
+                32,
+                3
+            ],
+            "learning_rate": 0.001,
+            "nb_classes": 10
+        }
     },
     "scenario": {
         "export_batches": false,
