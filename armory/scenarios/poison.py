@@ -196,6 +196,10 @@ class Poison(Scenario):
                 np.array([]),
             )
 
+        self.record_poison_and_data_info()
+
+    def record_poison_and_data_info(self):
+
         self.n_poisoned = int(len(self.poison_index))
         self.n_clean = (
             len(self.y_clean) - self.n_poisoned
