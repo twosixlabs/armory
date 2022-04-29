@@ -42,7 +42,7 @@ is a JSON-able dict.
 <br>
 
 We have implemented the metrics in numpy, instead of using framework-specific 
-metrics, to prevent expanding the required set of dependencies. Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
+metrics, to prevent expanding the required set of dependencies. Please see [armory/utils/metrics.py](../armory/engine/utils/metrics.py) for more detailed descriptions.
 
 ### Targeted vs. Untargeted Attacks
 

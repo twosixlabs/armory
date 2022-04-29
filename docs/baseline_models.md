@@ -18,7 +18,7 @@ returned.
 
 
 ### Keras
-The model files can be found in [armory/baseline_models/keras](../armory/baseline_models/keras). 
+The model files can be found in [armory/baseline_models/keras](../armory/engine/baseline_models/keras). 
 
 | Model   | S3 weight_files   | 
 |:----------: | :-----------: | 
@@ -32,7 +32,7 @@ The model files can be found in [armory/baseline_models/keras](../armory/baselin
 
 
 ### PyTorch
-The model files can be found in [armory/baseline_models/pytorch](../armory/baseline_models/pytorch)
+The model files can be found in [armory/baseline_models/pytorch](../armory/engine/baseline_models/pytorch)
 
 | Model   | S3 weight_files   | 
 |:----------: | :-----------: | 
@@ -49,7 +49,7 @@ The model files can be found in [armory/baseline_models/pytorch](../armory/basel
 | CARLA GoTurn| `pytorch_goturn.pth.tar` |
 
 ### TensorFlow 1
-The model file can be found in [armory/baseline_models/tf_graph](../armory/baseline_models/tf_graph). 
+The model file can be found in [armory/baseline_models/tf_graph](../armory/engine/baseline_models/tf_graph). 
 The weights for this model are downloaded from the link listed below.
 
 | Model   | TF Weights URL   | 

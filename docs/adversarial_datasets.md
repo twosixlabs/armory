@@ -48,7 +48,7 @@ is meant to induce the model to predict a specific class at the location of the 
 
 ##### CARLA Object Detection
 The carla_obj_det_dev and carla_obj_det_test datasets contain rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
-When using the dataset function imported from [armory.data.adversarial_datasets](../armory/data/adversarial_datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
+When using the dataset function imported from [armory.data.adversarial_datasets](../armory/engine/data/adversarial_datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
 is specified in the dataset_config as such:
 ```json
  "dataset": {
@@ -92,7 +92,7 @@ Example attack module for image classification scenario:
 Note: the APRICOT dataset contains splits for ["frcnn", "ssd", "retinanet"] rather than adversarial keys. See example below.
 The APRICOT dataset contains labels and bounding boxes for both COCO objects and physical adversarial patches.
 The label used to signify the patch is the `ADV_PATCH_MAGIC_NUMBER_LABEL_ID` defined in
-[armory/data/adversarial_datasets.py](../armory/data/adversarial_datasets.py). Each image contains one adversarial
+[armory/data/adversarial_datasets.py](../armory/engine/data/adversarial_datasets.py). Each image contains one adversarial
 patch and a varying number of COCO objects (in some cases zero). COCO object class labels are one-indexed (start from 1)
 in Armory <= 0.13.1 and zero-indexed in Armory > 0.13.1.
 

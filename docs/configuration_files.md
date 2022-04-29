@@ -152,7 +152,7 @@ To run with a custom Docker image, replace the `["sys_config"]["docker_image"]` 
 to your custom docker image name `<your_image/name:your_tag>`.
 
 ### Specifying kwargs for metric functions
-Some metric functions in [armory/utils/metrics.py](../armory/utils/metrics.py) receive kwargs, e.g.
+Some metric functions in [armory/utils/metrics.py](../armory/engine/utils/metrics.py) receive kwargs, e.g.
 `iou_threshold` in the case of `object_detection_AP_per_class()`. To modify the kwarg, specify 
 `"task_kwargs"` in the `"metric"` portion of the config file as such:
 

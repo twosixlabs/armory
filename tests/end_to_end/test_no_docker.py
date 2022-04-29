@@ -30,7 +30,7 @@ def test_run(scenario_configs, config, args):
 def test_interactive(scenario_configs, config):
     # log.info("Executing Config Dir: {}".format(scenario_configs))
     log.info("Running Armory Scenarios interactive in `--no-docker` mode")
-    from armory.scenarios.main import get as get_scenario
+    from armory.engine.scenarios import get as get_scenario
     from armory import paths
 
     log.info("Setting Paths to `host`")

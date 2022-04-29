@@ -19,6 +19,7 @@ dataset:
   module: "armory.data.datasets"
   name: "mnist"
 
+defense: null
 metric: null
 
 model:
@@ -36,7 +37,10 @@ scenario:
   module_name: "armory.scenarios.image_classification"
   function_name: "ImageClassificationTask"
 
-overrides: []
-#
-#sysconfig:
-#  null
+execution:
+  execution_mode: "docker"
+  docker_image: "pytorch"
+
+environment:
+  credentials:
+    git_token: "foo"

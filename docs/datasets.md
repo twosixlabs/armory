@@ -37,7 +37,7 @@ NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 
 ##### CARLA Object Detection
 The carla_obj_det_train dataset contains rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
-When using the dataset function imported from [armory.data.datasets](../armory/data/datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
+When using the dataset function imported from [armory.data.datasets](../armory/engine/data/datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
 is specified in the dataset_config as such:
 ```json
  "dataset": {

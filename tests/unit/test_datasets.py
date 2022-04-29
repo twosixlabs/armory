@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import pytest
 import tensorflow as tf
-from armory.data import datasets
+from armory.engine.data import datasets
 
 # TODO Right now unit tests only run for `mnist`, `cifar10`, and `resisc10`
 #  figure out if this is what we want or if we need more
@@ -91,7 +91,17 @@ def test_supported_datasets(dataset_name):
 
 @pytest.mark.parametrize(
     "name, batch_size, num_epochs, split, framework, shuffle, exp_cnt",
-    [("mnist", 10, 2, "test", "pytorch", True, 2000,),],
+    [
+        (
+            "mnist",
+            10,
+            2,
+            "test",
+            "pytorch",
+            True,
+            2000,
+        ),
+    ],
 )
 def test_generator_epoch_creation(
     name,

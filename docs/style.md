@@ -56,6 +56,7 @@ Imports in python files should be organized into three blocks, lexically ordered
 * Block 2: external package imports
 * Block 3: internal package imports
 These blocks should be separated by a single empty line. Here is an example:
+
 ```python
 """
 Docstring
@@ -68,7 +69,7 @@ import requests
 import numpy as np
 from art import defences
 
-from armory.docker.management import ManagementInstance
+from armory.engine.docker import ManagementInstance
 from armory.utils.external_repo import download_and_extract_repos
 from armory.logs import log
 # ...

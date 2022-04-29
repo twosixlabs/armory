@@ -449,9 +449,9 @@ The development dataset is the [CARLA Object Detection dataset](https://carla.or
 which contains a green-screen intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
   * Single-modality:
-    * Pretrained [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
+    * Pretrained [Faster-RCNN with ResNet-50](../armory/engine/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
   * Multimodal:
-    * Pretrained multimodal [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_multimodality_object_detection_frcnn.py) model.
+    * Pretrained multimodal [Faster-RCNN with ResNet-50](../armory/engine/baseline_models/pytorch/carla_multimodality_object_detection_frcnn.py) model.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of an object detector through the insertion of adversarial patches.
@@ -498,7 +498,7 @@ In this scenario, the system under evaluation is an object tracker trained to lo
 The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
 which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
-  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+  * Pretrained [GoTurn](../armory/engine/baseline_models/pytorch/carla_goturn.py) model.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of the tracker through the insertion of adversarial patches.
