@@ -15,6 +15,7 @@ from typing import Callable, Union, Tuple, List
 
 import numpy as np
 from armory.logs import log
+from PIL import ImageOps, Image
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -679,9 +680,27 @@ def cifar10_canonical_preprocessing(batch):
 def cifar100_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar100_context, batch)
 
-
 def gtsrb_canonical_preprocessing(batch):
-    return canonical_variable_image_preprocess(gtsrb_context, batch)
+    img_size = 48
+    img_out = []
+    quantization = 255.0
+    for im in batch:
+        img_eq = ImageOps.equalize(Image.fromarray(im))
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width // 2, height // 2
+
+        left = center[0] - min_side // 2
+        top = center[1] - min_side // 2
+        right = center[0] + min_side // 2
+        bottom = center[1] + min_side // 2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
 
 
 def resisc45_canonical_preprocessing(batch):
