@@ -109,6 +109,17 @@ Since these all use a global Hub object, it doesn't matter which python files th
 Probe should be instantiated in the file or class you are trying to measure.
 Meters and writers can be instantiated in your initial setup, and can be connected before probes are constructed.
 
+#### Direct Recording
+
+To capture one-off values or values that do not require metric measurement, you can push a record to the hub directly using its `record` method:
+```
+hub = get_hub()
+name = "my_record"
+result = 17
+hub.record(name, result)
+```
+This will push a record to all default writers (including the `ResultsWriter` in standard scenarios) with that information.
+
 ### Probes
 
 To get a new Probe (connected to the default Hub):
