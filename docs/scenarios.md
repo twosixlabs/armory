@@ -2,6 +2,12 @@
 Armory is intended to evaluate threat-model scenarios. Baseline evaluation scenarios
 are described below. Additionally, we've provided some academic standard scenarios.
 
+## Configuration Files
+
+Scenario configuration files are found in the `scenario_configs` directory [here](scenario_configs).
+The most recent config files are found in the `eval5` subfolder and older configs are found in the `eval1-4` subfolder.
+There are also symlinks to representative configs found in the base of the `scenario_configs` directory.
+
 ## Base Scenario Class
 All scenarios inherit from the [Base Armory Scenario](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/base.py). The
 base class parses an armory configuration file and calls a particular scenario's
