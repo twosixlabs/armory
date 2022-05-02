@@ -43,7 +43,8 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         features = {
             # sequence of [RGB, depth] images
             "image": tfds.features.Sequence(
-                tfds.features.Image(shape=(960, 1280, 3)), length=2,
+                tfds.features.Image(shape=(960, 1280, 3)),
+                length=2,
             ),
             # sequence of image features for [RGB, depth]
             "images": tfds.features.Sequence(
@@ -103,7 +104,8 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         path = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
+                name="dev",
+                gen_kwargs={"path": os.path.join(path, "dev")},
             )
         ]
 
@@ -161,7 +163,10 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
 
             example = {
                 "image": [
-                    os.path.join(path, modality,)
+                    os.path.join(
+                        path,
+                        modality,
+                    )
                     for modality in [fpath_rgb, fpath_depth]
                 ],
                 "images": [image_rgb, image_depth],

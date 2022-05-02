@@ -39,7 +39,8 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
         features = tfds.features.FeaturesDict(
             {
                 "video": tfds.features.Video(
-                    (None, 960, 1280, 3), encoding_format="png",
+                    (None, 960, 1280, 3),
+                    encoding_format="png",
                 ),
                 "bboxes": tfds.features.Sequence(
                     tfds.features.Tensor(
@@ -73,7 +74,8 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
 
         return [
             tfds.core.SplitGenerator(
-                name="dev", gen_kwargs={"path": os.path.join(path, "dev")},
+                name="dev",
+                gen_kwargs={"path": os.path.join(path, "dev")},
             )
         ]
 

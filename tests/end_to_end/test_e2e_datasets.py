@@ -473,7 +473,9 @@ def test_coco2017(armory_dataset_dir):
 
     split_size = 5000
     split = "validation"
-    dataset = datasets.coco2017(split=split,)
+    dataset = datasets.coco2017(
+        split=split,
+    )
     assert dataset.size == split_size
 
     for i in range(8):
@@ -492,7 +494,9 @@ def test_dapricot_dev():
 
     split_size = 27
     split = "small"
-    dataset = adversarial_datasets.dapricot_dev_adversarial(split=split,)
+    dataset = adversarial_datasets.dapricot_dev_adversarial(
+        split=split,
+    )
     assert dataset.size == split_size
 
     x, y = dataset.get_batch()
@@ -514,7 +518,9 @@ def test_dapricot_test():
 
     split_size = 108
     split = "small"
-    dataset = adversarial_datasets.dapricot_test_adversarial(split=split,)
+    dataset = adversarial_datasets.dapricot_test_adversarial(
+        split=split,
+    )
     assert dataset.size == split_size
 
     x, y = dataset.get_batch()
@@ -707,7 +713,10 @@ def test_variable_length(armory_dataset_dir):
     batch_size = 4
 
     dataset = datasets.digit(
-        split="train", epochs=1, batch_size=batch_size, dataset_dir=armory_dataset_dir,
+        split="train",
+        epochs=1,
+        batch_size=batch_size,
+        dataset_dir=armory_dataset_dir,
     )
     assert dataset.batches_per_epoch == (size // batch_size + bool(size % batch_size))
 

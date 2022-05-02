@@ -363,7 +363,9 @@ class CARLADapricotPatch(RobustDPatch):
                     )
 
                     gradients = self.estimator.loss_gradient(
-                        x=patched_images, y=patch_target, standardise_output=True,
+                        x=patched_images,
+                        y=patch_target,
+                        standardise_output=True,
                     )
 
                     gradients = self._untransform_gradients(
@@ -415,7 +417,9 @@ class CARLADapricotPatch(RobustDPatch):
 
                 # clip Depth channels so perturbation is constrained by meters
                 self._patch[:, :, 3:] = np.clip(
-                    self._patch[:, :, 3:], a_min=self.min_depth, a_max=self.max_depth,
+                    self._patch[:, :, 3:],
+                    a_min=self.min_depth,
+                    a_max=self.max_depth,
                 )
 
             if self.estimator.clip_values is not None:
@@ -543,7 +547,10 @@ class CARLADapricotPatch(RobustDPatch):
         return x_patch, patch_target, transformations
 
     def _untransform_gradients(
-        self, gradients, transforms, channels_first,
+        self,
+        gradients,
+        transforms,
+        channels_first,
     ):
         """
         Revert transformation on gradients using perspective transform

@@ -434,7 +434,10 @@ def apricot_dev_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
+                y,
+                raw_adv_patch_category_id,
+                ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+                "labels",
             ),
         ),
         context=apricot_adversarial_context,
@@ -494,7 +497,10 @@ def apricot_test_adversarial(
         lambda_map=lambda x, y: (
             x,
             replace_magic_val(
-                y, raw_adv_patch_category_id, ADV_PATCH_MAGIC_NUMBER_LABEL_ID, "labels",
+                y,
+                raw_adv_patch_category_id,
+                ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+                "labels",
             ),
         ),
         context=apricot_adversarial_context,

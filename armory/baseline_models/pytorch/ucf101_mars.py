@@ -13,7 +13,8 @@ from torch import optim
 from armory.utils.external_repo import ExternalRepoImport
 
 with ExternalRepoImport(
-    repo="yusong-tan/MARS", experiment="ucf101_baseline_finetune.json",
+    repo="yusong-tan/MARS",
+    experiment="ucf101_baseline_finetune.json",
 ):
     from MARS.opts import parse_opts
     from MARS.models.model import generate_model
@@ -270,7 +271,10 @@ def make_model(
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], max_frames: int = 0, **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        max_frames: int = 0,
+        **model_kwargs,
     ):
         """
         Max frames is the maximum number of input frames.

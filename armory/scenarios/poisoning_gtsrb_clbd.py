@@ -66,7 +66,12 @@ class GTSRB_CLBD(GTSRB):
                 trainer.fit(self.x_clean, self.y_clean)
                 proxy = trainer.get_classifier()
             else:
-                fit_kwargs.update(dict(shuffle=True, verbose=False,))
+                fit_kwargs.update(
+                    dict(
+                        shuffle=True,
+                        verbose=False,
+                    )
+                )
                 proxy.fit(self.x_clean, self.y_clean, **fit_kwargs)
 
             attack_config["kwargs"]["proxy_classifier"] = proxy
@@ -74,5 +79,7 @@ class GTSRB_CLBD(GTSRB):
             attack, backdoor = config_loading.load(attack_config)
             self.poisoner = CleanDatasetPoisoner(attack)
             self.test_poisoner = DatasetPoisoner(
-                backdoor, self.source_class, self.target_class,
+                backdoor,
+                self.source_class,
+                self.target_class,
             )

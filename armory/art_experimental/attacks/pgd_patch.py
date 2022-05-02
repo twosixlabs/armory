@@ -19,8 +19,8 @@ class PGDPatch(ProjectedGradientDescent):
 
         if "patch_ratio" in generate_kwargs:
             patch_ratio = generate_kwargs["patch_ratio"]
-            patch_height = int(x.shape[-3] * patch_ratio ** 0.5)
-            patch_width = int(x.shape[-2] * patch_ratio ** 0.5)
+            patch_height = int(x.shape[-3] * patch_ratio**0.5)
+            patch_width = int(x.shape[-2] * patch_ratio**0.5)
         elif "patch_height" in generate_kwargs and "patch_width" in generate_kwargs:
             patch_height = generate_kwargs["patch_height"]
             patch_width = generate_kwargs["patch_width"]

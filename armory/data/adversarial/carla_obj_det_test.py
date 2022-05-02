@@ -44,7 +44,8 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
         features = {
             # sequence of [RGB, depth] images
             "image": tfds.features.Sequence(
-                tfds.features.Image(shape=(600, 800, 3)), length=2,
+                tfds.features.Image(shape=(600, 800, 3)),
+                length=2,
             ),
             # sequence of image features for [RGB, depth]
             "images": tfds.features.Sequence(
@@ -199,14 +200,20 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
                 else:
                     return pandas_proxy.read_csv_to_numpy_float32(
                         os.path.join(
-                            path, "annotations", fname_rgb.split(".")[-2] + ".csv",
+                            path,
+                            "annotations",
+                            fname_rgb.split(".")[-2] + ".csv",
                         ),
                         header=None,
                     )
 
             example = {
                 "image": [
-                    os.path.join(path, size, modality,)
+                    os.path.join(
+                        path,
+                        size,
+                        modality,
+                    )
                     for modality in [fname_rgb, fname_depth]
                 ],
                 "images": [image_rgb, image_depth],
