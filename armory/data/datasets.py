@@ -680,6 +680,7 @@ def cifar10_canonical_preprocessing(batch):
 def cifar100_canonical_preprocessing(batch):
     return canonical_image_preprocess(cifar100_context, batch)
 
+
 def gtsrb_canonical_preprocessing(batch):
     img_size = 48
     img_out = []
