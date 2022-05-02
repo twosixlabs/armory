@@ -12,7 +12,7 @@ from armory.utils.export import So2SatExporter
 
 
 class So2SatClassification(Scenario):
-    def __init__(self, config, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         if "attack_modality" not in kwargs.keys():
             raise ValueError("`attack_modality` must be defined for So2Sat scenario")
         attack_modality = (kwargs.pop("attack_modality") or "").lower()
@@ -21,12 +21,13 @@ class So2SatClassification(Scenario):
                 f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
             )
         self.attack_modality = attack_modality
-        self.perturbation_metrics = config["metric"].pop("perturbation")
-        config["metric"]["perturbation"] = None
+
+        super().__init__(*args, **kwargs)
+        self.perturbation_metrics = self.config["metric"].pop("perturbation")
+        self.config["metric"]["perturbation"] = None
         if self.perturbation_metrics is not None:
             if isinstance(self.perturbation_metrics, str):
                 self.perturbation_metrics = [self.perturbation_metrics]
-        super().__init__(config, *args, **kwargs)
 
     def load_attack(self):
         attack_config = self.config["attack"]
