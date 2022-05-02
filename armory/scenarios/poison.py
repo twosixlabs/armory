@@ -196,6 +196,10 @@ class Poison(Scenario):
                 np.array([]),
             )
 
+        self.record_poison_and_data_info()
+
+    def record_poison_and_data_info(self):
+
         self.n_poisoned = int(len(self.poison_index))
         self.n_clean = (
             len(self.y_clean) - self.n_poisoned
@@ -338,23 +342,23 @@ class Poison(Scenario):
 
         self.hub.connect_meter(
             Meter(
-                "sample_accuracy_on_benign_test_data_all_classes",
+                "accuracy_on_benign_test_data_all_classes",
                 get_supported_metric("categorical_accuracy"),
                 "scenario.y",
                 "scenario.y_pred",
                 final=np.mean,
-                final_name="accuracy_on_benign_data_all_classes",
+                final_name="accuracy_on_benign_test_data_all_classes",
                 record_final_only=True,
             )
         )
         self.hub.connect_meter(
             Meter(
-                "sample_accuracy_on_benign_test_data_source_class",
+                "accuracy_on_benign_test_data_source_class",
                 get_supported_metric("categorical_accuracy"),
                 "scenario.y_source",
                 "scenario.y_pred_source",
                 final=np.mean,
-                final_name="accuracy_on_benign_data_source_class",
+                final_name="accuracy_on_benign_test_data_source_class",
                 record_final_only=True,
             )
         )
@@ -375,19 +379,19 @@ class Poison(Scenario):
         if self.use_poison:
             self.hub.connect_meter(
                 Meter(
-                    "sample_accuracy_on_poisoned_data_all_classes",
+                    "accuracy_on_poisoned_test_data_all_classes",
                     metrics.get_supported_metric("categorical_accuracy"),
                     "scenario.y",
                     "scenario.y_pred_adv",
                     final=np.mean,
-                    final_name="accuracy_on_poisoned_data_all_classes",
+                    final_name="accuracy_on_poisoned_test_data_all_classes",
                     record_final_only=True,
                 )
             )
             # counts number of source images classified as target
             self.hub.connect_meter(
                 Meter(
-                    "sample_attack_success_rate",
+                    "attack_success_rate",
                     metrics.get_supported_metric("categorical_accuracy"),
                     "scenario.target_class_source",
                     "scenario.y_pred_adv_source",
@@ -404,12 +408,12 @@ class Poison(Scenario):
         )
         self.hub.connect_meter(
             Meter(
-                "sample_benign_test_accuracy_per_class",
+                "accuracy_on_benign_test_data_per_class",
                 metrics.get_supported_metric("identity_unzip"),
                 "scenario.y",
                 "scenario.y_pred",
                 final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
-                final_name="unpoisoned_test_accuracy_per_class",
+                final_name="accuracy_on_benign_test_data_per_class",
                 record_final_only=True,
             )
         )

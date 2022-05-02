@@ -324,11 +324,8 @@ class WitchesBrewScenario(Poison):
         self.config["adhoc"]["trigger_index"] = [int(t) for t in self.trigger_index]
         self.config["adhoc"]["source_class"] = [int(c) for c in self.source_class]
         self.config["adhoc"]["target_class"] = [int(c) for c in self.target_class]
-        self.train_set_class_labels = sorted(np.unique(self.y_clean))
-        for y in self.train_set_class_labels:
-            self.hub.record(
-                f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
-            )
+
+        self.record_poison_and_data_info()
 
     def load_dataset(self, eval_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
@@ -345,27 +342,39 @@ class WitchesBrewScenario(Poison):
             **self.dataset_kwargs,
         )
         self.i = -1
+        self.test_set_class_labels = set()
 
     def load_metrics(self):
+        if self.use_filtering_defense:
+            # Filtering metrics
+            self.hub.connect_meter(
+                Meter(
+                    "filter",
+                    metrics.get_supported_metric("tpr_fpr"),
+                    "scenario.poisoned",
+                    "scenario.removed",
+                )
+            )
+
         self.hub.connect_meter(
             Meter(
-                "mean_accuracy_non_trigger_images",
+                "accuracy_on_non_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
                 final=np.mean,
-                final_name="mean_accuracy_non_trigger_images",
+                final_name="accuracy_on_non_trigger_images",
                 record_final_only=True,
             )
         )
         self.hub.connect_meter(
             Meter(
-                "accuracy_trigger_images",
+                "accuracy_on_trigger_images",
                 metrics.get_supported_metric("categorical_accuracy"),
                 "scenario.y[trigger]",
                 "scenario.y_pred[trigger]",
                 final=np.mean,
-                final_name="mean_accuracy_trigger_images",
+                final_name="accuracy_on_trigger_images",
                 record_final_only=True,
             )
         )
@@ -375,12 +384,12 @@ class WitchesBrewScenario(Poison):
         )
         self.hub.connect_meter(
             Meter(
-                "sample_non_trigger_test_accuracy_per_class",
+                "accuracy_on_non_trigger_images_per_class",
                 metrics.get_supported_metric("identity_unzip"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
                 final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
-                final_name="mean_accuracy_per_class_non_trigger_images",
+                final_name="accuracy_on_non_trigger_images_per_class",
                 record_final_only=True,
             )
         )
@@ -419,6 +428,7 @@ class WitchesBrewScenario(Poison):
         self.probe.update(y=y, y_pred=y_pred)
 
         self.y_pred = y_pred  # for exporting when function returns
+        self.test_set_class_labels.update(y)
 
     def run_attack(self):
         self.hub.set_context(stage="trigger")
