@@ -199,6 +199,9 @@ def get_art_model_mm_robust(
         model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchFasterRCNN(
-        model, clip_values=(0.0, 1.0), channels_first=False, **wrapper_kwargs,
+        model,
+        clip_values=(0.0, 1.0),
+        channels_first=False,
+        **wrapper_kwargs,
     )
     return wrapped_model

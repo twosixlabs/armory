@@ -140,7 +140,8 @@ def download_and_extract_repo(
         if os.path.isdir(final_dir_name):
             shutil.rmtree(final_dir_name)
         os.rename(
-            os.path.join(external_repo_dir, dl_directory_name), final_dir_name,
+            os.path.join(external_repo_dir, dl_directory_name),
+            final_dir_name,
         )
         add_path(final_dir_name, include_parent=True)
 

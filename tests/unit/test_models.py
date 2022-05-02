@@ -26,14 +26,26 @@ def get_armory_module_and_fn(
 @pytest.mark.parametrize(
     "module_name, fn_attr_name, weights_path",
     [
-        ("armory.baseline_models.pytorch.mnist", "get_art_model", None,),
+        (
+            "armory.baseline_models.pytorch.mnist",
+            "get_art_model",
+            None,
+        ),
         (
             "armory.baseline_models.pytorch.mnist",
             "get_art_model",
             "undefended_mnist_5epochs.pth",
         ),
-        ("armory.baseline_models.pytorch.cifar", "get_art_model", None,),
-        ("armory.baseline_models.pytorch.micronnet_gtsrb", "get_art_model", None,),
+        (
+            "armory.baseline_models.pytorch.cifar",
+            "get_art_model",
+            None,
+        ),
+        (
+            "armory.baseline_models.pytorch.micronnet_gtsrb",
+            "get_art_model",
+            None,
+        ),
     ],
 )
 def test_model_creation(module_name, fn_attr_name, weights_path):

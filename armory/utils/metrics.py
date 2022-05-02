@@ -59,7 +59,8 @@ class Entailment:
             )
 
         with ExternalPipInstalledImport(
-            package="transformers", dockerimage="twosixarmory/pytorch-deepspeech",
+            package="transformers",
+            dockerimage="twosixarmory/pytorch-deepspeech",
         ):
             from transformers import AutoTokenizer, AutoModelForSequenceClassification
 

@@ -101,12 +101,12 @@ class DatasetPoisonerWitchesBrew:
 
 class WitchesBrewScenario(Poison):
     def _validate_attack_args(self, adhoc_config, y_test):
-        """ Ensures that the attack parameters from the config are valid and
-            sufficient to create a poisoned dataset.
+        """Ensures that the attack parameters from the config are valid and
+        sufficient to create a poisoned dataset.
 
-            Returns a standardized version of trigger_index, source_class, and
-            target_class from the config, as well as a bool indicating whether
-            the triggers were selected randomly.
+        Returns a standardized version of trigger_index, source_class, and
+        target_class from the config, as well as a bool indicating whether
+        the triggers were selected randomly.
         """
 
         ###

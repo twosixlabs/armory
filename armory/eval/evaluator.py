@@ -24,7 +24,10 @@ from armory.logs import log, is_debug, added_filters
 
 class Evaluator(object):
     def __init__(
-        self, config: dict, no_docker: bool = False, root: bool = False,
+        self,
+        config: dict,
+        no_docker: bool = False,
+        root: bool = False,
     ):
         log.info("Constructing Evaluator Object")
         if not isinstance(config, dict):
@@ -153,7 +156,9 @@ class Evaluator(object):
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
+            runner = self.manager.start_armory_instance(
+                envs=self.extra_env_vars,
+            )
             try:
                 exit_code = self._run_config(
                     runner,
@@ -187,7 +192,9 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports, user=self.get_id(),
+                envs=self.extra_env_vars,
+                ports=ports,
+                user=self.get_id(),
             )
             try:
                 if jupyter:

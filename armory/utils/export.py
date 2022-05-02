@@ -59,8 +59,8 @@ class SampleExporter:
         )
 
     def write(self):
-        """ Pickle the y_dict built up during each export() call.
-            Called at end of scenario.
+        """Pickle the y_dict built up during each export() call.
+        Called at end of scenario.
         """
 
         with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
@@ -682,7 +682,7 @@ class AudioExporter(SampleExporter):
         :return: int np array of shape (sequence_length, )
         """
         assert dataset_context.input_type == np.int64
-        assert dataset_context.quantization == 2 ** 15
+        assert dataset_context.quantization == 2**15
 
         return np.clip(
             np.int16(x_i * dataset_context.quantization),

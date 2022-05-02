@@ -147,7 +147,10 @@ def run_config(*args, **kwargs):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="scenario", description="run armory scenario")
     parser.add_argument(
-        "config", metavar="<config json>", type=str, help="scenario config JSON",
+        "config",
+        metavar="<config json>",
+        type=str,
+        help="scenario config JSON",
     )
 
     parser.add_argument(

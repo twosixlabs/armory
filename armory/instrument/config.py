@@ -444,7 +444,10 @@ def construct_meters_for_task_metrics_wrt_benign_predictions(
     meters = []
     for name, metric_kwargs in zip(names, task_kwargs):
         meter = _task_metric_wrt_benign_predictions(
-            name, metric_kwargs, use_mean=use_mean, record_final_only=record_final_only,
+            name,
+            metric_kwargs,
+            use_mean=use_mean,
+            record_final_only=record_final_only,
         )
         meters.append(meter)
 
@@ -452,5 +455,9 @@ def construct_meters_for_task_metrics_wrt_benign_predictions(
         hub.connect_meter(m)
 
     hub.connect_writer(
-        ResultsLogWriter(adversarial=True, used_preds_as_labels=True,), meters=meters
+        ResultsLogWriter(
+            adversarial=True,
+            used_preds_as_labels=True,
+        ),
+        meters=meters,
     )

@@ -227,13 +227,12 @@ explanatory_model_configs = {
 
 
 class FairnessMetrics:
-    """ This class will manage the computation of fairness metrics for the poisoning scenario.
-    """
+    """This class will manage the computation of fairness metrics for the poisoning scenario."""
 
     def __init__(self, poisoning_config, is_filtering_defense, scenario):
-        """ poisoning_config: the adhoc section of the config
-            is_filtering_defense: Boolean used to indicate whether the filtering metric(s) should be computed
-            scenario: A reference to the scenario object which instantiates this
+        """poisoning_config: the adhoc section of the config
+        is_filtering_defense: Boolean used to indicate whether the filtering metric(s) should be computed
+        scenario: A reference to the scenario object which instantiates this
         """
         # self.metric_config = metric_config
         self.is_filtering_defense = is_filtering_defense
@@ -262,11 +261,11 @@ class FairnessMetrics:
         poison_index_name="scenario.poison_index",
         predicted_clean_indices="scenario.is_dirty_mask",
     ):
-        """ Compute filter perplexity, add it to the results dict in the calling scenario, and return data for logging
+        """Compute filter perplexity, add it to the results dict in the calling scenario, and return data for logging
 
-            y_clean: the labels for the clean dataset
-            poison_index: the indices of the poisoned samples
-            predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
+        y_clean: the labels for the clean dataset
+        poison_index: the indices of the poisoned samples
+        predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
         """
         self.scenario.hub.connect_meter(
             Meter(
@@ -291,19 +290,19 @@ class FairnessMetrics:
         train_set_class_labels,
         test_set_class_labels,
     ):
-        """ Compute two metrics based on comparing two binary distributions.
-            Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
-            Metric 2 (Filter Bias) compares the filtering rate on the same binary splits.
-            This comparison can be made in a variety of arbitrary ways.  Currently, we compute both SPD and chi^2 on
-            the contingency tables of the distributions.
+        """Compute two metrics based on comparing two binary distributions.
+        Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
+        Metric 2 (Filter Bias) compares the filtering rate on the same binary splits.
+        This comparison can be made in a variety of arbitrary ways.  Currently, we compute both SPD and chi^2 on
+        the contingency tables of the distributions.
 
-            Adds results to results dict of calling scenario, and returns the data for logging.
+        Adds results to results dict of calling scenario, and returns the data for logging.
 
-            x_poison: the poisoned training dataset
-            y_poison: the labels of the poisoned dataset
-            poison_index: the indices of the poisoned samples in x_poison and y_poison
-            predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
-            test_dataset: the test dataset
+        x_poison: the poisoned training dataset
+        y_poison: the labels of the poisoned dataset
+        poison_index: the indices of the poisoned samples in x_poison and y_poison
+        predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
+        test_dataset: the test dataset
         """
         # get majority ceilings on unpoisoned part of train set
         poisoned_mask = np.zeros_like(y_poison, dtype=np.bool_)

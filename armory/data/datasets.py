@@ -401,7 +401,8 @@ def _generator_from_tfds(
 
     if cache_dataset:
         _cache_dataset(
-            dataset_dir, dataset_name=dataset_name,
+            dataset_dir,
+            dataset_name=dataset_name,
         )
 
     if not isinstance(split, str):
@@ -741,11 +742,11 @@ class AudioContext:
     def __init__(self, x_shape, sample_rate, input_type=np.int64):
         self.x_shape = x_shape
         self.input_type = input_type
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
+        self.input_min = -(2**15)
+        self.input_max = 2**15 - 1
 
         self.sample_rate = 16000
-        self.quantization = 2 ** 15
+        self.quantization = 2**15
         self.output_type = np.float32
         self.output_min = -1.0
         self.output_max = 1.0
@@ -1644,7 +1645,9 @@ def coco_label_preprocessing(x, y):
     for label_dict in y:
         label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
         label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
-            label_dict.pop("label").reshape(-1,)
+            label_dict.pop("label").reshape(
+                -1,
+            )
         )
     return y
 
@@ -1782,7 +1785,9 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
 
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
-            dataset_dir=dataset_dir, checksum_file=name + ".txt", name=name,
+            dataset_dir=dataset_dir,
+            checksum_file=name + ".txt",
+            name=name,
         )
 
 

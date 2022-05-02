@@ -167,7 +167,12 @@ def test_norms():
 
 def test_snr():
     # variable length numpy arrays
-    x = np.array([np.array([0, 1, 0, -1]), np.array([0, 1, 2, 3, 4]),])
+    x = np.array(
+        [
+            np.array([0, 1, 0, -1]),
+            np.array([0, 1, 2, 3, 4]),
+        ]
+    )
 
     for multiplier, snr_value in [
         (0, 1),
@@ -195,7 +200,12 @@ def test_snr():
 
 def test_snr_spectrogram():
     # variable length numpy arrays
-    x = np.array([np.array([0, 1, 0, -1]), np.array([0, 1, 2, 3, 4]),])
+    x = np.array(
+        [
+            np.array([0, 1, 0, -1]),
+            np.array([0, 1, 2, 3, 4]),
+        ]
+    )
 
     for multiplier, snr_value in [
         (0, 1),

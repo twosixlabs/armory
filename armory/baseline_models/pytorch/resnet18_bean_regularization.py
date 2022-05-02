@@ -38,7 +38,9 @@ def ResNet18(num_classes=10):
 
 class get_model(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        **model_kwargs,
     ):
         # default to imagenet mean and std
         data_means = model_kwargs.pop("data_means", [0.485, 0.456, 0.406])

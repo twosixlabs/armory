@@ -33,7 +33,7 @@ import armory.logs
 
 class PortNumber(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if not 0 < values < 2 ** 16:
+        if not 0 < values < 2**16:
             raise argparse.ArgumentError(self, "port numbers must be in (0, 65535]")
         setattr(namespace, self.dest, values)
 
@@ -163,13 +163,17 @@ def _port(parser):
 
 def _no_gpu(parser):
     parser.add_argument(
-        "--no-gpu", action="store_true", help="Whether to not use GPU(s)",
+        "--no-gpu",
+        action="store_true",
+        help="Whether to not use GPU(s)",
     )
 
 
 def _use_gpu(parser):
     parser.add_argument(
-        "--use-gpu", action="store_true", help="Whether to use GPU(s)",
+        "--use-gpu",
+        action="store_true",
+        help="Whether to use GPU(s)",
     )
 
 
@@ -220,7 +224,9 @@ def _no_docker(parser):
 
 def _root(parser):
     parser.add_argument(
-        "--root", action="store_true", help="Whether to run docker as root",
+        "--root",
+        action="store_true",
+        help="Whether to run docker as root",
     )
 
 
@@ -297,7 +303,9 @@ def run(command_args, prog, description):
     _index(parser)
     _classes(parser)
     parser.add_argument(
-        "--output-dir", type=str, help="Override of default output directory prefix",
+        "--output-dir",
+        type=str,
+        help="Override of default output directory prefix",
     )
     parser.add_argument(
         "--output-filename",
@@ -754,7 +762,11 @@ def main():
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
     parser.add_argument(
-        "command", metavar="<command>", type=str, help="armory command", action=Command,
+        "command",
+        metavar="<command>",
+        type=str,
+        help="armory command",
+        action=Command,
     )
     args = parser.parse_args(sys.argv[1:2])
 
