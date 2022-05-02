@@ -32,6 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
@@ -39,8 +40,9 @@ jobs:
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
+          pip install -r requirements.txt
+          pip install -e .
+          version=$(armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/tf2:latest
           python docker/build.py tf2
@@ -54,6 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
@@ -61,8 +64,9 @@ jobs:
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
+          pip install -r requirements.txt
+          pip install -e .
+          version=$(armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/pytorch:latest
           python docker/build.py pytorch
@@ -76,6 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
@@ -83,8 +88,9 @@ jobs:
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
-          python -m pip install -r requirements.txt
-          version=$(python -c "import armory; print(armory.__version__)")
+          pip install -r requirements.txt
+          pip install -e .
+          version=$(armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/pytorch-deepspeech:latest
           python docker/build.py pytorch-deepspeech
