@@ -25,7 +25,7 @@ metric: null
 model:
   fit: true
   fit_kwargs:
-    nb_epoch: 3
+    nb_epoch: {'value':3, 'type':int}
   model_kwargs: {}
   module: "armory.baseline_models.pytorch.mnist"
   name: "get_art_model"

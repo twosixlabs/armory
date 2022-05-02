@@ -2,6 +2,7 @@ import functools
 import collections
 
 
+
 def rsetattr(obj, attr, val):
     pre, _, post = attr.rpartition(".")
     return setattr(rgetattr(obj, pre) if pre else obj, post, val)
@@ -18,10 +19,11 @@ def rhasattr(obj, attr):
     try:
         left, right = attr.split(".", 1)
     except Exception:
-        return hasattr(obj, attr)
-    print(left, right, obj)
+        if isinstance(obj, dict):
+            return attr in obj
+        else:
+            return hasattr(obj, attr)
     if hasattr(obj, left):
-        print("it does have attribute")
         return rhasattr(getattr(obj, left), right)
     else:
         return False
@@ -39,7 +41,6 @@ def flatten(d, parent_key="", sep="."):
 
 
 def parse_overrides(overrides):
-    print(f"Attempting to parse Overrides: {overrides}")
     if isinstance(overrides, str):
         output = {i.split()[0]: i.split[1] for i in overrides.split(" ")}
     elif isinstance(overrides, dict):
@@ -56,7 +57,4 @@ def set_overrides(obj, overrides):
     overrides = parse_overrides(overrides)
     for k, v in overrides.items():
         if rhasattr(obj, k):
-            print("Found Override attribute...settting now")
             rsetattr(obj, k, v)
-        else:
-            print(f"did not find {k}")

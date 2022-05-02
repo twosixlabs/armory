@@ -3,10 +3,28 @@ from armory.logs import log
 import os
 import yaml
 import json
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 from armory.utils import set_overrides
 from enum import Enum
+from pydoc import locate
 
+class Values(BaseModel):
+    value: str
+    type: str
+
+
+class ArbitraryKwargs(BaseModel):
+    __root__: Optional[Dict[str, Values]]
+
+    def __getattr__(self, item):  # if you want to use '.'
+        print(item)
+        return self.__root__[item].value
+        # return self.__root__[item]
+
+    def __setattr__(self, key, value):
+        print(key, value)
+        tp = locate(self.__root__[key].type)
+        self.__root__[key] = tp(value)
 
 class ExecutionMode(str, Enum):
     """Armory Execution Mode
@@ -67,7 +85,7 @@ class ModelParameters(BaseModel):
     weights_file: str = None
     wrapper_kwargs: dict
     model_kwargs: dict
-    fit_kwargs: dict
+    fit_kwargs: ArbitraryKwargs
     fit: bool
 
 
@@ -139,12 +157,9 @@ class ExperimentParameters(BaseModel):
         log.debug(f"Parsing Class Object from: {data}")
         exp = cls.parse_obj(data)
 
-        from armory.utils.utils import rhasattr
-
-        print(exp)
-        print(f"has: {hasattr(exp, 'model')}")
-        print(rhasattr(exp, "model.fit_kwargs.nb_epoch"))
-        exit()
+        log.debug(f"Recieved Exp: {exp.pretty_print()}")
+        # import pdb;
+        # pdb.set_trace()
         set_overrides(exp, overrides)
         return exp, env_overrides
 
