@@ -34,11 +34,11 @@ model:
 
 scenario:
   kwargs: {}
-  module_name: "armory.scenarios.image_classification"
+  module_name: "armory.engine.scenarios.image_classification"
   function_name: "ImageClassificationTask"
 
 execution:
-  execution_mode: "docker"
+  mode: "docker"
   docker_image: "pytorch"
 
 environment:

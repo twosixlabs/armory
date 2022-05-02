@@ -1,12 +1,11 @@
 """Armory Launcher Docker Orchestration"""
-
+import importlib
 import os
 import subprocess
 from dataclasses import dataclass
 from typing import List
-from armory.utils.experiment import Experiment
 from armory.logs import log
-
+from armory.utils.experiment import ExperimentParameters
 
 @dataclass
 class DockerMount:
@@ -79,8 +78,48 @@ def execute_docker_cmd(
     return result
 
 
-def execute_experiment(experiment):
-    pass
+
+
+def execute_experiment(experiment: ExperimentParameters):
+    log.info(f'Executing Experiment from paramters: {experiment.pretty_print()}')
+    config = experiment.as_old_config()
+
+    log.debug("Importing Armory Engine Bits")
+    # Import here to avoid dependency tree in launcher
+    # from armory.engine.utils import config_loading
+    # log.debug("Constructing Scenario Class")
+    # ScenarioClass = config_loading.load_fn(scenario_config)
+    log.debug("Constructing Scenario Class")
+    module = importlib.import_module(experiment.scenario.module_name)
+    ScenarioClass = getattr(module, experiment.scenario.function_name)
+    scenario = ScenarioClass(config, **experiment.scenario.kwargs.dict())
+    log.debug(f"Scneario Loaded: {scenario}")
+    log.debug(f"Calling .evaluate()")
+    scenario.evaluate()
+    # # from armory.engine.utils.configuration import load_config
+    # log.debug(f"Loading Config: {config}")
+    # # config = load_config(config, from_file=True)
+    #
+    # # scenario_config = config.get("scenario")
+    # # if scenario_config is None:
+    # #     raise KeyError('"scenario" missing from evaluation config')
+    # # _scenario_setup(config)
+    #
+    # ScenarioClass = config_loading.load_fn(scenario_config)
+    # kwargs = scenario_config.get("kwargs", {})
+    # kwargs.update(
+    #     dict(
+    #         check_run=check_run,
+    #         num_eval_batches=num_eval_batches,
+    #         skip_benign=skip_benign,
+    #         skip_attack=skip_attack,
+    #         skip_misclassified=skip_misclassified,
+    #     )
+    # )
+    # scenario_config["kwargs"] = kwargs
+    # scenario = ScenarioClass(config, **kwargs)
+    # log.trace(f"scenario loaded {scenario}")
+    # scenario.evaluate()
 
 
 if __name__ == "__main__":

@@ -43,6 +43,7 @@ class ArbitraryDict(BaseModel):
         # return the value typed correctly
         self.__root__[key] = tp(value)
 
+
 class ExecutionMode(str, Enum):
     """Armory Execution Mode
     docker  ->  Means that armory will execute
@@ -136,7 +137,7 @@ class PoisonParameters(BaseModel):
 
 
 class ExecutionParameters(BaseModel):
-    execution_mode: ExecutionMode
+    mode: ExecutionMode
     docker_image: str = None
 
 
@@ -184,3 +185,5 @@ class ExperimentParameters(BaseModel):
     def pretty_print(self):
         return json.dumps(self.dict(), indent=2, sort_keys=True)
 
+    def as_old_config(self):
+        return self.dict()

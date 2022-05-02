@@ -13,53 +13,53 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
-try:
-    from importlib.metadata import version, PackageNotFoundError
-except ModuleNotFoundError:
-    from importlib_metadata import version, PackageNotFoundError  # noqa
-
+# try:
+#     from importlib.metadata import version, PackageNotFoundError
+# except ModuleNotFoundError:
+#     from importlib_metadata import version, PackageNotFoundError  # noqa
+#
 import pathlib
 import re
 import subprocess
 
 from armory.logs import log
+#
+#
+# def get_dynamic_version():
+#     """
+#     Produce the version dynamically from setup.py if available.
+#
+#     Return None if setup.py is not available
+#     """
+#     armory_repo_root = pathlib.Path(__file__).parent.parent
+#     setup = armory_repo_root / "setup.py"
+#     if not setup.is_file():
+#         return None
+#
+#     completed = subprocess.run(
+#         ["python", str(setup), "--version"],
+#         cwd=str(armory_repo_root),
+#         capture_output=True,
+#         text=True,
+#     )
+#     try:
+#         completed.check_returncode()
+#     except subprocess.CalledProcessError:
+#         log.critical("setup.py exists but 'python setup.py --version' failed.")
+#         raise
+#     version = completed.stdout.strip()
+#     return version
 
-
-def get_dynamic_version():
-    """
-    Produce the version dynamically from setup.py if available.
-
-    Return None if setup.py is not available
-    """
-    armory_repo_root = pathlib.Path(__file__).parent.parent
-    setup = armory_repo_root / "setup.py"
-    if not setup.is_file():
-        return None
-
-    completed = subprocess.run(
-        ["python", str(setup), "--version"],
-        cwd=str(armory_repo_root),
-        capture_output=True,
-        text=True,
-    )
-    try:
-        completed.check_returncode()
-    except subprocess.CalledProcessError:
-        log.critical("setup.py exists but 'python setup.py --version' failed.")
-        raise
-    version = completed.stdout.strip()
-    return version
-
-
-__version__ = get_dynamic_version()
-if __version__ is None:
-    try:
-        __version__ = version("armory-testbed")
-    except PackageNotFoundError:
-        log.critical("armory package is not pip installed and not locally cloned")
-        raise
-__version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
-
+#
+# __version__ = get_dynamic_version()
+# if __version__ is None:
+#     try:
+#         __version__ = version("armory-testbed")
+#     except PackageNotFoundError:
+#         log.critical("armory package is not pip installed and not locally cloned")
+#         raise
+# __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
+#
 
 # Handle PyTorch / TensorFlow interplay
 
@@ -88,7 +88,7 @@ except ImportError:
 
 # Handle ART configuration
 
-from armory import paths
+from armory.engine import paths
 
 try:
     paths.set_art_data_path()
@@ -105,10 +105,10 @@ Config = Dict[str, Any]
 # Submodule imports
 try:
     from armory.engine import art_experimental, baseline_models, docker, eval
-    from armory import data
-    from armory import paths
-    from armory import utils
-    from armory import webapi
+    from armory.engine import data
+    from armory.engine import paths
+    from armory.engine import utils
+    from armory.engine import webapi
 except ImportError as e:
     module = e.name
     print(f"ERROR: cannot import '{module}' module")

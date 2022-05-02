@@ -227,10 +227,10 @@ def run(experiment, override):
     from armory.utils.environment import EnvironmentParameters
     from armory.utils.experiment import ExperimentParameters
     from armory.utils.utils import set_overrides
+    import armory.launcher.launcher as al
+    log.info(f"Running Experiment Defined by: {experiment}")
 
-    print(f"clid overrides: {override}")
     env = EnvironmentParameters.load(overrides=override)
-    print(f"aver env overrides: {override}")
     log.debug(f"Loaded Environment: \n{env.pretty_print()}")
 
     exp, env_overrides = ExperimentParameters.load(experiment, overrides=override)
@@ -242,6 +242,11 @@ def run(experiment, override):
         set_overrides(env, env_overrides)
         log.debug(f"New Environment: \n{env.pretty_print()}")
 
+    if exp.execution.mode == "native":
+        log.info("Launching Armory in `native` mode")
+        al.execute_experiment(exp)
+    else:
+        log.info(f"Launching Armory in `docker` mode using image: {exp.execution.docker_image}")
 
 # @cli.command()
 # @click.argument("docker-image", type=str)

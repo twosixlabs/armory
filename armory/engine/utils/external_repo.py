@@ -10,8 +10,8 @@ from typing import Union, List
 
 import requests
 
-from armory import paths
-from armory.configuration import get_verify_ssl
+from armory.engine import paths
+from armory.engine.configuration import get_verify_ssl
 from armory.logs import log
 
 

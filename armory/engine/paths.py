@@ -5,7 +5,7 @@ Reference objects for armory paths
 import os
 import warnings  # armory.logs initialization depends on this module, use warnings instead
 
-from armory import configuration
+from armory.engine import configuration
 
 NO_DOCKER = False
 
