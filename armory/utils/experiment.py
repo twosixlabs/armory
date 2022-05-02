@@ -8,22 +8,39 @@ from armory.utils import set_overrides
 from enum import Enum
 from pydoc import locate
 
+
 class Values(BaseModel):
+    """ Base Model for Arbitrary Dict Type attribute values"""
     value: str
     type: str
 
 
-class ArbitraryKwargs(BaseModel):
+class ArbitraryDict(BaseModel):
+    """Base Model substitute for Dict
+
+    ArbitraryDict is inteded to be used as a data model
+    when the `keys` of the incoming data are not known
+    and/or can't be anticipated.  The main example of this
+    is in the `kwarg` type options within the armory experiment
+    file.  To use this:
+
+    # Say we have data model called `AttackParameters` and we want
+    it to have a `kwargs` attribute that can store arbitrary key/value
+    pairs, then we would write something like:
+
+    class AttackParameters(BaseModel):
+        kwargs: ArbitraryDict
+    """
     __root__: Optional[Dict[str, Values]]
 
-    def __getattr__(self, item):  # if you want to use '.'
-        print(item)
+    def __getattr__(self, item):  # need this to access using `.`
         return self.__root__[item].value
-        # return self.__root__[item]
 
     def __setattr__(self, key, value):
-        print(key, value)
+        # Get class for specified value type
         tp = locate(self.__root__[key].type)
+
+        # return the value typed correctly
         self.__root__[key] = tp(value)
 
 class ExecutionMode(str, Enum):
@@ -46,7 +63,7 @@ class AttackParameters(BaseModel):
     name: str
     module: str
     knowledge: str
-    kwargs: dict
+    kwargs: ArbitraryDict
     type: str = None
 
 
@@ -65,7 +82,7 @@ class DefenseParameters(BaseModel):
     name: str
     type: str
     module: str
-    kwargs: dict
+    kwargs: ArbitraryDict
 
 
 class MetricParameters(BaseModel):
@@ -83,9 +100,9 @@ class ModelParameters(BaseModel):
     name: str
     module: str
     weights_file: str = None
-    wrapper_kwargs: dict
-    model_kwargs: dict
-    fit_kwargs: ArbitraryKwargs
+    wrapper_kwargs: ArbitraryDict
+    model_kwargs: ArbitraryDict
+    fit_kwargs: ArbitraryDict
     fit: bool
 
 
@@ -94,7 +111,7 @@ class ScenarioParameters(BaseModel):
 
     function_name: str
     module_name: str
-    kwargs: dict
+    kwargs: ArbitraryDict
 
 
 class SystemConfigurationParameters(BaseModel):
@@ -157,27 +174,13 @@ class ExperimentParameters(BaseModel):
         log.debug(f"Parsing Class Object from: {data}")
         exp = cls.parse_obj(data)
 
-        log.debug(f"Recieved Exp: {exp.pretty_print()}")
-        # import pdb;
-        # pdb.set_trace()
+        log.debug(f"Parsed Experiment: {exp.pretty_print()}")
+
+        log.debug(f"Applying experiment overrides: {overrides}")
         set_overrides(exp, overrides)
+        log.debug(f"Final Experiment: {exp}")
         return exp, env_overrides
 
     def pretty_print(self):
-        print(self.dict())
         return json.dumps(self.dict(), indent=2, sort_keys=True)
 
-
-# class Experiment(object):
-#     """Execution Class to `run` armory experiments"""
-#
-#     def __init__(self, experiment_parameters, environment_parameters):
-#         log.info(f"Constructing Experiment using parameters: \n{experiment_parameters}")
-#         self.exp_pars = experiment_parameters
-#         self.env_pars = environment_parameters
-#         log.info(f"Importing Scenario Module: {self.exp_pars.scenario.module_name}")
-#         self.scenario_module = import_module(self.exp_pars.scenario.module_name)
-#         log.info(f"Loading Scenario Function: {self.exp_pars.scenario.function_name}")
-#         self.scenario_fn = getattr(
-#             self.scenario_module, self.exp_pars.scenario.function_name
-#         )
