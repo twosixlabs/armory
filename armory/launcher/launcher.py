@@ -7,6 +7,7 @@ from typing import List
 from armory.utils.experiment import Experiment
 from armory.logs import log
 
+
 @dataclass
 class DockerMount:
     type: str
@@ -31,6 +32,7 @@ class DockerPort:
     def __str__(self):
         return f"-p {self.host}:{self.container}/{self.type}"
 
+
 def execute_native_cmd(
     cmd: str,
 ):
@@ -43,6 +45,7 @@ def execute_native_cmd(
         log.success("Docker CMD Execution Success!!")
         log.debug(result)
     return result
+
 
 def execute_docker_cmd(
     image: str,
@@ -74,6 +77,7 @@ def execute_docker_cmd(
     else:
         log.success("Docker CMD Execution Success!!")
     return result
+
 
 def execute_experiment(experiment):
     pass

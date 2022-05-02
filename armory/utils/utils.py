@@ -1,6 +1,7 @@
 import functools
 import collections
 
+
 def rsetattr(obj, attr, val):
     pre, _, post = attr.rpartition(".")
     return setattr(rgetattr(obj, pre) if pre else obj, post, val)
@@ -26,7 +27,7 @@ def rhasattr(obj, attr):
         return False
 
 
-def flatten(d, parent_key='', sep='.'):
+def flatten(d, parent_key="", sep="."):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k

@@ -121,24 +121,26 @@ class ExperimentParameters(BaseModel):
     @classmethod
     def load(cls, filename: str, overrides: List = []):
         fname, fext = os.path.splitext(filename)
-        log.info(f"Attempting to Load Experiment from file: {filename} and applying cli overrides: {overrides}")
+        log.info(
+            f"Attempting to Load Experiment from file: {filename} and applying cli overrides: {overrides}"
+        )
         with open(filename, "r") as f:
             data = yaml.safe_load(f.read())
 
         if "environment" in data:
-            log.warning(f"Overriding Environment Setting using data from Experiment File: {data['environment']}")
+            log.warning(
+                f"Overriding Environment Setting using data from Experiment File: {data['environment']}"
+            )
             env_overrides = data["environment"]
             data.pop("environment")
         else:
             env_overrides = []
 
-
-
-
         log.debug(f"Parsing Class Object from: {data}")
         exp = cls.parse_obj(data)
 
         from armory.utils.utils import rhasattr
+
         print(exp)
         print(f"has: {hasattr(exp, 'model')}")
         print(rhasattr(exp, "model.fit_kwargs.nb_epoch"))
@@ -149,7 +151,6 @@ class ExperimentParameters(BaseModel):
     def pretty_print(self):
         print(self.dict())
         return json.dumps(self.dict(), indent=2, sort_keys=True)
-
 
 
 # class Experiment(object):

@@ -20,7 +20,10 @@ from tqdm import tqdm
 
 from armory import paths
 from armory.logs import log, is_progress
-from armory.engine.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
+from armory.engine.data.progress_percentage import (
+    ProgressPercentage,
+    ProgressPercentageUpload,
+)
 from armory.configuration import get_verify_ssl
 
 CHECKSUMS_DIRS = []

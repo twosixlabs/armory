@@ -1,4 +1,3 @@
 """
 Evaluation within ARMORY
 """
-

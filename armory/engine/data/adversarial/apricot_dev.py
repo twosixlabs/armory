@@ -7,7 +7,10 @@ import os
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets.public_api as tfds
 
-from armory.engine.data.adversarial.apricot_metadata import APRICOT_PATCHES, APRICOT_MODELS
+from armory.engine.data.adversarial.apricot_metadata import (
+    APRICOT_PATCHES,
+    APRICOT_MODELS,
+)
 
 _CITATION = """
 @misc{braunegg2020apricot,

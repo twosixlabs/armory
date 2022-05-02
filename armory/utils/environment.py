@@ -6,8 +6,10 @@ import os
 from typing import List, Union, Dict
 from enum import Enum
 import json
+
 # from armory.utils import rsetattr, rhasattr, parse_overrides
 from armory.utils import set_overrides
+
 DEFAULT_ARMORY_DIRECTORY = os.path.expanduser("~/.armory")
 # DEFAULT_DOCKER_REPO = "twosixarmory"
 
@@ -43,6 +45,7 @@ class Paths(BaseModel):
         for k, v in self.dict().items():
             new_v = os.path.join(base_dir, os.path.basename(v))
             setattr(self, k, str(new_v))
+
 
 #
 # # TODO Think aobut what to do if multiple simulatenous test

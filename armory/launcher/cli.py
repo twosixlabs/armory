@@ -2,6 +2,7 @@ import armory
 from armory.logs import log
 import armory.logs
 import click
+
 # from armory.engine.eval import Evaluator
 import sys
 import os
@@ -163,29 +164,45 @@ def download():
 
 def get_mounts_from_paths(path_list):
     import armory.launcher.launcher as al
+
     mounts = []
     for name, dir_path in path_list:
-        mounts.append(al.DockerMount(type="bind",
-                                     source=dir_path,
-                                     target=f"/armory/{os.path.basename(dir_path)}",
-                                     readonly=False))
+        mounts.append(
+            al.DockerMount(
+                type="bind",
+                source=dir_path,
+                target=f"/armory/{os.path.basename(dir_path)}",
+                readonly=False,
+            )
+        )
     return mounts
 
+
 @cli.command()
-@click.argument("command", type=str, nargs=-1) # trick from here: https://stackoverflow.com/questions/48391777/nargs-equivalent-for-options-in-click
-@click.option("-i","--image", type=str, default=None, help="name of docker image to use (Default: None -- will execute in native mode")
+@click.argument(
+    "command", type=str, nargs=-1
+)  # trick from here: https://stackoverflow.com/questions/48391777/nargs-equivalent-for-options-in-click
+@click.option(
+    "-i",
+    "--image",
+    type=str,
+    default=None,
+    help="name of docker image to use (Default: None -- will execute in native mode",
+)
 @click.option("--override", default=[], multiple=True)
 @docker_options
 def exec(image, command, gpus, root, override):
     """Armory Launcher -- Execute command"""
     import armory.launcher.launcher as al
     from armory.utils.environment import EnvironmentParameters
+
     env = EnvironmentParameters.load(overrides=override)
 
     requested_mode = "docker" if image is not None else "native"
     if env.execution_mode != requested_mode:
-        log.warning(f"Overriding Armory execution_mode setting: {env.execution_mode}... exec called with mode: {requested_mode}")
-
+        log.warning(
+            f"Overriding Armory execution_mode setting: {env.execution_mode}... exec called with mode: {requested_mode}"
+        )
 
     cmd = " ".join(command)
     if requested_mode == "native":
@@ -196,8 +213,8 @@ def exec(image, command, gpus, root, override):
 
         mounts = get_mounts_from_paths(env.paths.items())
 
-
         al.execute_docker_cmd(image, cmd, mounts=mounts)
+
 
 @cli.command()
 @click.argument("experiment")
@@ -210,6 +227,7 @@ def run(experiment, override):
     from armory.utils.environment import EnvironmentParameters
     from armory.utils.experiment import ExperimentParameters
     from armory.utils.utils import set_overrides
+
     print(f"clid overrides: {override}")
     env = EnvironmentParameters.load(overrides=override)
     print(f"aver env overrides: {override}")
@@ -218,14 +236,11 @@ def run(experiment, override):
     exp, env_overrides = ExperimentParameters.load(experiment, overrides=override)
     log.debug(f"Loaded Experiment: {experiment}: \n {exp.pretty_print()}")
     if len(env_overrides) > 0:
-        log.warning(f"Applying Environment Overrides from Experiment File: {experiment}")
+        log.warning(
+            f"Applying Environment Overrides from Experiment File: {experiment}"
+        )
         set_overrides(env, env_overrides)
         log.debug(f"New Environment: \n{env.pretty_print()}")
-
-
-
-
-
 
 
 # @cli.command()

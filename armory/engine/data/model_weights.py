@@ -4,7 +4,10 @@ Utility to download model weights to cache.
 import os
 
 from armory import paths
-from armory.engine.data.utils import _read_validate_scenario_config, download_file_from_s3
+from armory.engine.data.utils import (
+    _read_validate_scenario_config,
+    download_file_from_s3,
+)
 from armory.logs import log
 
 

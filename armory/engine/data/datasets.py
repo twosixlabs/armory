@@ -30,7 +30,9 @@ from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.engine.data.resisc45 import resisc45_split  # noqa: F401
 from armory.engine.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.engine.data.xview import xview as xv  # noqa: F401
-from armory.engine.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
+from armory.engine.data.carla_object_detection import (
+    carla_obj_det_train as codt,
+)  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
