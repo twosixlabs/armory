@@ -57,7 +57,7 @@ Note: only release versions of armory will be published to [Dockerhub](https://h
 development branch images much be built locally using:
 ```bash
 cd [armory-fork-repo]
-bash docker/build.sh <tf1|tf2|pytorch|pytorch-deepspeech|all> dev
+bash docker/build.sh <tf2|pytorch|pytorch-deepspeech|all> dev
 ```
 
 ## Style Guide
@@ -83,23 +83,5 @@ minor, then feel free to make them without discussion.
 When adding new features please add test cases to ensure their correctness. We use 
 pytest as our test runner. 
 
-For running `pytest`, users should follow the `.github/workflows/ci_test.yml` process. 
-This splits tests into those used on the host:
-```
-pytest -s --disable-warnings tests/test_host
-```
-and the rest, which are run in the container (after building):
-```
-python -m armory exec tf1 -- pytest -s tests/test_tf1/
-python -m armory exec tf2 -- pytest -s tests/test_tf2/
-python -m armory exec pytorch -- pytest -s tests/test_pytorch/
-```
-
-#### Example
-As an example if you added a new pytorch baseline model, 
-you'll want to add testcases to `tests/test_pytorch/test_pytorch_models.py`
-
-To run simply use the armory exec functionality:
-```
-python -m armory exec pytorch -- pytest -s tests/test_pytorch/
-```
+For running `pytest`, users should follow `.github/workflows/ci_test.yml`.
+This has tests for docker and native modes as well as formatting.

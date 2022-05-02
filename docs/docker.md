@@ -4,21 +4,25 @@ inside a docker container.
 
 
 ## Images
-There are four docker images that are currently published to dockerhub for every release of
+There are three docker images that are currently published to dockerhub for every release of
 the armory framework:
 
-1. `twosixarmory/tf1:<version>`
-2. `twosixarmory/tf2:<version>`
-3. `twosixarmory/pytorch:<version>`
-4. `twosixarmory/pytorch-deepspeech:<version>`
+1. `twosixarmory/tf2:<version>`
+1. `twosixarmory/pytorch:<version>`
+1. `twosixarmory/pytorch-deepspeech:<version>`
+
+NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
+If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.
+
+We additionally publish a base image, `twosixarmory/base:latest`, from which the three main images are derived.
+This is updated less frequently, and each release does not necessarily have a corresponding new base.
 
 When using `armory launch` or `armory exec` the framework specific arguments will
-utilize one of these three images.
+utilize one of these three primary images.
 
 When running `armory run <path/to/config.json>` the image launched will be whatever is
-specified in the `docker_image` field. This enables users to extend our base images
+specified in the `docker_image` field. This enables users to extend our images
 and run evaluations on an image that has all additional requirements for their defense.
-
 
 ### Custom Images
 
@@ -83,8 +87,12 @@ evaluations are ran. However if there are issues downloading the images (e.g. pr
 they can be built from the release branch of the repo:
 ```
 git checkout -b r0.15.0
-bash docker/build.sh <tf1|tf2|pytorch|all>
+bash docker/build-base.sh
+python docker/build.py <tf2|pytorch|pytorch-deepspeech|all> [--no-pull]
 ```
+
+If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.
+
 
 ## Docker Volume Mounts
 When launching an ARMORY instance several host directories will be mounted within the
@@ -163,7 +171,7 @@ and will default to `all` if not present in `run` or when using `launch` and `ex
 Examples:
 ```
 armory run scenario_configs/mnist_baseline.json --use-gpu
-armory launch tf1 --gpus=1,4 --interactive
+armory launch tf2 --gpus=1,4 --interactive
 armory exec pytorch --gpus=0 -- nvidia-smi
 ```
 

@@ -50,7 +50,7 @@ NOTE: when running a config, these will overwrite the fields inside the config.
 Examples:
 ```
 armory run scenario_configs/mnist_baseline.json --use-gpu
-armory launch tf1 --gpus=1,4 --interactive
+armory launch tf2 --gpus=1,4 --interactive
 armory exec pytorch --gpus=0 -- nvidia-smi
 ```
 
