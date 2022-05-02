@@ -12,7 +12,7 @@ from armory.utils.export import So2SatExporter
 
 
 class So2SatClassification(Scenario):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, *args, **kwargs):
         if "attack_modality" not in kwargs.keys():
             raise ValueError("`attack_modality` must be defined for So2Sat scenario")
         attack_modality = (kwargs.pop("attack_modality") or "").lower()
@@ -21,12 +21,12 @@ class So2SatClassification(Scenario):
                 f"Multimodal scenario requires attack_modality parameter in {'SAR', 'EO', 'Both'}"
             )
         self.attack_modality = attack_modality
-        self.perturbation_metrics = self.config["metrics"].pop("perturbation")
-        self.config["metrics"]["perturbation"] = None
+        self.perturbation_metrics = config["metric"].pop("perturbation")
+        config["metric"]["perturbation"] = None
         if self.perturbation_metrics is not None:
             if isinstance(self.perturbation_metrics, str):
                 self.perturbation_metrics = [self.perturbation_metrics]
-        super().__init__(*args, **kwargs)
+        super().__init__(config, *args, **kwargs)
 
     def load_attack(self):
         attack_config = self.config["attack"]
@@ -86,7 +86,7 @@ class So2SatClassification(Scenario):
             modes = [self.attack_modality]
 
         # Generate metrics for perturbation on eo and sar
-        if self.config["metrics"].get("means"):
+        if self.config["metric"].get("means"):
             final = np.mean
         else:
             final = None
@@ -96,10 +96,13 @@ class So2SatClassification(Scenario):
                 m = Meter(
                     f"{mode}_perturbation_{name}",
                     metric,
-                    "scenario.x_{mode}",
-                    "scenario.x_adv_{mode}",
+                    f"scenario.x_{mode}",
+                    f"scenario.x_adv_{mode}",
                     final=final,
                     final_name=f"{mode}_perturbation_mean_{name}",
+                    record_final_only=not bool(
+                        self.config["metric"].get("record_metric_per_sample")
+                    ),
                 )
                 self.hub.connect_meter(m)
 
