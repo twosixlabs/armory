@@ -24,11 +24,11 @@ from art.defences.postprocessor import Postprocessor
 from art.defences.preprocessor import Preprocessor
 from art.defences.trainer import Trainer
 
-from armory.engine.art_experimental import patch
-from armory.engine.art_experimental import SweepAttack
+from armory.engine.art_experimental.attacks import patch
+from armory.engine.art_experimental.attacks.sweep import SweepAttack
 from armory.engine.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.engine.data.utils import maybe_download_weights_from_s3
-from armory.utils import labels
+from armory.engine.utils import labels
 import copy
 
 

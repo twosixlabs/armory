@@ -25,8 +25,8 @@ from armory.engine.data.utils import (
     _read_validate_scenario_config,
     add_checksums_dir,
 )
-from armory import paths
-from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
+from armory.engine import paths
+from armory.engine.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.engine.data.resisc45 import resisc45_split  # noqa: F401
 from armory.engine.data.ucf101 import ucf101_clean as uc  # noqa: F401
 from armory.engine.data.xview import xview as xv  # noqa: F401

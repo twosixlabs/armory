@@ -18,13 +18,13 @@ from botocore.exceptions import ClientError
 import requests
 from tqdm import tqdm
 
-from armory import paths
+from armory.engine import paths
 from armory.logs import log, is_progress
 from armory.engine.data.progress_percentage import (
     ProgressPercentage,
     ProgressPercentageUpload,
 )
-from armory.configuration import get_verify_ssl
+from armory.engine.configuration import get_verify_ssl
 
 CHECKSUMS_DIRS = []
 
