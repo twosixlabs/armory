@@ -4,9 +4,6 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-import numpy as np
-from PIL import ImageOps, Image
-
 try:
     from tensorflow import set_random_seed, ConfigProto, Session
     from tensorflow.keras.backend import set_session
@@ -25,7 +22,6 @@ from armory.scenarios.poison import Poison
 
 
 class GTSRB(Poison):
-
     def set_random_seed_tensorflow(self):
         # TODO: Handle automatically
         if not self.config["sysconfig"].get("use_gpu"):
