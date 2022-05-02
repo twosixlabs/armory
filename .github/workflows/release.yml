@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
