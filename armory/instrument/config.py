@@ -226,7 +226,7 @@ class ResultsLogWriter(LogWriter):
         elif "entailment" in name:
             if "total_entailment" not in name:
                 result = metrics.get_supported_metric("total_entailment")(result)
-            total = len(result)
+            total = sum(result.values())
             f_result = (
                 f"contradiction: {result['contradiction']}/{total}, "
                 f"neutral: {result['neutral']}/{total}, "

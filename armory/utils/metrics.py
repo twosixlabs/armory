@@ -101,7 +101,7 @@ def total_entailment(sample_results):
         Return a dictionary of counts for each label
     """
     entailment_map = ["contradiction", "neutral", "entailment"]
-    for i in range(sample_results):
+    for i in range(len(sample_results)):
         sample = sample_results[i]
         if sample in (0, 1, 2):
             log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
@@ -112,6 +112,10 @@ def total_entailment(sample_results):
     c = Counter()
     c.update(sample_results)
     c = dict(c)  # ensure JSON-able
+    for k in entailment_map:
+        if k not in c:
+            c[k] = 0
+    return c
 
 
 def total_wer(sample_wers):

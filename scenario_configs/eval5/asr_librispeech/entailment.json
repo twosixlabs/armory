@@ -7,9 +7,9 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 10,
+            "eps": 20,
             "eps_step": 0.5,
-            "max_iter": 10,
+            "max_iter": 500,
             "norm": "snr",
             "num_random_init": 0,
             "targeted": true

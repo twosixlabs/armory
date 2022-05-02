@@ -59,6 +59,23 @@ def test_entailment():
     assert c["contradiction"] >= 98
 
 
+def test_total_entailment(caplog):
+    for invalid_results in (["invalid name"], [-1], [3], [None]):
+        with pytest.raises(ValueError):
+            metrics.total_entailment(invalid_results)
+
+    metrics.total_entailment([0, 1, 2])
+    assert "Entailment outputs are (0, 1, 2) ints, not strings, mapping" in caplog.text
+
+    results = metrics.total_entailment(["contradiction"])
+    assert results == dict(contradiction=1, neutral=0, entailment=0)
+    assert isinstance(results, dict)
+
+    results = metrics.total_entailment([0, 1, 1, "neutral", "entailment", "entailment"])
+    assert results == dict(contradiction=1, neutral=3, entailment=2)
+    assert sum(results.values()) == 6
+
+
 def test_tpr_fpr():
     actual_conditions = [0] * 10 + [1] * 10
     predicted_conditions = [0] * 4 + [1] * 6 + [0] * 3 + [1] * 7
