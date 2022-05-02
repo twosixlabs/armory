@@ -3,13 +3,14 @@
 import collections
 import json
 import os
-import pandas
 from copy import deepcopy
 from PIL import Image
 import numpy as np
 
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
+
+from armory.data.adversarial import pandas_proxy
 
 _DESCRIPTION = """
 Synthetic multimodality (RGB, depth) dataset generated using CARLA (https://carla.org).
@@ -43,7 +44,8 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
         features = {
             # sequence of [RGB, depth] images
             "image": tfds.features.Sequence(
-                tfds.features.Image(shape=(600, 800, 3)), length=2,
+                tfds.features.Image(shape=(600, 800, 3)),
+                length=2,
             ),
             # sequence of image features for [RGB, depth]
             "images": tfds.features.Sequence(
@@ -187,33 +189,31 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
             # get colorchecker color box values. There are 24 color boxes, so output shape is (24, 3)
             def get_cc(ground_truth=True):
                 if ground_truth:
-                    return (
-                        pandas.read_csv(
-                            os.path.join(
-                                path,
-                                "annotations",
-                                "xrite_passport_colors_sRGB-GMB-2005.csv",
-                            ),
-                            header=None,
-                        )
-                        .to_numpy()
-                        .astype("float32")
+                    return pandas_proxy.read_csv_to_numpy_float32(
+                        os.path.join(
+                            path,
+                            "annotations",
+                            "xrite_passport_colors_sRGB-GMB-2005.csv",
+                        ),
+                        header=None,
                     )
                 else:
-                    return (
-                        pandas.read_csv(
-                            os.path.join(
-                                path, "annotations", fname_rgb.split(".")[-2] + ".csv",
-                            ),
-                            header=None,
-                        )
-                        .to_numpy()
-                        .astype("float32")
+                    return pandas_proxy.read_csv_to_numpy_float32(
+                        os.path.join(
+                            path,
+                            "annotations",
+                            fname_rgb.split(".")[-2] + ".csv",
+                        ),
+                        header=None,
                     )
 
             example = {
                 "image": [
-                    os.path.join(path, size, modality,)
+                    os.path.join(
+                        path,
+                        size,
+                        modality,
+                    )
                     for modality in [fname_rgb, fname_depth]
                 ],
                 "images": [image_rgb, image_depth],

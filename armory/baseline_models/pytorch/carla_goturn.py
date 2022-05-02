@@ -1,14 +1,18 @@
-import torch
 from typing import Optional
-import numpy as np
-from art.estimators.object_tracking import PyTorchGoturn
 
-# Load model from MITRE external repo: https://github.com/yusong-tan/pygoturn
-# This needs to be defined in your config's `external_github_repo` field to be
-# downloaded and placed on the PYTHONPATH
-from pygoturn.src.model import GoNet  # clone from https://github.com/amoudgl/pygoturn
+from art.estimators.object_tracking import PyTorchGoturn
+import numpy as np
+import torch
+
+from armory.utils.external_repo import ExternalRepoImport
 
 # load amoudgl model and instantiate ART PyTorchGoTurn model
+with ExternalRepoImport(
+    repo="amoudgl/pygoturn",
+    experiment="carla_video_tracking_goturn_advtextures_defended.json",
+):
+    from pygoturn.src.model import GoNet
+
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

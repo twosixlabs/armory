@@ -1,4 +1,4 @@
-u"""
+"""
 TensorFlow Dataset for resisc45 attacked by Adversarial Patch with adv/clean splits
 """
 from __future__ import absolute_import
@@ -145,15 +145,33 @@ class Resisc45Densenet121UnivpatchAndUnivperturbationAdversarial224x224(
         labels.sort()
         for label in labels:
             image_clean = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[0], label, "*.png",)
+                os.path.join(
+                    data_dir_path,
+                    root_dir,
+                    split_dirs[0],
+                    label,
+                    "*.png",
+                )
             )
             image_clean.sort()
             adv_univpatch = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[1], label, "*.png",)
+                os.path.join(
+                    data_dir_path,
+                    root_dir,
+                    split_dirs[1],
+                    label,
+                    "*.png",
+                )
             )
             adv_univpatch.sort()
             adv_univperturbation = tf.io.gfile.glob(
-                os.path.join(data_dir_path, root_dir, split_dirs[2], label, "*.png",)
+                os.path.join(
+                    data_dir_path,
+                    root_dir,
+                    split_dirs[2],
+                    label,
+                    "*.png",
+                )
             )
             adv_univperturbation.sort()
 

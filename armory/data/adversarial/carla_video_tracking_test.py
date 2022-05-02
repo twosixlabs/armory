@@ -4,9 +4,10 @@ import os
 import glob
 import numpy as np
 from PIL import Image
-import pandas
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
+
+from armory.data.adversarial import pandas_proxy
 
 _DESCRIPTION = """
 Synthetic multimodality (RGB, depth) dataset generated using CARLA (https://carla.org).
@@ -39,7 +40,8 @@ class CarlaVideoTrackingTest(tfds.core.GeneratorBasedBuilder):
         features = tfds.features.FeaturesDict(
             {
                 "video": tfds.features.Video(
-                    (None, 600, 800, 3), encoding_format="png",
+                    (None, 600, 800, 3),
+                    encoding_format="png",
                 ),
                 "bboxes": tfds.features.Sequence(
                     tfds.features.Tensor(
@@ -84,7 +86,8 @@ class CarlaVideoTrackingTest(tfds.core.GeneratorBasedBuilder):
 
         return [
             tfds.core.SplitGenerator(
-                name="test", gen_kwargs={"path": os.path.join(path, "test")},
+                name="test",
+                gen_kwargs={"path": os.path.join(path, "test")},
             )
         ]
 
@@ -147,18 +150,18 @@ class CarlaVideoTrackingTest(tfds.core.GeneratorBasedBuilder):
             # convert patch mask to patch coordinates [top_left, top_right, bottom_right, bottom_left]
             def build_coords(mask):
                 """
-        Get the corner points of a patch by using its segmentation mask.
+                Get the corner points of a patch by using its segmentation mask.
 
-        Arguments:
-            mask: A numpy array of shape (height, width). mask will be converted
-                  to a uint8 image for use with the cornerHarris algorithm
+                Arguments:
+                    mask: A numpy array of shape (height, width). mask will be converted
+                          to a uint8 image for use with the cornerHarris algorithm
 
-        Returns:
-            pts: The corner points (vertices) of the mask/patch. This is a list
-                of lists, with each nested list containing the (x,y) coordinate
-                of a vertex/corner. The points will be in the order of:
-                    [Top/Left, Top/Right, Bottom/Right, Bottom/Left]
-        """
+                Returns:
+                    pts: The corner points (vertices) of the mask/patch. This is a list
+                        of lists, with each nested list containing the (x,y) coordinate
+                        of a vertex/corner. The points will be in the order of:
+                            [Top/Left, Top/Right, Bottom/Right, Bottom/Left]
+                """
                 # Importing cv2 inside function, since not all twosixarmory images contain cv2 package
                 import cv2
 
@@ -186,23 +189,22 @@ class CarlaVideoTrackingTest(tfds.core.GeneratorBasedBuilder):
             # get colorchecker color box values. There are 24 color boxes, so output shape is (24, 3)
             def get_cc(ground_truth=True):
                 if ground_truth:
-                    return (
-                        pandas.read_csv(
-                            os.path.join(
-                                path, video, "xrite_passport_colors_sRGB-GMB-2005.csv",
-                            ),
-                            header=None,
-                        )
-                        .to_numpy()
-                        .astype("float32")
+                    return pandas_proxy.read_csv_to_numpy_float32(
+                        os.path.join(
+                            path,
+                            video,
+                            "xrite_passport_colors_sRGB-GMB-2005.csv",
+                        ),
+                        header=None,
                     )
                 else:
-                    return (
-                        pandas.read_csv(
-                            os.path.join(path, video, "CC.csv",), header=None,
-                        )
-                        .to_numpy()
-                        .astype("float32")
+                    return pandas_proxy.read_csv_to_numpy_float32(
+                        os.path.join(
+                            path,
+                            video,
+                            "CC.csv",
+                        ),
+                        header=None,
                     )
 
             patch_coords = build_coords(masks[0][:, :, 0:1])

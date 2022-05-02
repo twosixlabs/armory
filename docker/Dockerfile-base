@@ -1,0 +1,130 @@
+###########################################################################################
+#                           ARMORY Baseline Docker Image
+#
+# This File contains the baseline image for Armory docker images.  All framework
+# based images should inhereit from this image using:
+#       FROM twosixlabs/armory-baseline AS armory-baseline
+#
+#
+###########################################################################################
+
+
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+
+# Temporary fix for broken nvidia package checksum
+RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
+
+# Basic Apt-get Bits
+RUN apt-get -y -qq update && \
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y \
+    wget \
+    vim \
+    build-essential \
+    git \
+    curl \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh && \
+    /opt/conda/bin/conda clean -tipsy && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && \
+    echo 'alias ll="ls -al"' >> ~/.bashrc
+
+ENV PATH=/opt/conda/bin:$PATH
+
+# conda installations ordered by channel
+
+# TODO Figure out why we need to support this and `armory-base-requirements` separately.
+
+# Conda Install for Channel: pytorch
+RUN /opt/conda/bin/conda install \
+    pytorch=1.10 \
+    torchvision \
+    torchaudio \
+    cudatoolkit=11.3 \
+    -c pytorch \
+    && /opt/conda/bin/conda clean --all
+# pytorch==1.10.2
+# torchvision==0.11.3
+# torchaudio==0.10.2
+# cudatoolkit==1.11.3
+# numpy==1.21.2
+# Pillow==9.0.1
+
+# Conda Install for Channel: conda-forge
+RUN /opt/conda/bin/conda install \
+    scikit-learn=1.0 \
+    jupyterlab \
+    jupyterlab_widgets \
+    ipywidgets \
+    matplotlib \
+    ffmpeg \
+    -c conda-forge \
+    && /opt/conda/bin/conda clean --all
+    # ART requires scikit-learn >=0.22.2,<1.1.0
+# scikit-learn==1.0.2 \
+# scipy==1.7.3 \
+# jupyterlab==3.3.2 \
+# jsonschema==4.4.0 \
+# six==1.16.0 \
+# setuptools==52.0.0 \
+# matplotlib==3.5.1 \
+# ffmpeg==4.3.2
+# conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include
+#     this encoder is required for video compression defenses (ART) and video exporting
+#     future work could migrate this to libopenh264 encoder, which is available in both channels
+
+# Conda Install for Channel: Numba
+RUN /opt/conda/bin/conda install \
+    numba=0.55 \
+    -c numba \
+    && /opt/conda/bin/conda clean --all
+    # ART requires numba >= 0.53.1
+# numba==0.55.1
+
+# Conda Install for Channel: Anaconda
+RUN /opt/conda/bin/conda install \
+    pandas=1.1 \
+    -c anaconda \
+    && /opt/conda/bin/conda clean --all
+# pandas==1.1.3
+
+# Conda Install for packages with no channel
+RUN /opt/conda/bin/conda install \
+    protobuf=3 \
+    && /opt/conda/bin/conda clean --all
+# protobuf==3.19.1
+
+RUN /opt/conda/bin/pip install --no-cache-dir \
+    tensorflow-datasets==4.5 \
+    tensorflow==2.8 \
+    tensorboardx==2.4 \
+    boto3==1.20 \
+    opencv-python \
+    ffmpeg-python \
+    pytest \
+    loguru \
+    docker
+# dill==0.3.4 \
+# tensorflow-datasets==4.5.0 \
+# tensorflow==2.8.0 \
+# tensorboardX==2.4 \
+# boto3==1.20.0 \
+# opencv-python==4.5.5.64 \
+# ffmpeg-python==0.2.0 \
+# pytest==7.0.1 \
+# docker==5.0.3
+
+RUN /opt/conda/bin/pip install --no-cache-dir \
+    pydub
+# pydub==0.25.1
+# required for ART mp3 defense
+
+WORKDIR /workspace

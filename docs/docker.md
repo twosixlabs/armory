@@ -4,21 +4,25 @@ inside a docker container.
 
 
 ## Images
-There are four docker images that are currently published to dockerhub for every release of 
+There are three docker images that are currently published to dockerhub for every release of
 the armory framework:
 
-1. `twosixarmory/tf1:<version>` 
-2. `twosixarmory/tf2:<version>` 
-3. `twosixarmory/pytorch:<version>` 
-4. `twosixarmory/pytorch-deepspeech:<version>` 
+1. `twosixarmory/tf2:<version>`
+1. `twosixarmory/pytorch:<version>`
+1. `twosixarmory/pytorch-deepspeech:<version>`
 
-When using `armory launch` or `armory exec` the framework specific arguments will 
-utilize one of these three images. 
+NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
+If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.
 
-When running `armory run <path/to/config.json>` the image launched will be whatever is 
-specified in the `docker_image` field. This enables users to extend our base images 
+We additionally publish a base image, `twosixarmory/base:latest`, from which the three main images are derived.
+This is updated less frequently, and each release does not necessarily have a corresponding new base.
+
+When using `armory launch` or `armory exec` the framework specific arguments will
+utilize one of these three primary images.
+
+When running `armory run <path/to/config.json>` the image launched will be whatever is
+specified in the `docker_image` field. This enables users to extend our images
 and run evaluations on an image that has all additional requirements for their defense.
-
 
 ### Custom Images
 
@@ -27,7 +31,7 @@ either the `"docker_image"` field of the [config file](configuration_files.md)
 of `armory run <path/to/config.json>` or in the CLI of the `launch` and `exec` commands,
 as in `run launch <custom_image:tag>`.
 
-Note: since Armory executes commands on detached containers, the `CMD` of the Docker image 
+Note: since Armory executes commands on detached containers, the `CMD` of the Docker image
 will be *ignored* and replaced with `tail -f /dev/null` to ensure that the container does not
 exit while those commands are being executed.
 
@@ -63,43 +67,49 @@ Once inside the container, you should be able to run or import armory as require
 I have no name!@c10db6c70a81:/workspace$ armory version
 0.13.0
 I have no name!@c10db6c70a81:/workspace$ python
-Python 3.7.6 (default, Jan  8 2020, 19:59:22) 
+Python 3.7.6 (default, Jan  8 2020, 19:59:22)
 [GCC 7.3.0] :: Anaconda, Inc. on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import armory
->>> 
+>>>
 ```
 
-Note: We do not recommend using `--interactive` mode for installing custom requirements. You may 
+Please see [running_armory_scenarios_interactively.ipynb](../notebooks/running_armory_scenarios_interactively.ipynb) for a tutorial on running Armory interactively.
+
+Note: We do not recommend using `--interactive` mode for installing custom requirements. You may
 run into permissions issues, as everything is installed as root, but the armory user is not run
 as root, to prevent potential security issues. Instead, we recommend creating a custom Docker image,
 as described above.
 
 ## Building Images from Source
-When using a released version of armory, docker images will be pulled as needed when 
-evaluations are ran. However if there are issues downloading the images (e.g. proxy) 
+When using a released version of armory, docker images will be pulled as needed when
+evaluations are ran. However if there are issues downloading the images (e.g. proxy)
 they can be built from the release branch of the repo:
 ```
-git checkout -b r0.14.0
-bash docker/build.sh <tf1|tf2|pytorch|all>
+git checkout -b r0.15.0
+bash docker/build-base.sh
+python docker/build.py <tf2|pytorch|pytorch-deepspeech|all> [--no-pull]
 ```
 
+If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.
+
+
 ## Docker Volume Mounts
-When launching an ARMORY instance several host directories will be mounted within the 
-docker container. Note, the host directory path for datasets, saved_models, and 
+When launching an ARMORY instance several host directories will be mounted within the
+docker container. Note, the host directory path for datasets, saved_models, and
 outputs are configurable. To modify those directories simply run `armory configure`.
 The defaults are shown below:
 
 
-| Host Path   | Docker Path   | 
-|:----------: | :-----------: | 
-| os.getcwd() | /workspace    |  
+| Host Path   | Docker Path   |
+|:----------: | :-----------: |
+| os.getcwd() | /workspace    |
 | ~/.armory/datasets | /armory/datasets |
 | ~/.armory/saved_models | /armory/saved_models |
 | ~/.armory/outputs | /armory/outputs |
 
 
-When using these paths in code, armory provides a programatic way to access these 
+When using these paths in code, armory provides a programatic way to access these
 directories.
 
 ### PyTorch model persistent storage
@@ -108,7 +118,7 @@ If you are using the Armory PyTorch container, published models from PyTorch Hub
 will often need to be retieved from a remote source. To avoid re-download of
 that data on each container run, these will be stored in the
 `/armory/saved_models/pytorch` container directory which is normally mapped to
-`~/.armory/saved_models` on the host as shown in the table above. 
+`~/.armory/saved_models` on the host as shown in the table above.
 
 
 #### Utilizing the paths
@@ -161,51 +171,51 @@ and will default to `all` if not present in `run` or when using `launch` and `ex
 Examples:
 ```
 armory run scenario_configs/mnist_baseline.json --use-gpu
-armory launch tf1 --gpus=1,4 --interactive
+armory launch tf2 --gpus=1,4 --interactive
 armory exec pytorch --gpus=0 -- nvidia-smi
 ```
 
-### CUDA 
+### CUDA
 
-The TensorFlow versions we support require CUDA 10+.
+Armory docker images currently use CUDA 11.3 as the base image ( see [Dockerfile-Base](../docker/Dockerfile-base))
+and the TensorFlow versions we support require CUDA 10+. Previous versions of CUDA (e.g. CUDA<11.3) are not actively tested 
+by armory developers or CI tools.  However, if previous versions of CUDA are needed, the following instructions should
+provide a decent starting point.
 
-While PyTorch does support CUDA 9, we do not recommend using it unless strictly necessary
-due to an inability to upgrade your local server, and we do not have it baked in to our docker
-containers. To use CUDA 9 in our docker container, you will need to replace the line
+To use CUDA 10.2, you will need to rebuild the base image and the derived images with the following changes:
+in [docker/Dockerfile-base](../docker/Dockerfile-base) change:
+```bash
+FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 ```
- cudatoolkit=10.1 -c pytorch && \
+to
+```bash
+FROM nvidia/cuda:10.2-cudnn8-runtime-ubuntu18.04
 ```
-with
-```
- cudatoolkit=9.2 -c pytorch && \
-```
-in `docker/pytorch/Dockerfile` and build the pytorch container locally.
+and then change `cudatoolkit=11.3 \` to `cudatoolkit=10.2 \`.
 
+Again, this is not actively tested, so it may require further modification of library dependencies to 
+work appropriately. Also, while PyTorch does support CUDA 9, we do not provide support in armory due to 
+TFDS dependencies and we do not recommend using versions less than the standard 11.3.
 
 ## Docker Setup
-Depending on the evaluation, you may need to increase the default memory allocation for 
-docker containers on your system. 
+Depending on the evaluation, you may need to increase the default memory allocation for
+docker containers on your system.
 
-Linux does not limit memory allocation, but on Mac and Windows this defaults to 2 GB 
+Linux does not limit memory allocation, but on Mac and Windows this defaults to 2 GB
 which is likely insufficient. See the docker documentation to change this:
 * [Mac](https://docs.docker.com/docker-for-mac/)
 * [Windows](https://docs.docker.com/docker-for-windows/)
 
 
-## Docker Image Maintenance 
+## Docker Image Maintenance
 Since there are new docker images for every release of ARMORY, you may want to clean up
 your docker image cache as you increase versions.
-
-To download the current version's images ,and remove old ones, simply run:
-```
-armory clean --force
-```
 
 To display the set of current images on your machine, you can run:
 ```
 docker images
 ```
-To manually delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
+To delete images, see the docs for [docker rmi](https://docs.docker.com/engine/reference/commandline/rmi/).
 
 
 ### Docker Container Maintenance
@@ -215,8 +225,8 @@ docker ps
 ```
 ARMORY will attempt to gracefully shut down all containers it launches;
 however, certain errors may prevent shutdown and leave running containers.
-To shut down these containers, please see the docs for 
-[docker stop](https://docs.docker.com/engine/reference/commandline/stop/) 
+To shut down these containers, please see the docs for
+[docker stop](https://docs.docker.com/engine/reference/commandline/stop/)
 and [docker kill](https://docs.docker.com/engine/reference/commandline/kill/).
 
 ## Running without docker
@@ -247,3 +257,54 @@ x, y = next(ds)
 NOTE: The listing of libraries needed for Armory when run on host is available at
 `host-requirements.txt`. You will need to manually install the requirements in
 that file that match your framework (TF1, TF2, PyTorch).
+
+# publishing a new base
+
+As of armory v0.15, there is a base docker image which is pushed to dockerhub
+occasionally.  The container description is in [Dockerfile-base](docker/Dockerfile-base)
+and there is a tiny [build-base.sh](docker/build-base.sh) helper script.
+
+We do not currently have any verification tests for this build.
+**TODO**: add validation tests and make this a CI deployment job, perhaps.
+
+
+## docker credentials
+
+In the GARD Keeper Password manager is the password for twosixarmory on dockerhub.
+Run
+
+    docker login --username twosixarmory
+
+and give it the password when prompted.  It should respond `Login Succeeded`
+
+## push the new image
+
+This step is "push to production": it changes the latest image on our official
+repository, so has the potential to break all container builds by any armory
+user anywhere.
+
+If you do discover a breaking change, the only fix is to push a new image, since
+[dockerhub does not allow reversion](https://stackoverflow.com/questions/55475080/how-can-i-revert-my-last-push-on-hub-docker-com)
+
+There is a `--dry-run` option which allows you to see what commands would be run.
+It's a good idea to run that first:
+
+    bash docker/build-base.sh --dry-run --push
+
+When satisfied that you want that run:
+
+    bash docker/build-base.sh --push
+
+Will tag the image properly and push it to dockerhub.  There will be two
+new tags created at https://hub.docker.com/r/twosixarmory/base
+
+    twosixarmory/base:latest
+    twosixarmory/base:VERSION
+
+both with the same digest.
+
+You might want to end with
+
+    docker logout
+
+to avoid accidental `docker push` commands from using the shared account.

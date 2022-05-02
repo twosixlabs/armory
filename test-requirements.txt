@@ -1,4 +1,5 @@
-black==19.10b0
+black==22.*
 flake8
 pytest
 yamllint
+click==8.0.4

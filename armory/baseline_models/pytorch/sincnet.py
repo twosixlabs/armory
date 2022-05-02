@@ -4,7 +4,6 @@ CNN model for raw audio classification
 Model contributed by: MITRE Corporation
 Adapted from: https://github.com/mravanelli/SincNet
 """
-import logging
 from typing import Optional
 
 from art.estimators.classification import PyTorchClassifier
@@ -12,13 +11,13 @@ import numpy as np
 import torch
 from torch import nn
 
+from armory.utils.external_repo import ExternalRepoImport
 
-# Load model from MITRE external repo: https://github.com/hkakitani/SincNet
-# This needs to be defined in your config's `external_github_repo` field to be
-# downloaded and placed on the PYTHONPATH
-from SincNet import dnn_models
-
-logger = logging.getLogger(__name__)
+with ExternalRepoImport(
+    repo="hkakitani/SincNet",
+    experiment="librispeech_baseline_sincnet.json",
+):
+    from SincNet import dnn_models
 
 # NOTE: Underlying dataset sample rate is 16 kHz. SincNet uses this SAMPLE_RATE to
 # determine internal filter high cutoff frequency.

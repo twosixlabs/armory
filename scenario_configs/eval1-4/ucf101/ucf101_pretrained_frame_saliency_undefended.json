@@ -1,0 +1,74 @@
+{
+    "_description": "UCF101 video classification from pretrained, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "frame_index": 1,
+            "inner_config": {
+                "kwargs": {
+                    "batch_size": 1,
+                    "eps": 0.015,
+                    "eps_step": 0.001,
+                    "max_iter": 100,
+                    "targeted": false,
+                    "verbose": false
+                },
+                "module": "art.attacks.evasion",
+                "name": "ProjectedGradientDescent"
+            },
+            "method": "iterative_saliency",
+            "verbose": false
+        },
+        "module": "armory.art_experimental.attacks.frame",
+        "name": "get_frame_saliency",
+        "use_label": true
+    },
+    "dataset": {
+        "batch_size": 1,
+        "framework": "numpy",
+        "max_frames": 512,
+        "module": "armory.data.datasets",
+        "name": "ucf101"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": [
+            "l0",
+            "linf"
+        ],
+        "record_metric_per_sample": false,
+        "task": [
+            "categorical_accuracy",
+            "top_5_categorical_accuracy"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {
+            "nb_epochs": 10
+        },
+        "model_kwargs": {
+            "model_status": "ucf101_trained"
+        },
+        "module": "armory.baseline_models.pytorch.ucf101_mars",
+        "name": "get_art_model",
+        "weights_file": "mars_ucf101_v1.pth",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.video_ucf101_scenario",
+        "name": "Ucf101"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": "yusong-tan/MARS",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

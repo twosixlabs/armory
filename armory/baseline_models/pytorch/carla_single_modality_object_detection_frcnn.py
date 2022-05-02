@@ -1,14 +1,11 @@
 """
 PyTorch Faster-RCNN Resnet50-FPN object detection model
 """
-import logging
 from typing import Optional
 
 from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 from torchvision import models
-
-logger = logging.getLogger(__name__)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -36,6 +33,9 @@ def get_art_model(
         model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchFasterRCNN(
-        model, clip_values=(0.0, 1.0), channels_first=False, **wrapper_kwargs,
+        model,
+        clip_values=(0.0, 1.0),
+        channels_first=False,
+        **wrapper_kwargs,
     )
     return wrapped_model

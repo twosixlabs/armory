@@ -12,12 +12,18 @@ from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Lambda
 
+tf.compat.v1.disable_eager_execution()
+
 num_classes = 45
 
 
 def mean_std():
     resisc_mean = np.array(
-        [0.36386173189316956, 0.38118692953271804, 0.33867067558870334,]
+        [
+            0.36386173189316956,
+            0.38118692953271804,
+            0.33867067558870334,
+        ]
     )
 
     resisc_std = np.array([0.20350874, 0.18531173, 0.18472934])

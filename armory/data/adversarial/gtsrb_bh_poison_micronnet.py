@@ -40,10 +40,16 @@ class GtsrbBhPoisonMicronnet(tfds.core.GeneratorBasedBuilder):
         test_path = dl_manager.download(_TEST_URL)
         return [
             tfds.core.SplitGenerator(
-                name="poison", gen_kwargs={"data_dir_path": dl_path,},
+                name="poison",
+                gen_kwargs={
+                    "data_dir_path": dl_path,
+                },
             ),
             tfds.core.SplitGenerator(
-                name="poison_test", gen_kwargs={"data_dir_path": test_path,},
+                name="poison_test",
+                gen_kwargs={
+                    "data_dir_path": test_path,
+                },
             ),
         ]
 

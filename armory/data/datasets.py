@@ -8,23 +8,17 @@ data is found at '<dataset_dir>/cifar10'
 The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 """
 
-import logging
 import json
 import os
 import re
 from typing import Callable, Union, Tuple, List
 
 import numpy as np
+from armory.logs import log
+from PIL import ImageOps, Image
 
-# import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
-#     all CPU resources when num_workers > 1
-try:
-    import torch  # noqa: F401
-except ImportError:
-    pass
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import apache_beam as beam
 from art.data_generators import DataGenerator
 
 from armory.data.utils import (
@@ -45,8 +39,6 @@ from armory.data.carla_object_detection import carla_obj_det_train as codt  # no
 
 
 os.environ["KMP_WARNINGS"] = "0"
-
-logger = logging.getLogger(__name__)
 
 CHECKSUMS_DIR = os.path.join(os.path.dirname(__file__), "url_checksums")
 tfds.download.add_checksums_dir(CHECKSUMS_DIR)
@@ -278,7 +270,7 @@ def filter_by_index(dataset: "tf.data.Dataset", index: list, dataset_size: int):
 
     returns the dataset and the indexed size
     """
-    logger.info(f"Filtering dataset to the following indices: {index}")
+    log.info(f"Filtering dataset to the following indices: {index}")
     dataset_size = int(dataset_size)
     sorted_index = sorted([int(x) for x in set(index)])
     if len(sorted_index) == 0:
@@ -307,7 +299,7 @@ def filter_by_class(dataset: "tf.data.Dataset", class_ids: Union[list, int]):
 
     returns the dataset filtered by class id, keeping elements with label in class_ids
     """
-    logger.info(f"Filtering dataset to the following class IDs: {class_ids}")
+    log.info(f"Filtering dataset to the following class IDs: {class_ids}")
     if len(class_ids) == 0:
         raise ValueError(
             "The specified dataset 'class_ids' param must have at least one value"
@@ -409,10 +401,9 @@ def _generator_from_tfds(
 
     if cache_dataset:
         _cache_dataset(
-            dataset_dir, dataset_name=dataset_name,
+            dataset_dir,
+            dataset_name=dataset_name,
         )
-
-    default_graph = tf.compat.v1.keras.backend.get_session().graph
 
     if not isinstance(split, str):
         raise ValueError(f"split must be str, not {type(split)}")
@@ -427,13 +418,15 @@ def _generator_from_tfds(
             download_and_prepare_kwargs=download_and_prepare_kwargs,
             shuffle_files=shuffle_files,
         )
-    except AssertionError as e:
-        if not str(e).startswith("Unrecognized instruction format: "):
+    except (AssertionError, ValueError) as e:
+        if not str(e).startswith(
+            "Unrecognized instruction format: "
+        ) and "Unrecognized split format: " not in str(e):
             raise
-        logger.warning(f"Caught AssertionError in TFDS load split argument: {e}")
-        logger.warning(f"Attempting to parse split {split}")
+        log.warning(f"Caught AssertionError in TFDS load split argument: {e}")
+        log.warning(f"Attempting to parse split {split}")
         split = parse_split_index(split)
-        logger.warning(f"Replacing split with {split}")
+        log.warning(f"Replacing split with {split}")
         ds, ds_info = tfds.load(
             dataset_name,
             split=split,
@@ -486,7 +479,7 @@ def _generator_from_tfds(
     # Add class-based filtering
     if class_ids is not None:
         if split == "train":
-            logger.warning(
+            log.warning(
                 "Filtering by class entails iterating over the whole dataset and thus "
                 "can be very slow if using the 'train' split"
             )
@@ -524,9 +517,9 @@ def _generator_from_tfds(
         )
 
     if framework == "numpy":
-        ds = tfds.as_numpy(ds, graph=default_graph)
+        ds = tfds.as_numpy(ds)
         generator = ArmoryDataGenerator(
-            ds,
+            iter(ds),
             size=dataset_size,
             batch_size=batch_size,
             epochs=epochs,
@@ -541,10 +534,9 @@ def _generator_from_tfds(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = _get_pytorch_dataset(ds)
-        generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
-        )
+        from armory.data import pytorch_loader
+
+        generator = pytorch_loader.get_pytorch_data_loader(ds)
 
     else:
         raise ValueError(
@@ -674,8 +666,8 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_single_modal_context = ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(960, 1280, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -691,7 +683,26 @@ def cifar100_canonical_preprocessing(batch):
 
 
 def gtsrb_canonical_preprocessing(batch):
-    return canonical_variable_image_preprocess(gtsrb_context, batch)
+    img_size = 48
+    img_out = []
+    quantization = 255.0
+    for im in batch:
+        img_eq = ImageOps.equalize(Image.fromarray(im))
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width // 2, height // 2
+
+        left = center[0] - min_side // 2
+        top = center[1] - min_side // 2
+        right = center[0] + min_side // 2
+        bottom = center[1] + min_side // 2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
 
 
 def resisc45_canonical_preprocessing(batch):
@@ -731,11 +742,11 @@ class AudioContext:
     def __init__(self, x_shape, sample_rate, input_type=np.int64):
         self.x_shape = x_shape
         self.input_type = input_type
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
+        self.input_min = -(2**15)
+        self.input_max = 2**15 - 1
 
         self.sample_rate = 16000
-        self.quantization = 2 ** 15
+        self.quantization = 2**15
         self.output_type = np.float32
         self.output_min = -1.0
         self.output_max = 1.0
@@ -841,7 +852,7 @@ def carla_obj_det_label_preprocessing(x, y):
     for i, label_dict in enumerate(y):
         orig_boxes = label_dict["boxes"].reshape((-1, 4))
         converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
-        height, width = x[i].shape[1:3]  # shape is (2, 600, 800, 3)
+        height, width = x[i].shape[1:3]
         converted_boxes *= [width, height, width, height]
         label_dict["boxes"] = converted_boxes
         label_dict["labels"] = label_dict["labels"].reshape((-1,))
@@ -901,7 +912,7 @@ def carla_obj_det_train(
     )
 
     return _generator_from_tfds(
-        "carla_obj_det_train:1.0.1",
+        "carla_obj_det_train:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1036,6 +1047,7 @@ def imagenette(
     Smaller subset of 10 classes of Imagenet
         https://github.com/fastai/imagenette
     """
+    # TODO Find out why this is in some of the functions but not others (e.g. see german_traffic_sign)
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1084,6 +1096,22 @@ def german_traffic_sign(
     )
 
 
+def _get_librispeech_download_and_prepare_kwargs():
+    try:
+        import apache_beam as beam
+
+        dl_config = tfds.download.DownloadConfig(
+            beam_options=beam.options.pipeline_options.PipelineOptions(flags=[])
+        )
+        return {"download_config": dl_config}
+    except ImportError as e:
+        log.warning(
+            f"Unable to import apache_beam:\n{e}\n"
+            "If building librispeech dataset from source, apache_beam must be installed"
+        )
+        return None
+
+
 def librispeech_dev_clean(
     split: str = "train",
     epochs: int = 1,
@@ -1105,11 +1133,7 @@ def librispeech_dev_clean(
     returns:
         Generator
     """
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
-
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1119,7 +1143,7 @@ def librispeech_dev_clean(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1145,6 +1169,7 @@ def librispeech_full(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_full dataset"
         )
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1154,6 +1179,7 @@ def librispeech_full(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1179,11 +1205,8 @@ def librispeech(
         raise ValueError(
             "Filtering by class is not supported for the librispeech dataset"
         )
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
 
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     CACHED_SPLITS = ("dev_clean", "dev_other", "test_clean", "train_clean100")
@@ -1197,14 +1220,25 @@ def librispeech(
                 f"To use train_clean360 or train_other500 must use librispeech_full dataset."
             )
 
+    # TODO: make less hacky by updating dataset to librispeech 2.1.0
+    # Begin Hack
+    # make symlink to ~/.armory/datasets/librispeech/plain_text/1.1.0 from ~/.armory/datasets/librispeech/2.1.0 (required for TFDS v4)
+    base = os.path.join(paths.runtime_paths().dataset_dir, "librispeech")
+    os.makedirs(base, exist_ok=True)
+    src = os.path.join(base, "plain_text", "1.1.0")
+    dst = os.path.join(base, "2.1.0")
+    if not os.path.exists(dst):
+        os.symlink(src, dst)
+    # End Hack
+
     return _generator_from_tfds(
-        "librispeech/plain_text:1.1.0",
+        "librispeech:2.1.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         variable_length=bool(batch_size > 1),
         cache_dataset=cache_dataset,
         framework=framework,
@@ -1239,11 +1273,8 @@ def librispeech_dev_clean_asr(
         raise ValueError(
             "Filtering by class is not supported for the librispeech_dev_clean_asr dataset"
         )
-    flags = []
-    dl_config = tfds.download.DownloadConfig(
-        beam_options=beam.options.pipeline_options.PipelineOptions(flags=flags)
-    )
 
+    download_and_prepare_kwargs = _get_librispeech_download_and_prepare_kwargs()
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
@@ -1253,7 +1284,7 @@ def librispeech_dev_clean_asr(
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        download_and_prepare_kwargs={"download_config": dl_config},
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
         as_supervised=False,
         supervised_xy_keys=("speech", "text"),
         variable_length=bool(batch_size > 1),
@@ -1350,6 +1381,27 @@ def resisc10(
     )
 
 
+class ClipFrames:
+    """
+    Clip Video Frames
+        Assumes first two dims are (batch, frames, ...)
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, batch):
+        if batch.dtype == np.object:
+            clipped_batch = np.empty_like(batch, dtype=np.object)
+            clipped_batch[:] = [x[: self.max_frames] for x in batch]
+            return clipped_batch
+        else:
+            return batch[:, : self.max_frames]
+
+
 def ucf101(
     split: str = "train",
     epochs: int = 1,
@@ -1360,13 +1412,21 @@ def ucf101(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    max_frames: int = None,
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
     UCF 101 Action Recognition Dataset
         https://www.crcv.ucf.edu/data/UCF101.php
+
+    max_frames, if it exists, will clip the inputs to a set number of frames
     """
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    if max_frames:
+        clip = ClipFrames(max_frames)
+    else:
+        clip = None
+
+    preprocessing_fn = preprocessing_chain(clip, preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "ucf101/ucf101_1:2.0.0",
@@ -1585,7 +1645,9 @@ def coco_label_preprocessing(x, y):
     for label_dict in y:
         label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
         label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
-            label_dict.pop("label").reshape(-1,)
+            label_dict.pop("label").reshape(
+                -1,
+            )
         )
     return y
 
@@ -1723,7 +1785,9 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
 
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
-            dataset_dir=dataset_dir, checksum_file=name + ".txt", name=name,
+            dataset_dir=dataset_dir,
+            checksum_file=name + ".txt",
+            name=name,
         )
 
 
@@ -1744,6 +1808,13 @@ def _parse_dataset_name(dataset_name: str):
         )
     return name, subpath
 
+
+# TODO Move to something like this
+"""
+SUPPORTED_DATASETS = ['mnist','cifar10'...]
+def generator(name, **kwargs):
+    return getattr(dataset, name)(itertools.partial(**kwargs))
+"""
 
 SUPPORTED_DATASETS = {
     "mnist": mnist,
@@ -1767,11 +1838,11 @@ def download_all(download_config, scenario):
     """
 
     def _print_scenario_names():
-        logger.info(
+        log.info(
             f"The following scenarios are available based upon config file {download_config}:"
         )
         for scenario in config["scenario"].keys():
-            logger.info(scenario)
+            log.info(scenario)
 
     config = _read_validate_scenario_config(download_config)
     if scenario == "all":
@@ -1782,7 +1853,7 @@ def download_all(download_config, scenario):
         _print_scenario_names()
     else:
         if scenario not in config["scenario"].keys():
-            logger.info(f"The scenario name {scenario} is not valid.")
+            log.info(f"The scenario name {scenario} is not valid.")
             _print_scenario_names()
             raise ValueError("Invalid scenario name.")
 
@@ -1801,18 +1872,10 @@ def _download_data(dataset_name):
 
     func = SUPPORTED_DATASETS[dataset_name]
 
-    logger.info(f"Downloading (if necessary) dataset {dataset_name}...")
+    log.info(f"Downloading (if necessary) dataset {dataset_name}...")
 
     try:
         func()
-        logger.info(f"Successfully downloaded dataset {dataset_name}.")
+        log.info(f"Successfully downloaded dataset {dataset_name}.")
     except Exception:
-        logger.exception(f"Loading dataset {dataset_name} failed.")
-
-
-def _get_pytorch_dataset(ds):
-    import armory.data.pytorch_loader as ptl
-
-    ds = ptl.TFToTorchGenerator(ds)
-
-    return ds
+        log.exception(f"Loading dataset {dataset_name} failed.")

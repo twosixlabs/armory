@@ -6,21 +6,253 @@ Outputs are lists of python variables amenable to JSON serialization:
     numpy data types and tensors generally fail to serialize
 """
 
-import logging
 import numpy as np
 import time
 from contextlib import contextmanager
 import io
 from collections import defaultdict, Counter
+import os
+from typing import Dict, List
 
 import cProfile
 import pstats
+from scipy import stats
 
-from armory.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-from armory.data.adversarial.apricot_metadata import APRICOT_PATCHES
+from armory import paths
+from armory.data.adversarial.apricot_metadata import (
+    ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+    APRICOT_PATCHES,
+)
+from armory.logs import log
+from armory.utils.external_repo import ExternalPipInstalledImport
+
+_ENTAILMENT_MODEL = None
 
 
-logger = logging.getLogger(__name__)
+class Entailment:
+    """
+    Entailment measures the relationship between the premise y and hypothesis y_pred
+    It can be categorized as three values:
+        0 - "contradiction" - the hypothesis contradicts the premise
+        1 - "neutral" - the hypothesis is logically unrelated to the premise
+        2 - "entailment" - the hypothesis follows from the premise
+
+    See: https://towardsdatascience.com/fine-tuning-pre-trained-transformer-models-for-sentence-entailment-d87caf9ec9db
+    """
+
+    def __init__(self, model_name="roberta-large-mnli", cache_dir=None):
+        # Don't generate multiple entailment models
+        global _ENTAILMENT_MODEL
+        if _ENTAILMENT_MODEL is not None:
+            if model_name == _ENTAILMENT_MODEL[0]:
+                log.info(f"Using existing entailment model {model_name} for metric")
+                self.tokenizer, self.model, self.label_mapping = _ENTAILMENT_MODEL[2:]
+                return
+            else:
+                log.warning(
+                    f"Creating new entailment model {model_name} though {_ENTAILMENT_MODEL[0]} exists"
+                )
+
+        if cache_dir is None:
+            cache_dir = os.path.join(
+                paths.runtime_paths().saved_model_dir, "huggingface"
+            )
+
+        with ExternalPipInstalledImport(
+            package="transformers",
+            dockerimage="twosixarmory/pytorch-deepspeech",
+        ):
+            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, cache_dir=cache_dir
+        )
+        self.model.eval()
+        self.label_mapping = ["contradiction", "neutral", "entailment"]
+        _ENTAILMENT_MODEL = (
+            model_name,
+            cache_dir,
+            self.tokenizer,
+            self.model,
+            self.label_mapping,
+        )
+
+    def __call__(self, y, y_pred):
+        import torch
+
+        # In Armory, y is stored as byte strings, and y_pred is stored as strings
+        y = np.array(
+            [y_i.decode("utf-8") if isinstance(y_i, bytes) else y_i for y_i in y]
+        )
+        sentence_pairs = list(zip(y, y_pred))
+        features = self.tokenizer(
+            sentence_pairs, padding=True, truncation=True, return_tensors="pt"
+        )
+        with torch.no_grad():
+            scores = self.model(**features).logits
+            labels = [self.label_mapping[i] for i in scores.argmax(dim=1)]
+
+        return labels  # return list of labels, not (0, 1, 2)
+
+
+def total_entailment(sample_results):
+    """
+    Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
+        Return a dictionary of counts for each label
+    """
+    entailment_map = ["contradiction", "neutral", "entailment"]
+    for i in range(len(sample_results)):
+        sample = sample_results[i]
+        if sample in (0, 1, 2):
+            log.warning("Entailment outputs are (0, 1, 2) ints, not strings, mapping")
+            sample_results[i] = entailment_map[sample]
+        elif sample not in entailment_map:
+            raise ValueError(f"result {sample} not a valid entailment label")
+
+    c = Counter()
+    c.update(sample_results)
+    c = dict(c)  # ensure JSON-able
+    for k in entailment_map:
+        if k not in c:
+            c[k] = 0
+    return c
+
+
+def total_wer(sample_wers):
+    """
+    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
+        Return global_wer, (total_edit_distance, total_words)
+    """
+    # checks if all values are tuples from the WER metric
+    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        total_edit_distance = 0
+        total_words = 0
+        for wer_tuple in sample_wers:
+            total_edit_distance += int(wer_tuple[0])
+            total_words += int(wer_tuple[1])
+        if total_words:
+            global_wer = float(total_edit_distance / total_words)
+        else:
+            global_wer = float("nan")
+        return global_wer, (total_edit_distance, total_words)
+    else:
+        raise ValueError("total_wer() only for WER metric aggregation")
+
+
+def identity_unzip(*args):
+    """
+    Map batchwise args to a list of sample-wise args
+    """
+    return list(zip(*args))
+
+
+def identity_zip(sample_arg_tuples):
+    args = [list(x) for x in zip(*sample_arg_tuples)]
+    return args
+
+
+# NOTE: Not registered as a metric due to arg in __init__
+class MeanAP:
+    def __init__(self, ap_metric):
+        self.ap_metric = ap_metric
+
+    def __call__(self, values, **kwargs):
+        args = [list(x) for x in zip(*values)]
+        ap = self.ap_metric(*args, **kwargs)
+        mean_ap = np.fromiter(ap.values(), dtype=float).mean()
+        return {"mean": mean_ap, "class": ap}
+
+
+def tpr_fpr(actual_conditions, predicted_conditions):
+    """
+    actual_conditions and predicted_conditions should be equal length boolean np arrays
+
+    Returns a dict containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, F1 Score
+    """
+    actual_conditions, predicted_conditions = [
+        np.asarray(x, dtype=np.bool) for x in (actual_conditions, predicted_conditions)
+    ]
+    if actual_conditions.shape != predicted_conditions.shape:
+        raise ValueError(
+            f"inputs must have equal shape. {actual_conditions.shape} != {predicted_conditions.shape}"
+        )
+    if actual_conditions.ndim != 1:
+        raise ValueError(f"inputs must be 1-dimensional, not {actual_conditions.ndim}")
+
+    true_positives = int(np.sum(predicted_conditions & actual_conditions))
+    true_negatives = int(np.sum(~predicted_conditions & ~actual_conditions))
+    false_positives = int(np.sum(predicted_conditions & ~actual_conditions))
+    false_negatives = int(np.sum(~predicted_conditions & actual_conditions))
+
+    actual_positives = true_positives + false_negatives
+    if actual_positives > 0:
+        true_positive_rate = true_positives / actual_positives
+        false_negative_rate = false_negatives / actual_positives
+    else:
+        true_positive_rate = false_negative_rate = float("nan")
+
+    actual_negatives = true_negatives + false_positives
+    if actual_negatives > 0:
+        false_positive_rate = false_positives / actual_negatives
+        true_negative_rate = true_negatives / actual_negatives
+    else:
+        false_positive_rate = true_negative_rate = float("nan")
+
+    if true_positives or false_positives or false_negatives:
+        f1_score = true_positives / (
+            true_positives + 0.5 * (false_positives + false_negatives)
+        )
+    else:
+        f1_score = float("nan")
+
+    return dict(
+        true_positives=true_positives,
+        true_negatives=true_negatives,
+        false_positives=false_positives,
+        false_negatives=false_negatives,
+        true_positive_rate=true_positive_rate,
+        false_positive_rate=false_positive_rate,
+        false_negative_rate=false_negative_rate,
+        true_negative_rate=true_negative_rate,
+        f1_score=f1_score,
+    )
+
+
+def per_class_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    y, y_pred = (np.asarray(i) for i in (y, y_pred))
+    if y.ndim != 1:
+        raise ValueError("y should be a list of classes")
+    if y.ndim + 1 != y_pred.ndim:
+        raise ValueError("y_pred should be a matrix of probabilities")
+
+    results = {}
+    for i in range(y_pred.shape[1]):
+        if i in y:
+            index = y == i
+            results[i] = categorical_accuracy(y[index], y_pred[index])
+        else:
+            results[i] = float("nan")
+
+    return results
+
+
+def per_class_mean_accuracy(y, y_pred):
+    """
+    Return a dict mapping class indices to their mean accuracies
+        Returns nan for classes that are not present
+
+    y - 1-dimensional array
+    y_pred - 2-dimensional array
+    """
+    return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
 
 
 def abstains(y, y_pred):
@@ -34,6 +266,221 @@ def abstains(y, y_pred):
     if y_pred.ndim != 2:
         raise ValueError(f"y_pred {y_pred} is not 2-dimensional")
     return [int(x) for x in (y_pred == 0.0).all(axis=1)]
+
+
+def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
+
+    perform a chi-squared test to measure the association between
+    the A flags and B flags, returning a p-value.
+    """
+    try:
+        _, chi2_p_value, _, _ = stats.chi2_contingency(
+            contingency_table, correction=False
+        )
+    except ValueError:
+        chi2_p_value = np.nan
+    return [chi2_p_value]
+
+
+def compute_fisher_p_value(contingency_table: np.ndarray) -> List[float]:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
+
+    perform a Fisher exact test to measure the association between
+    the A flags and B flags, returning a p-value.
+    """
+    _, fisher_p_value = stats.fisher_exact(contingency_table, alternative="greater")
+    return [fisher_p_value]
+
+
+def compute_spd(contingency_table: np.ndarray) -> List[float]:
+    """
+    Given a 2-x-2 contingency table of the form
+
+                          not flagged by B   |     flagged by B
+                      ---------------------------------------------
+    not flagged by A |           a           |          b         |
+                     |---------------------------------------------
+        flagged by A |           c           |          d         |
+                      ---------------------------------------------
+
+    the Statistical Parity Difference computed by
+
+    SPD = b / (a + b) - d / (c + d)
+
+    is one measure of the impact being flagged by A has on being flagged by B.
+    """
+    numerators = contingency_table[:, 1]
+    denominators = contingency_table.sum(1)
+    numerators[denominators == 0] = 0  # Handle division by zero:
+    denominators[denominators == 0] = 1  # 0/0 => 0/1.
+    fractions = numerators / denominators
+    spd = fractions[0] - fractions[1]
+    return [spd]
+
+
+def make_contingency_tables(
+    y: np.ndarray, flagged_A: np.ndarray, flagged_B: np.ndarray
+) -> Dict[int, np.ndarray]:
+    """
+    Given a list of class labels and two arbitrary binary flags A and B,
+    for each class, produce the following 2-x-2 contingency table:
+
+                             not flagged by B   |     flagged by B
+                         ---------------------------------------------
+       not flagged by A |           a           |          b         |
+                        |---------------------------------------------
+           flagged by A |           c           |          d         |
+                         ---------------------------------------------
+
+    For example, flag A can be whether this example was classified correctly,
+    while flag B reports some other binary characteristic of the data.
+
+    Args:
+        y (np.ndarray): The true labels (not necessarily binary)
+        flagged_A (np.ndarray): The binary outputs of flag A
+        flagged_B (np.ndarray): The binary outputs of flag B
+
+    Returns:
+        A map (Dict[int, np.ndarray]) of the per-class contingency tables.
+    """
+
+    y = np.array(y).astype(np.int).flatten()
+    flagged_A = np.array(flagged_A).astype(np.bool_).flatten()
+    flagged_B = np.array(flagged_B).astype(np.bool_).flatten()
+
+    if len(flagged_A) != len(y) or len(flagged_B) != len(y):
+        raise ValueError(
+            f"Expected arrays y, flagged_A, and flagged_B of the same length: \
+            got {len(y)}, {len(flagged_A)}, and {len(flagged_B)}."
+        )
+
+    contingency_tables = {}
+    for class_id in np.unique(y):
+
+        items_flagged_A = flagged_A[y == class_id]
+        items_flagged_B = flagged_B[y == class_id]
+
+        a = (~items_flagged_A & ~items_flagged_B).sum()
+        b = (~items_flagged_A & items_flagged_B).sum()
+        c = (items_flagged_A & ~items_flagged_B).sum()
+        d = (items_flagged_A & items_flagged_B).sum()
+
+        table = np.array([[a, b], [c, d]])
+        contingency_tables[class_id] = table
+
+    return contingency_tables
+
+
+def filter_perplexity_fps_benign(
+    y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray
+) -> List[float]:
+    """
+    Measure one possible aspect of bias by seeing how closely the distribution of false
+    positives matches the distribution of unpoisoned data.  The intuition is that bias
+    depends not on how much of the poison the filter finds, but only what the filter does
+    to the rest of the data.  That is, if it removes clean data, it should do so in
+    proportion to class frequency, removing roughly the same fraction of each class.
+
+    In particular, we do not expect that _everything_ removed by the filter should match
+    the original class distribution, because we do not expect that the poison was applied
+    evenly to the whole dataset in the first place.
+
+    Args:
+        y_clean:            The class labels of the original dataset
+        poison_index:       The indices of elements in y_clean that were actually poisoned
+        poison_prediction:  What the filter thinks is poison.  1 for poison, 0 for clean
+
+    Returns:
+        Normalized perplexity from fps to benign, where fps is the class frequency distribution of false positives,
+        and benign is the class frequency distribution of the unpoisoned data
+
+    """
+
+    # convert poison_index to binary vector the same length as data
+    poison_inds = np.zeros_like(y_clean)
+    poison_inds[poison_index.astype(np.int64)] = 1
+    # benign is here defined to be the class distribution of the unpoisoned part of the data
+    x_benign = y_clean[poison_inds == 0]
+    x_benign = np.bincount(x_benign, minlength=max(y_clean))
+    x_benign = x_benign / x_benign.sum()
+    # fps is false positives: clean data marked as poison by the filter
+    fp_inds = (1 - poison_inds) & poison_prediction
+    fp_labels = y_clean[fp_inds == 1]
+    fps = np.bincount(fp_labels, minlength=max(y_clean))
+    if fps.sum() == 0:
+        return [1]  # If no FPs, we'll define perplexity to be 1 (unbiased)
+    fps = fps / fps.sum()
+
+    return perplexity(fps, x_benign)
+
+
+def perplexity(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
+    """
+    Return the normalized p-to-q perplexity.
+    """
+    kl_div_pq = kl_div(p, q, eps)[0]
+    perplexity_pq = np.exp(-kl_div_pq)
+    return [perplexity_pq]
+
+
+def kl_div(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
+    """
+    Return the Kullback-Leibler divergence from p to q.
+    """
+    cross_entropy_pq = _cross_entropy(p, q, eps)
+    entropy_p = _cross_entropy(p, p, eps)
+    kl_div_pq = cross_entropy_pq - entropy_p
+    return [kl_div_pq]
+
+
+def _cross_entropy(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
+    """
+    Return the cross entropy from a distribution p to a distribution q.
+    """
+    p = np.asarray(p)
+    q = np.asarray(q)
+    if p.ndim > 2 or q.ndim > 2:
+        raise ValueError(
+            f"Not obvious how to reshape arrays: got shapes {p.shape} and {q.shape}."
+        )
+    elif (p.ndim == 2 and p.shape[0] > 1) or (q.ndim == 2 and q.shape[0] > 1):
+        raise ValueError(
+            f"Expected 2-dimensional arrays to have shape (1, *): got shapes \
+             {p.shape} and {q.shape}."
+        )
+    p = p.reshape(-1)
+    q = q.reshape(-1)
+    if p.shape[0] != q.shape[0]:
+        raise ValueError(
+            f"Expected arrays of the same length: got lengths {len(p)} and {len(q)}."
+        )
+    if np.any(p < 0) or np.any(q < 0):
+        raise ValueError("Arrays must both be non-negative.")
+    if np.isclose(p.sum(), 0) or np.isclose(q.sum(), 0):
+        raise ValueError("Arrays must both be non-zero.")
+    if not np.isclose(p.sum(), 1):
+        p /= p.sum()
+    if not np.isclose(q.sum(), 1):
+        q /= q.sum()
+    cross_entropy_pq = (-p * np.log(q + eps)).sum()
+    return cross_entropy_pq
 
 
 def categorical_accuracy(y, y_pred):
@@ -278,7 +725,7 @@ def resource_context(name="Name", profiler=None, computational_resource_dict=Non
     if profiler is not None and profiler not in profiler_types:
         raise ValueError(f"Profiler {profiler} is not one of {profiler_types}.")
     if profiler == "Deterministic":
-        logger.warn(
+        log.warning(
             "Using Deterministic profiler. This may reduce timing accuracy and result in a large results file."
         )
         pr = cProfile.Profile()
@@ -335,7 +782,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     if len(img_shape) != 3:
         raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
     if (x_i == x_adv_i).mean() < 0.5:
-        logger.warning(
+        log.warning(
             f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
             "indices. image_circle_patch_area may not be accurate"
         )
@@ -346,7 +793,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
     # Determine which indices (along the spatial dimension) are perturbed
     pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
     if len(pert_spatial_indices) == 0:
-        logger.warning("x_i == x_adv_i. image_circle_patch_area is 0")
+        log.warning("x_i == x_adv_i. image_circle_patch_area is 0")
         return 0
 
     # Find which indices (preceding the patch's max index) are unperturbed, in order
@@ -363,7 +810,7 @@ def _image_circle_patch_diameter(x_i, x_adv_i):
 
     # If there are any perturbed indices outside the range of the patch just computed
     if min(pert_spatial_indices) < min_ind_of_patch:
-        logger.warning("Multiple regions of the image have been perturbed")
+        log.warning("Multiple regions of the image have been perturbed")
 
     diameter = max_ind_of_patch - min_ind_of_patch + 1
     spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
@@ -454,9 +901,7 @@ def _intersection_over_union(box_1, box_2):
     if all(i <= 1.0 for i in box_1[np.where(box_1 > 0)]) ^ all(
         i <= 1.0 for i in box_2[np.where(box_2 > 0)]
     ):
-        logger.warning(
-            "One set of boxes appears to be normalized while the other is not"
-        )
+        log.warning("One set of boxes appears to be normalized while the other is not")
 
     # Determine coordinates of intersection box
     x_left = max(box_1[1], box_2[1])
@@ -505,6 +950,47 @@ def video_tracking_mean_iou(y, y_pred):
         )
 
     return mean_ious
+
+
+def video_tracking_mean_success_rate(y, y_pred):
+    """
+    Mean success rate averaged over all thresholds in {0, 0.05, 0.1, ..., 1.0} and all frames.
+    This function expects to receive a single video's labels/prediction as input.
+
+    y (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    y_pred (List[Dict, ...]): list of length equal to number of examples. Each element
+                  is a dict with "boxes" key mapping to (num_frames, 4) numpy array
+    """
+    _check_video_tracking_input(y, y_pred)
+    if len(y_pred) > 1:
+        raise ValueError(f"y_pred expected to have length of 1, found {len(y_pred)}.")
+
+    thresholds = np.arange(0, 1.0, 0.05)
+    mean_success_rates = (
+        []
+    )  # initialize list that will have length num_videos, which currently is forced to be 1
+    for video_idx in range(len(y_pred)):
+        success = np.zeros(len(thresholds))
+
+        # Selecting first element since y_pred is forced to have length 1
+        y_pred_boxes = y_pred[video_idx]["boxes"]
+        y_boxes = y[video_idx]["boxes"]
+
+        num_frames = y_pred_boxes.shape[0]
+
+        # begin with 2nd frame to skip y_init in metric calculation
+        ious = [
+            _intersection_over_union(y_boxes[i], y_pred_boxes[i])
+            for i in range(1, num_frames)
+        ]
+        for thresh_idx in range(len(thresholds)):
+            success[thresh_idx] = np.sum(ious > thresholds[thresh_idx]) / float(
+                num_frames - 1
+            )  # subtract by 1 since we ignore first frame
+        mean_success_rates.append(success.mean())
+
+    return mean_success_rates
 
 
 def object_detection_AP_per_class(
@@ -1430,6 +1916,14 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 SUPPORTED_METRICS = {
+    "entailment": Entailment,
+    "total_entailment": total_entailment,
+    "total_wer": total_wer,
+    "identity_unzip": identity_unzip,
+    "identity_zip": identity_zip,
+    "tpr_fpr": tpr_fpr,
+    "per_class_accuracy": per_class_accuracy,
+    "per_class_mean_accuracy": per_class_mean_accuracy,
     "dapricot_patch_target_success": dapricot_patch_target_success,
     "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
     "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
@@ -1443,6 +1937,7 @@ SUPPORTED_METRICS = {
     "lp": lp,
     "linf": linf,
     "video_tracking_mean_iou": video_tracking_mean_iou,
+    "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
     "snr": snr,
     "snr_db": snr_db,
     "snr_spectrogram": snr_spectrogram,
@@ -1462,17 +1957,19 @@ SUPPORTED_METRICS = {
     "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
     "carla_od_misclassification_rate": carla_od_misclassification_rate,
     "carla_od_true_positive_rate": carla_od_true_positive_rate,
+    "kl_div": kl_div,
+    "perplexity": perplexity,
+    "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
+    "poison_chi2_p_value": compute_chi2_p_value,
+    "poison_fisher_p_value": compute_fisher_p_value,
+    "poison_spd": compute_spd,
 }
 
 # Image-based metrics applied to video
 
 
 def video_metric(metric, frame_average="mean"):
-    mapping = {
-        "mean": np.mean,
-        "max": np.max,
-        "min": np.min,
-    }
+    mapping = {"mean": np.mean, "max": np.max, "min": np.min}
     if frame_average not in mapping:
         raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
     frame_average_func = mapping[frame_average]
@@ -1497,317 +1994,13 @@ for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
         SUPPORTED_METRICS[new_metric_name] = new_metric
 
 
-class MetricList:
-    """
-    Keeps track of all results from a single metric
-    """
-
-    def __init__(self, name, function=None):
-        if function is None:
-            try:
-                self.function = SUPPORTED_METRICS[name]
-            except KeyError:
-                raise KeyError(f"{name} is not part of armory.utils.metrics")
-        elif callable(function):
-            self.function = function
-        else:
-            raise ValueError(f"function must be callable or None, not {function}")
-        self.name = name
-        self._values = []
-        self._input_labels = []
-        self._input_preds = []
-
-    def clear(self):
-        self._values.clear()
-
-    def add_results(self, *args, **kwargs):
-        value = self.function(*args, **kwargs)
-        self._values.extend(value)
-
-    def __iter__(self):
-        return self._values.__iter__()
-
-    def __len__(self):
-        return len(self._values)
-
-    def values(self):
-        return list(self._values)
-
-    def mean(self):
-        if not self._values:
-            return float("nan")
-        return sum(float(x) for x in self._values) / len(self._values)
-
-    def append_input_label(self, label):
-        self._input_labels.extend(label)
-
-    def append_input_pred(self, pred):
-        self._input_preds.extend(pred)
-
-    def total_wer(self):
-        # checks if all values are tuples from the WER metric
-        if all(isinstance(wer_tuple, tuple) for wer_tuple in self._values):
-            total_edit_distance = 0
-            total_words = 0
-            for wer_tuple in self._values:
-                total_edit_distance += wer_tuple[0]
-                total_words += wer_tuple[1]
-            return float(total_edit_distance / total_words)
-        else:
-            raise ValueError("total_wer() only for WER metric")
-
-    def compute_non_elementwise_metric(self, **kwargs):
-        return self.function(self._input_labels, self._input_preds, **kwargs)
-
-
-class MetricsLogger:
-    """
-    Uses the set of task and perturbation metrics given to it.
-    """
-
-    def __init__(
-        self,
-        task=None,
-        perturbation=None,
-        means=True,
-        record_metric_per_sample=False,
-        profiler_type=None,
-        computational_resource_dict=None,
-        skip_benign=None,
-        skip_attack=None,
-        targeted=False,
-        task_kwargs=None,
-        **kwargs,
-    ):
-        """
-        task - single metric or list of metrics
-        perturbation - single metric or list of metrics
-        means - whether to return the mean value for each metric
-        record_metric_per_sample - whether to return metric values for each sample
-        """
-        self.tasks = [] if skip_benign else self._generate_counters(task)
-        self.adversarial_tasks = [] if skip_attack else self._generate_counters(task)
-        self.targeted_tasks = (
-            self._generate_counters(task) if targeted and not skip_attack else []
-        )
-        self.perturbations = (
-            [] if skip_attack else self._generate_counters(perturbation)
-        )
-        self.means = bool(means)
-        self.full = bool(record_metric_per_sample)
-        self.computational_resource_dict = {}
-        if not self.means and not self.full:
-            logger.warning(
-                "No per-sample metric results will be produced. "
-                "To change this, set 'means' or 'record_metric_per_sample' to True."
-            )
-        if (
-            not self.tasks
-            and not self.perturbations
-            and not self.adversarial_tasks
-            and not self.targeted_tasks
-        ):
-            logger.warning(
-                "No metric results will be produced. "
-                "To change this, set one or more 'task' or 'perturbation' metrics"
-            )
-        # the following metrics must be computed at once after all predictions have been obtained
-        self.non_elementwise_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-        self.mean_ap_metrics = [
-            "object_detection_AP_per_class",
-            "apricot_patch_targeted_AP_per_class",
-            "dapricot_patch_targeted_AP_per_class",
-            "carla_od_AP_per_class",
-        ]
-
-        self.task_kwargs = task_kwargs
-        if task_kwargs:
-            if not isinstance(task_kwargs, list):
-                raise TypeError(
-                    f"task_kwargs should be of type list, found {type(task_kwargs)}"
-                )
-            if len(task_kwargs) != len(task):
-                raise ValueError(
-                    f"task is of length {len(task)} but task_kwargs is of length {len(task_kwargs)}"
-                )
-
-        # This designation only affects logging formatting
-        self.quantity_metrics = [
-            "object_detection_hallucinations_per_image",
-            "carla_od_hallucinations_per_image",
-        ]
-
-    def _generate_counters(self, names):
-        if names is None:
-            names = []
-        elif isinstance(names, str):
-            names = [names]
-        elif not isinstance(names, list):
-            raise ValueError(
-                f"{names} must be one of (None, str, list), not {type(names)}"
-            )
-        return [MetricList(x) for x in names]
-
-    @classmethod
-    def from_config(cls, config, skip_benign=None, skip_attack=None, targeted=None):
-        if skip_benign:
-            config["skip_benign"] = skip_benign
-        if skip_attack:
-            config["skip_attack"] = skip_attack
-        return cls(**config, targeted=targeted)
-
-    def clear(self):
-        for metric in self.tasks + self.adversarial_tasks + self.perturbations:
-            metric.clear()
-
-    def update_task(self, y, y_pred, adversarial=False, targeted=False):
-        if targeted and not adversarial:
-            raise ValueError("benign task cannot be targeted")
-        tasks = (
-            self.targeted_tasks
-            if targeted
-            else self.adversarial_tasks
-            if adversarial
-            else self.tasks
-        )
-        for task_idx, metric in enumerate(tasks):
-            if metric.name in self.non_elementwise_metrics:
-                metric.append_input_label(y)
-                metric.append_input_pred(y_pred)
-            else:
-                if self.task_kwargs:
-                    metric.add_results(y, y_pred, **self.task_kwargs[task_idx])
-                else:
-                    metric.add_results(y, y_pred)
-
-    def update_perturbation(self, x, x_adv):
-        for metric in self.perturbations:
-            metric.add_results(x, x_adv)
-
-    def log_task(self, adversarial=False, targeted=False, used_preds_as_labels=False):
-        if used_preds_as_labels and not adversarial:
-            raise ValueError("benign task shouldn't use benign predictions as labels")
-        if used_preds_as_labels and targeted:
-            raise ValueError("targeted task shouldn't use benign predictions as labels")
-        if targeted:
-            if adversarial:
-                metrics = self.targeted_tasks
-                wrt = "target"
-                task_type = "adversarial"
-            else:
-                raise ValueError("benign task cannot be targeted")
-        elif adversarial:
-            metrics = self.adversarial_tasks
-            if used_preds_as_labels:
-                wrt = "benign predictions as"
-            else:
-                wrt = "ground truth"
-            task_type = "adversarial"
-        else:
-            metrics = self.tasks
-            wrt = "ground truth"
-            task_type = "benign"
-
-        for task_idx, metric in enumerate(metrics):
-            # Do not calculate mean WER, calcuate total WER
-            if metric.name == "word_error_rate":
-                logger.info(
-                    f"Word error rate on {task_type} examples relative to {wrt} labels: "
-                    f"{metric.total_wer():.2%}"
-                )
-            elif metric.name in self.non_elementwise_metrics:
-                if self.task_kwargs:
-                    metric_result = metric.compute_non_elementwise_metric(
-                        **self.task_kwargs[task_idx]
-                    )
-                else:
-                    metric_result = metric.compute_non_elementwise_metric()
-                logger.info(
-                    f"{metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric_result}"
-                )
-                if metric.name in self.mean_ap_metrics:
-                    logger.info(
-                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
-                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
-                    )
-            elif metric.name in self.quantity_metrics:
-                # Don't include % symbol
-                logger.info(
-                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric.mean():.2}"
-                )
-                if metric.name in self.mean_ap_metrics:
-                    logger.info(
-                        f"mean {metric.name} on {task_type} examples relative to {wrt} labels "
-                        f"{np.fromiter(metric_result.values(), dtype=float).mean():.2%}."
-                    )
-            else:
-                logger.info(
-                    f"Average {metric.name} on {task_type} test examples relative to {wrt} labels: "
-                    f"{metric.mean():.2%}"
-                )
-
-    def results(self):
-        """
-        Return dict of results
-        """
-        results = {}
-        for metrics, prefix in [
-            (self.tasks, "benign"),
-            (self.adversarial_tasks, "adversarial"),
-            (self.targeted_tasks, "targeted"),
-            (self.perturbations, "perturbation"),
-        ]:
-            for task_idx, metric in enumerate(metrics):
-                if metric.name in self.non_elementwise_metrics:
-                    if self.task_kwargs:
-                        metric_result = metric.compute_non_elementwise_metric(
-                            **self.task_kwargs[task_idx]
-                        )
-                    else:
-                        metric_result = metric.compute_non_elementwise_metric()
-                    results[f"{prefix}_{metric.name}"] = metric_result
-                    if metric.name in self.mean_ap_metrics:
-                        results[f"{prefix}_mean_{metric.name}"] = np.fromiter(
-                            metric_result.values(), dtype=float
-                        ).mean()
-                    continue
-
-                if self.full:
-                    results[f"{prefix}_{metric.name}"] = metric.values()
-                if self.means:
-                    try:
-                        results[f"{prefix}_mean_{metric.name}"] = metric.mean()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate mean in {prefix}_{metric.name}"
-                        )
-                if metric.name == "word_error_rate":
-                    try:
-                        results[f"{prefix}_total_{metric.name}"] = metric.total_wer()
-                    except ZeroDivisionError:
-                        raise ZeroDivisionError(
-                            f"No values to calculate WER in {prefix}_{metric.name}"
-                        )
-
-        for name in self.computational_resource_dict:
-            entry = self.computational_resource_dict[name]
-            if "execution_count" not in entry or "total_time" not in entry:
-                raise ValueError(
-                    "Computational resource dictionary entry corrupted, missing data."
-                )
-            total_time = entry["total_time"]
-            execution_count = entry["execution_count"]
-            average_time = total_time / execution_count
-            results[
-                f"Avg. CPU time (s) for {execution_count} executions of {name}"
-            ] = average_time
-            if "stats" in entry:
-                results[f"{name} profiler stats"] = entry["stats"]
-        return results
+def get_supported_metric(name):
+    try:
+        function = SUPPORTED_METRICS[name]
+    except KeyError:
+        raise KeyError(f"{name} is not part of armory.utils.metrics")
+    if isinstance(function, type) and issubclass(function, object):
+        # If a class is given, instantiate it
+        function = function()
+    assert callable(function), f"function {name} is not callable"
+    return function

@@ -2,17 +2,15 @@
 Reference objects for armory paths
 """
 
-import logging
 import os
+import warnings  # armory.logs initialization depends on this module, use warnings instead
 
 from armory import configuration
-
-logger = logging.getLogger(__name__)
 
 NO_DOCKER = False
 
 
-def set_mode(mode):
+def set_mode(mode, set_art_path=True):
     """
     Set path mode to "docker" or "host"
     """
@@ -24,6 +22,21 @@ def set_mode(mode):
         NO_DOCKER = True
     else:
         raise ValueError(f"mode {mode} is not in {MODES}")
+
+    if set_art_path:
+        set_art_data_path()
+
+
+def set_art_data_path():
+    """
+    Sets the art data path if art can be imported in the current environment
+    """
+    try:
+        from art import config
+
+        config.set_data_path(os.path.join(runtime_paths().saved_model_dir, "art"))
+    except ImportError:
+        pass
 
 
 def runtime_paths():
@@ -81,8 +94,8 @@ class HostPaths(HostDefaultPaths):
             ):
                 setattr(self, k, config[k])
         else:
-            logger.warning(f"No {self.armory_config} file. Using default paths.")
-            logger.warning("Please run `armory configure`")
+            warnings.warn(f"No {self.armory_config} file. Using default paths.")
+            warnings.warn("Please run `armory configure`")
 
         os.makedirs(self.dataset_dir, exist_ok=True)
         os.makedirs(self.local_git_dir, exist_ok=True)

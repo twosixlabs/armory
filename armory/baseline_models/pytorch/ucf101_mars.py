@@ -2,7 +2,6 @@
 Model contributed by: MITRE Corporation
 Adapted from: https://github.com/craston/MARS
 """
-import logging
 from typing import Union, Optional, Tuple
 
 from art.estimators.classification import PyTorchClassifier
@@ -11,11 +10,18 @@ from PIL import Image
 import torch
 from torch import optim
 
-from MARS.opts import parse_opts
-from MARS.models.model import generate_model
-from MARS.dataset import preprocess_data
+from armory.utils.external_repo import ExternalRepoImport
 
-logger = logging.getLogger(__name__)
+with ExternalRepoImport(
+    repo="yusong-tan/MARS",
+    experiment="ucf101_baseline_finetune.json",
+):
+    from MARS.opts import parse_opts
+    from MARS.models.model import generate_model
+    from MARS.dataset import preprocess_data
+
+from armory.logs import log
+
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -93,7 +99,7 @@ def preprocessing_fn_torch(
         There are some
     """
     if not isinstance(batch, torch.Tensor):
-        logger.warning(f"batch {type(batch)} is not a torch.Tensor. Casting")
+        log.warning(f"batch {type(batch)} is not a torch.Tensor. Casting")
         batch = torch.from_numpy(batch).to(DEVICE)
         # raise ValueError(f"batch {type(batch)} is not a torch.Tensor")
     if batch.dtype != torch.float32:
@@ -111,7 +117,7 @@ def preprocessing_fn_torch(
     if tuple(video.shape[1:]) == (240, 320, 3):
         standard_shape = True
     elif tuple(video.shape[1:]) == (226, 400, 3):
-        logger.warning("Expected odd example shape (226, 400, 3)")
+        log.warning("Expected odd example shape (226, 400, 3)")
         standard_shape = False
     else:
         raise ValueError(f"frame shape {tuple(video.shape[1:])} not recognized")
@@ -235,7 +241,7 @@ def make_model(
 
         opt.pretrain_path = weights_path
 
-    logger.info(f"Loading model... {opt.model} {opt.model_depth}")
+    log.info(f"Loading model... {opt.model} {opt.model_depth}")
     model, parameters = generate_model(opt)
 
     if trained and weights_path is not None:
@@ -265,7 +271,10 @@ def make_model(
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], max_frames: int = 0, **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        max_frames: int = 0,
+        **model_kwargs,
     ):
         """
         Max frames is the maximum number of input frames.
@@ -275,6 +284,11 @@ class OuterModel(torch.nn.Module):
         """
         super().__init__()
         max_frames = int(max_frames)
+        if max_frames:
+            log.warning(
+                "Deprecation warning: max_frames should be used as kwarg in ucf101 dataset, not in MARS model. "
+                "This will be removed in version 0.16.0"
+            )
         if max_frames < 0:
             raise ValueError(f"max_frames {max_frames} cannot be negative")
         self.max_frames = max_frames

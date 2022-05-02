@@ -18,8 +18,8 @@ set -e
 if [ $need_format -ne 0 ]
 then
     python -m tools.format_json
-    echo "Some JSON files were formatted"
-    echo "You need to do git add and git commit again"
+    echo Some JSON files were formatted
+    echo You need to do git add and git commit again
     exit $need_format
 fi
 

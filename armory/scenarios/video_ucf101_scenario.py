@@ -4,11 +4,8 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-import logging
-
 from armory.scenarios.scenario import Scenario
-
-logger = logging.getLogger(__name__)
+from armory.utils.export import VideoClassificationExporter
 
 
 class Ucf101(Scenario):
@@ -19,3 +16,9 @@ class Ucf101(Scenario):
                 "    If training, set config['model']['fit_kwargs']['fit_batch_size']"
             )
         super().load_dataset()
+
+    def _load_sample_exporter(self):
+        return VideoClassificationExporter(
+            self.scenario_output_dir,
+            frame_rate=self.test_dataset.context.frame_rate,
+        )

@@ -3,18 +3,17 @@ D-APRICOT scenario for object detection in the presence of targeted adversarial 
 """
 
 import copy
-import logging
 
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
+from armory.utils.export import DApricotExporter
 
 
 class ObjectDetectionTask(Scenario):
     def __init__(self, *args, skip_benign=None, **kwargs):
         if skip_benign is False:
-            logger.warning(
+            log.warning(
                 "--skip-benign=False is being ignored since the D-APRICOT"
                 " scenario doesn't include benign evaluation."
             )
@@ -68,6 +67,10 @@ class ObjectDetectionTask(Scenario):
             )
         super().load_dataset()
 
+    def next(self):
+        super().next()
+        self.y, self.y_patch_metadata = self.y
+
     def load_model(self, defended=True):
         model_config = self.config["model"]
         generate_kwargs = self.config["attack"]["generate_kwargs"]
@@ -75,7 +78,7 @@ class ObjectDetectionTask(Scenario):
             model_config["model_kwargs"].get("batch_size") != 3
             and generate_kwargs["threat_model"].lower() == "physical"
         ):
-            logger.warning(
+            log.warning(
                 "If using Armory's baseline mscoco frcnn model,"
                 " model['model_kwargs']['batch_size'] should be set to 3 for physical attack."
             )
@@ -87,47 +90,46 @@ class ObjectDetectionTask(Scenario):
         )
 
     def load_metrics(self):
+        # The D-APRICOT scenario only has targeted adversarial tasks
+        self.config["metrics"]["include_benign"] = False
+        self.config["metrics"]["include_adversarial"] = False
         super().load_metrics()
-        # The D-APRICOT scenario has no non-targeted tasks
-        self.metrics_logger.adversarial_tasks = []
 
     def run_benign(self):
         raise NotImplementedError("D-APRICOT has no benign task")
 
     def run_attack(self):
+        self._check_x("run_attack")
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
         with metrics.resource_context(name="Attack", **self.profiler_kwargs):
-
             if x.shape[0] != 1:
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
             x = x[0]
-            y_object, y_patch_metadata = y
 
             generate_kwargs = copy.deepcopy(self.generate_kwargs)
-            generate_kwargs["y_patch_metadata"] = y_patch_metadata
-            y_target = self.label_targeter.generate(y_object)
+            generate_kwargs["y_patch_metadata"] = self.y_patch_metadata
+            y_target = self.label_targeter.generate(y)
             generate_kwargs["y_object"] = y_target
 
             x_adv = self.attack.generate(x=x, **generate_kwargs)
 
+        self.hub.set_context(stage="adversarial")
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv)
-        for img_idx in range(len(y_object)):
+        for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
-            self.metrics_logger.update_task(
-                [y_i_target], [y_i_pred], adversarial=True, targeted=True
-            )
+            self.probe.update(y_target=[y_i_target], y_pred=[y_i_pred])
+        self.probe.update(x_adv=x_adv)
 
-        self.metrics_logger.update_perturbation(x, x_adv)
-
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y_object, y_pred_adv)
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def finalize_results(self):
-        self.metrics_logger.log_task(adversarial=True, targeted=True)
-        self.results = self.metrics_logger.results()
+    def _load_sample_exporter(self):
+        default_export_kwargs = {"with_boxes": True}
+        return DApricotExporter(
+            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
+        )

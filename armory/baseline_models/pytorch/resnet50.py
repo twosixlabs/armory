@@ -1,7 +1,6 @@
 """
 ResNet50 CNN model for 244x244x3 image classification
 """
-import logging
 from typing import Optional
 
 from art.estimators.classification import PyTorchClassifier
@@ -9,14 +8,14 @@ import torch
 from torchvision import models
 
 
-logger = logging.getLogger(__name__)
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        **model_kwargs,
     ):
         super().__init__()
         self.inner_model = models.resnet50(**model_kwargs)

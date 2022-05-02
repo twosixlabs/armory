@@ -1,5 +1,4 @@
 import copy
-import logging
 
 import numpy as np
 
@@ -7,8 +6,7 @@ from armory.utils import config_loading
 from armory.scenarios.poison import DatasetPoisoner
 from armory.scenarios.poisoning_gtsrb_scenario import GTSRB
 from armory.scenarios.utils import to_categorical, from_categorical
-
-logger = logging.getLogger(__name__)
+from armory.logs import log
 
 
 class CleanDatasetPoisoner:
@@ -32,7 +30,7 @@ class CleanDatasetPoisoner:
                     if (x_i != x_poison_i).any():
                         poison_index.append(i)
             else:
-                logger.warning(
+                log.warning(
                     f"len(x_poison) {len(x_poison)} != len(x) {len(x)}. Returning []"
                 )
             poison_index = np.array(poison_index)
@@ -57,18 +55,23 @@ class GTSRB_CLBD(GTSRB):
                 "batch_size": self.fit_batch_size,
                 "nb_epochs": self.train_epochs,
             }
-            logger.info("Fitting proxy classifier...")
+            log.info("Fitting proxy classifier...")
             if attack_config.get("use_adversarial_trainer"):
                 from art.defences.trainer import AdversarialTrainerMadryPGD
 
-                logger.info("Using adversarial trainer...")
+                log.info("Using adversarial trainer...")
                 trainer_kwargs = attack_config.pop("adversarial_trainer_kwargs", {})
                 trainer_kwargs.update(fit_kwargs)
                 trainer = AdversarialTrainerMadryPGD(proxy, **trainer_kwargs)
                 trainer.fit(self.x_clean, self.y_clean)
                 proxy = trainer.get_classifier()
             else:
-                fit_kwargs.update(dict(shuffle=True, verbose=False,))
+                fit_kwargs.update(
+                    dict(
+                        shuffle=True,
+                        verbose=False,
+                    )
+                )
                 proxy.fit(self.x_clean, self.y_clean, **fit_kwargs)
 
             attack_config["kwargs"]["proxy_classifier"] = proxy
@@ -76,5 +79,7 @@ class GTSRB_CLBD(GTSRB):
             attack, backdoor = config_loading.load(attack_config)
             self.poisoner = CleanDatasetPoisoner(attack)
             self.test_poisoner = DatasetPoisoner(
-                backdoor, self.source_class, self.target_class,
+                backdoor,
+                self.source_class,
+                self.target_class,
             )

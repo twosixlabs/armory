@@ -1,7 +1,6 @@
 """
 ResNet18 CNN model for NxNx3 image classification
 """
-import logging
 from typing import Optional
 
 from art.estimators.classification import PyTorchClassifier
@@ -9,14 +8,14 @@ import torch
 from torchvision import models
 
 
-logger = logging.getLogger(__name__)
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        **model_kwargs,
     ):
         # default to imagenet mean and std
         data_means = model_kwargs.pop("data_means", [0.485, 0.456, 0.406])
@@ -47,10 +46,12 @@ def get_art_model(
 
     model = OuterModel(weights_path=weights_path, **model_kwargs)
 
+    lr = wrapper_kwargs.pop("learning_rate", 0.1)
+
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss(),
-        optimizer=torch.optim.SGD(model.parameters(), lr=0.2, momentum=0.9),
+        optimizer=torch.optim.Adam(model.parameters(), lr=lr),
         input_shape=wrapper_kwargs.pop(
             "input_shape", (224, 224, 3)
         ),  # default to imagenet shape
