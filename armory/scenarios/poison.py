@@ -226,7 +226,10 @@ class Poison(Scenario):
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
 
-            if defense_config["name"] == "PerfectFilterBaselineDefense":
+            if (
+                "perfect_filter" in defense_config["kwargs"]
+                and defense_config["kwargs"]["perfect_filter"] is True
+            ):
                 log.info("Filtering all poisoned samples out of training data")
                 indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
                 indices_to_keep[self.poison_index] = False

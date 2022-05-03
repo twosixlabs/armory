@@ -87,8 +87,6 @@
             },
             "required": [
                 "kwargs",
-                "module",
-                "name",
                 "type"
             ],
             "type": "object"

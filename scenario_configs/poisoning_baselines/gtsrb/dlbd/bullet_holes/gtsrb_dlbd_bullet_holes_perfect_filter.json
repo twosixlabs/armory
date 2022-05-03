@@ -1,7 +1,7 @@
 {
     "_description": "GTSRB dirty label backdoor, bullet holes trigger, random filter",
     "adhoc": {
-        "compute_fairness_metrics": true,
+        "compute_fairness_metrics": false,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
         "fraction_poisoned": 0.1,
@@ -9,7 +9,7 @@
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 30,
+        "train_epochs": 3,
         "use_poison_filtering_defense": true
     },
     "attack": {
@@ -37,9 +37,9 @@
         "name": "german_traffic_sign"
     },
     "defense": {
-        "kwargs": {},
-        "module": "armory.art_experimental.poison_detection.perfect_filter",
-        "name": "PerfectFilterBaselineDefense",
+        "kwargs": {
+            "perfect_filter": true
+        },
         "type": "PoisonFilteringDefence"
     },
     "metric": null,
@@ -58,7 +58,7 @@
         "name": "GTSRB"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch",
+        "docker_image": "twosixarmory/pytorch:0.14.2",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
