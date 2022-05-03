@@ -12,6 +12,18 @@ from art.estimators.classification import PyTorchClassifier
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+# TEMPORARY CODE
+from armory.instrument import get_hub, ImageWriter
+
+hub = get_hub()
+img_writer = ImageWriter("tmp_dir")
+hub.connect_writer(img_writer, default=False)
+
+from torchvision.transforms import RandomRotation
+
+rot_transform = RandomRotation(degrees=(10, 20))
+
+
 class Net(nn.Module):
     """
     This is a simple CNN for CIFAR-10 and does not achieve SotA performance
@@ -25,6 +37,10 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(100, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # TEMPORARY CODE
+        x_rot = rot_transform(x).numpy()
+        hub.record("x_flipped", x_rot, writers=img_writer, use_default_writers=False)
+
         x = x.permute(0, 3, 1, 2)  # from NHWC to NCHW
         x = self.conv1(x)
         x = F.relu(x)

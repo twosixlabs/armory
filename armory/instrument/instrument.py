@@ -36,6 +36,7 @@ except ImportError:
     json_utils = None
 
 import json
+import os
 
 from armory import log
 
@@ -385,13 +386,23 @@ class Hub:
         if writer not in self.writers:
             self.writers.append(writer)
 
-    def record(self, name, result):
+    def record(self, name, result, use_default_writers=True, writers=None):
         """
         Push a record to the default writers
         """
-        if not self.default_writers:
-            log.warning(f"No default writers to record {name}:{result} to")
-        for writer in self.default_writers:
+        if writers is None:
+            writers = []
+        elif isinstance(writers, Writer):
+            writers = [writers]
+        elif not isinstance(writers, list):
+            raise TypeError(
+                f"Received 'writers' input of type {type(writers)}, expected a Writer or list of Writers"
+            )
+        if use_default_writers:
+            writers += self.default_writers
+        if len(writers) == 0:
+            log.warning(f"No writers to record {name}:{result} to")
+        for writer in writers:
             writer.write((name, self.context["batch"], result))
 
     def close(self):
@@ -697,6 +708,26 @@ class ResultsWriter(Writer):
         if self.sink is not None:
             raise ValueError("output only kept if sink is None")
         return self.output
+
+
+class ImageWriter(Writer):
+    def __init__(self, output_dir):
+        super().__init__()
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
+        if len(os.listdir(self.output_dir)) > 0:
+            log.warning(
+                f"directory {self.output_dir} contains files that may be overwritten."
+            )
+
+    def _write(self, name, batch, result):
+        from armory.utils.export import ImageClassificationExporter
+
+        batch_size = result.shape[0]
+        for idx in range(batch_size):
+            breakpoint()
+            img_pil = ImageClassificationExporter.get_sample(result[idx])
+            img_pil.save(os.path.join(self.output_dir, f"batch_{batch}_ex_{idx}.png"))
 
 
 # GLOBAL CONTEXT METHODS #

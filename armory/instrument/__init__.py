@@ -9,6 +9,7 @@ from armory.instrument.instrument import (
     Probe,
     PrintWriter,
     ResultsWriter,
+    ImageWriter,
     Writer,
     get_hub,
     get_probe,
