@@ -1,4 +1,3 @@
-
 from art.defences.detector.poison import PoisonFilteringDefence
 
 """
