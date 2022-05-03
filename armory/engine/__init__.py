@@ -22,7 +22,7 @@ import pathlib
 import re
 import subprocess
 
-from armory.logs import log
+# from armory.logs import log
 #
 #
 # def get_dynamic_version():
@@ -61,58 +61,137 @@ from armory.logs import log
 # __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 #
 
+from armory.logs import log
+import os
+
+def _load_torch_and_tf():
+    """Handle Loading PyTorch / Tensorflow
+    In order for armory to work properly, we need to
+    import torch at the very beginning, especially before
+    tensorflow to ensure torch.utils.data.DataLoader can utilize
+    all CPU resources when num_workers > 1
+    """
+    log.debug("Loading PyTorch/Tensorflow")
+    try:
+        import torch  # noqa: F401
+    except ImportError:
+        log.warning("Torch not found!  Disregard if using tf backend")
+        pass
+
+    log.debug("Loading Tensorflow")
+    try:
+        import tensorflow as tf
+        gpus = tf.config.list_physical_devices("GPU")
+        if gpus:
+            # Currently, memory growth needs to be the same across GPUs
+            log.info(f"Found GPUs: {gpus}...setting tf.config.experimental.set_memory_growth to True on all GPUs")
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError:
+        log.exception("Import armory before initializing GPU tensors")
+        raise
+    except ImportError:
+        # TODO Figure out if this is actually true give TFDS dep.
+        log.warning("Tensorflow not found!  Disregard if using pure pytorch backend")
+        pass
+
+
+def _set_art_data_path():
+    saved_model_paths = os.getenv("ARMORY_PATHS_SAVED_MODELS_DIRECTORY")
+    art_path = os.path.join(saved_model_paths, "art")
+    log.info(f"Setting ART Data PATH to {art_path}")
+    try:
+        from art import config
+        config.set_data_path(art_path)
+    except ImportError:
+        log.warning("ART not found...")
+        pass
+
+def _load_engine_deps():
+
+    # TODO: Currently this is a requirement of armory.engine...
+    #  However, we need to remove this dep as we move forward
+    from typing import Dict, Any
+    global Config
+    Config = Dict[str, Any]
+
+    # Submodule imports
+    try:
+        from armory.engine import art_experimental, baseline_models, docker, eval
+        from armory.engine import data
+        from armory.engine import paths
+        from armory.engine import utils
+        from armory.engine import webapi
+    except ImportError as e:
+        module = e.name
+        print(f"ERROR: cannot import '{module}' module")
+        print("    Please run: $ pip install -r requirements.txt")
+        raise
+
+    END_SENTINEL = "Scenario has finished running cleanly"
+
+
+# ----------- Executing All Necessary Components below (ORDER MATTERS!!) ----------
+log.info("Initiating Armory Engine...")
+_load_torch_and_tf()
+_set_art_data_path()
+_load_engine_deps()
+
+
+
+
 # Handle PyTorch / TensorFlow interplay
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
-try:
-    import torch  # noqa: F401
-except ImportError:
-    pass
+# try:
+#     import torch  # noqa: F401
+# except ImportError:
+#     pass
 
 # From: https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
-try:
-    import tensorflow as tf
-
-    gpus = tf.config.list_physical_devices("GPU")
-    if gpus:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        log.info("Setting tf.config.experimental.set_memory_growth to True on all GPUs")
-except RuntimeError:
-    log.exception("Import armory before initializing GPU tensors")
-    raise
-except ImportError:
-    pass
+# try:
+#     import tensorflow as tf
+#
+#     gpus = tf.config.list_physical_devices("GPU")
+#     if gpus:
+#         # Currently, memory growth needs to be the same across GPUs
+#         for gpu in gpus:
+#             tf.config.experimental.set_memory_growth(gpu, True)
+#         log.info("Setting tf.config.experimental.set_memory_growth to True on all GPUs")
+# except RuntimeError:
+#     log.exception("Import armory before initializing GPU tensors")
+#     raise
+# except ImportError:
+#     pass
 
 # Handle ART configuration
 
-from armory.engine import paths
-
-try:
-    paths.set_art_data_path()
-except OSError:
-    # If running in --no-docker mode, catch write error based on default DockerPaths
-    # the later call to paths.set_mode("host") will set this properly
-    pass
+# from armory.engine import paths
+#
+# try:
+#     paths.set_art_data_path()
+# except OSError:
+#     # If running in --no-docker mode, catch write error based on default DockerPaths
+#     # the later call to paths.set_mode("host") will set this properly
+#     pass
 
 # typedef for a widely used JSON-like configuration specification
-from typing import Dict, Any
+# from typing import Dict, Any
+#
+# Config = Dict[str, Any]
 
-Config = Dict[str, Any]
-
-# Submodule imports
-try:
-    from armory.engine import art_experimental, baseline_models, docker, eval
-    from armory.engine import data
-    from armory.engine import paths
-    from armory.engine import utils
-    from armory.engine import webapi
-except ImportError as e:
-    module = e.name
-    print(f"ERROR: cannot import '{module}' module")
-    print("    Please run: $ pip install -r requirements.txt")
-    raise
-
-END_SENTINEL = "Scenario has finished running cleanly"
+# # Submodule imports
+# try:
+#     from armory.engine import art_experimental, baseline_models, docker, eval
+#     from armory.engine import data
+#     from armory.engine import paths
+#     from armory.engine import utils
+#     from armory.engine import webapi
+# except ImportError as e:
+#     module = e.name
+#     print(f"ERROR: cannot import '{module}' module")
+#     print("    Please run: $ pip install -r requirements.txt")
+#     raise
+#
+# END_SENTINEL = "Scenario has finished running cleanly"

@@ -16,7 +16,7 @@ from armory.engine.utils import config_loading, metrics
 from armory.engine.utils.export import SampleExporter
 from armory.logs import log
 import armory.engine as armory
-
+# from armory.engine import Config
 
 class Scenario:
     """
@@ -66,8 +66,10 @@ class Scenario:
     def _set_output_dir(self, config: Config) -> None:
         runtime_paths = paths.runtime_paths()
         self.scenario_output_dir = os.path.join(
-            runtime_paths.output_dir, config["eval_id"]
+            runtime_paths.output_directory, config["eval_id"]
         )
+        if not os.path.exists(self.scenario_output_dir):
+            os.makedirs(self.scenario_output_dir)
 
     def _check_config_and_cli_args(
         self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
@@ -136,6 +138,8 @@ class Scenario:
             self.model.fit_generator(self.train_dataset, **self.fit_kwargs)
 
     def load_attack(self):
+        # TODO: Figure out what to do if attack is None....
+        #  Currently it fails
         attack_config = self.config["attack"]
         attack_type = attack_config.get("type")
         if attack_type == "preloaded" and self.skip_misclassified:
@@ -362,9 +366,11 @@ class Scenario:
             sys.exit(1)
 
         if results is None:
+            # TODO: Figure out why this is not an error condition
             log.warning(f"{self._evaluate} returned None, not a dict")
-        output = self._prepare_results(self.config, results)
-        self._save(output)
+        else:
+            output = self._prepare_results(self.config, results)
+            self._save(output)
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
@@ -377,7 +383,7 @@ class Scenario:
             raise NotImplementedError("saving adversarial examples")
 
         output = {
-            "armory_version": armory.__version__,
+            # "armory_version": armory.__version__,
             "config": config,
             "results": results,
             "timestamp": int(self.time_stamp),
@@ -388,15 +394,16 @@ class Scenario:
         """
         Save json-formattable output to a file
         """
-        override_name = output["config"]["sysconfig"].get("output_filename", None)
-        scenario_name = (
-            override_name if override_name else output["config"]["scenario"]["name"]
-        )
+        # override_name = output["config"]["sysconfig"].get("output_filename", None)
+        log.debug(f"Saving Output: {output}")
+        scenario_name = output["config"].get("execution",
+                                            {}).get("output_filename",
+                                                    output["config"]["scenario"]["function_name"])
+        print(scenario_name)
         filename = f"{scenario_name}_{output['timestamp']}.json"
+        file_path = os.path.join(self.scenario_output_dir,filename)
         log.info(
-            "Saving evaluation results to path "
-            f"{self.scenario_output_dir}/{filename} "
-            "inside container."
+            f"Saving evaluation results to path: {file_path} inside container"
         )
-        with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
+        with open(file_path, "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")

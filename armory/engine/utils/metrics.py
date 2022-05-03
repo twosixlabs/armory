@@ -18,7 +18,7 @@ import pstats
 from scipy import stats
 
 from armory.engine.data.adversarial_datasets import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-from armory.engine.data.adversarial import APRICOT_PATCHES
+from armory.engine.data.adversarial.apricot_metadata import APRICOT_PATCHES
 from armory.logs import log
 
 

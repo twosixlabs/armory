@@ -394,7 +394,7 @@ def _generator_from_tfds(
     lambda_map - if not None, mapping function to apply to dataset elements
     """
     if not dataset_dir:
-        dataset_dir = paths.runtime_paths().dataset_dir
+        dataset_dir = paths.runtime_paths().dataset_directory
 
     if cache_dataset:
         _cache_dataset(
@@ -1201,7 +1201,7 @@ def librispeech(
     # TODO: make less hacky by updating dataset to librispeech 2.1.0
     # Begin Hack
     # make symlink to ~/.armory/datasets/librispeech/plain_text/1.1.0 from ~/.armory/datasets/librispeech/2.1.0 (required for TFDS v4)
-    base = os.path.join(paths.runtime_paths().dataset_dir, "librispeech")
+    base = os.path.join(paths.runtime_paths().dataset_directory, "librispeech")
     os.makedirs(base, exist_ok=True)
     src = os.path.join(base, "plain_text", "1.1.0")
     dst = os.path.join(base, "2.1.0")

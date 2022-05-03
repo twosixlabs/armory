@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List
 from armory.logs import log
 from armory.utils.experiment import ExperimentParameters
+from armory.utils.environment import EnvironmentParameters
 
 @dataclass
 class DockerMount:
@@ -80,22 +81,35 @@ def execute_docker_cmd(
 
 
 
-def execute_experiment(experiment: ExperimentParameters):
-    log.info(f'Executing Experiment from paramters: {experiment.pretty_print()}')
-    config = experiment.as_old_config()
+def execute_experiment(experiment: ExperimentParameters, environment: EnvironmentParameters):
+    log.info("Executing Armory Experiment")
+    log.debug(f"Experiment Parameters: {experiment}")
+    log.debug(f"Envioronment Parameters: {environment}")
 
-    log.debug("Importing Armory Engine Bits")
+    config = experiment.as_old_config()
+    config['environment_parameters'] = environment.dict()
+    from datetime import datetime as dt
+    import time
+    eval_id = dt.utcfromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%SUTC")
+    config['eval_id'] = eval_id
+
     # Import here to avoid dependency tree in launcher
-    # from armory.engine.utils import config_loading
-    # log.debug("Constructing Scenario Class")
-    # ScenarioClass = config_loading.load_fn(scenario_config)
-    log.debug("Constructing Scenario Class")
+    log.debug("Loading Scenario Module & fn")
     module = importlib.import_module(experiment.scenario.module_name)
     ScenarioClass = getattr(module, experiment.scenario.function_name)
-    scenario = ScenarioClass(config, **experiment.scenario.kwargs.dict())
-    log.debug(f"Scneario Loaded: {scenario}")
+    log.trace(f"ScenarioClass Loaded: {ScenarioClass}")
+    log.debug(f"Constructing Scenario Class...")
+    if experiment.scenario.kwargs is not None:
+        pars = experiment.scenario.kwargs.dict()
+        pars.pop('__root__')
+    else:
+        pars = {}
+
+    scenario = ScenarioClass(config, **pars)
+    log.trace(f"constructed scenario: {scenario}")
     log.debug(f"Calling .evaluate()")
     scenario.evaluate()
+    log.success("Evaluation Complete!!")
     # # from armory.engine.utils.configuration import load_config
     # log.debug(f"Loading Config: {config}")
     # # config = load_config(config, from_file=True)

@@ -234,6 +234,9 @@ def run(experiment, override):
     log.debug(f"Loaded Environment: \n{env.pretty_print()}")
 
     exp, env_overrides = ExperimentParameters.load(experiment, overrides=override)
+
+
+
     log.debug(f"Loaded Experiment: {experiment}: \n {exp.pretty_print()}")
     if len(env_overrides) > 0:
         log.warning(
@@ -242,9 +245,11 @@ def run(experiment, override):
         set_overrides(env, env_overrides)
         log.debug(f"New Environment: \n{env.pretty_print()}")
 
+    print(f"Exp Dict:\n {exp.dict()}")
+
     if exp.execution.mode == "native":
         log.info("Launching Armory in `native` mode")
-        al.execute_experiment(exp)
+        al.execute_experiment(exp, env)
     else:
         log.info(f"Launching Armory in `docker` mode using image: {exp.execution.docker_image}")
 

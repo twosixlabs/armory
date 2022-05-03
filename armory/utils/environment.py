@@ -105,17 +105,17 @@ class EnvironmentParameters(BaseModel):
         if profile is None:
             profile = cls().profile
 
-        print(overrides)
         env = cls.parse_file(profile)
         set_overrides(env, overrides)
         env.check()
-        return env
+        import os
+        os.environ["ARMORY_PROFILE"] = env.profile
+        for k,v in env.paths.dict().items():
+            os.environ[f"ARMORY_PATHS_{str(k).upper()}"] = str(v)
+        for k,v in env.credentials.dict().items():
+            os.environ[f"ARMORY_CREDS_{str(k).upper()}"] = str(v)
 
-    # def apply_overrides(self, overrides: [List, Dict]):
-    #     overrides = parse_overrides(overrides)
-    #     for k, v in overrides:
-    #         if rhasattr(self, k):
-    #             rsetattr(self, k, v)
+        return env
 
 
 def ask_yes_no(prompt, msg):

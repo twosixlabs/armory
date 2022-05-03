@@ -11,29 +11,44 @@ _meta:
 
 poison: null
 
-attack: null
+attack:
+  knowledge: "white"
+  kwargs:
+    batch_size: 1
+    eps: 0.2
+    eps_step: 0.1
+    minimal: false
+    num_random_init: 0
+    targeted: false
+  module: "art.attacks.evasion"
+  name: "FastGradientMethod"
+  use_label: true
 
 dataset:
   batch_size: 64
   framework: "numpy"
-  module: "armory.data.datasets"
+  module: "armory.engine.data.datasets"
   name: "mnist"
 
 defense: null
-metric: null
+metric:
+  means: true
+  perturbation: "linf"
+  record_metric_per_sample: false
+  task: ["categorical_accuracy"]
 
 model:
   fit: true
   fit_kwargs:
-    nb_epoch: {'value':3, 'type':int}
+    nb_epochs: 3
   model_kwargs: {}
-  module: "armory.baseline_models.pytorch.mnist"
+  module: "armory.engine.baseline_models.pytorch.mnist"
   name: "get_art_model"
   weights_file: null
   wrapper_kwargs: {}
 
 scenario:
-  kwargs: {}
+  kwargs: null
   module_name: "armory.engine.scenarios.image_classification"
   function_name: "ImageClassificationTask"
 

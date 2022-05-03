@@ -3,46 +3,117 @@ from armory.logs import log
 import os
 import yaml
 import json
-from typing import Union, List, Dict, Optional
+from typing import Union, List, Dict, Optional, Any
 from armory.utils import set_overrides
 from enum import Enum
 from pydoc import locate
 
-
-class Values(BaseModel):
-    """ Base Model for Arbitrary Dict Type attribute values"""
-    value: str
-    type: str
+#
+# class ArbitraryValue(BaseModel):
+#     value: str
+#     type: str
 
 
 class ArbitraryDict(BaseModel):
-    """Base Model substitute for Dict
+    __root__: Dict[str, Any]
 
-    ArbitraryDict is inteded to be used as a data model
-    when the `keys` of the incoming data are not known
-    and/or can't be anticipated.  The main example of this
-    is in the `kwarg` type options within the armory experiment
-    file.  To use this:
-
-    # Say we have data model called `AttackParameters` and we want
-    it to have a `kwargs` attribute that can store arbitrary key/value
-    pairs, then we would write something like:
-
-    class AttackParameters(BaseModel):
-        kwargs: ArbitraryDict
-    """
-    __root__: Optional[Dict[str, Values]]
-
-    def __getattr__(self, item):  # need this to access using `.`
-        return self.__root__[item].value
+    def __getattr__(self, item):
+        if item in self.__root__:
+            return self.__root__[item]
 
     def __setattr__(self, key, value):
-        # Get class for specified value type
-        tp = locate(self.__root__[key].type)
+        if key in self.__root__:
+            self.__root__[key] = value
 
-        # return the value typed correctly
-        self.__root__[key] = tp(value)
+    # def __getattr__(self, item):  # if you want to use '.'
+    #     print(f'Getting Item: {item}')
+    #     if item in self.__root__:
+    #         print(f"Found item in root: {self.__root__[item]}")
+    #         tp = locate(self.__root__[item].Type)
+    #         return tp(self.__root__[item].Value)
 
+
+# class Values(BaseModel):
+#     """ Base Model for Arbitrary Dict Type attribute values"""
+#     value: str
+#     type: str
+#     #
+#     # def __getattr__(self, item):
+#     #     if item == "type"
+#     #     tp = locate(self.type)
+#
+#
+# class ArbitraryDict(BaseModel):
+#     __root__: Optional[Dict[str, Values]]
+#     __values__ = {}
+#
+#     def __setattr__(self, key, value):
+#         log.debug(f"Setting {key} to {value}")
+#         if isinstance(value, dict):
+#             self.__values__[key] = locate(value['type'])(value['value'])
+#         elif isinstance(value, Values):
+#             self.__values__[key] = locate(value.type)(value.value)
+#         else:
+#             self.__values__[key] = value
+#
+#     def __getattr__(self, item):
+#         if item not in self.__values__:
+#             msg = f"Arbitrary Dict: {self.__values__} does not have attribute: {item}"
+#             log.exception(msg)
+#             raise AttributeError(msg)
+#         else:
+#             return self.__values__[item]
+
+
+# class ArbitraryDict(BaseModel):
+#     """Base Model substitute for Dict
+#
+#     ArbitraryDict is inteded to be used as a data model
+#     when the `keys` of the incoming data are not known
+#     and/or can't be anticipated.  The main example of this
+#     is in the `kwarg` type options within the armory experiment
+#     file.  To use this:
+#
+#     # Say we have data model called `AttackParameters` and we want
+#     it to have a `kwargs` attribute that can store arbitrary key/value
+#     pairs, then we would write something like:
+#
+#     class AttackParameters(BaseModel):
+#         kwargs: ArbitraryDict
+#     """
+#     __root__: Optional[Dict[str, Values]]
+#     __values__: Dict
+#
+#     # def __init__(self, *args, **kwargs):
+#     #     super().__init__(*args, **kwargs)
+#     #     log.info("Constructing Arbitrary Dict")
+#         # for k,v in self.__root__.items():
+#         #     print(k,v)
+#         #     tp = locate(v.type)
+#         #     setattr(self, k, tp(v.value))
+#
+#     # def __getattr__(self, item):  # need this to access using `.`
+#     #     tp = locate(self.__root__[item].type)
+#     #     return tp(self.__root__[item].value)
+#     #     # return self.__root__[item].value
+#
+#     def __setattr__(self, key, value):
+#         if isinstance(value, dict):
+#             tp = locate(value['type'])
+#         else
+#         # Get class for specified value type
+#         tp = locate(self.__root__[key].type)
+#
+#         # return the value typed correctly
+#         self.__root__[key] = tp(value)
+#         setattr(self, key, tp(value))
+#
+#     def as_dict(self):
+#         tmp = {}
+#         for k,v in self.__root__:
+#             tp = locate(v.type)
+#             tmp[k] = tp(v.value)
+#         return tmp
 
 class ExecutionMode(str, Enum):
     """Armory Execution Mode
@@ -66,6 +137,7 @@ class AttackParameters(BaseModel):
     knowledge: str
     kwargs: ArbitraryDict
     type: str = None
+    use_label: bool = True
 
 
 class DatasetParameters(BaseModel):
@@ -112,18 +184,7 @@ class ScenarioParameters(BaseModel):
 
     function_name: str
     module_name: str
-    kwargs: ArbitraryDict
-
-
-class SystemConfigurationParameters(BaseModel):
-    """Armory Dataclass for Environment Configuration Paramters"""
-
-    docker_image: str = None
-    gpus: str = None
-    external_github_repo: str = None
-    output_dir: str = None
-    output_filename: str = None
-    use_gpu: bool = False
+    kwargs: ArbitraryDict = None
 
 
 class MetaData(BaseModel):
@@ -146,10 +207,12 @@ class ExperimentParameters(BaseModel):
 
     _meta: MetaData
     poison: PoisonParameters = None
-    attack: AttackParameters = None
+    # TODO: currently armory.enging does not work if attack
+    #  is not specified... so this must be set
+    attack: AttackParameters
     dataset: DatasetParameters
     defense: DefenseParameters = None
-    metric: MetricParameters = None
+    metric: MetricParameters # TODO: Figure out why this can't be none
     model: ModelParameters
     scenario: ScenarioParameters
     execution: ExecutionParameters = None
@@ -163,6 +226,7 @@ class ExperimentParameters(BaseModel):
         with open(filename, "r") as f:
             data = yaml.safe_load(f.read())
 
+        log.debug(f"Loaded YAML: \n{data}\n")
         if "environment" in data:
             log.warning(
                 f"Overriding Environment Setting using data from Experiment File: {data['environment']}"
@@ -174,7 +238,6 @@ class ExperimentParameters(BaseModel):
 
         log.debug(f"Parsing Class Object from: {data}")
         exp = cls.parse_obj(data)
-
         log.debug(f"Parsed Experiment: {exp.pretty_print()}")
 
         log.debug(f"Applying experiment overrides: {overrides}")
@@ -186,4 +249,6 @@ class ExperimentParameters(BaseModel):
         return json.dumps(self.dict(), indent=2, sort_keys=True)
 
     def as_old_config(self):
+        print(self)
+
         return self.dict()

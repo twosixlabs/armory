@@ -59,6 +59,7 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     If num_batches is None, this function will return a generator that iterates
     over the entire dataset.
     """
+    print(f"kwargs: {kwargs}")
     dataset_config = copy.deepcopy(
         dataset_config
     )  # Avoid modifying original dictionary
