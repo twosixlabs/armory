@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB dirty label backdoor, bullet holes trigger, random filter",
+    "_description": "GTSRB dirty label backdoor, bullet holes trigger, undefended",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -10,7 +10,7 @@
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 30,
-        "use_poison_filtering_defense": true
+        "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
@@ -36,14 +36,7 @@
         "module": "armory.data.datasets",
         "name": "german_traffic_sign"
     },
-    "defense": {
-        "kwargs": {
-            "expected_pp_poison": 0.3
-        },
-        "module": "armory.art_experimental.poison_detection.random_filter",
-        "name": "RandomFilterBaselineDefense",
-        "type": "PoisonFilteringDefence"
-    },
+    "defense": null,
     "metric": null,
     "model": {
         "fit": true,

@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB dirty label backdoor, bullet holes trigger, random filter",
+    "_description": "GTSRB dirty label backdoor, bullet holes trigger, spectral signatures defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -40,8 +40,8 @@
         "kwargs": {
             "expected_pp_poison": 0.3
         },
-        "module": "armory.art_experimental.poison_detection.random_filter",
-        "name": "RandomFilterBaselineDefense",
+        "module": "art.defences.detector.poison.spectral_signature_defense",
+        "name": "SpectralSignatureDefense",
         "type": "PoisonFilteringDefence"
     },
     "metric": null,
