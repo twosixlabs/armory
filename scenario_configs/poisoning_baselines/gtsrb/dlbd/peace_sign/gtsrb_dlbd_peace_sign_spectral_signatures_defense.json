@@ -16,7 +16,7 @@
         "knowledge": "black",
         "kwargs": {
             "backdoor_packaged_with_armory": true,
-            "backdoor_path": "./armory/utils/triggers/peace_sign.png",
+            "backdoor_path": "./armory/utils/triggers/peace.png",
             "blend": 0.6,
             "channels_first": false,
             "mode": "RGB",

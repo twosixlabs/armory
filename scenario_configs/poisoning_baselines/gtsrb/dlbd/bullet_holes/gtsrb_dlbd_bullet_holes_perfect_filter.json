@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB dirty label backdoor, bullet holes trigger, random filter",
+    "_description": "GTSRB dirty label backdoor, bullet holes trigger, perfect filter",
     "adhoc": {
         "compute_fairness_metrics": false,
         "experiment_id": 0,
