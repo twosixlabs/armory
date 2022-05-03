@@ -38,7 +38,7 @@
     },
     "defense": {
         "kwargs": {
-            "fraction_to_remove":0.1
+            "expected_pp_poison":0.3
         },
         "module": "armory.art_experimental.poison_detection.random_filter",
         "name": "RandomFilterBaselineDefense",
