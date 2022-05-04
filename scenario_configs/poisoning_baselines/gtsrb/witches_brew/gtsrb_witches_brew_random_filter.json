@@ -4,7 +4,7 @@
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
-        "fit_defense_classifier_outside_defense":false,
+        "fit_defense_classifier_outside_defense": false,
         "fraction_poisoned": 0.01,
         "poison_dataset": true,
         "source_class": 1,
