@@ -72,7 +72,7 @@
                     "$ref": "#/definitions/python_module"
                 },
                 "name": {
-                    "type": ["string","null"]
+                    "type": "string"
                 },
                 "type": {
                     "enum": [
@@ -87,6 +87,8 @@
             },
             "required": [
                 "kwargs",
+                "module",
+                "name",
                 "type"
             ],
             "type": "object"
@@ -167,7 +169,7 @@
         "python_module": {
             "$comment": "Validate that it looks like a Python module path",
             "pattern": "^([a-zA-Z0-9_\\-]+\\.)*[a-zA-Z0-9_-]+$",
-            "type": ["string","null"]
+            "type": "string"
         },
         "scenario": {
             "properties": {
