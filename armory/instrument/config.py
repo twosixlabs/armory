@@ -39,7 +39,6 @@ class MetricsLogger:
         include_benign - whether to include benign task metrics
         include_adversarial - whether to include adversarial task metrics
         include_targeted - whether to include targeted task metrics
-        profiler_type - part of metrics config; ignored
         """
         self.task = task
         self.task_kwargs = task_kwargs
@@ -101,7 +100,7 @@ class MetricsLogger:
             include_benign=include_benign,
             include_adversarial=include_adversarial,
             include_targeted=include_targeted,
-            **config,
+            **{k: v for k, v in config.items() if k != "profiler_type"},
         )
 
     def _sink(self, results_dict):

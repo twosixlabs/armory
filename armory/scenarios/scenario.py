@@ -343,7 +343,7 @@ class Scenario:
         self.compute_results = self.profiler.results()
         self.results = {}
         self.results.update(self.metric_results)
-        self.results.update(self.compute_results)
+        self.results["compute"] = self.compute_results
 
         if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
