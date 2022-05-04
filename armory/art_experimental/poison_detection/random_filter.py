@@ -21,7 +21,7 @@ class RandomFilterBaselineDefense(PoisonFilteringDefence):
             "evaluate_defence() not implemented for RandomFilterBaselineDefense"
         )
 
-    def detect_poison(self, **kwargs):
+    def detect_poison(self, expected_pp_poison=None):
         """
         Selects data at random to label as poison.
         :return: (report, is_clean_lst):
@@ -30,7 +30,6 @@ class RandomFilterBaselineDefense(PoisonFilteringDefence):
                     and a 0 indicates that x_train[i] is detected as poison.
         """
 
-        expected_pp_poison = kwargs.get("expected_pp_poison", None)
         if expected_pp_poison is None:
             expected_pp_poison = 0.3
             log.info(
