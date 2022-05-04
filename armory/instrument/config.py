@@ -29,7 +29,6 @@ class MetricsLogger:
         include_adversarial=True,
         include_targeted=True,
         record_metric_per_sample=False,
-        **kwargs,
     ):
         """
         task - single metric or list of metrics
@@ -40,13 +39,8 @@ class MetricsLogger:
         include_benign - whether to include benign task metrics
         include_adversarial - whether to include adversarial task metrics
         include_targeted - whether to include targeted task metrics
+        profiler_type - part of metrics config; ignored
         """
-        if kwargs.pop("profiler_type", None) is not None:
-            log.warning(
-                "ignoring profiler_type in MetricsLogger instantiation. Use metrics.resource_context to log computational resource usage"
-            )
-        if kwargs:
-            raise ValueError(f"Unexpected keyword arguments: {kwargs}")
         self.task = task
         self.task_kwargs = task_kwargs
         self.perturbation = perturbation
@@ -81,7 +75,6 @@ class MetricsLogger:
         get_hub().connect_writer(self.results_writer, default=True)
 
         self.metric_results = None
-        self.computational_resource_dict = {}
 
     def add_tasks_wrt_benign_predictions(self):
         """
@@ -111,42 +104,18 @@ class MetricsLogger:
             **config,
         )
 
-    def _computational_results(self):
-        results = {}
-        for name in self.computational_resource_dict:
-            entry = self.computational_resource_dict[name]
-            if "execution_count" not in entry or "total_time" not in entry:
-                raise ValueError(
-                    "Computational resource dictionary entry corrupted, missing data."
-                )
-            total_time = entry["total_time"]
-            execution_count = entry["execution_count"]
-            average_time = total_time / execution_count
-            results[
-                f"Avg. CPU time (s) for {execution_count} executions of {name}"
-            ] = average_time
-            if "stats" in entry:
-                results[f"{name} profiler stats"] = entry["stats"]
-        return results
-
     def _sink(self, results_dict):
         """
         sink for results_writer to write to
         """
         self.metric_results = results_dict
 
-    def _metric_results(self):
+    def results(self):
         get_hub().close()
         if self.metric_results is None:
             log.warning("No metric results received from ResultsWriter")
             return {}
         return self.metric_results
-
-    def results(self):
-        results = {}
-        results.update(self._computational_results())
-        results.update(self._metric_results())
-        return results
 
 
 def construct_meters_for_perturbation_metrics(
