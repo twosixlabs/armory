@@ -293,9 +293,6 @@ class Poison(Scenario):
         is_dirty_mask[self.indices_to_keep] = 0
         self.is_dirty_mask = is_dirty_mask
 
-        print(len(self.y_train))
-        print("hohohohoho")
-
         removed = (1 - self.indices_to_keep).astype(np.bool)
         self.probe.update(removed=removed, is_dirty_mask=is_dirty_mask)
         self.hub.record("fraction_data_removed", removed.mean())
