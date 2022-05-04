@@ -51,6 +51,8 @@
         "kwargs": {
             "perfect_filter": true
         },
+        "module":"null",
+        "name":"null",
         "type": "PoisonFilteringDefence"
     },
     "metric": null,

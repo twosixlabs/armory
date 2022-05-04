@@ -1,7 +1,7 @@
 {
     "_description": "GTSRB dirty label backdoor, bullet holes trigger, perfect filter",
     "adhoc": {
-        "compute_fairness_metrics": false,
+        "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
         "fraction_poisoned": 0.1,
@@ -40,6 +40,8 @@
         "kwargs": {
             "perfect_filter": true
         },
+        "module":"null",
+        "name":"null",
         "type": "PoisonFilteringDefence"
     },
     "metric": null,
