@@ -3,16 +3,16 @@ import collections
 from pydoc import locate
 
 
-
 def rsetattr(obj, attr, val):
     print(f"obj: {obj}, {type(obj)}")
     pre, _, post = attr.rpartition(".")
-    print(pre,_,post)
+    print(pre, _, post)
     return setattr(rgetattr(obj, pre) if pre else obj, post, val)
 
 
 def rgetattr(obj, attr, *args):
     print(f"rgetattr {obj}, {attr}")
+
     def _getattr(obj, attr):
         print(f"_getattr: {obj}, {type(obj)}")
         return getattr(obj, attr, *args)
@@ -66,7 +66,7 @@ def set_overrides(obj, overrides):
             print(type(old_val))
             tp = locate(type(old_val).__name__)
             if tp is not None:
-                new_val = tp(v) # Casting to correct type
+                new_val = tp(v)  # Casting to correct type
             else:
                 new_val = v
             rsetattr(obj, k, new_val)

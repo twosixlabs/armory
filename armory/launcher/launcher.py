@@ -8,6 +8,7 @@ from armory.logs import log
 from armory.utils.experiment import ExperimentParameters
 from armory.utils.environment import EnvironmentParameters
 
+
 @dataclass
 class DockerMount:
     type: str
@@ -79,35 +80,36 @@ def execute_docker_cmd(
     return result
 
 
-
-
-def execute_experiment(experiment: ExperimentParameters, environment: EnvironmentParameters):
+def execute_experiment(
+    experiment: ExperimentParameters, environment: EnvironmentParameters
+):
     log.info("Executing Armory Experiment")
     log.debug(f"Experiment Parameters: {experiment}")
     log.debug(f"Envioronment Parameters: {environment}")
 
     config = experiment.as_old_config()
-    config['environment_parameters'] = environment.dict()
+    config["environment_parameters"] = environment.dict()
     from datetime import datetime as dt
     import time
+
     eval_id = dt.utcfromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%SUTC")
-    config['eval_id'] = eval_id
+    config["eval_id"] = eval_id
 
     # Import here to avoid dependency tree in launcher
     log.debug("Loading Scenario Module & fn")
     module = importlib.import_module(experiment.scenario.module_name)
     ScenarioClass = getattr(module, experiment.scenario.function_name)
     log.trace(f"ScenarioClass Loaded: {ScenarioClass}")
-    log.debug(f"Constructing Scenario Class...")
+    log.debug("Constructing Scenario Class...")
     if experiment.scenario.kwargs is not None:
         pars = experiment.scenario.kwargs.dict()
-        pars.pop('__root__')
+        pars.pop("__root__")
     else:
         pars = {}
 
     scenario = ScenarioClass(config, **pars)
     log.trace(f"constructed scenario: {scenario}")
-    log.debug(f"Calling .evaluate()")
+    log.debug("Calling .evaluate()")
     scenario.evaluate()
     log.success("Evaluation Complete!!")
     # # from armory.engine.utils.configuration import load_config

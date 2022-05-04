@@ -1,10 +1,8 @@
 """
 Environment parameter names
 """
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 import os
-from typing import List, Union, Dict
-from enum import Enum
 import json
 
 # from armory.utils import rsetattr, rhasattr, parse_overrides
@@ -109,10 +107,11 @@ class EnvironmentParameters(BaseModel):
         set_overrides(env, overrides)
         env.check()
         import os
+
         os.environ["ARMORY_PROFILE"] = env.profile
-        for k,v in env.paths.dict().items():
+        for k, v in env.paths.dict().items():
             os.environ[f"ARMORY_PATHS_{str(k).upper()}"] = str(v)
-        for k,v in env.credentials.dict().items():
+        for k, v in env.credentials.dict().items():
             os.environ[f"ARMORY_CREDS_{str(k).upper()}"] = str(v)
 
         return env

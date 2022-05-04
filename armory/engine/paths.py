@@ -7,9 +7,11 @@ import os
 
 def runtime_paths():
     pth = Paths()
-    for k,v in pth.dict().items():
+    for k, v in pth.dict().items():
         setattr(pth, k, os.getenv(f"ARMORY_PATHS_{str(k).upper()}"))
     return pth
+
+
 # def runtime_paths():
 #     """
 #     Delegates armory evaluation paths to be either Host or Docker paths.
@@ -18,7 +20,6 @@ def runtime_paths():
 #         return HostPaths()
 #     else:
 #         return DockerPaths()
-
 
 
 # import os

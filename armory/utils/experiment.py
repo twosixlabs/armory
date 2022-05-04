@@ -3,10 +3,11 @@ from armory.logs import log
 import os
 import yaml
 import json
-from typing import Union, List, Dict, Optional, Any
+from typing import List, Dict, Any
 from armory.utils import set_overrides
 from enum import Enum
-from pydoc import locate
+
+# from pydoc import locate
 
 #
 # class ArbitraryValue(BaseModel):
@@ -115,6 +116,7 @@ class ArbitraryDict(BaseModel):
 #             tmp[k] = tp(v.value)
 #         return tmp
 
+
 class ExecutionMode(str, Enum):
     """Armory Execution Mode
     docker  ->  Means that armory will execute
@@ -212,7 +214,7 @@ class ExperimentParameters(BaseModel):
     attack: AttackParameters
     dataset: DatasetParameters
     defense: DefenseParameters = None
-    metric: MetricParameters # TODO: Figure out why this can't be none
+    metric: MetricParameters  # TODO: Figure out why this can't be none
     model: ModelParameters
     scenario: ScenarioParameters
     execution: ExecutionParameters = None

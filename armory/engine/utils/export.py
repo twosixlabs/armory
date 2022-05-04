@@ -6,7 +6,12 @@ import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
-from armory.engine.data.datasets import ImageContext, VideoContext, AudioContext, So2SatContext
+from armory.engine.data.datasets import (
+    ImageContext,
+    VideoContext,
+    AudioContext,
+    So2SatContext,
+)
 from armory.logs import log
 
 

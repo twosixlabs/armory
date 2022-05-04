@@ -4,7 +4,7 @@ import armory.logs
 import click
 
 # from armory.engine.eval import Evaluator
-import sys
+# import sys
 import os
 
 
@@ -228,14 +228,13 @@ def run(experiment, override):
     from armory.utils.experiment import ExperimentParameters
     from armory.utils.utils import set_overrides
     import armory.launcher.launcher as al
+
     log.info(f"Running Experiment Defined by: {experiment}")
 
     env = EnvironmentParameters.load(overrides=override)
     log.debug(f"Loaded Environment: \n{env.pretty_print()}")
 
     exp, env_overrides = ExperimentParameters.load(experiment, overrides=override)
-
-
 
     log.debug(f"Loaded Experiment: {experiment}: \n {exp.pretty_print()}")
     if len(env_overrides) > 0:
@@ -251,7 +250,21 @@ def run(experiment, override):
         log.info("Launching Armory in `native` mode")
         al.execute_experiment(exp, env)
     else:
-        log.info(f"Launching Armory in `docker` mode using image: {exp.execution.docker_image}")
+        log.info(
+            f"Launching Armory in `docker` mode using image: {exp.execution.docker_image}"
+        )
+        mounts = get_mounts_from_paths(env.paths.items())
+        from armory.launcher.launcher import DockerMount, execute_docker_cmd
+
+        armory_dir = "../../"
+        mounts.append(
+            DockerMount(
+                type="bind", source=armory_dir, target="/armory_src/", readonly=True
+            )
+        )
+        cmd = "echo Executing Armory in docker"
+        execute_docker_cmd(image="testtorch", cmd=cmd, mounts=mounts)
+
 
 # @cli.command()
 # @click.argument("docker-image", type=str)

@@ -15,8 +15,10 @@ from armory.engine import Config, paths
 from armory.engine.utils import config_loading, metrics
 from armory.engine.utils.export import SampleExporter
 from armory.logs import log
-import armory.engine as armory
+# import armory.engine as armory
+
 # from armory.engine import Config
+
 
 class Scenario:
     """
@@ -396,14 +398,14 @@ class Scenario:
         """
         # override_name = output["config"]["sysconfig"].get("output_filename", None)
         log.debug(f"Saving Output: {output}")
-        scenario_name = output["config"].get("execution",
-                                            {}).get("output_filename",
-                                                    output["config"]["scenario"]["function_name"])
+        scenario_name = (
+            output["config"]
+            .get("execution", {})
+            .get("output_filename", output["config"]["scenario"]["function_name"])
+        )
         print(scenario_name)
         filename = f"{scenario_name}_{output['timestamp']}.json"
-        file_path = os.path.join(self.scenario_output_dir,filename)
-        log.info(
-            f"Saving evaluation results to path: {file_path} inside container"
-        )
+        file_path = os.path.join(self.scenario_output_dir, filename)
+        log.info(f"Saving evaluation results to path: {file_path} inside container")
         with open(file_path, "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
