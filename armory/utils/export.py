@@ -10,6 +10,7 @@ import json
 from copy import deepcopy
 
 from armory.logs import log
+from armory.instrument import get_hub
 
 
 class SampleExporter:
@@ -20,6 +21,27 @@ class SampleExporter:
         self.output_dir = None
         self.y_dict = {}
         self.default_export_kwargs = default_export_kwargs
+        self.hub = get_hub()
+
+    @staticmethod
+    def is_measuring(probe_variable):
+        return True
+
+    def update(self, probe_variable, value):
+        batch_size = value.shape[0]
+        batch_num = self.hub.context.get("batch")
+        breakpoint()
+        for idx in range(batch_size):
+            sample = self.get_sample(value[idx])
+            self.save_sample(
+                fname=f"{self.base_output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
+                sample=sample,
+            )
+
+    def save_sample(self, fname, sample):
+        raise NotImplementedError(
+            f"save_sample() method should be defined for export class {self.__class__}"
+        )
 
     def export(
         self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
@@ -85,6 +107,12 @@ class SampleExporter:
 
 
 class ImageClassificationExporter(SampleExporter):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
+        super().__init__(
+            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
+        )
+        self.file_extension = ".png"
+
     def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
         for i, x_i in enumerate(x):
             self._export_image(x_i, name="benign")
@@ -134,6 +162,13 @@ class ImageClassificationExporter(SampleExporter):
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
+
+    def save_sample(self, fname, sample):
+        """
+        fname: string
+        sample: PIL.Image.Image
+        """
+        sample.save(fname + self.file_extension)
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
