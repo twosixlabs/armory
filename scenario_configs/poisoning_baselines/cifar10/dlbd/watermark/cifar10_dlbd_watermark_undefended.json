@@ -10,7 +10,7 @@
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 200,
-        "use_poison_filtering_defense": true
+        "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
