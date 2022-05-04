@@ -13,7 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
-from armory.metrics import computation
+from armory.metrics import compute
 from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
@@ -214,7 +214,7 @@ class Scenario:
             include_adversarial=not self.skip_attack,
             include_targeted=self.targeted,
         )
-        self.profiler = computation.profiler_from_config(metrics_config)
+        self.profiler = compute.profiler_from_config(metrics_config)
         self.metrics_logger = metrics_logger
 
     def load_sample_exporter(self):

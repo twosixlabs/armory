@@ -1,1 +1,1 @@
-from armory.metrics import computation
+from armory.metrics import compute
