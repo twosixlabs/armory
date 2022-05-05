@@ -104,8 +104,8 @@
                 "profiler_type": {
                     "enum": [
                         null,
-                        "Basic",
-                        "Deterministic"
+                        "basic",
+                        "deterministic"
                     ],
                     "type": [
                         "null",
