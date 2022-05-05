@@ -1,45 +1,34 @@
 {
-    "_description": "GTSRB poison image classification, witches' brew attack",
+    "_description": "GTSRB dirty label backdoor, peace sign trigger, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
-        "fraction_poisoned": 0.01,
+        "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 30,
-        "trigger_index": null,
         "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "data_filepath": "gtsrb_gradient_matching_precomputed.npz",
-            "epsilon": 0.1,
-            "learning_rate_schedule": [
-                [
-                    0.1,
-                    0.01,
-                    0.001,
-                    0.0001,
-                    1e-05
-                ],
-                [
-                    250,
-                    350,
-                    400,
-                    430,
-                    460
-                ]
-            ],
-            "max_epochs": 500,
-            "max_trials": 1,
-            "verbose": 1
+            "backdoor_packaged_with_armory": true,
+            "backdoor_path": "./armory/utils/triggers/peace.png",
+            "blend": 0.6,
+            "channels_first": false,
+            "mode": "RGB",
+            "poison_module": "art.attacks.poisoning.perturbations",
+            "poison_type": "image",
+            "size": [
+                16,
+                16
+            ]
         },
-        "module": "armory.art_experimental.attacks.gradient_matching",
-        "name": "GradientMatchingWrapper"
+        "module": "armory.art_experimental.attacks.poison_loader",
+        "name": "poison_loader_GTSRB"
     },
     "dataset": {
         "batch_size": 512,
@@ -70,10 +59,9 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
-        "export_batches": false,
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_witches_brew",
-        "name": "WitchesBrewScenario"
+        "module": "armory.scenarios.poisoning_gtsrb_scenario",
+        "name": "GTSRB"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",

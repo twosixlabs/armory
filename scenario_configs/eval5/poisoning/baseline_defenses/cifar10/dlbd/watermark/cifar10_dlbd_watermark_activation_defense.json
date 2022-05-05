@@ -1,5 +1,5 @@
 {
-    "_description": "CIFAR10 DLBD poison image classification",
+    "_description": "CIFAR10 dirty label backdoor, watermark trigger, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,

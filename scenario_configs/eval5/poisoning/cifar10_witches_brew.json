@@ -1,5 +1,5 @@
 {
-    "_description": "CIFAR10 poison image classification, contributed by MITRE Corporation",
+    "_description": "CIFAR10 poison image classification, witches' brew attack",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -42,7 +42,7 @@
         "name": "GradientMatchingWrapper"
     },
     "dataset": {
-        "batch_size": 32,
+        "batch_size": 512,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "cifar10"

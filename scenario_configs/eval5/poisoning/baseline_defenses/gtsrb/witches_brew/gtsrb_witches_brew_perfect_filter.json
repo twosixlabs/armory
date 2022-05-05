@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB poison image classification, witches' brew attack",
+    "_description": "GTSRB poison image classification, witches' brew attack, perfect filter",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -49,14 +49,10 @@
     },
     "defense": {
         "kwargs": {
-            "cluster_analysis": "smaller",
-            "clustering_method": "KMeans",
-            "nb_clusters": 2,
-            "nb_dims": 43,
-            "reduce": "PCA"
+            "perfect_filter": true
         },
-        "module": "art.defences.detector.poison.activation_defence",
-        "name": "ActivationDefence",
+        "module": "null",
+        "name": "null",
         "type": "PoisonFilteringDefence"
     },
     "metric": null,
