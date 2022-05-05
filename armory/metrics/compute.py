@@ -3,11 +3,10 @@ Computational metrics
 """
 
 import contextlib
-import io
-import time
-
 import cProfile
+import io
 import pstats
+import time
 
 from armory.logs import log
 
