@@ -16,6 +16,7 @@ Desired metrics and flags are placed under the key `"metric"` dictionary in the 
 "metric": {
     "means": [Bool],
     "perturbation": List[String] or String or null,
+    "profiler_type": null or "basic" or "deterministic",
     "record_metric_per_sample": [Bool],
     "task": List[String] or String or null,
 }
@@ -29,6 +30,27 @@ These metrics are called on batches of inputs, but are sample-wise metrics, and 
 When `means` is true, the average value for the given metric is also recorded.
 When `record_metric_per_sample` is true, all of the per-sample metrics are recorded.
 If neither is true, a `ValueError` is raised, as nothing is recorded.
+
+The `profiler_type` field, when not `null`, enables the logging of computational metrics.
+If `"basic"`, it logs CPU time for model inference and attacking.
+If `"deterministic"`, which runs *very* slowly, also provides verbose CPU statistics at the function call level, like so:
+```
+         837 function calls (723 primitive calls) in 0.063 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.063    0.063 /opt/conda/lib/python3.8/site-packages/art/attacks/evasion/fast_gradient.py:207(generate)
+        1    0.000    0.000    0.054    0.054 /opt/conda/lib/python3.8/site-packages/art/attacks/evasion/fast_gradient.py:477(_compute)
+        1    0.000    0.000    0.053    0.053 /opt/conda/lib/python3.8/site-packages/art/attacks/evasion/fast_gradient.py:383(_compute_perturbation)
+        1    0.000    0.000    0.052    0.052 /opt/conda/lib/python3.8/site-packages/art/estimators/classification/keras.py:422(loss_gradient)
+        1    0.000    0.000    0.052    0.052 /opt/conda/lib/python3.8/site-packages/keras/backend.py:4238(__call__)
+        1    0.000    0.000    0.042    0.042 /opt/conda/lib/python3.8/site-packages/keras/backend.py:4170(_make_callable)
+        1    0.000    0.000    0.042    0.042 /opt/conda/lib/python3.8/site-packages/tensorflow/python/client/session.py:1502(_make_callable_from_options)
+   ...
+```
+Profiler information can be found in the results json under `["results"]["compute"]`.
+The functionality for these profilers can be found in `armory/metrics/compute.py`.
 
 ## Metrics
 
