@@ -103,10 +103,14 @@
                 },
                 "profiler_type": {
                     "enum": [
+                        null,
                         "Basic",
                         "Deterministic"
                     ],
-                    "type": "string"
+                    "type": [
+                        "null",
+                        "string"
+                    ]
                 },
                 "record_metric_per_sample": {
                     "type": "boolean"
