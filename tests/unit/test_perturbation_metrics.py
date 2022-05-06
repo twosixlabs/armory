@@ -2,12 +2,13 @@
 Test cases for perturbation metrics
 """
 
+import itertools
+
 import pytest
 import numpy as np
 
 from armory.metrics import perturbation
 
-# Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit
 
 
@@ -113,3 +114,60 @@ def test_snr_spectrogram():
         perturbation.batch.snr_spectrogram(x[:1], x[1:])
     with pytest.raises(ValueError):
         perturbation.batch.snr_spectrogram(x, np.array([1]))
+
+
+def test_image_circle_patch_diameter(caplog):
+    image_circle_patch_diameter = perturbation.image_circle_patch_diameter
+    with pytest.raises(ValueError):
+        image_circle_patch_diameter([1, 1, 1], [1, 1, 1])
+    with pytest.raises(ValueError):
+        image_circle_patch_diameter(np.ones((3, 3, 3, 3)), np.ones((3, 3, 3, 3)))
+
+    x = np.zeros((28, 28))
+    assert image_circle_patch_diameter(x, x) == 0.0
+
+    assert image_circle_patch_diameter(x, x + 1) == 1.0
+    assert "x and x_adv differ at 100% of indices." in caplog.text
+
+    x = np.zeros((100, 10, 1))
+    assert image_circle_patch_diameter(x, x + 1) == 10.0
+    assert "Circular patch is not contained within the image" in caplog.text
+
+    N = 10
+    x = np.zeros((N, N))
+    x_adv = np.zeros((N, N))
+    # Draw widening circles centered at (5, 5)
+    for r in range(5):
+        for i, j in itertools.product(range(x.shape[0]), range(x.shape[1])):
+            if (i - 5) ** 2 + (j - 5) ** 2 <= r**2:
+                x_adv[i, j] = 1
+        assert image_circle_patch_diameter(x, x_adv) == (r * 2 + 1) / N
+
+
+def test_video_metrics():
+    def func(x, x_adv):
+        return (x + x_adv).sum()
+
+    with pytest.raises(ValueError):
+        perturbation._generate_video_metric(func, frame_average="not right")
+
+    docstring = "My Custom Docstring"
+    image_dim = (28, 28, 1)
+    pixels = np.product(image_dim)
+    for name in "mean", "max", "min":
+        new_metric = perturbation._generate_video_metric(
+            func, frame_average=name, docstring=docstring
+        )
+        assert new_metric.__doc__ == docstring
+
+    x = np.zeros((3,) + image_dim)
+    x_adv = np.stack(
+        [0 * np.ones(image_dim), 1 * np.ones(image_dim), 2 * np.ones(image_dim)]
+    )
+
+    assert perturbation.element.max_l1(x, x_adv) == 2 * pixels
+    assert perturbation.element.mean_l1(x, x_adv) == pixels
+    min_l1 = perturbation._generate_video_metric(
+        perturbation.element.l1, frame_average="min"
+    )
+    assert min_l1(x, x_adv) == 0

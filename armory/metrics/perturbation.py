@@ -250,56 +250,58 @@ def snr_spectrogram_db(x, x_adv):
 @numpy
 def image_circle_patch_diameter(x, x_adv):
     """
-    Return the diameter of the smallest circular patch over the modified pixels
+    Return smallest circular patch diameter that covers the modified pixels
+        This value is normalized by the smallest spatial dimension
+        So that a value of 1 is the largest circular patch that fits inside the image
+            Values greater than 1 are possible for non-square images
+
+    This metric *assumes* that the modification was circular and contained in the image
+        If the modification is non-circular, then this may underestimate diameter
+
+    Note: If this assumption was not made, a more complicated algorithm would be needed
+        See: "Smallest enclosing disks (balls and ellipsoids)", Emo Welzl, (1991)
+            or https://en.wikipedia.org/wiki/Smallest-circle_problem
     """
     if x.ndim == 2:
         x = np.expand_dims(x, axis=-1)
         x_adv = np.expand_dims(x_adv, axis=-1)
     if x.ndim != 3:
         raise ValueError(
-            f"Expected image with 2 (HW) or 3 (HWC) dimensions. x has shape {x.shape}"
+            f"Expected image with 2 (HW) or 3 (HWC or CHW) dimensions. x has shape {x.shape}"
         )
-    img_shape = x.shape
-    if (x == x_adv).mean() < 0.5:
-        log.warning(
-            f"x and x_adv differ at {int(100*(x != x_adv).mean())} percent of "
-            "indices. image_circle_patch_area may not be accurate"
-        )
-    # Identify which axes of input array are spatial vs. depth dimensions
-    depth_dim = img_shape.index(min(img_shape))
-    spat_ind = 1 if depth_dim != 1 else 0
 
-    # Determine which indices (along the spatial dimension) are perturbed
-    pert_spatial_indices = set(np.where(x != x_adv)[spat_ind])
-    if len(pert_spatial_indices) == 0:
-        log.warning("x == x_adv. image_circle_patch_area is 0")
+    # Assume channel dim is the smallest dimension
+    channel_dim = np.argmin(x.shape)
+    # mask is True if the pixel is different
+    mask = (x != x_adv).any(axis=channel_dim)
+
+    diff = mask.sum()
+    if not diff:
         return 0
 
-    # Find which indices (preceding the patch's max index) are unperturbed, in order
-    # to determine the index of the edge of the patch
-    max_ind_of_patch = max(pert_spatial_indices)
-    unpert_ind_less_than_patch_max_ind = [
-        i for i in range(max_ind_of_patch) if i not in pert_spatial_indices
-    ]
-    min_ind_of_patch = (
-        max(unpert_ind_less_than_patch_max_ind) + 1
-        if unpert_ind_less_than_patch_max_ind
-        else 0
-    )
+    # Get patch diameters for height and width, then take the larger of them
+    diameters = []
+    for axis in 0, 1:
+        marginal = mask.any(axis=axis)
+        min_index = np.argmax(marginal)
+        max_index = len(marginal) - np.argmax(marginal[::-1]) - 1
+        diameters.append(max_index - min_index + 1)
+    diameter = max(diameters)
 
-    # If there are any perturbed indices outside the range of the patch just computed
-    if min(pert_spatial_indices) < min_ind_of_patch:
-        log.warning("Multiple regions of the image have been perturbed")
+    size = np.product(mask.shape)
+    max_diameter = min(mask.shape)  # max in-image diameter
+    if diameter > max_diameter:
+        log.warning("Circular patch is not contained within the image")
+    elif diff >= np.pi * (max_diameter / 2) ** 2:
+        log.warning(
+            f"x and x_adv differ at {diff/size:.0%} of indices. "
+            "Assumption of circular patch within image may be violated."
+        )
 
-    diameter = max_ind_of_patch - min_ind_of_patch + 1
-    spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
-    patch_diameter = diameter / min(spatial_dims)
-    return patch_diameter
+    return diameter / max_diameter
 
 
 # Image-based metrics applied to video
-
-
 def _generate_video_metric(metric, frame_average="mean", docstring=None):
     """
     Helper function to create video metrics from existing image metrics
