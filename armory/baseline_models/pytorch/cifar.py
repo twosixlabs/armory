@@ -20,7 +20,7 @@ from torchvision.transforms import RandomRotation
 
 rot_transform = RandomRotation(degrees=(10, 20))
 export_meter = ImageClassificationExportMeter(
-    "exporter", "cifar_model.x_rotated[benign]", "tmp_dir"
+    "exporter", "cifar_model.x_rotated[benign]", "tmp_dir", max_batches=1
 )
 hub = get_hub()
 hub.connect_meter(export_meter, use_default_writers=False)

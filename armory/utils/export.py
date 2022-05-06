@@ -23,21 +23,6 @@ class SampleExporter:
         self.default_export_kwargs = default_export_kwargs
         self.hub = get_hub()
 
-    @staticmethod
-    def is_measuring(probe_variable):
-        return True
-
-    def update(self, probe_variable, value):
-        batch_size = value.shape[0]
-        batch_num = self.hub.context.get("batch")
-        breakpoint()
-        for idx in range(batch_size):
-            sample = self.get_sample(value[idx])
-            self.save_sample(
-                fname=f"{self.base_output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
-                sample=sample,
-            )
-
     def save_sample(self, fname, sample):
         raise NotImplementedError(
             f"save_sample() method should be defined for export class {self.__class__}"
@@ -819,13 +804,18 @@ class So2SatExporter(SampleExporter):
 
 
 class ExportMeter(Meter):
-    def __init__(self, name, metric_arg_name, base_output_dir, export_class):
+    def __init__(
+        self, name, metric_arg_name, base_output_dir, export_class, max_batches=None
+    ):
         super().__init__(name, lambda x: x, metric_arg_name)
         self.base_output_dir = base_output_dir
         self.exporter = export_class(base_output_dir)
+        self.max_batches = max_batches
+        self.hub = get_hub()
 
     def measure(self, clear_values=True):
-        breakpoint()
+        if self.max_batches and self.hub.context.get("batch") >= self.max_batches:
+            return
         self.is_ready(raise_error=True)
         batch_num, value = self.arg_batch_indices[0], self.values[0]
         probe_variable = self.get_arg_names()[0]
@@ -842,7 +832,11 @@ class ExportMeter(Meter):
 
 
 class ImageClassificationExportMeter(ExportMeter):
-    def __init__(self, name, metric_arg_name, base_output_dir):
+    def __init__(self, name, metric_arg_name, base_output_dir, max_batches=None):
         super().__init__(
-            name, metric_arg_name, base_output_dir, ImageClassificationExporter
+            name,
+            metric_arg_name,
+            base_output_dir,
+            ImageClassificationExporter,
+            max_batches,
         )
