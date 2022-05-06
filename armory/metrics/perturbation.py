@@ -108,16 +108,14 @@ def elementwise(element_metric, name=None):
 def numpy(function):
     """
     Ensures args (but not kwargs) are passed in as numpy vectors
-    It casts them to float (unless they are complex)
-    And it ensures that they have the same shape and dtype
+    It casts them to to a common data type (complex, float, int) if possible
+    And it ensures that they have the same shape
     """
 
     @functools.wraps(function)
     def wrapper(x, x_adv, **kwargs):
         # TODO: cast from Torch tensor and TF tensor to numpy?
         x, x_adv = (np.asarray(i) for i in (x, x_adv))
-        if x.dtype != x_adv.dtype:
-            raise ValueError(f"x.dtype {x.dtype} != x_adv.dtype {x_adv.dtype}")
         if x.shape != x_adv.shape:
             raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
 
@@ -127,9 +125,12 @@ def numpy(function):
             (np.floating, float),
             (np.integer, int),
         ]:
-            if np.issubdtype(x.dtype, umbrella_type):
+            if np.issubdtype(x.dtype, umbrella_type) or np.issubdtype(
+                x_adv.dtype, umbrella_type
+            ):
                 if x.dtype != target_type:
                     x = x.astype(target_type)
+                if x_adv.dtype != target_type:
                     x_adv = x_adv.astype(target_type)
                 break
         # Otherwise, do not modify
@@ -139,6 +140,7 @@ def numpy(function):
     return wrapper
 
 
+@elementwise
 @numpy
 def lp(x, x_adv, *, p=2):
     """
