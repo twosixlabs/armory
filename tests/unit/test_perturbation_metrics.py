@@ -132,6 +132,7 @@ def test_image_circle_patch_diameter(caplog):
     x = np.zeros((100, 10, 1))
     assert image_circle_patch_diameter(x, x + 1) == 10.0
     assert "Circular patch is not contained within the image" in caplog.text
+    assert image_circle_patch_diameter(x.transpose(), x.transpose() + 1) == 10.0
 
     N = 10
     x = np.zeros((N, N))
@@ -142,6 +143,13 @@ def test_image_circle_patch_diameter(caplog):
             if (i - 5) ** 2 + (j - 5) ** 2 <= r**2:
                 x_adv[i, j] = 1
         assert image_circle_patch_diameter(x, x_adv) == (r * 2 + 1) / N
+        for axis in range(3):
+            assert (
+                image_circle_patch_diameter(
+                    np.expand_dims(x, axis=axis), np.expand_dims(x_adv, axis=axis)
+                )
+                == (r * 2 + 1) / N
+            )
 
 
 def test_video_metrics():
