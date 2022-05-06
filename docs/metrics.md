@@ -87,7 +87,7 @@ print(peturbation.batch)
 print(perturbation.element)
 # ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
 ```
-Currently, all perturbation metrics have element-wise and batch-wise versions, though theconfig assumes that the batch version is intended.
+Currently, all perturbation metrics have element-wise and batch-wise versions, though the config assumes that the batch version is intended.
 For instance:
 ```
 perturbation.batch.l1([0, 0, 0], [1, 1, 1])
