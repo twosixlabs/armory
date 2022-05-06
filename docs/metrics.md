@@ -54,17 +54,15 @@ The functionality for these profilers can be found in `armory/metrics/compute.py
 
 ## Metrics
 
-The `armory.utils.metrics` module implements functionality to measure both
-task and perturbation metrics. 
+The `armory.utils.metrics` module implements functionality to measure both task and perturbation metrics. 
 
-### Metrics
+We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
+Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
+
+### Perturbation Metrics
 
 | Name | Type | Description |
 |-------|-------|-------|
-| categorical_accuracy | Task | Categorical Accuracy |
-| top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
-| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
-| word_error_rate | Task | Word Error Rate |
 | image_circle_patch_diameter | Perturbation | Patch Diameter |
 | lp   | Perturbation | L-p norm |
 | linf | Perturbation | L-infinity norm |
@@ -74,11 +72,6 @@ task and perturbation metrics.
 | mars_mean_l2 | Perturbation | Mean L2 norm across video stacks |
 | mars_mean_patch | Perturbation | Mean patch diameter across video stacks |
 | norm | Perturbation | L-p norm |
-| object_detection_AP_per_class | Task | Object Detection mAP |
-| object_detection_disappearance_rate | Task | Object Detection Disappearance Rate |
-| object_detection_hallucinations_per_image| Task | Object Detection Hallucinations Per Image |
-| object_detection_misclassification_rate | Task | Object Detection Misclassification Rate |
-| object_detection_true_positive_rate | Task | Object Detection True Positive Rate | 
 | snr | Perturbation | Signal-to-noise ratio |
 | snr_db | Perturbation | Signal-to-noise ratio (decibels) |
 | snr_spectrogram | Perturbation | Signal-to-noise ratio of spectrogram |
@@ -86,8 +79,22 @@ task and perturbation metrics.
 
 <br>
 
-We have implemented the metrics in numpy, instead of using framework-specific 
-metrics, to prevent expanding the required set of dependencies. Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
+### Task Metrics
+
+| Name | Type | Description |
+|-------|-------|-------|
+| categorical_accuracy | Task | Categorical Accuracy |
+| top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
+| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
+| word_error_rate | Task | Word Error Rate |
+| object_detection_AP_per_class | Task | Object Detection mAP |
+| object_detection_disappearance_rate | Task | Object Detection Disappearance Rate |
+| object_detection_hallucinations_per_image| Task | Object Detection Hallucinations Per Image |
+| object_detection_misclassification_rate | Task | Object Detection Misclassification Rate |
+| object_detection_true_positive_rate | Task | Object Detection True Positive Rate | 
+
+<br>
+
 
 ### Targeted vs. Untargeted Attacks
 
