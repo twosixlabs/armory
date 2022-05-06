@@ -54,44 +54,62 @@ The functionality for these profilers can be found in `armory/metrics/compute.py
 
 ## Metrics
 
-The `armory.utils.metrics` module implements functionality to measure both task and perturbation metrics. 
+The `armory.utils.metrics` module implements functionality to measure task metrics.
+The `armory.metrics.perturbation` module implements functionality to measure perturbation metrics.
 
 We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
 Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
 
 ### Perturbation Metrics
 
-| Name | Type | Description |
-|-------|-------|-------|
-| image_circle_patch_diameter | Perturbation | Patch Diameter |
-| lp   | Perturbation | L-p norm |
-| linf | Perturbation | L-infinity norm |
-| l2 | Perturbation | L2 norm |
-| l1 | Perturbation | L1 norm |
-| l0 | Perturbation | L0 "norm" |
-| mars_mean_l2 | Perturbation | Mean L2 norm across video stacks |
-| mars_mean_patch | Perturbation | Mean patch diameter across video stacks |
-| norm | Perturbation | L-p norm |
-| snr | Perturbation | Signal-to-noise ratio |
-| snr_db | Perturbation | Signal-to-noise ratio (decibels) |
-| snr_spectrogram | Perturbation | Signal-to-noise ratio of spectrogram |
-| snr_spectrogram_db | Perturbation | Signal-to-noise ratio of spectrogram (decibels) |
+| Name | Description |
+|-------|-------|
+| `linf` | L-infinity norm |
+| `l2` | L2 norm |
+| `l1` | L1 norm |
+| `l0` | L0 "norm" |
+| `snr` | Signal-to-noise ratio |
+| `snr_db` | Signal-to-noise ratio (decibels) |
+| `snr_spectrogram` | Signal-to-noise ratio of spectrogram |
+| `snr_spectrogram_db` | Signal-to-noise ratio of spectrogram (decibels) |
+| `image_circle_patch_diameter` | Diameter of smallest circular patch |
+| `mean_l(0|1|2|inf)` | Lp norm averaged over all frames of video |
+| `max_l(0|1|2|inf)` | Max of Lp norm over all frames of video |
+| `(mean|max)_image_circle_patch_diameter` | Average or max circle over all frames of video |
 
 <br>
 
+The set of perturbation metrics provided by armory can also be found via batch-wise and element-wise namespaces as follows:
+```
+from armory.metrics import perturbation
+print(peturbation.batch)
+# ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
+print(perturbation.element)
+# ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
+```
+Currently, all perturbation metrics have element-wise and batch-wise versions, though theconfig assumes that the batch version is intended.
+For instance:
+```
+perturbation.batch.l1([0, 0, 0], [1, 1, 1])
+# array([1., 1., 1.])
+perturbation.element.l1([0, 0, 0], [1, 1, 1])
+# 3.0
+```
+Metric outputs are numpy arrays or scalars.
+
+
 ### Task Metrics
 
-| Name | Type | Description |
-|-------|-------|-------|
-| categorical_accuracy | Task | Categorical Accuracy |
-| top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
-| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
-| word_error_rate | Task | Word Error Rate |
-| object_detection_AP_per_class | Task | Object Detection mAP |
-| object_detection_disappearance_rate | Task | Object Detection Disappearance Rate |
-| object_detection_hallucinations_per_image| Task | Object Detection Hallucinations Per Image |
-| object_detection_misclassification_rate | Task | Object Detection Misclassification Rate |
-| object_detection_true_positive_rate | Task | Object Detection True Positive Rate | 
+| Name | Description |
+|-------|-------|
+| `categorical_accuracy` | Categorical Accuracy |
+| `top_5_categorical_accuracy` | Top-5 Categorical Accuracy |
+| `word_error_rate` | Word Error Rate |
+| `object_detection_AP_per_class` | Object Detection mAP |
+| `object_detection_disappearance_rate` | Object Detection Disappearance Rate |
+| `object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
+| `object_detection_misclassification_rate` | Object Detection Misclassification Rate |
+| `object_detection_true_positive_rate` | Object Detection True Positive Rate | 
 
 <br>
 
