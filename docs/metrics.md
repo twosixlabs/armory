@@ -73,9 +73,9 @@ Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detail
 | `snr_spectrogram` | Signal-to-noise ratio of spectrogram |
 | `snr_spectrogram_db` | Signal-to-noise ratio of spectrogram (decibels) |
 | `image_circle_patch_diameter` | Diameter of smallest circular patch |
-| `mean_l(0|1|2|inf)` | Lp norm averaged over all frames of video |
-| `max_l(0|1|2|inf)` | Max of Lp norm over all frames of video |
-| `(mean|max)_image_circle_patch_diameter` | Average or max circle over all frames of video |
+| `mean_l(0\|1\|2\|inf)` | Lp norm averaged over all frames of video |
+| `max_l(0\|1\|2\|inf)` | Max of Lp norm over all frames of video |
+| `(mean\|max)_image_circle_patch_diameter` | Average or max circle over all frames of video |
 
 <br>
 
