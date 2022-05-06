@@ -232,8 +232,6 @@
                 "snr_spectrogram",
                 "snr_spectrogram_db",
                 "image_circle_patch_diameter",
-                "mars_mean_l2",
-                "mars_mean_patch",
                 "mean_l0",
                 "max_l0",
                 "mean_l1",
