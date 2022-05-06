@@ -10,7 +10,7 @@ import json
 from copy import deepcopy
 
 from armory.logs import log
-from armory.instrument import get_hub
+from armory.instrument import get_hub, Meter
 
 
 class SampleExporter:
@@ -816,3 +816,33 @@ class So2SatExporter(SampleExporter):
             raise ValueError(
                 f"modality must be one of ('vh', 'vv', 'eo'), received {modality}"
             )
+
+
+class ExportMeter(Meter):
+    def __init__(self, name, metric_arg_name, base_output_dir, export_class):
+        super().__init__(name, lambda x: x, metric_arg_name)
+        self.base_output_dir = base_output_dir
+        self.exporter = export_class(base_output_dir)
+
+    def measure(self, clear_values=True):
+        breakpoint()
+        self.is_ready(raise_error=True)
+        batch_num, value = self.arg_batch_indices[0], self.values[0]
+        probe_variable = self.get_arg_names()[0]
+        batch_size = value.shape[0]
+        for idx in range(batch_size):
+            sample = self.exporter.get_sample(value[idx])
+            self.exporter.save_sample(
+                fname=f"{self.base_output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
+                sample=sample,
+            )
+        if clear_values:
+            self.clear()
+        self.never_measured = False
+
+
+class ImageClassificationExportMeter(ExportMeter):
+    def __init__(self, name, metric_arg_name, base_output_dir):
+        super().__init__(
+            name, metric_arg_name, base_output_dir, ImageClassificationExporter
+        )
