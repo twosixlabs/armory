@@ -12,6 +12,7 @@ from armory.instrument.instrument import (
 )
 from armory.logs import log
 from armory.utils import metrics
+from armory.metrics import task
 
 
 class MetricsLogger:
@@ -205,7 +206,7 @@ class ResultsLogWriter(LogWriter):
                 for m in MEAN_AP_METRICS:
                     if m in name:
                         metric = metrics.get_supported_metric(m)
-                        result = metrics.MeanAP(metric)(result)
+                        result = task.MeanAP(metric)(result)
                         break
             f_result = f"{result}"
         elif any(m in name for m in QUANTITY_METRICS):
@@ -235,7 +236,7 @@ def _task_metric(
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = metrics.MeanAP(metric)
+        final = task.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
@@ -366,7 +367,7 @@ def _task_metric_wrt_benign_predictions(
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = metrics.MeanAP(metric)
+        final = task.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
