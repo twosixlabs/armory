@@ -1,1 +1,1 @@
-from armory.metrics import compute, perturbation
+from armory.metrics import compute, perturbation, statistical, task

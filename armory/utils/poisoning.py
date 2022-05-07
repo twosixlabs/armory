@@ -10,7 +10,8 @@ import torch
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
 from armory.instrument import Meter
-from armory.utils.metrics import get_supported_metric, make_contingency_tables
+from armory.utils.metrics import get_supported_metric
+from armory.metrics.statistical import make_contingency_tables
 
 
 class SilhouetteData(NamedTuple):
@@ -335,8 +336,8 @@ class FairnessMetrics:
             test_y, majority_mask_test_set, correct_prediction_mask_test_set
         )
 
-        chi2_metric = get_supported_metric("poison_chi2_p_value")
-        spd_metric = get_supported_metric("poison_spd")
+        chi2_metric = get_supported_metric("chi2_p_value")
+        spd_metric = get_supported_metric("spd")
         for class_id in test_set_class_labels:
             majority_x = majority_x_correct_prediction_tables[class_id]
             chi2 = np.mean(chi2_metric(majority_x))
