@@ -87,6 +87,7 @@ def numpy(function):
 _ENTAILMENT_MODEL = None
 
 
+# batchwise registration after class definition due to name change
 class Entailment:
     """
     Entailment measures the relationship between the premise y and hypothesis y_pred
@@ -154,6 +155,9 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
+batchwise(Entailment, name="entailment")
+
+
 @aggregator
 def total_entailment(sample_results):
     """
@@ -200,6 +204,7 @@ def total_wer(sample_wers):
         raise ValueError("total_wer() only for WER metric aggregation")
 
 
+@batchwise
 def identity_unzip(*args):
     """
     Map batchwise args to a list of sample-wise args
@@ -207,6 +212,7 @@ def identity_unzip(*args):
     return list(zip(*args))
 
 
+@aggregator
 def identity_zip(sample_arg_tuples):
     args = [list(x) for x in zip(*sample_arg_tuples)]
     return args
@@ -224,6 +230,7 @@ class MeanAP:
         return {"mean": mean_ap, "class": ap}
 
 
+@batchwise
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays
@@ -279,6 +286,7 @@ def tpr_fpr(actual_conditions, predicted_conditions):
     )
 
 
+@batchwise
 def per_class_accuracy(y, y_pred):
     """
     Return a dict mapping class indices to their accuracies
@@ -304,6 +312,7 @@ def per_class_accuracy(y, y_pred):
     return results
 
 
+@batchwise
 def per_class_mean_accuracy(y, y_pred):
     """
     Return a dict mapping class indices to their mean accuracies
@@ -315,6 +324,7 @@ def per_class_mean_accuracy(y, y_pred):
     return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
 
 
+@batchwise
 def abstains(y, y_pred):
     """
     For each sample in y_pred:
@@ -512,6 +522,7 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
+@batchwise
 def video_tracking_mean_iou(y, y_pred):
     """
     Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video.
@@ -542,6 +553,7 @@ def video_tracking_mean_iou(y, y_pred):
     return mean_ious
 
 
+@batchwise
 def video_tracking_mean_success_rate(y, y_pred):
     """
     Mean success rate averaged over all thresholds in {0, 0.05, 0.1, ..., 1.0} and all frames.
@@ -583,6 +595,7 @@ def video_tracking_mean_success_rate(y, y_pred):
     return mean_success_rates
 
 
+@populationwise
 def object_detection_AP_per_class(
     y_list, y_pred_list, iou_threshold=0.5, class_list=None
 ):
@@ -764,6 +777,7 @@ def object_detection_AP_per_class(
     return average_precisions_by_class
 
 
+@populationwise
 def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None):
     """
     Mean average precision for object detection.
@@ -893,6 +907,7 @@ def _object_detection_get_tpr_mr_dr_hr(
     )
 
 
+@populationwise
 def object_detection_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -923,6 +938,7 @@ def object_detection_true_positive_rate(
     return true_positive_rate_per_img
 
 
+@populationwise
 def object_detection_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -953,6 +969,7 @@ def object_detection_misclassification_rate(
     return misclassification_rate_per_image
 
 
+@populationwise
 def object_detection_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -984,6 +1001,7 @@ def object_detection_disappearance_rate(
     return disappearance_rate_per_img
 
 
+@populationwise
 def object_detection_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1014,6 +1032,7 @@ def object_detection_hallucinations_per_image(
     return hallucinations_per_image
 
 
+@populationwise
 def carla_od_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1031,6 +1050,7 @@ def carla_od_hallucinations_per_image(
     )
 
 
+@populationwise
 def carla_od_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1048,6 +1068,7 @@ def carla_od_disappearance_rate(
     )
 
 
+@populationwise
 def carla_od_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1065,6 +1086,7 @@ def carla_od_true_positive_rate(
     )
 
 
+@populationwise
 def carla_od_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1082,6 +1104,7 @@ def carla_od_misclassification_rate(
     )
 
 
+@populationwise
 def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     class_list = [1, 2, 3]
     """
@@ -1093,6 +1116,7 @@ def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     )
 
 
+@populationwise
 def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
@@ -1277,6 +1301,7 @@ def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     return average_precisions_by_class
 
 
+@populationwise
 def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the patch causes the detector
@@ -1460,6 +1485,7 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
     return average_precisions_by_class
 
 
+@populationwise
 def dapricot_patch_target_success(
     y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5
 ):
@@ -1507,31 +1533,4 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 SUPPORTED_METRICS = {
     "entailment": Entailment,
-    "total_entailment": total_entailment,
-    "total_wer": total_wer,
-    "identity_unzip": identity_unzip,
-    "identity_zip": identity_zip,
-    "tpr_fpr": tpr_fpr,
-    "per_class_accuracy": per_class_accuracy,
-    "per_class_mean_accuracy": per_class_mean_accuracy,
-    "dapricot_patch_target_success": dapricot_patch_target_success,
-    "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
-    "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
-    "categorical_accuracy": categorical_accuracy,
-    "top_n_categorical_accuracy": top_n_categorical_accuracy,
-    "top_5_categorical_accuracy": top_5_categorical_accuracy,
-    "video_tracking_mean_iou": video_tracking_mean_iou,
-    "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
-    "word_error_rate": word_error_rate,
-    "object_detection_AP_per_class": object_detection_AP_per_class,
-    "object_detection_mAP": object_detection_mAP,
-    "object_detection_disappearance_rate": object_detection_disappearance_rate,
-    "object_detection_hallucinations_per_image": object_detection_hallucinations_per_image,
-    "object_detection_misclassification_rate": object_detection_misclassification_rate,
-    "object_detection_true_positive_rate": object_detection_true_positive_rate,
-    "carla_od_AP_per_class": carla_od_AP_per_class,
-    "carla_od_disappearance_rate": carla_od_disappearance_rate,
-    "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
-    "carla_od_misclassification_rate": carla_od_misclassification_rate,
-    "carla_od_true_positive_rate": carla_od_true_positive_rate,
 }
