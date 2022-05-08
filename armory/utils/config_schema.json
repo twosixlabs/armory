@@ -197,7 +197,7 @@
             ]
         },
         "supported_metric": {
-            "$comment": "see armory/utils/metrics.py::SUPPORTED_METRICS",
+            "$comment": "see armory/metrics.py::SUPPORTED_METRICS",
             "anyOf": [
                 {
                     "$ref": "#/definitions/supported_metric_enum",
