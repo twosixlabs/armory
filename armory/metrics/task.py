@@ -51,6 +51,8 @@ def elementwise(metric, name=None):
     """
     Register a element-wise metric and register a batch-wise version of it
     """
+    if name is None:
+        name = metric.__name__
     set_namespace(element, metric, name=name)
     batch_metric = as_batch(metric)
     batchwise(batch_metric, name=name)
@@ -152,6 +154,7 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
+@aggregator
 def total_entailment(sample_results):
     """
     Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
@@ -343,7 +346,7 @@ def categorical_accuracy(y, y_pred):
         y = np.argmax(y)
     if y_pred.ndim == 1:
         y_pred = np.argmax(y_pred)
-    return y == y_pred
+    return float(y == y_pred)
 
 
 @elementwise
@@ -354,17 +357,20 @@ def top_5_categorical_accuracy(y, y_pred):
     return top_n_categorical_accuracy(y, y_pred, n=5)
 
 
+@elementwise
 @numpy
 def top_n_categorical_accuracy(y, y_pred, *, n=5):
     """
     Return the top n categorical accuracy of the predictions
 
-    y_pred - must be a vector of values
+    y_pred - must be a vector of values or a single value
     """
     if n < 1 or n == np.inf or n != int(n):
         raise ValueError(f"n must be a positive integer, not {n}")
     n = int(n)
 
+    if y_pred.ndim == 0:
+        return float(y == y_pred)
     if y_pred.ndim != 1:
         raise ValueError(f"y_pred {y_pred} must be a 1-dimensional vector")
     if y.ndim > 1:

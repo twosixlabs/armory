@@ -129,8 +129,8 @@ def test_abstains():
 def test_categorical_accuracy():
     y = [0, 1, 2, 3, 4]
     y_pred = [0, 1, 2, 2, 3]
-    assert task.categorical_accuracy(y, y_pred) == [1, 1, 1, 0, 0]
-    assert task.categorical_accuracy(y, np.eye(5)) == [1] * 5
+    assert (task.batch.categorical_accuracy(y, y_pred) == [1, 1, 1, 0, 0]).all()
+    assert (task.batch.categorical_accuracy(y, np.eye(5)) == [1] * 5).all()
     with pytest.raises(ValueError):
         task.categorical_accuracy(y, [[y_pred]])
 
@@ -138,12 +138,13 @@ def test_categorical_accuracy():
 def test_top_n_categorical_accuracy():
     y = [0, 1, 2, 3, 4]
     y_pred = [0, 1, 2, 2, 3]
-    assert task.categorical_accuracy(y, y_pred) == task.top_n_categorical_accuracy(
-        y, y_pred, 1
-    )
+    assert (
+        task.batch.categorical_accuracy(y, y_pred)
+        == task.batch.top_n_categorical_accuracy(y, y_pred, n=1)
+    ).all()
     y = [2, 0]
     y_pred = [[0.1, 0.4, 0.2, 0.2, 0.1, 0.1], [0.1, 0.4, 0.2, 0.2, 0.1, 0.1]]
-    assert task.top_n_categorical_accuracy(y, y_pred, 3) == [1, 0]
+    assert (task.batch.top_n_categorical_accuracy(y, y_pred, n=3) == [1, 0]).all()
 
 
 def test_mAP():

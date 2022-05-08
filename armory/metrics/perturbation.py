@@ -25,6 +25,8 @@ def elementwise(metric, name=None):
     """
     Register a element metric and register a batchwise version of it
     """
+    if name is None:
+        name = metric.__name__
     set_namespace(element, metric, name=name)
     batch_metric = as_batch(metric)
     batchwise(batch_metric, name=name)
