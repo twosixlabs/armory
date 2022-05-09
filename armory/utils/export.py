@@ -21,7 +21,6 @@ class SampleExporter:
         self.output_dir = None
         self.y_dict = {}
         self.default_export_kwargs = default_export_kwargs
-        self.hub = get_hub()
 
     def save_sample(self, fname, sample):
         raise NotImplementedError(
@@ -809,13 +808,12 @@ class ExportMeter(Meter):
         self.exporter = exporter
         self.base_output_dir = exporter.base_output_dir
         self.max_batches = max_batches
-        self.hub = get_hub()
 
     def measure(self, clear_values=True):
-        if self.max_batches and self.hub.context.get("batch") >= self.max_batches:
-            return
         self.is_ready(raise_error=True)
         batch_num, value = self.arg_batch_indices[0], self.values[0]
+        if self.max_batches and batch_num >= self.max_batches:
+            return
         probe_variable = self.get_arg_names()[0]
         batch_size = value.shape[0]
         for idx in range(batch_size):
