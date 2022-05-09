@@ -42,7 +42,7 @@ class Net(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # TEMPORARY CODE
-        x_rot = rot_transform(x).numpy()
+        x_rot = rot_transform(x).detach().numpy()
         probe.update(x_rotated=x_rot)
 
         x = x.permute(0, 3, 1, 2)  # from NHWC to NCHW
