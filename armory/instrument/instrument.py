@@ -385,13 +385,30 @@ class Hub:
         if writer not in self.writers:
             self.writers.append(writer)
 
-    def record(self, name, result):
+    def record(self, name, result, writers=None, use_default_writers=True):
         """
         Push a record to the default writers
         """
-        if not self.default_writers:
-            log.warning(f"No default writers to record {name}:{result} to")
-        for writer in self.default_writers:
+        if writers is None:
+            writers = []
+        elif isinstance(writers, Writer):
+            writers = [writers]
+        else:
+            try:
+                writers = list(writers)
+            except TypeError:
+                raise TypeError(
+                    f"Received 'writers' input of type {type(writers)}, "
+                    "expected one of (None, Writer, iterable of Writers)"
+                )
+            if not all(isinstance(writer, Writer) for writer in writers):
+                raise ValueError("writers are not all of type Writer")
+
+        if use_default_writers:
+            writers.extend(self.default_writers)
+        if not writers:
+            log.warning(f"No writers to record {name}:{result} to")
+        for writer in writers:
             writer.write((name, self.context["batch"], result))
 
     def close(self):

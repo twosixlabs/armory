@@ -269,7 +269,7 @@ def test_probe_mapper(caplog):
     assert len(probe_mapper) == 0
 
 
-class LastRecordWriter:
+class LastRecordWriter(instrument.Writer):
     """
     Mock test interface for Writer
     """
@@ -308,7 +308,7 @@ def test_hub(caplog):
     name = "no default writer"
     result = 17
     hub.record(name, result)
-    assert f"No default writers to record {name}:{result} to" in caplog.text
+    assert f"No writers to record {name}:{result} to" in caplog.text
 
     w1 = LastRecordWriter()
     w2 = LastRecordWriter()
@@ -321,6 +321,25 @@ def test_hub(caplog):
     assert w1.record == (name, batch, result)
     assert w1.num_writes == 1
     assert w2.num_writes == 0
+
+    with pytest.raises(TypeError):
+        hub.record(name, result, writers=2343)
+    with pytest.raises(ValueError):
+        hub.record(name, result, writers=(w1, w2, "hi"))
+    name = "use_default_writers set to False"
+    hub.record(name, result, use_default_writers=False)
+    assert f"No writers to record {name}:{result} to" in caplog.text
+    w3 = LastRecordWriter()
+    hub.record(name, result, writers=w3, use_default_writers=False)
+    assert w3.record == (name, batch, result)
+    assert w1.num_writes == 1
+    assert w2.num_writes == 0
+    assert w3.num_writes == 1
+    hub.record(name, result, writers=w3, use_default_writers=True)
+    assert w3.record == (name, batch, result)
+    assert w1.num_writes == 2
+    assert w2.num_writes == 0
+    assert w3.num_writes == 2
 
     m1 = MockMeter("a[benign]")
     m2 = MockMeter("a", "b[benign]")
