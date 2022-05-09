@@ -12,15 +12,17 @@ from art.estimators.classification import PyTorchClassifier
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # TEMPORARY CODE
-from armory.instrument import get_probe, get_hub
-from armory.utils.export import ImageClassificationExportMeter
-
-probe = get_probe("cifar_model")
 from torchvision.transforms import RandomRotation
 
 rot_transform = RandomRotation(degrees=(10, 20))
-export_meter = ImageClassificationExportMeter(
-    "exporter", "cifar_model.x_rotated[benign]", "tmp_dir", max_batches=1
+
+from armory.instrument import get_probe, get_hub
+from armory.utils.export import ExportMeter, ImageClassificationExporter
+
+probe = get_probe("cifar_model")
+exporter = ImageClassificationExporter("tmp_dir")
+export_meter = ExportMeter(
+    "exporter", "cifar_model.x_rotated[benign]", exporter, max_batches=1
 )
 hub = get_hub()
 hub.connect_meter(export_meter, use_default_writers=False)

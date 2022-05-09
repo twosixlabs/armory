@@ -804,12 +804,10 @@ class So2SatExporter(SampleExporter):
 
 
 class ExportMeter(Meter):
-    def __init__(
-        self, name, metric_arg_name, base_output_dir, export_class, max_batches=None
-    ):
+    def __init__(self, name, metric_arg_name, exporter, max_batches=None):
         super().__init__(name, lambda x: x, metric_arg_name)
-        self.base_output_dir = base_output_dir
-        self.exporter = export_class(base_output_dir)
+        self.exporter = exporter
+        self.base_output_dir = exporter.base_output_dir
         self.max_batches = max_batches
         self.hub = get_hub()
 
@@ -829,14 +827,3 @@ class ExportMeter(Meter):
         if clear_values:
             self.clear()
         self.never_measured = False
-
-
-class ImageClassificationExportMeter(ExportMeter):
-    def __init__(self, name, metric_arg_name, base_output_dir, max_batches=None):
-        super().__init__(
-            name,
-            metric_arg_name,
-            base_output_dir,
-            ImageClassificationExporter,
-            max_batches,
-        )
