@@ -8,7 +8,6 @@ Scenario Contributor: MITRE Corporation
 import numpy as np
 
 from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
 from armory.utils.export import VideoTrackingExporter
 
 
@@ -36,7 +35,7 @@ class CarlaVideoTracking(Scenario):
         x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
         x.flags.writeable = False
-        with metrics.resource_context(name="Inference", **self.profiler_kwargs):
+        with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
@@ -47,7 +46,7 @@ class CarlaVideoTracking(Scenario):
         x, y = self.x, self.y
         y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.use_label:
                 y_target = y
             elif self.targeted:
