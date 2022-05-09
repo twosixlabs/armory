@@ -65,34 +65,6 @@ def cli(verbose, log_level):
     setup_log(verbose, log_level)
 
 
-# @cli.command()
-# @click.argument("experiment")
-# @click.option("--interactive", is_flag=True)
-# @click.option("--override", default=[], multiple=True)
-# def run(experiment, interactive, override):
-#     """Armory Run - Execute Armory using Experiment File
-#
-#     EXPERIMENT - File containing experiment parameters
-#     """
-#     from armory.environment import EnvironmentParameters
-#
-#     env_pars = EnvironmentParameters.load(overrides=override)
-#     log.info(f"Loaded Environment from: {env_pars.profile}")
-#
-#     from armory.experiment import ExperimentParameters, Experiment
-#
-#     exp_pars, env_overrides = ExperimentParameters.load(experiment)
-#     env_pars.apply_overrides(env_overrides)
-#
-#     exp = Experiment(exp_pars, env_pars)
-#     print(exp)
-#     # log.info(f"Executing `armory run` from experiment file: {experiment}")
-#     #
-#     # env = EnvironmentParameters(overrides=override)
-#     #
-#     # click.echo(f"Interactive: {interactive}")
-#     # raise NotImplementedError("Still Working")
-#     # # TODO Fix this
 
 
 @cli.command()
@@ -256,10 +228,12 @@ def run(experiment, override):
         mounts = get_mounts_from_paths(env.paths.items())
         from armory.launcher.launcher import DockerMount, execute_docker_cmd
 
-        armory_dir = "../../"
         mounts.append(
             DockerMount(
-                type="bind", source=armory_dir, target="/armory_src/", readonly=True
+                type="bind",
+                source=env.armory_source_directory,
+                target="/armory_src/",
+                readonly=True
             )
         )
         cmd = "echo Executing Armory in docker"

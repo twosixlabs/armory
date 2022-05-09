@@ -4,12 +4,12 @@ Environment parameter names
 from pydantic import BaseModel
 import os
 import json
-
-# from armory.utils import rsetattr, rhasattr, parse_overrides
+import inspect
+import armory
 from armory.utils import set_overrides
+import signal
 
 DEFAULT_ARMORY_DIRECTORY = os.path.expanduser("~/.armory")
-# DEFAULT_DOCKER_REPO = "twosixarmory"
 
 
 class Credentials(BaseModel):
@@ -45,38 +45,6 @@ class Paths(BaseModel):
             setattr(self, k, str(new_v))
 
 
-#
-# # TODO Think aobut what to do if multiple simulatenous test
-# #  builds are happending on same machine with image name/tag
-# #  clashes
-#
-#
-# class DockerImage(str, Enum):
-#     """Armory Supported Docker Images
-#
-#     IMAGES
-#     base:                   This image contains the base requirements
-#                             necessary to run armory within a container.
-#                             NOTE: This image does NOT contain an installation
-#                             of armory.
-#
-#     tf2                     Image with armory installed and ready to use with
-#                             TensorFlow2 based architectures
-#
-#     pytorch                 Image with armory installed and ready to use with
-#                             pytorch based architectures
-#
-#     pytorch-deepspeech      Image with armory installed and ready to use with
-#                             pytorch deepspeech architectures (primarily used with
-#                             audio scenarios
-#     """
-#
-#     base = f"{DEFAULT_DOCKER_REPO}/base"
-#     pytorch = f"{DEFAULT_DOCKER_REPO}/pytorch"
-#     pytorch_deepspeech = f"{DEFAULT_DOCKER_REPO}/pytorch-deepspeech"
-#     tf2 = f"{DEFAULT_DOCKER_REPO}/tf2"
-
-
 class EnvironmentParameters(BaseModel):
     """Armory Environment Configuration Context
 
@@ -89,6 +57,8 @@ class EnvironmentParameters(BaseModel):
     """
 
     profile: str = os.path.join(DEFAULT_ARMORY_DIRECTORY, "profile")
+    armory_source_directory: str = os.path.dirname(inspect.getfile(armory))
+
     credentials: Credentials = Credentials()
     paths: Paths = Paths()
 
@@ -109,6 +79,7 @@ class EnvironmentParameters(BaseModel):
         import os
 
         os.environ["ARMORY_PROFILE"] = env.profile
+        os.environ["ARMORY_SOURCE_DIRECTORY"] = env.armory_source_directory
         for k, v in env.paths.dict().items():
             os.environ[f"ARMORY_PATHS_{str(k).upper()}"] = str(v)
         for k, v in env.credentials.dict().items():
@@ -210,7 +181,11 @@ def setup_environment(use_defaults=False):
     if use_defaults:
         return env
 
-    # TODO: Consider catching CTRL+C to show message that setup was NOT saved
+    def handler (signum, frame):
+        print("\n\nCtrl-c was pressed...aborting operation!!\n")
+        exit(1)
+
+    signal.signal(signal.SIGINT, handler)
 
     while True:
         if os.path.isfile(env.profile):
@@ -225,13 +200,19 @@ def setup_environment(use_defaults=False):
                 "",
                 "Please enter desired value for the following parameters.",
                 "    If left empty, the default parameter will be used.",
-                "    Absolute paths (which include '~' user paths) are required.",
+                "    If specifying a directory, an absolute path must be provided,",
+                "    which may include usage of special characters( e.g. '~') that ",
+                "    will be resolved by this configuration tool.",
                 "",
                 "If, at any time, you wish to stop, press Ctrl-C.",
-                "Note: This will NOT save the values you have already selected",
+                "Note: This will result in the loss of the values you have already selected",
             ]
         )
         print(instructions)
+
+        # Query for armory source directory
+        new_val = get_value("armory_source_directory", env.armory_source_directory, "str", choices=None)
+        setattr(env, "armory_source_directory", new_val)
 
         # Query for Credentials
         for k, v in env.credentials.dict().items():
