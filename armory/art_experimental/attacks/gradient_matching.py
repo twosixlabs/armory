@@ -14,7 +14,11 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         self.triggers_chosen_randomly = kwargs.pop("triggers_chosen_randomly")
         learning_rate_schedule = tuple(kwargs.pop("learning_rate_schedule"))
 
-        self.overwrite_presaved_data = False if "overwrite_presaved_data" not in kwargs else kwargs.pop("overwrite_presaved_data")
+        self.overwrite_presaved_data = (
+            False
+            if "overwrite_presaved_data" not in kwargs
+            else kwargs.pop("overwrite_presaved_data")
+        )
 
         super().__init__(
             classifier=classifier,
@@ -23,26 +27,39 @@ class GradientMatchingWrapper(GradientMatchingAttack):
             **kwargs,
         )
 
-    def _check_for_config_conflicts(self, filepath, trigger_index, load_trigger_index, load_source_class, load_target_class, percent_poison, epsilon):
+    def _check_for_config_conflicts(
+        self,
+        filepath,
+        trigger_index,
+        load_trigger_index,
+        load_source_class,
+        load_target_class,
+        percent_poison,
+        epsilon,
+    ):
         # Check that config parameters are consistent with pre-poisoned dataset and raise a super helpful error if not
         # If config is consistent with pre-saved data, do nothing.
 
         loaded_description = f"Adversarial dataset at filepath {filepath} is not consistent with config.  The saved dataset was trained:\n"
-        config_description = f"But the config is requesting:\n"
-        suggestion = ("Please clarify your intent by doing one of the following:\n" +
-                        "  1 Reconcile the config with the above parameters (Armory can then use the saved dataset)--see note below,\n" +
-                        "  2 Delete or rename the saved dataset (Armory will generate a new dataset with the old filename),\n" +
-                        "  3 Change attack/kwargs/data_filepath in the config (Armory will generate a new dataset with a new filename),\n" +
-                        "  4 Set attack/kwargs/overwrite_presaved_data to True in the config (Armory will generate a new dataset and overwrite the saved one).\n" +
-                        "Note for 1: Either source_class or trigger_index can be set to null, or all three of source_class, trigger_index, and target_class.\n")
+        config_description = "But the config is requesting:\n"
+        suggestion = (
+            "Please clarify your intent by doing one of the following:\n"
+            + "  1 Reconcile the config with the above parameters (Armory can then use the saved dataset)--see note below,\n"
+            + "  2 Delete or rename the saved dataset (Armory will generate a new dataset with the old filename),\n"
+            + "  3 Change attack/kwargs/data_filepath in the config (Armory will generate a new dataset with a new filename),\n"
+            + "  4 Set attack/kwargs/overwrite_presaved_data to True in the config (Armory will generate a new dataset and overwrite the saved one).\n"
+            + "Note for 1: Either source_class or trigger_index can be set to null, or all three of source_class, trigger_index, and target_class.\n"
+        )
 
         config_conflict = False
-        
+
         if self.triggers_chosen_randomly:
             # If random_triggers is True, we can override them with loaded data because user didn't care exactly which trigger images.
             # But, we still enforce that there are the correct _nummber_ of triggers.
             if len(load_trigger_index) != len(trigger_index):
-                loaded_description += f"-  for {len(load_trigger_index)} trigger image(s)\n"
+                loaded_description += (
+                    f"-  for {len(load_trigger_index)} trigger image(s)\n"
+                )
                 config_description += f"-  {len(trigger_index)} trigger image(s)\n"
                 config_conflict = True
         else:
@@ -55,9 +72,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         # source class must match element-wise
         if not (
             len(load_source_class) == len(self.target_class)
-            and sum(
-                [s1 == s2 for s1, s2 in zip(load_source_class, self.source_class)]
-            )
+            and sum([s1 == s2 for s1, s2 in zip(load_source_class, self.source_class)])
             == len(load_source_class)
         ):
             loaded_description += f"-  for source class(es) {load_source_class}\n"
@@ -67,9 +82,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
         # target class must match element-wise
         if not (
             len(load_target_class) == len(self.target_class)
-            and sum(
-                [t1 == t2 for t1, t2 in zip(load_target_class, self.target_class)]
-            )
+            and sum([t1 == t2 for t1, t2 in zip(load_target_class, self.target_class)])
             == len(load_target_class)
         ):
             loaded_description += f"-  for target class(es) {load_target_class}\n"
@@ -88,7 +101,6 @@ class GradientMatchingWrapper(GradientMatchingAttack):
 
         if config_conflict:
             raise ValueError(loaded_description + config_description + suggestion)
-
 
     def poison(self, filepath, x_trigger, y_trigger, x_train, y_train, trigger_index):
         """
@@ -138,8 +150,15 @@ class GradientMatchingWrapper(GradientMatchingAttack):
                     load_target_class,
                 )
 
-            
-            self._check_for_config_conflicts(filepath, trigger_index, load_trigger_index, load_source_class, load_target_class, percent_poison, epsilon)
+            self._check_for_config_conflicts(
+                filepath,
+                trigger_index,
+                load_trigger_index,
+                load_source_class,
+                load_target_class,
+                percent_poison,
+                epsilon,
+            )
 
             trigger_index = list(load_trigger_index)
             source_class = list(load_source_class)

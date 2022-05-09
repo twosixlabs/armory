@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-from PIL import ImageOps, Image
 from art.estimators.classification import PyTorchClassifier
-import numpy as np
 
 nclasses = 43  # GTSRB has 43 classes
 
