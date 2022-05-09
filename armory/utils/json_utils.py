@@ -45,7 +45,7 @@ class NullFile:
 
 def size(obj, *, sort_keys=True, indent=4, cls=NumpyEncoder, **kwargs):
     """
-    Provides the size of the JSON-encoded object
+    Provides the size of the JSON-encoded object (in bytes)
     """
     f = NullFile()
     dump(obj, f, sort_keys=sort_keys, indent=indent, cls=cls, **kwargs)
