@@ -10,7 +10,7 @@ import random
 import numpy as np
 
 from armory import metrics
-from armory.utils.poisoning import FairnessMetrics
+from armory.metrics.poisoning import FairnessMetrics
 from armory.utils.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical

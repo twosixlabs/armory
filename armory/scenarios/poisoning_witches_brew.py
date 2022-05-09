@@ -4,7 +4,7 @@ import copy
 import numpy as np
 
 from armory.scenarios.poison import Poison
-from armory.utils.poisoning import FairnessMetrics
+from armory.metrics.poisoning import FairnessMetrics
 from armory.logs import log
 from armory.utils import config_loading
 from armory import metrics, paths
