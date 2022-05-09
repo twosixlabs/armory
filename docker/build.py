@@ -49,11 +49,12 @@ for framework in frameworks:
         "--file",
         str(dockerfile),
         "--tag",
-        f"twosixarmory/{framework}:{armory.__version__}",
+        # f"twosixarmory/{framework}:{armory.__version__}",
+        f"twosixarmory/{framework}:latest",
         "--build-arg",
         f"base_image_tag={args.base_tag}",
-        "--build-arg",
-        f"armory_version={armory.__version__}",
+        # "--build-arg",
+        # f"armory_version={armory.__version__}",
         "--force-rm",
     ]
     if args.no_cache:

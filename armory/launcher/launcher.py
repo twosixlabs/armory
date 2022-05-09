@@ -61,7 +61,7 @@ def execute_cmd(cmd: list, cwd=None, pre_prompt=""):
     log.debug(f"\t{cmd}")
     with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True, cwd=cwd) as p:
         for line in p.stdout:
-            print(f"<{pre_prompt}> {line}", end="\r")
+            print(f"{pre_prompt} {line}", end="\r")
 
     log.debug(f"Subprocess Execution Completed with returncode: {p.returncode}")
     if p.returncode != 0:
@@ -93,7 +93,7 @@ def execute_docker_cmd(
     ]
     command += cmd.split(" ")
     log.info(f"Executing command:\n\t{' '.join(command)}")
-    execute_cmd(command)
+    execute_cmd(command, pre_prompt="<in docker>")
 
 
 def get_mounts_from_paths(path_list):
