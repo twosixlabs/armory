@@ -29,6 +29,7 @@ class MetricsLogger:
         include_adversarial=True,
         include_targeted=True,
         record_metric_per_sample=False,
+        max_record_size=2**20,
     ):
         """
         task - single metric or list of metrics
@@ -39,6 +40,7 @@ class MetricsLogger:
         include_benign - whether to include benign task metrics
         include_adversarial - whether to include adversarial task metrics
         include_targeted - whether to include targeted task metrics
+        max_record_size - maximum number of bytes in a record (for ResultsWriter)
         """
         self.task = task
         self.task_kwargs = task_kwargs
@@ -70,7 +72,9 @@ class MetricsLogger:
                 perturbation, use_mean=means, record_final_only=self.record_final_only
             )
 
-        self.results_writer = ResultsWriter(sink=self._sink)
+        self.results_writer = ResultsWriter(
+            sink=self._sink, max_record_size=max_record_size
+        )
         get_hub().connect_writer(self.results_writer, default=True)
 
         self.metric_results = None

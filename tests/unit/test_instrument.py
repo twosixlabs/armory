@@ -582,7 +582,7 @@ class WriterSink:
         self.output = output
 
 
-def test_results_writer():
+def test_results_writer(caplog):
     sink = WriterSink()
     writer = instrument.ResultsWriter(sink=sink)
     with pytest.raises(ValueError):
@@ -613,6 +613,17 @@ def test_results_writer():
     assert len(output) == 2
     assert output["a"] == [None, -1]
     assert output["b"] == [-2]
+
+    with pytest.raises(ValueError):
+        writer = instrument.ResultsWriter(sink=None, max_record_size=-7)
+
+    writer = instrument.ResultsWriter(sink=None, max_record_size=50)
+    writer.write(("string", 0, ["a"] * 50))
+    assert "max_record_size" in caplog.text
+    writer.write(("a", 2, -1))
+    writer.close()
+    results = writer.get_output()
+    assert results == {"a": [-1]}
 
 
 @pytest.mark.docker_required

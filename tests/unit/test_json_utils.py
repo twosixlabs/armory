@@ -24,3 +24,9 @@ def test_dump(inp=JSON_INPUT, out=JSON_OUTPUT):
 
 def test_size(inp=JSON_INPUT, out=JSON_OUTPUT):
     assert json_utils.size(inp) == len(bytes(JSON_OUTPUT, encoding="utf-8"))
+
+
+def test_check_size(inp=JSON_INPUT, out=JSON_OUTPUT):
+    json_utils.check_size(inp, len(out))
+    with pytest.raises(ValueError):
+        json_utils.check_size(inp, len(out) - 1)

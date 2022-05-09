@@ -14,6 +14,7 @@ When running a scenario, these metrics are measured and output in json format in
 Desired metrics and flags are placed under the key `"metric"` dictionary in the config:
 ```
 "metric": {
+    "max_record_size": Integer or null,
     "means": [Bool],
     "perturbation": List[String] or String or null,
     "profiler_type": null or "basic" or "deterministic",
@@ -30,6 +31,8 @@ These metrics are called on batches of inputs, but are sample-wise metrics, and 
 When `means` is true, the average value for the given metric is also recorded.
 When `record_metric_per_sample` is true, all of the per-sample metrics are recorded.
 If neither is true, a `ValueError` is raised, as nothing is recorded.
+The `max_record_size` field, if not `null`, will drop individual records sent to the ResultsWriter that are greater than the given value.
+    To use the default of `2**20` bytes (per record, not per full results output), do not include this field in the config.
 
 The `profiler_type` field, when not `null`, enables the logging of computational metrics.
 If `"basic"`, it logs CPU time for model inference and attacking.
