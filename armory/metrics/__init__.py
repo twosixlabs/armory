@@ -23,6 +23,13 @@ def _instantiate_validate(function, name, instantiate_if_class=True):
     return function
 
 
+def supported(name):
+    """
+    Return whether given name is a supported metric
+    """
+    return name in SUPPORTED_METRICS
+
+
 def get_supported_metric(name, instantiate_if_class=True):
     try:
         function = SUPPORTED_METRICS[name]

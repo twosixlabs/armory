@@ -1529,8 +1529,3 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
             ):
                 return 1
     return 0
-
-
-SUPPORTED_METRICS = {
-    "entailment": Entailment,
-}
