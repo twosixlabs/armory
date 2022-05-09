@@ -31,7 +31,7 @@
             ]
         },
         "module": "armory.art_experimental.attacks.poison_loader",
-        "name": "poison_loader_GTSRB"
+        "name": "poison_loader"
     },
     "dataset": {
         "batch_size": 512,
