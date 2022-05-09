@@ -9,15 +9,15 @@ import random
 
 import numpy as np
 
+from armory import metrics
 from armory.utils.poisoning import FairnessMetrics
 from armory.utils.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
-from armory.utils import config_loading, metrics
+from armory.utils import config_loading
 from armory.logs import log
 
 from armory.instrument import Meter, LogWriter, ResultsWriter
-from armory.utils.metrics import get_supported_metric
 
 
 class DatasetPoisoner:
@@ -334,7 +334,7 @@ class Poison(Scenario):
             self.hub.connect_meter(
                 Meter(
                     "filter",
-                    metrics.get_supported_metric("tpr_fpr"),
+                    metrics.get("tpr_fpr"),
                     "scenario.poisoned",
                     "scenario.removed",
                 )
@@ -343,7 +343,7 @@ class Poison(Scenario):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_all_classes",
-                get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y",
                 "scenario.y_pred",
                 final=np.mean,
@@ -354,7 +354,7 @@ class Poison(Scenario):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_source_class",
-                get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y_source",
                 "scenario.y_pred_source",
                 final=np.mean,
@@ -380,7 +380,7 @@ class Poison(Scenario):
             self.hub.connect_meter(
                 Meter(
                     "accuracy_on_poisoned_test_data_all_classes",
-                    metrics.get_supported_metric("categorical_accuracy"),
+                    metrics.get("categorical_accuracy"),
                     "scenario.y",
                     "scenario.y_pred_adv",
                     final=np.mean,
@@ -392,7 +392,7 @@ class Poison(Scenario):
             self.hub.connect_meter(
                 Meter(
                     "attack_success_rate",
-                    metrics.get_supported_metric("categorical_accuracy"),
+                    metrics.get("categorical_accuracy"),
                     "scenario.target_class_source",
                     "scenario.y_pred_adv_source",
                     final=np.mean,
@@ -403,13 +403,11 @@ class Poison(Scenario):
             # attack_success_rate is not just 1 - (accuracy on poisoned source class)
             # because it only counts examples misclassified as target, and no others.
 
-        per_class_mean_accuracy = metrics.get_supported_metric(
-            "per_class_mean_accuracy"
-        )
+        per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_per_class",
-                metrics.get_supported_metric("identity_unzip"),
+                metrics.get("identity_unzip"),
                 "scenario.y",
                 "scenario.y_pred",
                 final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),

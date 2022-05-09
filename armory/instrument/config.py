@@ -11,8 +11,8 @@ from armory.instrument.instrument import (
     get_hub,
 )
 from armory.logs import log
-from armory.utils import metrics
-from armory.metrics import task
+
+from armory import metrics
 
 
 class MetricsLogger:
@@ -128,7 +128,7 @@ def construct_meters_for_perturbation_metrics(
 
     hub = get_hub()
     for name in names:
-        metric = metrics.get_supported_metric(name)
+        metric = metrics.get(name)
         hub.connect_meter(
             Meter(
                 f"perturbation_{name}",
@@ -189,12 +189,12 @@ class ResultsLogWriter(LogWriter):
         #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
         if "word_error_rate" in name:
             if "total_word_error_rate" not in name:
-                result = metrics.get_supported_metric("total_wer")(result)
+                result = metrics.get("total_wer")(result)
             total, (num, denom) = result
             f_result = f"total={total:.2%}, {num}/{denom}"
         elif "entailment" in name:
             if "total_entailment" not in name:
-                result = metrics.get_supported_metric("total_entailment")(result)
+                result = metrics.get("total_entailment")(result)
             total = sum(result.values())
             f_result = (
                 f"contradiction: {result['contradiction']}/{total}, "
@@ -205,8 +205,8 @@ class ResultsLogWriter(LogWriter):
             if "input_to" in name:
                 for m in MEAN_AP_METRICS:
                     if m in name:
-                        metric = metrics.get_supported_metric(m)
-                        result = task.MeanAP(metric)(result)
+                        metric = metrics.get(m)
+                        result = metrics.task.MeanAP(metric)(result)
                         break
             f_result = f"{result}"
         elif any(m in name for m in QUANTITY_METRICS):
@@ -232,22 +232,22 @@ def _task_metric(
     Return list of meters generated for this specific task
     """
     meters = []
-    metric = metrics.get_supported_metric(name)
+    metric = metrics.get(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = task.MeanAP(metric)
+        final = metrics.task.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = metrics.get_supported_metric("identity_unzip")
+        metric = metrics.get("identity_unzip")
         metric_kwargs = None
         record_final_only = True
     elif name == "entailment":
-        final = metrics.get_supported_metric("total_entailment")
+        final = metrics.get("total_entailment")
         final_suffix = "total_entailment"
     elif name == "word_error_rate":
-        final = metrics.get_supported_metric("total_wer")
+        final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
     elif use_mean:
         final = np.mean
@@ -363,22 +363,22 @@ def _task_metric_wrt_benign_predictions(
     Return the meter generated for this specific task
     Return list of meters generated for this specific task
     """
-    metric = metrics.get_supported_metric(name)
+    metric = metrics.get(name)
     final_kwargs = {}
     if name in MEAN_AP_METRICS:
         final_suffix = name
-        final = task.MeanAP(metric)
+        final = metrics.task.MeanAP(metric)
         final_kwargs = metric_kwargs
 
         name = f"input_to_{name}"
-        metric = metrics.get_supported_metric("identity_unzip")
+        metric = metrics.get("identity_unzip")
         metric_kwargs = None
         record_final_only = True
     elif name == "entailment":
-        final = metrics.get_supported_metric("total_entailment")
+        final = metrics.get("total_entailment")
         final_suffix = "total_entailment"
     elif name == "word_error_rate":
-        final = metrics.get_supported_metric("total_wer")
+        final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
     elif use_mean:
         final = np.mean

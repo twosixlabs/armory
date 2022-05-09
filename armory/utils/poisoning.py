@@ -10,7 +10,7 @@ import torch
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
 from armory.instrument import Meter
-from armory.utils.metrics import get_supported_metric
+from armory.metrics import get as get_supported_metric
 from armory.metrics.statistical import make_contingency_tables
 
 

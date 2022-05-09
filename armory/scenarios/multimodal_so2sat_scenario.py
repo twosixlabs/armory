@@ -7,7 +7,7 @@ import numpy as np
 from armory.logs import log
 from armory.instrument import Meter
 from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
+from armory import metrics
 from armory.utils.export import So2SatExporter
 
 
@@ -93,7 +93,7 @@ class So2SatClassification(Scenario):
             final = None
         for mode in modes:
             for name in self.perturbation_metrics:
-                metric = metrics.get_supported_metric(name)
+                metric = metrics.get(name)
                 m = Meter(
                     f"{mode}_perturbation_{name}",
                     metric,
@@ -150,10 +150,12 @@ class So2SatClassification(Scenario):
                 if self.skip_misclassified:
                     if self.targeted:
                         misclassified = all(
-                            metrics.categorical_accuracy(y_target, y_pred)
+                            metrics.task.batch.categorical_accuracy(y_target, y_pred)
                         )
                     else:
-                        misclassified = not any(metrics.categorical_accuracy(y, y_pred))
+                        misclassified = not any(
+                            metrics.task.batch.categorical_accuracy(y, y_pred)
+                        )
                 else:
                     misclassified = False
 

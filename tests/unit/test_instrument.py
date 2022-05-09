@@ -7,7 +7,7 @@ import json
 import pytest
 
 from armory.instrument import instrument
-from armory.utils import metrics
+from armory import metrics
 
 pytestmark = pytest.mark.unit
 
@@ -648,7 +648,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(
             "postprocessed_l2_distance",
-            metrics.l2,
+            metrics.perturbation.batch.l2,
             "model.prep_output[benign]",
             "model.prep_output[adversarial]",
         )
@@ -663,7 +663,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(
             "categorical_accuracy",
-            metrics.categorical_accuracy,
+            metrics.task.batch.categorical_accuracy,
             "scenario.y",
             "scenario.y_pred",
         )
@@ -671,7 +671,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(  # Never measured, since 'y_target' is never set
             "targeted_categorical_accuracy",
-            metrics.categorical_accuracy,
+            metrics.task.batch.categorical_accuracy,
             "scenario.y_target",
             "scenario.y_pred",
         )
