@@ -388,6 +388,9 @@ class Hub:
     def record(self, name, result, writers=None, use_default_writers=True):
         """
         Push a record to the default writers
+        writers - None, a Writer, or an iterable of Writer
+            if not None, write to all given writers
+        use_default_writers - whether to write to the default writers
         """
         if writers is None:
             writers = []

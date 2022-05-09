@@ -144,6 +144,14 @@ result = 17
 hub.record(name, result)
 ```
 This will push a record to all default writers (including the `ResultsWriter` in standard scenarios) with that information.
+To send it to an additional writer or writers, you can supply them with the `writers` kwargs, which can take a single writer or an iterable of writers.
+To not send it to the default writers, set the `use_default_writers` kwarg to `False`.
+For instance:
+```
+my_writer = PrintWriter()
+hub.record(name, result, writers=my_writer, use_default_writers=False)
+```
+If `writers` is empty or None and `use_default_writers` is False, no record will be sent and a warning will be logged.
 
 ### Probes
 
