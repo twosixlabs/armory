@@ -87,6 +87,10 @@ class EnvironmentParameters(BaseModel):
 
         return env
 
+    def save(self, filename):
+        with open(filename, "w") as f:
+            f.write(json.dumps(self.dict(), indent=2, sort_keys=True))
+
 
 def ask_yes_no(prompt, msg):
     while True:
@@ -181,7 +185,7 @@ def setup_environment(use_defaults=False):
     if use_defaults:
         return env
 
-    def handler (signum, frame):
+    def handler(signum, frame):
         print("\n\nCtrl-c was pressed...aborting operation!!\n")
         exit(1)
 
@@ -211,7 +215,9 @@ def setup_environment(use_defaults=False):
         print(instructions)
 
         # Query for armory source directory
-        new_val = get_value("armory_source_directory", env.armory_source_directory, "str", choices=None)
+        new_val = get_value(
+            "armory_source_directory", env.armory_source_directory, "dir", choices=None
+        )
         setattr(env, "armory_source_directory", new_val)
 
         # Query for Credentials

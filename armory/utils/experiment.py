@@ -254,3 +254,7 @@ class ExperimentParameters(BaseModel):
         print(self)
 
         return self.dict()
+
+    def save(self, filename):
+        with open(filename, "w") as f:
+            f.write(self.pretty_print())

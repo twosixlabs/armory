@@ -2,11 +2,17 @@
 import importlib
 import os
 import subprocess
+from subprocess import Popen, PIPE, CalledProcessError
+import sys
 from dataclasses import dataclass
 from typing import List
 from armory.logs import log
 from armory.utils.experiment import ExperimentParameters
 from armory.utils.environment import EnvironmentParameters
+from datetime import datetime as dt
+import time
+from string import Template
+import armory.logs
 
 
 @dataclass
@@ -34,50 +40,76 @@ class DockerPort:
         return f"-p {self.host}:{self.container}/{self.type}"
 
 
-def execute_native_cmd(
-    cmd: str,
-):
-    log.info(f"Executing cmd in native environment:\n\t{cmd}")
-    result = subprocess.run(f"{cmd}", shell=True, capture_output=True)
+# def execute_native_cmd(
+#     cmd: str,
+# ):
+#     log.info(f"Executing cmd in native environment:\n\t{cmd}")
+#     execute_cmd()
+#
+#     result = subprocess.run(f"{cmd}", shell=True, capture_output=True)
+#
+#     if result.returncode != 0:
+#         log.error(f"Cmd returned error: {result.returncode}")
+#     else:
+#         log.success("Docker CMD Execution Success!!")
+#         log.debug(result)
+#     return result
 
-    if result.returncode != 0:
-        log.error(f"Cmd returned error: {result.returncode}")
+
+def execute_cmd(cmd: list, cwd=None, pre_prompt=""):
+    log.info(f"Executing Command in subprocess...")
+    log.debug(f"\t{cmd}")
+    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True, cwd=cwd) as p:
+        for line in p.stdout:
+            print(f"<{pre_prompt}> {line}", end="\r")
+
+    log.debug(f"Subprocess Execution Completed with returncode: {p.returncode}")
+    if p.returncode != 0:
+        log.error("Command Execution in Subprocess Failed!!")
+        raise CalledProcessError(p.returncode, p.args)
     else:
-        log.success("Docker CMD Execution Success!!")
-        log.debug(result)
-    return result
+        log.success("Command Execution in Subprocess Succeeded!!")
 
 
 def execute_docker_cmd(
     image: str,
     cmd: str,
+    cwd: str = "/workspace",
     runtime: str = "runc",
     mounts: List[DockerMount] = [],
     ports: List[DockerPort] = [],
-    remove=True,
     shm_size="16G",
 ):
-    cmd = " ".join(
-        [
-            "docker run -it",
-            "--rm" if remove else "",
-            f"--runtime={runtime}",
-            " ".join([f"{mnt}" for mnt in mounts]),
-            " ".join([f"{port}" for port in ports]),
-            f"--shm-size={shm_size}",
-            f"{image}",
-            f"{cmd}",
-        ]
-    )
-    log.info(f"Executing cmd:\n\t{cmd}")
-    result = subprocess.run(cmd, shell=True, capture_output=True)
-    log.debug(result)
+    command = ["docker", "run", "-it", "--rm", "-w", f"{cwd}", f"--runtime={runtime}"]
+    for mnt in mounts:
+        command += f"{mnt}".split(" ")
 
-    if result.returncode != 0:
-        log.error(f"Cmd returned error: {result.returncode}")
-    else:
-        log.success("Docker CMD Execution Success!!")
-    return result
+    for prt in ports:
+        command += f"{prt}".split(" ")
+
+    command += [
+        f"--shm-size={shm_size}",
+        f"{image}",
+    ]
+    command += cmd.split(" ")
+    log.info(f"Executing command:\n\t{' '.join(command)}")
+    execute_cmd(command)
+
+
+def get_mounts_from_paths(path_list):
+    import armory.launcher.launcher as al
+
+    mounts = []
+    for name, dir_path in path_list:
+        mounts.append(
+            al.DockerMount(
+                type="bind",
+                source=dir_path,
+                target=f"/armory/{os.path.basename(dir_path)}",
+                readonly=False,
+            )
+        )
+    return mounts
 
 
 def execute_experiment(
@@ -85,57 +117,103 @@ def execute_experiment(
 ):
     log.info("Executing Armory Experiment")
     log.debug(f"Experiment Parameters: {experiment}")
-    log.debug(f"Envioronment Parameters: {environment}")
+    log.debug(f"Environment Parameters: {environment}")
 
-    config = experiment.as_old_config()
-    config["environment_parameters"] = environment.dict()
-    from datetime import datetime as dt
-    import time
+    output_directory = os.path.join(
+        environment.paths.output_directory,
+        dt.utcfromtimestamp(time.time()).strftime("%Y-%m-%dT%H-%M-%SUTC"),
+    )
+    log.info(f"Creating Output Directory: {output_directory}")
+    os.makedirs(output_directory)
 
-    eval_id = dt.utcfromtimestamp(time.time()).strftime("%Y-%m-%dT%H:%M:%SUTC")
-    config["eval_id"] = eval_id
+    if experiment.execution.mode == "native":
+        experiment_filename = os.path.join(output_directory, "experiment.yml")
+        experiment.save(experiment_filename)
+        log.debug(f"Saved Experiment (for reference) to: {experiment_filename}")
+        environment_filename = os.path.join(output_directory, "environment.yml")
+        environment.save(environment_filename)
+        log.debug(f"Saved Environment (for reference) to: {environment_filename}")
 
-    # Import here to avoid dependency tree in launcher
-    log.debug("Loading Scenario Module & fn")
-    module = importlib.import_module(experiment.scenario.module_name)
-    ScenarioClass = getattr(module, experiment.scenario.function_name)
-    log.trace(f"ScenarioClass Loaded: {ScenarioClass}")
-    log.debug("Constructing Scenario Class...")
-    if experiment.scenario.kwargs is not None:
-        pars = experiment.scenario.kwargs.dict()
-        pars.pop("__root__")
+        template_parameters = {
+            "armory_sys_path": "",
+            "experiment_filename": experiment_filename,
+            "environment_filename": environment_filename,
+            "output_directory": output_directory,
+            "armory_log_filters": [f"{k}:{v}" for k, v in armory.logs.filters.items()],
+        }
+
+        with open(os.path.join(os.path.dirname(__file__), "execute_template.py")) as f:
+            template = Template(f.read())
+            script = template.substitute(template_parameters)
+        log.debug(f"Execution script: \n{script}")
+        with open(os.path.join(output_directory, "execution_script.py"), "w") as f:
+            f.write(script)
+        log.info("Launching Armory in `native` mode")
+        execute_cmd(["python", "execution_script.py"], cwd=output_directory)
+        log.success("Native Execution Complete!!")
+    elif experiment.execution.mode == "docker":
+        docker_image = experiment.execution.docker_image
+        experiment_filename = os.path.join(output_directory, "experiment.yml")
+        experiment.execution.mode = "native"
+        experiment.execution.docker_image = None
+        experiment.save(experiment_filename)
+        log.debug(f"Saved Experiment (for reference) to: {experiment_filename}")
+
+        environment_filename = os.path.join(output_directory, "environment.yml")
+        environment.paths.change_base("/armory/")
+        environment.save(environment_filename)
+        log.debug(f"Saved Environment (for reference) to: {environment_filename}")
+
+        template_parameters = {
+            "armory_sys_path": "import sys; sys.path.insert(0, '/armory_src/')",
+            "experiment_filename": "/armory_output/experiment.yml",
+            "environment_filename": "/armory_output/environment.yml",
+            "output_directory": "/armory_output/",
+            "armory_log_filters": [f"{k}:{v}" for k, v in armory.logs.filters.items()],
+        }
+
+        with open(os.path.join(os.path.dirname(__file__), "execute_template.py")) as f:
+            template = Template(f.read())
+            script = template.substitute(template_parameters)
+        log.debug(f"Execution script: \n{script}")
+        with open(os.path.join(output_directory, "execution_script.py"), "w") as f:
+            f.write(script)
+        mounts = []
+        mounts.append(
+            DockerMount(
+                type="bind",
+                source=os.path.dirname(environment.profile),
+                target="/armory/",
+                readonly=False,
+            )
+        )
+
+        mounts.append(
+            DockerMount(
+                type="bind",
+                source=environment.armory_source_directory,
+                target="/armory_src/armory",
+                readonly=True,
+            )
+        )
+
+        mounts.append(
+            DockerMount(
+                type="bind",
+                source=output_directory,
+                target="/armory_output/",
+                readonly=False,
+            )
+        )
+        execute_docker_cmd(
+            image=docker_image,
+            cmd="python execution_script.py",
+            cwd="/armory_output/",
+            mounts=mounts,
+        )
+
     else:
-        pars = {}
-
-    scenario = ScenarioClass(config, **pars)
-    log.trace(f"constructed scenario: {scenario}")
-    log.debug("Calling .evaluate()")
-    scenario.evaluate()
-    log.success("Evaluation Complete!!")
-    # # from armory.engine.utils.configuration import load_config
-    # log.debug(f"Loading Config: {config}")
-    # # config = load_config(config, from_file=True)
-    #
-    # # scenario_config = config.get("scenario")
-    # # if scenario_config is None:
-    # #     raise KeyError('"scenario" missing from evaluation config')
-    # # _scenario_setup(config)
-    #
-    # ScenarioClass = config_loading.load_fn(scenario_config)
-    # kwargs = scenario_config.get("kwargs", {})
-    # kwargs.update(
-    #     dict(
-    #         check_run=check_run,
-    #         num_eval_batches=num_eval_batches,
-    #         skip_benign=skip_benign,
-    #         skip_attack=skip_attack,
-    #         skip_misclassified=skip_misclassified,
-    #     )
-    # )
-    # scenario_config["kwargs"] = kwargs
-    # scenario = ScenarioClass(config, **kwargs)
-    # log.trace(f"scenario loaded {scenario}")
-    # scenario.evaluate()
+        raise ValueError(f"Unrecognized Execution Mode: {experiment.execution.mode}")
 
 
 if __name__ == "__main__":

@@ -65,8 +65,6 @@ def cli(verbose, log_level):
     setup_log(verbose, log_level)
 
 
-
-
 @cli.command()
 @click.option("-d", "--default", is_flag=True, help="Use Defaults")
 def setup(default):
@@ -134,20 +132,21 @@ def download():
 #     )
 
 
-def get_mounts_from_paths(path_list):
-    import armory.launcher.launcher as al
-
-    mounts = []
-    for name, dir_path in path_list:
-        mounts.append(
-            al.DockerMount(
-                type="bind",
-                source=dir_path,
-                target=f"/armory/{os.path.basename(dir_path)}",
-                readonly=False,
-            )
-        )
-    return mounts
+# def get_mounts_from_paths(path_list):
+#     import armory.launcher.launcher as al
+#
+#     mounts = []
+#     for name, dir_path in path_list:
+#         mounts.append(
+#             al.DockerMount(
+#                 type="bind",
+#                 source=dir_path,
+#                 target=f"/armory/{os.path.basename(dir_path)}",
+#                 readonly=False,
+#             )
+#         )
+#     return mounts
+#
 
 
 @cli.command()
@@ -207,8 +206,8 @@ def run(experiment, override):
     log.debug(f"Loaded Environment: \n{env.pretty_print()}")
 
     exp, env_overrides = ExperimentParameters.load(experiment, overrides=override)
-
     log.debug(f"Loaded Experiment: {experiment}: \n {exp.pretty_print()}")
+
     if len(env_overrides) > 0:
         log.warning(
             f"Applying Environment Overrides from Experiment File: {experiment}"
@@ -216,28 +215,7 @@ def run(experiment, override):
         set_overrides(env, env_overrides)
         log.debug(f"New Environment: \n{env.pretty_print()}")
 
-    print(f"Exp Dict:\n {exp.dict()}")
-
-    if exp.execution.mode == "native":
-        log.info("Launching Armory in `native` mode")
-        al.execute_experiment(exp, env)
-    else:
-        log.info(
-            f"Launching Armory in `docker` mode using image: {exp.execution.docker_image}"
-        )
-        mounts = get_mounts_from_paths(env.paths.items())
-        from armory.launcher.launcher import DockerMount, execute_docker_cmd
-
-        mounts.append(
-            DockerMount(
-                type="bind",
-                source=env.armory_source_directory,
-                target="/armory_src/",
-                readonly=True
-            )
-        )
-        cmd = "echo Executing Armory in docker"
-        execute_docker_cmd(image="testtorch", cmd=cmd, mounts=mounts)
+    al.execute_experiment(exp, env)
 
 
 # @cli.command()

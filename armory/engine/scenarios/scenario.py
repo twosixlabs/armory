@@ -31,6 +31,7 @@ class Scenario:
     def __init__(
         self,
         config: Config,
+        output_directory: str,
         num_eval_batches: Optional[int] = None,
         skip_benign: Optional[bool] = False,
         skip_attack: Optional[bool] = False,
@@ -55,7 +56,8 @@ class Scenario:
             config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
         )
         self.config = config
-        self._set_output_dir(self.config)
+        self.scenario_output_dir = output_directory
+        # self._set_output_dir(self.config)
         self.num_eval_batches = num_eval_batches
         self.skip_benign = bool(skip_benign)
         self.skip_attack = bool(skip_attack)
@@ -66,13 +68,13 @@ class Scenario:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
 
-    def _set_output_dir(self, config: Config) -> None:
-        runtime_paths = paths.runtime_paths()
-        self.scenario_output_dir = os.path.join(
-            runtime_paths.output_directory, config["eval_id"]
-        )
-        if not os.path.exists(self.scenario_output_dir):
-            os.makedirs(self.scenario_output_dir)
+    # def _set_output_dir(self, config: Config) -> None:
+    #     runtime_paths = paths.runtime_paths()
+    #     self.scenario_output_dir = os.path.join(
+    #         runtime_paths.output_directory, config["eval_id"]
+    #     )
+    #     if not os.path.exists(self.scenario_output_dir):
+    #         os.makedirs(self.scenario_output_dir)
 
     def _check_config_and_cli_args(
         self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
@@ -374,6 +376,7 @@ class Scenario:
         else:
             output = self._prepare_results(self.config, results)
             self._save(output)
+        log.debug("evaluate complete")
 
     def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
         """
@@ -404,9 +407,11 @@ class Scenario:
             .get("execution", {})
             .get("output_filename", output["config"]["scenario"]["function_name"])
         )
-        print(scenario_name)
         filename = f"{scenario_name}_{output['timestamp']}.json"
         file_path = os.path.join(self.scenario_output_dir, filename)
         log.info(f"Saving evaluation results to path: {file_path} inside container")
+        for k, v in output["results"].items():
+            log.debug(f"Result {k} is of type: {type(v)}")
         with open(file_path, "w") as f:
             f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+        log.debug("Save complete")

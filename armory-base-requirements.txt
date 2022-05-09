@@ -47,3 +47,7 @@ ffmpeg-python==0.2.0
 
 # Needed for CARLA baseline scenario
 opencv-python==4.5.5.62
+
+# Needed for Experiment / Environment parsing
+pydantic
+pyyaml

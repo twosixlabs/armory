@@ -54,7 +54,7 @@ scenario:
 
 execution:
   mode: "docker"
-  docker_image: "pytorch"
+  docker_image: "testtorch"
 
 environment:
   credentials:

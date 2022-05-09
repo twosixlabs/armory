@@ -12,7 +12,7 @@ except ModuleNotFoundError as e:
 
 FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 
-print(f"armory docker builder version {armory.__version__}")
+# print(f"armory docker builder version {armory.__version__}")
 script_dir = Path(__file__).parent
 
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
