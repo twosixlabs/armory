@@ -40,20 +40,27 @@ class DockerPort:
         return f"-p {self.host}:{self.container}/{self.type}"
 
 
-# def execute_native_cmd(
-#     cmd: str,
-# ):
-#     log.info(f"Executing cmd in native environment:\n\t{cmd}")
-#     execute_cmd()
-#
-#     result = subprocess.run(f"{cmd}", shell=True, capture_output=True)
-#
-#     if result.returncode != 0:
-#         log.error(f"Cmd returned error: {result.returncode}")
-#     else:
-#         log.success("Docker CMD Execution Success!!")
-#         log.debug(result)
-#     return result
+def get_mounts_from_environment(environment: EnvironmentParameters):
+    """Get list of DockerMount(s) from EnvironmentParameters """
+    mounts = []
+    mounts.append(
+        DockerMount(
+            type="bind",
+            source=os.path.dirname(environment.profile),
+            target="/armory/",
+            readonly=False,
+        )
+    )
+
+    mounts.append(
+        DockerMount(
+            type="bind",
+            source=environment.armory_source_directory,
+            target="/armory_src/armory",
+            readonly=True,
+        )
+    )
+    return mounts
 
 
 def execute_cmd(cmd: list, cwd=None, pre_prompt=""):
@@ -73,7 +80,7 @@ def execute_cmd(cmd: list, cwd=None, pre_prompt=""):
 
 def execute_docker_cmd(
     image: str,
-    cmd: str,
+    cmd: list,
     cwd: str = "/workspace",
     runtime: str = "runc",
     mounts: List[DockerMount] = [],
@@ -91,25 +98,10 @@ def execute_docker_cmd(
         f"--shm-size={shm_size}",
         f"{image}",
     ]
-    command += cmd.split(" ")
+    command += cmd
     log.info(f"Executing command:\n\t{' '.join(command)}")
     execute_cmd(command, pre_prompt="<in docker>")
 
-
-def get_mounts_from_paths(path_list):
-    import armory.launcher.launcher as al
-
-    mounts = []
-    for name, dir_path in path_list:
-        mounts.append(
-            al.DockerMount(
-                type="bind",
-                source=dir_path,
-                target=f"/armory/{os.path.basename(dir_path)}",
-                readonly=False,
-            )
-        )
-    return mounts
 
 
 def execute_experiment(
@@ -178,25 +170,8 @@ def execute_experiment(
         log.debug(f"Execution script: \n{script}")
         with open(os.path.join(output_directory, "execution_script.py"), "w") as f:
             f.write(script)
-        mounts = []
-        mounts.append(
-            DockerMount(
-                type="bind",
-                source=os.path.dirname(environment.profile),
-                target="/armory/",
-                readonly=False,
-            )
-        )
 
-        mounts.append(
-            DockerMount(
-                type="bind",
-                source=environment.armory_source_directory,
-                target="/armory_src/armory",
-                readonly=True,
-            )
-        )
-
+        mounts = get_mounts_from_environment(environment)
         mounts.append(
             DockerMount(
                 type="bind",
@@ -207,13 +182,15 @@ def execute_experiment(
         )
         execute_docker_cmd(
             image=docker_image,
-            cmd="python execution_script.py",
+            cmd=["python","execution_script.py"],
             cwd="/armory_output/",
             mounts=mounts,
         )
 
     else:
         raise ValueError(f"Unrecognized Execution Mode: {experiment.execution.mode}")
+
+    log.info(f"Experiment Execution Complete!!  Results can be found at: {output_directory}")
 
 
 if __name__ == "__main__":

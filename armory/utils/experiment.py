@@ -222,13 +222,13 @@ class ExperimentParameters(BaseModel):
     @classmethod
     def load(cls, filename: str, overrides: List = []):
         fname, fext = os.path.splitext(filename)
-        log.info(
+        log.trace(
             f"Attempting to Load Experiment from file: {filename} and applying cli overrides: {overrides}"
         )
         with open(filename, "r") as f:
             data = yaml.safe_load(f.read())
 
-        log.debug(f"Loaded YAML: \n{data}\n")
+        log.trace(f"Loaded YAML: \n{data}\n")
         if "environment" in data:
             log.warning(
                 f"Overriding Environment Setting using data from Experiment File: {data['environment']}"
@@ -238,21 +238,19 @@ class ExperimentParameters(BaseModel):
         else:
             env_overrides = []
 
-        log.debug(f"Parsing Class Object from: {data}")
+        log.trace(f"Parsing Class Object from: {data}")
         exp = cls.parse_obj(data)
-        log.debug(f"Parsed Experiment: {exp.pretty_print()}")
+        log.trace(f"Parsed Experiment: {exp.pretty_print()}")
 
-        log.debug(f"Applying experiment overrides: {overrides}")
+        log.trace(f"Applying experiment overrides: {overrides}")
         set_overrides(exp, overrides)
-        log.debug(f"Final Experiment: {exp}")
+        log.trace(f"Final Experiment: {exp}")
         return exp, env_overrides
 
     def pretty_print(self):
         return json.dumps(self.dict(), indent=2, sort_keys=True)
 
     def as_old_config(self):
-        print(self)
-
         return self.dict()
 
     def save(self, filename):

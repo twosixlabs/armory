@@ -8,6 +8,7 @@ import inspect
 import armory
 from armory.utils import set_overrides
 import signal
+from armory.logs import log
 
 DEFAULT_ARMORY_DIRECTORY = os.path.expanduser("~/.armory")
 
@@ -71,13 +72,20 @@ class EnvironmentParameters(BaseModel):
     @classmethod
     def load(cls, profile=None, overrides=[]):
         if profile is None:
+            log.trace(f"Loading Environment from Default profile: {profile}")
             profile = cls().profile
 
+        log.trace(f"Parsing File: {profile}...")
         env = cls.parse_file(profile)
-        set_overrides(env, overrides)
-        env.check()
-        import os
 
+        log.trace(f"Setting Overrides using: {overrides}")
+        set_overrides(env, overrides)
+
+        log.trace("Checking Environment...")
+        env.check()
+
+        import os
+        log.info("Setting Environment Variables from Environment Profile")
         os.environ["ARMORY_PROFILE"] = env.profile
         os.environ["ARMORY_SOURCE_DIRECTORY"] = env.armory_source_directory
         for k, v in env.paths.dict().items():
@@ -85,6 +93,8 @@ class EnvironmentParameters(BaseModel):
         for k, v in env.credentials.dict().items():
             os.environ[f"ARMORY_CREDS_{str(k).upper()}"] = str(v)
 
+        vars = [{k: v} for k,v in os.environ.items() if "ARMORY" in k]
+        log.debug(f"Armory Environment Variables: {vars}")
         return env
 
     def save(self, filename):
