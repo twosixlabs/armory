@@ -7,29 +7,6 @@ import numpy as np
 nclasses = 43  # GTSRB has 43 classes
 
 
-def preprocessing_fn(batch):
-    img_size = 48
-    img_out = []
-    quantization = 255.0
-    for im in batch:
-        img_eq = ImageOps.equalize(Image.fromarray(im))
-        width, height = img_eq.size
-        min_side = min(img_eq.size)
-        center = width // 2, height // 2
-
-        left = center[0] - min_side // 2
-        top = center[1] - min_side // 2
-        right = center[0] + min_side // 2
-        bottom = center[1] + min_side // 2
-
-        img_eq = img_eq.crop((left, top, right, bottom))
-        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
-
-        img_out.append(img_eq)
-
-    return np.array(img_out, dtype=np.float32)
-
-
 class Permute(nn.Module):
     def __init__(self):
         super(Permute, self).__init__()
