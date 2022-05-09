@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB poison image classification, witches' brew attack",
+    "_description": "GTSRB poison image classification, witches' brew attack, undefended",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -11,7 +11,7 @@
         "target_class": 2,
         "train_epochs": 30,
         "trigger_index": null,
-        "use_poison_filtering_defense": true
+        "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
@@ -47,18 +47,7 @@
         "module": "armory.data.datasets",
         "name": "german_traffic_sign"
     },
-    "defense": {
-        "kwargs": {
-            "cluster_analysis": "smaller",
-            "clustering_method": "KMeans",
-            "nb_clusters": 2,
-            "nb_dims": 43,
-            "reduce": "PCA"
-        },
-        "module": "art.defences.detector.poison.activation_defence",
-        "name": "ActivationDefence",
-        "type": "PoisonFilteringDefence"
-    },
+    "defense": null,
     "metric": null,
     "model": {
         "fit": true,

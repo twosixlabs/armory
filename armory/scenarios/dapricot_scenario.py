@@ -5,7 +5,6 @@ D-APRICOT scenario for object detection in the presence of targeted adversarial 
 import copy
 
 from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
 from armory.logs import log
 from armory.utils.export import DApricotExporter
 
@@ -103,7 +102,7 @@ class ObjectDetectionTask(Scenario):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if x.shape[0] != 1:
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)

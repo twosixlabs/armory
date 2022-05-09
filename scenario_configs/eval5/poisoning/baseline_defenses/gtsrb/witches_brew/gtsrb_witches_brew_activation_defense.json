@@ -1,5 +1,5 @@
 {
-    "_description": "GTSRB poison image classification, witches' brew attack",
+    "_description": "GTSRB poison image classification, witches' brew attack, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,

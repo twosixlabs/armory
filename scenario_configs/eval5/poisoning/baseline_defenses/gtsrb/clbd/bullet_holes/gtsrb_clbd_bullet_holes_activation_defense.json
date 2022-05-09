@@ -1,45 +1,45 @@
 {
-    "_description": "GTSRB poison image classification, witches' brew attack",
+    "_description": "GTSRB clean label backdoor, bullet holes trigger, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
-        "fraction_poisoned": 0.01,
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 30,
-        "trigger_index": null,
         "use_poison_filtering_defense": true
     },
     "attack": {
-        "knowledge": "black",
+        "knowledge": "white",
         "kwargs": {
-            "data_filepath": "gtsrb_gradient_matching_precomputed.npz",
-            "epsilon": 0.1,
-            "learning_rate_schedule": [
-                [
-                    0.1,
-                    0.01,
-                    0.001,
-                    0.0001,
-                    1e-05
-                ],
-                [
-                    250,
-                    350,
-                    400,
-                    430,
-                    460
+            "backdoor_kwargs": {
+                "backdoor_packaged_with_armory": true,
+                "backdoor_path": "./armory/utils/triggers/bullet_holes.png",
+                "blend": 0.6,
+                "channels_first": false,
+                "mode": "RGB",
+                "poison_module": "art.attacks.poisoning.perturbations",
+                "poison_type": "image",
+                "size": [
+                    16,
+                    16
                 ]
-            ],
-            "max_epochs": 500,
-            "max_trials": 1,
-            "verbose": 1
+            },
+            "eps": 0.03,
+            "eps_step": 0.001,
+            "max_iter": 100,
+            "n_classes": 43,
+            "norm": "inf",
+            "num_random_init": 0,
+            "pp_poison": 0.2,
+            "target": 2
         },
-        "module": "armory.art_experimental.attacks.gradient_matching",
-        "name": "GradientMatchingWrapper"
+        "module": "armory.art_experimental.attacks.poison_loader_clbd",
+        "name": "poison_loader_clbd",
+        "type": "clbd",
+        "use_adversarial_trainer": false
     },
     "dataset": {
         "batch_size": 512,
@@ -64,16 +64,15 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.micronnet_gtsrb",
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
-        "export_batches": false,
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_witches_brew",
-        "name": "WitchesBrewScenario"
+        "module": "armory.scenarios.poisoning_gtsrb_clbd",
+        "name": "GTSRB_CLBD"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
