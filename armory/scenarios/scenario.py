@@ -13,7 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
-from armory.utils import config_loading, metrics, json_utils
+from armory.utils import config_loading, metrics, json_utils, export
 from armory.logs import log
 
 
@@ -233,6 +233,15 @@ class Scenario:
         self.num_export_batches = num_export_batches
         self.sample_exporter = self._load_sample_exporter()
 
+        for probe_value in ["x", "x_adv"]:  # TODO: better alternative to hardcoding?
+            export_meter = export.ExportMeter(
+                f"{probe_value}_exporter",
+                f"scenario.{probe_value}",
+                self.sample_exporter,
+                max_batches=self.num_export_batches,
+            )
+            self.hub.connect_meter(export_meter, use_default_writers=False)
+
     def _load_sample_exporter(self):
         raise NotImplementedError(
             f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"
@@ -333,14 +342,6 @@ class Scenario:
             self.run_benign()
         if not self.skip_attack:
             self.run_attack()
-        if self.num_export_batches > self.sample_exporter.saved_batches:
-            self.sample_exporter.export(
-                x=self.x,
-                x_adv=self.x_adv,
-                y=self.y,
-                y_pred_clean=self.y_pred,
-                y_pred_adv=self.y_pred_adv,
-            )
 
     def finalize_results(self):
         self.results = self.metrics_logger.results()

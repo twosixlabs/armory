@@ -10,7 +10,7 @@ import json
 from copy import deepcopy
 
 from armory.logs import log
-from armory.instrument import get_hub, Meter
+from armory.instrument import Meter
 
 
 class SampleExporter:
@@ -21,8 +21,14 @@ class SampleExporter:
         self.output_dir = None
         self.y_dict = {}
         self.default_export_kwargs = default_export_kwargs
+        self._set_output_dir()
 
     def save_sample(self, fname, sample):
+        if not os.path.exists(self.output_dir):
+            self._make_output_dir()
+        self._save_sample(fname, sample)
+
+    def _save_sample(self, fname, sample):
         raise NotImplementedError(
             f"save_sample() method should be defined for export class {self.__class__}"
         )
@@ -72,7 +78,7 @@ class SampleExporter:
         with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
             pickle.dump(self.y_dict, f)
 
-    def _make_output_dir(self):
+    def _set_output_dir(self):
         assert os.path.exists(self.base_output_dir) and os.path.isdir(
             self.base_output_dir
         ), f"Directory {self.base_output_dir} does not exist"
@@ -82,11 +88,13 @@ class SampleExporter:
         self.output_dir = os.path.join(self.base_output_dir, "saved_samples")
         if os.path.exists(self.output_dir):
             log.warning(
-                f"Sample output directory {self.output_dir} already exists. Creating new directory"
+                f"Sample output directory {self.output_dir} already exists, will create new directory"
             )
             self.output_dir = os.path.join(
                 self.base_output_dir, f"saved_samples_{time.time()}"
             )
+
+    def _make_output_dir(self):
         os.mkdir(self.output_dir)
 
 
@@ -147,7 +155,7 @@ class ImageClassificationExporter(SampleExporter):
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
 
-    def save_sample(self, fname, sample):
+    def _save_sample(self, fname, sample):
         """
         fname: string
         sample: PIL.Image.Image
@@ -806,7 +814,6 @@ class ExportMeter(Meter):
     def __init__(self, name, metric_arg_name, exporter, max_batches=None):
         super().__init__(name, lambda x: x, metric_arg_name)
         self.exporter = exporter
-        self.base_output_dir = exporter.base_output_dir
         self.max_batches = max_batches
 
     def measure(self, clear_values=True):
@@ -819,7 +826,7 @@ class ExportMeter(Meter):
         for idx in range(batch_size):
             sample = self.exporter.get_sample(value[idx])
             self.exporter.save_sample(
-                fname=f"{self.base_output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
+                fname=f"{self.exporter.output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
                 sample=sample,
             )
         if clear_values:
