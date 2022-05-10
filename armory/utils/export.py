@@ -16,29 +16,26 @@ from armory.instrument import Meter
 class SampleExporter:
     def __init__(self, base_output_dir, default_export_kwargs={}):
         self.base_output_dir = base_output_dir
-        self.saved_batches = 0
-        self.saved_samples = 0
         self.output_dir = None
         self.y_dict = {}
         self.default_export_kwargs = default_export_kwargs
         self._set_output_dir()
 
-    def export(self, x, prefix, **kwargs):
+    def export(self, x_i, fname, **kwargs):
         export_kwargs = dict(
             list(self.default_export_kwargs.items()) + list(kwargs.items())
         )
-        if self.saved_batches == 0:
+        if not os.path.exists(self.output_dir):
             self._make_output_dir()
 
         self._export(
-            x=x,
-            prefix=prefix,
+            x_i,
+            fname,
             **export_kwargs,
         )
-        self.saved_batches += 1
 
     @abc.abstractmethod
-    def _export(self, x, prefix, **kwargs):
+    def _export(self, x_i, prefix, **kwargs):
         raise NotImplementedError(
             f"_export() method should be defined for export class {self.__class__}"
         )
@@ -48,14 +45,6 @@ class SampleExporter:
         raise NotImplementedError(
             f"get_sample() method should be defined for export class {self.__class__}"
         )
-
-    def write(self):
-        """Pickle the y_dict built up during each export() call.
-        Called at end of scenario.
-        """
-
-        with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
-            pickle.dump(self.y_dict, f)
 
     def _set_output_dir(self):
         assert os.path.exists(self.base_output_dir) and os.path.isdir(
@@ -78,24 +67,22 @@ class SampleExporter:
 
 
 class ImageClassificationExporter(SampleExporter):
-    def _export(self, x, prefix):
-        for i, x_i in enumerate(x):
-            self.image = self.get_sample(x_i)
-            self.image.save(
+    def _export(self, x_i, fname):
+        self.image = self.get_sample(x_i)
+        self.image.save(
+            os.path.join(
+                self.output_dir,
+                fname,
+            )
+        )
+        if x_i.shape[-1] == 6:
+            self.depth_image = self.get_sample(x_i[..., 3:])
+            self.depth_image.save(
                 os.path.join(
                     self.output_dir,
-                    f"{prefix}_batch_{self.saved_batches}_ex_{self.saved_samples}.png",
+                    f"{os.path.splitext(fname)[0]}_depth.png",
                 )
             )
-            if x_i.shape[-1] == 6:
-                self.depth_image = self.get_sample(x_i[..., 3:])
-                self.depth_image.save(
-                    os.path.join(
-                        self.output_dir,
-                        f"{prefix}_batch_{self.saved_batches}_ex_{self.saved_samples}_depth.png",
-                    )
-                )
-            self.saved_samples += 1
 
     @staticmethod
     def get_sample(x_i):
@@ -777,6 +764,8 @@ class ExportMeter(Meter):
         super().__init__(name, lambda x: x, metric_arg_name)
         self.exporter = exporter
         self.max_batches = max_batches
+        self.batches_exported = 0
+        self.examples_exported = 0
 
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
@@ -784,10 +773,13 @@ class ExportMeter(Meter):
         if self.max_batches and batch_num >= self.max_batches:
             return
         probe_variable = self.get_arg_names()[0]
-        self.exporter.export(
-            x=value,
-            prefix=probe_variable,
-        )
+        for v in value:
+            self.exporter.export(
+                v,
+                f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",
+            )
+            self.examples_exported += 1
+        self.batches_exported += 1
         if clear_values:
             self.clear()
         self.never_measured = False
