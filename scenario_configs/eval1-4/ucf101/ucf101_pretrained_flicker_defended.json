@@ -34,7 +34,7 @@
             "video_format": "avi"
         },
         "module": "armory.art_experimental.defences.video_compression_normalized",
-        "name": "VideoCompressionNormalized",
+        "name": "VideoCompressionNormalizedPyTorch",
         "type": "Preprocessor"
     },
     "metric": {
