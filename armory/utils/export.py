@@ -121,50 +121,28 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
     def _export(
         self,
-        x,
-        x_adv=None,
+        x_i,
+        fname,
         with_boxes=False,
         y=None,
-        y_pred_adv=None,
-        y_pred_clean=None,
+        y_pred=None,
         score_threshold=0.5,
         classes_to_skip=None,
     ):
-        for i, x_i in enumerate(x):
-            self._export_image(x_i, name="benign")
+        super()._export(x_i, fname)
+        if with_boxes:
+            self.image_with_boxes = self.get_sample(
+                x_i,
+                with_boxes=True,
+                y_i=y,
+                y_i_pred=y_pred,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+            )
+            fname_with_boxes = f"{os.path.splitext(fname)[0]}_with_boxes.png"
+            self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
 
-            if with_boxes:
-                y_i = y[i] if y is not None else None
-                y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
-                self._export_image(
-                    x_i,
-                    name="benign",
-                    with_boxes=True,
-                    y_i=y_i,
-                    y_i_pred=y_i_pred_clean,
-                    score_threshold=score_threshold,
-                    classes_to_skip=classes_to_skip,
-                )
-
-            # Export adversarial image x_adv_i if present
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, name="adversarial")
-                if with_boxes:
-                    y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
-                    self._export_image(
-                        x_adv_i,
-                        name="adversarial",
-                        with_boxes=True,
-                        y_i=y_i,
-                        y_i_pred=y_i_pred_adv,
-                        score_threshold=score_threshold,
-                        classes_to_skip=classes_to_skip,
-                    )
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
+    # TODO: this method isn't being used anymore
     def _export_image(
         self,
         x_i,
@@ -760,23 +738,31 @@ class So2SatExporter(SampleExporter):
 
 
 class ExportMeter(Meter):
-    def __init__(self, name, metric_arg_name, exporter, max_batches=None):
-        super().__init__(name, lambda x: x, metric_arg_name)
+    def __init__(self, name, exporter, *metric_args, max_batches=None):
+        super().__init__(name, lambda x: x, *metric_args)
         self.exporter = exporter
         self.max_batches = max_batches
         self.batches_exported = 0
         self.examples_exported = 0
+        self.metric_args = metric_args
 
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
         batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
+
         if self.max_batches and batch_num >= self.max_batches:
             return
         probe_variable = self.get_arg_names()[0]
-        for example in batch_data:
+        batch_size = batch_data.shape[0]
+        for batch_idx in range(batch_size):
+            export_kwargs = {
+                probe_value.split(".")[-1]: self.values[i + 1][batch_idx]
+                for i, probe_value in enumerate(self.metric_args[1:])
+            }
             self.exporter.export(
-                example,
+                batch_data[batch_idx],
                 f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",
+                **export_kwargs,
             )
             self.examples_exported += 1
         self.batches_exported += 1
