@@ -769,13 +769,13 @@ class ExportMeter(Meter):
 
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
-        batch_num, value = self.arg_batch_indices[0], self.values[0]
+        batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
         if self.max_batches and batch_num >= self.max_batches:
             return
         probe_variable = self.get_arg_names()[0]
-        for v in value:
+        for example in batch_data:
             self.exporter.export(
-                v,
+                example,
                 f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",
             )
             self.examples_exported += 1
