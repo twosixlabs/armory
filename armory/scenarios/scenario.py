@@ -239,6 +239,8 @@ class Scenario:
             )
             self.hub.connect_meter(export_meter, use_default_writers=False)
 
+        # TODO: set up meter for y, y_pred_clean, y_pred_adv?
+
     def _load_sample_exporter(self):
         raise NotImplementedError(
             f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"

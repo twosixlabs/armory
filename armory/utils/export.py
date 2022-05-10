@@ -23,43 +23,22 @@ class SampleExporter:
         self.default_export_kwargs = default_export_kwargs
         self._set_output_dir()
 
-    def save_sample(self, fname, sample):
-        if not os.path.exists(self.output_dir):
-            self._make_output_dir()
-        self._save_sample(fname, sample)
-
-    def _save_sample(self, fname, sample):
-        raise NotImplementedError(
-            f"save_sample() method should be defined for export class {self.__class__}"
-        )
-
-    def export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
+    def export(self, x, prefix, **kwargs):
         export_kwargs = dict(
             list(self.default_export_kwargs.items()) + list(kwargs.items())
         )
         if self.saved_batches == 0:
             self._make_output_dir()
 
-        self.y_dict[self.saved_samples] = {
-            "y": y,
-            "y_pred_clean": y_pred_clean,
-            "y_pred_adv": y_pred_adv,
-        }
         self._export(
             x=x,
-            x_adv=x_adv,
-            y=y,
-            y_pred_adv=y_pred_adv,
-            y_pred_clean=y_pred_clean,
+            prefix=prefix,
             **export_kwargs,
         )
+        self.saved_batches += 1
 
     @abc.abstractmethod
-    def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
+    def _export(self, x, prefix, **kwargs):
         raise NotImplementedError(
             f"_export() method should be defined for export class {self.__class__}"
         )
@@ -99,34 +78,24 @@ class SampleExporter:
 
 
 class ImageClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, default_export_kwargs={}):
-        super().__init__(
-            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
-        )
-        self.file_extension = ".png"
-
-    def _export(self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None):
+    def _export(self, x, prefix):
         for i, x_i in enumerate(x):
-            self._export_image(x_i, name="benign")
-
-            # Export adversarial image x_adv_i if present
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-                self._export_image(x_adv_i, name="adversarial")
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
-    def _export_image(self, x_i, name="benign"):
-        self.image = self.get_sample(x_i)
-        self.image.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.png")
-        )
-        if x_i.shape[-1] == 6:
-            self.depth_image = self.get_sample(x_i[..., 3:])
-            self.depth_image.save(
-                os.path.join(self.output_dir, f"{self.saved_samples}_depth_{name}.png")
+            self.image = self.get_sample(x_i)
+            self.image.save(
+                os.path.join(
+                    self.output_dir,
+                    f"{prefix}_batch_{self.saved_batches}_ex_{self.saved_samples}.png",
+                )
             )
+            if x_i.shape[-1] == 6:
+                self.depth_image = self.get_sample(x_i[..., 3:])
+                self.depth_image.save(
+                    os.path.join(
+                        self.output_dir,
+                        f"{prefix}_batch_{self.saved_batches}_ex_{self.saved_samples}_depth.png",
+                    )
+                )
+            self.saved_samples += 1
 
     @staticmethod
     def get_sample(x_i):
@@ -154,13 +123,6 @@ class ImageClassificationExporter(SampleExporter):
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
-
-    def _save_sample(self, fname, sample):
-        """
-        fname: string
-        sample: PIL.Image.Image
-        """
-        sample.save(fname + self.file_extension)
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
@@ -822,13 +784,10 @@ class ExportMeter(Meter):
         if self.max_batches and batch_num >= self.max_batches:
             return
         probe_variable = self.get_arg_names()[0]
-        batch_size = value.shape[0]
-        for idx in range(batch_size):
-            sample = self.exporter.get_sample(value[idx])
-            self.exporter.save_sample(
-                fname=f"{self.exporter.output_dir}/{probe_variable}_batch_{batch_num}_ex_{idx}",
-                sample=sample,
-            )
+        self.exporter.export(
+            x=value,
+            prefix=probe_variable,
+        )
         if clear_values:
             self.clear()
         self.never_measured = False
