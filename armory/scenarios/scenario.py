@@ -218,7 +218,7 @@ class Scenario:
         self.profiler = compute.profiler_from_config(metrics_config)
         self.metrics_logger = metrics_logger
 
-    def load_sample_exporter(self):
+    def load_export_meters(self):
         if self.config["scenario"].get("export_samples") is not None:
             log.warning(
                 "The export_samples field was deprecated in Armory 0.15.0. Please use export_batches instead."
@@ -230,11 +230,11 @@ class Scenario:
         self.num_export_batches = num_export_batches
         self.sample_exporter = self._load_sample_exporter()
 
-        for probe_value in ["x", "x_adv"]:  # TODO: better alternative to hardcoding?
+        for probe_value in ["x", "x_adv"]:
             export_meter = ExportMeter(
                 f"{probe_value}_exporter",
-                f"scenario.{probe_value}",
                 self.sample_exporter,
+                f"scenario.{probe_value}",
                 max_batches=self.num_export_batches,
             )
             self.hub.connect_meter(export_meter, use_default_writers=False)
@@ -254,7 +254,7 @@ class Scenario:
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
-        self.load_sample_exporter()
+        self.load_export_meters()
         return self
 
     def evaluate_all(self):
