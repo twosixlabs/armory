@@ -761,7 +761,7 @@ class ExportMeter(Meter):
             }
             self.exporter.export(
                 batch_data[batch_idx],
-                f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",
+                f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",  #TODO: remove hardcoded file extension
                 **export_kwargs,
             )
             self.examples_exported += 1
