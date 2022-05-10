@@ -349,9 +349,6 @@ class Scenario:
         self.results.update(self.metric_results)
         self.results["compute"] = self.compute_results
 
-        if self.sample_exporter.saved_batches > 0:
-            self.sample_exporter.write()
-
     def _evaluate(self) -> dict:
         """
         Evaluate the config and set the results dict self.results
