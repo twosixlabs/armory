@@ -19,6 +19,7 @@ from armory.data.adversarial.apricot_metadata import (
     APRICOT_PATCHES,
 )
 from armory.logs import log
+from armory.metrics import perturbation
 from armory.utils.external_repo import ExternalPipInstalledImport
 
 _ENTAILMENT_MODEL = None
@@ -530,105 +531,6 @@ def top_n_categorical_accuracy(y, y_pred, n):
         raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
 
 
-def norm(x, x_adv, ord):
-    """
-    Return the given norm over a batch, outputting a list of floats
-    """
-    x = np.asarray(x)
-    x_adv = np.asarray(x_adv)
-    # elevate to 64-bit types first to prevent overflow errors
-    assert not (
-        np.iscomplexobj(x) ^ np.iscomplexobj(x_adv)
-    ), "x and x_adv mix real/complex types"
-    dtype = complex if np.iscomplexobj(x) else float
-    diff = (x.astype(dtype) - x_adv.astype(dtype)).reshape(x.shape[0], -1)
-    values = np.linalg.norm(diff, ord=ord, axis=1)
-    # normalize l0 norm by number of elements in array
-    if ord == 0:
-        return list(float(x) / diff[i].size for i, x in enumerate(values))
-    return list(float(x) for x in values)
-
-
-def linf(x, x_adv):
-    """
-    Return the L-infinity norm over a batch of inputs as a float
-    """
-    return norm(x, x_adv, np.inf)
-
-
-def l2(x, x_adv):
-    """
-    Return the L2 norm over a batch of inputs as a float
-    """
-    return norm(x, x_adv, 2)
-
-
-def l1(x, x_adv):
-    """
-    Return the L1 norm over a batch of inputs as a float
-    """
-    return norm(x, x_adv, 1)
-
-
-def lp(x, x_adv, p):
-    """
-    Return the Lp norm over a batch of inputs as a float
-    """
-    if p <= 0:
-        raise ValueError(f"p must be positive, not {p}")
-    return norm(x, x_adv, p)
-
-
-def l0(x, x_adv):
-    """
-    Return the L0 'norm' over a batch of inputs as a float,
-    normalized by the number of elements in the array
-    """
-    return norm(x, x_adv, 0)
-
-
-def _snr(x_i, x_adv_i):
-    assert not (
-        np.iscomplexobj(x_i) ^ np.iscomplexobj(x_adv_i)
-    ), "x_i and x_adv_i mix real/complex types"
-    dtype = complex if np.iscomplexobj(x_i) else float
-    x_i = np.asarray(x_i, dtype=dtype)
-    x_adv_i = np.asarray(x_adv_i, dtype=dtype)
-    if x_i.shape != x_adv_i.shape:
-        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    signal_power = (np.abs(x_i) ** 2).mean()
-    noise_power = (np.abs(x_i - x_adv_i) ** 2).mean()
-    if noise_power == 0:
-        return np.inf
-    return signal_power / noise_power
-
-
-def snr(x, x_adv):
-    """
-    Return the SNR of a batch of samples with raw audio input
-    """
-    if len(x) != len(x_adv):
-        raise ValueError(f"len(x) {len(x)} != len(x_adv) {len(x_adv)}")
-    return [float(_snr(x_i, x_adv_i)) for (x_i, x_adv_i) in zip(x, x_adv)]
-
-
-def snr_db(x, x_adv):
-    """
-    Return the SNR of a batch of samples with raw audio input in Decibels (DB)
-    """
-    return [float(i) for i in 10 * np.log10(snr(x, x_adv))]
-
-
-def _snr_spectrogram(x_i, x_adv_i):
-    x_i = np.asarray(x_i, dtype=float)
-    x_adv_i = np.asarray(x_adv_i, dtype=float)
-    if x_i.shape != x_adv_i.shape:
-        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    signal_power = np.abs(x_i).mean()
-    noise_power = np.abs(x_i - x_adv_i).mean()
-    return signal_power / noise_power
-
-
 def word_error_rate(y, y_pred):
     """
     Return the word error rate for a batch of transcriptions.
@@ -665,125 +567,6 @@ def _word_error_rate(y_i, y_pred_i):
                 deletion = matrix[i - 1][j] + 1
                 matrix[i][j] = min(substitute, insertion, deletion)
     return (matrix[r_length][h_length], r_length)
-
-
-# Metrics specific to MARS model preprocessing in video UCF101 scenario
-
-
-def verify_mars(x, x_adv):
-    if len(x) != len(x_adv):
-        raise ValueError(f"len(x) {len(x)} != {len(x_adv)} len(x_adv)")
-    for x_i, x_adv_i in zip(x, x_adv):
-        if x_i.shape[1:] != x_adv_i.shape[1:]:
-            raise ValueError(f"Shape {x_i.shape[1:]} != {x_adv_i.shape[1:]}")
-        if x_i.shape[1:] != (3, 16, 112, 112):
-            raise ValueError(f"Shape {x_i.shape[1:]} != (3, 16, 112, 112)")
-
-
-def mars_mean_l2(x, x_adv):
-    """
-    Input dimensions: (n_batch, n_stacks, channels, stack_frames, height, width)
-        Typically: (1, variable, 3, 16, 112, 112)
-    """
-    verify_mars(x, x_adv)
-    out = []
-    for x_i, x_adv_i in zip(x, x_adv):
-        out.append(np.mean(l2(x_i, x_adv_i)))
-    return out
-
-
-def mars_reshape(x_i):
-    """
-    Reshape (n_stacks, 3, 16, 112, 112) into (n_stacks * 16, 112, 112, 3)
-    """
-    return np.transpose(x_i, (0, 2, 3, 4, 1)).reshape((-1, 112, 112, 3))
-
-
-def mars_mean_patch(x, x_adv):
-    verify_mars(x, x_adv)
-    out = []
-    for x_i, x_adv_i in zip(x, x_adv):
-        out.append(
-            np.mean(
-                image_circle_patch_diameter(mars_reshape(x_i), mars_reshape(x_adv_i))
-            )
-        )
-    return out
-
-
-def snr_spectrogram(x, x_adv):
-    """
-    Return the SNR of a batch of samples with spectrogram input
-
-    NOTE: Due to phase effects, this is only an estimate of the SNR.
-        For instance, if x[0] = sin(t) and x_adv[0] = sin(t + 2*pi/3),
-        Then the SNR will be calculated as infinity, when it should be 1.
-        However, the spectrograms will look identical, so as long as the
-        model uses spectrograms and not the underlying raw signal,
-        this should not have a significant effect on the results.
-    """
-    if x.shape != x_adv.shape:
-        raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
-    return [float(_snr_spectrogram(x_i, x_adv_i)) for (x_i, x_adv_i) in zip(x, x_adv)]
-
-
-def snr_spectrogram_db(x, x_adv):
-    """
-    Return the SNR of a batch of samples with spectrogram input in Decibels (DB)
-    """
-    return [float(i) for i in 10 * np.log10(snr_spectrogram(x, x_adv))]
-
-
-def _image_circle_patch_diameter(x_i, x_adv_i):
-    if x_i.shape != x_adv_i.shape:
-        raise ValueError(f"x_i.shape {x_i.shape} != x_adv_i.shape {x_adv_i.shape}")
-    img_shape = x_i.shape
-    if len(img_shape) != 3:
-        raise ValueError(f"Expected image with 3 dimensions. x_i has shape {x_i.shape}")
-    if (x_i == x_adv_i).mean() < 0.5:
-        log.warning(
-            f"x_i and x_adv_i differ at {int(100*(x_i != x_adv_i).mean())} percent of "
-            "indices. image_circle_patch_area may not be accurate"
-        )
-    # Identify which axes of input array are spatial vs. depth dimensions
-    depth_dim = img_shape.index(min(img_shape))
-    spat_ind = 1 if depth_dim != 1 else 0
-
-    # Determine which indices (along the spatial dimension) are perturbed
-    pert_spatial_indices = set(np.where(x_i != x_adv_i)[spat_ind])
-    if len(pert_spatial_indices) == 0:
-        log.warning("x_i == x_adv_i. image_circle_patch_area is 0")
-        return 0
-
-    # Find which indices (preceding the patch's max index) are unperturbed, in order
-    # to determine the index of the edge of the patch
-    max_ind_of_patch = max(pert_spatial_indices)
-    unpert_ind_less_than_patch_max_ind = [
-        i for i in range(max_ind_of_patch) if i not in pert_spatial_indices
-    ]
-    min_ind_of_patch = (
-        max(unpert_ind_less_than_patch_max_ind) + 1
-        if unpert_ind_less_than_patch_max_ind
-        else 0
-    )
-
-    # If there are any perturbed indices outside the range of the patch just computed
-    if min(pert_spatial_indices) < min_ind_of_patch:
-        log.warning("Multiple regions of the image have been perturbed")
-
-    diameter = max_ind_of_patch - min_ind_of_patch + 1
-    spatial_dims = [dim for i, dim in enumerate(img_shape) if i != depth_dim]
-    patch_diameter = diameter / min(spatial_dims)
-    return patch_diameter
-
-
-def image_circle_patch_diameter(x, x_adv):
-    """
-    Returns diameter of circular image patch, normalized by the smaller spatial dimension
-    """
-    return [
-        _image_circle_patch_diameter(x_i, x_adv_i) for (x_i, x_adv_i) in zip(x, x_adv)
-    ]
 
 
 def _check_object_detection_input(y_list, y_pred_list):
@@ -1889,21 +1672,8 @@ SUPPORTED_METRICS = {
     "categorical_accuracy": categorical_accuracy,
     "top_n_categorical_accuracy": top_n_categorical_accuracy,
     "top_5_categorical_accuracy": top_5_categorical_accuracy,
-    "norm": norm,
-    "l0": l0,
-    "l1": l1,
-    "l2": l2,
-    "lp": lp,
-    "linf": linf,
     "video_tracking_mean_iou": video_tracking_mean_iou,
     "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
-    "snr": snr,
-    "snr_db": snr_db,
-    "snr_spectrogram": snr_spectrogram,
-    "snr_spectrogram_db": snr_spectrogram_db,
-    "image_circle_patch_diameter": image_circle_patch_diameter,
-    "mars_mean_l2": mars_mean_l2,
-    "mars_mean_patch": mars_mean_patch,
     "word_error_rate": word_error_rate,
     "object_detection_AP_per_class": object_detection_AP_per_class,
     "object_detection_mAP": object_detection_mAP,
@@ -1924,33 +1694,8 @@ SUPPORTED_METRICS = {
     "poison_spd": compute_spd,
 }
 
-# Image-based metrics applied to video
-
-
-def video_metric(metric, frame_average="mean"):
-    mapping = {"mean": np.mean, "max": np.max, "min": np.min}
-    if frame_average not in mapping:
-        raise ValueError(f"frame_average {frame_average} not in {tuple(mapping)}")
-    frame_average_func = mapping[frame_average]
-
-    def func(x, x_adv):
-        results = []
-        for x_sample, x_adv_sample in zip(x, x_adv):
-            frames = metric(x_sample, x_adv_sample)
-            results.append(frame_average_func(frames))
-        return results
-
-    return func
-
-
-for metric_name in "l0", "l1", "l2", "linf", "image_circle_patch_diameter":
-    metric = SUPPORTED_METRICS[metric_name]
-    for prefix in "mean", "max":
-        new_metric_name = prefix + "_" + metric_name
-        if new_metric_name in SUPPORTED_METRICS:
-            raise ValueError(f"Duplicate metric {new_metric_name} in SUPPORTED_METRICS")
-        new_metric = video_metric(metric, frame_average=prefix)
-        SUPPORTED_METRICS[new_metric_name] = new_metric
+assert not any(k in perturbation.batch for k in SUPPORTED_METRICS)
+SUPPORTED_METRICS.update(perturbation.batch)
 
 
 def get_supported_metric(name):
