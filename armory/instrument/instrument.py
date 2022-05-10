@@ -706,7 +706,7 @@ class ResultsWriter(Writer):
                 json_utils.check_size(record, self.max_record_size)
             except ValueError:
                 log.warning(
-                    f"record ({name}, {batch}, ...) size > "
+                    f"record (name={name}, batch={batch}, result=...) size > "
                     f"max_record_size {self.max_record_size}. Dropping."
                 )
                 return
