@@ -328,6 +328,23 @@ class Poison(Scenario):
         self.i = -1
         self.test_set_class_labels = set()
 
+    def add_filter_perplexity(self, result_name="filter_perplexity"):
+        """
+        Add filter perplexity to metrics being collected.
+        """
+        self.hub.connect_meter(
+            Meter(
+                f"input_to_{result_name}",
+                metrics.get_supported_metric("filter_perplexity_fps_benign"),
+                "scenario.y_clean",
+                "scenario.poison_index",
+                "scenario.is_dirty_mask",
+                final=np.mean,
+                final_name=result_name,
+                record_final_only=True,
+            )
+        )
+
     def load_metrics(self):
         if self.use_filtering_defense:
             # Filtering metrics
@@ -421,8 +438,7 @@ class Poison(Scenario):
                 self.config["adhoc"], self.use_filtering_defense, self
             )
             if not self.check_run and self.use_filtering_defense:
-                self.fairness_metrics.add_filter_perplexity()
-                # log.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
+                self.add_filter_perplexity()
         else:
             log.warning(
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"

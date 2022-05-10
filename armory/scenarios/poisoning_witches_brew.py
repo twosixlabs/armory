@@ -405,7 +405,7 @@ class WitchesBrewScenario(Poison):
                 self.config["adhoc"], self.use_filtering_defense, self
             )
             if not self.check_run and self.use_filtering_defense:
-                self.fairness_metrics.add_filter_perplexity()
+                self.add_filter_perplexity()
         else:
             log.warning(
                 "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"

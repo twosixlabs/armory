@@ -7,10 +7,9 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_samples
 import torch
 
+from armory import metrics
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
-from armory.instrument import Meter
-from armory.metrics import get as get_supported_metric
 from armory.metrics.statistical import make_contingency_tables
 
 
@@ -255,32 +254,6 @@ class FairnessMetrics:
             "resize_image", True
         )
 
-    def add_filter_perplexity(
-        self,
-        result_name="filter_perplexity",
-        y_clean_name="scenario.y_clean",
-        poison_index_name="scenario.poison_index",
-        predicted_clean_indices="scenario.is_dirty_mask",
-    ):
-        """Compute filter perplexity, add it to the results dict in the calling scenario, and return data for logging
-
-        y_clean: the labels for the clean dataset
-        poison_index: the indices of the poisoned samples
-        predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
-        """
-        self.scenario.hub.connect_meter(
-            Meter(
-                f"input_to_{result_name}",
-                get_supported_metric("filter_perplexity_fps_benign"),
-                y_clean_name,
-                poison_index_name,
-                predicted_clean_indices,
-                final=np.mean,
-                final_name=result_name,
-                record_final_only=True,
-            )
-        )
-
     def add_cluster_metrics(
         self,
         x_poison,
@@ -336,8 +309,8 @@ class FairnessMetrics:
             test_y, majority_mask_test_set, correct_prediction_mask_test_set
         )
 
-        chi2_metric = get_supported_metric("chi2_p_value")
-        spd_metric = get_supported_metric("spd")
+        chi2_metric = metrics.get_supported_metric("chi2_p_value")
+        spd_metric = metrics.get_supported_metric("spd")
         for class_id in test_set_class_labels:
             majority_x = majority_x_correct_prediction_tables[class_id]
             chi2 = np.mean(chi2_metric(majority_x))
