@@ -413,12 +413,11 @@ class VideoClassificationExporter(SampleExporter):
     def __init__(self, base_output_dir, frame_rate, default_export_kwargs={}):
         super().__init__(base_output_dir, default_export_kwargs=default_export_kwargs)
         self.frame_rate = frame_rate
-        self.saved_samples = 0
         self.video_file_extension = ".mp4"
         self.frame_file_extension = ".png"
 
     def _export(self, x, basename):
-        folder = str(self.saved_samples)
+        folder = str(basename)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
         ffmpeg_process = (
