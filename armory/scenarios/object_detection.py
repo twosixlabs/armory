@@ -36,7 +36,7 @@ class ObjectDetectionTask(ImageClassificationTask):
 
         for probe_data, probe_pred in [("x", "y_pred"), ("x_adv", "y_pred_adv")]:
             export_with_boxes_meter = ExportMeter(
-                f"{probe_data}_exporter_with_boxes",
+                f"{probe_data}_exporter",
                 self.sample_exporter,
                 f"scenario.{probe_data}",
                 "scenario.y",
@@ -44,7 +44,6 @@ class ObjectDetectionTask(ImageClassificationTask):
                 max_batches=self.num_export_batches,
             )
             self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
-
 
     def _load_sample_exporter(self):
         default_export_kwargs = {"with_boxes": True}

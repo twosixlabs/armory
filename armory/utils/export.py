@@ -759,9 +759,10 @@ class ExportMeter(Meter):
                 probe_value.split(".")[-1]: self.values[i + 1][batch_idx]
                 for i, probe_value in enumerate(self.metric_args[1:])
             }
+            export_kwargs = self.map_probe_names_to_export_kwargs(export_kwargs)
             self.exporter.export(
                 batch_data[batch_idx],
-                f"{probe_variable}_batch_{self.batches_exported}_ex_{self.examples_exported}.png",  #TODO: remove hardcoded file extension
+                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}.png",  # TODO: remove hardcoded file extension
                 **export_kwargs,
             )
             self.examples_exported += 1
@@ -769,3 +770,9 @@ class ExportMeter(Meter):
         if clear_values:
             self.clear()
         self.never_measured = False
+
+    @staticmethod
+    def map_probe_names_to_export_kwargs(export_kwargs_dict):
+        # Keys are probe names, each mapping to the proper export function kwarg name
+        map = {"y_pred_adv": "y_pred"}
+        return {(map[k] if k in map else k): v for k, v in export_kwargs_dict.items()}
