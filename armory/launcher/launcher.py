@@ -1,9 +1,6 @@
 """Armory Launcher Docker Orchestration"""
-import importlib
 import os
-import subprocess
 from subprocess import Popen, PIPE, CalledProcessError
-import sys
 from dataclasses import dataclass
 from typing import List
 from armory.logs import log
@@ -65,7 +62,8 @@ def get_mounts_from_environment(environment: EnvironmentParameters):
 
 def execute_cmd(cmd: list, cwd=None, pre_prompt=""):
     log.info(f"Executing Command in subprocess...")
-    log.debug(f"\t{cmd}")
+    log.debug(f"\t{' '.join(cmd)}\n")
+    log.trace(f"\t Actual List: {cmd}")
     with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True, cwd=cwd) as p:
         for line in p.stdout:
             print(f"{pre_prompt} {line}", end="\r")
