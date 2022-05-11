@@ -59,7 +59,7 @@ python build.py -lcs [local_path]
 
 ## Docker mode
 Some usages might require containerization to isolate the build process, for which we provide
-minimal support.  The [Dockerfile](./Dockerfile) included here can be utilized by, first, 
+minimal support.  The [Dockerfile](Dockerfile) included here can be utilized by, first, 
 building the image:
 ```bash
 docker build --force-rm -t dsbuild .

@@ -2,9 +2,9 @@ import pytest
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-import tools.dataset_builder.build as build
-import tools.dataset_builder.utils as utils
+# sys.path.append(os.path.join(os.path.dirname(__file__), "../../tools/dataset_builder"))
+import armory.datasets.builder.build as build
+import armory.datasets.builder.utils as utils
 
 
 @pytest.mark.parametrize("dataset_name", ["mnist", "cifar10"])

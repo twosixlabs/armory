@@ -1,5 +1,5 @@
 import pytest
-import tools.dataset_builder.utils as utils
+import armory.datasets.builder.utils as utils
 import os
 import random
 import string
@@ -64,11 +64,18 @@ def test_camel_case(input, capitalize_first, expected_output):
             },
         ),
         (
-            os.path.join(os.path.dirname(__file__), "..", "build_classes", "digit.py"),
+            os.path.join(
+                os.path.dirname(__file__),
+                "../../armory/datasets/builder",
+                "build_classes",
+                "digit.py"),
             {
                 "type": "source",
                 "class_file": os.path.join(
-                    os.path.dirname(__file__), "..", "build_classes", "digit.py"
+                    os.path.dirname(__file__),
+                    "../../armory/datasets/builder",
+                    "build_classes",
+                    "digit.py"
                 ),
                 "expected_name": "Digit",
                 "expected_version": "1.0.8",
