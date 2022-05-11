@@ -67,6 +67,12 @@ class SampleExporter:
 
 
 class ImageClassificationExporter(SampleExporter):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
+        super().__init__(
+            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
+        )
+        self.file_extension = ".png"
+
     def _export(self, x_i, fname):
         self.image = self.get_sample(x_i)
         self.image.save(
@@ -139,7 +145,9 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
             )
-            fname_with_boxes = f"{os.path.splitext(fname)[0]}_with_boxes.png"
+            fname_with_boxes = (
+                f"{os.path.splitext(fname)[0]}_with_boxes{self.file_extension}"
+            )
             self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
 
     # TODO: this method isn't being used anymore
@@ -762,7 +770,7 @@ class ExportMeter(Meter):
             export_kwargs = self.map_probe_names_to_export_kwargs(export_kwargs)
             self.exporter.export(
                 batch_data[batch_idx],
-                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}.png",  # TODO: remove hardcoded file extension
+                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}{self.exporter.file_extension}",
                 **export_kwargs,
             )
             self.examples_exported += 1
