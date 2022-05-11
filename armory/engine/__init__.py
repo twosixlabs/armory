@@ -128,7 +128,6 @@ def _load_engine_deps():
         from armory.engine import data
         from armory.engine import paths
         from armory.engine import utils
-        from armory.engine import webapi
     except ImportError as e:
         module = e.name
         print(f"ERROR: cannot import '{module}' module")
