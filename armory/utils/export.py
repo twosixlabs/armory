@@ -145,9 +145,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
             )
-            fname_with_boxes = (
-                f"{basename}_with_boxes{self.file_extension}"
-            )
+            fname_with_boxes = f"{basename}_with_boxes{self.file_extension}"
             self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
 
     # TODO: this method isn't being used anymore
@@ -428,7 +426,11 @@ class VideoClassificationExporter(SampleExporter):
                 s=f"{x.shape[2]}x{x.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{basename}{self.video_file_extension}"),
+                os.path.join(
+                    self.output_dir,
+                    folder,
+                    f"video_{basename}{self.video_file_extension}",
+                ),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -443,7 +445,11 @@ class VideoClassificationExporter(SampleExporter):
             pixels = np.array(frame)
             ffmpeg_process.stdin.write(pixels.tobytes())
             frame.save(
-                os.path.join(self.output_dir, folder, f"{basename}_frame_{n_frame:04d}{self.frame_file_extension}")
+                os.path.join(
+                    self.output_dir,
+                    folder,
+                    f"{basename}_frame_{n_frame:04d}{self.frame_file_extension}",
+                )
             )
 
         ffmpeg_process.stdin.close()
@@ -587,48 +593,36 @@ class VideoTrackingExporter(VideoClassificationExporter):
 class AudioExporter(SampleExporter):
     def __init__(self, base_output_dir, sample_rate):
         self.sample_rate = sample_rate
+        self.file_extension = ".wav"
         super().__init__(base_output_dir)
 
-    def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
-        for i, x_i in enumerate(x):
-            self._export_audio(x_i, name="benign")
+    def _export(self, x, basename):
+        x_copy = deepcopy(x)
 
-            if x_adv is not None:
-                x_i_adv = x_adv[i]
-                self._export_audio(x_i_adv, name="adversarial")
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
-    def _export_audio(self, x_i, name="benign"):
-        x_i_copy = deepcopy(x_i)
-
-        if not np.isfinite(x_i_copy).all():
+        if not np.isfinite(x_copy).all():
             posinf, neginf = 1, -1
             log.warning(
                 f"audio vector has infinite values. Mapping nan to 0, -inf to {neginf}, inf to {posinf}."
             )
-            x_i_copy = np.nan_to_num(x_i_copy, posinf=posinf, neginf=neginf)
+            x_copy = np.nan_to_num(x_copy, posinf=posinf, neginf=neginf)
 
-        if x_i_copy.min() < -1.0 or x_i_copy.max() > 1.0:
+        if x_copy.min() < -1.0 or x_copy.max() > 1.0:
             log.warning(
                 "audio vector out of expected [-1, 1] range, normalizing by the max absolute value"
             )
-            x_i_copy = x_i_copy / np.abs(x_i_copy).max()
+            x_copy = x_copy / np.abs(x_copy).max()
 
         wavfile.write(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{name}.wav"),
+            os.path.join(self.output_dir, f"{basename}{self.file_extension}"),
             rate=self.sample_rate,
-            data=x_i_copy,
+            data=x_copy,
         )
 
     @staticmethod
-    def get_sample(x_i, dataset_context):
+    def get_sample(x, dataset_context):
         """
 
-        :param x_i: floating point np array of shape (sequence_length,) in [-1.0, 1.0]
+        :param x: floating point np array of shape (sequence_length,) in [-1.0, 1.0]
         :param dataset_context: armory.data.datasets AudioContext object
         :return: int np array of shape (sequence_length, )
         """
@@ -636,7 +630,7 @@ class AudioExporter(SampleExporter):
         assert dataset_context.quantization == 2**15
 
         return np.clip(
-            np.int16(x_i * dataset_context.quantization),
+            np.int16(x * dataset_context.quantization),
             dataset_context.input_min,
             dataset_context.input_max,
         )
@@ -766,6 +760,7 @@ class ExportMeter(Meter):
 
         probe_variable = self.get_arg_names()[0]
         batch_size = batch_data.shape[0]
+        examples_exported = 0
         for batch_idx in range(batch_size):
             export_kwargs = {}
             if self.y_probe is not None:
@@ -777,7 +772,7 @@ class ExportMeter(Meter):
                 f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}",
                 **export_kwargs,
             )
-            self.examples_exported += 1
+            examples_exported += 1
         self.batches_exported += 1
         if clear_values:
             self.clear()
