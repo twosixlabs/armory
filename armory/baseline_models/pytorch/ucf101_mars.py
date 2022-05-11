@@ -253,7 +253,7 @@ class OuterModel(torch.nn.Module):
                     "Possibly in 0.16.0"
                 )
                 self.warned = True
-            x = preprocessing_fn_torch(x)
+            x = preprocessing_fn_torch(x, select_random_stack=True)
             return self.model(x)
         else:
             x = preprocessing_fn_torch(x)
