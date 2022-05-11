@@ -13,7 +13,7 @@ import shutil
 from loguru import logger as log
 import subprocess
 import itertools
-import utils
+import armory.datasets.builder.utils as utils
 
 
 def build_tfds_dataset(dataset_name: str, local_path: str, feature_dict=None) -> str:
