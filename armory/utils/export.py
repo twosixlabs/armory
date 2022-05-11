@@ -746,28 +746,43 @@ class So2SatExporter(SampleExporter):
 
 
 class ExportMeter(Meter):
-    def __init__(self, name, exporter, *metric_args, max_batches=None):
+    def __init__(
+        self, name, exporter, x_probe, y_probe=None, y_pred_probe=None, max_batches=None
+    ):
+        metric_args = [x_probe]
+        if y_probe is not None:
+            metric_args.append(y_probe)
+        if y_pred_probe is not None:
+            metric_args.append(y_pred_probe)
         super().__init__(name, lambda x: x, *metric_args)
+
+        self.y_probe = y_probe
+        self.y_pred_probe = y_pred_probe
         self.exporter = exporter
         self.max_batches = max_batches
         self.batches_exported = 0
         self.examples_exported = 0
         self.metric_args = metric_args
 
+        if self.y_probe is not None:
+            self.y_probe_idx = self.metric_args.index(self.y_probe)
+        if self.y_pred_probe is not None:
+            self.y_pred_probe_idx = self.metric_args.index(self.y_pred_probe)
+
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
         batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
-
         if self.max_batches and batch_num >= self.max_batches:
             return
+
         probe_variable = self.get_arg_names()[0]
         batch_size = batch_data.shape[0]
         for batch_idx in range(batch_size):
-            export_kwargs = {
-                probe_value.split(".")[-1]: self.values[i + 1][batch_idx]
-                for i, probe_value in enumerate(self.metric_args[1:])
-            }
-            export_kwargs = self.map_probe_names_to_export_kwargs(export_kwargs)
+            export_kwargs = {}
+            if self.y_probe is not None:
+                export_kwargs["y"] = self.values[self.y_probe_idx][batch_idx]
+            if self.y_pred_probe is not None:
+                export_kwargs["y_pred"] = self.values[self.y_pred_probe_idx][batch_idx]
             self.exporter.export(
                 batch_data[batch_idx],
                 f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}{self.exporter.file_extension}",
@@ -778,9 +793,3 @@ class ExportMeter(Meter):
         if clear_values:
             self.clear()
         self.never_measured = False
-
-    @staticmethod
-    def map_probe_names_to_export_kwargs(export_kwargs_dict):
-        # Keys are probe names, each mapping to the proper export function kwarg name
-        map = {"y_pred_adv": "y_pred"}
-        return {(map[k] if k in map else k): v for k, v in export_kwargs_dict.items()}

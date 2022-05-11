@@ -39,8 +39,8 @@ class ObjectDetectionTask(ImageClassificationTask):
                 f"{probe_data}_exporter",
                 self.sample_exporter,
                 f"scenario.{probe_data}",
-                "scenario.y",
-                f"scenario.{probe_pred}",
+                y_probe="scenario.y",
+                y_pred_probe=f"scenario.{probe_pred}",
                 max_batches=self.num_export_batches,
             )
             self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
