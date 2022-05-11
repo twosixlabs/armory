@@ -637,40 +637,40 @@ class AudioExporter(SampleExporter):
 
 
 class So2SatExporter(SampleExporter):
-    def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
+    def __init__(self, base_output_dir, default_export_kwargs={}):
+        super().__init__(
+            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
+        )
+        self.file_extension = ".png"
 
-        for i, x_i in enumerate(x):
-            self._export_so2sat_image(x_i, name="benign")
-
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-                self._export_so2sat_image(x_adv_i, name="adversarial")
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
-    def _export_so2sat_image(self, x_i, name="benign"):
-        folder = str(self.saved_samples)
+    def _export(self, x, basename):
+        folder = str(basename)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
-        self.vh_image = self.get_sample(x_i, modality="vh")
-        self.vh_image.save(os.path.join(self.output_dir, folder, f"vh_{name}.png"))
+        self.vh_image = self.get_sample(x, modality="vh")
+        self.vh_image.save(
+            os.path.join(self.output_dir, folder, f"{basename}_vh{self.file_extension}")
+        )
 
-        self.vv_image = self.get_sample(x_i, modality="vv")
-        self.vv_image.save(os.path.join(self.output_dir, folder, f"vv_{name}.png"))
+        self.vv_image = self.get_sample(x, modality="vv")
+        self.vv_image.save(
+            os.path.join(self.output_dir, folder, f"{basename}_vv{self.file_extension}")
+        )
 
-        self.eo_images = self.get_sample(x_i, modality="eo")
+        self.eo_images = self.get_sample(x, modality="eo")
         for i in range(10):
             eo_image = self.eo_images[i]
-            eo_image.save(os.path.join(self.output_dir, folder, f"eo{i}_{name}.png"))
+            eo_image.save(
+                os.path.join(
+                    self.output_dir, folder, f"{basename}_eo{i}{self.file_extension}"
+                )
+            )
 
     @staticmethod
-    def get_sample(x_i, modality):
+    def get_sample(x, modality):
         """
 
-        :param x_i: floating point np array of shape (H, W, C=14) in [0.0, 1.0]
+        :param x: floating point np array of shape (H, W, C=14) in [0.0, 1.0]
         :param modality: one of {'vv', 'vh', 'eo'}
         :return: PIL.Image.Image, or List[PIL.Image.Image] if modality == "eo"
         """
@@ -680,8 +680,8 @@ class So2SatExporter(SampleExporter):
             x_vh = np.log10(
                 np.abs(
                     np.complex128(
-                        np.clip(x_i[..., 0], -1.0, 1.0)
-                        + 1j * np.clip(x_i[..., 1], -1.0, 1.0)
+                        np.clip(x[..., 0], -1.0, 1.0)
+                        + 1j * np.clip(x[..., 1], -1.0, 1.0)
                     )
                     + sar_eps
                 )
@@ -696,8 +696,8 @@ class So2SatExporter(SampleExporter):
             x_vv = np.log10(
                 np.abs(
                     np.complex128(
-                        np.clip(x_i[..., 2], -1.0, 1.0)
-                        + 1j * np.clip(x_i[..., 3], -1.0, 1.0)
+                        np.clip(x[..., 2], -1.0, 1.0)
+                        + 1j * np.clip(x[..., 3], -1.0, 1.0)
                     )
                     + sar_eps
                 )
@@ -711,12 +711,12 @@ class So2SatExporter(SampleExporter):
         elif modality == "eo":
             eo_images = []
 
-            eo_min = x_i[..., 4:].min()
-            eo_max = x_i[..., 4:].max()
+            eo_min = x[..., 4:].min()
+            eo_max = x[..., 4:].max()
             eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x_i[..., c], 0.0, 1.0) - eo_min)), "L"
+                    np.uint8(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)), "L"
                 )
                 eo_images.append(eo)
 
