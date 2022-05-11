@@ -21,7 +21,7 @@ class SampleExporter:
         self.default_export_kwargs = default_export_kwargs
         self._set_output_dir()
 
-    def export(self, x_i, fname, **kwargs):
+    def export(self, x_i, basename, **kwargs):
         export_kwargs = dict(
             list(self.default_export_kwargs.items()) + list(kwargs.items())
         )
@@ -30,7 +30,7 @@ class SampleExporter:
 
         self._export(
             x_i,
-            fname,
+            basename,
             **export_kwargs,
         )
 
@@ -73,47 +73,47 @@ class ImageClassificationExporter(SampleExporter):
         )
         self.file_extension = ".png"
 
-    def _export(self, x_i, fname):
-        self.image = self.get_sample(x_i)
+    def _export(self, x, basename):
+        self.image = self.get_sample(x)
         self.image.save(
             os.path.join(
                 self.output_dir,
-                fname,
+                f"{basename}{self.file_extension}",
             )
         )
-        if x_i.shape[-1] == 6:
-            self.depth_image = self.get_sample(x_i[..., 3:])
+        if x.shape[-1] == 6:
+            self.depth_image = self.get_sample(x[..., 3:])
             self.depth_image.save(
                 os.path.join(
                     self.output_dir,
-                    f"{os.path.splitext(fname)[0]}_depth.png",
+                    f"{basename}_depth{self.file_extension}",
                 )
             )
 
     @staticmethod
-    def get_sample(x_i):
+    def get_sample(x):
         """
 
-        :param x_i: floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+        :param x: floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
                 3 (RGB), or 6 (RGB-Depth)
         :return: PIL.Image.Image
         """
 
-        if x_i.min() < 0.0 or x_i.max() > 1.0:
+        if x.min() < 0.0 or x.max() > 1.0:
             log.warning("Image out of expected range. Clipping to [0, 1].")
 
         # Export benign image x_i
-        if x_i.shape[-1] == 1:
+        if x.shape[-1] == 1:
             mode = "L"
-            x_i_mode = np.squeeze(x_i, axis=2)
-        elif x_i.shape[-1] == 3:
+            x_i_mode = np.squeeze(x, axis=2)
+        elif x.shape[-1] == 3:
             mode = "RGB"
-            x_i_mode = x_i
-        elif x_i.shape[-1] == 6:
+            x_i_mode = x
+        elif x.shape[-1] == 6:
             mode = "RGB"
-            x_i_mode = x_i[..., :3]
+            x_i_mode = x[..., :3]
         else:
-            raise ValueError(f"Expected 1, 3, or 6 channels, found {x_i.shape[-1]}")
+            raise ValueError(f"Expected 1, 3, or 6 channels, found {x.shape[-1]}")
         image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
         return image
 
@@ -127,26 +127,26 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
     def _export(
         self,
-        x_i,
-        fname,
+        x,
+        basename,
         with_boxes=False,
         y=None,
         y_pred=None,
         score_threshold=0.5,
         classes_to_skip=None,
     ):
-        super()._export(x_i, fname)
+        super()._export(x, basename)
         if with_boxes:
             self.image_with_boxes = self.get_sample(
-                x_i,
+                x,
                 with_boxes=True,
-                y_i=y,
-                y_i_pred=y_pred,
+                y=y,
+                y_pred=y_pred,
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
             )
             fname_with_boxes = (
-                f"{os.path.splitext(fname)[0]}_with_boxes{self.file_extension}"
+                f"{basename}_with_boxes{self.file_extension}"
             )
             self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
 
@@ -166,10 +166,10 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             return
 
         self.image_with_boxes = self.get_sample(
-            x_i=x_i,
+            x=x_i,
             with_boxes=True,
-            y_i=y_i,
-            y_i_pred=y_i_pred,
+            y=y_i,
+            y_pred=y_i_pred,
             classes_to_skip=classes_to_skip,
             score_threshold=score_threshold,
         )
@@ -249,42 +249,42 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
     def get_sample(
         self,
-        x_i,
+        x,
         with_boxes=False,
-        y_i=None,
-        y_i_pred=None,
+        y=None,
+        y_pred=None,
         score_threshold=0.5,
         classes_to_skip=None,
     ):
         """
-        :param x_i:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
+        :param x:  floating point np array of shape (H, W, C) in [0.0, 1.0], where C = 1 (grayscale),
                 3 (RGB), or 6 (RGB-Depth)
         :param with_boxes: boolean indicating whether to display bounding boxes
-        :param y_i: ground-truth label dict
-        :param y_i_pred: predicted label dict
+        :param y: ground-truth label dict
+        :param y_pred: predicted label dict
         :param score_threshold: float in [0, 1]; boxes with confidence > score_threshold are displayed
         :param classes_to_skip: List[Int] containing class ID's for which boxes should not be displayed
         :return: PIL.Image.Image
         """
-        image = super().get_sample(x_i)
+        image = super().get_sample(x)
         if not with_boxes:
             return image
 
-        if y_i is None and y_i_pred is None:
+        if y is None and y_pred is None:
             raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
-        if y_i is not None:
-            bboxes_true = y_i["boxes"]
-            labels_true = y_i["labels"]
+        if y is not None:
+            bboxes_true = y["boxes"]
+            labels_true = y["labels"]
 
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
                 box_layer.rectangle(true_box, outline="red", width=2)
 
-        if y_i_pred is not None:
-            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
+        if y_pred is not None:
+            bboxes_pred = y_pred["boxes"][y_pred["scores"] > score_threshold]
 
             for pred_box in bboxes_pred:
                 box_layer.rectangle(pred_box, outline="white", width=2)
@@ -413,21 +413,11 @@ class VideoClassificationExporter(SampleExporter):
     def __init__(self, base_output_dir, frame_rate, default_export_kwargs={}):
         super().__init__(base_output_dir, default_export_kwargs=default_export_kwargs)
         self.frame_rate = frame_rate
+        self.saved_samples = 0
+        self.video_file_extension = ".mp4"
+        self.frame_file_extension = ".png"
 
-    def _export(
-        self, x, x_adv=None, y=None, y_pred_adv=None, y_pred_clean=None, **kwargs
-    ):
-        for i, x_i in enumerate(x):
-            self._export_video(x_i, name="benign")
-
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, name="adversarial")
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
-    def _export_video(self, x_i, name="benign"):
+    def _export(self, x, basename):
         folder = str(self.saved_samples)
         os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
@@ -436,10 +426,10 @@ class VideoClassificationExporter(SampleExporter):
                 "pipe:",
                 format="rawvideo",
                 pix_fmt="rgb24",
-                s=f"{x_i.shape[2]}x{x_i.shape[1]}",
+                s=f"{x.shape[2]}x{x.shape[1]}",
             )
             .output(
-                os.path.join(self.output_dir, folder, f"video_{name}.mp4"),
+                os.path.join(self.output_dir, folder, f"video_{basename}{self.video_file_extension}"),
                 pix_fmt="yuv420p",
                 vcodec="libx264",
                 r=self.frame_rate,
@@ -448,30 +438,30 @@ class VideoClassificationExporter(SampleExporter):
             .run_async(pipe_stdin=True, quiet=True)
         )
 
-        self.frames = self.get_sample(x_i)
+        self.frames = self.get_sample(x)
 
         for n_frame, frame in enumerate(self.frames):
             pixels = np.array(frame)
             ffmpeg_process.stdin.write(pixels.tobytes())
             frame.save(
-                os.path.join(self.output_dir, folder, f"frame_{n_frame:04d}_{name}.png")
+                os.path.join(self.output_dir, folder, f"{basename}_frame_{n_frame:04d}{self.frame_file_extension}")
             )
 
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
 
     @staticmethod
-    def get_sample(x_i):
+    def get_sample(x):
         """
 
-        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :param x: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
         :return: List[PIL.Image.Image] of length equal to num_frames
         """
-        if x_i.min() < 0.0 or x_i.max() > 1.0:
+        if x.min() < 0.0 or x.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0, 1]")
 
         pil_frames = []
-        for n_frame, x_frame in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
@@ -562,25 +552,25 @@ class VideoTrackingExporter(VideoClassificationExporter):
         ffmpeg_process.stdin.close()
         ffmpeg_process.wait()
 
-    def get_sample(self, x_i, with_boxes=False, y_i=None, y_i_pred=None):
+    def get_sample(self, x, with_boxes=False, y_i=None, y_i_pred=None):
         """
 
-        :param x_i: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
+        :param x: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
         :param with_boxes: boolean indicating whether to display bounding boxes
         :param y_i: ground-truth label dict
         :param y_i_pred: predicted label dict
         :return: List[PIL.Image.Image] of length equal to num_frames
         """
         if not with_boxes:
-            return super().get_sample(x_i)
+            return super().get_sample(x)
 
         if y_i is None and y_i_pred is None:
             raise TypeError("Both y_i and y_pred are None, but with_boxes is True.")
-        if x_i.min() < 0.0 or x_i.max() > 1.0:
+        if x.min() < 0.0 or x.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
 
         pil_frames = []
-        for n_frame, x_frame in enumerate(x_i):
+        for n_frame, x_frame in enumerate(x):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
@@ -785,7 +775,7 @@ class ExportMeter(Meter):
                 export_kwargs["y_pred"] = self.values[self.y_pred_probe_idx][batch_idx]
             self.exporter.export(
                 batch_data[batch_idx],
-                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}{self.exporter.file_extension}",
+                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}",
                 **export_kwargs,
             )
             self.examples_exported += 1
