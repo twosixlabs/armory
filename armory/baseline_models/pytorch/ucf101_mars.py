@@ -6,7 +6,6 @@ from typing import Union, Optional, Tuple
 
 from art.estimators.classification import PyTorchClassifier
 import numpy as np
-from PIL import Image
 import torch
 from torch import optim
 
@@ -18,7 +17,6 @@ with ExternalRepoImport(
 ):
     from MARS.opts import parse_opts
     from MARS.models.model import generate_model
-    from MARS.dataset import preprocess_data
 
 from armory.logs import log
 
@@ -29,74 +27,27 @@ MEAN = np.array([114.7748, 107.7354, 99.4750], dtype=np.float32)
 STD = np.array([1, 1, 1], dtype=np.float32)
 
 
-def preprocessing_fn_numpy(batch: np.ndarray):
-    """
-    batch is a batch of videos, (batch, frames, height, width, channels)
-
-    Preprocessing resizes the height and width to 112 x 112 and reshapes
-    each video to (n_stack, 3, 16, height, width), where n_stack = int(time/16).
-
-    Outputs a list of videos, each of shape (n_stack, 3, 16, 112, 112)
-    """
-    sample_duration = 16  # expected number of consecutive frames as input to the model
-
-    outputs = []
-    for i, x in enumerate(batch):
-        if x.ndim != 4:
-            raise ValueError(f"sample {i} in batch has {x.ndim} dims, not 4 (FHWC)")
-        if x.dtype in (float, np.float32):
-            if x.max() > 1.0 or x.min() < 0.0:
-                raise ValueError(f"sample {i} is a float but not in [0.0, 1.0] range")
-            x = (255 * x).round().astype(np.uint8)
-        if x.dtype != np.uint8:
-            raise ValueError(f"sample {i} - unrecognized dtype {x.dtype}")
-
-        # select a fixed number of consecutive frames
-        total_frames = x.shape[0]
-        if total_frames < sample_duration / 2:
-            raise ValueError(
-                f"video is too short; requires >= {sample_duration / 2} frames"
-            )
-        if total_frames <= sample_duration:  # cyclic pad if not enough frames
-            x = np.vstack([x, x[: sample_duration - total_frames]])
-
-        # apply MARS preprocessing: scaling, cropping, normalizing
-        opt = parse_opts(arguments=[])
-        opt.modality = "RGB"
-        opt.sample_size = 112
-        x_Image = []  # convert each frame to PIL Image
-        for frame in x:
-            x_Image.append(Image.fromarray(frame))
-        x_mars_preprocessed = preprocess_data.scale_crop(x_Image, 0, opt)
-
-        # reshape
-        x_reshaped = []
-        for ns in range(int(total_frames / sample_duration)):
-            np_frames = x_mars_preprocessed[
-                :, ns * sample_duration : (ns + 1) * sample_duration, :, :
-            ].numpy()
-            x_reshaped.append(np_frames)
-        outputs.append(np.array(x_reshaped, dtype=np.float32))
-    return outputs
-
-
 def preprocessing_fn_torch(
     batch: Union[torch.Tensor, np.ndarray],
     consecutive_frames: int = 16,
     scale_first: bool = True,
     align_corners: bool = False,
+    select_random_stack: bool = False,
 ):
     """
     inputs - batch of videos each with shape (frames, height, width, channel)
     outputs - batch of videos each with shape (n_stack, channel, stack_frames, new_height, new_width)
-        frames = n_stack * stack_frames (after padding)
+        frames = n_stack * stack_frames (after padding / truncation)
         new_height = new_width = 112
     consecutive_frames - number of consecutive frames (stack_frames)
 
     After resizing, a center crop is performed to make the image square
 
     This is a differentiable alternative to MARS' PIL-based preprocessing.
-        There are some
+        There are some minor differences.
+
+    select_random_stack - whether to select a single random stack per batch element
+        instead of all stacks; used for training
     """
     if not isinstance(batch, torch.Tensor):
         log.warning(f"batch {type(batch)} is not a torch.Tensor. Casting")
@@ -127,6 +78,11 @@ def preprocessing_fn_torch(
         raise ValueError(f"consecutive_frames {consecutive_frames} must be an int")
     if consecutive_frames < 1:
         raise ValueError(f"consecutive_frames {consecutive_frames} must be positive")
+
+    if select_random_stack and len(video) > consecutive_frames:
+        # select a random sequence of 16 consecutive frames (if present)
+        i = torch.randint(len(video) - consecutive_frames + 1, (1,))
+        video = video[i : i + consecutive_frames]
 
     # Select a integer multiple of consecutive frames
     while len(video) < consecutive_frames:
@@ -200,18 +156,6 @@ def preprocessing_fn_torch(
     video = torch.transpose(video, 4, 1)
 
     return video
-
-
-def fit_preprocessing_fn_numpy(batch: np.ndarray):
-    """
-    Randomly sample a single stack from each video
-    """
-    x = preprocessing_fn_numpy(batch)
-    x = np.stack([x_i[np.random.randint(x_i.shape[0])] for x_i in x])
-    return x
-
-
-preprocessing_fn = fit_preprocessing_fn_numpy
 
 
 def make_model(
@@ -295,13 +239,21 @@ class OuterModel(torch.nn.Module):
         self.model, self.optimizer = make_model(
             weights_path=weights_path, **model_kwargs
         )
+        self.warned = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.max_frames:
             x = x[:, : self.max_frames]
 
         if self.training:
-            # Use preprocessing_fn_numpy in dataset preprocessing
+            if not self.warned:
+                log.warning(
+                    "Training in current framework is highly inefficient. "
+                    "Recommend training outside armory until improvements to fit. "
+                    "Possibly in 0.16.0"
+                )
+                self.warned = True
+            x = preprocessing_fn_torch(x)
             return self.model(x)
         else:
             x = preprocessing_fn_torch(x)
