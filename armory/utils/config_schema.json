@@ -95,6 +95,12 @@
         },
         "metric": {
             "properties": {
+                "max_record_size": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
                 "means": {
                     "type": "boolean"
                 },
