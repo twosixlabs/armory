@@ -25,7 +25,10 @@ class AdversarialTrainerMadryPGD(Trainer):
 
     def __init__(self, classifier, eps=0.03, eps_step=0.008, max_iter=7, ratio=1.0):
         self.attack = ProjectedGradientDescent(
-            classifier, eps=eps, eps_step=eps_step, max_iter=max_iter,
+            classifier,
+            eps=eps,
+            eps_step=eps_step,
+            max_iter=max_iter,
         )
 
         self.trainer = AdversarialTrainer(classifier, self.attack, ratio=ratio)

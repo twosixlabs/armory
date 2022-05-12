@@ -11,7 +11,8 @@ from armory import paths
 runtime_paths = paths.runtime_paths()
 external_repo_dir = runtime_paths.external_repo_dir
 external_repo.download_and_extract_repos(
-    "amoudgl/pygoturn", external_repo_dir=external_repo_dir,
+    "amoudgl/pygoturn",
+    external_repo_dir=external_repo_dir,
 )
 # Load model from MITRE external repo: https://github.com/yusong-tan/pygoturn
 # This needs to be defined in your config's `external_github_repo` field to be

@@ -265,7 +265,10 @@ def make_model(
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], max_frames: int = 0, **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        max_frames: int = 0,
+        **model_kwargs,
     ):
         """
         Max frames is the maximum number of input frames.

@@ -73,7 +73,7 @@ def build_source_dataset(dataset_class_file: str, local_path: str) -> str:
 def build(
     dataset_name: str, dataset_config, local_path: str, clean: bool = True
 ) -> str:
-    """ Builds a given dataset from the provided inputs
+    """Builds a given dataset from the provided inputs
     Parameters:
         dataset_name (str):         Name of the Dataset to build (e.g. `mnist`, `so2sat/all`, etc.)
         dataset_config (dict):      Configuration Dictonary for Dataset (see `utils.SUPPORTED_DATASETS`

@@ -119,7 +119,10 @@ class Poison(Scenario):
         self.predict_kwargs = model_config.get("predict_kwargs", {})
 
     def set_dataset_kwargs(self):
-        self.dataset_kwargs = dict(epochs=1, shuffle_files=False,)
+        self.dataset_kwargs = dict(
+            epochs=1,
+            shuffle_files=False,
+        )
 
     def load_train_dataset(self, train_split_default=None):
         """

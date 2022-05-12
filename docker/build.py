@@ -25,7 +25,8 @@ parser.add_argument(
     "-n", "--dry-run", action="store_true", help="show what would be done"
 )
 parser.add_argument(
-    "framework", help=f"framework to build ({FRAMEWORKS + ['all']})",
+    "framework",
+    help=f"framework to build ({FRAMEWORKS + ['all']})",
 )
 args = parser.parse_args()
 

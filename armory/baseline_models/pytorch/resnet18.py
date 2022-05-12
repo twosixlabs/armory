@@ -13,7 +13,9 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        **model_kwargs,
     ):
         # default to imagenet mean and std
         data_means = model_kwargs.pop("data_means", [0.485, 0.456, 0.406])

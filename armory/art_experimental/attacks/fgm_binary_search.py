@@ -99,7 +99,9 @@ class FGMBinarySearch(FastGradientMethod):
         while active.size > 0 and current_eps <= self.eps:
             # Adversarial crafting
             adv_batch[active] = self._apply_perturbation(
-                batch[active], perturbation[active], current_eps,
+                batch[active],
+                perturbation[active],
+                current_eps,
             )
 
             # Check for success
@@ -128,7 +130,9 @@ class FGMBinarySearch(FastGradientMethod):
         for start in range(0, adv_x.shape[0], self.batch_size):
             end = start + self.batch_size
             self._minimal_perturbation_binary_batch(
-                x[start:end], y[start:end], adv_x[start:end],
+                x[start:end],
+                y[start:end],
+                adv_x[start:end],
             )
 
         return adv_x
