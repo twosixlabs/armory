@@ -8,7 +8,7 @@ Scenario Contributor: MITRE Corporation
 import numpy as np
 
 from armory.scenarios.scenario import Scenario
-from armory.utils.export import VideoTrackingExporter
+from armory.utils.export import VideoTrackingExporter, ExportMeter
 
 
 class CarlaVideoTracking(Scenario):
@@ -74,9 +74,28 @@ class CarlaVideoTracking(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
-        default_export_kwargs = {"with_boxes": True}
         return VideoTrackingExporter(
             self.scenario_output_dir,
             frame_rate=self.test_dataset.context.frame_rate,
-            default_export_kwargs=default_export_kwargs,
         )
+
+    def load_export_meters(self):
+        # Load default export meters
+        super().load_export_meters()
+
+        # Add export meters that export examples with boxes overlaid
+        self.sample_exporter_with_boxes = VideoTrackingExporter(
+            self.scenario_output_dir,
+            frame_rate=self.test_dataset.context.frame_rate,
+            default_export_kwargs={"with_boxes": True},
+        )
+        for probe_data, probe_pred in [("x", "y_pred"), ("x_adv", "y_pred_adv")]:
+            export_with_boxes_meter = ExportMeter(
+                f"{probe_data}_with_boxes_exporter",
+                self.sample_exporter_with_boxes,
+                f"scenario.{probe_data}",
+                y_probe="scenario.y",
+                y_pred_probe=f"scenario.{probe_pred}",
+                max_batches=self.num_export_batches,
+            )
+            self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)

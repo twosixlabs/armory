@@ -475,102 +475,63 @@ class VideoClassificationExporter(SampleExporter):
 
 
 class VideoTrackingExporter(VideoClassificationExporter):
-    def _export(
-        self,
-        x,
-        x_adv=None,
-        with_boxes=False,
-        y=None,
-        y_pred_adv=None,
-        y_pred_clean=None,
-    ):
-        for i, x_i in enumerate(x):
-            self._export_video(x_i, name="benign")
+    def _export(self, x, basename, with_boxes=False, y=None, y_pred=None):
+        if with_boxes:
+            folder = str(basename)
+            os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
 
-            if with_boxes:
-                y_i = y[i] if y is not None else None
-                y_i_pred_clean = y_pred_clean[i] if y_pred_clean is not None else None
-                self._export_video(
-                    x_i,
-                    with_boxes=True,
-                    y_i=y_i,
-                    y_i_pred=y_i_pred_clean,
-                    name="benign",
+            ffmpeg_process = (
+                ffmpeg.input(
+                    "pipe:",
+                    format="rawvideo",
+                    pix_fmt="rgb24",
+                    s=f"{x.shape[2]}x{x.shape[1]}",
                 )
-
-            if x_adv is not None:
-                x_adv_i = x_adv[i]
-                self._export_video(x_adv_i, name="adversarial")
-                if with_boxes:
-                    y_i_pred_adv = y_pred_adv[i] if y_pred_adv is not None else None
-                    self._export_video(
-                        x_adv_i,
-                        with_boxes=True,
-                        y_i=y_i,
-                        y_i_pred=y_i_pred_adv,
-                        name="adversarial",
+                .output(
+                    os.path.join(
+                        self.output_dir,
+                        folder,
+                        f"video_{basename}_with_boxes{self.video_file_extension}",
+                    ),
+                    pix_fmt="yuv420p",
+                    vcodec="libx264",
+                    r=self.frame_rate,
+                )
+                .overwrite_output()
+                .run_async(pipe_stdin=True, quiet=True)
+            )
+            self.frames_with_boxes = self.get_sample(
+                x, with_boxes=True, y=y, y_pred=y_pred
+            )
+            for n_frame, frame in enumerate(self.frames_with_boxes):
+                frame.save(
+                    os.path.join(
+                        self.output_dir,
+                        folder,
+                        f"{basename}_frame_{n_frame:04d}_with_boxes{self.frame_file_extension}",
                     )
-
-            self.saved_samples += 1
-        self.saved_batches += 1
-
-    def _export_video(
-        self, x_i, with_boxes=False, y_i=None, y_i_pred=None, name="benign"
-    ):
-        if not with_boxes:
-            super()._export_video(x_i, name=name)
-            return
-
-        folder = str(self.saved_samples)
-        os.makedirs(os.path.join(self.output_dir, folder), exist_ok=True)
-
-        ffmpeg_process = (
-            ffmpeg.input(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="rgb24",
-                s=f"{x_i.shape[2]}x{x_i.shape[1]}",
-            )
-            .output(
-                os.path.join(self.output_dir, folder, f"video_{name}_with_boxes.mp4"),
-                pix_fmt="yuv420p",
-                vcodec="libx264",
-                r=self.frame_rate,
-            )
-            .overwrite_output()
-            .run_async(pipe_stdin=True, quiet=True)
-        )
-
-        self.frames_with_boxes = self.get_sample(
-            x_i, with_boxes=True, y_i=y_i, y_i_pred=y_i_pred
-        )
-        for n_frame, frame in enumerate(self.frames_with_boxes):
-            frame.save(
-                os.path.join(
-                    self.output_dir,
-                    folder,
-                    f"frame_{n_frame:04d}_{name}_with_boxes.png",
                 )
-            )
-            pixels_with_boxes = np.array(frame)
-            ffmpeg_process.stdin.write(pixels_with_boxes.tobytes())
+                pixels_with_boxes = np.array(frame)
+                ffmpeg_process.stdin.write(pixels_with_boxes.tobytes())
 
-        ffmpeg_process.stdin.close()
-        ffmpeg_process.wait()
+            ffmpeg_process.stdin.close()
+            ffmpeg_process.wait()
+        else:
+            super()._export(x, basename)
 
-    def get_sample(self, x, with_boxes=False, y_i=None, y_i_pred=None):
+    def get_sample(self, x, with_boxes=False, y=None, y_pred=None):
         """
 
         :param x: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
         :param with_boxes: boolean indicating whether to display bounding boxes
-        :param y_i: ground-truth label dict
-        :param y_i_pred: predicted label dict
+        :param y: ground-truth label dict
+        :param y_pred: predicted label dict
         :return: List[PIL.Image.Image] of length equal to num_frames
         """
         if not with_boxes:
             return super().get_sample(x)
 
-        if y_i is None and y_i_pred is None:
+        if y is None and y_pred is None:
             raise TypeError("Both y_i and y_pred are None, but with_boxes is True.")
         if x.min() < 0.0 or x.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
@@ -580,11 +541,11 @@ class VideoTrackingExporter(VideoClassificationExporter):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
-            if y_i is not None:
-                bbox_true = y_i["boxes"][n_frame].astype("float32")
+            if y is not None:
+                bbox_true = y["boxes"][n_frame].astype("float32")
                 box_layer.rectangle(bbox_true, outline="red", width=2)
-            if y_i_pred is not None:
-                bbox_pred = y_i_pred["boxes"][n_frame]
+            if y_pred is not None:
+                bbox_pred = y_pred["boxes"][n_frame]
                 box_layer.rectangle(bbox_pred, outline="white", width=2)
             pil_frames.append(image)
 
