@@ -64,6 +64,8 @@ def undump_filters(s: str):
     global filters
     for filter in s.split("|"):
         k, v = filter.split(":")
+        if v == "False":
+            v = False
         filters[k] = v
 
 
