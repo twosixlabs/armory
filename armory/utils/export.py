@@ -328,73 +328,61 @@ class DApricotExporter(ObjectDetectionExporter):
     def _export(
         self,
         x,
-        x_adv=None,
+        basename,
         with_boxes=False,
         y=None,
-        y_pred_adv=None,
-        y_pred_clean=None,
+        y_pred=None,
         score_threshold=0.5,
         classes_to_skip=[12],  # class of green-screen
     ):
-        if x_adv is None:
-            raise TypeError("Expected x_adv to not be None for DApricot scenario.")
-        x_adv_angle_1 = x_adv[0]
-        self._export_image(x_adv_angle_1, name="adversarial_angle_1")
-
-        x_adv_angle_2 = x_adv[1]
-        self._export_image(x_adv_angle_2, name="adversarial_angle_2")
-
-        x_adv_angle_3 = x_adv[2]
-        self._export_image(x_adv_angle_3, name="adversarial_angle_3")
+        x_angle_1 = x[0]
+        x_angle_2 = x[1]
+        x_angle_3 = x[2]
 
         if with_boxes:
-            y_angle_1 = y[0]
-            y_pred_angle_1 = deepcopy(y_pred_adv[0])
+            y_pred_angle_1 = deepcopy(y_pred[0])
             y_pred_angle_1["boxes"] = self.convert_boxes_tf_to_torch(
-                x_adv_angle_1, y_pred_angle_1["boxes"]
+                x_angle_1, y_pred_angle_1["boxes"]
             )
-            self._export_image(
-                x_adv_angle_1,
+            super()._export(
+                x_angle_1,
+                f"{basename}_angle_1",
                 with_boxes=True,
-                y_i=y_angle_1,
-                y_i_pred=y_pred_angle_1,
+                y_pred=y_pred_angle_1,
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
-                name="adversarial_angle_1",
             )
 
-            y_angle_2 = y[1]
-            y_pred_angle_2 = deepcopy(y_pred_adv[1])
+            y_pred_angle_2 = deepcopy(y_pred[1])
             y_pred_angle_2["boxes"] = self.convert_boxes_tf_to_torch(
-                x_adv_angle_2, y_pred_angle_2["boxes"]
-            )
-            self._export_image(
-                x_adv_angle_2,
-                with_boxes=True,
-                y_i=y_angle_2,
-                y_i_pred=y_pred_angle_2,
-                score_threshold=score_threshold,
-                classes_to_skip=classes_to_skip,
-                name="adversarial_angle_2",
+                x_angle_2, y_pred_angle_2["boxes"]
             )
 
-            y_angle_3 = y[2]
-            y_pred_angle_3 = deepcopy(y_pred_adv[2])
+            super()._export(
+                x_angle_2,
+                f"{basename}_angle_2",
+                with_boxes=True,
+                y_pred=y_pred_angle_2,
+                score_threshold=score_threshold,
+                classes_to_skip=classes_to_skip,
+            )
+
+            y_pred_angle_3 = deepcopy(y_pred[2])
             y_pred_angle_3["boxes"] = self.convert_boxes_tf_to_torch(
-                x_adv_angle_3, y_pred_angle_3["boxes"]
+                x_angle_3, y_pred_angle_3["boxes"]
             )
-            self._export_image(
-                x_adv_angle_3,
+            super()._export(
+                x_angle_3,
+                f"{basename}_angle_3",
                 with_boxes=True,
-                y_i=y_angle_3,
-                y_i_pred=y_pred_angle_3,
+                y_pred=y_pred_angle_3,
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
-                name="adversarial_angle_3",
             )
-
-        self.saved_samples += 1
-        self.saved_batches += 1
+        else:
+            super()._export(x_angle_1, f"{basename}_angle_1")
+            super()._export(x_angle_2, f"{basename}_angle_2")
+            super()._export(x_angle_3, f"{basename}_angle_3")
 
     @staticmethod
     def convert_boxes_tf_to_torch(x, box_array):
@@ -706,7 +694,6 @@ class ExportMeter(Meter):
         self.exporter = exporter
         self.max_batches = max_batches
         self.batches_exported = 0
-        self.examples_exported = 0
         self.metric_args = metric_args
 
         if self.y_probe is not None:
@@ -717,7 +704,7 @@ class ExportMeter(Meter):
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
         batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
-        if self.max_batches and batch_num >= self.max_batches:
+        if self.max_batches is not None and batch_num >= self.max_batches:
             return
 
         probe_variable = self.get_arg_names()[0]
@@ -731,7 +718,7 @@ class ExportMeter(Meter):
                 export_kwargs["y_pred"] = self.values[self.y_pred_probe_idx][batch_idx]
             self.exporter.export(
                 batch_data[batch_idx],
-                f"batch_{self.batches_exported}_ex_{self.examples_exported}_{probe_variable}",
+                f"batch_{self.batches_exported}_ex_{examples_exported}_{probe_variable}",
                 **export_kwargs,
             )
             examples_exported += 1

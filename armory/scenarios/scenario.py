@@ -227,7 +227,7 @@ class Scenario:
         num_export_batches = self.config["scenario"].get("export_batches", 0)
         if num_export_batches is True:
             num_export_batches = len(self.test_dataset)
-        self.num_export_batches = num_export_batches
+        self.num_export_batches = int(num_export_batches)
         self.sample_exporter = self._load_sample_exporter()
 
         for probe_value in ["x", "x_adv"]:
