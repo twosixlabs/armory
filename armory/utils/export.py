@@ -135,7 +135,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         score_threshold=0.5,
         classes_to_skip=None,
     ):
-        super()._export(x, basename)
         if with_boxes:
             self.image_with_boxes = self.get_sample(
                 x,
@@ -147,6 +146,8 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             )
             fname_with_boxes = f"{basename}_with_boxes{self.file_extension}"
             self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
+        else:
+            super()._export(x, basename)
 
     # TODO: this method isn't being used anymore
     def _export_image(
