@@ -38,7 +38,7 @@ class DockerPort:
 
 
 def get_mounts_from_environment(environment: EnvironmentParameters):
-    """Get list of DockerMount(s) from EnvironmentParameters """
+    """Get list of DockerMount(s) from EnvironmentParameters"""
     mounts = []
     mounts.append(
         DockerMount(
@@ -101,7 +101,6 @@ def execute_docker_cmd(
     execute_cmd(command, pre_prompt="<in docker>")
 
 
-
 def execute_experiment(
     experiment: ExperimentParameters, environment: EnvironmentParameters
 ):
@@ -125,11 +124,12 @@ def execute_experiment(
         log.debug(f"Saved Environment (for reference) to: {environment_filename}")
 
         template_parameters = {
+            "template_sentinel": "",  # when nulled will allow execution_script to run
             "armory_sys_path": "",
             "experiment_filename": experiment_filename,
             "environment_filename": environment_filename,
             "output_directory": output_directory,
-            "armory_log_filters": [f"{k}:{v}" for k, v in armory.logs.filters.items()],
+            "armory_log_filters": armory.logs.dump_filters(),
         }
 
         with open(os.path.join(os.path.dirname(__file__), "execute_template.py")) as f:
@@ -155,11 +155,12 @@ def execute_experiment(
         log.debug(f"Saved Environment (for reference) to: {environment_filename}")
 
         template_parameters = {
+            "template_sentinel": "",  # when nulled will allow execution_script to run
             "armory_sys_path": "import sys; sys.path.insert(0, '/armory_src/')",
             "experiment_filename": "/armory_output/experiment.yml",
             "environment_filename": "/armory_output/environment.yml",
             "output_directory": "/armory_output/",
-            "armory_log_filters": [f"{k}:{v}" for k, v in armory.logs.filters.items()],
+            "armory_log_filters": armory.logs.dump_filters(),
         }
 
         with open(os.path.join(os.path.dirname(__file__), "execute_template.py")) as f:
@@ -180,7 +181,7 @@ def execute_experiment(
         )
         execute_docker_cmd(
             image=docker_image,
-            cmd=["python","execution_script.py"],
+            cmd=["python", "execution_script.py"],
             cwd="/armory_output/",
             mounts=mounts,
         )
@@ -188,7 +189,9 @@ def execute_experiment(
     else:
         raise ValueError(f"Unrecognized Execution Mode: {experiment.execution.mode}")
 
-    log.info(f"Experiment Execution Complete!!  Results can be found at: {output_directory}")
+    log.info(
+        f"Experiment Execution Complete!!  Results can be found at: {output_directory}"
+    )
 
 
 if __name__ == "__main__":
