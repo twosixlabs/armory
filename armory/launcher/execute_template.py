@@ -2,7 +2,7 @@
 """
 
 
-# launcher.py substitutes all names with a $ sigil to derive a runnable file.
+# launcher.py substitutes all names with a dollar-sign sigil to derive a runnable file.
 # Prevent execution if someone tries to run this file without substitution.
 if "$template_sentinel":
     raise ImportError("execute_template.py is a template cannot be run directly")

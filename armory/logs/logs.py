@@ -63,7 +63,6 @@ def undump_filters(s: str):
     """the converse operation of dump_filters"""
     global filters
     for filter in s.split("|"):
-        log.info(f"parsing filter {filter}")
         k, v = filter.split(":")
         filters[k] = v
 
