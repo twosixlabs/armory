@@ -68,14 +68,15 @@ def test_camel_case(input, capitalize_first, expected_output):
                 os.path.dirname(__file__),
                 "../../armory/datasets/builder",
                 "build_classes",
-                "digit.py"),
+                "digit.py",
+            ),
             {
                 "type": "source",
                 "class_file": os.path.join(
                     os.path.dirname(__file__),
                     "../../armory/datasets/builder",
                     "build_classes",
-                    "digit.py"
+                    "digit.py",
                 ),
                 "expected_name": "Digit",
                 "expected_version": "1.0.8",
