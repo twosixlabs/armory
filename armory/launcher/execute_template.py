@@ -1,6 +1,12 @@
 """Execution Script for Armory Runs
 """
 
+
+# launcher.py substitutes all names with a $ sigil to derive a runnable file.
+# Prevent execution if someone tries to run this file without substitution.
+if "$template_sentinel":
+    raise ImportError("execute_template.py is a template cannot be run directly")
+
 # TODO: since armory_sys_path is either "" or "/armory_src", and the latter only
 # valid in containers, can we drop the conditional?
 import sys
