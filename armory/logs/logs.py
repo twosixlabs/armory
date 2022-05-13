@@ -53,6 +53,22 @@ added_filters = {}
 logfile_directory = None
 
 
+def dump_filters() -> str:
+    """return a string representation of the current filters"""
+    global filters
+    return "|".join(f"{k}:{v}" for k, v in filters.items())
+
+
+def undump_filters(s: str):
+    """the converse operation of dump_filters"""
+    global filters
+    for filter in s.split("|"):
+        k, v = filter.split(":")
+        if v == "False":
+            v = False
+        filters[k] = v
+
+
 def is_debug() -> bool:
     """return true if there is a filter set to DEBUG or lower"""
     global filters

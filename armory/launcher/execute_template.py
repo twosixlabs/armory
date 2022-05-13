@@ -1,7 +1,20 @@
 """Execution Script for Armory Runs
 """
+
+
+# launcher.py substitutes all names with a dollar-sign sigil to derive a runnable file.
+# Prevent execution if someone tries to run this file without substitution.
+if "$template_sentinel":
+    raise ImportError("execute_template.py is a template cannot be run directly")
+
+# TODO: since armory_sys_path is either "" or "/armory_src", and the latter only
+# valid in containers, can we drop the conditional?
+import sys
+
+if "$armory_sys_path":
+    sys.path.insert(0, "$armory_sys_path")
+
 import time
-$armory_sys_path # fmt: skip
 
 import armory
 import armory.logs
@@ -15,8 +28,7 @@ import importlib
 environment_filename = "$environment_filename"
 experiment_filename = "$experiment_filename"
 output_directory = "$output_directory"
-log_filters = $armory_log_filters # fmt: skip
-armory.logs.update_filters(log_filters)
+armory.logs.undump_filters("$armory_log_filters")
 
 
 log.info("Running Execution Script for Armory")
@@ -53,4 +65,3 @@ log.trace(f"constructed scenario: {scenario}")
 log.debug("Calling .evaluate()")
 scenario.evaluate()
 log.success("Evaluation Complete!!")
-
