@@ -36,6 +36,7 @@ class Scenario:
     ):
         self.probe = get_probe("scenario")
         self.hub = get_hub()
+        log.debug("Constructing Scenario Base Class...")
         self.check_run = bool(check_run)
         if num_eval_batches is not None and num_eval_batches < 0:
             raise ValueError("num_eval_batches cannot be negative")
@@ -121,7 +122,7 @@ class Scenario:
 
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
-        log.info(f"Loading train dataset {dataset_config['name']}...")
+        log.info(f"Loading train dataset: {dataset_config['module']}.{dataset_config['name']}...")
         self.train_dataset = config_loading.load_dataset(
             dataset_config,
             epochs=self.fit_kwargs["nb_epochs"],

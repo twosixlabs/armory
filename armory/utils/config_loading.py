@@ -26,8 +26,11 @@ from art.defences.trainer import Trainer
 
 from armory.art_experimental.attacks import patch
 from armory.art_experimental.attacks.sweep import SweepAttack
-from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
-from armory.data.utils import maybe_download_weights_from_s3
+# from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
+# from armory.data.utils import maybe_download_weights_from_s3
+
+from armory.datasets.generator import ArmoryDataGenerator, EvalGenerator
+
 from armory.utils import labels
 import copy
 
@@ -61,7 +64,11 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     dataset_fn_name = dataset_config.pop("name")
     batch_size = dataset_config.pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
+
+    log.debug(f"Importing Dataset Module: {module}")
     dataset_module = import_module(module)
+
+    log.debug(f"Grabbing Function: {dataset_fn_name}")
     dataset_fn = getattr(dataset_module, dataset_fn_name)
 
     # Add remaining dataset_config items to kwargs
@@ -70,6 +77,7 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
             continue
         kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
+    log.debug(f"Calling: {dataset_fn}({batch_size},{framework},{args},{kwargs}")
     dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")

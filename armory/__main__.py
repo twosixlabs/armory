@@ -731,14 +731,6 @@ def ds_build(command_args, prog, description):
         default=DEFAULT_DATASET_DIRECTORY,
         help="Directory to Store built datasets (Default: %(default)s )",
     )
-    parser.add_argument(
-        "-v",
-        "--verbosity",
-        type=str,
-        choices=["trace", "debug", "info", "warning", "error"],
-        default="info",
-        help="Set Output log level (Default: %(default)s)",
-    )
     args = parser.parse_args(command_args)
     armory.logs.update_filters(args.log_level, args.debug)
     # Listing SUPPORTED_DATASETS
