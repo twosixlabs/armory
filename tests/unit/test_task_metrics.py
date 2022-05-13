@@ -232,3 +232,15 @@ def test_video_tracking_metrics():
         assert isinstance(result, list)
         assert len(result) == len(y)
         assert result[0] == 0.5
+
+
+def test_word_error_rate():  # and total
+    raise NotImplementedError()
+
+
+def test_identity():
+    raise NotImplementedError()
+
+
+def test_per_class_accuracy():  # and mean
+    raise NotImplementedError()
