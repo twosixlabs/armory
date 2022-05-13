@@ -446,5 +446,8 @@ class WitchesBrewScenario(Poison):
     def evaluate_current(self):
         if self.i in self.trigger_index:
             self.run_attack()
+            for batch_idx in range(self.x.shape[0]):
+                basename = f"trigger_batch_{self.i}_ex_{batch_idx}"
+                self.sample_exporter.export(self.x[batch_idx], basename)
         else:
             self.run_benign()
