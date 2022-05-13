@@ -13,7 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
-from armory.utils.export import ExportMeter
+from armory.utils.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
 from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
@@ -239,7 +239,15 @@ class Scenario:
             )
             self.hub.connect_meter(export_meter, use_default_writers=False)
 
-        # TODO: set up meter for y, y_pred_clean, y_pred_adv?
+        pred_meter = PredictionMeter(
+            "pred_dict_exporter",
+            self.scenario_output_dir,
+            y_probe="scenario.y",
+            y_pred_clean_probe="scenario.y_pred",
+            y_pred_adv_probe="scenario.y_pred_adv",
+            max_batches=self.num_export_batches,
+        )
+        self.hub.connect_meter(pred_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
         raise NotImplementedError(

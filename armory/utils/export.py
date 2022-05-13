@@ -735,3 +735,93 @@ class ExportMeter(Meter):
                     f"Meter '{self.name}' was never measured. "
                     f"The following args were never set: {unset}"
                 )
+
+
+class PredictionMeter(Meter):
+    """
+    Meter that keeps track of y, y_pred_clean, y_pred_adv and pickles these results to a dictionary
+    that gets saved in the Armory scenario output directory. Each key in the dictionary corresponds
+    to the dataset example index, which maps to "y", "y_pred_clean", and "y_pred_adv" values.
+    """
+
+    def __init__(
+        self,
+        name,
+        output_dir,
+        y_probe=None,
+        y_pred_clean_probe=None,
+        y_pred_adv_probe=None,
+        max_batches=None,
+    ):
+        idx = 0
+        metric_args = []
+        if y_probe is not None:
+            metric_args.append(y_probe)
+            self.y_probe_idx = idx
+            idx += 1
+        if y_pred_clean_probe is not None:
+            metric_args.append(y_pred_clean_probe)
+            self.y_pred_clean_probe_idx = idx
+            idx += 1
+        if y_pred_adv_probe is not None:
+            metric_args.append(y_pred_adv_probe)
+            self.y_pred_adv_probe_idx = idx
+
+        super().__init__(name, lambda x: x, *metric_args)
+        if not metric_args:
+            log.warning(f"{self.name} was constructed with all probes set to None")
+
+        self.output_dir = output_dir
+        self.y_probe = y_probe
+        self.y_pred_clean_probe = y_pred_clean_probe
+        self.y_pred_adv_probe = y_pred_adv_probe
+        self.max_batches = max_batches
+        self.examples_saved = 0
+        self.y_dict = {}
+
+    def measure(self, clear_values=True):
+        self.is_ready(raise_error=True)
+        batch_num = self.arg_batch_indices[0]
+        batch_size = len(self.values[0])
+
+        if (
+            self.max_batches is not None and batch_num >= self.max_batches
+        ) or not self.values:
+            return
+
+        y = [None] * batch_size
+        y_pred_clean = [None] * batch_size
+        y_pred_adv = [None] * batch_size
+
+        if self.y_probe is not None:
+            y = self.values[self.y_probe_idx]
+        if self.y_pred_clean_probe is not None:
+            y_pred_clean = self.values[self.y_pred_clean_probe_idx]
+        if self.y_pred_adv_probe is not None:
+            y_pred_adv = self.values[self.y_pred_adv_probe_idx]
+
+        for i in range(batch_size):
+            y_i = y[i]
+            y_i_pred_clean = y_pred_clean[i]
+            y_i_pred_adv = y_pred_adv[i]
+            self.y_dict[self.examples_saved] = {
+                "y": y_i,
+                "y_pred": y_i_pred_clean,
+                "y_pred_adv": y_i_pred_adv,
+            }
+            self.examples_saved += 1
+        if clear_values:
+            self.clear()
+        self.never_measured = False
+
+    def finalize(self):
+        if self.never_measured:
+            unset = [arg for arg, i in self.arg_index.items() if not self.values_set[i]]
+            if unset:
+                log.warning(
+                    f"Meter '{self.name}' was never measured. "
+                    f"The following args were never set: {unset}"
+                )
+
+        with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+            pickle.dump(self.y_dict, f)
