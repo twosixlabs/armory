@@ -16,21 +16,25 @@ def test_lp_norms():
     x = [1, 2, 3]
     x_adv = [2, 3, 4]
     assert (perturbation.batch.l1(x, x_adv) == np.array([1, 1, 1])).all()
+    for x_i, x_adv_i in zip(x, x_adv):
+        assert perturbation.element.l1(x_i, x_adv_i) == 1
     batch_size = 5
     for x, x_adv in [
         (np.ones((batch_size, 16)), np.zeros((batch_size, 16))),
         (np.ones((batch_size, 4, 4)), np.zeros((batch_size, 4, 4))),
     ]:
-        for func, list_result in [
-            (perturbation.batch.l2, [4.0]),
-            (perturbation.batch.l1, [16.0]),
-            (perturbation.batch.l0, [16.0]),
-            (perturbation.batch.linf, [1.0]),
+        for batch_func, element_func, list_result in [
+            (perturbation.batch.l2, perturbation.element.l2, [4.0]),
+            (perturbation.batch.l1, perturbation.element.l1, [16.0]),
+            (perturbation.batch.l0, perturbation.element.l0, [16.0]),
+            (perturbation.batch.linf, perturbation.element.linf, [1.0]),
         ]:
-            assert (func(x, x_adv) == np.array(list_result * batch_size)).all()
+            assert (batch_func(x, x_adv) == np.array(list_result * batch_size)).all()
+            assert element_func(x[0], x_adv[0]) == list_result[0]
         assert (
             perturbation.batch.lp(x, x_adv, p=4) == np.array([2.0] * batch_size)
         ).all()
+        assert perturbation.element.lp(x[0], x_adv[0], p=4) == 2.0
 
 
 def test_snr():

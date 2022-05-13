@@ -121,7 +121,7 @@ try:
     from armory import eval
     from armory import paths
     from armory import utils
-    from armory import webapi
+    from armory import postprocessing
 except ImportError as e:
     module = e.name
     print(f"ERROR: cannot import '{module}' module")

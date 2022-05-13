@@ -42,7 +42,6 @@ def numpy(function):
 
     @functools.wraps(function)
     def wrapper(x, x_adv, **kwargs):
-        # TODO: cast from Torch tensor and TF tensor to numpy?
         x, x_adv = (np.asarray(i) for i in (x, x_adv))
         if x.shape != x_adv.shape:
             raise ValueError(f"x.shape {x.shape} != x_adv.shape {x_adv.shape}")
