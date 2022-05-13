@@ -115,6 +115,9 @@ class Probe:
                 # Push to sink
                 self.sink.update(name, value)
 
+    def hook_method(self, obj, method, arg_map=None, kwarg_map=None, mode="method"):
+        raise NotImplementedError("hooking not ready for general python methods")
+
     def hook(self, module, *preprocessing, input=None, output=None, mode="pytorch"):
         if mode == "pytorch":
             return self.hook_torch(module, *preprocessing, input=input, output=output)
