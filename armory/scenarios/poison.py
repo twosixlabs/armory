@@ -456,7 +456,7 @@ class Poison(Scenario):
         self.filter_dataset()
         self.fit()
         self.load_dataset()
-        self.load_sample_exporter()
+        self.load_export_meters()
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
@@ -501,16 +501,6 @@ class Poison(Scenario):
         self.run_benign()
         if self.use_poison:
             self.run_attack()
-
-        if self.num_export_batches > self.sample_exporter.saved_batches:
-            # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
-            self.sample_exporter.export(
-                x=self.x,
-                x_adv=self.x_adv,
-                y=self.y,
-                y_pred_clean=self.y_pred,
-                y_pred_adv=self.y_pred_adv,
-            )
 
     def finalize_results(self):
         if hasattr(self, "fairness_metrics") and not self.check_run:
