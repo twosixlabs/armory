@@ -726,3 +726,12 @@ class ExportMeter(Meter):
         if clear_values:
             self.clear()
         self.never_measured = False
+
+    def finalize(self):
+        if self.never_measured:
+            unset = [arg for arg, i in self.arg_index.items() if not self.values_set[i]]
+            if unset:
+                log.warning(
+                    f"Meter '{self.name}' was never measured. "
+                    f"The following args were never set: {unset}"
+                )
