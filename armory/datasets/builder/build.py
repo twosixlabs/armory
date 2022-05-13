@@ -15,7 +15,7 @@ from armory.logs import log
 import subprocess
 import itertools
 import armory.datasets.builder.utils as utils
-
+from armory.datasets.loader import load
 
 def build_tfds_dataset(dataset_name: str, local_path: str, feature_dict=None) -> str:
     log.info(f"Building Dataset: {dataset_name} from TFDS artifacts")
@@ -130,7 +130,7 @@ def main(dataset_dict: dict, output_directory: str, clean: bool = False):
     for ds_name, ds_config in dataset_dict.items():
         ds_path = build(ds_name, ds_config, output_directory, clean)
         try:
-            ds_info, ds = utils.load(ds_name, output_directory)
+            ds_info, ds = load(ds_name, output_directory)
         except Exception as e:
             log.exception(f"Could not reconstruct dataset located at {ds_path}!!")
             log.exception(e)

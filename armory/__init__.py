@@ -24,6 +24,7 @@ import subprocess
 
 from armory.logs import log
 
+log.info("Initializing Armory (loading armory.__init__.py)")
 
 def get_dynamic_version():
     """
@@ -50,7 +51,7 @@ def get_dynamic_version():
     version = completed.stdout.strip()
     return version
 
-
+log.debug("Loading Version")
 __version__ = get_dynamic_version()
 if __version__ is None:
     try:
@@ -63,6 +64,7 @@ __version__ = re.sub(r"dev\d+\+(g[0-9a-f]+)(\.d\d+)?$", r"\1", __version__)
 
 # Handle PyTorch / TensorFlow interplay
 
+log.debug("Loading Torch")
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
 try:
@@ -70,6 +72,7 @@ try:
 except ImportError:
     pass
 
+log.debug("Loading Tensorflow")
 # From: https://www.tensorflow.org/guide/gpu#limiting_gpu_memory_growth
 try:
     import tensorflow as tf
@@ -92,6 +95,7 @@ from typing import Dict, Any
 
 Config = Dict[str, Any]
 
+log.debug("Loading submodules")
 # Submodule imports
 try:
     from armory import art_experimental
@@ -109,3 +113,4 @@ except ImportError as e:
     raise
 
 END_SENTINEL = "Scenario has finished running cleanly"
+log.info("Armory Initialization Complete!")

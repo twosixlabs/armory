@@ -8,21 +8,21 @@ import tensorflow as tf
 import numpy as np
 
 from armory.data import datasets
-from armory.data.adversarial import (  # noqa: F401
-    imagenet_adversarial as IA,
-    librispeech_adversarial as LA,
-    resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
-    ucf101_mars_perturbation_and_patch_adversarial_112x112,
-    gtsrb_bh_poison_micronnet,
-    apricot_dev,
-    apricot_test,
-    dapricot_dev,
-    dapricot_test,
-    carla_obj_det_dev as codd,
-    carla_obj_det_test as codt,
-    carla_video_tracking_dev as cvtd,
-    carla_video_tracking_test as cvtt,
-)
+# from armory.data.adversarial import (  # noqa: F401
+#     imagenet_adversarial as IA,
+#     librispeech_adversarial as LA,
+#     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
+#     ucf101_mars_perturbation_and_patch_adversarial_112x112,
+#     gtsrb_bh_poison_micronnet,
+#     apricot_dev,
+#     apricot_test,
+#     dapricot_dev,
+#     dapricot_test,
+#     carla_obj_det_dev as codd,
+#     carla_obj_det_test as codt,
+#     carla_video_tracking_dev as cvtd,
+#     carla_video_tracking_test as cvtt,
+# )
 
 
 # The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this

@@ -25,15 +25,15 @@ from armory.data.utils import (
     add_checksums_dir,
 )
 from armory import paths
-from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
-from armory.data.librispeech import librispeech_full as lf  # noqa: F401
-from armory.data.resisc45 import resisc45_split  # noqa: F401
-from armory.data.resisc10 import resisc10_poison  # noqa: F401
-from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
-from armory.data.xview import xview as xv  # noqa: F401
-from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
-from armory.data.digit import digit as digit_tfds  # noqa: F401
-from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
+# from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
+# from armory.data.librispeech import librispeech_full as lf  # noqa: F401
+# from armory.data.resisc45 import resisc45_split  # noqa: F401
+# from armory.data.resisc10 import resisc10_poison  # noqa: F401
+# from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
+# from armory.data.xview import xview as xv  # noqa: F401
+# from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
+# from armory.data.digit import digit as digit_tfds  # noqa: F401
+# from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
 
 # TODO: Consider moving this to armory.logs?
 #  This reduces verbosity of tensorflow spinning up additional threads (maybe more)
@@ -424,16 +424,32 @@ def _generator_from_tfds(
         raise ValueError(f"split must be str, not {type(split)}")
 
     dataset_folder = os.path.join(dataset_dir, "/".join(dataset_name.split(":")))
-    print(dataset_folder)
-    if not os.path.exists(dataset_folder):
-        raise ValueError(f"Dataset: {dataset_folder} does not exist")
-    builder = tfds.core.builder_from_directory(dataset_folder)
+    dataset_cache_folder = os.path.join(dataset_dir, "cache")
+    # print(dataset_folder)
+    # if not os.path.exists(dataset_folder):
+    #     raise ValueError(f"Dataset: {dataset_folder} does not exist")
+    # builder = tfds.core.builder_from_directory(dataset_folder)
+    #
+    # ds_info = builder.info
+    # ds = builder.as_dataset(
+    #     split="train", shuffle_files=shuffle_files, as_supervised=as_supervised
+    # )
 
-    ds_info = builder.info
-    ds = builder.as_dataset(
-        split="train", shuffle_files=shuffle_files, as_supervised=as_supervised
+    ds_name, ds_version = dataset_name.split(":")
+    ds_info, ds = get_tf_dataset(
+        dataset_name=ds_name,
+        dataset_version=ds_version,
+        dataset_folder=dataset_folder,
+        dataset_cache_folder=dataset_cache_folder,
+        download=False,
+        split=split,
+        batch_size=batch_size,
+        shuffle_files=shuffle_files,
+        as_supervised=as_supervised
     )
 
+    log.error("STopping here in datasets")
+    exit(1)
     # ds, ds_info = tfds.load(
     #     dataset_name,
     #     split=split,
