@@ -1,5 +1,6 @@
 from .builder.utils import SUPPORTED_DATASETS, DEFAULT_DATASET_DIRECTORY
-from .loader import preprocessing_chain, load, generator_from_dataset
+from .loader import load, generator_from_dataset
+from .preprocess import preprocessing_chain
 import sys
 from typing import Callable
 from typing import Optional

@@ -14,6 +14,7 @@ import json
 import glob
 import re
 
+print(f"User: {os.path.expanduser('~')}")
 DEFAULT_DATASET_DIRECTORY = os.path.expanduser("~/.armory/dataset_builds/")
 if not os.path.isdir(DEFAULT_DATASET_DIRECTORY):
     log.warning(

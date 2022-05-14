@@ -49,6 +49,12 @@ def load_fn(sub_config):
     module = import_module(sub_config["module"])
     return getattr(module, sub_config["name"])
 
+def load_arbitrary(thing: str):
+    _module, _fn = str(thing).rsplit(".", 1)
+    _module = import_module(_module)
+    _fn = getattr(_module, _fn)
+    return _fn
+
 
 # TODO THIS is a TERRIBLE Pattern....can we refactor?
 def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwargs):
@@ -64,6 +70,14 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     dataset_fn_name = dataset_config.pop("name")
     batch_size = dataset_config.pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
+    preprocess = dataset_config.pop("preprocess", None)
+    if preprocess is not None:
+        preprocessing_fn = load_arbitrary(preprocess.get("function"))
+        _context = load_arbitrary(preprocess.get("context").get("type"))
+        _context = _context(x_shape=tuple(preprocess.get("context").get("x_shape")))
+        preprocessing_fn = preprocessing_fn(context=_context).check
+    else:
+        preprocessing_fn = None
 
     log.debug(f"Importing Dataset Module: {module}")
     dataset_module = import_module(module)
@@ -78,7 +92,12 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
         kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
     log.debug(f"Calling: {dataset_fn}({batch_size},{framework},{args},{kwargs}")
-    dataset = dataset_fn(batch_size=batch_size, framework=framework, *args, **kwargs)
+    dataset = dataset_fn(
+        batch_size=batch_size,
+        framework=framework,
+        preprocessing_fn=preprocessing_fn,
+        *args,
+        **kwargs)
     if not isinstance(dataset, ArmoryDataGenerator):
         raise ValueError(f"{dataset} is not an instance of {ArmoryDataGenerator}")
     if check_run:
