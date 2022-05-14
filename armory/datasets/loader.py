@@ -52,21 +52,6 @@ def load(dataset_name: str, dataset_directory: str, as_supervised: bool = True):
 
     return ds_info, ds
 
-def preprocessing_chain(*args):
-    """
-    Wraps and returns a sequence of functions
-    """
-    functions = [x for x in args if x is not None]
-    if not functions:
-        return None
-
-    def wrapped(x):
-        for function in functions:
-            x = function(x)
-        return x
-
-    return wrapped
-
 
 def generator_from_dataset(
         dataset_info: dict,

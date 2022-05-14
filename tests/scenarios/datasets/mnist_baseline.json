@@ -19,7 +19,14 @@
         "batch_size": 64,
         "framework": "numpy",
         "module": "armory.datasets.standard",
-        "name": "mnist"
+        "name": "mnist",
+        "preprocess": {
+            "function": "armory.datasets.preprocess.CanonicalImagePreprocessor",
+            "context": {
+                "type": "armory.datasets.preprocess.ImageContext",
+                "x_shape": [28, 28, 1]
+            }
+        }
     },
     "defense": null,
     "metric": {
