@@ -50,11 +50,10 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.carla_object_detection",
-        "name": "CarlaObjectDetectionTask",
-        "export_batches": true
+        "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.15.1.g9389c20",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
