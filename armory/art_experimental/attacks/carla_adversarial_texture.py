@@ -213,13 +213,17 @@ class AdversarialPhysicalTexture(AdversarialTexturePyTorch):
 
         # green screen coordinates used for placement of a rectangular patch
         gs_coords = y_patch_metadata[0]["gs_coords"]
-        patch_widths = []
-        patch_heights = []
-        for coords in gs_coords:
-            patch_widths.append(int(np.max(coords[:, 0]) - np.min(coords[:, 0])))
-            patch_heights.append(int(np.max(coords[:, 1]) - np.min(coords[:, 1])))
-        patch_width = max(patch_widths)
-        patch_height = max(patch_heights)
+        if gs_coords.ndim == 2:  # same location for all frames
+            patch_width = int(np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0]))
+            patch_height = int(np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1]))
+        else:
+            patch_widths = []
+            patch_heights = []
+            for coords in gs_coords:
+                patch_widths.append(int(np.max(coords[:, 0]) - np.min(coords[:, 0])))
+                patch_heights.append(int(np.max(coords[:, 1]) - np.min(coords[:, 1])))
+            patch_width = max(patch_widths)
+            patch_height = max(patch_heights)
 
         self.patch_height = patch_height
         self.patch_width = patch_width
