@@ -42,9 +42,9 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn",
-        "name": "get_art_model_mm",
-        "weights_file": "carla_multimodal_naive_weights_eval5.pt",
+	"module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion",
+        "name": "get_art_model_mm_robust",
+        "weights_file": "carla_multimodal_robust_weights_eval5.pt",
         "wrapper_kwargs": {}
     },
     "scenario": {
