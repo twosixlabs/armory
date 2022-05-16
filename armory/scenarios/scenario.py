@@ -241,7 +241,7 @@ class Scenario:
 
         pred_meter = PredictionMeter(
             "pred_dict_exporter",
-            self.scenario_output_dir,
+            self.sample_exporter.output_dir,
             y_probe="scenario.y",
             y_pred_clean_probe="scenario.y_pred",
             y_pred_adv_probe="scenario.y_pred_adv",
