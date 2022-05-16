@@ -57,11 +57,14 @@ The functionality for these profilers can be found in `armory/metrics/compute.py
 
 ## Metrics
 
-The `armory.utils.metrics` module implements functionality to measure task metrics.
-The `armory.metrics.perturbation` module implements functionality to measure perturbation metrics.
+The `armory.metrics` module contains functionality to measure a variety of metrics:
+- `armory.metrics.perturbation` metrics measure adversarial perturbations such as `lp` distance
+- `armory.metrics.task` metrics measure task performance such as categorical accuracy 
+- `armory.metrics.statistical` metrics measure statistical quantities such as KL divergence
+- `armory.metrics.poisoning` metrics measure fairness statistics relevant to poisoning and filtering scenarios
 
 We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
-Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
+Please see the relevant submodules in [armory/metrics](../armory/metrics/) for more detailed descriptions.
 
 ### Perturbation Metrics
 
@@ -113,6 +116,26 @@ Metric outputs are numpy arrays or scalars.
 | `object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
 | `object_detection_misclassification_rate` | Object Detection Misclassification Rate |
 | `object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+
+<br>
+
+### Statistical Metrics
+
+| Name | Namespace | Description |
+|-------|-------|-------|
+| `chi2_p_value` | `metrics.statistical.registered.chi2_p_value` | Chi Squared Value  |
+| `fisher_p_value` | `metrics.statistical.registered.fisher_p_value` | Fisher P-Value |
+| `spd` | `metrics.statistical.registered.spd` | Statistical Parity Difference |
+| `filter_perplexity_fps_benign` | `metrics.statistical.registered.filter_perplexity_fps_benign` | Perplexity of Filtered Distribution |
+| `perplexity` | `metrics.statistical.registered.perplexity` | P-to-Q Perplexity |
+| `kl_div` | `metrics.statistical.registered.kl_div` | KL Divergence |
+| `cross_entropy` | `metrics.statistical.registered.cross_entropy` | Distriutional Cross Entropy |
+
+<br>
+
+### Poisoning Metrics
+
+TBD
 
 <br>
 
