@@ -3,7 +3,7 @@ General object detection scenario
 """
 
 from armory.scenarios.image_classification import ImageClassificationTask
-from armory.utils.export import ObjectDetectionExporter, ExportMeter
+from armory.utils.export import ObjectDetectionExporter, ExportMeter, CocoBoxFormatMeter
 
 
 class ObjectDetectionTask(ImageClassificationTask):
@@ -32,6 +32,16 @@ class ObjectDetectionTask(ImageClassificationTask):
                 max_batches=self.num_export_batches,
             )
             self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
+
+        coco_box_format_meter = CocoBoxFormatMeter(
+            "coco_box_format_meter",
+            self.sample_exporter.output_dir,
+            y_probe="scenario.y",
+            y_pred_clean_probe="scenario.y_pred",
+            y_pred_adv_probe="scenario.y_pred_adv",
+            max_batches=self.num_export_batches,
+        )
+        self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
         return ObjectDetectionExporter(self.scenario_output_dir)

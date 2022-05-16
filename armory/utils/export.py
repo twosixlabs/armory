@@ -149,103 +149,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         else:
             super()._export(x, basename)
 
-    # TODO: this method isn't being used anymore
-    def _export_image(
-        self,
-        x_i,
-        name="benign",
-        with_boxes=False,
-        y_i=None,
-        y_i_pred=None,
-        score_threshold=0.5,
-        classes_to_skip=None,
-    ):
-        if not with_boxes:
-            super()._export_image(x_i=x_i, name=name)
-            return
-
-        self.image_with_boxes = self.get_sample(
-            x=x_i,
-            with_boxes=True,
-            y=y_i,
-            y_pred=y_i_pred,
-            classes_to_skip=classes_to_skip,
-            score_threshold=score_threshold,
-        )
-        self.image_with_boxes.save(
-            os.path.join(self.output_dir, f"{self.saved_samples}_{name}_with_boxes.png")
-        )
-
-        if y_i is not None:
-            # Can only export box annotations if we have 'image_id' from y_i
-            gt_boxes_coco, pred_boxes_coco = self.get_coco_formatted_bounding_box_data(
-                y_i=y_i,
-                y_i_pred=y_i_pred,
-                classes_to_skip=classes_to_skip,
-                score_threshold=score_threshold,
-            )
-
-            # Add coco box dictionaries to correct lists
-            if name == "benign":
-                for coco_box in pred_boxes_coco:
-                    self.benign_predicted_boxes_coco_format.append(coco_box)
-                for coco_box in gt_boxes_coco:
-                    self.ground_truth_boxes_coco_format.append(coco_box)
-            elif name == "adversarial":
-                # don't save gt boxes here since they are the same as for benign
-                for coco_box in pred_boxes_coco:
-                    self.adversarial_predicted_boxes_coco_format.append(coco_box)
-
-    def get_coco_formatted_bounding_box_data(
-        self, y_i, y_i_pred=None, score_threshold=0.5, classes_to_skip=None
-    ):
-        """
-        :param y_i: ground-truth label dict
-        :param y_i_pred: predicted label dict
-        :param score_threshold: float in [0, 1]; predicted boxes with confidence > score_threshold are exported
-        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be exported
-        :return: Two lists of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
-        """
-
-        ground_truth_boxes_coco_format = []
-        predicted_boxes_coco_format = []
-
-        image_id = y_i["image_id"][0]  # All boxes in y_i are for the same image
-        bboxes_true = y_i["boxes"]
-        labels_true = y_i["labels"]
-
-        for true_box, label in zip(bboxes_true, labels_true):
-            if classes_to_skip is not None and label in classes_to_skip:
-                continue
-            xmin, ymin, xmax, ymax = true_box
-            ground_truth_box_coco = {
-                "image_id": int(image_id),
-                "category_id": int(label),
-                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-            }
-            ground_truth_boxes_coco_format.append(ground_truth_box_coco)
-
-        if y_i_pred is not None:
-            bboxes_pred = y_i_pred["boxes"][y_i_pred["scores"] > score_threshold]
-            labels_pred = y_i_pred["labels"][y_i_pred["scores"] > score_threshold]
-            scores_pred = y_i_pred["scores"][y_i_pred["scores"] > score_threshold]
-
-            for pred_box, label, score in zip(bboxes_pred, labels_pred, scores_pred):
-                xmin, ymin, xmax, ymax = pred_box
-                predicted_box_coco = {
-                    "image_id": int(image_id),
-                    "category_id": int(label),
-                    "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
-                    "score": float(score),
-                }
-                predicted_boxes_coco_format.append(predicted_box_coco)
-        else:
-            log.warning(
-                "Annotations for predicted bounding boxes will not be exported.  Provide y_i_pred if this is not desired."
-            )
-
-        return ground_truth_boxes_coco_format, predicted_boxes_coco_format
-
     def get_sample(
         self,
         x,
@@ -289,39 +192,6 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 box_layer.rectangle(pred_box, outline="white", width=2)
 
         return image
-
-    def write(self):
-        super().write()
-        if len(self.ground_truth_boxes_coco_format) > 0:
-            json.dump(
-                self.ground_truth_boxes_coco_format,
-                open(
-                    os.path.join(
-                        self.output_dir, "ground_truth_boxes_coco_format.json"
-                    ),
-                    "w",
-                ),
-            )
-        if len(self.benign_predicted_boxes_coco_format) > 0:
-            json.dump(
-                self.benign_predicted_boxes_coco_format,
-                open(
-                    os.path.join(
-                        self.output_dir, "benign_predicted_boxes_coco_format.json"
-                    ),
-                    "w",
-                ),
-            )
-        if len(self.adversarial_predicted_boxes_coco_format) > 0:
-            json.dump(
-                self.adversarial_predicted_boxes_coco_format,
-                open(
-                    os.path.join(
-                        self.output_dir, "adversarial_predicted_boxes_coco_format.json"
-                    ),
-                    "w",
-                ),
-            )
 
 
 class DApricotExporter(ObjectDetectionExporter):
@@ -825,3 +695,137 @@ class PredictionMeter(Meter):
 
         with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
             pickle.dump(self.y_dict, f)
+
+
+class CocoBoxFormatMeter(Meter):
+    """
+    Meter that keeps track of object detection predicted boxes and saves them
+    as COCO-formatted JSON files.
+    """
+
+    def __init__(
+        self,
+        name,
+        output_dir,
+        y_probe,
+        y_pred_clean_probe=None,
+        y_pred_adv_probe=None,
+        max_batches=None,
+    ):
+        metric_args = [y_probe]
+        self.y_probe_idx = 0
+        self.y_pred_clean_probe_idx = None
+        self.y_pred_adv_probe_idx = None
+
+        idx = 1
+        if y_pred_clean_probe is not None:
+            metric_args.append(y_pred_clean_probe)
+            self.y_pred_clean_probe_idx = idx
+            idx += 1
+        if y_pred_adv_probe is not None:
+            metric_args.append(y_pred_adv_probe)
+            self.y_pred_adv_probe_idx = idx
+
+        super().__init__(name, lambda x: x, *metric_args)
+        if not metric_args:
+            log.warning(f"{self.name} was constructed with all probes set to None")
+
+        self.output_dir = output_dir
+        self.y_probe = y_probe
+        self.y_pred_clean_probe = y_pred_clean_probe
+        self.y_pred_adv_probe = y_pred_adv_probe
+        self.max_batches = max_batches
+        self.y_boxes_coco_format = []
+        self.y_pred_clean_boxes_coco_format = []
+        self.y_pred_adv_boxes_coco_format = []
+
+    def measure(self, clear_values=True):
+        self.is_ready(raise_error=True)
+        batch_num = self.arg_batch_indices[0]
+        batch_size = len(self.values[0])
+
+        if (
+            self.max_batches is not None and batch_num >= self.max_batches
+        ) or not self.values:
+            return
+
+        for ex_idx in range(batch_size):
+            for probe_idx, box_list in [
+                (self.y_probe_idx, self.y_boxes_coco_format),
+                (self.y_pred_clean_probe_idx, self.y_pred_clean_boxes_coco_format),
+                (self.y_pred_adv_probe_idx, self.y_pred_adv_boxes_coco_format),
+            ]:
+                # Can use index of 0 since all boxes have the same image id
+                image_id = int(self.values[self.y_probe_idx][ex_idx].get("image_id")[0])
+                if probe_idx is not None:
+                    boxes = self.values[probe_idx][ex_idx]
+                    boxes_coco_format = self.get_coco_formatted_bounding_box_data(
+                        boxes, image_id=image_id
+                    )
+                    box_list.extend(boxes_coco_format)
+
+    def finalize(self):
+        if self.never_measured:
+            unset = [arg for arg, i in self.arg_index.items() if not self.values_set[i]]
+            if unset:
+                log.warning(
+                    f"Meter '{self.name}' was never measured. "
+                    f"The following args were never set: {unset}"
+                )
+        for box_list, name in [
+            (self.y_boxes_coco_format, "ground_truth"),
+            (self.y_pred_clean_boxes_coco_format, "benign_predicted"),
+            (self.y_pred_adv_boxes_coco_format, "adversarial_predicted"),
+        ]:
+            if len(box_list) > 0:
+                json.dump(
+                    box_list,
+                    open(
+                        os.path.join(self.output_dir, f"{name}_boxes_coco_format.json"),
+                        "w",
+                    ),
+                )
+
+    def get_coco_formatted_bounding_box_data(
+        self, y, image_id=None, score_threshold=0.5, classes_to_skip=None
+    ):
+        """
+        :param y: ground-truth label dict or predicted label dict
+        :param score_threshold: float in [0, 1]; predicted boxes with confidence > score_threshold are exported
+        :param image_id: int or None. This key exists in ground-truth boxes but not predicted boxes, in which case it should be passed in
+        :param classes_to_skip: List[Int] containing class ID's for which boxes should not be exported
+        :return: Two lists of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
+        """
+
+        boxes_coco_format = []
+
+        # "image_id" key will exist for ground-truth but not predicted boxes
+        if image_id is None:
+            image_id = y["image_id"][0]  # All boxes in y_i are for the same image
+        elif not isinstance(image_id, int):
+            raise ValueError(f"Expected an int for image_id, received {type(image_id)}")
+
+        bboxes = y["boxes"]
+        cat_ids = y["labels"]
+
+        # "scores" key will exist for predicted boxes, but not ground-truth
+        scores = y.get("scores")
+        if scores is not None:
+            bboxes = bboxes[scores > score_threshold]
+            cat_ids = cat_ids[scores > score_threshold]
+            scores = scores[scores > score_threshold]
+
+        for i, (box, cat_id) in enumerate(zip(bboxes, cat_ids)):
+            if classes_to_skip is not None and cat_id in classes_to_skip:
+                continue
+            xmin, ymin, xmax, ymax = box
+            coco_box = {
+                "image_id": int(image_id),
+                "category_id": int(cat_id),
+                "bbox": [int(xmin), int(ymin), int(xmax - xmin), int(ymax - ymin)],
+            }
+            if scores is not None:
+                coco_box["score"] = float(scores[i])
+            boxes_coco_format.append(coco_box)
+
+        return boxes_coco_format
