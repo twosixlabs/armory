@@ -751,13 +751,15 @@ class CocoBoxFormatMeter(Meter):
             return
 
         for ex_idx in range(batch_size):
+            # All boxes for a given example have the same image id
+            image_id = int(
+                self.values[self.y_probe_idx][ex_idx].get("image_id").flatten()[0]
+            )
             for probe_idx, box_list in [
                 (self.y_probe_idx, self.y_boxes_coco_format),
                 (self.y_pred_clean_probe_idx, self.y_pred_clean_boxes_coco_format),
                 (self.y_pred_adv_probe_idx, self.y_pred_adv_boxes_coco_format),
             ]:
-                # Can use index of 0 since all boxes have the same image id
-                image_id = int(self.values[self.y_probe_idx][ex_idx].get("image_id")[0])
                 if probe_idx is not None:
                     boxes = self.values[probe_idx][ex_idx]
                     boxes_coco_format = self.get_coco_formatted_bounding_box_data(
