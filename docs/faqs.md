@@ -11,7 +11,7 @@ will switch to having PyTorch or TensorFlow data generators.
 
 #### How/where do I perform dataset preprocessing when running a scenario?
 As of Armory 0.12, dataset preprocessing should be performed inside the model. The functions 
-to retrieve datasets in [armory/data/datasets.py](../armory/data/datasets.py) do each accept 
+to retrieve datasets in [armory/data/datasets.py](../armory/engine/data/datasets.py) do each accept 
 a `preprocessing_fn` kwarg that can used when loading datasets outside the context of a scenario. 
 However, this kwarg is by default set to the canonical preprocessing function for each dataset and 
 is not configurable when running Armory scenarios.

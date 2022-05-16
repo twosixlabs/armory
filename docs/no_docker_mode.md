@@ -47,8 +47,10 @@ python -m pytest -s ./tests/unit/test_no_docker.py
 
 If you would like to run the example interactively you 
 enter a python session in the virtualenv and type:
+
 ```python
-from armory import scenarios
+
+from armory.engine import scenarios
 from armory import paths
 from pathlib import Path
 

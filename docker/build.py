@@ -12,7 +12,7 @@ except ModuleNotFoundError as e:
 
 FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 
-print(f"armory docker builder version {armory.__version__}")
+# print(f"armory docker builder version {armory.__version__}")
 script_dir = Path(__file__).parent
 
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
@@ -25,7 +25,8 @@ parser.add_argument(
     "-n", "--dry-run", action="store_true", help="show what would be done"
 )
 parser.add_argument(
-    "framework", help=f"framework to build ({FRAMEWORKS + ['all']})",
+    "framework",
+    help=f"framework to build ({FRAMEWORKS + ['all']})",
 )
 args = parser.parse_args()
 
@@ -48,11 +49,12 @@ for framework in frameworks:
         "--file",
         str(dockerfile),
         "--tag",
-        f"twosixarmory/{framework}:{armory.__version__}",
+        # f"twosixarmory/{framework}:{armory.__version__}",
+        f"twosixarmory/{framework}:latest",
         "--build-arg",
         f"base_image_tag={args.base_tag}",
-        "--build-arg",
-        f"armory_version={armory.__version__}",
+        # "--build-arg",
+        # f"armory_version={armory.__version__}",
         "--force-rm",
     ]
     if args.no_cache:

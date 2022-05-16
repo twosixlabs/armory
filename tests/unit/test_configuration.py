@@ -1,13 +1,13 @@
 import argparse
 
-from armory import arguments
+from armory.engine import arguments
 import pathlib
 from glob import glob
 
 import jsonschema
 import pytest
 
-from armory.utils.configuration import load_config
+from armory.engine.utils.configuration import load_config
 
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit

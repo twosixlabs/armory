@@ -230,10 +230,13 @@ armory download <path/to/scenario-set1.json> --no-docker
 
 After datasets have been downloaded, they can be used outside of docker by setting
 the pathing mode to host in python:
+
 ```python
 from armory import paths
+
 paths.set_mode("host")
-from armory.data import datasets
+from armory.engine.data import datasets
+
 ds = datasets.mnist()
 x, y = next(ds)
 ```
