@@ -111,7 +111,7 @@ class GradientMatchingWrapper(GradientMatchingAttack):
 
         filepath, string: path to load data from (if it exists) or save it to (if it doesn't)
         x_trigger, array: Images from the test set that we hope to misclassify
-        y_trigger, array: Labels for x_trigger
+        y_trigger, array: Target labels for misclassification
         x_train, array: The training images to be poisoned
         y_train, array: Labels for x_train
         trigger_index, int or array: Index or indices of trigger images

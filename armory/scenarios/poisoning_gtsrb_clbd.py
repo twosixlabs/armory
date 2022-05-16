@@ -4,7 +4,7 @@ import numpy as np
 
 from armory.utils import config_loading
 from armory.scenarios.poison import DatasetPoisoner
-from armory.scenarios.poisoning_gtsrb_scenario import GTSRB
+from armory.scenarios.poisoning_gtsrb_dlbd import GTSRB_DLBD
 from armory.scenarios.utils import to_categorical, from_categorical
 from armory.logs import log
 
@@ -38,7 +38,7 @@ class CleanDatasetPoisoner:
         return x_poison, y_poison
 
 
-class GTSRB_CLBD(GTSRB):
+class GTSRB_CLBD(GTSRB_DLBD):
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = copy.deepcopy(self.config["attack"])

@@ -21,7 +21,7 @@ except ImportError:
 from armory.scenarios.poison import Poison
 
 
-class GTSRB(Poison):
+class GTSRB_DLBD(Poison):
     def set_random_seed_tensorflow(self):
         # TODO: Handle automatically
         if not self.config["sysconfig"].get("use_gpu"):
