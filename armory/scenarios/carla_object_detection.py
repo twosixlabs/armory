@@ -72,27 +72,13 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def load_export_meters(self):
-        # Load default export meters
-        super().load_export_meters()
-
-        # Add export meters that export examples with boxes overlaid
-        self.sample_exporter_with_boxes = ObjectDetectionExporter(
-            self.scenario_output_dir,
-            default_export_kwargs={"with_boxes": True, "classes_to_skip": [4]},
-        )
-        for probe_data, probe_pred in [("x", "y_pred"), ("x_adv", "y_pred_adv")]:
-            export_with_boxes_meter = ExportMeter(
-                f"{probe_data}_with_boxes_exporter",
-                self.sample_exporter_with_boxes,
-                f"scenario.{probe_data}",
-                y_probe="scenario.y",
-                y_pred_probe=f"scenario.{probe_pred}",
-                max_batches=self.num_export_batches,
-            )
-            self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
-
     def load_metrics(self):
         super().load_metrics()
         # measure adversarial results using benign predictions as labels
         self.metrics_logger.add_tasks_wrt_benign_predictions()
+
+    def _load_sample_exporter_with_boxes(self):
+        return ObjectDetectionExporter(
+            self.scenario_output_dir,
+            default_export_kwargs={"with_boxes": True, "classes_to_skip": [4]},
+        )
