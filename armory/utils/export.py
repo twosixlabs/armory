@@ -693,8 +693,9 @@ class PredictionMeter(Meter):
                     f"The following args were never set: {unset}"
                 )
 
-        with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
-            pickle.dump(self.y_dict, f)
+        if self.examples_saved > 0:
+            with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+                pickle.dump(self.y_dict, f)
 
 
 class CocoBoxFormatMeter(Meter):
