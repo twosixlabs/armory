@@ -22,7 +22,7 @@ from armory.utils.export import ExportMeter, ImageClassificationExporter
 probe = get_probe("cifar_model")
 exporter = ImageClassificationExporter("tmp_dir")
 export_meter = ExportMeter(
-    "exporter", "cifar_model.x_rotated[benign]", exporter, max_batches=1
+    "exporter", exporter, "cifar_model.x_rotated[benign]", max_batches=1
 )
 hub = get_hub()
 hub.connect_meter(export_meter, use_default_writers=False)
