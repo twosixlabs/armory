@@ -8,7 +8,7 @@ from art.attacks.poisoning import perturbations
 import armory
 
 
-def poison_loader(**kwargs):
+def poison_loader_dlbd(**kwargs):
     poison_type = kwargs["poison_type"]
     if poison_type == "pattern":
 
