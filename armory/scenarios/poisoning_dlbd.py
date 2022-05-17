@@ -1,5 +1,5 @@
 """
-Extended scenario for poisoning
+Base scenario for poisoning, dirty label backdoor
 """
 
 import copy

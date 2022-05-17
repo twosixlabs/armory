@@ -56,7 +56,7 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poison_dlbd",
+        "module": "armory.scenarios.poisoning_dlbd",
         "name": "Poison_DLBD"
     },
     "sysconfig": {

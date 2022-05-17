@@ -1,10 +1,14 @@
+"""
+Clean label backdoor poisoning scenario
+"""
+
 import copy
 
 import numpy as np
 
 from armory.utils import config_loading
-from armory.scenarios.poison_dlbd import DatasetPoisoner
-from armory.scenarios.poison_dlbd import Poison_DLBD
+from armory.scenarios.poisoning_dlbd import DatasetPoisoner
+from armory.scenarios.poisoning_dlbd import Poison_DLBD
 from armory.scenarios.utils import to_categorical, from_categorical
 from armory.logs import log
 
