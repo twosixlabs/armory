@@ -563,7 +563,6 @@ class ExportMeter(Meter):
         self.y_pred_probe = y_pred_probe
         self.exporter = exporter
         self.max_batches = max_batches
-        self.batches_exported = 0
         self.metric_args = metric_args
 
         if self.y_probe is not None:
@@ -579,7 +578,6 @@ class ExportMeter(Meter):
 
         probe_variable = self.get_arg_names()[0]
         batch_size = batch_data.shape[0]
-        examples_exported = 0
         for batch_idx in range(batch_size):
             export_kwargs = {}
             if self.y_probe is not None:
@@ -588,11 +586,9 @@ class ExportMeter(Meter):
                 export_kwargs["y_pred"] = self.values[self.y_pred_probe_idx][batch_idx]
             self.exporter.export(
                 batch_data[batch_idx],
-                f"batch_{self.batches_exported}_ex_{examples_exported}_{probe_variable}",
+                f"batch_{batch_num}_ex_{batch_idx}_{probe_variable}",
                 **export_kwargs,
             )
-            examples_exported += 1
-        self.batches_exported += 1
         if clear_values:
             self.clear()
         self.never_measured = False
