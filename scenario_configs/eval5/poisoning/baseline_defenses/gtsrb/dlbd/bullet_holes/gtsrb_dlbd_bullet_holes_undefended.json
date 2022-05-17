@@ -1,7 +1,7 @@
 {
     "_description": "GTSRB dirty label backdoor, bullet holes trigger, undefended",
     "adhoc": {
-        "compute_fairness_metrics": false,
+        "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
         "fraction_poisoned": 0.1,
@@ -9,7 +9,7 @@
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 1,
+        "train_epochs": 30,
         "use_poison_filtering_defense": false
     },
     "attack": {
