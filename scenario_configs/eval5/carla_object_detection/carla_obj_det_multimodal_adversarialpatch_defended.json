@@ -8,12 +8,14 @@
             "depth_delta_meters": 3,
             "learning_rate": 0.01,
             "learning_rate_depth": 0.0001,
-            "max_iter": 2000,
+            "max_iter": 1000,
+            "optimizer": "pgd",
+            "targeted": false,
             "verbose": true
         },
-        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
-        "name": "CARLADapricotPatch",
-        "use_label": false
+        "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
+        "name": "CARLAAdversarialPatchPyTorch",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 1,
@@ -40,9 +42,9 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn",
-        "name": "get_art_model_mm",
-        "weights_file": "carla_multimodal_naive_weights_eval5.pt",
+        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion",
+        "name": "get_art_model_mm_robust",
+        "weights_file": "carla_multimodal_robust_weights_eval5.pt",
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -52,7 +54,7 @@
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
-        "external_github_repo": "colour-science/colour@v0.3.16",
+        "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
