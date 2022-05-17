@@ -71,8 +71,8 @@ class DatasetPoisoner:
 
 
 class Poison_DLBD(Scenario):
-    """ This is the base poisoning dirty label scenario.  
-        As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
+    """This is the base poisoning dirty label scenario.
+    As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
     """
 
     def __init__(
