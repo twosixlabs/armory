@@ -6,7 +6,7 @@ This module enables loading of CLBD attack from a json config
 from art.attacks.poisoning import PoisoningAttackCleanLabelBackdoor
 from art.utils import to_categorical
 
-from armory.art_experimental.attacks.poison_loader import poison_loader_dlbd
+from armory.art_experimental.attacks.poison_loader_dlbd import poison_loader_dlbd
 
 
 def poison_loader_clbd(**kwargs):
