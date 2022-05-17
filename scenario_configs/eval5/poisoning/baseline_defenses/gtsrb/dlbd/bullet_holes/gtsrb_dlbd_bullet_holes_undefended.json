@@ -1,7 +1,7 @@
 {
     "_description": "GTSRB dirty label backdoor, bullet holes trigger, undefended",
     "adhoc": {
-        "compute_fairness_metrics": true,
+        "compute_fairness_metrics": false,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
         "fraction_poisoned": 0.1,
@@ -9,7 +9,7 @@
         "source_class": 1,
         "split_id": 0,
         "target_class": 2,
-        "train_epochs": 30,
+        "train_epochs": 1,
         "use_poison_filtering_defense": false
     },
     "attack": {
@@ -49,8 +49,8 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_dlbd",
-        "name": "GTSRB_DLBD"
+        "module": "armory.scenarios.poison_dlbd",
+        "name": "Poison_DLBD"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",

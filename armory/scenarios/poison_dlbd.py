@@ -8,6 +8,7 @@ import os
 import random
 
 import numpy as np
+from tensorflow.random import set_seed as tf_set_seed
 
 from armory.utils.poisoning import FairnessMetrics
 from armory.utils.export import ImageClassificationExporter
@@ -69,7 +70,11 @@ class DatasetPoisoner:
         return poison_x, poison_y
 
 
-class Poison(Scenario):
+class Poison_DLBD(Scenario):
+    """ This is the base poisoning dirty label scenario.  
+        As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
+    """
+
     def __init__(
         self,
         config: dict,
@@ -104,6 +109,7 @@ class Poison(Scenario):
         self.seed = self.config["adhoc"]["split_id"]
         np.random.seed(self.seed)
         random.seed(self.seed)
+        tf_set_seed(self.seed)
         if self.config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
 

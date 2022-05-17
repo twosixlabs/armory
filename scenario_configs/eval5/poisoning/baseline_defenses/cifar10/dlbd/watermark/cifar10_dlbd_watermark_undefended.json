@@ -73,7 +73,7 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.poison",
-        "name": "Poison"
+        "name": "Poison_DLBD"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",

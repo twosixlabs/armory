@@ -49,8 +49,8 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_dlbd",
-        "name": "GTSRB_DLBD"
+        "module": "armory.scenarios.poison_dlbd",
+        "name": "Poison_DLBD"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
