@@ -13,6 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
+from armory.metrics import compute
 from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
@@ -213,12 +214,7 @@ class Scenario:
             include_adversarial=not self.skip_attack,
             include_targeted=self.targeted,
         )
-
-        self.profiler_kwargs = dict(
-            profiler=metrics_config.get("profiler_type"),
-            computational_resource_dict=metrics_logger.computational_resource_dict,
-        )
-
+        self.profiler = compute.profiler_from_config(metrics_config)
         self.metrics_logger = metrics_logger
 
     def load_sample_exporter(self):
@@ -275,7 +271,7 @@ class Scenario:
 
         x, y = self.x, self.y
         x.flags.writeable = False
-        with metrics.resource_context(name="Inference", **self.profiler_kwargs):
+        with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, **self.predict_kwargs)
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
@@ -288,7 +284,7 @@ class Scenario:
         self.hub.set_context(stage="attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.skip_misclassified and self.misclassified:
                 y_target = None
 
@@ -343,7 +339,11 @@ class Scenario:
             )
 
     def finalize_results(self):
-        self.results = self.metrics_logger.results()
+        self.metric_results = self.metrics_logger.results()
+        self.compute_results = self.profiler.results()
+        self.results = {}
+        self.results.update(self.metric_results)
+        self.results["compute"] = self.compute_results
 
         if self.sample_exporter.saved_batches > 0:
             self.sample_exporter.write()
@@ -414,5 +414,11 @@ class Scenario:
             f"{self.scenario_output_dir}/{filename} "
             "inside container."
         )
-        with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
+        output_path = os.path.join(self.scenario_output_dir, filename)
+        with open(output_path, "w") as f:
             json_utils.dump(output, f)
+        if os.path.getsize(output_path) > 2**27:
+            log.warning(
+                "Results json file exceeds 128 MB! "
+                "Recommend checking what is being recorded!"
+            )

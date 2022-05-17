@@ -5,7 +5,6 @@ Scenario Contributor: MITRE Corporation
 """
 
 from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
 from armory.utils.export import ObjectDetectionExporter
 from armory.logs import log
 
@@ -46,7 +45,7 @@ class CarlaObjectDetectionTask(Scenario):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.use_label:
                 y_target = y
             elif self.targeted:
