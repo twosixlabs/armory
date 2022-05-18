@@ -374,10 +374,6 @@ def test_hub(caplog):
     with pytest.raises(ValueError):
         hub.connect_writer(w1, meters=[not_connected_meter])
 
-    hub.disconnect_meter(m1)
-    hub.disconnect_meter(m2)
-    assert len(hub.meters) == 0
-
     hub.close()
     hub.close()
     for m in (m1, m2):
@@ -385,6 +381,11 @@ def test_hub(caplog):
     for w in (w1, w2):
         assert w.num_closes == 1
     assert hub.closed
+
+    hub.disconnect_meter(m1)
+    hub.disconnect_meter(m2)
+    assert len(hub.meters) == 0
+
 
 
 def test_meter(caplog):
