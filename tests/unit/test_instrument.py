@@ -387,7 +387,6 @@ def test_hub(caplog):
     assert len(hub.meters) == 0
 
 
-
 def test_meter(caplog):
     Meter = instrument.Meter
     with pytest.raises(ValueError):
