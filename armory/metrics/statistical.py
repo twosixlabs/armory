@@ -2,10 +2,12 @@
 Statistical metrics
 """
 
-from typing import Dict, List
+from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 from scipy import stats
+from sklearn import cluster
+from sklearn.metrics import silhouette_samples
 
 from armory.metrics.perturbation import MetricNameSpace, set_namespace
 
@@ -239,3 +241,85 @@ def cross_entropy(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
         q /= q.sum()
     cross_entropy_pq = (-p * np.log(q + eps)).sum()
     return cross_entropy_pq
+
+
+@register
+def class_bias(y_true, majority_mask, kept_mask, class_labels):
+    """
+    Return dict mapping from class_label -> (chi2, spd)
+        chi2, spd = result[class_label]
+        chi2 - chi squared statistic
+        spd - statistical parity differnce
+    """
+    majority_contingency_tables = make_contingency_tables(
+        y_true,
+        majority_mask,
+        kept_mask,
+    )
+
+    chi2_spd = {}
+    for c in class_labels:
+        class_c_table = majority_contingency_tables.get(c)
+        if class_c_table is None:
+            chi2 = None
+            spd = None
+        else:
+            chi2 = np.mean(chi2_p_value(class_c_table))
+            spd = np.mean(spd(class_c_table))
+        chi2_spd[c] = (chi2, spd)
+
+    return chi2_spd
+
+
+class SilhouetteData(NamedTuple):
+    n_clusters: int
+    cluster_labels: np.ndarray
+    silhouette_scores: np.ndarray
+
+
+@register
+def get_majority_mask(
+    activations,
+    class_ids,
+    majority_ceilings: Optional[Dict[int, float]] = None,
+    range_n_clusters: Iterable[int] = (2,),
+    random_seed: int = 42,
+) -> Tuple[np.ndarray, Dict[int, float]]:
+    """
+    Return majority_mask and majority_ceilings of input activations
+    """
+    majority_mask = np.empty(len(activations), dtype=bool)
+    if majority_ceilings is None:
+        majority_ceilings = {}
+
+    for class_id in np.unique(class_ids):
+        mask_id = class_ids == class_id
+        activations_id = activations[mask_id]
+
+        silhouette_analysis_id = {}
+        for n_clusters in range_n_clusters:
+            clusterer = cluster.KMeans(n_clusters=n_clusters, random_state=random_seed)
+            cluster_labels = clusterer.fit_predict(activations_id)
+            silhouette_scores = silhouette_samples(activations_id, cluster_labels)
+            silhouette_data = SilhouetteData(
+                n_clusters, cluster_labels, silhouette_scores
+            )
+            silhouette_analysis_id[n_clusters] = silhouette_data
+
+        best_n_clusters_id = max(
+            list(silhouette_analysis_id.keys()),
+            key=lambda n_clusters: silhouette_analysis_id[
+                n_clusters
+            ].silhouette_scores.mean(),
+        )
+        best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
+
+        majority_ceiling_id = majority_ceilings.get(class_id)
+        if majority_ceiling_id is None:
+            majority_ceiling_id = best_silhouette_data_id.silhouette_scores.mean()
+        majority_mask_id = (0 <= best_silhouette_data_id.silhouette_scores) & (
+            best_silhouette_data_id.silhouette_scores <= majority_ceiling_id
+        )
+        majority_mask[mask_id] = majority_mask_id
+        majority_ceilings[class_id] = majority_ceiling_id
+    return majority_mask, majority_ceilings

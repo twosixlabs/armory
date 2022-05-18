@@ -43,3 +43,11 @@ def test_kl_div():
 
 def test_cross_entropy():
     raise NotImplementedError()
+
+
+def test_class_bias():
+    raise NotImplementedError()
+
+
+def test_get_majority_mask():
+    raise NotImplementedError()

@@ -1,257 +1,160 @@
 from importlib import import_module
-from typing import NamedTuple, Iterable, Dict, List, Tuple, Optional
+import copy
 
 import numpy as np
 from PIL import Image
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_samples
 import torch
 
 from armory import metrics
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
-from armory.metrics.statistical import make_contingency_tables
 
 
-class SilhouetteData(NamedTuple):
-    n_clusters: int
-    cluster_labels: np.ndarray
-    silhouette_scores: np.ndarray
+# An armory user may request one of these models under 'adhoc'/'explanatory_model'
+EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
+    "cifar10_silhouette_model": {
+        "model_kwargs": {
+            "data_means": [0.4914, 0.4822, 0.4465],
+            "data_stds": [0.2471, 0.2435, 0.2616],
+            "num_classes": 10,
+        },
+        "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
+        "name": "get_model",
+        "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
+    },
+    "gtsrb_silhouette_model": {
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
+        "name": "get_model",
+        "resize_image": False,
+        "weights_file": "gtsrb_explanatory_model_micronnet_bean.pt",
+    },
+    "resisc10_silhouette_model": {
+        "model_kwargs": {
+            "data_means": [0.39382024, 0.4159701, 0.40887499],
+            "data_stds": [0.18931773, 0.18901625, 0.19651154],
+            "num_classes": 10,
+        },
+        "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
+        "name": "get_model",
+        "weights_file": "resisc10_explanatory_model_resnet18_bean.pt",
+    },
+}
+
+DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 
-def get_majority_mask(
-    explanatory_model: torch.nn.Module,
-    data: Iterable,
-    device: torch.device,
-    resize_image: bool,
-    majority_ceilings: Dict[int, float] = {},
-    range_n_clusters: List[int] = [2],
-    random_seed: int = 42,
-) -> Tuple[np.ndarray, Dict[int, float]]:
-    majority_mask = np.empty(len(data), dtype=np.bool_)
-    activations, class_ids = _get_activations_w_class_ids(
-        explanatory_model, data, device, resize_image
-    )
-    for class_id in np.unique(class_ids):
-        majority_ceiling_id = majority_ceilings.get(class_id, None)
-        mask_id = class_ids == class_id
-        activations_id = activations[mask_id]
-        silhouette_analysis_id = _get_silhouette_analysis(
-            activations_id, range_n_clusters, random_seed
-        )
-        best_n_clusters_id = _get_best_n_clusters(silhouette_analysis_id)
-        best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
-        majority_mask_id, majority_ceiling_id = _get_majority_mask(
-            best_silhouette_data_id, majority_ceiling_id
-        )
-        majority_mask[mask_id] = majority_mask_id
-        majority_ceilings[class_id] = majority_ceiling_id
-    return majority_mask, majority_ceilings
+class ExplanatoryModel:
+    def __init__(
+        self,
+        explanatory_model,
+        resize_image=True,
+        size=(224, 224),
+        resample=Image.BILINEAR,
+        device=DEVICE,
+    ):
+        if not callable(explanatory_model):
+            raise ValueError(f"explanatory_model {explanatory_model} is not callable")
+        self.explanatory_model = explanatory_model
+        self.resize_image = bool(resize_image)
+        self.size = size
+        self.resample = resample
+        self.device = device
 
+    @classmethod
+    def from_config(cls, model_config, **kwargs):
+        if isinstance(model_config, str):
+            if model_config not in EXPLANATORY_MODEL_CONFIGS:
+                raise ValueError(
+                    f"model_config {model_config}, if a str, must be in {EXPLANATORY_MODEL_CONFIGS.keys()}"
+                )
+            model_config = EXPLANATORY_MODEL_CONFIGS[model_config]
+        if not isinstance(model_config, dict):
+            raise ValueError(
+                f"model_config {model_config} must be a str or dict, not {type(model_config)}"
+            )
+        model_config = copy.copy(model_config)
+        model_config.update(kwargs)  # override config with kwargs
+        keys = ("module", "name", "weights_file")
+        for k in keys:
+            if k not in model_config:
+                raise ValueError(f"config key {k} is required")
+        module, name, weights_file = (model_config.pop(k) for k in keys)
+        model_kwargs = model_config.pop("model_kwargs", {})
 
-def _get_activations_w_class_ids(
-    explanatory_model: torch.nn.Module,
-    data: Iterable,
-    device: torch.device,
-    resize_image: bool,
-) -> Tuple[np.ndarray]:
-    activations, class_ids = [], []
-    for image, class_id in data:
-        with torch.no_grad():
-            image = _convert_np_image_to_tensor(image, device, resize_image)
-            activation = _get_activation(explanatory_model, image)
-            activations.append(activation)
-            class_ids.append(class_id)
-    activations = np.concatenate(activations)
-    class_ids = np.array(class_ids, dtype=np.int64)
-    return activations, class_ids
-
-
-def _convert_np_image_to_tensor(
-    image: np.ndarray, device: torch.device, resize_image: bool
-) -> torch.Tensor:
-    image = Image.fromarray(np.uint8(image * 255))
-    if resize_image:
-        image = image.resize(size=(224, 224), resample=Image.BILINEAR)
-    image = np.array(image, dtype=np.float32)
-    image = image / 255.0
-    image = np.expand_dims(image, 0)
-    image = torch.tensor(image).to(device)
-    return image
-
-
-def _get_activation(
-    explanatory_model: torch.nn.Module, image: torch.Tensor
-) -> np.ndarray:
-    activation, _ = explanatory_model(image)
-    activation = activation.detach().cpu().numpy()
-    return activation
-
-
-def _get_silhouette_analysis(
-    activations: np.ndarray, range_n_clusters: List[int], random_seed: int
-) -> Dict[int, SilhouetteData]:
-    silhouette_analysis = {}
-    for n_clusters in range_n_clusters:
-        clusterer = KMeans(n_clusters=n_clusters, random_state=random_seed)
-        cluster_labels = clusterer.fit_predict(activations)
-        silhouette_scores = silhouette_samples(activations, cluster_labels)
-        silhouette_data = SilhouetteData(n_clusters, cluster_labels, silhouette_scores)
-        silhouette_analysis[n_clusters] = silhouette_data
-    return silhouette_analysis
-
-
-def _get_best_n_clusters(silhouette_analysis: Dict[int, SilhouetteData]) -> int:
-    best_n_clusters = max(
-        list(silhouette_analysis.keys()),
-        key=lambda n_clusters: silhouette_analysis[n_clusters].silhouette_scores.mean(),
-    )
-    return best_n_clusters
-
-
-def _get_majority_mask(
-    silhouette_data: SilhouetteData, majority_ceiling: Optional[float]
-) -> Tuple[np.ndarray, float]:
-    if majority_ceiling is None:
-        majority_ceiling = _get_mean_silhouette_score(silhouette_data)
-    majority_mask = (0 <= silhouette_data.silhouette_scores) & (
-        silhouette_data.silhouette_scores <= majority_ceiling
-    )
-    return majority_mask, majority_ceiling
-
-
-def _get_mean_silhouette_score(silhouette_data: SilhouetteData) -> float:
-    mean_silhouette_score = silhouette_data.silhouette_scores.mean()
-    return mean_silhouette_score
-
-
-# Essentially copied from armory.utils.config_loading for BEAN regularization.
-def load_explanatory_model(model_config):
-    """
-    Loads a model and preprocessing function from configuration file
-
-    preprocessing_fn can be a tuple of functions or None values
-        If so, it applies to training and inference separately
-    """
-    model_module = import_module(model_config["module"])
-    model_fn = getattr(model_module, model_config["name"])
-    weights_file = model_config.get("weights_file", None)
-    if isinstance(weights_file, str):
         weights_path = maybe_download_weights_from_s3(
             weights_file, auto_expand_tars=True
         )
-    elif isinstance(weights_file, list):
-        weights_path = [
-            maybe_download_weights_from_s3(w, auto_expand_tars=True)
-            for w in weights_file
-        ]
-    elif isinstance(weights_file, dict):
-        weights_path = {
-            k: maybe_download_weights_from_s3(v) for k, v in weights_file.items()
-        }
-    else:
-        weights_path = None
-    try:
-        model = model_fn(weights_path)
-    except TypeError:
-        model = model_fn(weights_path, model_config["model_kwargs"])
-    if not weights_file and not model_config["fit"]:
-        log.warning(
-            "No weights file was provided and the model is not configured to train. "
-            "Are you loading model weights from an online repository?"
-        )
-    preprocessing_fn = getattr(model_module, "preprocessing_fn", None)
-    if preprocessing_fn is not None:
-        if isinstance(preprocessing_fn, tuple):
-            if len(preprocessing_fn) != 2:
-                raise ValueError(
-                    f"preprocessing tuple length {len(preprocessing_fn)} != 2"
-                )
-            elif not all([x is None or callable(x) for x in preprocessing_fn]):
-                raise TypeError(
-                    f"preprocessing_fn tuple elements {preprocessing_fn} must be None or callable"
-                )
-        elif not callable(preprocessing_fn):
-            raise TypeError(
-                f"preprocessing_fn {preprocessing_fn} must be None, tuple, or callable"
+        model_module = import_module(module)
+        model_fn = getattr(model_module, name)
+        explanatory_model = model_fn(weights_path, **model_kwargs)
+
+        return cls(explanatory_model, **model_config)
+
+    def get_activations(self, x):
+        """
+        Return array of activations from input batch x
+        """
+        activations = []
+        with torch.no_grad():
+            x = self.preprocess(x)
+            activation, _ = self.explanatory_model(x)
+            activations.append(activation.detach().cpu().numpy())
+        return np.concatenate(activations)
+
+    @staticmethod
+    def _preprocess(
+        x, resize_image=True, size=(224, 224), resample=Image.BILINEAR, device=DEVICE
+    ):
+        if isinstance(x.dtype, np.floating):
+            if x.min() < 0.0 or x.max() > 1.0:
+                raise ValueError("Floating input not bound to [0.0, 1.0] range")
+
+            if resize_image:
+                x = np.round(x * 255).astype(np.uint8)
+            elif x.dtype != np.float32:
+                x = x.astype(np.float32)
+        elif x.dtype == np.uint8:
+            if not resize_image:
+                x = x.astype(np.float32) / 255
+        else:
+            raise ValueError(
+                f"Input must be of type np.uint8 or floating, not {x.dtype}"
             )
-    return model, preprocessing_fn
+        if resize_image:
+            images = []
+            for i in range(len(x)):
+                image = Image.fromarray(x[i])
+                image = image.resize(size=size, resample=resample)
+                images.append(np.array(image, dtype=np.float32))
+            x = np.stack(images) / 255
 
+        return torch.tensor(x).to(device)
 
-gtsrb_silhouette_clustering_config = {
-    "fit": False,
-    "fit_kwargs": {},
-    "model_kwargs": {},
-    "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
-    "name": "get_model",
-    "resize_image": False,
-    "weights_file": "gtsrb_explanatory_model_micronnet_bean.pt",
-    "wrapper_kwargs": {},
-}
-
-resisc10_silhouette_clustering_config = {
-    "fit": False,
-    "fit_kwargs": {},
-    "model_kwargs": {
-        "data_means": [0.39382024, 0.4159701, 0.40887499],
-        "data_stds": [0.18931773, 0.18901625, 0.19651154],
-        "num_classes": 10,
-    },
-    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
-    "name": "get_model",
-    "weights_file": "resisc10_explanatory_model_resnet18_bean.pt",
-    "wrapper_kwargs": {},
-}
-
-cifar10_silhouette_clustering_config = {
-    "fit": False,
-    "fit_kwargs": {},
-    "model_kwargs": {
-        "data_means": [0.4914, 0.4822, 0.4465],
-        "data_stds": [0.2471, 0.2435, 0.2616],
-        "num_classes": 10,
-    },
-    "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
-    "name": "get_model",
-    "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
-    "wrapper_kwargs": {},
-}
-
-
-# An armory user will request one of these explanatory models under 'adhoc'/'explanatory_model'
-explanatory_model_configs = {
-    "gtsrb_silhouette_model": gtsrb_silhouette_clustering_config,
-    "resisc10_silhouette_model": resisc10_silhouette_clustering_config,
-    "cifar10_silhouette_model": cifar10_silhouette_clustering_config,
-}
+    def preprocess(self, x):
+        """
+        Preprocess a batch of images
+        """
+        return type(self)._preprocess(
+            x,
+            self.resize_image,
+            self.size,
+            resample=self.resample,
+            device=self.device,
+        )
 
 
 class FairnessMetrics:
-    """This class will manage the computation of fairness metrics for the poisoning scenario."""
+    """
+    This class will manage the computation of fairness metrics for the poisoning scenario.
+    """
 
-    def __init__(self, poisoning_config, is_filtering_defense, scenario):
-        """poisoning_config: the adhoc section of the config
-        is_filtering_defense: Boolean used to indicate whether the filtering metric(s) should be computed
-        scenario: A reference to the scenario object which instantiates this
+    def __init__(self, poisoning_config):
         """
-        # self.metric_config = metric_config
-        self.is_filtering_defense = is_filtering_defense
-        self.DEVICE = (
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        )
-        self.scenario = scenario
-
-        explanatory_model_name = poisoning_config.get("explanatory_model", None)
-        if explanatory_model_name not in explanatory_model_configs.keys():
-            raise ValueError(
-                f"Config should specify model for fairness metrics.  Set adhoc/explanatory_model to one of {list(explanatory_model_configs.keys())}, "
-                + "or set adhoc/compute_fairness_metrics to false if these metrics are not desired."
-            )
-        explanatory_model_config = explanatory_model_configs[explanatory_model_name]
-        explanatory_model, _ = load_explanatory_model(explanatory_model_config)
-        self.explanatory_model = explanatory_model
-        self.explanatory_model_resize_image = explanatory_model_config.get(
-            "resize_image", True
+        poisoning_config: the adhoc section of the config
+        """
+        self.explanatory_model = ExplanatoryModel.from_config(
+            poisoning_config.get("explanatory_model")
         )
 
     def add_cluster_metrics(
@@ -260,65 +163,71 @@ class FairnessMetrics:
         y_poison,
         poison_index,
         predicted_clean_indices,
-        test_dataset,
+        test_x,
+        test_y,
         train_set_class_labels,
         test_set_class_labels,
+        test_y_pred,
+        is_filtering_defense,
+        hub,
     ):
-        """Compute two metrics based on comparing two binary distributions.
-        Metric 1 (Model Bias) compares the classification accuracy in a binary split of each class.
-        Metric 2 (Filter Bias) compares the filtering rate on the same binary splits.
-        This comparison can be made in a variety of arbitrary ways.  Currently, we compute both SPD and chi^2 on
-        the contingency tables of the distributions.
+        """
+        Compute two metrics that compare 2 binary distributions:
+            1 (Model Bias) compares the classification accuracy in a binary split of each class.
+            2 (Filter Bias) compares the filtering rate on the same binary splits.
+        Currently, we compute both SPD and chi^2 on the contingency tables of the distributions.
 
-        Adds results to results dict of calling scenario, and returns the data for logging.
+        Record and log results.
 
         x_poison: the poisoned training dataset
         y_poison: the labels of the poisoned dataset
         poison_index: the indices of the poisoned samples in x_poison and y_poison
         predicted_clean_indices: the indices of the samples that the filter believes to be unpoisoned
-        test_dataset: the test dataset
+        test_x: x values of the test set
+        test_y: y values of the test set
+        train_set_class_labels: class labels in the training set
+        test_set_class_labels: class labels in the test set
+        test_y_pred: predictions of the primary model on test_x
+        is_filtering_defense: whether the filtering metric(s) should be computed
+        hub: hub to log to
         """
+        class_bias = metrics.get("class_bias")
+        get_majority_mask = metrics.get("get_majority_mask")
+
         # get majority ceilings on unpoisoned part of train set
-        poisoned_mask = np.zeros_like(y_poison, dtype=np.bool_)
+        poisoned_mask = np.zeros_like(y_poison, dtype=bool)
         poisoned_mask[poison_index.astype(np.int64)] = True
         x_unpoisoned = x_poison[~poisoned_mask]
         y_unpoisoned = y_poison[~poisoned_mask]
+
+        activations = self.explanatory_model.get_activations(x_unpoisoned)
         majority_mask_unpoisoned, majority_ceilings = get_majority_mask(
-            explanatory_model=self.explanatory_model,
-            data=list(zip(x_unpoisoned, y_unpoisoned)),
-            device=self.DEVICE,
-            resize_image=self.explanatory_model_resize_image,
+            activations,
+            y_unpoisoned,  # TODO: check
         )
 
         # Metric 1 General model bias
         # Compares rate of correct predictions between binary clusters of each class
-        test_x, test_y = (np.concatenate(z, axis=0) for z in zip(*list(test_dataset)))
-        test_set_preds = self.scenario.model.predict(
-            test_x, **self.scenario.predict_kwargs
-        ).argmax(1)
+        test_set_preds = test_y_pred.argmax(axis=1)
+
         correct_prediction_mask_test_set = test_y == test_set_preds
-        majority_mask_test_set, majority_ceilings = get_majority_mask(
-            explanatory_model=self.explanatory_model,
-            data=list(zip(test_x, test_y)),
+        activations = self.explanatory_model.get_activations(test_x)
+        majority_mask_test_set, _ = get_majority_mask(
+            activations,
+            test_y,  # TODO: check
             majority_ceilings=majority_ceilings,  # use ceilings computed from train set
-            device=self.DEVICE,
-            resize_image=self.explanatory_model_resize_image,
         )
 
-        majority_x_correct_prediction_tables = make_contingency_tables(
-            test_y, majority_mask_test_set, correct_prediction_mask_test_set
+        chi2_spd = class_bias(
+            test_y,
+            majority_mask_test_set,
+            correct_prediction_mask_test_set,
+            test_set_class_labels,
         )
-
-        chi2_metric = metrics.get_supported_metric("chi2_p_value")
-        spd_metric = metrics.get_supported_metric("spd")
         for class_id in test_set_class_labels:
-            majority_x = majority_x_correct_prediction_tables[class_id]
-            chi2 = np.mean(chi2_metric(majority_x))
-            spd = np.mean(spd_metric(majority_x))
-            self.scenario.hub.record(
-                f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
-            )
-            self.scenario.hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
+            chi2, spd = chi2_spd[class_id]
+            hub.record(f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
+            hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
             log.info(
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
             )
@@ -328,39 +237,30 @@ class FairnessMetrics:
 
         # Metric 2 Filter bias (only if filtering defense)
         # Compares rate of filtering between binary clusters of each class
-        if self.is_filtering_defense:
-            kept_mask = np.zeros_like(y_poison, dtype=np.bool_)
+        if is_filtering_defense:
+            kept_mask = np.zeros_like(y_poison, dtype=bool)
             kept_mask[predicted_clean_indices] = True
             kept_mask_unpoisoned = kept_mask[~poisoned_mask]
 
-            majority_x_passed_filter_tables = make_contingency_tables(
-                y_unpoisoned, majority_mask_unpoisoned, kept_mask_unpoisoned
+            chi2_spd = class_bias(
+                y_unpoisoned,
+                majority_mask_unpoisoned,
+                kept_mask_unpoisoned,
+                train_set_class_labels,
             )
 
             for class_id in train_set_class_labels:
-                try:
-                    majority_x = majority_x_passed_filter_tables[class_id]
-                    chi2 = np.mean(chi2_metric(majority_x))
-                    spd = np.mean(spd_metric(majority_x))
-                    self.scenario.hub.record(
-                        f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
+                chi2, spd = chi2_spd[class_id]
+                hub.record(f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
+                hub.record(f"filter_bias_spd_{str(class_id).zfill(2)}", spd)
+                if chi2 is None or spd is None:
+                    log.info(
+                        f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: not computed--the entire class was poisoned"
                     )
-                    self.scenario.hub.record(
-                        f"filter_bias_spd_{str(class_id).zfill(2)}", spd
-                    )
+                else:
                     log.info(
                         f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
                     )
                     log.info(
                         f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {spd:.4f}"
-                    )
-                except KeyError:
-                    self.scenario.hub.record(
-                        f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", None
-                    )
-                    self.scenario.hub.record(
-                        f"filter_bias_spd_{str(class_id).zfill(2)}", None
-                    )
-                    log.info(
-                        f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: not computed--the entire class was poisoned"
                     )

@@ -19,11 +19,3 @@ def test_get_majority_mask():
 
 def test_load_explanatory_model():
     raise NotImplementedError()
-
-
-def test_model_bias():
-    raise NotImplementedError()
-
-
-def test_filter_bias():
-    raise NotImplementedError()
