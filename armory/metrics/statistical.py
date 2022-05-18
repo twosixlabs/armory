@@ -2,7 +2,7 @@
 Statistical metrics
 """
 
-from typing import Dict, Iterable, List, NamedTuple, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 from scipy import stats
@@ -271,55 +271,45 @@ def class_bias(y_true, majority_mask, kept_mask, class_labels):
     return chi2_spd
 
 
-class SilhouetteData(NamedTuple):
-    n_clusters: int
-    cluster_labels: np.ndarray
-    silhouette_scores: np.ndarray
+@register
+def majority_mask(
+    activations,
+    majority_ceiling=None,
+    random_state=42,
+):
+    """
+    Return a boolean mask and silhouette score ceiling
+    """
+    clusterer = cluster.KMeans(n_clusters=2, random_state=random_state)
+    cluster_labels = clusterer.fit_predict(activations)
+    silhouette_scores = silhouette_samples(activations, cluster_labels)
+    if majority_ceiling is None:
+        majority_ceiling = silhouette_scores.mean()
+    mask = (0 <= silhouette_scores) & (silhouette_scores <= majority_ceiling)
+    return mask, majority_ceiling
 
 
 @register
-def get_majority_mask(
+def class_majority_mask(
     activations,
     class_ids,
     majority_ceilings: Optional[Dict[int, float]] = None,
-    range_n_clusters: Iterable[int] = (2,),
-    random_seed: int = 42,
-) -> Tuple[np.ndarray, Dict[int, float]]:
+    random_state: int = 42,
+):
     """
-    Return majority_mask and majority_ceilings of input activations
+    Return a single boolean mask and a silhouette score ceiling for each class
     """
-    majority_mask = np.empty(len(activations), dtype=bool)
+    full_majority_mask = np.empty(len(activations), dtype=bool)
     if majority_ceilings is None:
         majority_ceilings = {}
 
     for class_id in np.unique(class_ids):
-        mask_id = class_ids == class_id
-        activations_id = activations[mask_id]
-
-        silhouette_analysis_id = {}
-        for n_clusters in range_n_clusters:
-            clusterer = cluster.KMeans(n_clusters=n_clusters, random_state=random_seed)
-            cluster_labels = clusterer.fit_predict(activations_id)
-            silhouette_scores = silhouette_samples(activations_id, cluster_labels)
-            silhouette_data = SilhouetteData(
-                n_clusters, cluster_labels, silhouette_scores
-            )
-            silhouette_analysis_id[n_clusters] = silhouette_data
-
-        best_n_clusters_id = max(
-            list(silhouette_analysis_id.keys()),
-            key=lambda n_clusters: silhouette_analysis_id[
-                n_clusters
-            ].silhouette_scores.mean(),
+        mask_index = class_ids == class_id
+        mask, majority_ceiling_id = majority_mask(
+            activations[mask_index],
+            majority_ceilings.get(class_id),
+            random_state=random_state,
         )
-        best_silhouette_data_id = silhouette_analysis_id[best_n_clusters_id]
-
-        majority_ceiling_id = majority_ceilings.get(class_id)
-        if majority_ceiling_id is None:
-            majority_ceiling_id = best_silhouette_data_id.silhouette_scores.mean()
-        majority_mask_id = (0 <= best_silhouette_data_id.silhouette_scores) & (
-            best_silhouette_data_id.silhouette_scores <= majority_ceiling_id
-        )
-        majority_mask[mask_id] = majority_mask_id
         majority_ceilings[class_id] = majority_ceiling_id
-    return majority_mask, majority_ceilings
+        full_majority_mask[mask_index] = mask
+    return full_majority_mask, majority_ceilings

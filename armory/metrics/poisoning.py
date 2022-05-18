@@ -7,7 +7,7 @@ import torch
 
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
-from armory.metrics.statistical import class_bias, get_majority_mask
+from armory.metrics.statistical import class_bias, class_majority_mask
 
 
 # An armory user may request one of these models under 'adhoc'/'explanatory_model'
@@ -198,7 +198,7 @@ class FairnessMetrics:
         y_unpoisoned = y_poison[~poisoned_mask]
 
         activations = self.explanatory_model.get_activations(x_unpoisoned)
-        majority_mask_unpoisoned, majority_ceilings = get_majority_mask(
+        majority_mask_unpoisoned, majority_ceilings = class_majority_mask(
             activations,
             y_unpoisoned,  # TODO: check
         )
@@ -209,7 +209,7 @@ class FairnessMetrics:
 
         correct_prediction_mask_test_set = test_y == test_set_preds
         activations = self.explanatory_model.get_activations(test_x)
-        majority_mask_test_set, _ = get_majority_mask(
+        majority_mask_test_set, _ = class_majority_mask(
             activations,
             test_y,  # TODO: check
             majority_ceilings=majority_ceilings,  # use ceilings computed from train set
