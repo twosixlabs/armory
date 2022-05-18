@@ -5,9 +5,9 @@ import numpy as np
 from PIL import Image
 import torch
 
-from armory import metrics
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.logs import log
+from armory.metrics.statistical import class_bias, get_majority_mask
 
 
 # An armory user may request one of these models under 'adhoc'/'explanatory_model'
@@ -191,9 +191,6 @@ class FairnessMetrics:
         is_filtering_defense: whether the filtering metric(s) should be computed
         hub: hub to log to
         """
-        class_bias = metrics.get("class_bias")
-        get_majority_mask = metrics.get("get_majority_mask")
-
         # get majority ceilings on unpoisoned part of train set
         poisoned_mask = np.zeros_like(y_poison, dtype=bool)
         poisoned_mask[poison_index.astype(np.int64)] = True
