@@ -116,6 +116,7 @@ Metric outputs are numpy arrays or scalars.
 | `object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
 | `object_detection_misclassification_rate` | Object Detection Misclassification Rate |
 | `object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+| TBD | TBD |
 
 <br>
 
@@ -129,7 +130,10 @@ Metric outputs are numpy arrays or scalars.
 | `filter_perplexity_fps_benign` | `metrics.statistical.registered.filter_perplexity_fps_benign` | Perplexity of Filtered Distribution |
 | `perplexity` | `metrics.statistical.registered.perplexity` | P-to-Q Perplexity |
 | `kl_div` | `metrics.statistical.registered.kl_div` | KL Divergence |
-| `cross_entropy` | `metrics.statistical.registered.cross_entropy` | Distriutional Cross Entropy |
+| `cross_entropy` | `metrics.statistical.registered.cross_entropy` | Distributional Cross Entropy |
+| `class_bias` | `metrics.statistical.registered.class_bias` | Class Bias |
+| `get_majority_mask` | `metrics.statistical.registered.get_majority_mask` | Majority Mask |
+
 
 <br>
 
