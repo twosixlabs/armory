@@ -149,15 +149,21 @@ class FairnessMetrics:
     This class will manage the computation of fairness metrics for the poisoning scenario.
     """
 
-    def __init__(self, poisoning_config):
+    def __init__(
+        self,
+        poisoning_config,
+        hub,
+    ):
         """
         poisoning_config: the adhoc section of the config
+        hub: hub to log to
         """
         self.explanatory_model = ExplanatoryModel.from_config(
             poisoning_config.get("explanatory_model")
         )
+        self.hub = hub
 
-    def add_cluster_metrics(
+    def compute_fairness_metrics(
         self,
         x_poison,
         y_poison,
@@ -169,7 +175,6 @@ class FairnessMetrics:
         test_set_class_labels,
         test_y_pred,
         is_filtering_defense,
-        hub,
     ):
         """
         Compute two metrics that compare 2 binary distributions:
@@ -189,11 +194,38 @@ class FairnessMetrics:
         test_set_class_labels: class labels in the test set
         test_y_pred: predictions of the primary model on test_x
         is_filtering_defense: whether the filtering metric(s) should be computed
-        hub: hub to log to
         """
-        # get majority ceilings on unpoisoned part of train set
+
+        poisoned_mask = self.get_poisoned_mask(y_poison, poison_index)
+        (
+            majority_mask_train_unpoisoned,
+            majority_ceilings,
+        ) = self.get_train_majority_mask_and_ceilings(x_poison, y_poison, poisoned_mask)
+        majority_mask_test_set = self.get_test_majority_mask(
+            test_x, test_y, majority_ceilings
+        )
+        self.compute_model_bias(
+            test_y, test_y_pred, majority_mask_test_set, test_set_class_labels
+        )
+
+        if is_filtering_defense:
+            self.compute_filter_bias(
+                y_poison,
+                predicted_clean_indices,
+                poisoned_mask,
+                majority_mask_train_unpoisoned,
+                train_set_class_labels,
+            )
+
+    def get_poisoned_mask(self, y_poison, poison_index):
         poisoned_mask = np.zeros_like(y_poison, dtype=bool)
         poisoned_mask[poison_index.astype(np.int64)] = True
+        return poisoned_mask
+
+    def get_train_majority_mask_and_ceilings(self, x_poison, y_poison, poisoned_mask):
+
+        # get majority ceilings on unpoisoned part of train set
+
         x_unpoisoned = x_poison[~poisoned_mask]
         y_unpoisoned = y_poison[~poisoned_mask]
 
@@ -202,18 +234,25 @@ class FairnessMetrics:
             activations,
             y_unpoisoned,  # TODO: check
         )
+        return majority_mask_unpoisoned, majority_ceilings
 
-        # Metric 1 General model bias
-        # Compares rate of correct predictions between binary clusters of each class
-        test_set_preds = test_y_pred.argmax(axis=1)
-
-        correct_prediction_mask_test_set = test_y == test_set_preds
+    def get_test_majority_mask(self, test_x, test_y, majority_ceilings):
         activations = self.explanatory_model.get_activations(test_x)
         majority_mask_test_set, _ = get_majority_mask(
             activations,
             test_y,  # TODO: check
             majority_ceilings=majority_ceilings,  # use ceilings computed from train set
         )
+
+        return majority_mask_test_set
+
+    def compute_model_bias(
+        self, test_y, test_y_pred, majority_mask_test_set, test_set_class_labels
+    ):
+        # Metric 1 General model bias
+        # Compares rate of correct predictions between binary clusters of each class
+        test_set_preds = test_y_pred.argmax(axis=1)
+        correct_prediction_mask_test_set = test_y == test_set_preds
 
         chi2_spd = class_bias(
             test_y,
@@ -223,8 +262,8 @@ class FairnessMetrics:
         )
         for class_id in test_set_class_labels:
             chi2, spd = chi2_spd[class_id]
-            hub.record(f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
-            hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
+            self.hub.record(f"model_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
+            self.hub.record(f"model_bias_spd_{str(class_id).zfill(2)}", spd)
             log.info(
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
             )
@@ -232,32 +271,41 @@ class FairnessMetrics:
                 f"Model Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {spd:.4f}"
             )
 
+    def compute_filter_bias(
+        self,
+        y_poison,
+        predicted_clean_indices,
+        poisoned_mask,
+        majority_mask_train_unpoisoned,
+        train_set_class_labels,
+    ):
         # Metric 2 Filter bias (only if filtering defense)
         # Compares rate of filtering between binary clusters of each class
-        if is_filtering_defense:
-            kept_mask = np.zeros_like(y_poison, dtype=bool)
-            kept_mask[predicted_clean_indices] = True
-            kept_mask_unpoisoned = kept_mask[~poisoned_mask]
+        kept_mask = np.zeros_like(y_poison, dtype=bool)
+        kept_mask[predicted_clean_indices] = True
+        kept_mask_unpoisoned = kept_mask[~poisoned_mask]
 
-            chi2_spd = class_bias(
-                y_unpoisoned,
-                majority_mask_unpoisoned,
-                kept_mask_unpoisoned,
-                train_set_class_labels,
-            )
+        y_unpoisoned = y_poison[~poisoned_mask]
 
-            for class_id in train_set_class_labels:
-                chi2, spd = chi2_spd[class_id]
-                hub.record(f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
-                hub.record(f"filter_bias_spd_{str(class_id).zfill(2)}", spd)
-                if chi2 is None or spd is None:
-                    log.info(
-                        f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: not computed--the entire class was poisoned"
-                    )
-                else:
-                    log.info(
-                        f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
-                    )
-                    log.info(
-                        f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {spd:.4f}"
-                    )
+        chi2_spd = class_bias(
+            y_unpoisoned,
+            majority_mask_train_unpoisoned,
+            kept_mask_unpoisoned,
+            train_set_class_labels,
+        )
+
+        for class_id in train_set_class_labels:
+            chi2, spd = chi2_spd[class_id]
+            self.hub.record(f"filter_bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2)
+            self.hub.record(f"filter_bias_spd_{str(class_id).zfill(2)}", spd)
+            if chi2 is None or spd is None:
+                log.info(
+                    f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: not computed--the entire class was poisoned"
+                )
+            else:
+                log.info(
+                    f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
+                )
+                log.info(
+                    f"Filter Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {spd:.4f}"
+                )
