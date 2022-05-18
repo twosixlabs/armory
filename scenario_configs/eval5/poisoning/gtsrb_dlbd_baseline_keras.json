@@ -18,8 +18,8 @@
             "poison_module": "art.attacks.poisoning.perturbations",
             "poison_type": "pattern"
         },
-        "module": "armory.art_experimental.attacks.poison_loader",
-        "name": "poison_loader_GTSRB"
+        "module": "armory.art_experimental.attacks.poison_loader_dlbd",
+        "name": "poison_loader_dlbd"
     },
     "dataset": {
         "batch_size": 512,
@@ -51,8 +51,8 @@
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_scenario",
-        "name": "GTSRB"
+        "module": "armory.scenarios.poison",
+        "name": "Poison"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
