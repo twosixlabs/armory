@@ -307,7 +307,7 @@ def class_majority_mask(
         mask_index = class_ids == class_id
         mask, majority_ceiling_id = majority_mask(
             activations[mask_index],
-            majority_ceilings.get(class_id),
+            majority_ceiling=majority_ceilings.get(class_id),
             random_state=random_state,
         )
         majority_ceilings[class_id] = majority_ceiling_id
