@@ -70,7 +70,7 @@ class DatasetPoisoner:
         return poison_x, poison_y
 
 
-class Poison_DLBD(Scenario):
+class Poison(Scenario):
     """This is the base poisoning dirty label scenario.
     As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
     """
