@@ -13,9 +13,13 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-def test_get_majority_mask():
+def test_explanatory_model():
     raise NotImplementedError()
 
 
-def test_load_explanatory_model():
+def test_model_bias():
+    raise NotImplementedError()
+
+
+def test_filter_bias():
     raise NotImplementedError()
