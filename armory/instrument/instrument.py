@@ -353,15 +353,10 @@ class Hub:
         self.meters.append(meter)
         self.mapper.connect_meter(meter)
 
-    def disconnect_meter(self, meter_name):
-        """
-        :param meter_name: string, name of meter
-        """
-        for i, meter in enumerate(self.meters):
-            if meter.name == meter_name:
-                removed_meter = self.meters.pop(i)
-                self.mapper.disconnect_meter(removed_meter)
-                self.disconnect_meter(meter_name)
+    def disconnect_meter(self, meter):
+        self.mapper.disconnect_meter(meter)
+        if meter in self.meters:
+            self.meters.remove(meter)
 
     def connect_writer(self, writer, meters=None, default=False):
         """
