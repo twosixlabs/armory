@@ -98,8 +98,6 @@ trigger_index: [10,20,30]
 
 Because generating poisoned data takes so much longer for Witches' Brew than for the backdoor attacks, Armory provides a means to save and load a poisoned dataset.  A filepath may be provided in the config under `attack/kwargs/data_filepath`.  If this path does not exist, Armory will generate the dataset and save it to that path.  If the path does exist, Armory will load it and check that it was generated consistent with what the current config is requesting, in terms of source, target, perturbation bound, and so forth.  If there are any discrepancies, a helpful error is raised.  If you are loading a pre-generated dataset, `source_class`, `target_class`, and `trigger_index` may all be null.  If you want to re-generate a poisoned dataset that already exists, you can delete the old one or rename it.  Alternatively, you may set `attack/kwargs/overwrite_presaved_data:true`, but use caution: if you forget to reset it to `false`, or pass the config to someone else, it can take a lot of time to re-generate the poison.
 
-## Baseline Defenses?
-
 
 ## Metrics
 
