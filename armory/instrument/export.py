@@ -533,8 +533,30 @@ class So2SatExporter(SampleExporter):
 
 class ExportMeter(Meter):
     def __init__(
-        self, name, exporter, x_probe, y_probe=None, y_pred_probe=None, max_batches=None
+        self,
+        name,
+        exporter,
+        x_probe,
+        y_probe=None,
+        y_pred_probe=None,
+        max_batches=None,
+        overwrite_mode="increment",
     ):
+        """
+        :param name (string): name given to ExportMeter
+        :param exporter (SampleExporter): sample exporter object
+        :param x_probe (string): name of x probe e.g. "scenario.x"
+        :param y_probe (string or None): name of y probe, if applicable. E.g. "scenario.y"
+        :param y_pred_probe (string or None): name of y_pred_probe, if applicable. E.g. "scenario.y_pred"
+        :param max_batches (int or None): maximum number of batches to export
+        :param overwrite_mode (string): one of ('increment', 'overwrite'). Whether to overwrite existing
+                files or increment filename with an appended underscore and number
+        """
+        if overwrite_mode not in ["increment", "overwrite"]:
+            raise ValueError(
+                f"overwrite_mode must be one of ('increment', 'overwrite'). Received {overwrite_mode}"
+            )
+        self.overwrite_mode = overwrite_mode
         metric_args = [x_probe]
         if y_probe is not None:
             metric_args.append(y_probe)
@@ -553,6 +575,8 @@ class ExportMeter(Meter):
         if self.y_pred_probe is not None:
             self.y_pred_probe_idx = self.metric_args.index(self.y_pred_probe)
 
+        self.sample_id_counter = {}
+
     def measure(self, clear_values=True):
         self.is_ready(raise_error=True)
         batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
@@ -567,9 +591,19 @@ class ExportMeter(Meter):
                 export_kwargs["y"] = self.values[self.y_probe_idx][batch_idx]
             if self.y_pred_probe is not None:
                 export_kwargs["y_pred"] = self.values[self.y_pred_probe_idx][batch_idx]
+
+            sample_id = f"batch_{batch_num}_ex_{batch_idx}_{probe_variable}"
+            sample_id_count = self.sample_id_counter.get(sample_id, 0)
+            if sample_id_count > 0 and self.overwrite_mode == "increment":
+                basename = f"{sample_id}_{sample_id_count}"
+            else:
+                self.sample_id_counter[sample_id] = 0
+                basename = sample_id
+
+            self.sample_id_counter[sample_id] += 1
             self.exporter.export(
                 batch_data[batch_idx],
-                f"batch_{batch_num}_ex_{batch_idx}_{probe_variable}",
+                basename,
                 **export_kwargs,
             )
         if clear_values:
