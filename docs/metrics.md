@@ -14,6 +14,7 @@ When running a scenario, these metrics are measured and output in json format in
 Desired metrics and flags are placed under the key `"metric"` dictionary in the config:
 ```
 "metric": {
+    "max_record_size": Integer or null,
     "means": [Bool],
     "perturbation": List[String] or String or null,
     "profiler_type": null or "basic" or "deterministic",
@@ -30,6 +31,8 @@ These metrics are called on batches of inputs, but are sample-wise metrics, and 
 When `means` is true, the average value for the given metric is also recorded.
 When `record_metric_per_sample` is true, all of the per-sample metrics are recorded.
 If neither is true, a `ValueError` is raised, as nothing is recorded.
+The `max_record_size` field, if not `null`, will drop individual records sent to the ResultsWriter that are greater than the given value.
+    To use the default of `2**20` bytes (per record, not per full results output), do not include this field in the config.
 
 The `profiler_type` field, when not `null`, enables the logging of computational metrics.
 If `"basic"`, it logs CPU time for model inference and attacking.
@@ -54,40 +57,65 @@ The functionality for these profilers can be found in `armory/metrics/compute.py
 
 ## Metrics
 
-The `armory.utils.metrics` module implements functionality to measure both
-task and perturbation metrics. 
+The `armory.utils.metrics` module implements functionality to measure task metrics.
+The `armory.metrics.perturbation` module implements functionality to measure perturbation metrics.
 
-### Metrics
+We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
+Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
 
-| Name | Type | Description |
-|-------|-------|-------|
-| categorical_accuracy | Task | Categorical Accuracy |
-| top_n_categorical_accuracy | Task | Top-n Categorical Accuracy |
-| top_5_categorical_accuracy | Task | Top-5 Categorical Accuracy |
-| word_error_rate | Task | Word Error Rate |
-| image_circle_patch_diameter | Perturbation | Patch Diameter |
-| lp   | Perturbation | L-p norm |
-| linf | Perturbation | L-infinity norm |
-| l2 | Perturbation | L2 norm |
-| l1 | Perturbation | L1 norm |
-| l0 | Perturbation | L0 "norm" |
-| mars_mean_l2 | Perturbation | Mean L2 norm across video stacks |
-| mars_mean_patch | Perturbation | Mean patch diameter across video stacks |
-| norm | Perturbation | L-p norm |
-| object_detection_AP_per_class | Task | Object Detection mAP |
-| object_detection_disappearance_rate | Task | Object Detection Disappearance Rate |
-| object_detection_hallucinations_per_image| Task | Object Detection Hallucinations Per Image |
-| object_detection_misclassification_rate | Task | Object Detection Misclassification Rate |
-| object_detection_true_positive_rate | Task | Object Detection True Positive Rate | 
-| snr | Perturbation | Signal-to-noise ratio |
-| snr_db | Perturbation | Signal-to-noise ratio (decibels) |
-| snr_spectrogram | Perturbation | Signal-to-noise ratio of spectrogram |
-| snr_spectrogram_db | Perturbation | Signal-to-noise ratio of spectrogram (decibels) |
+### Perturbation Metrics
+
+| Name | Description |
+|-------|-------|
+| `linf` | L-infinity norm |
+| `l2` | L2 norm |
+| `l1` | L1 norm |
+| `l0` | L0 "norm" |
+| `snr` | Signal-to-noise ratio |
+| `snr_db` | Signal-to-noise ratio (decibels) |
+| `snr_spectrogram` | Signal-to-noise ratio of spectrogram |
+| `snr_spectrogram_db` | Signal-to-noise ratio of spectrogram (decibels) |
+| `image_circle_patch_diameter` | Diameter of smallest circular patch |
+| `mean_l(0\|1\|2\|inf)` | Lp norm averaged over all frames of video |
+| `max_l(0\|1\|2\|inf)` | Max of Lp norm over all frames of video |
+| `(mean\|max)_image_circle_patch_diameter` | Average or max circle over all frames of video |
 
 <br>
 
-We have implemented the metrics in numpy, instead of using framework-specific 
-metrics, to prevent expanding the required set of dependencies. Please see [armory/utils/metrics.py](../armory/utils/metrics.py) for more detailed descriptions.
+The set of perturbation metrics provided by armory can also be found via batch-wise and element-wise namespaces as follows:
+```
+from armory.metrics import perturbation
+print(peturbation.batch)
+# ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
+print(perturbation.element)
+# ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
+```
+Currently, all perturbation metrics have element-wise and batch-wise versions, though the config assumes that the batch version is intended.
+For instance:
+```
+perturbation.batch.l1([0, 0, 0], [1, 1, 1])
+# array([1., 1., 1.])
+perturbation.element.l1([0, 0, 0], [1, 1, 1])
+# 3.0
+```
+Metric outputs are numpy arrays or scalars.
+
+
+### Task Metrics
+
+| Name | Description |
+|-------|-------|
+| `categorical_accuracy` | Categorical Accuracy |
+| `top_5_categorical_accuracy` | Top-5 Categorical Accuracy |
+| `word_error_rate` | Word Error Rate |
+| `object_detection_AP_per_class` | Object Detection mAP |
+| `object_detection_disappearance_rate` | Object Detection Disappearance Rate |
+| `object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
+| `object_detection_misclassification_rate` | Object Detection Misclassification Rate |
+| `object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+
+<br>
+
 
 ### Targeted vs. Untargeted Attacks
 
@@ -141,6 +169,14 @@ result = 17
 hub.record(name, result)
 ```
 This will push a record to all default writers (including the `ResultsWriter` in standard scenarios) with that information.
+To send it to an additional writer or writers, you can supply them with the `writers` kwargs, which can take a single writer or an iterable of writers.
+To not send it to the default writers, set the `use_default_writers` kwarg to `False`.
+For instance:
+```
+my_writer = PrintWriter()
+hub.record(name, result, writers=my_writer, use_default_writers=False)
+```
+If `writers` is empty or None and `use_default_writers` is False, no record will be sent and a warning will be logged.
 
 ### Probes
 

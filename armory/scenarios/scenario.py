@@ -423,5 +423,11 @@ class Scenario:
             f"{self.scenario_output_dir}/{filename} "
             "inside container."
         )
-        with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
+        output_path = os.path.join(self.scenario_output_dir, filename)
+        with open(output_path, "w") as f:
             json_utils.dump(output, f)
+        if os.path.getsize(output_path) > 2**27:
+            log.warning(
+                "Results json file exceeds 128 MB! "
+                "Recommend checking what is being recorded!"
+            )

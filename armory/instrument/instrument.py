@@ -353,6 +353,11 @@ class Hub:
         self.meters.append(meter)
         self.mapper.connect_meter(meter)
 
+    def disconnect_meter(self, meter):
+        self.mapper.disconnect_meter(meter)
+        if meter in self.meters:
+            self.meters.remove(meter)
+
     def connect_writer(self, writer, meters=None, default=False):
         """
         Convenience method to add writer to all (or a subset of meters)
@@ -385,13 +390,33 @@ class Hub:
         if writer not in self.writers:
             self.writers.append(writer)
 
-    def record(self, name, result):
+    def record(self, name, result, writers=None, use_default_writers=True):
         """
         Push a record to the default writers
+        writers - None, a Writer, or an iterable of Writer
+            if not None, write to all given writers
+        use_default_writers - whether to write to the default writers
         """
-        if not self.default_writers:
-            log.warning(f"No default writers to record {name}:{result} to")
-        for writer in self.default_writers:
+        if writers is None:
+            writers = []
+        elif isinstance(writers, Writer):
+            writers = [writers]
+        else:
+            try:
+                writers = list(writers)
+            except TypeError:
+                raise TypeError(
+                    f"Received 'writers' input of type {type(writers)}, "
+                    "expected one of (None, Writer, iterable of Writers)"
+                )
+            if not all(isinstance(writer, Writer) for writer in writers):
+                raise ValueError("writers are not all of type Writer")
+
+        if use_default_writers:
+            writers.extend(self.default_writers)
+        if not writers:
+            log.warning(f"No writers to record {name}:{result} to")
+        for writer in writers:
             writer.write((name, self.context["batch"], result))
 
     def close(self):
@@ -660,18 +685,37 @@ class ResultsWriter(Writer):
     Write results to dictionary
     """
 
-    def __init__(self, sink=None):
+    def __init__(self, sink=None, max_record_size=None):
         """
         sink is a callable that takes the output results dict as input
             if sink is None, call get_output after close to get results dict
+        max_record_size - if not None, the maximum size in bytes for a single record
+            Records exceeding that size log a warning and are dropped
         """
         super().__init__()
         self.sink = sink
         self.records = []
         self.output = None
+        if max_record_size is not None:
+            if max_record_size < -1:
+                raise ValueError(f"max_record_size {max_record_size} cannot be < -1")
+            if json_utils is None:
+                raise ValueError("Cannot import numpy. Set max_record_size to None")
+            max_record_size = int(max_record_size)
+        self.max_record_size = max_record_size
 
     def _write(self, name, batch, result):
-        self.records.append((name, batch, result))
+        record = (name, batch, result)
+        if self.max_record_size is not None:
+            try:
+                json_utils.check_size(record, self.max_record_size)
+            except ValueError:
+                log.warning(
+                    f"record (name={name}, batch={batch}, result=...) size > "
+                    f"max_record_size {self.max_record_size}. Dropping."
+                )
+                return
+        self.records.append(record)
 
     def collate_results(self):
         """
