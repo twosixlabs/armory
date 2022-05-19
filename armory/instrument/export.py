@@ -3,7 +3,6 @@ import abc
 import numpy as np
 import ffmpeg
 import pickle
-import time
 from PIL import Image, ImageDraw
 from scipy.io import wavfile
 import json
@@ -14,12 +13,12 @@ from armory.instrument import Meter
 
 
 class SampleExporter:
-    def __init__(self, base_output_dir, default_export_kwargs={}):
-        self.base_output_dir = base_output_dir
-        self.output_dir = None
-        self.y_dict = {}
+    def __init__(self, output_dir, default_export_kwargs={}):
+        self.output_dir = output_dir
+        base_dir = os.path.dirname(self.output_dir)
+        if base_dir and not os.path.exists(base_dir):
+            raise ValueError(f"Directory {base_dir} does not exist")
         self.default_export_kwargs = default_export_kwargs
-        self._set_output_dir()
 
     def export(self, x_i, basename, **kwargs):
         export_kwargs = dict(
@@ -46,30 +45,14 @@ class SampleExporter:
             f"get_sample() method should be defined for export class {self.__class__}"
         )
 
-    def _set_output_dir(self):
-        assert os.path.exists(self.base_output_dir) and os.path.isdir(
-            self.base_output_dir
-        ), f"Directory {self.base_output_dir} does not exist"
-        assert os.access(
-            self.base_output_dir, os.W_OK
-        ), f"Directory {self.base_output_dir} is not writable"
-        self.output_dir = os.path.join(self.base_output_dir, "saved_samples")
-        if os.path.exists(self.output_dir):
-            log.warning(
-                f"Sample output directory {self.output_dir} already exists, will create new directory"
-            )
-            self.output_dir = os.path.join(
-                self.base_output_dir, f"saved_samples_{time.time()}"
-            )
-
     def _make_output_dir(self):
         os.mkdir(self.output_dir)
 
 
 class ImageClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, default_export_kwargs={}):
+    def __init__(self, output_dir, default_export_kwargs={}):
         super().__init__(
-            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
+            output_dir=output_dir, default_export_kwargs=default_export_kwargs
         )
         self.file_extension = ".png"
 
@@ -119,8 +102,8 @@ class ImageClassificationExporter(SampleExporter):
 
 
 class ObjectDetectionExporter(ImageClassificationExporter):
-    def __init__(self, base_output_dir, default_export_kwargs={}):
-        super().__init__(base_output_dir, default_export_kwargs)
+    def __init__(self, output_dir, default_export_kwargs={}):
+        super().__init__(output_dir, default_export_kwargs)
         self.ground_truth_boxes_coco_format = []
         self.benign_predicted_boxes_coco_format = []
         self.adversarial_predicted_boxes_coco_format = []
@@ -267,8 +250,8 @@ class DApricotExporter(ObjectDetectionExporter):
 
 
 class VideoClassificationExporter(SampleExporter):
-    def __init__(self, base_output_dir, frame_rate, default_export_kwargs={}):
-        super().__init__(base_output_dir, default_export_kwargs=default_export_kwargs)
+    def __init__(self, output_dir, frame_rate, default_export_kwargs={}):
+        super().__init__(output_dir, default_export_kwargs=default_export_kwargs)
         self.frame_rate = frame_rate
         self.video_file_extension = ".mp4"
         self.frame_file_extension = ".png"
@@ -411,10 +394,10 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
 
 class AudioExporter(SampleExporter):
-    def __init__(self, base_output_dir, sample_rate):
+    def __init__(self, output_dir, sample_rate):
         self.sample_rate = sample_rate
         self.file_extension = ".wav"
-        super().__init__(base_output_dir)
+        super().__init__(output_dir)
 
     def _export(self, x, basename):
         x_copy = deepcopy(x)
@@ -457,9 +440,9 @@ class AudioExporter(SampleExporter):
 
 
 class So2SatExporter(SampleExporter):
-    def __init__(self, base_output_dir, default_export_kwargs={}):
+    def __init__(self, output_dir, default_export_kwargs={}):
         super().__init__(
-            base_output_dir=base_output_dir, default_export_kwargs=default_export_kwargs
+            output_dir=output_dir, default_export_kwargs=default_export_kwargs
         )
         self.file_extension = ".png"
 

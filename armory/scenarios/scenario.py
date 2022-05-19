@@ -55,7 +55,6 @@ class Scenario:
             config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
         )
         self.config = config
-        self._set_output_dir(self.config)
         self.num_eval_batches = num_eval_batches
         self.skip_benign = bool(skip_benign)
         self.skip_attack = bool(skip_attack)
@@ -65,6 +64,7 @@ class Scenario:
         if skip_attack:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
+        self._set_output_dir(self.config)
         self.results = None
 
     def _set_output_dir(self, config: Config) -> None:
@@ -72,6 +72,16 @@ class Scenario:
         self.scenario_output_dir = os.path.join(
             runtime_paths.output_dir, config["eval_id"]
         )
+        self.export_dir = os.path.join(self.scenario_output_dir, "saved_samples")
+        if os.path.exists(self.export_dir):
+            log.warning(
+                f"Export output directory {self.export_dir} already exists, will create new directory"
+            )
+            self.export_dir = os.path.join(
+                self.scenario_output_dir, f"saved_samples_{self.time_stamp}"
+            )
+        self.hub._set_output_dir(self.scenario_output_dir)
+        self.hub._set_export_dir(self.export_dir)
 
     def _check_config_and_cli_args(
         self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
@@ -241,7 +251,7 @@ class Scenario:
 
         pred_meter = PredictionMeter(
             "pred_dict_exporter",
-            self.sample_exporter.output_dir,
+            self.export_dir,
             y_probe="scenario.y",
             y_pred_clean_probe="scenario.y_pred",
             y_pred_adv_probe="scenario.y_pred_adv",
@@ -255,6 +265,7 @@ class Scenario:
         )
 
     def load(self):
+        self.load_export_meters()
         self.load_model()
         if self.use_fit:
             self.load_train_dataset()
@@ -262,7 +273,6 @@ class Scenario:
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
-        self.load_export_meters()
         return self
 
     def evaluate_all(self):

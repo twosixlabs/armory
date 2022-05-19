@@ -16,4 +16,4 @@ class ImageClassificationTask(Scenario):
             self.generate_kwargs["mask"] = np.array(self.generate_kwargs["mask"])
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.scenario_output_dir)
+        return ImageClassificationExporter(self.export_dir)

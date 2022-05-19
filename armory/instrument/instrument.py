@@ -28,6 +28,7 @@ Example:
         hub.connect_meter(meter)
         hub.connect_writer(instrument.PrintWriter())
 """
+import armory.paths
 
 try:
     # If numpy is available, enable NumpyEncoder for json export
@@ -311,6 +312,20 @@ class Hub:
         self.writers = []
         self.default_writers = []
         self.closed = False
+        self.output_dir = armory.paths.runtime_paths().output_dir
+        self.export_dir = f"{self.output_dir}/saved_samples"
+
+    def _set_output_dir(self, name):
+        self.output_dir = name
+
+    def get_output_dir(self):
+        return self.output_dir
+
+    def _set_export_dir(self, name):
+        self.export_dir = name
+
+    def get_export_dir(self):
+        return self.export_dir
 
     def set_context(self, **kwargs):
         for k in kwargs:

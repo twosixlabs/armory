@@ -35,7 +35,7 @@ class ObjectDetectionTask(ImageClassificationTask):
 
         coco_box_format_meter = CocoBoxFormatMeter(
             "coco_box_format_meter",
-            self.sample_exporter.output_dir,
+            self.export_dir,
             y_probe="scenario.y",
             y_pred_clean_probe="scenario.y_pred",
             y_pred_adv_probe="scenario.y_pred_adv",
@@ -44,9 +44,9 @@ class ObjectDetectionTask(ImageClassificationTask):
         self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
-        return ObjectDetectionExporter(self.scenario_output_dir)
+        return ObjectDetectionExporter(self.export_dir)
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.scenario_output_dir, default_export_kwargs={"with_boxes": True}
+            self.export_dir, default_export_kwargs={"with_boxes": True}
         )

@@ -146,4 +146,4 @@ class ObjectDetectionTask(Scenario):
         self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
-        return DApricotExporter(self.scenario_output_dir)
+        return DApricotExporter(self.export_dir)

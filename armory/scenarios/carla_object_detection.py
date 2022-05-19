@@ -79,6 +79,6 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.scenario_output_dir,
+            self.export_dir,
             default_export_kwargs={"with_boxes": True, "classes_to_skip": [4]},
         )

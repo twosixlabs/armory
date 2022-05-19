@@ -19,6 +19,6 @@ class Ucf101(Scenario):
 
     def _load_sample_exporter(self):
         return VideoClassificationExporter(
-            self.scenario_output_dir,
+            self.export_dir,
             frame_rate=self.test_dataset.context.frame_rate,
         )

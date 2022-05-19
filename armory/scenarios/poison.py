@@ -449,7 +449,7 @@ class Poison(Scenario):
         self.hub.connect_writer(LogWriter(), default=True)
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.scenario_output_dir)
+        return ImageClassificationExporter(self.export_dir)
 
     def load(self):
         self.set_random_seed()

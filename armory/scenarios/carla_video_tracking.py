@@ -85,7 +85,7 @@ class CarlaVideoTracking(Scenario):
 
         # Add export meters that export examples with boxes overlaid
         self.sample_exporter_with_boxes = VideoTrackingExporter(
-            self.scenario_output_dir,
+            self.export_dir,
             frame_rate=self.test_dataset.context.frame_rate,
             default_export_kwargs={"with_boxes": True},
         )
