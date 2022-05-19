@@ -353,6 +353,11 @@ class Hub:
         self.meters.append(meter)
         self.mapper.connect_meter(meter)
 
+    def disconnect_meter(self, meter):
+        self.mapper.disconnect_meter(meter)
+        if meter in self.meters:
+            self.meters.remove(meter)
+
     def connect_writer(self, writer, meters=None, default=False):
         """
         Convenience method to add writer to all (or a subset of meters)

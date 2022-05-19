@@ -382,6 +382,10 @@ def test_hub(caplog):
         assert w.num_closes == 1
     assert hub.closed
 
+    hub.disconnect_meter(m1)
+    hub.disconnect_meter(m2)
+    assert len(hub.meters) == 0
+
 
 def test_meter(caplog):
     Meter = instrument.Meter
