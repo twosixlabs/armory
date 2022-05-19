@@ -20,13 +20,13 @@ from armory.instrument import get_probe, get_hub
 from armory.instrument.export import ExportMeter, ImageClassificationExporter
 
 probe = get_probe("cifar_model")
-exporter = ImageClassificationExporter("tmp_dir")
+hub = get_hub()
+exporter = ImageClassificationExporter(hub.get_export_dir())
 export_meter = ExportMeter(
     "rot_exporter",
     exporter,
     "cifar_model.x_rotated",
 )
-hub = get_hub()
 hub.connect_meter(export_meter, use_default_writers=False)
 
 
