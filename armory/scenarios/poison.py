@@ -11,7 +11,7 @@ import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
 from armory.utils.poisoning import FairnessMetrics
-from armory.utils.export import ImageClassificationExporter
+from armory.instrument.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics

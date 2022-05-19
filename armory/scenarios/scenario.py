@@ -13,7 +13,7 @@ from tqdm import tqdm
 import armory
 from armory import Config, paths
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
-from armory.utils.export import ExportMeter, PredictionMeter
+from armory.instrument.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
 from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log

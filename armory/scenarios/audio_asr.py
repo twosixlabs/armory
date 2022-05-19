@@ -6,7 +6,7 @@ import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
 
 from armory.scenarios.scenario import Scenario
-from armory.utils.export import AudioExporter
+from armory.instrument.export import AudioExporter
 
 from armory.logs import log
 

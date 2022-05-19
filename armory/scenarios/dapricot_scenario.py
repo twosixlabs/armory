@@ -8,7 +8,7 @@ import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.logs import log
-from armory.utils.export import DApricotExporter, ExportMeter
+from armory.instrument.export import DApricotExporter, ExportMeter
 
 
 class ObjectDetectionTask(Scenario):

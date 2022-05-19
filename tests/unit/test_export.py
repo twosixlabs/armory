@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import PIL
 
-from armory.utils.export import (
+from armory.instrument.export import (
     ImageClassificationExporter,
     ObjectDetectionExporter,
     VideoClassificationExporter,

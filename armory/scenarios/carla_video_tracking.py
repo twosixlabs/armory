@@ -8,7 +8,7 @@ Scenario Contributor: MITRE Corporation
 import numpy as np
 
 from armory.scenarios.scenario import Scenario
-from armory.utils.export import VideoTrackingExporter, ExportMeter
+from armory.instrument.export import VideoTrackingExporter, ExportMeter
 
 
 class CarlaVideoTracking(Scenario):

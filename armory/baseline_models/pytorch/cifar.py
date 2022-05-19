@@ -17,7 +17,7 @@ from torchvision.transforms import RandomRotation
 rot_transform = RandomRotation(degrees=(10, 20))
 
 from armory.instrument import get_probe, get_hub
-from armory.utils.export import ExportMeter, ImageClassificationExporter
+from armory.instrument.export import ExportMeter, ImageClassificationExporter
 
 probe = get_probe("cifar_model")
 exporter = ImageClassificationExporter("tmp_dir")
