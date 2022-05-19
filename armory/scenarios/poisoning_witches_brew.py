@@ -451,3 +451,13 @@ class WitchesBrewScenario(Poison):
                 self.sample_exporter.export(self.x[batch_idx], basename)
         else:
             self.run_benign()
+
+    def load_export_meters(self):
+        super().load_export_meters()
+
+        # Remove x_adv export meter since witches brew scenario doesn't probe.update() x_adv
+        meter_names = [m.name for m in self.hub.meters]
+        if "x_adv_exporter" in meter_names:
+            self.hub.disconnect_meter(
+                self.hub.meters[meter_names.index("x_adv_exporter")]
+            )
