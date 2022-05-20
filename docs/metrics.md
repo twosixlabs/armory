@@ -55,6 +55,10 @@ If `"deterministic"`, which runs *very* slowly, also provides verbose CPU statis
 Profiler information can be found in the results json under `["results"]["compute"]`.
 The functionality for these profilers can be found in `armory/metrics/compute.py`.
 
+### Targeted vs. Untargeted Attacks
+
+For targeted attacks, each metric will be reported twice for adversarial data: once relative to the ground truth labels and once relative to the target labels.  For untargeted attacks, each metric is only reported relative to the ground truth labels.  Performance relative to ground truth measures the effectiveness of the defense, indicating the ability of the model to make correct predictions despite the perturbed input.  Performance relative to target labels measures the effectiveness of the attack, indicating the ability of the attacker to force the model to make predictions that are not only incorrect, but that align with the attackers chosen output.
+
 ## Metrics
 
 The `armory.metrics` module contains functionality to measure a variety of metrics:
@@ -188,10 +192,6 @@ This module mostly contains code to load explanatory models, generate activation
 
 <br>
 
-
-### Targeted vs. Untargeted Attacks
-
-For targeted attacks, each metric will be reported twice for adversarial data: once relative to the ground truth labels and once relative to the target labels.  For untargeted attacks, each metric is only reported relative to the ground truth labels.  Performance relative to ground truth measures the effectiveness of the defense, indicating the ability of the model to make correct predictions despite the perturbed input.  Performance relative to target labels measures the effectiveness of the attack, indicating the ability of the attacker to force the model to make predictions that are not only incorrect, but that align with the attackers chosen output.
 
 ## Instrumentation
 
