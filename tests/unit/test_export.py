@@ -13,6 +13,7 @@ from armory.instrument.export import (
     So2SatExporter,
     ExportMeter,
     PredictionMeter,
+    CocoBoxFormatMeter,
 )
 
 from armory.instrument import get_probe, get_hub
@@ -234,6 +235,16 @@ def test_prediction_meter(tmp_path):
     )
     hub.connect_meter(pred_meter, use_default_writers=False)
 
+    pred_meter_max_batch_1 = PredictionMeter(
+        "pred_dict_exporter",
+        tmp_path,
+        y_probe="scenario.y",
+        y_pred_clean_probe="scenario.y_pred",
+        y_pred_adv_probe="scenario.y_pred_adv",
+        max_batches=1,
+    )
+    hub.connect_meter(pred_meter_max_batch_1, use_default_writers=False)
+
     probe = get_probe("scenario")
     for i in range(NUM_BATCHES):
         hub.set_context(batch=i)
@@ -248,6 +259,9 @@ def test_prediction_meter(tmp_path):
 
     pred_meter.finalize()
     assert os.path.isfile(f"{tmp_path}/predictions.pkl")
+
+    assert 0 in pred_meter_max_batch_1.y_dict.keys()
+    assert len(pred_meter_max_batch_1.y_dict) == 1
 
 
 @pytest.mark.docker_required
