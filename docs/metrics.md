@@ -61,7 +61,7 @@ The `armory.metrics` module contains functionality to measure a variety of metri
 - `armory.metrics.perturbation` metrics measure adversarial perturbations such as `lp` distance
 - `armory.metrics.task` metrics measure task performance such as categorical accuracy 
 - `armory.metrics.statistical` metrics measure statistical quantities such as KL divergence
-- `armory.metrics.poisoning` metrics measure fairness statistics relevant to poisoning and filtering scenarios
+- `armory.metrics.poisoning` module contains helper functions to measure fairness statistics relevant to poisoning and filtering scenarios
 
 We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
 Please see the relevant submodules in [armory/metrics](../armory/metrics/) for more detailed descriptions.
@@ -106,8 +106,19 @@ Metric outputs are numpy arrays or scalars.
 
 ### Task Metrics
 
-| Name | Description |
-|-------|-------|
+The `metrics.task` module contains metrics for measurement of task performance.
+Generally, these functions follow the form of `func(y, y_pred)`, where `y` is the ground truth and `y_pred` is the prediction.
+This is true for all of the batchwise and elementwise functions (which behave similarly to the `perturbation` module).
+
+Those metrics in the `population` namespace take `y_list` and `y_pred_list`, which are indicative of the entire dataset.
+They can be called on a subset of the population, but for a correct overall result, it requires the entire set of predictions.
+
+Finally, some metrics such as total word error rate and mean average precision are effectively aggregations of batchwise metrics, and are in the `aggregate` namespace.
+Total word error rate, for instance, requires independently summing the numerators and denominators of the sample word error rates, instead of directly averaging them.
+These metrics typically take a list or array of results as their single argument.
+
+| Name | Namespace | Description |
+|-------|-------|-------|
 | `categorical_accuracy` | Categorical Accuracy |
 | `top_5_categorical_accuracy` | Top-5 Categorical Accuracy |
 | `word_error_rate` | Word Error Rate |
@@ -122,6 +133,9 @@ Metric outputs are numpy arrays or scalars.
 
 ### Statistical Metrics
 
+The statistical module provide metrics for measurement of statistical and information theoretic quantities.
+It also contains helper functions to set up data structures (e.g., contingency tables) for computation with these metrics.
+
 | Name | Namespace | Description |
 |-------|-------|-------|
 | `chi2_p_value` | `metrics.statistical.registered.chi2_p_value` | Chi Squared Value  |
@@ -132,14 +146,20 @@ Metric outputs are numpy arrays or scalars.
 | `kl_div` | `metrics.statistical.registered.kl_div` | KL Divergence |
 | `cross_entropy` | `metrics.statistical.registered.cross_entropy` | Distributional Cross Entropy |
 | `class_bias` | `metrics.statistical.registered.class_bias` | Class Bias |
-| `get_majority_mask` | `metrics.statistical.registered.get_majority_mask` | Majority Mask |
-
+| `majority_mask` | `metrics.statistical.registered.majority_mask` | Binary mask indicating whether a sample is in the majority of the distribution |
+| `class_majority_mask` | `metrics.statistical.registered.class_majority_mask` | Majority mask with majority membership considered on a per-class basis |
 
 <br>
 
 ### Poisoning Metrics
 
-TBD
+The poisoning scenarios can be configured to measure fairness across classes.
+This code is in `armory.metrics.poisoning`, but doesn't constitute typical metric definitions.
+Instead, it uses metrics from `statistical` (`chi2_p_value` and `spd`) to measure fairness.
+In particular, it uses clustering from the activations of an explanatory model to determine samples that are in the "majority" or "minority" of the distribution, via `class_majority_mask` in `statistical`.
+The statistical metrics are then used to compare the fairness across these subpopulations.
+
+This module mostly contains code to load explanatory models, generate activations, and route the correct data as inputs to the statistical metrics.
 
 <br>
 
