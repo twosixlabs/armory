@@ -13,7 +13,6 @@ from armory.instrument.export import (
     So2SatExporter,
     ExportMeter,
     PredictionMeter,
-    CocoBoxFormatMeter,
 )
 
 from armory.instrument import get_probe, get_hub
@@ -136,9 +135,9 @@ def test_exporter(
 
 
 hub = get_hub()
-batch_size = 2
-num_batches = 2
-image_batch = np.random.rand(batch_size, 32, 32, 3)
+BATCH_SIZE = 2
+NUM_BATCHES = 2
+IMAGE_BATCH = np.random.rand(BATCH_SIZE, 32, 32, 3)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +145,7 @@ image_batch = np.random.rand(batch_size, 32, 32, 3)
     [
         (
             "max_batches=None, overwrite_mode=increment",
-            image_batch,
+            IMAGE_BATCH,
             ImageClassificationExporter,
             "scenario.x",
             None,
@@ -154,7 +153,7 @@ image_batch = np.random.rand(batch_size, 32, 32, 3)
         ),
         (
             "max_batches=None, overwrite_mode=overwrite",
-            image_batch,
+            IMAGE_BATCH,
             ImageClassificationExporter,
             "scenario.x",
             None,
@@ -162,7 +161,7 @@ image_batch = np.random.rand(batch_size, 32, 32, 3)
         ),
         (
             "max_batches=1, overwrite_mode=increment",
-            image_batch,
+            IMAGE_BATCH,
             ImageClassificationExporter,
             "scenario.x",
             1,
@@ -170,7 +169,7 @@ image_batch = np.random.rand(batch_size, 32, 32, 3)
         ),
         (
             "max_batches=1, overwrite_mode=overwrite",
-            image_batch,
+            IMAGE_BATCH,
             ImageClassificationExporter,
             "scenario.x",
             1,
@@ -204,7 +203,7 @@ def test_export_meters(
     is_incrementing = overwrite_mode == "increment"
     hub.connect_meter(export_meter, use_default_writers=False)
     probe = get_probe("scenario")
-    for i in range(num_batches):
+    for i in range(NUM_BATCHES):
         hub.set_context(batch=i)
         probe.update(x=x, y=y, y_pred=y_pred)
         probe.update(
@@ -213,12 +212,42 @@ def test_export_meters(
 
     num_samples_exported = len(os.listdir(tmp_path))
     if max_batches is None:
-        num_samples_expected = batch_size * num_batches * (is_incrementing + 1)
+        num_samples_expected = BATCH_SIZE * NUM_BATCHES * (is_incrementing + 1)
     else:
         num_samples_expected = (
-            batch_size * min(max_batches, num_batches) * (is_incrementing - 1)
+            BATCH_SIZE * min(max_batches, NUM_BATCHES) * (is_incrementing - 1)
         )
     assert num_samples_exported == num_samples_expected
+
+
+def test_prediction_meter(tmp_path):
+    y = [obj_det_y_i]
+    y_pred = [obj_det_y_i_pred]
+    y_pred_adv = [obj_det_y_i_pred]
+
+    pred_meter = PredictionMeter(
+        "pred_dict_exporter",
+        tmp_path,
+        y_probe="scenario.y",
+        y_pred_clean_probe="scenario.y_pred",
+        y_pred_adv_probe="scenario.y_pred_adv",
+    )
+    hub.connect_meter(pred_meter, use_default_writers=False)
+
+    probe = get_probe("scenario")
+    for i in range(NUM_BATCHES):
+        hub.set_context(batch=i)
+        probe.update(y=y, y_pred=y_pred, y_pred_adv=y_pred_adv)
+
+        assert i in pred_meter.y_dict.keys()
+        for key_value in ["y", "y_pred", "y_pred_adv"]:
+            assert key_value in pred_meter.y_dict.get(i)
+
+    assert pred_meter.examples_saved == NUM_BATCHES
+    assert len(pred_meter.y_dict) == NUM_BATCHES
+
+    pred_meter.finalize()
+    assert os.path.isfile(f"{tmp_path}/predictions.pkl")
 
 
 @pytest.mark.docker_required
