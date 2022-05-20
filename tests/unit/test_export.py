@@ -142,7 +142,7 @@ IMAGE_BATCH = np.random.rand(BATCH_SIZE, 32, 32, 3)
 
 
 @pytest.mark.parametrize(
-    "name, x, exporter_class, x_probe, max_batches, overwrite_mode, tmp_path",
+    "name, x, exporter_class, x_probe, max_batches, overwrite_mode",
     [
         (
             "max_batches=None, overwrite_mode=increment",
@@ -181,12 +181,8 @@ IMAGE_BATCH = np.random.rand(BATCH_SIZE, 32, 32, 3)
 def test_export_meters(
     name,
     x,
-    y,
-    y_pred,
     exporter_class,
     x_probe,
-    y_probe,
-    y_pred_probe,
     max_batches,
     overwrite_mode,
     tmp_path,
@@ -196,8 +192,8 @@ def test_export_meters(
         name,
         exporter,
         x_probe,
-        y_probe=y_probe,
-        y_pred_probe=y_pred_probe,
+        y_probe=None,
+        y_pred_probe=None,
         max_batches=max_batches,
         overwrite_mode=overwrite_mode,
     )
@@ -206,10 +202,8 @@ def test_export_meters(
     probe = get_probe("scenario")
     for i in range(NUM_BATCHES):
         hub.set_context(batch=i)
-        probe.update(x=x, y=y, y_pred=y_pred)
-        probe.update(
-            x=x, y=y, y_pred=y_pred
-        )  # calling a second time to test overwrite_mode
+        probe.update(x=x)
+        probe.update(x=x)  # calling a second time to test overwrite_mode
 
     num_samples_exported = len(os.listdir(tmp_path))
     if max_batches is None:

@@ -11,24 +11,6 @@ from art.estimators.classification import PyTorchClassifier
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# TEMPORARY CODE
-from torchvision.transforms import RandomRotation
-
-rot_transform = RandomRotation(degrees=(10, 20))
-
-from armory.instrument import get_probe, get_hub
-from armory.instrument.export import ExportMeter, ImageClassificationExporter
-
-probe = get_probe("cifar_model")
-hub = get_hub()
-exporter = ImageClassificationExporter(hub.get_export_dir())
-export_meter = ExportMeter(
-    "rot_exporter",
-    exporter,
-    "cifar_model.x_rotated",
-)
-hub.connect_meter(export_meter, use_default_writers=False)
-
 
 class Net(nn.Module):
     """
@@ -43,10 +25,6 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(100, 10)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TEMPORARY CODE
-        x_rot = rot_transform(x).detach().numpy()
-        probe.update(x_rotated=x_rot)
-
         x = x.permute(0, 3, 1, 2)  # from NHWC to NCHW
         x = self.conv1(x)
         x = F.relu(x)
