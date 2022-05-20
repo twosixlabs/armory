@@ -3,7 +3,11 @@ General object detection scenario
 """
 
 from armory.scenarios.image_classification import ImageClassificationTask
-from armory.instrument.export import ObjectDetectionExporter, ExportMeter, CocoBoxFormatMeter
+from armory.instrument.export import (
+    ObjectDetectionExporter,
+    ExportMeter,
+    CocoBoxFormatMeter,
+)
 
 
 class ObjectDetectionTask(ImageClassificationTask):
