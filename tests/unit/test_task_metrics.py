@@ -235,12 +235,78 @@ def test_video_tracking_metrics():
 
 
 def test_word_error_rate():  # and total
-    raise NotImplementedError()
+    for y, y_pred, errors, length in [
+        ("I am here", "no you aren't", 3, 3),
+        ("hello", "call me danny", 3, 1),
+        ("cat in the hat", "in the cat hat", 2, 4),
+        ("no errors", "no errors", 0, 2),
+    ]:
+        for y_i in (y, bytes(y, encoding="utf-8")):
+            for y_pred_i in (y_pred, bytes(y_pred, encoding="utf-8")):
+                numer, denom = task.word_error_rate(y_i, y_pred_i)
+                assert numer == errors, f"y = {y_i}, y_pred = {y_pred_i}"
+                assert denom == length, f"y = {y_i}, y_pred = {y_pred_i}"
+
+    with pytest.raises(TypeError):
+        task.word_error_rate(3, "hi there")
+    with pytest.raises(TypeError):
+        task.word_error_rate("hi there", 3)
+
+    for err in [1, (3, 4)], [(1, 2, 3)], [(1,)]:
+        with pytest.raises(ValueError):
+            task.total_wer(err)
+
+    global_wer, (total_edit_distance, total_words) = task.total_wer([])
+    assert math.isnan(global_wer)
+    assert (total_edit_distance, total_words) == (0, 0)
+
+    assert (0.8, (8, 10)) == task.total_wer([(3, 3), (3, 1), (2, 4), (0, 2)])
 
 
 def test_identity():
-    raise NotImplementedError()
+    x = np.arange(10)
+    y = x + 3
+    x1, y1 = task.identity_zip(task.identity_unzip(x, y))
+    assert (x == x1).all()
+    assert (y == y1).all()
+
+    unzipped = []
+    stride = 3
+    for i in range(0, len(x), stride):
+        unzipped.extend(task.identity_unzip(x[i : i + stride], y[i : i + stride]))
+    x1, y1 = task.identity_zip(unzipped)
+    assert (x == x1).all()
+    assert (y == y1).all()
 
 
 def test_per_class_accuracy():  # and mean
-    raise NotImplementedError()
+    y = [0, 0, 0, 0, 1, 1, 2, 3, 3, 3]
+    y_pred = np.zeros((len(y), 5))
+    y_pred[(range(len(y)), [0, 1, 1, 2, 1, 0, 2, 0, 0, 0])] = 1
+
+    results = task.per_class_accuracy(y, y_pred)
+    target = {
+        0: [1, 0, 0, 0],
+        1: [1, 0],
+        2: [1],
+        3: [0, 0, 0],
+        4: [],
+    }
+    assert target.keys() == results.keys()
+    for k in target:
+        assert (target[k] == results[k]).all()
+
+    results = task.per_class_mean_accuracy(y, y_pred)
+    target = {
+        0: 0.25,
+        1: 0.5,
+        2: 1.0,
+        3: 0.0,
+        4: float("nan"),
+    }
+    assert target.keys() == results.keys()
+    for k, v in target.items():
+        if math.isnan(v):
+            assert math.isnan(results[k])
+        else:
+            assert v == results[k]

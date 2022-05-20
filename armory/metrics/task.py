@@ -188,20 +188,20 @@ def total_wer(sample_wers):
     Aggregate a list of per-sample word error rate tuples (edit_distance, words)
         Return global_wer, (total_edit_distance, total_words)
     """
-    # checks if all values are tuples from the WER metric
-    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
-        total_edit_distance = 0
-        total_words = 0
-        for wer_tuple in sample_wers:
-            total_edit_distance += int(wer_tuple[0])
-            total_words += int(wer_tuple[1])
-        if total_words:
-            global_wer = float(total_edit_distance / total_words)
-        else:
-            global_wer = float("nan")
-        return global_wer, (total_edit_distance, total_words)
+    if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+
+    total_edit_distance = 0
+    total_words = 0
+    for edit_distance, words in sample_wers:
+        total_edit_distance += int(edit_distance)
+        total_words += int(words)
+
+    if total_words:
+        global_wer = float(total_edit_distance / total_words)
     else:
-        raise ValueError("total_wer() only for WER metric aggregation")
+        global_wer = float("nan")
+    return global_wer, (total_edit_distance, total_words)
 
 
 @batchwise
@@ -289,8 +289,7 @@ def tpr_fpr(actual_conditions, predicted_conditions):
 @batchwise
 def per_class_accuracy(y, y_pred):
     """
-    Return a dict mapping class indices to their accuracies
-        Returns nan for classes that are not present
+    Return a dict mapping class indices to a list of their accuracies
 
     y - 1-dimensional array
     y_pred - 2-dimensional array
@@ -305,9 +304,9 @@ def per_class_accuracy(y, y_pred):
     for i in range(y_pred.shape[1]):
         if i in y:
             index = y == i
-            results[i] = categorical_accuracy(y[index], y_pred[index])
+            results[i] = batch.categorical_accuracy(y[index], y_pred[index])
         else:
-            results[i] = float("nan")
+            results[i] = np.array([])
 
     return results
 
@@ -321,7 +320,10 @@ def per_class_mean_accuracy(y, y_pred):
     y - 1-dimensional array
     y_pred - 2-dimensional array
     """
-    return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
+    return {
+        k: np.mean(v) if len(v) else float("nan")
+        for k, v in per_class_accuracy(y, y_pred).items()
+    }
 
 
 @batchwise
@@ -399,13 +401,17 @@ def word_error_rate(y, y_pred):
     """
     Return the word error rate for a batch of transcriptions.
     """
-    if isinstance(y, str):
-        reference = y.split()
-    elif isinstance(y, bytes):
-        reference = y.decode("utf-8").split()
-    else:
+    if isinstance(y, bytes):
+        y = y.decode("utf-8")
+    elif not isinstance(y, str):
         raise TypeError(f"y is of type {type(y)}, expected string or bytes")
+    if isinstance(y_pred, bytes):
+        y_pred = y_pred.decode("utf-8")
+    elif not isinstance(y_pred, str):
+        raise TypeError(f"y_pred is of type {type(y_pred)}, expected string or bytes")
+    reference = y.split()
     hypothesis = y_pred.split()
+
     r_length = len(reference)
     h_length = len(hypothesis)
     matrix = np.zeros((r_length + 1, h_length + 1))
