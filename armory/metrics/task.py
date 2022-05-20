@@ -230,7 +230,7 @@ class MeanAP:
         return {"mean": mean_ap, "class": ap}
 
 
-@batchwise
+@populationwise
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays
