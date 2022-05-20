@@ -810,7 +810,7 @@ class CocoBoxFormatMeter(Meter):
         :param score_threshold: float in [0, 1]; predicted boxes with confidence > score_threshold are exported
         :param image_id: int or None. This key exists in ground-truth boxes but not predicted boxes, in which case it should be passed in
         :param classes_to_skip: List[Int] containing class ID's for which boxes should not be exported
-        :return: Two lists of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
+        :return: List of dictionaries, containing coco-formatted bounding box data for ground truth and predicted labels
         """
 
         boxes_coco_format = []
