@@ -189,7 +189,7 @@ In particular, it uses clustering from the activations of an explanatory model t
 The statistical metrics are then used to compare the fairness across these subpopulations.
 
 This module mostly contains code to load explanatory models, generate activations, and route the correct data as inputs to the statistical metrics.
-
+For more information, see [poisoning](poisoning.md).
 <br>
 
 
