@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 import pytest
@@ -10,7 +11,12 @@ from armory.instrument.export import (
     VideoClassificationExporter,
     VideoTrackingExporter,
     So2SatExporter,
+    ExportMeter,
+    PredictionMeter,
+    CocoBoxFormatMeter,
 )
+
+from armory.instrument import get_probe, get_hub
 
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit
@@ -127,6 +133,92 @@ def test_exporter(
         assert len(sample) == 10
         for i in sample:
             assert isinstance(i, PIL.Image.Image)
+
+
+hub = get_hub()
+batch_size = 2
+num_batches = 2
+image_batch = np.random.rand(batch_size, 32, 32, 3)
+
+
+@pytest.mark.parametrize(
+    "name, x, exporter_class, x_probe, max_batches, overwrite_mode, tmp_path",
+    [
+        (
+            "max_batches=None, overwrite_mode=increment",
+            image_batch,
+            ImageClassificationExporter,
+            "scenario.x",
+            None,
+            "increment",
+        ),
+        (
+            "max_batches=None, overwrite_mode=overwrite",
+            image_batch,
+            ImageClassificationExporter,
+            "scenario.x",
+            None,
+            "overwrite",
+        ),
+        (
+            "max_batches=1, overwrite_mode=increment",
+            image_batch,
+            ImageClassificationExporter,
+            "scenario.x",
+            1,
+            "increment",
+        ),
+        (
+            "max_batches=1, overwrite_mode=overwrite",
+            image_batch,
+            ImageClassificationExporter,
+            "scenario.x",
+            1,
+            "increment",
+        ),
+    ],
+)
+def test_export_meters(
+    name,
+    x,
+    y,
+    y_pred,
+    exporter_class,
+    x_probe,
+    y_probe,
+    y_pred_probe,
+    max_batches,
+    overwrite_mode,
+    tmp_path,
+):
+    exporter = exporter_class(tmp_path)
+    export_meter = ExportMeter(
+        name,
+        exporter,
+        x_probe,
+        y_probe=y_probe,
+        y_pred_probe=y_pred_probe,
+        max_batches=max_batches,
+        overwrite_mode=overwrite_mode,
+    )
+    is_incrementing = overwrite_mode == "increment"
+    hub.connect_meter(export_meter, use_default_writers=False)
+    probe = get_probe("scenario")
+    for i in range(num_batches):
+        hub.set_context(batch=i)
+        probe.update(x=x, y=y, y_pred=y_pred)
+        probe.update(
+            x=x, y=y, y_pred=y_pred
+        )  # calling a second time to test overwrite_mode
+
+    num_samples_exported = len(os.listdir(tmp_path))
+    if max_batches is None:
+        num_samples_expected = batch_size * num_batches * (is_incrementing + 1)
+    else:
+        num_samples_expected = (
+            batch_size * min(max_batches, num_batches) * (is_incrementing - 1)
+        )
+    assert num_samples_exported == num_samples_expected
 
 
 @pytest.mark.docker_required
