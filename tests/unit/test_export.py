@@ -210,7 +210,7 @@ def test_export_meters(
         num_samples_expected = BATCH_SIZE * NUM_BATCHES * (is_incrementing + 1)
     else:
         num_samples_expected = (
-            BATCH_SIZE * min(max_batches, NUM_BATCHES) * (is_incrementing - 1)
+            BATCH_SIZE * min(max_batches, NUM_BATCHES) * (is_incrementing + 1)
         )
     assert num_samples_exported == num_samples_expected
 
