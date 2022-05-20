@@ -108,7 +108,7 @@ random_so2sat_img = np.random.rand(32, 32, 14)
 def test_exporter(
     exporter_class, class_kwargs, input_array, fn_kwargs, expected_output_type, tmp_path
 ):
-    exporter = exporter_class(base_output_dir=tmp_path, **class_kwargs)
+    exporter = exporter_class(tmp_path, **class_kwargs)
     sample = exporter.get_sample(input_array, **fn_kwargs)
     assert isinstance(sample, expected_output_type)
 
