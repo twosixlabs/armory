@@ -1,5 +1,5 @@
 """
-Extended scenario for poisoning
+Base scenario for poisoning, dirty label backdoor
 """
 
 import copy
@@ -8,6 +8,7 @@ import os
 import random
 
 import numpy as np
+from tensorflow.random import set_seed as tf_set_seed
 
 from armory import metrics
 from armory.metrics.poisoning import FairnessMetrics
@@ -70,6 +71,10 @@ class DatasetPoisoner:
 
 
 class Poison(Scenario):
+    """This is the base poisoning dirty label scenario.
+    As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
+    """
+
     def __init__(
         self,
         config: dict,
@@ -104,6 +109,7 @@ class Poison(Scenario):
         self.seed = self.config["adhoc"]["split_id"]
         np.random.seed(self.seed)
         random.seed(self.seed)
+        tf_set_seed(self.seed)
         if self.config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
 
