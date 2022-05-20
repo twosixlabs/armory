@@ -264,6 +264,56 @@ def test_prediction_meter(tmp_path):
     assert len(pred_meter_max_batch_1.y_dict) == 1
 
 
+def test_coco_box_format_meter(tmp_path):
+    y = [obj_det_y_i]
+    y_pred = [obj_det_y_i_pred]
+    y_pred_adv = [obj_det_y_i_pred]
+
+    coco_box_format_meter = CocoBoxFormatMeter(
+        "coco_box_format_meter",
+        tmp_path,
+        y_probe="scenario.y",
+        y_pred_clean_probe="scenario.y_pred",
+        y_pred_adv_probe="scenario.y_pred_adv",
+    )
+    hub.connect_meter(coco_box_format_meter, use_default_writers=False)
+
+    coco_box_format_meter_max_batch_1 = CocoBoxFormatMeter(
+        "coco_box_format_meter_max_batch_1",
+        tmp_path,
+        y_probe="scenario.y",
+        y_pred_clean_probe="scenario.y_pred",
+        y_pred_adv_probe="scenario.y_pred_adv",
+        max_batches=1,
+    )
+    hub.connect_meter(coco_box_format_meter_max_batch_1, use_default_writers=False)
+
+    probe = get_probe("scenario")
+    for i in range(NUM_BATCHES):
+        hub.set_context(batch=i)
+        probe.update(y=y, y_pred=y_pred, y_pred_adv=y_pred_adv)
+
+    for box_list in [
+        coco_box_format_meter.y_boxes_coco_format,
+        coco_box_format_meter.y_pred_clean_boxes_coco_format,
+        coco_box_format_meter.y_pred_adv_boxes_coco_format,
+    ]:
+        assert isinstance(box_list, list)
+        assert len(box_list) == NUM_BATCHES
+        for coco_formatted_dict in box_list:
+            assert isinstance(coco_formatted_dict, dict)
+            for key_value in ["image_id", "category_id", "bbox"]:
+                assert key_value in coco_formatted_dict
+
+    for box_list in [
+        coco_box_format_meter_max_batch_1.y_boxes_coco_format,
+        coco_box_format_meter_max_batch_1.y_pred_clean_boxes_coco_format,
+        coco_box_format_meter_max_batch_1.y_pred_adv_boxes_coco_format,
+    ]:
+        assert isinstance(box_list, list)
+        assert len(box_list) == 1
+
+
 @pytest.mark.docker_required
 def test_ffmpeg_library():
     completed = subprocess.run(["ffmpeg", "-encoders"], capture_output=True)
