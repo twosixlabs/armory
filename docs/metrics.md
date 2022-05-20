@@ -68,25 +68,11 @@ Please see the relevant submodules in [armory/metrics](../armory/metrics/) for m
 
 ### Perturbation Metrics
 
-| Name | Description |
-|-------|-------|
-| `linf` | L-infinity norm |
-| `l2` | L2 norm |
-| `l1` | L1 norm |
-| `l0` | L0 "norm" |
-| `snr` | Signal-to-noise ratio |
-| `snr_db` | Signal-to-noise ratio (decibels) |
-| `snr_spectrogram` | Signal-to-noise ratio of spectrogram |
-| `snr_spectrogram_db` | Signal-to-noise ratio of spectrogram (decibels) |
-| `image_circle_patch_diameter` | Diameter of smallest circular patch |
-| `mean_l(0\|1\|2\|inf)` | Lp norm averaged over all frames of video |
-| `max_l(0\|1\|2\|inf)` | Max of Lp norm over all frames of video |
-| `(mean\|max)_image_circle_patch_diameter` | Average or max circle over all frames of video |
+Perturbation metrics compare a benign and adversarially perturbed input and return a distance.
+Typically, these functions follow the form of `func(x, x_adv)`, where `x` is the benign input and `x_adv` is the perturbed input.
 
-<br>
-
-The set of perturbation metrics provided by armory can also be found via batch-wise and element-wise namespaces as follows:
-```
+The set of perturbation metrics provided by armory can also be via batch-wise and element-wise namespaces as follows:
+```python
 from armory.metrics import perturbation
 print(peturbation.batch)
 # ['image_circle_patch_diameter', 'l0', 'l1', 'l2', 'linf', 'max_image_circle_patch_diameter', 'max_l0', 'max_l1', 'max_l2', 'max_linf', 'mean_image_circle_patch_diameter', 'mean_l0', 'mean_l1', 'mean_l2', 'mean_linf', 'snr', 'snr_db', 'snr_spectrogram', 'snr_spectrogram_db']
@@ -95,7 +81,7 @@ print(perturbation.element)
 ```
 Currently, all perturbation metrics have element-wise and batch-wise versions, though the config assumes that the batch version is intended.
 For instance:
-```
+```python
 perturbation.batch.l1([0, 0, 0], [1, 1, 1])
 # array([1., 1., 1.])
 perturbation.element.l1([0, 0, 0], [1, 1, 1])
@@ -103,31 +89,70 @@ perturbation.element.l1([0, 0, 0], [1, 1, 1])
 ```
 Metric outputs are numpy arrays or scalars.
 
+| Name | Namespace | Description |
+|-------|-------|-------|
+| `linf` | `perturbation.batch.linf` | L-infinity norm |
+| `l2` | `perturbation.batch.l2` | L2 norm |
+| `l1` | `perturbation.batch.l1` | L1 norm |
+| `l0` | `perturbation.batch.l0` | L0 "norm" |
+| `snr` | `perturbation.batch.snr` | Signal-to-noise ratio |
+| `snr_db` | `perturbation.batch.snr_db` | Signal-to-noise ratio (decibels) |
+| `snr_spectrogram` | `perturbation.batch.snr_spectrogram` | Signal-to-noise ratio of spectrogram |
+| `snr_spectrogram_db` | `perturbation.batch.snr_spectrogram_db` | Signal-to-noise ratio of spectrogram (decibels) |
+| `image_circle_patch_diameter` | `perturbation.batch.image_circle_patch_diameter` | Diameter of smallest circular patch |
+| `mean_l(0\|1\|2\|inf)` | `perturbation.batch.mean_l(0\|1\|2\|inf)` | Lp norm averaged over all frames of video |
+| `max_l(0\|1\|2\|inf)` | `perturbation.batch.max_l(0\|1\|2\|inf)` | Max of Lp norm over all frames of video |
+| `(mean\|max)_image_circle_patch_diameter` | `perturbation.batch.(mean\|max)` | Average or max circle over all frames of video |
+
+<br>
 
 ### Task Metrics
 
 The `metrics.task` module contains metrics for measurement of task performance.
 Generally, these functions follow the form of `func(y, y_pred)`, where `y` is the ground truth and `y_pred` is the prediction.
 This is true for all of the batchwise and elementwise functions (which behave similarly to the `perturbation` module).
+However, not all batchwise functions have elementwise counterparts (e.g., `per_class_accuracy`).
 
 Those metrics in the `population` namespace take `y_list` and `y_pred_list`, which are indicative of the entire dataset.
 They can be called on a subset of the population, but for a correct overall result, it requires the entire set of predictions.
 
-Finally, some metrics such as total word error rate and mean average precision are effectively aggregations of batchwise metrics, and are in the `aggregate` namespace.
+Some metrics such as total word error rate and mean average precision are effectively aggregations of batchwise metrics, and are in the `aggregate` namespace.
 Total word error rate, for instance, requires independently summing the numerators and denominators of the sample word error rates, instead of directly averaging them.
 These metrics typically take a list or array of results as their single argument.
 
+The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detection` metrics with parameters adapted to those respective scenarios.
+
 | Name | Namespace | Description |
 |-------|-------|-------|
-| `categorical_accuracy` | Categorical Accuracy |
-| `top_5_categorical_accuracy` | Top-5 Categorical Accuracy |
-| `word_error_rate` | Word Error Rate |
-| `object_detection_AP_per_class` | Object Detection mAP |
-| `object_detection_disappearance_rate` | Object Detection Disappearance Rate |
-| `object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
-| `object_detection_misclassification_rate` | Object Detection Misclassification Rate |
-| `object_detection_true_positive_rate` | Object Detection True Positive Rate | 
-| TBD | TBD |
+| `categorical_accuracy` | `task.batch.categorical_accuracy` | Categorical Accuracy |
+| `top_5_categorical_accuracy` | `task.batch.top_5_categorical_accuracy` | Top-5 Categorical Accuracy |
+| `per_class_accuracy` | `task.batch.per_class_accuracy` | Categorical accuracy per class, as a list per class|
+| `per_class_mean_accuracy` | `task.batch.per_class_mean_accuracy` | Mean categorical accuray per class |
+| `word_error_rate` | `task.batch.word_error_rate` | Word error rate |
+| `total_wer` | `task.batch.aggregate.total_wer` | Total word error rate |
+| `entailment` | `task.batch.entailment` | Entailment language metric (contradiction, neural, entailment) |
+| `total_entailment` | `task.aggregate.total_entailment` | Total entailment |
+| `tpr_fpr` | `task.population.tpr_fpr` | Return a dictionary containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, and F1 Score (assuming binary inputs) |
+| `video_tracking_mean_iou` | `task.batch.video_tracking_mean_iou` | Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video |
+| `video_tracking_mean_success_rate` | `task.batch.video_tracking_mean_success_rate` | Mean success rate averaged over all multiple IOU thresholds and all frames |
+| `object_detection_AP_per_class` | `task.population.object_detection_AP_per_class` | Object Detection average precision per class |
+| `object_detection_disappearance_rate` | `task.population.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
+| `object_detection_hallucinations_per_image` | `task.population.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
+| `object_detection_mAP` | `task.population.object_detection_mAP` | Object Detection mean average precision |
+| `object_detection_misclassification_rate` | `task.population.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
+| `object_detection_true_positive_rate` | `task.population.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+| `apricot_patch_targeted_AP_per_class` | `task.population.apricot_patch_targeted_AP_per_class` | OD metric applied to apricot scenario |
+| `carla_od_AP_per_class` | `task.population.carla_od_AP_per_class` | OD metric applied to carla scenario |
+| `carla_od_disappearance_rate`  | `task.population.carla_od_disappearance_rate` | OD metric applied to carla scenario |
+| `carla_od_hallucinations_per_image` | `task.population.carla_od_hallucinations_per_image` | OD metric applied to carla scenario |
+| `carla_od_misclassification_rate` | `task.population.carla_od_misclassification_rate` | OD metric applied to carla scenario |
+| `carla_od_true_positive_rate` | `task.population.carla_od_true_positive_rate` | OD metric applied to carla scenario |
+| `dapricot_patch_target_success` | `task.population.dapricot_patch_target_success` | OD metric applied to dapricot scenario |
+| `dapricot_patch_targeted_AP_per_class` | `task.population.dapricot_patch_targeted_AP_per_class` | OD metric applied to dapricot scenario |
+| `abstains` | `task.batch.abstains` | Takes a batch matrix of inputs and returns 1 for each row that are all 0 (abstention) |
+| `identity_unzip` | `task.batch.identity_unzip` | Utility function for mapping from batches to list of samples |
+| `identity_zip` | `task.aggregate.identity_zip` | Utility function for mapping from list of samples to single batch |
+
 
 <br>
 
