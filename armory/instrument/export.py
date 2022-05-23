@@ -156,7 +156,7 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             return image
 
         if y is None and y_pred is None:
-            raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
+            raise TypeError("Both y and y_pred are None, but with_boxes is True")
         box_layer = ImageDraw.Draw(image)
 
         if y is not None:
@@ -373,7 +373,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
             return super().get_sample(x)
 
         if y is None and y_pred is None:
-            raise TypeError("Both y_i and y_pred are None, but with_boxes is True.")
+            raise TypeError("Both y and y_pred are None, but with_boxes is True.")
         if x.min() < 0.0 or x.max() > 1.0:
             log.warning("video out of expected range. Clipping to [0,1]")
 
@@ -817,7 +817,7 @@ class CocoBoxFormatMeter(Meter):
 
         # "image_id" key will exist for ground-truth but not predicted boxes
         if image_id is None:
-            image_id = y["image_id"][0]  # All boxes in y_i are for the same image
+            image_id = y["image_id"][0]  # All boxes in y are for the same image
         elif not isinstance(image_id, int):
             raise ValueError(f"Expected an int for image_id, received {type(image_id)}")
 
