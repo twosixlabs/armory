@@ -418,7 +418,6 @@ class WitchesBrewScenario(Poison):
         self.probe.update(y=y, y_pred=y_pred)
 
         self.y_pred = y_pred  # for exporting when function returns
-        self.test_set_class_labels.update(y)
         if self.explanatory_model is not None:
             self.run_explanatory()
 
