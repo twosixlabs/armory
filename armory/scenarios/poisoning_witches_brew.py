@@ -4,7 +4,6 @@ import copy
 import numpy as np
 
 from armory.scenarios.poison import Poison
-from armory.metrics.poisoning import FairnessMetrics
 from armory.logs import log
 from armory.utils import config_loading
 from armory import metrics, paths
@@ -342,7 +341,8 @@ class WitchesBrewScenario(Poison):
             **self.dataset_kwargs,
         )
         self.i = -1
-        self.test_set_class_labels = set()
+        if self.explanatory_model is not None:
+            self.init_explanatory()
 
     def load_metrics(self):
         if self.use_filtering_defense:
@@ -400,16 +400,8 @@ class WitchesBrewScenario(Poison):
         #     f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
         # )
 
-        if self.config["adhoc"].get("compute_fairness_metrics", False):
-            self.fairness_metrics = FairnessMetrics(
-                self.config["adhoc"], self.use_filtering_defense, self
-            )
-            if not self.check_run and self.use_filtering_defense:
-                self.add_filter_perplexity()
-        else:
-            log.warning(
-                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
-            )
+        if self.config["adhoc"].get("compute_fairness_metrics"):
+            self.load_fairness_metrics()
         self.results_writer = ResultsWriter(sink=None)
         self.hub.connect_writer(self.results_writer, default=True)
         self.hub.connect_writer(LogWriter(), default=True)
@@ -427,6 +419,8 @@ class WitchesBrewScenario(Poison):
 
         self.y_pred = y_pred  # for exporting when function returns
         self.test_set_class_labels.update(y)
+        if self.explanatory_model is not None:
+            self.run_explanatory()
 
     def run_attack(self):
         self.hub.set_context(stage="trigger")
