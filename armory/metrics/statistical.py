@@ -170,17 +170,18 @@ def filter_perplexity_fps_benign(
 
     """
 
+    n_classes = len(np.unique(y_clean))
     # convert poison_index to binary vector the same length as data
     poison_inds = np.zeros_like(y_clean)
     poison_inds[poison_index.astype(np.int64)] = 1
     # benign is here defined to be the class distribution of the unpoisoned part of the data
     x_benign = y_clean[poison_inds == 0]
-    x_benign = np.bincount(x_benign, minlength=max(y_clean))
+    x_benign = np.bincount(x_benign, minlength=n_classes)
     x_benign = x_benign / x_benign.sum()
     # fps is false positives: clean data marked as poison by the filter
     fp_inds = (1 - poison_inds) & poison_prediction
     fp_labels = y_clean[fp_inds == 1]
-    fps = np.bincount(fp_labels, minlength=max(y_clean))
+    fps = np.bincount(fp_labels, minlength=n_classes)
     if fps.sum() == 0:
         return [1]  # If no FPs, we'll define perplexity to be 1 (unbiased)
     fps = fps / fps.sum()
@@ -261,12 +262,12 @@ def class_bias(y_true, majority_mask, kept_mask, class_labels):
     for c in class_labels:
         class_c_table = majority_contingency_tables.get(c)
         if class_c_table is None:
-            chi2 = None
-            spd = None
+            chi2_val = None
+            spd_val = None
         else:
-            chi2 = np.mean(chi2_p_value(class_c_table))
-            spd = np.mean(spd(class_c_table))
-        chi2_spd[c] = (chi2, spd)
+            chi2_val = np.mean(chi2_p_value(class_c_table))
+            spd_val = np.mean(spd(class_c_table))
+        chi2_spd[c] = (chi2_val, spd_val)
 
     return chi2_spd
 
