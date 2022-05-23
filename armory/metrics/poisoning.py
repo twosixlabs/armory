@@ -106,7 +106,7 @@ class ExplanatoryModel:
     def _preprocess(
         x, resize_image=True, size=(224, 224), resample=Image.BILINEAR, device=DEVICE
     ):
-        if isinstance(x.dtype, np.floating):
+        if np.issubdtype(x.dtype, np.floating):
             if x.min() < 0.0 or x.max() > 1.0:
                 raise ValueError("Floating input not bound to [0.0, 1.0] range")
 
