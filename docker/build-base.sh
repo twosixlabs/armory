@@ -29,7 +29,7 @@ if [[ -z "$push" ]]; then
     exit 0
 fi
 
-tag=$(python -m setuptools_scm | sed -e 's/dev[0-9][0-9]*+//' -e 's/\.d[0-9][0-9]*$//')
+tag=$(python -m armory --version)
 echo tagging twosixarmory/base:latest as $tag for dockerhub tracking
 $dryrun docker tag twosixarmory/base:latest twosixarmory/base:$tag
 
