@@ -13,6 +13,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.slow
 def test_explanatory_model():
     raise NotImplementedError()
 
