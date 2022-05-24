@@ -353,6 +353,18 @@ meter = Meter(
 )
 ``` 
 
+A more succinct way of doing this, which also handles the case when only batches of `w` and `z` are supplied to the meter, is to use `GlobalMeter`:
+```python
+meter = GlobalMeter(
+    "mean_meter",  # actual recorded name
+    np.mean,
+    "my_probe.w",
+    "my_probe.z",
+    final_kwargs=None,
+)
+The `GlobalMeter` assumes that inputs are batches, so if multiple batches are passed, they will be concatenated along the first axis.
+Note that if multiple batches are passed, all variables from a specific batch must be passed to the meter before moving to the next batch, in order to avoid dropping.
+
 The `metric_kwargs` and `final_kwargs` are a set of kwargs that are passed to each call of the corresponding function, but are assumed to be constant.
 For example, this could be the `p` parameter in a generic `l_p` norm:
 ```python
