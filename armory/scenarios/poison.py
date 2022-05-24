@@ -207,9 +207,7 @@ class Poison(Scenario):
 
     def record_poison_and_data_info(self):
         self.n_poisoned = int(len(self.poison_index))
-        self.n_clean = (
-            len(self.y_poison) - self.n_poisoned
-        )  # self.y_clean is the whole pre-poison train set
+        self.n_clean = len(self.y_poison) - self.n_poisoned
         self.poisoned = np.zeros_like(self.y_poison, dtype=bool)
         self.poisoned[self.poison_index.astype(np.int64)] = True
         self.probe.update(poisoned=self.poisoned, poison_index=self.poison_index)
@@ -234,9 +232,7 @@ class Poison(Scenario):
 
             if defense_config["kwargs"].get("perfect_filter"):
                 log.info("Filtering all poisoned samples out of training data")
-                indices_to_keep = np.ones_like(self.y_poison, dtype=bool)
-                indices_to_keep[self.poison_index] = False
-
+                indices_to_keep = ~self.poisoned
             else:
                 if "data_augmentation" in defense_config:
                     defense_config.pop("data_augmentation")  # NOTE: RESISC10 ONLY
@@ -273,14 +269,18 @@ class Poison(Scenario):
                 )
 
                 detection_kwargs = defense_config.get("kwargs", {})
-                _, is_clean = defense.detect_poison(**detection_kwargs)
-                is_clean = np.array(is_clean)
-                log.info(f"Total detected clean data points: {np.sum(is_clean)}")
-                is_dirty = is_clean.astype(np.int64) == 0
-                log.info(f"Total detected poisoned data points: {np.sum(is_dirty)}")
+                _, predicted_clean = defense.detect_poison(**detection_kwargs)
+                predicted_clean = np.array(predicted_clean)
+                log.info(
+                    f"Total predicted clean data points: {np.sum(predicted_clean)}"
+                )
+                predicted_dirty = predicted_clean.astype(np.int64) == 0
+                log.info(
+                    f"Total predicted poisoned data points: {np.sum(predicted_dirty)}"
+                )
 
-                log.info("Filtering out detected poisoned samples")
-                indices_to_keep = is_clean == 1
+                log.info("Filtering out predicted poisoned samples")
+                indices_to_keep = predicted_clean == 1
 
         else:
             log.info(
@@ -292,15 +292,12 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
-        is_dirty_mask = np.ones_like(self.y_clean)
-        is_dirty_mask[self.indices_to_keep] = 0
-        self.is_dirty_mask = is_dirty_mask
-
-        removed = (1 - self.indices_to_keep).astype(np.bool)
-        self.probe.update(removed=removed, is_dirty_mask=is_dirty_mask)
-        self.hub.record("fraction_data_removed", removed.mean())
-        self.hub.record("N_samples_removed", removed.sum())
-        self.removed = removed
+        self.removed = (1 - self.indices_to_keep).astype(np.bool)
+        self.probe.update(
+            removed=self.removed, predicted_dirty_mask=~self.indices_to_keep
+        )
+        self.hub.record("fraction_data_removed", self.removed.mean())
+        self.hub.record("N_samples_removed", self.removed.sum())
 
         if self.use_filtering_defense:
             for y in self.train_set_class_labels:
@@ -360,7 +357,7 @@ class Poison(Scenario):
                     metrics.get_supported_metric("filter_perplexity_fps_benign"),
                     "scenario.y_clean",
                     "scenario.poison_index",
-                    "scenario.is_dirty_mask",
+                    "scenario.predicted_dirty_mask",
                     final=np.mean,
                     final_name="filter_perplexity",
                     record_final_only=True,
@@ -449,7 +446,7 @@ class Poison(Scenario):
                 metrics.get("identity_unzip"),
                 "scenario.y",
                 "scenario.y_pred",
-                final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
+                final=lambda x: per_class_mean_accuracy(*metrics.task.identity_zip(x)),
                 final_name="accuracy_on_benign_test_data_per_class",
                 record_final_only=True,
             )
@@ -597,12 +594,6 @@ class Poison(Scenario):
                 f"{record_prefix}bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
             )
             self.hub.record(f"{record_prefix}bias_spd_{str(class_id).zfill(2)}", spd)
-        log.info(
-            f"{log_prefix}Subclass Bias for Class {str(class_id).zfill(2)}: chi^2 p-value = {chi2:.4f}"
-        )
-        log.info(
-            f"{log_prefix}Subclass Bias for Class {str(class_id).zfill(2)}: SPD = {spd:.4f}"
-        )
 
     def compute_explanatory(self):
         log.info("Computing fairness metrics")
@@ -627,7 +618,7 @@ class Poison(Scenario):
         self.record_bias_results(
             chi2_spd, self.test_set_class_labels, "model_", "Model "
         )
-        if self.is_filtering_defense:
+        if self.use_filtering_defense:
             # Filter bias: Compares rate of filtering between binary clusters of each class
             chi2_spd = class_bias(
                 self.y_poison[~self.poisoned],
