@@ -72,4 +72,3 @@ def test_preprocess():
     assert x_.shape == (10, 224, 224, 3)
     assert x_.max() <= 1
     assert x_.min() >= 0
-
