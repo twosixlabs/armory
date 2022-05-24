@@ -48,7 +48,7 @@
             "verbose": false
         },
         "module": "art.defences.preprocessor",
-        "name": "Mp3Compression",
+        "name": "Mp3CompressionPyTorch",
         "type": "Preprocessor"
     },
     "metric": {
