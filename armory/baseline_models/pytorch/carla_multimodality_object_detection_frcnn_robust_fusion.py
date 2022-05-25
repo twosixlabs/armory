@@ -189,8 +189,8 @@ def get_art_model_mm_robust(
     model = FasterRCNN(
         backbone,
         num_classes=num_classes,
-        image_mean=[0.485, 0.456, 0.406, 0.485, 0.456, 0.406],
-        image_std=[0.229, 0.224, 0.225, 0.229, 0.224, 0.225],
+        image_mean=[0.485, 0.456, 0.406, 0.0, 0.0, 0.0],
+        image_std=[0.229, 0.224, 0.225, 1.0, 1.0, 1.0],
     )
     model.to(DEVICE)
 

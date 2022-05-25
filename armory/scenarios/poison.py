@@ -1,5 +1,5 @@
 """
-Extended scenario for poisoning
+Base scenario for poisoning, dirty label backdoor
 """
 
 import copy
@@ -8,6 +8,7 @@ import os
 import random
 
 import numpy as np
+from tensorflow.random import set_seed as tf_set_seed
 
 from armory.utils.poisoning import FairnessMetrics
 from armory.utils.export import ImageClassificationExporter
@@ -70,6 +71,10 @@ class DatasetPoisoner:
 
 
 class Poison(Scenario):
+    """This is the base poisoning dirty label scenario.
+    As the original Armory poisoning scenario, it is the scenario from which other poisoning scenarios inherit.
+    """
+
     def __init__(
         self,
         config: dict,
@@ -104,6 +109,7 @@ class Poison(Scenario):
         self.seed = self.config["adhoc"]["split_id"]
         np.random.seed(self.seed)
         random.seed(self.seed)
+        tf_set_seed(self.seed)
         if self.config["sysconfig"].get("use_gpu"):
             os.environ["TF_CUDNN_DETERMINISM"] = "1"
 
@@ -225,47 +231,56 @@ class Poison(Scenario):
             and not self.check_run
         ):
             defense_config = copy.deepcopy(self.config["defense"] or {})
-            if "data_augmentation" in defense_config:
-                defense_config.pop("data_augmentation")  # NOTE: RESISC10 ONLY
 
-            # Assumes classifier_for_defense and classifier use same preprocessing function
-            defense_model_config = adhoc_config.get(
-                "defense_model", self.config["model"]
-            )
-            classifier_for_defense, _ = config_loading.load_model(defense_model_config)
-            log.info(
-                f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
-                f"for defense {defense_config['name']}..."
-            )
-            # Flag to determine whether defense_classifier is trained directly
-            #     (default API) or is trained as part of detect_poisons method
-            if adhoc_config.get("fit_defense_classifier_outside_defense", True):
-                classifier_for_defense.fit(
+            if defense_config["kwargs"].get("perfect_filter"):
+                log.info("Filtering all poisoned samples out of training data")
+                indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
+                indices_to_keep[self.poison_index] = False
+
+            else:
+                if "data_augmentation" in defense_config:
+                    defense_config.pop("data_augmentation")  # NOTE: RESISC10 ONLY
+
+                # Assumes classifier_for_defense and classifier use same preprocessing function
+                defense_model_config = adhoc_config.get(
+                    "defense_model", self.config["model"]
+                )
+                classifier_for_defense, _ = config_loading.load_model(
+                    defense_model_config
+                )
+                log.info(
+                    f"Fitting model {defense_model_config['module']}.{defense_model_config['name']} "
+                    f"for defense {defense_config['name']}..."
+                )
+                # Flag to determine whether defense_classifier is trained directly
+                #     (default API) or is trained as part of detect_poisons method
+                if adhoc_config.get("fit_defense_classifier_outside_defense", True):
+                    classifier_for_defense.fit(
+                        self.x_poison,
+                        self.label_function(self.y_poison),
+                        batch_size=self.fit_batch_size,
+                        nb_epochs=adhoc_config.get(
+                            "defense_train_epochs", self.train_epochs
+                        ),
+                        verbose=False,
+                        shuffle=True,
+                    )
+                defense_fn = config_loading.load_fn(defense_config)
+                defense = defense_fn(
+                    classifier_for_defense,
                     self.x_poison,
                     self.label_function(self.y_poison),
-                    batch_size=self.fit_batch_size,
-                    nb_epochs=adhoc_config.get(
-                        "defense_train_epochs", self.train_epochs
-                    ),
-                    verbose=False,
-                    shuffle=True,
                 )
-            defense_fn = config_loading.load_fn(defense_config)
-            defense = defense_fn(
-                classifier_for_defense,
-                self.x_poison,
-                self.label_function(self.y_poison),
-            )
 
-            detection_kwargs = defense_config.get("kwargs", {})
-            _, is_clean = defense.detect_poison(**detection_kwargs)
-            is_clean = np.array(is_clean)
-            log.info(f"Total clean data points: {np.sum(is_clean)}")
-            is_dirty = is_clean.astype(np.int64) == 0
-            log.info(f"Total dirty data points: {np.sum(is_dirty)}")
+                detection_kwargs = defense_config.get("kwargs", {})
+                _, is_clean = defense.detect_poison(**detection_kwargs)
+                is_clean = np.array(is_clean)
+                log.info(f"Total detected clean data points: {np.sum(is_clean)}")
+                is_dirty = is_clean.astype(np.int64) == 0
+                log.info(f"Total detected poisoned data points: {np.sum(is_dirty)}")
 
-            log.info("Filtering out detected poisoned samples")
-            indices_to_keep = is_clean == 1
+                log.info("Filtering out detected poisoned samples")
+                indices_to_keep = is_clean == 1
 
         else:
             log.info(

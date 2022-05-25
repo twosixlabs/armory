@@ -122,7 +122,7 @@ class So2SatClassification(Scenario):
         self.hub.set_context(stage="attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.attack_type == "preloaded":
                 log.warning(
                     "Specified preloaded attack. Ignoring `attack_modality` parameter"

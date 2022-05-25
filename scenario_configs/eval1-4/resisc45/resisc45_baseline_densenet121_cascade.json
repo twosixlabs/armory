@@ -20,7 +20,6 @@
                     "kwargs": {
                         "batch_size": 1,
                         "confidence": 0.9,
-                        "eps": 0.2,
                         "max_iter": 10
                     },
                     "module": "art.attacks.evasion",
