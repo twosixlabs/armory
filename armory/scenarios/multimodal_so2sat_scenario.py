@@ -8,7 +8,7 @@ from armory.logs import log
 from armory.instrument import Meter
 from armory.scenarios.scenario import Scenario
 from armory.utils import metrics
-from armory.utils.export import So2SatExporter
+from armory.instrument.export import So2SatExporter
 
 
 class So2SatClassification(Scenario):
@@ -122,7 +122,7 @@ class So2SatClassification(Scenario):
         self.hub.set_context(stage="attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.attack_type == "preloaded":
                 log.warning(
                     "Specified preloaded attack. Ignoring `attack_modality` parameter"
@@ -193,4 +193,4 @@ class So2SatClassification(Scenario):
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
     def _load_sample_exporter(self):
-        return So2SatExporter(self.scenario_output_dir)
+        return So2SatExporter(self.export_dir)

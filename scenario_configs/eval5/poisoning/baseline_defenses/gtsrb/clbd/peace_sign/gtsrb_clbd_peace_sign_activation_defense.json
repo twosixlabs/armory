@@ -1,10 +1,9 @@
 {
-    "_description": "GTSRB poison image classification, contributed by MITRE Corporation",
+    "_description": "GTSRB clean label backdoor, peace sign trigger, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "gtsrb_silhouette_model",
-        "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 1,
         "split_id": 0,
@@ -13,13 +12,34 @@
         "use_poison_filtering_defense": true
     },
     "attack": {
-        "knowledge": "black",
+        "knowledge": "white",
         "kwargs": {
-            "poison_module": "art.attacks.poisoning.perturbations",
-            "poison_type": "pattern"
+            "backdoor_kwargs": {
+                "backdoor_packaged_with_armory": true,
+                "backdoor_path": "./armory/utils/triggers/peace.png",
+                "blend": 0.6,
+                "channels_first": false,
+                "mode": "RGB",
+                "poison_module": "art.attacks.poisoning.perturbations",
+                "poison_type": "image",
+                "size": [
+                    16,
+                    16
+                ]
+            },
+            "eps": 0.03,
+            "eps_step": 0.001,
+            "max_iter": 100,
+            "n_classes": 43,
+            "norm": "inf",
+            "num_random_init": 0,
+            "pp_poison": 0.2,
+            "target": 2
         },
-        "module": "armory.art_experimental.attacks.poison_loader",
-        "name": "poison_loader_GTSRB"
+        "module": "armory.art_experimental.attacks.poison_loader_clbd",
+        "name": "poison_loader_clbd",
+        "type": "clbd",
+        "use_adversarial_trainer": false
     },
     "dataset": {
         "batch_size": 512,
@@ -44,15 +64,15 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.micronnet_gtsrb",
+        "module": "armory.baseline_models.keras.micronnet_gtsrb",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_gtsrb_scenario",
-        "name": "GTSRB"
+        "module": "armory.scenarios.poisoning_clbd",
+        "name": "Poison_CLBD"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",

@@ -4,10 +4,11 @@ D-APRICOT scenario for object detection in the presence of targeted adversarial 
 
 import copy
 
+import numpy as np
+
 from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
 from armory.logs import log
-from armory.utils.export import DApricotExporter
+from armory.instrument.export import DApricotExporter, ExportMeter
 
 
 class ObjectDetectionTask(Scenario):
@@ -70,6 +71,7 @@ class ObjectDetectionTask(Scenario):
     def next(self):
         super().next()
         self.y, self.y_patch_metadata = self.y
+        self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def load_model(self, defended=True):
         model_config = self.config["model"]
@@ -89,12 +91,6 @@ class ObjectDetectionTask(Scenario):
             "Training has not yet been implemented for object detectors"
         )
 
-    def load_metrics(self):
-        # The D-APRICOT scenario only has targeted adversarial tasks
-        self.config["metrics"]["include_benign"] = False
-        self.config["metrics"]["include_adversarial"] = False
-        super().load_metrics()
-
     def run_benign(self):
         raise NotImplementedError("D-APRICOT has no benign task")
 
@@ -103,7 +99,7 @@ class ObjectDetectionTask(Scenario):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if x.shape[0] != 1:
                 raise ValueError("D-APRICOT batch size must be set to 1")
             # (nb=1, num_cameras, h, w, c) --> (num_cameras, h, w, c)
@@ -120,16 +116,34 @@ class ObjectDetectionTask(Scenario):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv)
+        self.probe.update(y_pred_adv_batch=[y_pred_adv])
         for img_idx in range(len(y)):
             y_i_target = y_target[img_idx]
             y_i_pred = y_pred_adv[img_idx]
-            self.probe.update(y_target=[y_i_target], y_pred=[y_i_pred])
-        self.probe.update(x_adv=x_adv)
+            self.probe.update(y_target=[y_i_target], y_pred_adv=[y_i_pred])
+
+        # Add batch dimension (3, H, W, C) --> (1, 3, H, W, C)
+        self.probe.update(x_adv=np.expand_dims(x_adv, 0))
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def _load_sample_exporter(self):
-        default_export_kwargs = {"with_boxes": True}
-        return DApricotExporter(
-            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
+    def load_export_meters(self):
+        # Load default export meters
+        super().load_export_meters()
+
+        # Add export meters that export examples with boxes overlaid
+        self.sample_exporter_with_boxes = DApricotExporter(
+            self.scenario_output_dir,
+            default_export_kwargs={"with_boxes": True},
         )
+        export_with_boxes_meter = ExportMeter(
+            "x_adv_with_boxes_exporter",
+            self.sample_exporter_with_boxes,
+            "scenario.x_adv",
+            y_pred_probe="scenario.y_pred_adv_batch",
+            max_batches=self.num_export_batches,
+        )
+        self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
+
+    def _load_sample_exporter(self):
+        return DApricotExporter(self.export_dir)

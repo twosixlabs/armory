@@ -269,7 +269,7 @@ def test_probe_mapper(caplog):
     assert len(probe_mapper) == 0
 
 
-class LastRecordWriter:
+class LastRecordWriter(instrument.Writer):
     """
     Mock test interface for Writer
     """
@@ -308,7 +308,7 @@ def test_hub(caplog):
     name = "no default writer"
     result = 17
     hub.record(name, result)
-    assert f"No default writers to record {name}:{result} to" in caplog.text
+    assert f"No writers to record {name}:{result} to" in caplog.text
 
     w1 = LastRecordWriter()
     w2 = LastRecordWriter()
@@ -321,6 +321,25 @@ def test_hub(caplog):
     assert w1.record == (name, batch, result)
     assert w1.num_writes == 1
     assert w2.num_writes == 0
+
+    with pytest.raises(TypeError):
+        hub.record(name, result, writers=2343)
+    with pytest.raises(ValueError):
+        hub.record(name, result, writers=(w1, w2, "hi"))
+    name = "use_default_writers set to False"
+    hub.record(name, result, use_default_writers=False)
+    assert f"No writers to record {name}:{result} to" in caplog.text
+    w3 = LastRecordWriter()
+    hub.record(name, result, writers=w3, use_default_writers=False)
+    assert w3.record == (name, batch, result)
+    assert w1.num_writes == 1
+    assert w2.num_writes == 0
+    assert w3.num_writes == 1
+    hub.record(name, result, writers=w3, use_default_writers=True)
+    assert w3.record == (name, batch, result)
+    assert w1.num_writes == 2
+    assert w2.num_writes == 0
+    assert w3.num_writes == 2
 
     m1 = MockMeter("a[benign]")
     m2 = MockMeter("a", "b[benign]")
@@ -362,6 +381,10 @@ def test_hub(caplog):
     for w in (w1, w2):
         assert w.num_closes == 1
     assert hub.closed
+
+    hub.disconnect_meter(m1)
+    hub.disconnect_meter(m2)
+    assert len(hub.meters) == 0
 
 
 def test_meter(caplog):
@@ -582,7 +605,7 @@ class WriterSink:
         self.output = output
 
 
-def test_results_writer():
+def test_results_writer(caplog):
     sink = WriterSink()
     writer = instrument.ResultsWriter(sink=sink)
     with pytest.raises(ValueError):
@@ -613,6 +636,17 @@ def test_results_writer():
     assert len(output) == 2
     assert output["a"] == [None, -1]
     assert output["b"] == [-2]
+
+    with pytest.raises(ValueError):
+        writer = instrument.ResultsWriter(sink=None, max_record_size=-7)
+
+    writer = instrument.ResultsWriter(sink=None, max_record_size=50)
+    writer.write(("string", 0, ["a"] * 50))
+    assert "max_record_size" in caplog.text
+    writer.write(("a", 2, -1))
+    writer.close()
+    results = writer.get_output()
+    assert results == {"a": [-1]}
 
 
 @pytest.mark.docker_required
