@@ -399,19 +399,6 @@ class Poison(Scenario):
             )
         )
 
-        # log.info(
-        #    f"Accuracy on benign test data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Accuracy on benign test data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Attack success rate: {self.attack_success_rate.mean():.2%}"
-        #    )  # percent of poisoned source examples that get classified as target
-
         if self.use_poison:
             self.hub.connect_meter(
                 Meter(

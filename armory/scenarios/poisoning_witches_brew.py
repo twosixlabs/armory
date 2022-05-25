@@ -392,14 +392,6 @@ class WitchesBrewScenario(Poison):
             )
         )
 
-        # log.info(
-        #     f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
-        # )
-
-        # log.info(
-        #     f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
-        # )
-
         if self.config["adhoc"].get("compute_fairness_metrics"):
             self.load_fairness_metrics()
         self.results_writer = ResultsWriter(sink=None)
