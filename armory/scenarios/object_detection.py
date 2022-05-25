@@ -36,13 +36,15 @@ class ObjectDetectionTask(ImageClassificationTask):
                 max_batches=self.num_export_batches,
             )
             self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
+            if self.skip_attack:
+                break
 
         coco_box_format_meter = CocoBoxFormatMeter(
             "coco_box_format_meter",
             self.export_dir,
             y_probe="scenario.y",
             y_pred_clean_probe="scenario.y_pred",
-            y_pred_adv_probe="scenario.y_pred_adv",
+            y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
             max_batches=self.num_export_batches,
         )
         self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
