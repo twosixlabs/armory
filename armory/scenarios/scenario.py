@@ -64,23 +64,24 @@ class Scenario:
         if skip_attack:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
+        self.export_subdir = "saved_samples"
         self._set_output_dir(self.config.get("eval_id"))
-        export_subdir = "saved_samples"
-        if os.path.exists(f"{self.scenario_output_dir}/{export_subdir}"):
-            export_subdir = f"{export_subdir}_{self.time_stamp}"
+        if os.path.exists(f"{self.scenario_output_dir}/{self.export_subdir}"):
             log.warning(
-                f"Export output directory {self.scenario_output_dir}/{export_subdir} already exists, will create new directory"
+                f"Export output directory {self.scenario_output_dir}/{self.export_subdir} already exists, will create new directory"
             )
-        self._set_export_dir(export_subdir)
+            self._set_export_dir(f"{self.export_subdir}_{self.time_stamp}")
         self.results = None
 
     def _set_output_dir(self, eval_id) -> None:
         runtime_paths = paths.runtime_paths()
         self.scenario_output_dir = os.path.join(runtime_paths.output_dir, eval_id)
         self.hub._set_output_dir(self.scenario_output_dir)
+        self._set_export_dir(self.export_subdir)
 
     def _set_export_dir(self, output_subdir) -> None:
         self.export_dir = f"{self.scenario_output_dir}/{output_subdir}"
+        self.export_subdir = output_subdir
         self.hub._set_export_dir(output_subdir)
 
     def _check_config_and_cli_args(
