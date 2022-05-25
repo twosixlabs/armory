@@ -6,7 +6,7 @@ import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
 
 from armory.scenarios.scenario import Scenario
-from armory.utils.export import AudioExporter
+from armory.instrument.export import AudioExporter
 
 from armory.logs import log
 
@@ -109,6 +109,6 @@ class AutomaticSpeechRecognition(Scenario):
 
     def _load_sample_exporter(self):
         return AudioExporter(
-            self.scenario_output_dir,
+            self.export_dir,
             self.test_dataset.context.sample_rate,
         )

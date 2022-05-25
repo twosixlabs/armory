@@ -446,20 +446,18 @@ class WitchesBrewScenario(Poison):
     def evaluate_current(self):
         if self.i in self.trigger_index:
             self.run_attack()
+            for batch_idx in range(self.x.shape[0]):
+                basename = f"trigger_batch_{self.i}_ex_{batch_idx}"
+                self.sample_exporter.export(self.x[batch_idx], basename)
         else:
             self.run_benign()
 
-        # This just exports clean test samples up to num_eval_batches, and all the triggers.
-        if self.config["scenario"].get("export_batches"):
-            if (
-                self.num_export_batches > self.sample_exporter.saved_batches
-            ) or self.i in self.trigger_index:
-                if self.sample_exporter.saved_samples == 0:
-                    self.sample_exporter._make_output_dir()
-                name = "trigger" if self.i in self.trigger_index else "non-trigger"
-                self.sample_exporter._export_image(self.x[0], name=name)
-                self.sample_exporter.saved_samples += 1
-                self.sample_exporter.saved_batches = (
-                    self.sample_exporter.saved_samples
-                    // self.config["dataset"]["batch_size"]
-                )
+    def load_export_meters(self):
+        super().load_export_meters()
+
+        # Remove x_adv export meter since witches brew scenario doesn't probe.update() x_adv
+        meter_names = [m.name for m in self.hub.meters]
+        if "x_adv_exporter" in meter_names:
+            self.hub.disconnect_meter(
+                self.hub.meters[meter_names.index("x_adv_exporter")]
+            )

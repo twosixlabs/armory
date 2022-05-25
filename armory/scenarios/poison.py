@@ -11,7 +11,7 @@ import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
 from armory.utils.poisoning import FairnessMetrics
-from armory.utils.export import ImageClassificationExporter
+from armory.instrument.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading, metrics
@@ -449,7 +449,7 @@ class Poison(Scenario):
         self.hub.connect_writer(LogWriter(), default=True)
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.scenario_output_dir)
+        return ImageClassificationExporter(self.export_dir)
 
     def load(self):
         self.set_random_seed()
@@ -462,7 +462,7 @@ class Poison(Scenario):
         self.filter_dataset()
         self.fit()
         self.load_dataset()
-        self.load_sample_exporter()
+        self.load_export_meters()
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
@@ -507,16 +507,6 @@ class Poison(Scenario):
         self.run_benign()
         if self.use_poison:
             self.run_attack()
-
-        if self.num_export_batches > self.sample_exporter.saved_batches:
-            # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
-            self.sample_exporter.export(
-                x=self.x,
-                x_adv=self.x_adv,
-                y=self.y,
-                y_pred_clean=self.y_pred,
-                y_pred_adv=self.y_pred_adv,
-            )
 
     def finalize_results(self):
         if hasattr(self, "fairness_metrics") and not self.check_run:
