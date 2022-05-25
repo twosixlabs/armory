@@ -536,7 +536,6 @@ class Poison(Scenario):
         self.test_y_pred_class = []
 
     def run_explanatory(self):
-        self.hub.set_context(stage="explanatory")
         self.test_set_class_labels.update(self.y)
         self.test_x.append(self.x)
         self.test_y.extend(self.y)
