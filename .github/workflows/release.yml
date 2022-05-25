@@ -41,8 +41,7 @@ jobs:
         run: |
           rm -rf /usr/share/dotnet &
           pip install -r requirements.txt
-          pip install -e .
-          version=$(armory --version)
+          version=$(python -m armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/tf2:latest
           python docker/build.py tf2
@@ -65,8 +64,7 @@ jobs:
         run: |
           rm -rf /usr/share/dotnet &
           pip install -r requirements.txt
-          pip install -e .
-          version=$(armory --version)
+          version=$(python -m armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/pytorch:latest
           python docker/build.py pytorch
@@ -89,8 +87,7 @@ jobs:
         run: |
           rm -rf /usr/share/dotnet &
           pip install -r requirements.txt
-          pip install -e .
-          version=$(armory --version)
+          version=$(python -m armory --version)
           docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
           docker pull twosixarmory/pytorch-deepspeech:latest
           python docker/build.py pytorch-deepspeech
