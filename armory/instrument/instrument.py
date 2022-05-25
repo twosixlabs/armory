@@ -312,8 +312,8 @@ class Hub:
         self.writers = []
         self.default_writers = []
         self.closed = False
-        self.output_dir = armory.paths.runtime_paths().output_dir
-        self.export_dir = f"{self.output_dir}/saved_samples"
+        self._set_output_dir(armory.paths.runtime_paths().output_dir)
+        self._set_export_dir("saved_samples")
 
     def _set_output_dir(self, name):
         self.output_dir = name
@@ -321,8 +321,8 @@ class Hub:
     def get_output_dir(self):
         return self.output_dir
 
-    def _set_export_dir(self, name):
-        self.export_dir = name
+    def _set_export_dir(self, output_subdir):
+        self.export_dir = f"{self.output_dir}/{output_subdir}"
 
     def get_export_dir(self):
         return self.export_dir
