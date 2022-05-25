@@ -43,7 +43,7 @@ class ObjectDetectionTask(ImageClassificationTask):
             "coco_box_format_meter",
             self.export_dir,
             y_probe="scenario.y",
-            y_pred_clean_probe="scenario.y_pred",
+            y_pred_clean_probe="scenario.y_pred" if not self.skip_benign else None,
             y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
             max_batches=self.num_export_batches,
         )
