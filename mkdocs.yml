@@ -9,12 +9,19 @@ nav:
   - Datasets: datasets.md
   - Integrating TFDS Datasets: integrate_tensorflow_datasets.md
   - Adversarial Datasets: adversarial_datasets.md
+  - Exporting Data: exporting_data.md
+  - Logging: logging.md
   - Dataset Licensing: dataset_licensing.md
   - Docker: docker.md
+  - No-Docker: no_docker_mode.md
   - Metrics: metrics.md
   - Scenarios: scenarios.md
+  - Poisoning: poisoning.md
   - Command Line: command_line.md
   - External Repos: external_repos.md
   - FAQs: faqs.md
-  - Contributing: contributing.md
+  - Developers:
+      - Contributing: contributing.md
+      - Style: style.md
+      - Testing: developers/testing.md
 theme: readthedocs
