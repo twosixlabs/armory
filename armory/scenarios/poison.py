@@ -506,16 +506,6 @@ class Poison(Scenario):
         if self.use_poison:
             self.run_attack()
 
-        if self.num_export_batches > self.sample_exporter.saved_batches:
-            # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
-            self.sample_exporter.export(
-                x=self.x,
-                x_adv=self.x_adv,
-                y=self.y,
-                y_pred_clean=self.y_pred,
-                y_pred_adv=self.y_pred_adv,
-            )
-
     def init_explanatory(self):
         self.test_set_class_labels = set()
         self.test_x = []
