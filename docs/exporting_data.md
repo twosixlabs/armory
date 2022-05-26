@@ -57,13 +57,14 @@ Now at this point, let's say you'd like to save off the benign and adversarial e
 ```commandline
 >>> s.x.shape
 (1, 32, 32, 3)
->>> s.sample_exporter.export(x=s.x, x_adv=s.x_adv)
+>>> s.sample_exporter.export(s.x[0], "benign_x")
+>>> s.sample_exporter.export(s.x_adv[0], "adversarial_x")
 ```
 
 After calling this method, the images are saved to the scenario output directory:
 ```commandline
 ls ~/.armory/outputs/2022-03-18T163008.249437/saved_samples/
-0_adversarial.png  0_benign.png
+adversarial_x.png  benign_x.png
 ```
 
 If, instead of writing to disk, you'd like to return an individual sample, use the `get_sample()` method:
@@ -73,45 +74,36 @@ If, instead of writing to disk, you'd like to return an individual sample, use t
 <class 'PIL.Image.Image'>
 ```
 
-Note that the `export()` method expects a batch of data, e.g. an image of shape `(nb, H, W, C)`, whereas `get_sample()` expects 
-an individual data example.
-
 ### Exporting Data With Bounding Boxes
 For object detection and video tracking scenarios, Armory exports a set of raw images as well as images containing ground-truth (red) 
 and predicted (white) bounding boxes. This will all occur automatically if using Armory in the normal/non-interactive mode, but we include
 the following interactive example as well:
 
-In the example below, we've already loaded an xView object detection scenario and run `evaluate_current()` for a single batch before running the following:
+In the example below, we've already loaded an xView object detection scenario and run `evaluate_current()` for a single batch before running the following to export
+the adversarial image with ground-truth and predicted boxes overlaid:
 ```commandline
 >>> s.sample_exporter.export(
-                      x=s.x, 
-                      x_adv=s.x_adv, 
-                      y=s.y, 
-                      y_pred_clean=s.y_pred, 
-                      y_pred_adv=s.y_pred_adv,
-                      with_boxes=True)
+        s.x_adv[0], 
+        "adversarial_x_with_boxes", 
+        y=s.y[0], 
+        y_pred=s.y_pred_adv[0], 
+        with_boxes=True)
 ```
 
-The call above yields the following output:
 
 ```commandline
 ls ~/.armory/outputs/2022-03-18T181736.925088/saved_samples/
-0_adversarial.png  0_adversarial_with_boxes.png  0_benign.png  0_benign_with_boxes.png
-```
-
-You could also export only the raw images, absent boxes, with the following call:
-```commandline
->>> s.sample_exporter.export(x=s.x, x_adv=s.x_adv)
+adversarial_x_with_boxes.png
 ```
 
 As depicted earlier, the `get_sample()` method can be used to return the PIL image. The boolean `with_boxes` kwarg can be used to add
-bounding boxes to the image. When this is set to `True`, you must provide values for at least one of `y_i` and `y_i_pred`.
+bounding boxes to the image. When this is set to `True`, you must provide values for at least one of `y` and `y_pred`.
 ```commandline
 >>> adv_img = s.sample_exporter.get_sample(s.x_adv[0])
 >>> type(adv_img)
 <class 'PIL.Image.Image'>
 
->>> adv_img_with_boxes = s.sample_exporter.get_sample(s.x_adv[0], with_boxes=True, y_i=s.y[0], y_i_pred=s.y_pred_adv[0])
+>>> adv_img_with_boxes = s.sample_exporter.get_sample(s.x_adv[0], with_boxes=True, y=s.y[0], y_pred=s.y_pred_adv[0])
 >>> type(adv_img_with_boxes)
 <class 'PIL.Image.Image'>
 
@@ -119,16 +111,12 @@ bounding boxes to the image. When this is set to `True`, you must provide values
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/workspace/armory/utils/export.py", line 205, in get_sample
-    raise TypeError("Both y_i and y_i_pred are None, but with_boxes is True")
-TypeError: Both y_i and y_pred are None, but with_boxes is True
+    raise TypeError("Both y and y_pred are None, but with_boxes is True")
+TypeError: Both y and y_pred are None, but with_boxes is True
 
 ```
-If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for only `y_i` (or only `y_i_pred`).
+If you'd like to include only ground-truth boxes (or only predicted boxes), provide an arg for only `y` (or only `y_pred`).
 
-For object detection, if `with_boxes=True` is passed to `export()`, the sample_exporter will also generate json files 
-containing coco-formatted bounding box annotations.  These are saved in the scenario output directory as 
-"ground_truth_boxes_coco_format.json", "benign_predicted_boxes_coco_format.json", and "adversarial_predicted_boxes_coco_format.json".
-In interactive mode, these files will be generated once you call `sample_exporter.write()`.
 
 ### Exporting Multimodal Data
 #### Multimodal CARLA Object Detection
@@ -138,3 +126,8 @@ call `get_sample(x_i[..., 3:])`.
 #### So2Sat Image Classification
 The `get_sample()` method for the So2Sat scenario exporter takes a `modality` arg which must be one of `{'vh', 'vv', 'eo'}`. Calling `export()` will save off all three types of examples, which will occur automatically when running a config where `"export_batches"` is set.
 
+### Exporting COCO-Formatted Bounding Boxes
+For object detection scenarios, if `"export_batches"` is set in the config file, Armory will output COCO-formatted JSON
+files with ground-truth and predicted bounding boxes. These are saved in the scenario output directory as 
+`ground_truth_boxes_coco_format.json`, `benign_predicted_boxes_coco_format.json`, and `adversarial_predicted_boxes_coco_format.json`. Note that
+this functionality exists separately from the exporters described in this document.

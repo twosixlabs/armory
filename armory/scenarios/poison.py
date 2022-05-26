@@ -12,7 +12,7 @@ from tensorflow.random import set_seed as tf_set_seed
 
 from armory import metrics
 from armory.metrics.poisoning import ExplanatoryModel
-from armory.utils.export import ImageClassificationExporter
+from armory.instrument.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading
@@ -446,7 +446,7 @@ class Poison(Scenario):
         self.hub.connect_writer(LogWriter(), default=True)
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.scenario_output_dir)
+        return ImageClassificationExporter(self.export_dir)
 
     def load(self):
         self.set_random_seed()
@@ -459,7 +459,7 @@ class Poison(Scenario):
         self.filter_dataset()
         self.fit()
         self.load_dataset()
-        self.load_sample_exporter()
+        self.load_export_meters()
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
