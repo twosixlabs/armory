@@ -2,19 +2,17 @@ import argparse
 import subprocess
 from pathlib import Path
 import os
+import sys
 
-try:
-    import armory
-except ModuleNotFoundError as e:
-    if str(e) == "No module named 'armory'":
-        raise ModuleNotFoundError("Ensure armory is pip installed before running")
-    raise
-
-FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
-
-print(f"armory docker builder version {armory.__version__}")
+# Ensure correct location
 script_dir = Path(__file__).parent
+root_dir = script_dir.parent
+if not (root_dir / "armory").is_dir():
+    print("ERROR: make sure you run this script from the root of the armory repo")
+    sys.exit(1)
 
+# Parse arguments
+FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
 parser.add_argument(
     "-b", "--base-tag", help="version tag for twosixarmory", default="latest"
@@ -26,17 +24,34 @@ parser.add_argument(
 )
 parser.add_argument(
     "framework",
+    choices=FRAMEWORKS + ["all"],
+    metavar="framework",
     help=f"framework to build ({FRAMEWORKS + ['all']})",
 )
 args = parser.parse_args()
 
 if args.framework == "all":
     frameworks = FRAMEWORKS
-elif args.framework in FRAMEWORKS:
-    frameworks = [args.framework]
 else:
-    raise ValueError(f"unknown framework {args.framework}")
+    frameworks = [args.framework]
 
+# Enable import without pip installation and retrieve armory version
+sys.path.insert(0, str(root_dir))
+try:
+    import armory
+except ModuleNotFoundError as e:
+    if str(e) == "No module named 'armory'":
+        print(
+            "ERROR: could not import armory. "
+            "make sure you run this script from the root of the armory repo"
+        )
+        sys.exit(1)
+    raise
+
+print("Retrieving armory version")
+print(f"armory docker builder version {armory.__version__}")
+
+# Execute docker builds
 for framework in frameworks:
     dockerfile = script_dir / f"Dockerfile-{framework}"
     if not dockerfile.exists():
