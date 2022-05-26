@@ -55,7 +55,7 @@ class Micronnet(nn.Module):
 
 
 class get_model(nn.Module):
-    def __init__(self, weights_path: Optional[str], model_kwargs: dict):
+    def __init__(self, weights_path: Optional[str], **model_kwargs):
         super().__init__()
         self.inner_model = Micronnet(**model_kwargs)
         self.inner_model.to(DEVICE)

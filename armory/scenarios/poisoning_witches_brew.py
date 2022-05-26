@@ -4,10 +4,9 @@ import copy
 import numpy as np
 
 from armory.scenarios.poison import Poison
-from armory.utils.poisoning import FairnessMetrics
 from armory.logs import log
-from armory.utils import config_loading, metrics
-from armory import paths
+from armory.utils import config_loading
+from armory import metrics, paths
 from armory.instrument import Meter, LogWriter, ResultsWriter
 
 
@@ -342,7 +341,8 @@ class WitchesBrewScenario(Poison):
             **self.dataset_kwargs,
         )
         self.i = -1
-        self.test_set_class_labels = set()
+        if self.explanatory_model is not None:
+            self.init_explanatory()
 
     def load_metrics(self):
         if self.use_filtering_defense:
@@ -350,7 +350,7 @@ class WitchesBrewScenario(Poison):
             self.hub.connect_meter(
                 Meter(
                     "filter",
-                    metrics.get_supported_metric("tpr_fpr"),
+                    metrics.get("tpr_fpr"),
                     "scenario.poisoned",
                     "scenario.removed",
                 )
@@ -359,7 +359,7 @@ class WitchesBrewScenario(Poison):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_non_trigger_images",
-                metrics.get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
                 final=np.mean,
@@ -370,7 +370,7 @@ class WitchesBrewScenario(Poison):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_trigger_images",
-                metrics.get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y[trigger]",
                 "scenario.y_pred[trigger]",
                 final=np.mean,
@@ -379,39 +379,21 @@ class WitchesBrewScenario(Poison):
             )
         )
 
-        per_class_mean_accuracy = metrics.get_supported_metric(
-            "per_class_mean_accuracy"
-        )
+        per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_non_trigger_images_per_class",
-                metrics.get_supported_metric("identity_unzip"),
+                metrics.get("identity_unzip"),
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
-                final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
+                final=lambda x: per_class_mean_accuracy(*metrics.task.identity_zip(x)),
                 final_name="accuracy_on_non_trigger_images_per_class",
                 record_final_only=True,
             )
         )
 
-        # log.info(
-        #     f"Accuracy on non-trigger images: {self.non_trigger_accuracy_metric.mean():.2%}"
-        # )
-
-        # log.info(
-        #     f"Accuracy on trigger images: {self.trigger_accuracy_metric.mean():.2%}"
-        # )
-
-        if self.config["adhoc"].get("compute_fairness_metrics", False):
-            self.fairness_metrics = FairnessMetrics(
-                self.config["adhoc"], self.use_filtering_defense, self
-            )
-            if not self.check_run and self.use_filtering_defense:
-                self.fairness_metrics.add_filter_perplexity()
-        else:
-            log.warning(
-                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
-            )
+        if self.config["adhoc"].get("compute_fairness_metrics"):
+            self.load_fairness_metrics()
         self.results_writer = ResultsWriter(sink=None)
         self.hub.connect_writer(self.results_writer, default=True)
         self.hub.connect_writer(LogWriter(), default=True)
@@ -428,7 +410,8 @@ class WitchesBrewScenario(Poison):
         self.probe.update(y=y, y_pred=y_pred)
 
         self.y_pred = y_pred  # for exporting when function returns
-        self.test_set_class_labels.update(y)
+        if self.explanatory_model is not None:
+            self.run_explanatory()
 
     def run_attack(self):
         self.hub.set_context(stage="trigger")

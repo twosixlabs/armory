@@ -11,11 +11,11 @@ from typing import Optional
 from tqdm import tqdm
 
 import armory
-from armory import Config, paths
+from armory import Config, paths, metrics
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
 from armory.instrument.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
-from armory.utils import config_loading, metrics, json_utils
+from armory.utils import config_loading, json_utils
 from armory.logs import log
 
 
@@ -310,7 +310,9 @@ class Scenario:
         self.probe.update(y_pred=y_pred)
 
         if self.skip_misclassified:
-            self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
+            self.misclassified = not any(
+                metrics.task.batch.categorical_accuracy(y, y_pred)
+            )
 
     def run_attack(self):
         self._check_x("run_attack")
