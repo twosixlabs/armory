@@ -1,0 +1,5 @@
+tensorflow>=2.0
+tensorflow-datasets==4.5.*
+loguru
+pydub
+boto3
