@@ -19,9 +19,10 @@ import threading
 
 import boto3
 import botocore.client
-from loguru import logger as log
 
+from armory.logs import log
 from armory.datasets.builder import utils
+from armory.datasets.loader import load_from_directory
 
 
 class ProgressPercentageUpload(object):
