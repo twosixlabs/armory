@@ -1,21 +1,21 @@
-"""ARMORY Dataset Builder Script
+"""
+ARMORY Dataset Builder Script
 
 This script is intended to be used to construct Armory Datasets from
 the original data artifacts.  It can also be used to construct a dataset
 from a local class_file + data artifacts using the `-lcs` options described
 below.  The result is a `TFDS` style directory containing `tfrecord` files.
-
 """
-import tensorflow_datasets as tfds
-import os
-import json
-import shutil
 
-# from loguru import logger as log
-from armory.logs import log
+import json
+import os
+import shutil
 import subprocess
-import itertools
-import armory.datasets.builder.utils as utils
+
+import tensorflow_datasets as tfds
+
+from armory.logs import log
+from armory.datasets.builder import utils
 from armory.datasets.loader import load
 
 

@@ -1,20 +1,9 @@
-import os
-from typing import Callable, Union, Tuple, List, Optional
+from typing import Union, Tuple, List
 
 import numpy as np
-from armory.logs import log
-
-import torch
-import tensorflow as tf
-import tensorflow_datasets as tfds
 from art.data_generators import DataGenerator
 
-from armory.data.utils import (
-    download_verify_dataset_cache,
-    _read_validate_scenario_config,
-    add_checksums_dir,
-)
-from armory import paths
+from armory.logs import log
 
 
 class ArmoryDataGenerator(DataGenerator):

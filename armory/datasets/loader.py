@@ -1,15 +1,13 @@
-from armory.logs import log
-import tensorflow_datasets as tfds
-from armory.datasets.builder.utils import get_dataset_full_path
 import os
 from pathlib import Path
-from .generator import ArmoryDataGenerator
-from typing import Union
+from typing import Callable, Optional, Union
+
+from armory.logs import log
+from armory.datasets.builder.utils import get_dataset_full_path
+from armory.datasets.generator import ArmoryDataGenerator
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import torch
-
-from typing import Callable, Optional
 
 
 def load_from_directory(
@@ -137,22 +135,22 @@ def generator_from_dataset(
         #  Filter by index is fast, filter by stringslice is very slow
         #  Figure out why we need the full dataset size
         #  Add to ArmoryDataGenerator -> add_filter that removes samples at execution time based on filter
-        if isinstance(class_ids, list):
-            ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
-        elif isinstance(class_ids, int):
-            ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
-        else:
-            raise ValueError(
-                f"class_ids must be a list, int, or None, not {type(class_ids)}"
-            )
+        # if isinstance(class_ids, list):
+        #     ds, dataset_size = filter_by_class(ds, class_ids=class_ids)
+        # elif isinstance(class_ids, int):
+        #     ds, dataset_size = filter_by_class(ds, class_ids=[class_ids])
+        # else:
+        #     raise ValueError(
+        #         f"class_ids must be a list, int, or None, not {type(class_ids)}"
+        #     )
 
-    # Add index-based filtering
-    if isinstance(index, list):
-        ds, dataset_size = filter_by_index(ds, index, dataset_size)
-    elif isinstance(index, str):
-        ds, dataset_size = filter_by_str_slice(ds, index, dataset_size)
-    elif index is not None:
-        raise ValueError(f"index must be a list, str, or None, not {type(index)}")
+    # # Add index-based filtering
+    # if isinstance(index, list):
+    #     ds, dataset_size = filter_by_index(ds, index, dataset_size)
+    # elif isinstance(index, str):
+    #     ds, dataset_size = filter_by_str_slice(ds, index, dataset_size)
+    # elif index is not None:
+    #     raise ValueError(f"index must be a list, str, or None, not {type(index)}")
 
     ds = ds.repeat(epochs)
     # TODO: Why is this here since builder does this already??
@@ -187,11 +185,9 @@ def generator_from_dataset(
         generator = ds
 
     elif framework == "pytorch":
-        torch_ds = _get_pytorch_dataset(ds)
-        generator = torch.utils.data.DataLoader(
-            torch_ds, batch_size=None, collate_fn=lambda x: x, num_workers=0
-        )
+        from armory.datasets.pytorch_loader import get_pytorch_data_loader
 
+        return get_pytorch_data_loader(ds)
     else:
         raise ValueError(
             f"`framework` must be one of ['tf', 'pytorch', 'numpy']. Found {framework}"

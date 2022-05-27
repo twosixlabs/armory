@@ -1,18 +1,17 @@
+import glob
 import importlib
 import importlib.util
-import tempfile
-
-from loguru import logger as log
 import os
-import tensorflow_datasets as tfds
-import boto3
-import botocore.client
-import threading
+import re
 import sys
 import tarfile
-import json
-import glob
-import re
+import tempfile
+import threading
+
+import boto3
+import botocore.client
+from loguru import logger as log
+import tensorflow_datasets as tfds
 
 print(f"User: {os.path.expanduser('~')}")
 DEFAULT_DATASET_DIRECTORY = os.path.expanduser("~/.armory/dataset_builds/")
@@ -94,124 +93,124 @@ def get_local_config(python_class_file: str):
 #
 
 SUPPORTED_DATASETS = {
-    "mnist": {
-        "type": "tfds",
-        "feature_dict": {
-            "type": "tensorflow_datasets.core.features.features_dict.FeaturesDict",
-            "content": json.dumps(
-                {
-                    "features": {
-                        "image": {
-                            "pythonClassName": "tensorflow_datasets.core.features.image_feature.Image",
-                            "image": {
-                                "shape": {"dimensions": ["-1", "-1", "1"]},
-                                "dtype": "uint8",
-                            },
-                        },
-                        "label": {
-                            "pythonClassName": "tensorflow_datasets.core.features.class_label_feature.ClassLabel",
-                            "classLabel": {"numClasses": "10"},
-                        },
-                    }
-                }
-            ),
-            "proto_cls": "tensorflow_datasets.FeaturesDict",
-        },
-        "expected_name": "mnist",
-        "expected_version": "3.0.1",
-    },
-    "cifar10": {
-        "type": "tfds",
-        "feature_dict": None,
-        "expected_name": "cifar10",
-        "expected_version": "3.0.2",
-    },
-    "cifar100": {
-        "type": "tfds",
-        "feature_dict": None,
-        "expected_name": "cifar100",
-        "expected_version": "3.0.2",
-    },
-    "imagenette/full-size": {
-        "type": "tfds",
-        "feature_dict": None,
-        "expected_name": "imagenette/full-size",
-        "expected_version": "1.0.0",
-    },
-    # "coco/2017": {"type": "tfds", "feature_dict": None, "expected_name": "coco/2017", "expected_version": "1.0.0"},
-    "so2sat/all": {
-        "type": "tfds",
-        "feature_dict": None,
-        "expected_name": "so2sat/all",
-        "expected_version": "2.1.0",
-    },
-    "carla_obj_det_train": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "carla_obj_det_train.py")
-    ),
+    #    "mnist": {
+    #        "type": "tfds",
+    #        "feature_dict": {
+    #            "type": "tensorflow_datasets.core.features.features_dict.FeaturesDict",
+    #            "content": json.dumps(
+    #                {
+    #                    "features": {
+    #                        "image": {
+    #                            "pythonClassName": "tensorflow_datasets.core.features.image_feature.Image",
+    #                            "image": {
+    #                                "shape": {"dimensions": ["-1", "-1", "1"]},
+    #                                "dtype": "uint8",
+    #                            },
+    #                        },
+    #                        "label": {
+    #                            "pythonClassName": "tensorflow_datasets.core.features.class_label_feature.ClassLabel",
+    #                            "classLabel": {"numClasses": "10"},
+    #                        },
+    #                    }
+    #                }
+    #            ),
+    #            "proto_cls": "tensorflow_datasets.FeaturesDict",
+    #        },
+    #        "expected_name": "mnist",
+    #        "expected_version": "3.0.1",
+    #    },
+    #    "cifar10": {
+    #        "type": "tfds",
+    #        "feature_dict": None,
+    #        "expected_name": "cifar10",
+    #        "expected_version": "3.0.2",
+    #    },
+    #    "cifar100": {
+    #        "type": "tfds",
+    #        "feature_dict": None,
+    #        "expected_name": "cifar100",
+    #        "expected_version": "3.0.2",
+    #    },
+    #    "imagenette/full-size": {
+    #        "type": "tfds",
+    #        "feature_dict": None,
+    #        "expected_name": "imagenette/full-size",
+    #        "expected_version": "1.0.0",
+    #    },
+    #    # "coco/2017": {"type": "tfds", "feature_dict": None, "expected_name": "coco/2017", "expected_version": "1.0.0"},
+    #    "so2sat/all": {
+    #        "type": "tfds",
+    #        "feature_dict": None,
+    #        "expected_name": "so2sat/all",
+    #        "expected_version": "2.1.0",
+    #    },
+    #    "carla_obj_det_train": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "carla_obj_det_train.py")
+    #    ),
     "digit": get_local_config(os.path.join(BUILD_CLASS_DIR, "digit.py")),
-    "german_traffic_sign": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "german_traffic_sign.py")
-    ),
-    "librispeech_full": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "librispeech_full.py")
-    ),
-    "librispeech_dev_clean_split": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "librispeech_dev_clean_split.py")
-    ),
-    "resisc10_poison": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "resisc10_poison.py")
-    ),
-    "resisc45_split": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "resisc45_split.py")
-    ),
-    # "ucf101_clean": get_local_config(os.path.join(BUILD_CLASS_DIR, "ucf101_clean.py")), # See TODO Above...SSL Error
-    "xview": get_local_config(os.path.join(BUILD_CLASS_DIR, "xview.py")),
-    # Below Here are Adversarial Datasets
-    "apricot_dev": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "apricot_dev.py")
-    ),
-    "apricot_test": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "apricot_test.py")
-    ),
-    "carla_obj_det_dev": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_obj_det_dev.py")
-    ),
-    "carla_obj_det_test": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_obj_det_test.py")
-    ),
-    "carla_video_tracking_dev": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_video_tracking_dev.py")
-    ),
-    "carla_video_tracking_test": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_video_tracking_test.py")
-    ),
-    # "dapricot_dev": get_local_config(os.path.join(BUILD_CLASS_DIR, "adversarial", "dapricot_dev.py")),  # See TODO above about error
-    "dapricot_test": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "dapricot_test.py")
-    ),
-    "gtsrb_bh_poison_micronnet": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "gtsrb_bh_poison_micronnet.py")
-    ),
-    "imagenet_adversarial": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "imagenet_adversarial.py")
-    ),
-    "librispeech_adversarial": get_local_config(
-        os.path.join(BUILD_CLASS_DIR, "adversarial", "librispeech_adversarial.py")
-    ),
-    "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224": get_local_config(
-        os.path.join(
-            BUILD_CLASS_DIR,
-            "adversarial",
-            "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224.py",
-        )
-    ),
-    "ucf101_mars_perturbation_and_patch_adversarial112x112": get_local_config(
-        os.path.join(
-            BUILD_CLASS_DIR,
-            "adversarial",
-            "ucf101_mars_perturbation_and_patch_adversarial112x112.py",
-        )
-    ),
+    #    "german_traffic_sign": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "german_traffic_sign.py")
+    #    ),
+    #    "librispeech_full": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "librispeech_full.py")
+    #    ),
+    #    "librispeech_dev_clean_split": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "librispeech_dev_clean_split.py")
+    #    ),
+    #    "resisc10_poison": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "resisc10_poison.py")
+    #    ),
+    #    "resisc45_split": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "resisc45_split.py")
+    #    ),
+    #    # "ucf101_clean": get_local_config(os.path.join(BUILD_CLASS_DIR, "ucf101_clean.py")), # See TODO Above...SSL Error
+    #    "xview": get_local_config(os.path.join(BUILD_CLASS_DIR, "xview.py")),
+    #    # Below Here are Adversarial Datasets
+    #    "apricot_dev": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "apricot_dev.py")
+    #    ),
+    #    "apricot_test": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "apricot_test.py")
+    #    ),
+    #    "carla_obj_det_dev": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_obj_det_dev.py")
+    #    ),
+    #    "carla_obj_det_test": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_obj_det_test.py")
+    #    ),
+    #    "carla_video_tracking_dev": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_video_tracking_dev.py")
+    #    ),
+    #    "carla_video_tracking_test": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "carla_video_tracking_test.py")
+    #    ),
+    #    # "dapricot_dev": get_local_config(os.path.join(BUILD_CLASS_DIR, "adversarial", "dapricot_dev.py")),  # See TODO above about error
+    #    "dapricot_test": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "dapricot_test.py")
+    #    ),
+    #    "gtsrb_bh_poison_micronnet": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "gtsrb_bh_poison_micronnet.py")
+    #    ),
+    #    "imagenet_adversarial": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "imagenet_adversarial.py")
+    #    ),
+    #    "librispeech_adversarial": get_local_config(
+    #        os.path.join(BUILD_CLASS_DIR, "adversarial", "librispeech_adversarial.py")
+    #    ),
+    #    "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224": get_local_config(
+    #        os.path.join(
+    #            BUILD_CLASS_DIR,
+    #            "adversarial",
+    #            "resisc45_densenet121_univpatch_and_univperturbation_adversarial224x224.py",
+    #        )
+    #    ),
+    #    "ucf101_mars_perturbation_and_patch_adversarial112x112": get_local_config(
+    #        os.path.join(
+    #            BUILD_CLASS_DIR,
+    #            "adversarial",
+    #            "ucf101_mars_perturbation_and_patch_adversarial112x112.py",
+    #        )
+    #    ),
 }
 
 
