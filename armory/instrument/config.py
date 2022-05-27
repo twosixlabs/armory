@@ -216,6 +216,8 @@ class ResultsLogWriter(LogWriter):
         elif any(m in name for m in QUANTITY_METRICS):
             # Don't include % symbol
             f_result = f"{np.mean(result):.2}"
+        elif isinstance(result, dict):
+            f_result = f"{result}"
         else:
             f_result = f"{np.mean(result):.2%}"
         log.success(
@@ -253,6 +255,11 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    elif name == "per_class_mean_accuracy":
+        metric = metrics.get("identity_unzip")
+        func = metrics.get("per_class_mean_accuracy")
+        final = lambda x: func(*metrics.task.identity_zip(x))
+        final_suffix = name
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
