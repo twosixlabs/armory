@@ -11,7 +11,10 @@ import torch
 
 from typing import Callable, Optional
 
-def load_from_directory(dataset_full_path: str, as_supervised: bool = True) -> (dict, dict):
+
+def load_from_directory(
+    dataset_full_path: str, as_supervised: bool = True
+) -> (dict, dict):
     log.info(f"Attempting to Load Dataset from local directory: {dataset_full_path}")
     log.debug("Generating Builder object...")
     builder = tfds.core.builder_from_directory(dataset_full_path)
@@ -34,7 +37,9 @@ def load(dataset_name: str, dataset_directory: str, as_supervised: bool = True):
 
     ds_path = get_dataset_full_path(dataset_name, dataset_directory)
     expected_name = f"{Path(ds_path).relative_to(Path(dataset_directory))}"
-    log.debug(f"ds_path: {ds_path}, expected_name: {expected_name}, dataset_directory: {dataset_directory}")
+    log.debug(
+        f"ds_path: {ds_path}, expected_name: {expected_name}, dataset_directory: {dataset_directory}"
+    )
     if not os.path.isdir(ds_path):
         raise ValueError(
             f"Dataset Directory: {ds_path} does not exist...cannot construct!!"
@@ -54,27 +59,26 @@ def load(dataset_name: str, dataset_directory: str, as_supervised: bool = True):
 
 
 def generator_from_dataset(
-        dataset_info: dict,
-        dataset: dict,
-        framework: str = "numpy",
-        split: str = "train",
-        batch_size: int = 1,
-        epochs: int = 1,
-        preprocessing_fn: Callable = None,
-        label_preprocessing_fn: Callable = None,
-        variable_length: bool = False,
-        variable_y: bool = False,
-        shuffle_files: bool = False,
-        as_supervised: bool = True,
-        supervised_xy_keys: Optional[tuple] = None,
-        lambda_map: Callable = None,
-        context = None,
-        class_ids=None,
-        index=None,
+    dataset_info: dict,
+    dataset: dict,
+    framework: str = "numpy",
+    split: str = "train",
+    batch_size: int = 1,
+    epochs: int = 1,
+    preprocessing_fn: Callable = None,
+    label_preprocessing_fn: Callable = None,
+    variable_length: bool = False,
+    variable_y: bool = False,
+    shuffle_files: bool = False,
+    as_supervised: bool = True,
+    supervised_xy_keys: Optional[tuple] = None,
+    lambda_map: Callable = None,
+    context=None,
+    class_ids=None,
+    index=None,
 ) -> Union[ArmoryDataGenerator, tf.data.Dataset]:
 
     ds = dataset[split]
-
 
     if not as_supervised:
         try:
@@ -111,13 +115,10 @@ def generator_from_dataset(
         else:
             ds = ds.map(lambda x: (x[x_key], x[y_key]))
 
-
     # TODO:  Remove , thesea are just notes
     #  this shows up in so2stat call
     if lambda_map is not None:
         ds = ds.map(lambda_map)
-
-
 
     dataset_size = dataset_info.splits[split].num_examples
 

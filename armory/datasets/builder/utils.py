@@ -380,10 +380,6 @@ def resolve_dataset_directories(
     return data_dirs
 
 
-
-
-
-
 class ProgressPercentageUpload(object):
     """Helper Class for Progress Updates to stdout for uploads"""
 
