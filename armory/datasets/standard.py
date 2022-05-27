@@ -1,9 +1,10 @@
-from .builder.utils import SUPPORTED_DATASETS, DEFAULT_DATASET_DIRECTORY
-from .loader import load, generator_from_dataset
-from .preprocess import preprocessing_chain
 import sys
-from typing import Callable
-from typing import Optional
+from typing import Callable, Optional
+
+from armory.datasets.builder.utils import SUPPORTED_DATASETS, DEFAULT_DATASET_DIRECTORY
+from armory.datasets.generator import generator_from_dataset
+from armory.datasets.loader import load
+from armory.datasets.preprocess import preprocessing_chain
 
 
 def _dataset_generator(
