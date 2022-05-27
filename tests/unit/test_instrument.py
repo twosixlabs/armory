@@ -543,7 +543,7 @@ def test_global_meter():
     step = 3
     for i in range(0, 10, step):
         for array_name, array in zip(["a", "b", "c"], [a, b, c]):
-            m.set(array_name, array[i : i + step])
+            m.set(array_name, array[i : i + step], i)
     assert writer.num_writes == 0
     m.finalize()
     assert writer.num_writes == 1
@@ -553,7 +553,7 @@ def test_global_meter():
     m = GlobalMeter("sum", sum_rows, "a", "b", "c")
     for i in range(0, 10, step):
         for array_name, array in zip(["a", "b", "c"], [a, b, c]):
-            m.set(array_name, array[i : i + step])
+            m.set(array_name, array[i : i + step], i)
     # ValueError raised by sum_rows since kwargs == {}
     with pytest.raises(ValueError):
         m.finalize()

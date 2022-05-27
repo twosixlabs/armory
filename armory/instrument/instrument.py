@@ -653,7 +653,7 @@ class GlobalMeter(Meter):
         identity_zip = metrics.get("identity_zip")
 
         super().__init__(
-            "unused name",
+            f"input_to_{final_name}",
             identity_unzip,
             *final_metric_arg_names,
             metric_kwargs=None,
