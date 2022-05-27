@@ -7,7 +7,7 @@ from armory.scenarios.poison import Poison
 from armory.logs import log
 from armory.utils import config_loading
 from armory import metrics, paths
-from armory.instrument import Meter, LogWriter, ResultsWriter
+from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
 
 
 class DatasetPoisonerWitchesBrew:
@@ -381,14 +381,11 @@ class WitchesBrewScenario(Poison):
 
         per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
         self.hub.connect_meter(
-            Meter(
+            GlobalMeter(
                 "accuracy_on_non_trigger_images_per_class",
-                metrics.get("identity_unzip"),
+                per_class_mean_accuracy,
                 "scenario.y[non-trigger]",
                 "scenario.y_pred[non-trigger]",
-                final=lambda x: per_class_mean_accuracy(*metrics.task.identity_zip(x)),
-                final_name="accuracy_on_non_trigger_images_per_class",
-                record_final_only=True,
             )
         )
 
