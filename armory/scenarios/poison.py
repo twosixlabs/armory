@@ -10,15 +10,15 @@ import random
 import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
-from armory.utils.poisoning import FairnessMetrics
-from armory.utils.export import ImageClassificationExporter
+from armory import metrics
+from armory.metrics.poisoning import ExplanatoryModel
+from armory.instrument.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
-from armory.utils import config_loading, metrics
+from armory.utils import config_loading
 from armory.logs import log
 
 from armory.instrument import Meter, LogWriter, ResultsWriter
-from armory.utils.metrics import get_supported_metric
 
 
 class DatasetPoisoner:
@@ -103,6 +103,7 @@ class Poison(Scenario):
         if not triggered:
             raise NotImplementedError("triggered=False attacks are not implemented")
         self.triggered = triggered
+        self.explanatory_model = None
 
     def set_random_seed(self):
         # Set random seed due to large variance in attack and defense success
@@ -205,14 +206,11 @@ class Poison(Scenario):
         self.record_poison_and_data_info()
 
     def record_poison_and_data_info(self):
-
         self.n_poisoned = int(len(self.poison_index))
-        self.n_clean = (
-            len(self.y_clean) - self.n_poisoned
-        )  # self.y_clean is the whole pre-poison train set
-        poisoned = np.zeros_like(self.y_clean, np.bool)
-        poisoned[self.poison_index.astype(np.int64)] = True
-        self.probe.update(poisoned=poisoned, poison_index=self.poison_index)
+        self.n_clean = len(self.y_poison) - self.n_poisoned
+        self.poisoned = np.zeros_like(self.y_poison, dtype=bool)
+        self.poisoned[self.poison_index.astype(np.int64)] = True
+        self.probe.update(poisoned=self.poisoned, poison_index=self.poison_index)
         self.hub.record("N_poisoned_train_samples", self.n_poisoned)
         self.hub.record("N_clean_train_samples", self.n_clean)
         self.train_set_class_labels = sorted(np.unique(self.y_clean))
@@ -234,9 +232,7 @@ class Poison(Scenario):
 
             if defense_config["kwargs"].get("perfect_filter"):
                 log.info("Filtering all poisoned samples out of training data")
-                indices_to_keep = np.ones_like(self.y_poison, dtype=np.bool_)
-                indices_to_keep[self.poison_index] = False
-
+                indices_to_keep = ~self.poisoned
             else:
                 if "data_augmentation" in defense_config:
                     defense_config.pop("data_augmentation")  # NOTE: RESISC10 ONLY
@@ -273,14 +269,18 @@ class Poison(Scenario):
                 )
 
                 detection_kwargs = defense_config.get("kwargs", {})
-                _, is_clean = defense.detect_poison(**detection_kwargs)
-                is_clean = np.array(is_clean)
-                log.info(f"Total detected clean data points: {np.sum(is_clean)}")
-                is_dirty = is_clean.astype(np.int64) == 0
-                log.info(f"Total detected poisoned data points: {np.sum(is_dirty)}")
+                _, predicted_clean = defense.detect_poison(**detection_kwargs)
+                predicted_clean = np.array(predicted_clean)
+                log.info(
+                    f"Total predicted clean data points: {np.sum(predicted_clean)}"
+                )
+                predicted_dirty = predicted_clean.astype(np.int64) == 0
+                log.info(
+                    f"Total predicted poisoned data points: {np.sum(predicted_dirty)}"
+                )
 
-                log.info("Filtering out detected poisoned samples")
-                indices_to_keep = is_clean == 1
+                log.info("Filtering out predicted poisoned samples")
+                indices_to_keep = predicted_clean == 1
 
         else:
             log.info(
@@ -292,15 +292,12 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
-        is_dirty_mask = np.ones_like(self.y_clean)
-        is_dirty_mask[self.indices_to_keep] = 0
-        self.is_dirty_mask = is_dirty_mask
-
-        removed = (1 - self.indices_to_keep).astype(np.bool)
-        self.probe.update(removed=removed, is_dirty_mask=is_dirty_mask)
-        self.hub.record("fraction_data_removed", removed.mean())
-        self.hub.record("N_samples_removed", removed.sum())
-        self.removed = removed
+        self.removed = (1 - self.indices_to_keep).astype(np.bool)
+        self.probe.update(
+            removed=self.removed, predicted_dirty_mask=~self.indices_to_keep
+        )
+        self.hub.record("fraction_data_removed", self.removed.mean())
+        self.hub.record("N_samples_removed", self.removed.sum())
 
         if self.use_filtering_defense:
             for y in self.train_set_class_labels:
@@ -341,7 +338,31 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.i = -1
-        self.test_set_class_labels = set()
+        if self.explanatory_model is not None:
+            self.init_explanatory()
+
+    def load_fairness_metrics(self):
+        explanatory_config = self.config["adhoc"].get("explanatory_model")
+        if explanatory_config:
+            self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
+        else:
+            log.warning(
+                "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
+            )
+
+        if not self.check_run and self.use_filtering_defense:
+            self.hub.connect_meter(
+                Meter(
+                    "input_to_filter_perplexity",
+                    metrics.get_supported_metric("filter_perplexity_fps_benign"),
+                    "scenario.y_clean",
+                    "scenario.poison_index",
+                    "scenario.predicted_dirty_mask",
+                    final=np.mean,
+                    final_name="filter_perplexity",
+                    record_final_only=True,
+                )
+            )
 
     def load_metrics(self):
         if self.use_filtering_defense:
@@ -349,7 +370,7 @@ class Poison(Scenario):
             self.hub.connect_meter(
                 Meter(
                     "filter",
-                    metrics.get_supported_metric("tpr_fpr"),
+                    metrics.get("tpr_fpr"),
                     "scenario.poisoned",
                     "scenario.removed",
                 )
@@ -358,7 +379,7 @@ class Poison(Scenario):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_all_classes",
-                get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y",
                 "scenario.y_pred",
                 final=np.mean,
@@ -369,7 +390,7 @@ class Poison(Scenario):
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_source_class",
-                get_supported_metric("categorical_accuracy"),
+                metrics.get("categorical_accuracy"),
                 "scenario.y_source",
                 "scenario.y_pred_source",
                 final=np.mean,
@@ -378,24 +399,11 @@ class Poison(Scenario):
             )
         )
 
-        # log.info(
-        #    f"Accuracy on benign test data--all classes: {self.accuracy_on_benign_data_all_classes.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Accuracy on benign test data--source class: {self.accuracy_on_benign_data_source_class.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Accuracy on poisoned data--all classes: {self.accuracy_on_poisoned_data_all_classes.mean():.2%}"
-        # )
-        # log.info(
-        #    f"Attack success rate: {self.attack_success_rate.mean():.2%}"
-        #    )  # percent of poisoned source examples that get classified as target
-
         if self.use_poison:
             self.hub.connect_meter(
                 Meter(
                     "accuracy_on_poisoned_test_data_all_classes",
-                    metrics.get_supported_metric("categorical_accuracy"),
+                    metrics.get("categorical_accuracy"),
                     "scenario.y",
                     "scenario.y_pred_adv",
                     final=np.mean,
@@ -407,7 +415,7 @@ class Poison(Scenario):
             self.hub.connect_meter(
                 Meter(
                     "attack_success_rate",
-                    metrics.get_supported_metric("categorical_accuracy"),
+                    metrics.get("categorical_accuracy"),
                     "scenario.target_class_source",
                     "scenario.y_pred_adv_source",
                     final=np.mean,
@@ -418,38 +426,27 @@ class Poison(Scenario):
             # attack_success_rate is not just 1 - (accuracy on poisoned source class)
             # because it only counts examples misclassified as target, and no others.
 
-        per_class_mean_accuracy = metrics.get_supported_metric(
-            "per_class_mean_accuracy"
-        )
+        per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
         self.hub.connect_meter(
             Meter(
                 "accuracy_on_benign_test_data_per_class",
-                metrics.get_supported_metric("identity_unzip"),
+                metrics.get("identity_unzip"),
                 "scenario.y",
                 "scenario.y_pred",
-                final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
+                final=lambda x: per_class_mean_accuracy(*metrics.task.identity_zip(x)),
                 final_name="accuracy_on_benign_test_data_per_class",
                 record_final_only=True,
             )
         )
 
-        if self.config["adhoc"].get("compute_fairness_metrics", False):
-            self.fairness_metrics = FairnessMetrics(
-                self.config["adhoc"], self.use_filtering_defense, self
-            )
-            if not self.check_run and self.use_filtering_defense:
-                self.fairness_metrics.add_filter_perplexity()
-                # log.info(f"Normalized filter perplexity: {self.filter_perplexity.mean()}")
-        else:
-            log.warning(
-                "Not computing fairness metrics.  If these are desired, set 'compute_fairness_metrics':true under the 'adhoc' section of the config"
-            )
+        if self.config["adhoc"].get("compute_fairness_metrics"):
+            self.load_fairness_metrics()
         self.results_writer = ResultsWriter(sink=None)
         self.hub.connect_writer(self.results_writer, default=True)
         self.hub.connect_writer(LogWriter(), default=True)
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.scenario_output_dir)
+        return ImageClassificationExporter(self.export_dir)
 
     def load(self):
         self.set_random_seed()
@@ -462,7 +459,7 @@ class Poison(Scenario):
         self.filter_dataset()
         self.fit()
         self.load_dataset()
-        self.load_sample_exporter()
+        self.load_export_meters()
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
@@ -479,7 +476,8 @@ class Poison(Scenario):
 
         self.y_pred = y_pred
         self.source = source
-        self.test_set_class_labels.update(y)
+        if self.explanatory_model is not None:
+            self.run_explanatory()
 
     def run_attack(self):
         self.hub.set_context(stage="attack")
@@ -508,38 +506,109 @@ class Poison(Scenario):
         if self.use_poison:
             self.run_attack()
 
-        if self.num_export_batches > self.sample_exporter.saved_batches:
-            # Note: Will still output x_adv even if it is the same as x, i.e. not poisoned
-            self.sample_exporter.export(
-                x=self.x,
-                x_adv=self.x_adv,
-                y=self.y,
-                y_pred_clean=self.y_pred,
-                y_pred_adv=self.y_pred_adv,
+    def init_explanatory(self):
+        self.test_set_class_labels = set()
+        self.test_x = []
+        self.test_y = []
+        self.test_y_pred_class = []
+
+    def run_explanatory(self):
+        self.test_set_class_labels.update(self.y)
+        self.test_x.append(self.x)
+        self.test_y.extend(self.y)
+        self.test_y_pred_class.extend(self.y_pred.argmax(axis=1))
+
+    def finalize_explanatory(self):
+        self.test_x = np.concatenate(self.test_x)
+        self.test_y = np.array(self.test_y)
+        self.test_y_pred_labels = np.array(self.test_y_pred_class)
+        self.test_set_class_labels = sorted(self.test_set_class_labels)
+
+    def get_train_majority_mask_and_ceilings(self):
+        """
+        get majority ceilings on unpoisoned part of train set
+        """
+        if self.explanatory_model is None:
+            raise ValueError("No explanatory model")
+
+        class_majority_mask = metrics.get("class_majority_mask")
+        activations = self.explanatory_model.get_activations(
+            self.x_poison[~self.poisoned]
+        )
+        (
+            self.majority_mask_train_unpoisoned,
+            self.majority_ceilings,
+        ) = class_majority_mask(
+            activations,
+            self.y_poison[~self.poisoned],
+        )
+        return self.majority_mask_train_unpoisoned, self.majority_ceilings
+
+    def get_test_majority_mask(self):
+        """
+        get majority ceilings on unpoisoned part of test set
+        """
+        if self.explanatory_model is None:
+            raise ValueError("No explanatory model")
+        if not hasattr(self, "majority_ceilings"):
+            raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
+        class_majority_mask = metrics.get("class_majority_mask")
+        activations = self.explanatory_model.get_activations(self.test_x)
+        # use copy of majority ceilings computed from train set
+        self.majority_mask_test_set, _ = class_majority_mask(
+            activations,
+            self.test_y,
+            majority_ceilings=copy.copy(self.majority_ceilings),
+        )
+
+        return self.majority_mask_test_set
+
+    def record_bias_results(self, chi2_spd, class_ids, record_prefix, log_prefix):
+        for class_id in class_ids:
+            chi2, spd = chi2_spd[class_id]
+            self.hub.record(
+                f"{record_prefix}bias_chi^2_p_value_{str(class_id).zfill(2)}", chi2
+            )
+            self.hub.record(f"{record_prefix}bias_spd_{str(class_id).zfill(2)}", spd)
+
+    def compute_explanatory(self):
+        log.info("Computing fairness metrics")
+        if self.train_set_class_labels != self.test_set_class_labels:
+            log.warning(
+                "Test set contains a strict subset of train set classes. "
+                "Some metrics for missing classes may not be computed."
+            )
+
+        class_bias = metrics.get("class_bias")
+        # Model bias: compares rate of correct predictions between binary clusters of each class
+
+        self.get_train_majority_mask_and_ceilings()
+        self.get_test_majority_mask()
+        chi2_spd = class_bias(
+            self.test_y,
+            self.majority_mask_test_set,
+            self.test_y == self.test_y_pred_class,
+            self.test_set_class_labels,
+        )
+
+        self.record_bias_results(
+            chi2_spd, self.test_set_class_labels, "model_", "Model "
+        )
+        if self.use_filtering_defense:
+            # Filter bias: Compares rate of filtering between binary clusters of each class
+            chi2_spd = class_bias(
+                self.y_poison[~self.poisoned],
+                self.majority_mask_train_unpoisoned,
+                self.indices_to_keep[~self.poisoned],
+                self.train_set_class_labels,
+            )
+            self.record_bias_results(
+                chi2_spd, self.train_set_class_labels, "filter_", "Filter "
             )
 
     def finalize_results(self):
-        if hasattr(self, "fairness_metrics") and not self.check_run:
-            self.test_set_class_labels = sorted(self.test_set_class_labels)
-            if self.train_set_class_labels != self.test_set_class_labels:
-                log.warning(
-                    "Test set contains a strict subset of train set classes. "
-                    "Some metrics for missing classes may not be computed."
-                )
-            self.fairness_metrics.add_cluster_metrics(
-                self.x_poison,
-                self.y_poison,
-                self.poison_index,
-                self.indices_to_keep,
-                # Get unpoisoned test set
-                config_loading.load_dataset(
-                    self.config["dataset"],
-                    split="test",
-                    num_batches=None,
-                    **self.dataset_kwargs,
-                ),
-                self.train_set_class_labels,
-                self.test_set_class_labels,
-            )
+        if getattr(self, "explanatory_model") and not self.check_run:
+            self.finalize_explanatory()
+            self.compute_explanatory()
         self.hub.close()
         self.results = self.results_writer.get_output()

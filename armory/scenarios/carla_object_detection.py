@@ -4,18 +4,14 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.scenario import Scenario
-from armory.utils.export import ObjectDetectionExporter
+from armory.scenarios.object_detection import ObjectDetectionTask
+from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
 
 
-class CarlaObjectDetectionTask(Scenario):
+class CarlaObjectDetectionTask(ObjectDetectionTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.skip_misclassified:
-            raise ValueError(
-                "skip_misclassified shouldn't be set for carla_object_detection scenario"
-            )
         if self.skip_benign:
             raise ValueError(
                 "skip_benign shouldn't be set for carla_object_detection scenario, as "
@@ -76,13 +72,13 @@ class CarlaObjectDetectionTask(Scenario):
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def _load_sample_exporter(self):
-        default_export_kwargs = {"with_boxes": True, "classes_to_skip": [4]}
-        return ObjectDetectionExporter(
-            self.scenario_output_dir, default_export_kwargs=default_export_kwargs
-        )
-
     def load_metrics(self):
         super().load_metrics()
         # measure adversarial results using benign predictions as labels
         self.metrics_logger.add_tasks_wrt_benign_predictions()
+
+    def _load_sample_exporter_with_boxes(self):
+        return ObjectDetectionExporter(
+            self.export_dir,
+            default_export_kwargs={"with_boxes": True, "classes_to_skip": [4]},
+        )
