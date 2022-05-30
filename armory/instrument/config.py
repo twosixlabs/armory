@@ -258,7 +258,10 @@ def _task_metric(
     elif name == "per_class_mean_accuracy":
         metric = metrics.get("identity_unzip")
         func = metrics.get("per_class_mean_accuracy")
-        final = lambda x: func(*metrics.task.identity_zip(x))
+
+        def final(x):
+            return func(*metrics.task.identity_zip(x))
+
         final_suffix = name
     elif use_mean:
         final = np.mean
