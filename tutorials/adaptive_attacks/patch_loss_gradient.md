@@ -2,7 +2,7 @@
 Here, we demonstrate how to patch the `loss_gradient` method of the model, allowing for control over how the gradient is computed for white box attacks.
 
 # Goal
-Starting with the baseline CIFAR10 scenario [here](../../scenario_configs/cifar10_baseline.json), we will slightly modify the model to apply a random transformation to each input image before classification.  In particular, we will apply the `RandomErasing` operation, implemented in Torch, to each input image, then run each modified image through a forward pass of the model.
+Starting with the baseline CIFAR10 scenario [here](../../scenario_configs/eval1-4/cifar/cifar10_baseline.json), we will slightly modify the model to apply a random transformation to each input image before classification.  In particular, we will apply the `RandomErasing` operation, implemented in Torch, to each input image, then run each modified image through a forward pass of the model.
 
 Because this operation is random, one might want to average the gradient over many instances of the random transformation as part of a white box attack.  Here, we demonstrate how to achieve this via modifying the `loss_gradient` method of the model.
 

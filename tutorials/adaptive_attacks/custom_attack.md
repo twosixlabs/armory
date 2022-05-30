@@ -2,7 +2,7 @@
 As a first step, we will demonstrate how to implement a custom attack - one which does not fit directly into the existing attack types supported by ARMORY.
 
 # Goal
-Starting with the defended CIFAR10 scenario [here](../../scenario_configs/cifar10_baseline.json), we want to modify the attack as follows: rather than a simple untargeted attack, launch a targeted projected gradient descent (PGD) attack against each incorrect class, one at a time, until a successful adversarial example is identified.
+Starting with the defended CIFAR10 scenario [here](../../scenario_configs/eval1-4/cifar/cifar10_baseline.json), we want to modify the attack as follows: rather than a simple untargeted attack, launch a targeted projected gradient descent (PGD) attack against each incorrect class, one at a time, until a successful adversarial example is identified.
 
 # Implementation
 Because ARMORY targeted attacks are designed to attack only one class at a time, and not repeat the attack with a different target for the same example, this requires a custom attack.
