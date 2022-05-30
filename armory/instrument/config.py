@@ -205,6 +205,8 @@ class ResultsLogWriter(LogWriter):
                 f"neutral: {result['neutral']}/{total}, "
                 f"entailment: {result['entailment']}/{total}"
             )
+        elif "confusion_matrix" in name:
+            f_result = f"{result}"
         elif any(m in name for m in MEAN_AP_METRICS):
             if "input_to" in name:
                 for m in MEAN_AP_METRICS:
@@ -258,6 +260,14 @@ def _task_metric(
     elif name == "per_class_mean_accuracy":
         metric = metrics.get("identity_unzip")
         func = metrics.get("per_class_mean_accuracy")
+
+        def final(x):
+            return func(*metrics.task.identity_zip(x))
+
+        final_suffix = name
+    elif name == "confusion_matrix":
+        metric = metrics.get("identity_unzip")
+        func = metrics.get("confusion_matrix")
 
         def final(x):
             return func(*metrics.task.identity_zip(x))
