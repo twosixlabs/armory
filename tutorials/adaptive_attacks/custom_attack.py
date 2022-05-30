@@ -4,11 +4,6 @@ from art.attacks.evasion import ProjectedGradientDescent
 
 
 class CustomAttack(ProjectedGradientDescent):
-    def __init__(self, estimator, **kwargs):
-        modified_kwargs = kwargs.copy()
-        modified_kwargs["targeted"] = True
-        super().__init__(estimator, **modified_kwargs)
-
     def generate(self, x, y):
 
         x_adv = []
