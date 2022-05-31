@@ -263,7 +263,8 @@
                 "carla_od_misclassification_rate",
                 "carla_od_true_positive_rate",
                 "per_class_mean_accuracy",
-                "confusion_matrix"
+                "confusion_matrix",
+                "precision_and_recall"
             ]
         },
         "sysconfig": {

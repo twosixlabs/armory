@@ -10,6 +10,7 @@ from sklearn import cluster
 from sklearn.metrics import silhouette_samples
 
 from armory.metrics.perturbation import MetricNameSpace, set_namespace
+from armory.metrics.task import populationwise
 
 registered = MetricNameSpace()
 
@@ -19,6 +20,33 @@ def register(metric):
     Register a statistical metric
     """
     return set_namespace(registered, metric)
+
+
+@populationwise
+def precision_and_recall(y, y_pred):
+    """
+    Produce a dictionary whose keys are class labels, and values are (precision, recall) for that class
+    """
+    # Assumes that every class is represented in y
+
+    C = confusion_matrix(y, y_pred, normalize=False)
+    # breakpoint()
+    N = C.shape[0]
+    D = {}
+    for class_ in range(N):
+        # precision: true positives / number of items identified as class_
+        tp = C[class_, class_]
+        total_selected = C[:, class_].sum()
+        precision = tp / total_selected
+
+        #recall: true positives / number of actual items in class_
+        total_class_ = C[class_, :].sum()
+        recall = tp / total_class_
+
+        D[class_] = (precision, recall)
+
+    return D
+
 
 
 @register

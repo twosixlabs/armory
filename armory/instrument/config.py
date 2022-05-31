@@ -273,6 +273,16 @@ def _task_metric(
             return func(*metrics.task.identity_zip(x))
 
         final_suffix = name
+    elif name == "precision_and_recall":
+        metric = metrics.get("identity_unzip")
+        func = metrics.get("precision_and_recall")
+
+        def final(x):
+            return func(*metrics.task.identity_zip(x))
+
+        final_suffix = name
+
+
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
