@@ -231,24 +231,6 @@ class MeanAP:
 
 
 @populationwise
-def confusion_matrix(y, y_pred):
-    """
-    Produce a matrix C such that C[i,j] is the percentage of class i that was classified as j
-    """
-    # Assumes that every class is represented in y
-    y = np.array(y)
-    y_pred = np.argmax(y_pred, axis=1)
-    N = len(np.unique(y))
-    C = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            C[i, j] = np.sum(y_pred[y == i] == j)
-    sums = np.sum(C, axis=1)
-    C = C / sums[:, np.newaxis]
-    return C
-
-
-@populationwise
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays

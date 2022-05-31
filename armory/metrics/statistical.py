@@ -48,6 +48,25 @@ def precision_and_recall(y, y_pred):
     return D
 
 
+@populationwise
+def confusion_matrix(y, y_pred, normalize=True):
+    """
+    Produce a matrix C such that C[i,j] is the percentage of class i that was classified as j
+    If normalize is False, C[i,j] is the actual number of such elements, rather than the percentage
+    """
+    # Assumes that every class is represented in y
+    y = np.array(y)
+    y_pred = np.argmax(y_pred, axis=1)
+    N = len(np.unique(y))
+    C = np.zeros((N, N))
+    for i in range(N):
+        for j in range(N):
+            C[i, j] = np.sum(y_pred[y == i] == j)
+    if normalize:
+        sums = np.sum(C, axis=1)
+        C = C / sums[:, np.newaxis]
+    return C
+
 
 @register
 def chi2_p_value(contingency_table: np.ndarray) -> List[float]:
