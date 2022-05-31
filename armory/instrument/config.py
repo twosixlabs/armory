@@ -282,7 +282,6 @@ def _task_metric(
 
         final_suffix = name
 
-
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"

@@ -11,6 +11,35 @@ from armory.metrics import statistical
 pytestmark = pytest.mark.unit
 
 
+def test_confusion_matrix():
+    y = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
+    y_pred = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0])
+    assert statistical.confusion_matrix(y, y) == pytest.approx(
+        np.array([[1, 0], [0, 1]])
+    )
+    assert statistical.confusion_matrix(y, y_pred) == pytest.approx(
+        np.array([[0.6, 0.4], [0.2, 0.8]])
+    )
+    assert statistical.confusion_matrix(y, y_pred, normalize=False) == pytest.approx(
+        np.array([[3, 2], [1, 4]])
+    )
+
+
+def test_precision_and_recall():
+    y = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
+    y_pred = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0])
+    D = statistical.precision_and_recall(y, y_pred)
+    assert D[0] == pytest.approx((0.75, 0.6))
+    assert D[1] == pytest.approx((0.66666667, 0.8))
+
+    y = np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
+    y_pred = np.array([0, 0, 0, 0, 1, 1, 2, 1, 2, 2, 0, 1])
+    D = statistical.precision_and_recall(y, y_pred)
+    assert D[0] == pytest.approx((0.8, 1))
+    assert D[1] == pytest.approx((0.75, 0.75))
+    assert D[2] == pytest.approx((0.666666667, 0.5))
+
+
 def test_chi2_p_value():
 
     table1 = np.array([[2, 3], [4, 6]])
