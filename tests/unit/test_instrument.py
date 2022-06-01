@@ -766,21 +766,21 @@ def test_integration():
         hub.set_context(stage="get_batch", batch=i)
         x = np.random.random(100)
         y = np.random.randint(10)
-        scenario_probe.update(x=x, y=y)
+        scenario_probe.update(x=[x], y=[y])
         not_connected_probe.update(x)  # should send a warning once
 
         hub.set_context(stage="benign")
         y_pred = model.predict(x)
-        scenario_probe.update(y_pred=y_pred)
+        scenario_probe.update(y_pred=[y_pred])
 
         hub.set_context(stage="benign")
         x_adv = x
         for j in range(5):
             model.predict(x_adv)
             x_adv = x_adv + np.random.random(100) * 0.1
-            attack_probe.update(x_adv=x_adv)
+            attack_probe.update(x_adv=[x_adv])
 
         hub.set_context(stage="benign")
         y_pred_adv = model.predict(x_adv)
-        scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+        scenario_probe.update(x_adv=[x_adv], y_pred_adv=[y_pred_adv])
     hub.close()
