@@ -5,11 +5,119 @@ Loader is used to return a TF Dataset object from a dataset
 
 import os
 from pathlib import Path
+from typing import Optional, Tuple
 
 from armory.logs import log
 from armory.datasets.builder.utils import get_dataset_full_path
 
 import tensorflow_datasets as tfds
+
+
+def supervised_keys_map(supervised, keys=None):
+    """
+    Return a function that maps from input dict to tuple output
+
+    supervised - tuple of strings or tuple of tuple of strings (or Nones)
+        Desired output format
+        Examples:
+            ("audio", "label")
+            ("audio", "user_id")
+            (("image", "adv_image"), "label")
+            ("data", None)
+    keys - set of allowable keys
+        if None, do not check keys
+
+    Input/Ouput Examples:
+        ("hi", None, "there") --> lambda x: (x["hi"], None, x["there"])
+        (("a", "b"), "c") --> lambda x: ((x["a"], x["b"]), x["c"])
+    """
+
+    def key_mapper(x):
+        out = []
+        for element in supervised:
+            if element is None:
+                out.append(None)
+            elif isinstance(element, str):
+                out.append(x[element])
+            elif isinstance(element, tuple):
+                out_sub = []
+                for sub_element in element:
+                    if sub_element is None:
+                        out_sub.append(None)
+                    elif isinstance(sub_element, str):
+                        out_sub.append(x[sub_element])
+                    else:
+                        ValueError(f"sub_element {sub_element} must be None or str")
+                out.append(tuple(out_sub))
+            else:
+                raise ValueError(f"element {element} must be None, str, or tuple")
+        return tuple(out)
+
+    if keys is not None:
+        test_input = {k: i for i, k in enumerate(keys)}
+        try:
+            key_mapper(test_input)
+        except KeyError as e:
+            raise KeyError(f"element {e} is not in keys")
+
+    return key_mapper
+
+
+def from_config(
+    name,
+    version=None,
+    split=None,
+    supervised=True,
+    batch_size=1,
+    framework="numpy",
+):
+    info, ds = load_full(name, version - version, split=split, supervised=supervised)
+    # TODO ...
+
+
+def load_full(
+    name,
+    *,
+    # try_gcs = False,
+    data_dir=None,
+    config=None,
+    version=None,
+    split=None,
+    shuffle_files=False,
+    supervised=False,
+):
+    """
+    Return dataset info and dataset
+    """
+    if name in tfds.list_builders():
+        pass  # use TFDS main method;
+    elif name in SUPPORTED_DATASETS:
+        pass
+    else:
+        pass  # attempt custom
+
+    builder = tfds.core.builder_from_directory(name)
+
+    if supervised is True:
+        as_supervised = True
+    elif supervised is False or supervised is None:
+        as_supervised = False
+    elif isinstance(supervised, tuple) or isinstance(supervised, list):
+        supervised = tuple(supervised)
+        if split is None:
+            raise NotImplementedError(f"custom supervised keys require split specified")
+        as_supervised = False
+        supervised_map = supervised_keys_map(supervised, keys=builder.info.features)
+    else:
+        ValueError(f"supervised must be one of (True, False, tuple), not {supervised}")
+
+    ds = builder.as_dataset(
+        split=split, shuffle_files=shuffle_files, as_supervised=as_supervised
+    )
+    if isinstance(supervised, tuple):
+        ds = ds.map(supervised_map)
+
+    return builder.info, ds
 
 
 def load_from_directory(

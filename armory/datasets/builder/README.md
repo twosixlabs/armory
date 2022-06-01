@@ -101,3 +101,91 @@ python upload.py -h
    however, this `build.py` script enforces the naming of the class file and the class itself
    be consistent.  
    
+
+
+# Loading Datasets
+
+All datasets should be located in the `~/.armory/datasets/TFDSv4` directory and fully built.
+
+Datasets are loaded from directories there.
+
+TFDS core datasets use the standard mechanism?
+Armory datasets load from directory
+Custom datasets also load from directory
+
+## Bringing in standard TFDS dataset
+
+
+
+## Armory supported TFDS datasets
+
+Some datasets we support directly in Armory, such as `mnist` and `cifar10`.
+For these, 
+
+## Integrating existing TFDS dataset into Armory
+
+Here, we basically just need to create an s3 cached version of the dataset for reuse, and make it easy to download.
+
+Using the standard `tfds build` with the proper paths should be fine.
+Then we will need to use the upload tool on that directory.
+
+It should tar gz the file from the root of the datasets directory, like so:
+```
+cd ~/.armory/datasets
+tar zcvf mnist-3.0.1.tar.gz mnist/3.0.1/*
+```
+Then, when being untarred, it can be extracted from the root of the datasets directory:
+```
+cd ~/.armory/datasets
+tar zxvf mnist-3.0.1.tar.gz
+```
+
+
+It will push the `.tar.gz` file to s3.
+
+
+
+The upload tool will also create a checksum file which includes the name, size, and sha256 hash.
+
+
+## Creating / integrating a new armory dataset
+
+Go to the builder directory, under `datasets` (or `adversarial` for adversarial datasets).
+Then, use `tfds new <dataset_name>` to create a new dataset directory in `datasets`.
+```bash
+cd armory/datasets/builder/datasets
+tfds new <dataset_name>
+```
+
+Fill in the `<dataset_name>.py` file created in that directory, plus tests and dummy data as desired.
+Build the dataset using `tfds build`, and ensure that `--register_checksums` is used to create the checksums file.
+```bash
+cd <dataset_name>
+vim <dataset_name>.py
+build <dataset_name> --register_checksums --data_dir ~/.armory/datasets/v4
+```
+
+To test, we will ensure that the checksums validate correctly:
+```bash
+build <dataset_name> --force_checksums_validation --data_dir ~/.armory/datasets/v4 --overwrite
+```
+
+When making a PR, ensure that `<dataset_name>.py`, `__init__.py`, and `checksums.tsv` are included.
+
+Once the dataset is rebuilt and the PR is accepted, `upload.py` should be used to push the file to our s3 cache.
+
+TODO: we need to figure out how to handle s3 checksums.
+    Recommendation: use same structure as our internal datasets and versions.
+    However, also include a "checksums" file which is created in `upload.py` and pushed to an adjacent bucket.
+
+## Integrating a custom dataset
+
+Custom datasets should use the TFDS CLI (version 4 or later).
+We recommend using tfds to build it, and then using `add_custom_dataset` to bring it into armory.
+The author should ensure that the name is not part of TFDS core or in armory already, to prevent name collisions.
+
+
+
+## Loading from dataset config
+
+

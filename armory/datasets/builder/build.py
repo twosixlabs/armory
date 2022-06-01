@@ -29,6 +29,7 @@ def build_tfds_dataset(dataset_name: str, local_path: str, feature_dict=None) ->
         dataset_name, local_path, validate=False
     )  # Don't check structure yet
     log.debug(f"Resulting Dataset Directory: {ds_path}")
+    # Consider builder.info
     if "features.json" not in os.listdir(ds_path):
         if feature_dict is None:
             raise RuntimeError(
@@ -139,3 +140,7 @@ def main(dataset_dict: dict, output_directory: str, clean: bool = False):
             raise e
 
     log.success("\t ALL Builds Complete !!")
+
+
+if __name__ == "__main__":
+    main()

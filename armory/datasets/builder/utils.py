@@ -5,8 +5,9 @@ import os
 import re
 import sys
 
-from loguru import logger as log
 import tensorflow_datasets as tfds
+
+from armory.logs import log
 
 print(f"User: {os.path.expanduser('~')}")
 DEFAULT_DATASET_DIRECTORY = os.path.expanduser("~/.armory/dataset_builds/")
