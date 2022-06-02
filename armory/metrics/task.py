@@ -287,7 +287,7 @@ def tpr_fpr(actual_conditions, predicted_conditions):
 
 
 @populationwise
-def precision_and_recall(y, y_pred):
+def per_class_precision_and_recall(y, y_pred):
     """
     Produce a dictionary whose keys are class labels, and values are (precision, recall) for that class
     """
@@ -313,22 +313,26 @@ def precision_and_recall(y, y_pred):
 
 
 @populationwise
-def confusion_matrix(y, y_pred, normalize=True):
+def confusion_matrix(y, y_pred, normalize_rows=True):
     """
-    Produce a matrix C such that C[i,j] is the percentage of class i that was classified as j
-    If normalize is False, C[i,j] is the actual number of such elements, rather than the percentage
+    Produce a matrix C such that C[i,j] describes how often class i is classified as class j.
+    If normalize_rows is False, C[i,j] is the actual number of i's classified as j.
+    If normalize_rows is True (default), the rows are normalized in L1, so that C[i,j] is the percentage of class i that was marked as j.
     """
     # Assumes that every class is represented in y
+
     y = np.array(y)
     y_pred = np.array(y_pred)
-    if y_pred.ndim == 2:
+    if y_pred.ndim == 2:  # if y_pred is logits
         y_pred = np.argmax(y_pred, axis=1)
-    N = len(np.unique(y))
+    N = len(np.unique(y))  # number of classes
     C = np.zeros((N, N))
     for i in range(N):
         for j in range(N):
+            # count items of class i that were classified as j
             C[i, j] = np.sum(y_pred[y == i] == j)
-    if normalize:
+    if normalize_rows:
+        # divide rows by their sum so that each element is a percentage of class i, not a count
         sums = np.sum(C, axis=1)
         C = C / sums[:, np.newaxis]
     return C

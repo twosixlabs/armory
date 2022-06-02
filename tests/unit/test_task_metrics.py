@@ -15,9 +15,7 @@ pytestmark = pytest.mark.unit
 def test_confusion_matrix():
     y = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
     y_pred = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0])
-    assert task.confusion_matrix(y, y) == pytest.approx(
-        np.array([[1, 0], [0, 1]])
-    )
+    assert task.confusion_matrix(y, y) == pytest.approx(np.array([[1, 0], [0, 1]]))
     assert task.confusion_matrix(y, y_pred) == pytest.approx(
         np.array([[0.6, 0.4], [0.2, 0.8]])
     )
@@ -26,16 +24,16 @@ def test_confusion_matrix():
     )
 
 
-def test_precision_and_recall():
+def test_per_class_precision_and_recall():
     y = np.array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
     y_pred = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 0])
-    D = task.precision_and_recall(y, y_pred)
+    D = task.per_class_precision_and_recall(y, y_pred)
     assert D[0] == pytest.approx((0.75, 0.6))
     assert D[1] == pytest.approx((0.66666667, 0.8))
 
     y = np.array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2])
     y_pred = np.array([0, 0, 0, 0, 1, 1, 2, 1, 2, 2, 0, 1])
-    D = task.precision_and_recall(y, y_pred)
+    D = task.per_class_precision_and_recall(y, y_pred)
     assert D[0] == pytest.approx((0.8, 1))
     assert D[1] == pytest.approx((0.75, 0.75))
     assert D[2] == pytest.approx((0.666666667, 0.5))
