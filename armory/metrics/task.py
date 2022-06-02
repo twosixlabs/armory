@@ -293,7 +293,7 @@ def per_class_precision_and_recall(y, y_pred):
     """
     # Assumes that every class is represented in y
 
-    C = confusion_matrix(y, y_pred, normalize=False)
+    C = confusion_matrix(y, y_pred, normalize_rows=False)
     # breakpoint()
     N = C.shape[0]
     D = {}

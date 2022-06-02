@@ -257,25 +257,9 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
-    elif name == "per_class_mean_accuracy":
+    elif name in ["per_class_mean_accuracy", "per_class_precision_and_recall", "confusion_matrix"]:
         metric = metrics.get("identity_unzip")
-        func = metrics.get("per_class_mean_accuracy")
-
-        def final(x):
-            return func(*metrics.task.identity_zip(x))
-
-        final_suffix = name
-    elif name == "confusion_matrix":
-        metric = metrics.get("identity_unzip")
-        func = metrics.get("confusion_matrix")
-
-        def final(x):
-            return func(*metrics.task.identity_zip(x))
-
-        final_suffix = name
-    elif name == "precision_and_recall":
-        metric = metrics.get("identity_unzip")
-        func = metrics.get("precision_and_recall")
+        func = metrics.get(name)
 
         def final(x):
             return func(*metrics.task.identity_zip(x))
