@@ -257,7 +257,11 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
-    elif name in ["per_class_mean_accuracy", "per_class_precision_and_recall", "confusion_matrix"]:
+    elif name in [
+        "per_class_mean_accuracy",
+        "per_class_precision_and_recall",
+        "confusion_matrix",
+    ]:
         metric = metrics.get("identity_unzip")
         func = metrics.get(name)
 
