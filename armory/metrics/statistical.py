@@ -10,7 +10,6 @@ from sklearn import cluster
 from sklearn.metrics import silhouette_samples
 
 from armory.metrics.perturbation import MetricNameSpace, set_namespace
-from armory.metrics.task import populationwise
 
 registered = MetricNameSpace()
 
@@ -20,54 +19,6 @@ def register(metric):
     Register a statistical metric
     """
     return set_namespace(registered, metric)
-
-
-@populationwise
-def precision_and_recall(y, y_pred):
-    """
-    Produce a dictionary whose keys are class labels, and values are (precision, recall) for that class
-    """
-    # Assumes that every class is represented in y
-
-    C = confusion_matrix(y, y_pred, normalize=False)
-    # breakpoint()
-    N = C.shape[0]
-    D = {}
-    for class_ in range(N):
-        # precision: true positives / number of items identified as class_
-        tp = C[class_, class_]
-        total_selected = C[:, class_].sum()
-        precision = tp / total_selected
-
-        # recall: true positives / number of actual items in class_
-        total_class_ = C[class_, :].sum()
-        recall = tp / total_class_
-
-        D[class_] = (precision, recall)
-
-    return D
-
-
-@populationwise
-def confusion_matrix(y, y_pred, normalize=True):
-    """
-    Produce a matrix C such that C[i,j] is the percentage of class i that was classified as j
-    If normalize is False, C[i,j] is the actual number of such elements, rather than the percentage
-    """
-    # Assumes that every class is represented in y
-    y = np.array(y)
-    y_pred = np.array(y_pred)
-    if y_pred.ndim == 2:
-        y_pred = np.argmax(y_pred, axis=1)
-    N = len(np.unique(y))
-    C = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            C[i, j] = np.sum(y_pred[y == i] == j)
-    if normalize:
-        sums = np.sum(C, axis=1)
-        C = C / sums[:, np.newaxis]
-    return C
 
 
 @register
