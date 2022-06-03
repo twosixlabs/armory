@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 
 from armory.logs import log
 from armory.datasets.builder.utils import get_dataset_full_path
+from armory.datasets import directory
 
 import tensorflow_datasets as tfds
 
@@ -75,13 +76,110 @@ def from_config(
     # TODO ...
 
 
+def get_subdir(
+    name,
+    version=None,
+    data_dir=None,
+):
+    """ """
+    if version is None:  # derive version
+        if name in directory.SUPPORTED_DATASETS:
+            version = directory.SUPPORTED_DATASETS[name]
+        elif name in tfds.list_builders():
+            builder = tfds.builder(name)
+            version = str(builder.version)
+        else:
+            raise ValueError(f"version not provided for custom dataset {name}")
+    if data_dir is None:
+        data_dir = paths.runtime_paths().dataset_dir
+    data_dir = Path(data_dir)
+    return data_dir / name / version
+
+
+class Loader:
+    def __init__(self, name, version=None, data_dir=None):
+        self.supported = False
+        if name in directory.SUPPORTED_DATASETS:
+            self.supported = True
+            supported_version, checksum = directory.SUPPORTED_DATASETS[name]
+            if version is None:
+                version = supported_version
+            elif version != supported_version:
+                log.warning(
+                    f"version {version} does not match supported version {supported_version}"
+                )
+                self.supported = False
+            self.checksum = checksum
+        elif version is None:
+            if name in tfds.list_builders():
+                builder = tfds.builder(name)
+                version = str(builder.version)
+            else:
+                raise ValueError(f"version not provided for custom dataset {name}")
+        self.name = name
+        self.version = version
+        if data_dir is None:
+            data_dir = paths.runtime_paths().dataset_dir
+        self.data_dir = Path(data_dir)
+        self.dataset_subdir = self.data_dir / name / version
+
+    def load_builder(self, download_cached=True):
+        if not self.dataset_subdir.is_dir():
+            if download_cached:
+                if checksum is None:
+                    raise ValueError("No checksum for {self.name}. Cannot download")
+                download.download(
+                    name,
+                    version,
+                    self.data_dir,
+                    checksum=self.checksum,
+                    verify_download=True,
+                )
+                # TODO: unpack?
+
+        self.builder = tfds.core.builder_from_directory(self.dataset_subdir)
+        return self
+
+    def set_supervised(self, supervised=False):
+        supervised_map = None
+        if supervised is True:
+            as_supervised = True
+        elif supervised is False or supervised is None:
+            as_supervised = False
+        elif isinstance(supervised, tuple) or isinstance(supervised, list):
+            supervised = tuple(supervised)
+            if split is None:
+                raise NotImplementedError(
+                    f"custom supervised keys require split specified"
+                )
+            as_supervised = False
+            supervised_map = supervised_keys_map(supervised, keys=builder.info.features)
+        else:
+            ValueError(
+                f"supervised must be one of (True, False, tuple), not {supervised}"
+            )
+        self.supervised_map, self.as_supervised = supervised_map, as_supervised
+
+    def as_dataset(self, split=None, shuffle_files=None):
+        ds = self.builder.as_dataset(
+            split=split, shuffle_files=shuffle_files, as_supervised=self.as_supervised
+        )
+        if self.supervised_map is not None:
+            ds = ds.map(self.supervised_map)
+        self.ds = ds
+
+    def get(self):
+        return self.builder.info, ds
+
+
 def load_full(
     name,
     *,
     # try_gcs = False,
-    data_dir=None,
-    config=None,
     version=None,
+    data_dir=None,
+    download_cached=True,
+    config=None,
     split=None,
     shuffle_files=False,
     supervised=False,
@@ -89,14 +187,14 @@ def load_full(
     """
     Return dataset info and dataset
     """
-    if name in tfds.list_builders():
-        pass  # use TFDS main method;
-    elif name in SUPPORTED_DATASETS:
-        pass
-    else:
-        pass  # attempt custom
+    path = get_subdir(name, version=version, data_dir=data_dir)
+    if not path.is_dir():
+        if download_cached and name in directory.SUPPORTED_DATASETS:
+            download.download(name, version or directory.SUPPORTED_DATASETS[name])
 
-    builder = tfds.core.builder_from_directory(name)
+        if path.is_dir():
+            pass
+    builder = tfds.core.builder_from_directory(path)
 
     if supervised is True:
         as_supervised = True
