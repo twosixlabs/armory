@@ -19,7 +19,7 @@ def test_confusion_matrix():
     assert task.confusion_matrix(y, y_pred) == pytest.approx(
         np.array([[0.6, 0.4], [0.2, 0.8]])
     )
-    assert task.confusion_matrix(y, y_pred, normalize=False) == pytest.approx(
+    assert task.confusion_matrix(y, y_pred, normalize_rows=False) == pytest.approx(
         np.array([[3, 2], [1, 4]])
     )
 
