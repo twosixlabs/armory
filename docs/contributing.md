@@ -85,3 +85,8 @@ pytest as our test runner.
 
 For running `pytest`, users should follow `.github/workflows/ci_test.yml`.
 This has tests for docker and native modes as well as formatting.
+
+## Documentation
+When adding new functionality or modifying existing functionality, please update documentation.
+Docs are all markdown (`.md`) files located in [docs](./docs/) directory or its subdirectories.
+If doc files are added or removed, please also update the [markdown yaml](./mkdocs.yml)
