@@ -3,12 +3,13 @@ site_name: Armory
 nav:
   - Home: index.md
   - Getting Started: getting_started.md
+  - FAQs: faqs.md
   - Environment:
       - Command Line: command_line.md
       - Docker: docker.md
       - No-Docker: no_docker_mode.md
-  - Configuration Files: configuration_files.md
-  - Configuration Components:
+  - Experiments:
+      - Configuration Files: configuration_files.md
       - Baseline Models: baseline_models.md
       - External Repos: external_repos.md
       - Sweep Attacks: sweep_attacks.md
@@ -28,5 +29,4 @@ nav:
       - Contributing: contributing.md
       - Style: style.md
       - Testing: developers/testing.md
-  - FAQs: faqs.md
 theme: readthedocs
