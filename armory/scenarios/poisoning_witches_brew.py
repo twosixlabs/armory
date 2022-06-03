@@ -379,6 +379,18 @@ class WitchesBrewScenario(Poison):
             )
         )
 
+        self.hub.connect_meter(
+            Meter(
+                "attack_success_rate",  # percent of triggers classified as target
+                metrics.get_supported_metric("categorical_accuracy"),
+                "scenario.target[trigger]",
+                "scenario.y_pred[trigger]",
+                final=np.mean,
+                final_name="attack_success_rate",
+                record_final_only=True,
+            )
+        )
+
         per_class_mean_accuracy = metrics.get_supported_metric(
             "per_class_mean_accuracy"
         )
@@ -434,12 +446,16 @@ class WitchesBrewScenario(Poison):
         self.hub.set_context(stage="trigger")
         # Only called for the trigger images
 
+        # get target for this image
+        ind = self.trigger_index.index(self.i)
+        target = np.array([self.target_class[ind]])
+
         x, y = self.x, self.y
 
         x.flags.writeable = False
         y_pred_adv = self.model.predict(x, **self.predict_kwargs)
 
-        self.probe.update(y=y, y_pred=y_pred_adv, y_pred_adv=y_pred_adv)
+        self.probe.update(y=y, y_pred=y_pred_adv, y_pred_adv=y_pred_adv, target=target)
 
         self.y_pred_adv = y_pred_adv  # for exporting when function returns
 

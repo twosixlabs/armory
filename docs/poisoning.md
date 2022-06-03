@@ -157,9 +157,11 @@ $\mathrm{KL}(p||q) = \sum_i{p(C_i)\log}{\frac{p(C_i)}{q(C_i)}}$.
 
 ### Witches' Brew
 
-Because test-time data is not poisoned for the witches' brew attack, it doesn't make sense to use the four primary metrics described above.  Instead, we have these two:
+Because test-time data is not poisoned for the witches' brew attack, it doesn't make sense to use the four primary metrics described above.  Instead, we have these three:
 - `accuracy_on_trigger_images`
 - `accuracy_on_non_trigger_images`
+- `attack_success_rate`
 
-which are sufficiently self-explanatory.
+`attack_success_rate` is the percentage of trigger images which were classified as their respective target classes, while `accuracy_on_trigger_images` is the percentage of trigger images that were classified as their natural labels (source classes).  Similarly, `accuracy_on_non_trigger_images` is the classification accuracy on non-trigger images.
+
 The fairness and filter metrics remain the same.
