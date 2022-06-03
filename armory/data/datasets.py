@@ -564,7 +564,9 @@ def preprocessing_chain(*args):
 
 def label_preprocessing_chain(*args):
     """
-    Wraps and returns a sequence of label preprocessing functions
+    Wraps and returns a sequence of label preprocessing functions.
+    Note that this function differs from preprocessing_chain() in that
+    it chains across (x, y) instead of just x
     """
     functions = [x for x in args if x is not None]
     if not functions:
