@@ -10,7 +10,7 @@
             "max_iter": 20,
             "num_random_init": 1,
             "random_eps": false,
-            "targeted": false,
+            "targeted": true,
             "verbose": false
         },
         "module": "custom_attack",
