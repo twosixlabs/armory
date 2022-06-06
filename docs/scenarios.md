@@ -278,7 +278,7 @@ Table 1
 | PGD (multiple channels)* | yes      | snr=20dB       | 0.13                    | 0.99                         | N/A                   | N/A                        | 100       |
 | PGD (multiple channels)* | yes      | snr=30dB       | 0.13                    | 0.92                         | N/A                   | N/A                        | 100       |
 | PGD (multiple channels)* | yes      | snr=40dB       | 0.13                    | 0.75                         | N/A                   | N/A                        | 100       |
-* \*Target attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
+* \*Targeted attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 * Missing defended baseline is due to current incompatibility of the attack and defense.
@@ -289,7 +289,7 @@ Table 2
 | PGD*   | yes      | snr=20dB | 0.95/0.05/0.00                                             | 0.01/0.98/0.01                                                            | 0.93/0.07/0.00                                           | 0.02/0.96/0.02                                                | 100       |
 | PGD*   | yes      | snr=30dB | 0.95/0.05/0.00                                             | 0.04/0.95/0.01                                                            | 0.93/0.07/0.00                                           | 0.19/0.79/0.02                                                | 100       |
 | PGD*   | yes      | snr=40dB | 0.95/0.05/0.00                                             | 0.43/0.53/0.04                                                            | 0.93/0.07/0.00                                           | 0.66/0.34/0.00                                                | 100       |
-* \*Target attack, where the target phrase contradicts the ground truth phrase by changing a few key words (e.g., target phrase: he is a bad person; ground truth phrase: he is a good person)
+* \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/asr_librispeech)
 
