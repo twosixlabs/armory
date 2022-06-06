@@ -502,7 +502,7 @@ Multimodality (RGB+depth) Object Detection
 
 a/b in the tables refer to undefended/defended performance results, respectively.
 
-\* Undefended results not available for Adversarial Patch attack because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
+\* Undefended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/carla_object_detection)
 
