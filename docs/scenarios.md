@@ -259,6 +259,7 @@ may also be loaded by the model.
 
 Table 1
 | Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
+|--------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
 | Imperceptible ASR        | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
 | Imperceptible ASR        | yes      | max_iter_1=200 | 0.10                    | 0.20                         | 0.13                  | N/A                        | 320       |
 | Imperceptible ASR        | yes      | max_iter_1=400 | 0.10                    | 0.11                         | 0.13                  | N/A                        | 320       |
@@ -284,6 +285,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 
 Table 2
 | Attack | Targeted | Budget   | Entailment/Contradiction/Neutral Rates (Benign Undefended) | Number of Entailment/Contradiction/Neutral Rates (Adversarial Undefended) | Entailment/Contradiction/Neutral Rates (Benign Defended) | Entailment/Contradiction/Neutral Rates (Adversarial Defended) | Test Size |
+|--------|----------|----------|------------------------------------------------------------|---------------------------------------------------------------------------|----------------------------------------------------------|---------------------------------------------------------------|-----------|
 | PGD*   | yes      | snr=20dB | 0.95/0.05/0.00                                             | 0.01/0.98/0.01                                                            | 0.93/0.07/0.00                                           | 0.02/0.96/0.02                                                | 100       |
 | PGD*   | yes      | snr=30dB | 0.95/0.05/0.00                                             | 0.04/0.95/0.01                                                            | 0.93/0.07/0.00                                           | 0.19/0.79/0.02                                                | 100       |
 | PGD*   | yes      | snr=40dB | 0.95/0.05/0.00                                             | 0.43/0.53/0.04                                                            | 0.93/0.07/0.00                                           | 0.66/0.34/0.00                                                | 100       |
@@ -499,6 +501,7 @@ Multimodality (RGB+depth) Object Detection
 | Adversarial Patch | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.66/0.76        | 0.11/0.10                        | 10.74/7.13                           | 0.06/0.05                           | 0.83/0.85                       | 31        |
 
 a/b in the tables refer to undefended/defended performance results, respectively.
+
 \* Undefended results not available for Adversarial Patch attack because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/carla_object_detection)
