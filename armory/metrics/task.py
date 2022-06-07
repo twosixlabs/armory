@@ -185,11 +185,24 @@ def total_entailment(sample_results):
 @aggregator
 def total_wer(sample_wers):
     """
-    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
+    Aggregate an array or list of per-sample word error rate [edit_distance, words]
         Return global_wer, (total_edit_distance, total_words)
+
+    sample_wers: a list of 2-tuples, or an array of shape (N, 2)
     """
-    if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
-        raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+
+    if isinstance(sample_wers, list):
+        if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+            raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+    elif isinstance(sample_wers, np.ndarray):
+        if sample_wers.ndim != 2 or sample_wers.shape[-1] != 2:
+            raise ValueError(
+                f"sample_wers must be an array of shape (N, 2). Received shape {sample_wers.shape}"
+            )
+    else:
+        raise ValueError(
+            f"Expected sample_wers to be a list or numpy array. Received type {type(sample_wers)}"
+        )
 
     total_edit_distance = 0
     total_words = 0
