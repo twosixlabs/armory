@@ -29,7 +29,7 @@ matplotlib==3.*
 jupyterlab==3.*
 
 # ART
-adversarial-robustness-toolbox==1.10.2
+adversarial-robustness-toolbox==1.10.3
 
 # Data dependencies
 Pillow==9.0.*

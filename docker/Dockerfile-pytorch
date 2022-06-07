@@ -6,7 +6,7 @@ ARG armory_build_type
 FROM armory-base AS armory-local
 RUN echo "Installing ART"
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    adversarial-robustness-toolbox==1.10.2
+    adversarial-robustness-toolbox==1.10.3
 
 RUN echo "Building Armory from local source"
 WORKDIR /armory-repo/
