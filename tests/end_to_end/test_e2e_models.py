@@ -180,7 +180,9 @@ def test_pytorch_xview_pretrained():
         num_batches=NUM_TEST_SAMPLES,
         shuffle_files=False,
     )
-    from armory.utils.metrics import object_detection_AP_per_class
+    from armory import metrics
+
+    object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
 
     list_of_ys = []
     list_of_ypreds = []
@@ -228,7 +230,9 @@ def test_pytorch_carla_video_tracking():
         num_batches=NUM_TEST_SAMPLES,
         shuffle_files=False,
     )
-    from armory.utils.metrics import video_tracking_mean_iou
+    from armory import metrics
+
+    video_tracking_mean_iou = metrics.get("video_tracking_mean_iou")
 
     for x, y in dev_dataset:
         y_object, y_patch_metadata = y
@@ -447,7 +451,9 @@ def test_carla_od(
         module_name, fn_attr_name, weights_path, model_kwargs
     )
     from armory.utils.config_loading import load_dataset
-    from armory.utils.metrics import object_detection_AP_per_class
+    from armory import metrics
+
+    object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
 
     ds = load_dataset(**dataset_parameters)
     ys = []
@@ -681,7 +687,9 @@ def test_tf1_mnist(armory_dataset_dir):
 def test_tf1_coco(armory_dataset_dir):
     import os
     from armory.data import datasets
-    from armory.utils.metrics import object_detection_AP_per_class
+    from armory import metrics
+
+    object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
 
     if not os.path.exists(os.path.join(armory_dataset_dir, "coco", "2017", "1.1.0")):
         pytest.skip("coco2017 dataset not downloaded.")
@@ -713,9 +721,11 @@ def test_tf1_coco(armory_dataset_dir):
 @pytest.mark.tf1
 def test_tf1_apricot(armory_dataset_dir):
     import os
-    from armory.utils.metrics import (
-        object_detection_AP_per_class,
-        apricot_patch_targeted_AP_per_class,
+    from armory import metrics
+
+    object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
+    apricot_patch_targeted_AP_per_class = metrics.get(
+        "apricot_patch_targeted_AP_per_class"
     )
 
     if not os.path.isdir(os.path.join(armory_dataset_dir, "apricot_dev", "1.0.1")):

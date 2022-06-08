@@ -1,17 +1,12 @@
 """
-Metrics for scenarios
-
-Outputs are lists of python variables amenable to JSON serialization:
-    e.g., bool, int, float
-    numpy data types and tensors generally fail to serialize
+Task metrics (comparing y to y_pred)
 """
 
 from collections import Counter
+import functools
 import os
-from typing import Dict, List
 
 import numpy as np
-from scipy import stats
 
 from armory import paths
 from armory.data.adversarial.apricot_metadata import (
@@ -19,12 +14,80 @@ from armory.data.adversarial.apricot_metadata import (
     APRICOT_PATCHES,
 )
 from armory.logs import log
-from armory.metrics import perturbation
+from armory.metrics.common import MetricNameSpace, as_batch, set_namespace
 from armory.utils.external_repo import ExternalPipInstalledImport
+
+aggregate = MetricNameSpace()
+population = MetricNameSpace()
+batch = MetricNameSpace()
+element = MetricNameSpace()
+
+
+def aggregator(metric, name=None):
+    """
+    Register an aggregate metric
+        These are typically used to combine intermediate results into final results
+        Examples include total word error rate and mean average precision
+    """
+    return set_namespace(aggregate, metric, name=name)
+
+
+def populationwise(metric, name=None):
+    """
+    Register a population-wise (full test set) metric
+        Similar to a batch metric, but requires the entire set of data points
+    """
+    return set_namespace(population, metric, name=name)
+
+
+def batchwise(metric, name=None):
+    """
+    Register a batch-wise metric
+    """
+    return set_namespace(batch, metric, name=name)
+
+
+def elementwise(metric, name=None):
+    """
+    Register a element-wise metric and register a batch-wise version of it
+    """
+    if name is None:
+        name = metric.__name__
+    set_namespace(element, metric, name=name)
+    batch_metric = as_batch(metric)
+    batchwise(batch_metric, name=name)
+    return metric
+
+
+def _to_numpy(array):
+    """
+    Map to numpy array with `asarray`, but handle ragged arrays
+    """
+    try:
+        return np.asarray(array)
+    except ValueError:
+        return np.asarray(array, dtype=object)
+
+
+def numpy(function):
+    """
+    Ensures args (but not kwargs) are passed in as numpy vectors
+
+    In contrast to perturbation.numpy, this does not ensure same shape or dtype
+    """
+
+    @functools.wraps(function)
+    def wrapper(y, y_pred, **kwargs):
+        y, y_pred = (_to_numpy(array) for array in (y, y_pred))
+        return function(y, y_pred, **kwargs)
+
+    return wrapper
+
 
 _ENTAILMENT_MODEL = None
 
 
+# batchwise registration after class definition due to name change
 class Entailment:
     """
     Entailment measures the relationship between the premise y and hypothesis y_pred
@@ -92,6 +155,10 @@ class Entailment:
         return labels  # return list of labels, not (0, 1, 2)
 
 
+batchwise(Entailment, name="entailment")
+
+
+@aggregator
 def total_entailment(sample_results):
     """
     Aggregate a list of per-sample entailment results in ['contradiction', 'neutral', 'entailment'] format
@@ -115,27 +182,29 @@ def total_entailment(sample_results):
     return c
 
 
+@aggregator
 def total_wer(sample_wers):
     """
     Aggregate a list of per-sample word error rate tuples (edit_distance, words)
         Return global_wer, (total_edit_distance, total_words)
     """
-    # checks if all values are tuples from the WER metric
-    if all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
-        total_edit_distance = 0
-        total_words = 0
-        for wer_tuple in sample_wers:
-            total_edit_distance += int(wer_tuple[0])
-            total_words += int(wer_tuple[1])
-        if total_words:
-            global_wer = float(total_edit_distance / total_words)
-        else:
-            global_wer = float("nan")
-        return global_wer, (total_edit_distance, total_words)
+    if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+
+    total_edit_distance = 0
+    total_words = 0
+    for edit_distance, words in sample_wers:
+        total_edit_distance += int(edit_distance)
+        total_words += int(words)
+
+    if total_words:
+        global_wer = float(total_edit_distance / total_words)
     else:
-        raise ValueError("total_wer() only for WER metric aggregation")
+        global_wer = float("nan")
+    return global_wer, (total_edit_distance, total_words)
 
 
+@batchwise
 def identity_unzip(*args):
     """
     Map batchwise args to a list of sample-wise args
@@ -143,6 +212,7 @@ def identity_unzip(*args):
     return list(zip(*args))
 
 
+@aggregator
 def identity_zip(sample_arg_tuples):
     args = [list(x) for x in zip(*sample_arg_tuples)]
     return args
@@ -160,6 +230,7 @@ class MeanAP:
         return {"mean": mean_ap, "class": ap}
 
 
+@populationwise
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays
@@ -215,10 +286,10 @@ def tpr_fpr(actual_conditions, predicted_conditions):
     )
 
 
+@batchwise
 def per_class_accuracy(y, y_pred):
     """
-    Return a dict mapping class indices to their accuracies
-        Returns nan for classes that are not present
+    Return a dict mapping class indices to a list of their accuracies
 
     y - 1-dimensional array
     y_pred - 2-dimensional array
@@ -233,13 +304,14 @@ def per_class_accuracy(y, y_pred):
     for i in range(y_pred.shape[1]):
         if i in y:
             index = y == i
-            results[i] = categorical_accuracy(y[index], y_pred[index])
+            results[i] = batch.categorical_accuracy(y[index], y_pred[index])
         else:
-            results[i] = float("nan")
+            results[i] = np.array([])
 
     return results
 
 
+@batchwise
 def per_class_mean_accuracy(y, y_pred):
     """
     Return a dict mapping class indices to their mean accuracies
@@ -248,9 +320,13 @@ def per_class_mean_accuracy(y, y_pred):
     y - 1-dimensional array
     y_pred - 2-dimensional array
     """
-    return {k: np.mean(v) for k, v in per_class_accuracy(y, y_pred).items()}
+    return {
+        k: np.mean(v) if len(v) else float("nan")
+        for k, v in per_class_accuracy(y, y_pred).items()
+    }
 
 
+@batchwise
 def abstains(y, y_pred):
     """
     For each sample in y_pred:
@@ -264,290 +340,78 @@ def abstains(y, y_pred):
     return [int(x) for x in (y_pred == 0.0).all(axis=1)]
 
 
-def compute_chi2_p_value(contingency_table: np.ndarray) -> List[float]:
-    """
-    Given a 2-x-2 contingency table of the form
-
-                          not flagged by B   |     flagged by B
-                      ---------------------------------------------
-    not flagged by A |           a           |          b         |
-                     |---------------------------------------------
-        flagged by A |           c           |          d         |
-                      ---------------------------------------------
-
-    perform a chi-squared test to measure the association between
-    the A flags and B flags, returning a p-value.
-    """
-    try:
-        _, chi2_p_value, _, _ = stats.chi2_contingency(
-            contingency_table, correction=False
-        )
-    except ValueError:
-        chi2_p_value = np.nan
-    return [chi2_p_value]
-
-
-def compute_fisher_p_value(contingency_table: np.ndarray) -> List[float]:
-    """
-    Given a 2-x-2 contingency table of the form
-
-                          not flagged by B   |     flagged by B
-                      ---------------------------------------------
-    not flagged by A |           a           |          b         |
-                     |---------------------------------------------
-        flagged by A |           c           |          d         |
-                      ---------------------------------------------
-
-    perform a Fisher exact test to measure the association between
-    the A flags and B flags, returning a p-value.
-    """
-    _, fisher_p_value = stats.fisher_exact(contingency_table, alternative="greater")
-    return [fisher_p_value]
-
-
-def compute_spd(contingency_table: np.ndarray) -> List[float]:
-    """
-    Given a 2-x-2 contingency table of the form
-
-                          not flagged by B   |     flagged by B
-                      ---------------------------------------------
-    not flagged by A |           a           |          b         |
-                     |---------------------------------------------
-        flagged by A |           c           |          d         |
-                      ---------------------------------------------
-
-    the Statistical Parity Difference computed by
-
-    SPD = b / (a + b) - d / (c + d)
-
-    is one measure of the impact being flagged by A has on being flagged by B.
-    """
-    numerators = contingency_table[:, 1]
-    denominators = contingency_table.sum(1)
-    numerators[denominators == 0] = 0  # Handle division by zero:
-    denominators[denominators == 0] = 1  # 0/0 => 0/1.
-    fractions = numerators / denominators
-    spd = fractions[0] - fractions[1]
-    return [spd]
-
-
-def make_contingency_tables(
-    y: np.ndarray, flagged_A: np.ndarray, flagged_B: np.ndarray
-) -> Dict[int, np.ndarray]:
-    """
-    Given a list of class labels and two arbitrary binary flags A and B,
-    for each class, produce the following 2-x-2 contingency table:
-
-                             not flagged by B   |     flagged by B
-                         ---------------------------------------------
-       not flagged by A |           a           |          b         |
-                        |---------------------------------------------
-           flagged by A |           c           |          d         |
-                         ---------------------------------------------
-
-    For example, flag A can be whether this example was classified correctly,
-    while flag B reports some other binary characteristic of the data.
-
-    Args:
-        y (np.ndarray): The true labels (not necessarily binary)
-        flagged_A (np.ndarray): The binary outputs of flag A
-        flagged_B (np.ndarray): The binary outputs of flag B
-
-    Returns:
-        A map (Dict[int, np.ndarray]) of the per-class contingency tables.
-    """
-
-    y = np.array(y).astype(np.int).flatten()
-    flagged_A = np.array(flagged_A).astype(np.bool_).flatten()
-    flagged_B = np.array(flagged_B).astype(np.bool_).flatten()
-
-    if len(flagged_A) != len(y) or len(flagged_B) != len(y):
-        raise ValueError(
-            f"Expected arrays y, flagged_A, and flagged_B of the same length: \
-            got {len(y)}, {len(flagged_A)}, and {len(flagged_B)}."
-        )
-
-    contingency_tables = {}
-    for class_id in np.unique(y):
-
-        items_flagged_A = flagged_A[y == class_id]
-        items_flagged_B = flagged_B[y == class_id]
-
-        a = (~items_flagged_A & ~items_flagged_B).sum()
-        b = (~items_flagged_A & items_flagged_B).sum()
-        c = (items_flagged_A & ~items_flagged_B).sum()
-        d = (items_flagged_A & items_flagged_B).sum()
-
-        table = np.array([[a, b], [c, d]])
-        contingency_tables[class_id] = table
-
-    return contingency_tables
-
-
-def filter_perplexity_fps_benign(
-    y_clean: np.ndarray, poison_index: np.ndarray, poison_prediction: np.ndarray
-) -> List[float]:
-    """
-    Measure one possible aspect of bias by seeing how closely the distribution of false
-    positives matches the distribution of unpoisoned data.  The intuition is that bias
-    depends not on how much of the poison the filter finds, but only what the filter does
-    to the rest of the data.  That is, if it removes clean data, it should do so in
-    proportion to class frequency, removing roughly the same fraction of each class.
-
-    In particular, we do not expect that _everything_ removed by the filter should match
-    the original class distribution, because we do not expect that the poison was applied
-    evenly to the whole dataset in the first place.
-
-    Args:
-        y_clean:            The class labels of the original dataset
-        poison_index:       The indices of elements in y_clean that were actually poisoned
-        poison_prediction:  What the filter thinks is poison.  1 for poison, 0 for clean
-
-    Returns:
-        Normalized perplexity from fps to benign, where fps is the class frequency distribution of false positives,
-        and benign is the class frequency distribution of the unpoisoned data
-
-    """
-
-    # convert poison_index to binary vector the same length as data
-    poison_inds = np.zeros_like(y_clean)
-    poison_inds[poison_index.astype(np.int64)] = 1
-    # benign is here defined to be the class distribution of the unpoisoned part of the data
-    x_benign = y_clean[poison_inds == 0]
-    x_benign = np.bincount(x_benign, minlength=max(y_clean))
-    x_benign = x_benign / x_benign.sum()
-    # fps is false positives: clean data marked as poison by the filter
-    fp_inds = (1 - poison_inds) & poison_prediction
-    fp_labels = y_clean[fp_inds == 1]
-    fps = np.bincount(fp_labels, minlength=max(y_clean))
-    if fps.sum() == 0:
-        return [1]  # If no FPs, we'll define perplexity to be 1 (unbiased)
-    fps = fps / fps.sum()
-
-    return perplexity(fps, x_benign)
-
-
-def perplexity(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
-    """
-    Return the normalized p-to-q perplexity.
-    """
-    kl_div_pq = kl_div(p, q, eps)[0]
-    perplexity_pq = np.exp(-kl_div_pq)
-    return [perplexity_pq]
-
-
-def kl_div(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> List[float]:
-    """
-    Return the Kullback-Leibler divergence from p to q.
-    """
-    cross_entropy_pq = _cross_entropy(p, q, eps)
-    entropy_p = _cross_entropy(p, p, eps)
-    kl_div_pq = cross_entropy_pq - entropy_p
-    return [kl_div_pq]
-
-
-def _cross_entropy(p: np.ndarray, q: np.ndarray, eps: float = 1e-10) -> float:
-    """
-    Return the cross entropy from a distribution p to a distribution q.
-    """
-    p = np.asarray(p)
-    q = np.asarray(q)
-    if p.ndim > 2 or q.ndim > 2:
-        raise ValueError(
-            f"Not obvious how to reshape arrays: got shapes {p.shape} and {q.shape}."
-        )
-    elif (p.ndim == 2 and p.shape[0] > 1) or (q.ndim == 2 and q.shape[0] > 1):
-        raise ValueError(
-            f"Expected 2-dimensional arrays to have shape (1, *): got shapes \
-             {p.shape} and {q.shape}."
-        )
-    p = p.reshape(-1)
-    q = q.reshape(-1)
-    if p.shape[0] != q.shape[0]:
-        raise ValueError(
-            f"Expected arrays of the same length: got lengths {len(p)} and {len(q)}."
-        )
-    if np.any(p < 0) or np.any(q < 0):
-        raise ValueError("Arrays must both be non-negative.")
-    if np.isclose(p.sum(), 0) or np.isclose(q.sum(), 0):
-        raise ValueError("Arrays must both be non-zero.")
-    if not np.isclose(p.sum(), 1):
-        p /= p.sum()
-    if not np.isclose(q.sum(), 1):
-        q /= q.sum()
-    cross_entropy_pq = (-p * np.log(q + eps)).sum()
-    return cross_entropy_pq
-
-
+@elementwise
+@numpy
 def categorical_accuracy(y, y_pred):
     """
     Return the categorical accuracy of the predictions
+
+    y - integer value, one-hot encoding, or similar score
+    y_pred - integer value, one-hot encoding, log loss, probability distribution, logit
     """
-    y = np.asarray(y)
-    y_pred = np.asarray(y_pred)
-    if y.ndim == 0:
-        y = np.array([y])
-        y_pred = np.array([y_pred])
+    if y.ndim > 1 or y_pred.ndim > 1:
+        raise ValueError(f"y {y} and y_pred {y_pred} cannot have 2+ dimensions")
+    if y.ndim == 1 and y_pred.ndim == 1 and y.shape != y_pred.shape:
+        raise ValueError(f"When vectors, y {y} and y {y_pred} must have same shape")
 
-    if y.shape == y_pred.shape:
-        return [int(x) for x in list(y == y_pred)]
-    elif y.ndim + 1 == y_pred.ndim:
-        if y.ndim == 0:
-            return [int(y == np.argmax(y_pred, axis=-1))]
-        return [int(x) for x in list(y == np.argmax(y_pred, axis=-1))]
-    else:
-        raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
+    if y.ndim == 1:
+        y = np.argmax(y)
+    if y_pred.ndim == 1:
+        y_pred = np.argmax(y_pred)
+    return float(y == y_pred)
 
 
+@elementwise
 def top_5_categorical_accuracy(y, y_pred):
     """
     Return the top 5 categorical accuracy of the predictions
     """
-    return top_n_categorical_accuracy(y, y_pred, 5)
+    return top_n_categorical_accuracy(y, y_pred, n=5)
 
 
-def top_n_categorical_accuracy(y, y_pred, n):
-    if n < 1:
+@elementwise
+@numpy
+def top_n_categorical_accuracy(y, y_pred, *, n=5):
+    """
+    Return the top n categorical accuracy of the predictions
+
+    y_pred - must be a vector of values or a single value
+    """
+    if n < 1 or n == np.inf or n != int(n):
         raise ValueError(f"n must be a positive integer, not {n}")
     n = int(n)
-    if n == 1:
-        return categorical_accuracy(y, y_pred)
-    y = np.asarray(y)
-    y_pred = np.asarray(y_pred)
-    if y.ndim == 0:
-        y = np.array([y])
-        y_pred = np.array([y_pred])
 
-    if len(y) != len(y_pred):
-        raise ValueError("y and y_pred are of different length")
-    if y.shape == y_pred.shape:
-        raise ValueError("Must supply multiple predictions for top 5 accuracy")
-    elif y.ndim + 1 == y_pred.ndim:
-        y_pred_top5 = np.argsort(y_pred, axis=-1)[:, -n:]
-        if y.ndim == 0:
-            return [int(y in y_pred_top5)]
-        return [int(y[i] in y_pred_top5[i]) for i in range(len(y))]
-    else:
-        raise ValueError(f"{y} and {y_pred} have mismatched dimensions")
+    if y_pred.ndim == 0:
+        return float(y == y_pred)
+    if y_pred.ndim != 1:
+        raise ValueError(f"y_pred {y_pred} must be a 1-dimensional vector")
+    if y.ndim > 1:
+        raise ValueError(f"y {y} cannot have > 1 dimension")
+    if y.ndim == 1 and y.shape != y_pred.shape:
+        raise ValueError(f"When vectors, y {y} and y {y_pred} must have same shape")
+    if y.ndim == 1:
+        y = np.argmax(y)
+
+    y_pred_top_n = np.argsort(y_pred)[-n:]  # ascending order
+    return float(y in y_pred_top_n)
 
 
+@elementwise
 def word_error_rate(y, y_pred):
     """
     Return the word error rate for a batch of transcriptions.
     """
-    if len(y) != len(y_pred):
-        raise ValueError(f"len(y) {len(y)} != len(y_pred) {len(y_pred)}")
-    return [_word_error_rate(y_i, y_pred_i) for (y_i, y_pred_i) in zip(y, y_pred)]
+    if isinstance(y, bytes):
+        y = y.decode("utf-8")
+    elif not isinstance(y, str):
+        raise TypeError(f"y is of type {type(y)}, expected string or bytes")
+    if isinstance(y_pred, bytes):
+        y_pred = y_pred.decode("utf-8")
+    elif not isinstance(y_pred, str):
+        raise TypeError(f"y_pred is of type {type(y_pred)}, expected string or bytes")
+    reference = y.split()
+    hypothesis = y_pred.split()
 
-
-def _word_error_rate(y_i, y_pred_i):
-    if isinstance(y_i, str):
-        reference = y_i.split()
-    elif isinstance(y_i, bytes):
-        reference = y_i.decode("utf-8").split()
-    else:
-        raise TypeError(f"y_i is of type {type(y_i)}, expected string or bytes")
-    hypothesis = y_pred_i.split()
     r_length = len(reference)
     h_length = len(hypothesis)
     matrix = np.zeros((r_length + 1, h_length + 1))
@@ -664,6 +528,7 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
+@batchwise
 def video_tracking_mean_iou(y, y_pred):
     """
     Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video.
@@ -694,6 +559,7 @@ def video_tracking_mean_iou(y, y_pred):
     return mean_ious
 
 
+@batchwise
 def video_tracking_mean_success_rate(y, y_pred):
     """
     Mean success rate averaged over all thresholds in {0, 0.05, 0.1, ..., 1.0} and all frames.
@@ -735,6 +601,7 @@ def video_tracking_mean_success_rate(y, y_pred):
     return mean_success_rates
 
 
+@populationwise
 def object_detection_AP_per_class(
     y_list, y_pred_list, iou_threshold=0.5, class_list=None
 ):
@@ -916,6 +783,7 @@ def object_detection_AP_per_class(
     return average_precisions_by_class
 
 
+@populationwise
 def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None):
     """
     Mean average precision for object detection.
@@ -1045,6 +913,7 @@ def _object_detection_get_tpr_mr_dr_hr(
     )
 
 
+@populationwise
 def object_detection_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1075,6 +944,7 @@ def object_detection_true_positive_rate(
     return true_positive_rate_per_img
 
 
+@populationwise
 def object_detection_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1105,6 +975,7 @@ def object_detection_misclassification_rate(
     return misclassification_rate_per_image
 
 
+@populationwise
 def object_detection_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1136,6 +1007,7 @@ def object_detection_disappearance_rate(
     return disappearance_rate_per_img
 
 
+@populationwise
 def object_detection_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1166,6 +1038,7 @@ def object_detection_hallucinations_per_image(
     return hallucinations_per_image
 
 
+@populationwise
 def carla_od_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1183,6 +1056,7 @@ def carla_od_hallucinations_per_image(
     )
 
 
+@populationwise
 def carla_od_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1200,6 +1074,7 @@ def carla_od_disappearance_rate(
     )
 
 
+@populationwise
 def carla_od_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1217,6 +1092,7 @@ def carla_od_true_positive_rate(
     )
 
 
+@populationwise
 def carla_od_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1234,6 +1110,7 @@ def carla_od_misclassification_rate(
     )
 
 
+@populationwise
 def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     class_list = [1, 2, 3]
     """
@@ -1245,6 +1122,7 @@ def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
     )
 
 
+@populationwise
 def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
@@ -1429,6 +1307,7 @@ def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     return average_precisions_by_class
 
 
+@populationwise
 def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     """
     Average precision indicating how successfully the patch causes the detector
@@ -1612,6 +1491,7 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
     return average_precisions_by_class
 
 
+@populationwise
 def dapricot_patch_target_success(
     y_list, y_pred_list, iou_threshold=0.1, conf_threshold=0.5
 ):
@@ -1655,56 +1535,3 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
             ):
                 return 1
     return 0
-
-
-SUPPORTED_METRICS = {
-    "entailment": Entailment,
-    "total_entailment": total_entailment,
-    "total_wer": total_wer,
-    "identity_unzip": identity_unzip,
-    "identity_zip": identity_zip,
-    "tpr_fpr": tpr_fpr,
-    "per_class_accuracy": per_class_accuracy,
-    "per_class_mean_accuracy": per_class_mean_accuracy,
-    "dapricot_patch_target_success": dapricot_patch_target_success,
-    "dapricot_patch_targeted_AP_per_class": dapricot_patch_targeted_AP_per_class,
-    "apricot_patch_targeted_AP_per_class": apricot_patch_targeted_AP_per_class,
-    "categorical_accuracy": categorical_accuracy,
-    "top_n_categorical_accuracy": top_n_categorical_accuracy,
-    "top_5_categorical_accuracy": top_5_categorical_accuracy,
-    "video_tracking_mean_iou": video_tracking_mean_iou,
-    "video_tracking_mean_success_rate": video_tracking_mean_success_rate,
-    "word_error_rate": word_error_rate,
-    "object_detection_AP_per_class": object_detection_AP_per_class,
-    "object_detection_mAP": object_detection_mAP,
-    "object_detection_disappearance_rate": object_detection_disappearance_rate,
-    "object_detection_hallucinations_per_image": object_detection_hallucinations_per_image,
-    "object_detection_misclassification_rate": object_detection_misclassification_rate,
-    "object_detection_true_positive_rate": object_detection_true_positive_rate,
-    "carla_od_AP_per_class": carla_od_AP_per_class,
-    "carla_od_disappearance_rate": carla_od_disappearance_rate,
-    "carla_od_hallucinations_per_image": carla_od_hallucinations_per_image,
-    "carla_od_misclassification_rate": carla_od_misclassification_rate,
-    "carla_od_true_positive_rate": carla_od_true_positive_rate,
-    "kl_div": kl_div,
-    "perplexity": perplexity,
-    "filter_perplexity_fps_benign": filter_perplexity_fps_benign,
-    "poison_chi2_p_value": compute_chi2_p_value,
-    "poison_fisher_p_value": compute_fisher_p_value,
-    "poison_spd": compute_spd,
-}
-
-assert not any(k in perturbation.batch for k in SUPPORTED_METRICS)
-SUPPORTED_METRICS.update(perturbation.batch)
-
-
-def get_supported_metric(name):
-    try:
-        function = SUPPORTED_METRICS[name]
-    except KeyError:
-        raise KeyError(f"{name} is not part of armory.utils.metrics")
-    if isinstance(function, type) and issubclass(function, object):
-        # If a class is given, instantiate it
-        function = function()
-    assert callable(function), f"function {name} is not callable"
-    return function
