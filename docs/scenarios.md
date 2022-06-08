@@ -255,7 +255,7 @@ may also be loaded by the model.
   * [PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
   * [Kenansville attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/kenansville_dft.py)  
 * **Baseline Defense**: [MP3 Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/mp3_compression.py)
-* **Baseline Model Performance: (Table 1 results are obtained using Armory v0.13.3, Table 2 results are obtained using Armory v0.15.1)**
+* **Baseline Model Performance: (Table 1 results are obtained using Armory v0.13.3, Table 2 results are obtained using Armory v0.15.2)**
 
 Table 1
 | Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
@@ -291,7 +291,7 @@ Table 2
 | PGD*   | yes      | snr=40dB | eps_step=0.01, max_iter=500 | 0.95/0.05/0.00                                             | 0.43/0.53/0.04                                                            | 0.93/0.07/0.00                                           | 0.66/0.34/0.00                                                | 100       |
 * \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/asr_librispeech)
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.2/scenario_configs/eval5/asr_librispeech)
 
 
 ### so2sat multimodal image classification (Updated July 2021)
@@ -483,10 +483,10 @@ The development dataset is generated using [CARLA](https://carla.org), which inc
     * Misclassification rate
     * True positive rate
 * **Baseline Attacks:**
-  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/art_experimental/attacks/carla_obj_det_patch.py)
-  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
-* **Baseline Defense**: [JPEG Compression](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/art_experimental/defences/jpeg_compression_normalized.py)
-* **Baseline Model Performance: (results obtained using Armory v0.15.1 and [dev data](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/data/adversarial/carla_obj_det_dev.py))**
+  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_patch.py)
+  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
+* **Baseline Defense**: [JPEG Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/jpeg_compression_normalized.py)
+* **Baseline Model Performance: (results obtained using Armory v0.15.2 and [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_obj_det_dev.py))**
 
 Single Modality (RGB) Object Detection
 |       Attack      |                                   Attack Parameters                                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
@@ -504,7 +504,7 @@ a/b in the tables refer to undefended/defended performance results, respectively
 
 \* Undefended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/carla_object_detection)
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.2/scenario_configs/eval5/carla_object_detection)
 
 
 ### CARLA video tracking (Updated June 2022)
@@ -528,9 +528,9 @@ which contains a green-screen in all frames intended for adversarial patch inser
     * mean IOU
     * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
 * **Baseline Attacks:**
-  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/art_experimental/attacks/carla_adversarial_texture.py)
-* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/art_experimental/defences/video_compression_normalized.py)
-* **Baseline Model Performance: (results obtained using Armory v0.15.1 and [dev data](https://github.com/twosixlabs/armory/blob/v0.15.1/armory/data/adversarial/carla_video_tracking_dev.py))**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (results obtained using Armory v0.15.2 and [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py))**
 
 |       Attack Parameters      | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
 |:----------------------------:|:---------------:|:------------------------:|:--------------------:|:-----------------------------:|:---------:|
@@ -538,7 +538,7 @@ which contains a green-screen in all frames intended for adversarial patch inser
 
 a/b in the tables refer to undefended/defended performance results, respectively.
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.1/scenario_configs/eval5/carla_video_tracking)
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.2/scenario_configs/eval5/carla_video_tracking)
 
 ## Academic Scenarios
 
