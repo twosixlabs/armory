@@ -285,13 +285,19 @@ class WitchesBrewScenario(Poison):
                 data_filepath = os.path.join(attack_dir, data_filepath)
 
             log.info("Loading proxy model for attack . . .")
-            proxy_weights = attack_config.get("proxy_classifier_weights_file", None)  # you can pass in saved weights, but so far, this won't save them for you.
+            proxy_weights = attack_config.get(
+                "proxy_classifier_weights_file", None
+            )  # you can pass in saved weights, but so far, this won't save them for you.
             proxy_config = copy.deepcopy(self.config["model"])
             proxy_config["weights_file"] = proxy_weights
             proxy_model, _ = config_loading.load_model(proxy_config)
 
             #  Train proxy model for gradient matching attack, if no pre-saved dataset or if we are overwriting it.
-            if data_filepath is None or not os.path.exists(data_filepath) or attack_config['kwargs'].get("overwrite_presaved_data"):
+            if (
+                data_filepath is None
+                or not os.path.exists(data_filepath)
+                or attack_config["kwargs"].get("overwrite_presaved_data")
+            ):
 
                 if proxy_weights is None:
                     log.info("Fitting proxy model for attack . . .")
