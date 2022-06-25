@@ -4,13 +4,10 @@ import collections
 import json
 import os
 from copy import deepcopy
-from PIL import Image
 import numpy as np
 
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
-
-from armory.data.adversarial import pandas_proxy
 
 _DESCRIPTION = """
 Synthetic multimodality (RGB, depth) dataset generated using CARLA (https://carla.org).
@@ -27,16 +24,18 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_test.tar.gz"
+_URLS = "carla_od_test.tar.gz"
 # fmt: on
 
 
 class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_test dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("2.0.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
+        "1.0.1": "Correcting error to RGB and depth image pairing",
+        "2.0.0": "Eval5 update with higher resolution, HD textures, accurate annotations, and objects overlapping patch",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -44,7 +43,7 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
         features = {
             # sequence of [RGB, depth] images
             "image": tfds.features.Sequence(
-                tfds.features.Image(shape=(600, 800, 3)),
+                tfds.features.Image(shape=(960, 1280, 3)),
                 length=2,
             ),
             # sequence of image features for [RGB, depth]
@@ -63,8 +62,9 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
             "categories": tfds.features.Sequence(
                 tfds.features.FeaturesDict(
                     {
-                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2, 'trafficlight':3, 'patch':4}
+                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2, 'trafficlight':3}
                         "name": tfds.features.Text(),
+                        "supercategory": tfds.features.Text(),
                     }
                 )
             ),
@@ -82,22 +82,12 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
             # these data only apply to the "green screen patch" objects, which both modalities share
             "patch_metadata": tfds.features.FeaturesDict(
                 {
-                    "gs_coords": tfds.features.Sequence(
-                        tfds.features.Tensor(
-                            shape=[2], dtype=tf.int64
-                        ),  # green screen vertices in (x,y)
-                        length=4,  # always rectangle shape
-                    ),
-                    "cc_ground_truth": tfds.features.Tensor(
-                        shape=[24, 3], dtype=tf.float32
-                    ),  # colorchecker color ground truth
-                    "cc_scene": tfds.features.Tensor(
-                        shape=[24, 3], dtype=tf.float32
-                    ),  # colorchecker colors in a scene
+                    # green screen vertices in (x,y) starting from top-left moving clockwise
+                    "gs_coords": tfds.features.Tensor(shape=[4, 2], dtype=tf.int32),
                     # binarized segmentation mask of patch.
                     # mask[x,y] == 1 indicates patch pixel; 0 otherwise
-                    "mask": tfds.features.Tensor(shape=[600, 800, 3], dtype=tf.uint8),
-                    "shape": tfds.features.Text(),
+                    "mask": tfds.features.Image(shape=(960, 1280, 3)),
+                    "avg_patch_depth": tfds.features.Tensor(shape=(), dtype=tf.float64),
                 }
             ),
         }
@@ -111,28 +101,25 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        paths = dl_manager.download_and_extract(_URLS)
+        path = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name=patch_size,
-                gen_kwargs={"path": os.path.join(paths, "test"), "size": patch_size},
+                name="test",
+                gen_kwargs={"path": os.path.join(path, "test")},
             )
-            for patch_size in ["large", "medium", "small"]
         ]
 
-    def _generate_examples(self, path, size):
+    def _generate_examples(self, path):
         """yield examples"""
+
         # For each image, gets its annotations and yield relevant data
+        depth_folder = "_out/sensor.camera.depth.2"
+        foreground_mask_folder = "_out/foreground_mask"
+        patch_metadata_folder = "_out/patch_metadata"
 
-        yield_id = 0
-
-        patch_rgb = (
-            180,
-            130,
-            70,
-        )  # rgb values of patch object in semantic segmentation image
-
-        annotation_path = os.path.join(path, "annotations/coco_annotations.json")
+        annotation_path = os.path.join(
+            path, "_out", "kwcoco_annotations_without_patch_and_sans_tiny_objects.json"
+        )
 
         cocoanno = COCOAnnotation(annotation_path)
 
@@ -143,78 +130,44 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
         # sort images alphabetically
         images_rgb = sorted(images_rgb, key=lambda x: x["file_name"].lower())
 
-        for image_rgb in images_rgb:
+        for idx, image_rgb in enumerate(images_rgb):
+
+            # Discard irrelevant fields
+            image_rgb.pop("date_captured")
+            image_rgb.pop("license")
+            image_rgb.pop("coco_url")
+            image_rgb.pop("flickr_url")
+            image_rgb.pop("video_id")
+            image_rgb.pop("frame_index")
 
             # Pairing RGB and depth
-            fname_rgb = image_rgb["file_name"]  # rgb image file
-            fname, fext = fname_rgb.split(".")
-            fname_depth = fname + "_Depth." + fext  # depth image file
+            fpath_rgb = image_rgb["file_name"]  # rgb image path
+            fname = fpath_rgb.split("/")[-1]
+            fname_no_ext = fname.split(".")[0]
+            fpath_depth = os.path.join(depth_folder, fname)  # depth image path
             image_depth = deepcopy(image_rgb)
-            image_depth["file_name"] = fname_depth
-
-            if not os.path.isfile(os.path.join(path, size, fname_rgb)):
-                continue
-
-            # get binarized patch mask
-            fname, fext = image_rgb["file_name"].split(".")
-            fname_ss = fname + "SS." + fext
-            img_ss = Image.open(os.path.join(path, size, fname_ss)).convert("RGB")
-            img_ss = np.array(img_ss)
-            mask = np.zeros_like(img_ss)
-            mask[np.all(img_ss == patch_rgb, axis=-1)] = 1
+            image_depth["file_name"] = fpath_depth
 
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
 
-            # convert bbox to Pytorch format
-            def build_bbox(x, y, width, height):
+            # For unknown reasons, when kwcoco is saved after removing tiny objects,
+            # bbox format changes from [x,y,w,h] to [x1,y1,x2,y2]
+            def build_bbox(x1, y1, x2, y2):
                 return tfds.features.BBox(
-                    ymin=y / image_rgb["height"],
-                    xmin=x / image_rgb["width"],
-                    ymax=(y + height) / image_rgb["height"],
-                    xmax=(x + width) / image_rgb["width"],
+                    ymin=y1 / image_rgb["height"],
+                    xmin=x1 / image_rgb["width"],
+                    ymax=y2 / image_rgb["height"],
+                    xmax=x2 / image_rgb["width"],
                 )
-
-            # convert segmentation format of (x0,y0,x1,y1,...) to ( (x0, y0), (x1, y1), ... )
-            def build_coords(segmentation):
-                xs = segmentation[
-                    :-2:2
-                ]  # last two values are repeats of the first two values
-                ys = segmentation[1:-2:2]
-                coords = [[int(round(x)), int(round(y))] for (x, y) in zip(xs, ys)]
-                assert len(coords) == 4
-
-                return coords
-
-            # get colorchecker color box values. There are 24 color boxes, so output shape is (24, 3)
-            def get_cc(ground_truth=True):
-                if ground_truth:
-                    return pandas_proxy.read_csv_to_numpy_float32(
-                        os.path.join(
-                            path,
-                            "annotations",
-                            "xrite_passport_colors_sRGB-GMB-2005.csv",
-                        ),
-                        header=None,
-                    )
-                else:
-                    return pandas_proxy.read_csv_to_numpy_float32(
-                        os.path.join(
-                            path,
-                            "annotations",
-                            fname_rgb.split(".")[-2] + ".csv",
-                        ),
-                        header=None,
-                    )
 
             example = {
                 "image": [
                     os.path.join(
                         path,
-                        size,
                         modality,
                     )
-                    for modality in [fname_rgb, fname_depth]
+                    for modality in [fpath_rgb, fpath_depth]
                 ],
                 "images": [image_rgb, image_depth],
                 "categories": cocoanno.categories(),
@@ -222,29 +175,29 @@ class CarlaObjDetTest(tfds.core.GeneratorBasedBuilder):
                     {
                         "id": anno["id"],
                         "image_id": anno["image_id"],
-                        "area": anno["areas"],
+                        "area": anno["area"],
                         "boxes": build_bbox(*anno["bbox"]),
                         "labels": anno["category_id"],
                         "is_crowd": bool(anno["iscrowd"]),
                     }
                     for anno in annotations
                 ],
-                "patch_metadata": [
-                    {
-                        "gs_coords": build_coords(*anno["segmentation"]),
-                        "cc_ground_truth": get_cc(),
-                        "cc_scene": get_cc(ground_truth=False),
-                        "mask": mask,
-                        "shape": "rect",
-                    }
-                    for anno in annotations
-                    if anno["category_id"] == 4  # is patch
-                ][0],
+                "patch_metadata": {
+                    "gs_coords": np.load(
+                        os.path.join(
+                            path, patch_metadata_folder, fname_no_ext + "_coords.npy"
+                        )
+                    ),
+                    "avg_patch_depth": np.load(
+                        os.path.join(
+                            path, patch_metadata_folder, fname_no_ext + "_avg_depth.npy"
+                        )
+                    ),
+                    "mask": os.path.join(path, foreground_mask_folder, fname),
+                },
             }
 
-            yield_id = yield_id + 1
-
-            yield yield_id, example
+            yield idx, example
 
 
 class COCOAnnotation(object):
