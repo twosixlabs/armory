@@ -846,7 +846,7 @@ def carla_video_tracking_test(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_video_tracking_test:1.0.0",
+        "carla_video_tracking_test:2.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,
