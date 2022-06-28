@@ -42,7 +42,7 @@ carla_video_tracking_dev_context = datasets.VideoContext(
 carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
 carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
 carla_video_tracking_test_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=10
+    x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 
 
