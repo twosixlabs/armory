@@ -1,1 +1,1 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_test.tar.gz 325148292 a375803a43a7a4691b14f037a1f93bb7794d699524921dfc956c49d439b990df
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_test_2.0.0.tar.gz 387465525 6bd09f5cf50c0e16f34b5054e9d77f95cb4491a373ecb842431cc58ae50b882e

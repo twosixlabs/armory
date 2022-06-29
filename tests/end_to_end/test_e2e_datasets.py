@@ -609,9 +609,9 @@ def test_carla_obj_det_test():
     for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
         for x, y in ds:
             if i == 0:
-                assert x.shape == (1, 600, 800, 6)
+                assert x.shape == (1, 960, 1280, 6)
             else:
-                assert x.shape == (1, 600, 800, 3)
+                assert x.shape == (1, 960, 1280, 3)
 
             y_object, y_patch_metadata = y
             assert isinstance(y_object, dict)
@@ -659,7 +659,7 @@ def test_carla_video_tracking_test():
     assert dataset.size == 20
     for x, y in dataset:
         assert x.shape[0] == 1
-        assert x.shape[2:] == (600, 800, 3)
+        assert x.shape[2:] == (960, 1280, 3)
         assert isinstance(y, tuple)
         assert len(y) == 2
         y_object, y_patch_metadata = y

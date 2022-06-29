@@ -39,10 +39,10 @@ carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(960, 1280,
 carla_video_tracking_dev_context = datasets.VideoContext(
     x_shape=(None, 960, 1280, 3), frame_rate=10
 )
-carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
 carla_video_tracking_test_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=10
+    x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 
 
@@ -674,7 +674,7 @@ def carla_obj_det_dev(
 
 
 def carla_obj_det_test(
-    split: str = "large+medium+small",
+    split: str = "test",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -695,9 +695,6 @@ def carla_obj_det_test(
         )
     if batch_size != 1:
         raise ValueError("carla_obj_det_test batch size must be set to 1")
-
-    if split == "test":
-        split = "large+medium+small"
 
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
@@ -727,7 +724,7 @@ def carla_obj_det_test(
     )
 
     return datasets._generator_from_tfds(
-        "carla_obj_det_test:1.0.0",
+        "carla_obj_det_test:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -849,7 +846,7 @@ def carla_video_tracking_test(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_video_tracking_test:1.0.0",
+        "carla_video_tracking_test:2.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,
