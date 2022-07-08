@@ -73,7 +73,9 @@ def get_art_model_sgd(
     wrapped_model = PyTorchClassifier(
         model,
         loss=torch.nn.CrossEntropyLoss(),
-        optimizer=torch.optim.SGD(model.parameters(), lr=lr, weight_decay=1e-6, momentum=0.9, nesterov=True),
+        optimizer=torch.optim.SGD(
+            model.parameters(), lr=lr, weight_decay=1e-6, momentum=0.9, nesterov=True
+        ),
         input_shape=wrapper_kwargs.pop(
             "input_shape", (224, 224, 3)
         ),  # default to imagenet shape
