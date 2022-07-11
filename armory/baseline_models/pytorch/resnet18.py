@@ -60,3 +60,27 @@ def get_art_model(
         clip_values=(0.0, 1.0),
     )
     return wrapped_model
+
+
+def get_art_model_sgd(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchClassifier:
+
+    model = OuterModel(weights_path=weights_path, **model_kwargs)
+
+    lr = wrapper_kwargs.pop("learning_rate", 0.1)
+
+    wrapped_model = PyTorchClassifier(
+        model,
+        loss=torch.nn.CrossEntropyLoss(),
+        optimizer=torch.optim.SGD(
+            model.parameters(), lr=lr, weight_decay=1e-6, momentum=0.9, nesterov=True
+        ),
+        input_shape=wrapper_kwargs.pop(
+            "input_shape", (224, 224, 3)
+        ),  # default to imagenet shape
+        channels_first=False,
+        **wrapper_kwargs,
+        clip_values=(0.0, 1.0),
+    )
+    return wrapped_model
