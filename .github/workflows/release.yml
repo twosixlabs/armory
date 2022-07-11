@@ -2,12 +2,8 @@
 name: armory-release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_branch:
-        description: The branch to release from.
-        type: string
-        required: true
+  repository_dispatch:
+    types: build-and-release
 
 jobs:
   release-wheel:
@@ -17,10 +13,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_branch }}
+          ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: "3.8"
+          python-version: '3.7'
       - name: Build and release wheel
         run: |
           pip install wheel
@@ -29,7 +25,6 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.pypi_token }}
-
   release-tf2-docker:
     name: Build and release tf2 docker image
     needs: [release-wheel]
@@ -38,10 +33,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_branch }}
+          ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: "3.8"
+          python-version: '3.7'
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
@@ -53,7 +48,6 @@ jobs:
           docker push twosixarmory/tf2:${version}
           docker tag twosixarmory/tf2:${version} twosixarmory/tf2:latest
           docker push twosixarmory/tf2:latest
-
   release-pytorch-docker:
     name: Build and release pytorch docker image
     needs: [release-wheel]
@@ -62,10 +56,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_branch }}
+          ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: "3.8"
+          python-version: '3.7'
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
@@ -77,7 +71,6 @@ jobs:
           docker push twosixarmory/pytorch:${version}
           docker tag twosixarmory/pytorch:${version} twosixarmory/pytorch:latest
           docker push twosixarmory/pytorch:latest
-
   release-pytorch-deepspeech-docker:
     name: Build and release pytorch-deepspeech docker image
     needs: [release-wheel]
@@ -86,10 +79,10 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          ref: ${{ inputs.release_branch }}
+          ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: "3.8"
+          python-version: '3.7'
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
