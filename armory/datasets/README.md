@@ -17,6 +17,7 @@ ARMORY DATASET Builder Package
 The Armory dataset builder packages is a set of helper methods based around `tensorflow_datasets` (TFDS) version 4 API/CLI.
 In standard Armory usage, only a subset of the package is used.
 However, this package can also be used specifically to build armory-supported datasets.
+When used for building, this assumes armory is pip installed, but it is only used for logging and pathing.
 
 The basic process of constructing datasets follows:
    1.  Identify Source Files for the dataset (e.g. Images, labels, etc.)
