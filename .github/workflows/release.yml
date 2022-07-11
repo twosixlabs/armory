@@ -6,6 +6,8 @@ on:
     types: build-and-release
 
 jobs:
+
+
   release-wheel:
     name: Build release wheel
     runs-on: ubuntu-18.04
@@ -21,11 +23,13 @@ jobs:
         run: |
           pip install wheel
           python setup.py bdist_wheel
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_token }}
-  release-tf2-docker:
+          # TODO: comment out the push to pypi because 0.15.4 was already pushed and is good but the image builds need to compolete.
+#       - uses: pypa/gh-action-pypi-publish@master
+#         with:
+#           user: __token__
+#           password: ${{ secrets.pypi_token }}
+
+release-tf2-docker:
     name: Build and release tf2 docker image
     needs: [release-wheel]
     runs-on: ubuntu-18.04
