@@ -16,15 +16,15 @@ jobs:
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: "3.7"
       - name: Build and release wheel
         run: |
           pip install wheel
           python setup.py bdist_wheel
-      - uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_token }}
+    #   - uses: pypa/gh-action-pypi-publish@master
+    #     with:
+    #       user: __token__
+    #       password: ${{ secrets.pypi_token }}
   release-tf2-docker:
     name: Build and release tf2 docker image
     needs: [release-wheel]
@@ -36,7 +36,7 @@ jobs:
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: "3.7"
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
@@ -59,7 +59,7 @@ jobs:
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: "3.7"
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
@@ -82,7 +82,7 @@ jobs:
           ref: ${{ github.event.client_payload.branch }}
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: "3.7"
       - name: Build and release docker images
         run: |
           rm -rf /usr/share/dotnet &
