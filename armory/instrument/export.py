@@ -709,7 +709,8 @@ class PredictionMeter(Meter):
                 )
 
         if self.examples_saved > 0:
-            with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+            # with open(os.path.join(self.output_dir, "predictions.pkl"), "wb") as f:
+            with open(os.path.join(self.output_dir, "predictions_test.pkl"), "wb") as f:
                 pickle.dump(self.y_dict, f)
 
 

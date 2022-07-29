@@ -17,4 +17,5 @@ def __getattr__(name):
 # typedef for a widely used JSON-like configuration specification
 Config = Dict[str, Any]
 
-END_SENTINEL = "Scenario has finished running cleanly"
+# END_SENTINEL = "Scenario has finished running cleanly"
+END_SENTINEL = "Scenario has finished running cleanly - test"

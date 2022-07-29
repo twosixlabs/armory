@@ -734,7 +734,7 @@ def usage():
     lines = [
         f"{PROGRAM} <command>",
         "",
-        "ARMORY Adversarial Robustness Evaluation Test Bed",
+        "ARMORY Adversarial Robustness Evaluation Test Bed - test",
         "https://github.com/twosixlabs/armory",
         "",
         "Commands:",
