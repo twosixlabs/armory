@@ -548,7 +548,7 @@ def _generator_from_tfds(
 
 def preprocessing_chain(*args):
     """
-    Wraps and returns a sequence of functions
+    Wraps and returns a sequence of preprocessing functions
     """
     functions = [x for x in args if x is not None]
     if not functions:
@@ -558,6 +558,24 @@ def preprocessing_chain(*args):
         for function in functions:
             x = function(x)
         return x
+
+    return wrapped
+
+
+def label_preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of label preprocessing functions.
+    Note that this function differs from preprocessing_chain() in that
+    it chains across (x, y) instead of just x
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x, y):
+        for function in functions:
+            y = function(x, y)
+        return y
 
     return wrapped
 

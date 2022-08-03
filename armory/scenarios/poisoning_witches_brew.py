@@ -280,11 +280,36 @@ class WitchesBrewScenario(Poison):
 
             attack_dir = os.path.join(paths.runtime_paths().saved_model_dir, "attacks")
             os.makedirs(attack_dir, exist_ok=True)
-
-            attack = config_loading.load_attack(attack_config, self.model)
-
             if data_filepath is not None:
                 data_filepath = os.path.join(attack_dir, data_filepath)
+
+            log.info("Loading proxy model for attack . . .")
+            proxy_weights = attack_config.get(
+                "proxy_classifier_weights_file", None
+            )  # you can pass in saved weights, but so far, this won't save them for you.
+            proxy_config = copy.deepcopy(self.config["model"])
+            proxy_config["weights_file"] = proxy_weights
+            proxy_model, _ = config_loading.load_model(proxy_config)
+
+            #  Train proxy model for gradient matching attack, if no pre-saved dataset or if we are overwriting it.
+            if (
+                data_filepath is None
+                or not os.path.exists(data_filepath)
+                or attack_config["kwargs"].get("overwrite_presaved_data")
+            ):
+
+                if proxy_weights is None:
+                    log.info("Fitting proxy model for attack . . .")
+                    proxy_model.fit(
+                        self.x_clean,
+                        self.label_function(self.y_clean),
+                        batch_size=self.fit_batch_size,
+                        nb_epochs=self.train_epochs,
+                        verbose=False,
+                        shuffle=True,
+                    )
+
+            attack = config_loading.load_attack(attack_config, proxy_model)
 
             self.poisoner = DatasetPoisonerWitchesBrew(
                 attack,
@@ -379,7 +404,21 @@ class WitchesBrewScenario(Poison):
             )
         )
 
-        per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
+        self.hub.connect_meter(
+            Meter(
+                "attack_success_rate",  # percent of triggers classified as target
+                metrics.get_supported_metric("categorical_accuracy"),
+                "scenario.target[trigger]",
+                "scenario.y_pred[trigger]",
+                final=np.mean,
+                final_name="attack_success_rate",
+                record_final_only=True,
+            )
+        )
+
+        per_class_mean_accuracy = metrics.get_supported_metric(
+            "per_class_mean_accuracy"
+        )
         self.hub.connect_meter(
             GlobalMeter(
                 "accuracy_on_non_trigger_images_per_class",
@@ -414,12 +453,16 @@ class WitchesBrewScenario(Poison):
         self.hub.set_context(stage="trigger")
         # Only called for the trigger images
 
+        # get target for this image
+        ind = self.trigger_index.index(self.i)
+        target = np.array([self.target_class[ind]])
+
         x, y = self.x, self.y
 
         x.flags.writeable = False
         y_pred_adv = self.model.predict(x, **self.predict_kwargs)
 
-        self.probe.update(y=y, y_pred=y_pred_adv, y_pred_adv=y_pred_adv)
+        self.probe.update(y=y, y_pred=y_pred_adv, y_pred_adv=y_pred_adv, target=target)
 
         self.y_pred_adv = y_pred_adv  # for exporting when function returns
 
