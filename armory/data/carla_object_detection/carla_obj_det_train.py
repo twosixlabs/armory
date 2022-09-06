@@ -20,18 +20,19 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_train_val_2.0.0_dataset.tar.gz"
+_URLS = "carla_od_train_val_dataset_3.0.0.tar.gz"
 # fmt: on
 
 
 class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_train dataset."""
 
-    VERSION = tfds.core.Version("2.0.0")
+    VERSION = tfds.core.Version("3.0.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
         "1.0.1": "Correcting error to RGB and depth image pairing",
         "2.0.0": "Eval5 update with higher resolution, HD textures, and accurate annotations",
+        "3.0.0": "Eval6 update with images collected from overhead perspectives",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -118,7 +119,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
             image.pop("license", None)
             image.pop("flickr_url", None)
             image.pop("coco_url", None)
-            image.pop("data_captured", None)
+            image.pop("date_captured", None)
 
             fname = image["file_name"]
 
