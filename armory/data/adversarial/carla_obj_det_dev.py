@@ -36,7 +36,7 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         "1.0.0": "Initial release.",
         "1.0.1": "Correcting error to RGB and depth image pairing",
         "2.0.0": "Eval5 update with higher resolution, HD textures, accurate annotations, and objects overlapping patch",
-        "3.0.0": "Eval6 update with images collected from overhead perspectives"
+        "3.0.0": "Eval6 update with images collected from overhead perspectives",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -119,9 +119,7 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         foreground_mask_folder = "foreground_mask"
         patch_metadata_folder = "patch_metadata"
 
-        annotation_path = os.path.join(
-            path, "kwcoco_annotations.json"
-        )        
+        annotation_path = os.path.join(path, "kwcoco_annotations.json")
 
         cocoanno = COCOAnnotation(annotation_path)
 
