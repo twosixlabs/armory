@@ -205,6 +205,8 @@ class ResultsLogWriter(LogWriter):
                 f"neutral: {result['neutral']}/{total}, "
                 f"entailment: {result['entailment']}/{total}"
             )
+        elif "confusion_matrix" in name:
+            f_result = f"{result}"
         elif any(m in name for m in MEAN_AP_METRICS):
             if "input_to" in name:
                 for m in MEAN_AP_METRICS:
@@ -216,6 +218,8 @@ class ResultsLogWriter(LogWriter):
         elif any(m in name for m in QUANTITY_METRICS):
             # Don't include % symbol
             f_result = f"{np.mean(result):.2}"
+        elif isinstance(result, dict):
+            f_result = f"{result}"
         else:
             f_result = f"{np.mean(result):.2%}"
         log.success(
@@ -253,6 +257,19 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    elif name in [
+        "per_class_mean_accuracy",
+        "per_class_precision_and_recall",
+        "confusion_matrix",
+    ]:
+        metric = metrics.get("identity_unzip")
+        func = metrics.get(name)
+
+        def final(x):
+            return func(*metrics.task.identity_zip(x))
+
+        final_suffix = name
+
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
