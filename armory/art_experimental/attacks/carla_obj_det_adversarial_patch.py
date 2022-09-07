@@ -8,9 +8,7 @@ from typing import Optional
 import torch
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    linear_to_log,
-    log_to_linear,
-    get_avg_depth_value,
+    linear_depth_to_rgb,
 )
 
 
@@ -18,10 +16,14 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
     def __init__(self, estimator, **kwargs):
 
         # Maximum depth perturbation from a flat patch
-        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 3)
+        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 0.03)
         self.learning_rate_depth = kwargs.pop("learning_rate_depth", 0.0001)
-        self.max_depth = None
-        self.min_depth = None
+        self.max_depth_r = None
+        self.min_depth_r = None
+        self.max_depth_g = None
+        self.min_depth_g = None
+        self.max_depth_b = None
+        self.min_depth_b = None
 
         super().__init__(estimator=estimator, **kwargs)
 
@@ -58,8 +60,14 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                 )
 
                 if self._patch.shape[0] == 6:
-                    self._patch[3:, :, :] = torch.clamp(
-                        self._patch[3:, :, :], min=self.min_depth, max=self.max_depth
+                    self._patch[3, :, :] = torch.clamp(
+                        self._patch[3, :, :], min=self.min_depth_r, max=self.max_depth_r
+                    )
+                    self._patch[4, :, :] = torch.clamp(
+                        self._patch[4, :, :], min=self.min_depth_g, max=self.max_depth_g
+                    )
+                    self._patch[5, :, :] = torch.clamp(
+                        self._patch[5, :, :], min=self.min_depth_b, max=self.max_depth_b
                     )
         else:
             raise ValueError(
@@ -326,17 +334,40 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             if (
                 self.patch_shape[0] == 6
-            ):  # initialize depth patch with average depth value of green screen
-                if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 5+ metadata
+            ):  # initialize depth patch with average depth value of green screen.
+                # Eval6 data uses linear depth, so this attack is not backward compatible
+                if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
                     avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
-                else:  # backward compatible with Eval 4 metadata
-                    avg_patch_depth = get_avg_depth_value(x[i][:, :, 3], gs_coords)
-                avg_patch_depth_meters = log_to_linear(avg_patch_depth)
-                max_depth_meters = avg_patch_depth_meters + self.depth_delta_meters
-                min_depth_meters = avg_patch_depth_meters - self.depth_delta_meters
-                self.max_depth = linear_to_log(max_depth_meters)
-                self.min_depth = linear_to_log(min_depth_meters)
-                patch_init[3:, :, :] = avg_patch_depth
+
+                    # check if depth image is log-depth
+                    if (
+                        x.shape[-1] == 6
+                        and np.all(x[i, :, :, 3] == x[i, :, :, 4])
+                        and np.all(x[i, :, :, 3] == x[i, :, :, 5])
+                    ):
+                        raise ValueError(
+                            "Dataset uses log-depth and is not compatible with this attack"
+                        )
+                else:
+                    raise ValueError(
+                        "Dataset does not contain patch metadata for average patch depth"
+                    )
+                max_depth = avg_patch_depth + self.depth_delta_meters
+                min_depth = avg_patch_depth - self.depth_delta_meters
+                (
+                    self.max_depth_r,
+                    self.max_depth_g,
+                    self.max_depth_b,
+                ) = linear_depth_to_rgb(max_depth)
+                (
+                    self.min_depth_r,
+                    self.min_depth_g,
+                    self.min_depth_b,
+                ) = linear_depth_to_rgb(min_depth)
+                rv, gv, bv = linear_depth_to_rgb(avg_patch_depth)
+                patch_init[3, :, :] = rv
+                patch_init[4, :, :] = gv
+                patch_init[5, :, :] = bv
 
             self._patch = torch.tensor(
                 patch_init, requires_grad=True, device=self.estimator.device
