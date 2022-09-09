@@ -34,7 +34,7 @@ def test_valid_model_weight(tmp_path):
 
 def test_invalid_model_weight():
     weights_file = "does_not_exist.h5"
-    with pytest.raises(ValueError, match="attempting to load a custom set of weights"):
+    with pytest.raises(ValueError, match="was not found"):
         maybe_download_weights_from_s3(weights_file)
 
 

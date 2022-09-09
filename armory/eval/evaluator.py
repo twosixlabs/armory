@@ -135,7 +135,7 @@ class Evaluator(object):
             else:
                 json = ""
             output_path = os.path.join(self.output_dir, json)
-            log.info(f"results output written to:\n{output_path}")
+            log.info(f"results output written to: {output_path}")
 
     def run(
         self,
