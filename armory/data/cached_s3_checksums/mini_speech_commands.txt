@@ -1,0 +1,1 @@
+armory-public-data mini_speech_commands/mini_speech_commands_cached_1.0.0.tar.gz 203975536 92cb52edc41faa656c663bbc34636906f5ddcf066b439cae5d612b245c3c6919

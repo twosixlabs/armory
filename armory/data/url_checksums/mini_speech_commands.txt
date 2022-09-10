@@ -1,0 +1,1 @@
+https://armory-public-data.s3.us-east-2.amazonaws.com/mini-speech-commands/mini_speech_commands_1.0.0.tar.gz 179089128 1e097ec11480ff27b0c8291adb31b56c71924ebb01caa01a290096deaa7de7c1
