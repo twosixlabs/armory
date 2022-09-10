@@ -36,6 +36,7 @@ from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
+from armory.data.mini_speech_commands import mini_speech_commands as msc  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -806,6 +807,7 @@ def canonical_audio_preprocess(context, batch):
 digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
 librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
 librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+speech_commands_context = AudioContext(x_shape=(None,), sample_rate=16000)
 
 
 def digit_canonical_preprocessing(batch):
@@ -818,6 +820,10 @@ def librispeech_canonical_preprocessing(batch):
 
 def librispeech_dev_clean_canonical_preprocessing(batch):
     return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
+
+
+def speech_commands_preprocessing(batch):
+    return canonical_audio_preprocess(speech_commands_context, batch)
 
 
 def mnist(
@@ -1041,6 +1047,42 @@ def digit(
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=digit_context,
+        **kwargs,
+    )
+
+
+def mini_speech_commands(
+    split: str = "test",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = None,  # TODO add preprocessing that pads examples to same length
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    An audio dataset of speech commands:
+        https://ai.googleblog.com/2017/08/launching-speech-commands-dataset.html
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "mini_speech_commands:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        variable_length=bool(
+            batch_size > 1
+        ),  # TODO probably false if I add the padding preprocessing
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
