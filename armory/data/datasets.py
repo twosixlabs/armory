@@ -1074,7 +1074,7 @@ def mini_speech_commands(
 ) -> ArmoryDataGenerator:
     """
     An audio dataset of speech commands:
-        https://ai.googleblog.com/2017/08/launching-speech-commands-dataset.html
+        https://www.tensorflow.org/datasets/catalog/speech_commands
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 

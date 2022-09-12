@@ -12,7 +12,7 @@ for use in a tutorial on tensorflow.org. Please refer to the original[dataset](h
 for documentation and license information.
 """
 
-_HOMEPAGE = "https://ai.googleblog.com/2017/08/launching-speech-commands-dataset.html"
+_HOMEPAGE = "https://www.tensorflow.org/datasets/catalog/speech_commands"
 
 _NUM_CLASSES = 8
 
