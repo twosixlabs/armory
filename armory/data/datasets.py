@@ -823,7 +823,12 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
 
 
 def speech_commands_preprocessing(batch):
-    return canonical_audio_preprocess(speech_commands_context, batch)
+    new_batch = np.zeros((batch.shape[0], 16000))
+    for i in range(batch.shape[0]):
+        new_batch[i, : len(batch[i])] = batch[i]
+    return canonical_audio_preprocess(
+        speech_commands_context, new_batch.astype(np.int64)
+    )
 
 
 def mnist(
@@ -1060,7 +1065,7 @@ def mini_speech_commands(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = None,  # TODO add preprocessing that pads examples to same length
+    preprocessing_fn: Callable = speech_commands_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -1082,7 +1087,7 @@ def mini_speech_commands(
         preprocessing_fn=preprocessing_fn,
         variable_length=bool(
             batch_size > 1
-        ),  # TODO probably false if I add the padding preprocessing
+        ),  # Note: preprocessing function pads examples to the same length
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
