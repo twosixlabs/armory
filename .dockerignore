@@ -1,5 +1,3 @@
-# ignore .git, .conda, etc.
-.*
 # ignore large directories
 datasets/
 # ignore temp directories
