@@ -69,7 +69,6 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
-    python_requires=">=3.8",
     packages=find_packages(),
     include_package_data=True,
     entry_points={"console_scripts": ["armory = armory.__main__:main"]},
