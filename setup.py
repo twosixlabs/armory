@@ -1,20 +1,25 @@
-import codecs
 import os
+import codecs
+import datetime
+
+from pathlib import Path
+
 from setuptools import setup
 from setuptools import find_packages
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
 
-tests_require = []
-docs_require = []
+PACKAGE_NAME     = "armory-testbed"
+LONG_DESCRIPTION = Path("README.md").read_text()
+
+required_pkgs = Path("requirements.txt").read_text().splitlines()
+tests_require = Path("test-requirements.txt").read_text().splitlines()
+docs_require  = [ ]
 
 
 def read(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
     with codecs.open(os.path.join(here, rel_path), "r") as fp:
         return fp.read()
-
 
 def get_version(rel_path):
     for line in read(rel_path).splitlines():
@@ -24,22 +29,26 @@ def get_version(rel_path):
     raise RuntimeError("Unable to find version string.")
 
 
-with open("requirements.txt") as f:
-    required_pkgs = f.read().splitlines()
+# Allow installation without git repository, e.g. inside Docker.
+if os.path.exists('.git'):
+    kwargs = dict(
+        setup_requires = ["setuptools_scm"],
+        use_scm_version = {
+            "root": ".",
+            "relative_to": __file__,
+            "local_scheme": "node-and-timestamp",
+        }
+    )
+else:
+    kwargs = dict(
+        version = '0+d'+datetime.date.today().strftime('%Y%m%d')
+    )
 
-with open("test-requirements.txt") as f:
-    tests_require = f.readlines()
 
 setup(
-    name="armory-testbed",
-    setup_requires=["setuptools_scm"],
-    use_scm_version={
-        "root": ".",
-        "relative_to": __file__,
-        "local_scheme": "node-and-timestamp",
-    },
+    name=PACKAGE_NAME,
     description="Adversarial Robustness Test Bed",
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     author="Two Six Labs",
     author_email="armory@twosixlabs.com",
@@ -61,7 +70,9 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
+    python_requires=">=3.8",
     packages=find_packages(),
     include_package_data=True,
     entry_points={"console_scripts": ["armory = armory.__main__:main"]},
+    **kwargs
 )
