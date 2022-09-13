@@ -40,9 +40,8 @@ if os.path.exists('.git'):
         }
     )
 else:
-    kwargs = dict(
-        version = '0+d'+datetime.date.today().strftime('%Y%m%d')
-    )
+    app_version = os.getenv('armory_version') if bool(os.getenv('armory_version')) else '0+d'+datetime.date.today().strftime('%Y%m%d')
+    kwargs = dict(version = app_version)
 
 
 setup(
