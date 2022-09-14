@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tage }}
+          imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: Run Tests TF2 Docker
         run: |
-          imageName=twosixarmory/tf2:${{ github.event.inputs.image_tage }}
+          imageName=twosixarmory/tf2:${{ github.event.inputs.image_tag }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
   
@@ -65,7 +65,7 @@ jobs:
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
-          imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tage }}
+          imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
   
@@ -76,9 +76,9 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tage }}
-          docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tage }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tage }}
+          docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
+          docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tag }}
+          docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
 
 #### TODO
 #   build:
