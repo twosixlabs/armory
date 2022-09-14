@@ -21,7 +21,7 @@ on:
 
 
 env:
-  IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+  IMAGE_TAG: "latest"
   # IMAGE_TAG: ${{ github.sha }}
 
 
@@ -48,7 +48,7 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
+          imageName=twosixarmory/pytorch:${{ IMAGE_TAG }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
@@ -59,10 +59,10 @@ jobs:
     steps:
       - name: Run Tests TF2 Docker
         run: |
-          imageName=twosixarmory/tf2:${{ github.event.inputs.image_tag }}
+          imageName=twosixarmory/tf2:${{ IMAGE_TAG }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-  
+
   docker-deepspeech-end2end:
     name: Docker Deepspeech End2End
     needs: docker-build
@@ -70,10 +70,10 @@ jobs:
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
-          imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
+          imageName=twosixarmory/pytorch-deepspeech:${{ IMAGE_TAG }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-  
+
   docker-remove:
     name: Remove Docker Images
     needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
@@ -81,9 +81,9 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
-          docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tag }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
+          docker rmi twosixarmory/pytorch:${{ IMAGE_TAG }}
+          docker rmi twosixarmory/tf2:${{ IMAGE_TAG }}
+          docker rmi twosixarmory/pytorch-deepspeech:${{ IMAGE_TAG }}
 
 #### TODO
 #   build:
@@ -97,17 +97,17 @@ jobs:
 #             repository: twosixarmory/base
 #             tagprefix: ''
 #             default: true
-            
+
 #           - dockerfile: docker/Dockerfile-pytorch
 #             repository: twosixarmory/pytorch
 #             tagprefix: ''
 #             default: true
-            
+
 #           - dockerfile: Dockerfile-pytorch-deepspeech
 #             repository: twosixarmory/pytorch-deepspeech
 #             tagprefix: ''
 #             default: true
-            
+
 #           - dockerfile: Dockerfile-tf2
 #             repository: twosixarmory/tf2
 #             tagprefix: ''
@@ -127,4 +127,4 @@ jobs:
 #           tags: v1, latest
 #           dockerfile: |
 #             ${{ matrix.dockerfile }}
-      
+
