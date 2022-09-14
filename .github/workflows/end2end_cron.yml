@@ -48,7 +48,7 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          imageName=twosixarmory/pytorch:${{ IMAGE_TAG }}
+          imageName=twosixarmory/pytorch:${IMAGE_TAG}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
@@ -59,7 +59,7 @@ jobs:
     steps:
       - name: Run Tests TF2 Docker
         run: |
-          imageName=twosixarmory/tf2:${{ IMAGE_TAG }}
+          imageName=twosixarmory/tf2:${IMAGE_TAG}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
@@ -70,7 +70,7 @@ jobs:
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
-          imageName=twosixarmory/pytorch-deepspeech:${{ IMAGE_TAG }}
+          imageName=twosixarmory/pytorch-deepspeech:${IMAGE_TAG}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
 
@@ -81,9 +81,9 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          docker rmi twosixarmory/pytorch:${{ IMAGE_TAG }}
-          docker rmi twosixarmory/tf2:${{ IMAGE_TAG }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ IMAGE_TAG }}
+          docker rmi twosixarmory/pytorch:${IMAGE_TAG}
+          docker rmi twosixarmory/tf2:${IMAGE_TAG}
+          docker rmi twosixarmory/pytorch-deepspeech:${IMAGE_TAG}
 
 #### TODO
 #   build:
