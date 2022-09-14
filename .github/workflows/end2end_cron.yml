@@ -6,11 +6,17 @@ on:
     branches:
       - master
       - develop
-
   pull_request:
     branches:
       - master
       - develop
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Release tag to build images from'
+        required: true
+        default: "latest"
+        # default: ${{ github.sha }}
   schedule:
     - cron: 0 0 * * * # At Midnight Every Day
 
@@ -29,8 +35,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
           python docker/build.py all
-    outputs:
-      imageTag: ${{ steps.docker-build.outputs.imageTag }}
+
   docker-pytorch-end2end:
     name: Docker Torch End2End
     needs: docker-build
@@ -38,9 +43,10 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          imageName=twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
+          imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tage }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+
   docker-tf2-end2end:
     name: Docker TF2 End2End
     needs: docker-build
@@ -48,9 +54,10 @@ jobs:
     steps:
       - name: Run Tests TF2 Docker
         run: |
-          imageName=twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
+          imageName=twosixarmory/tf2:${{ github.event.inputs.image_tage }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+  
   docker-deepspeech-end2end:
     name: Docker Deepspeech End2End
     needs: docker-build
@@ -58,9 +65,10 @@ jobs:
     steps:
       - name: Run Tests Deepspeech Docker
         run: |
-          imageName=twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+          imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tage }}
           echo "Running Tests with Image -> $imageName"
           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+  
   docker-remove:
     name: Remove Docker Images
     needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
@@ -68,6 +76,50 @@ jobs:
     steps:
       - name: Run Tests Torch Docker
         run: |
-          docker rmi twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
-          docker rmi twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+          docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tage }}
+          docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tage }}
+          docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tage }}
+
+#### TODO
+#   build:
+#     runs-on: ubuntu-20.04
+#     # timeout-minutes: 45
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         include:
+#           - dockerfile: docker/Dockerfile-base
+#             repository: twosixarmory/base
+#             tagprefix: ''
+#             default: true
+            
+#           - dockerfile: docker/Dockerfile-pytorch
+#             repository: twosixarmory/pytorch
+#             tagprefix: ''
+#             default: true
+            
+#           - dockerfile: Dockerfile-pytorch-deepspeech
+#             repository: twosixarmory/pytorch-deepspeech
+#             tagprefix: ''
+#             default: true
+            
+#           - dockerfile: Dockerfile-tf2
+#             repository: twosixarmory/tf2
+#             tagprefix: ''
+#             default: true
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v2
+
+#       - name: Build
+#         uses: docker/build-push-action@v2
+#         with:
+#           push: false
+#           context: .
+#           image: |
+#             ${{ matrix.repository }}
+#           tags: v1, latest
+#           dockerfile: |
+#             ${{ matrix.dockerfile }}
+      
