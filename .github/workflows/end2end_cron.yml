@@ -25,101 +25,108 @@ jobs:
     name: Build Docker Image
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-      - name: Build Docker
-        id: docker-build
+      - name: "Test"
         run: |
-          pip install -r requirements.txt
-          pip install -e .
-          python docker/build.py all
-
-  docker-pytorch-end2end:
-    name: Docker Torch End2End
-    needs: docker-build
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Run Tests Torch Docker
-        run: |
-          imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
-          echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-
-  docker-tf2-end2end:
-    name: Docker TF2 End2End
-    needs: docker-build
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Run Tests TF2 Docker
-        run: |
-          imageName=twosixarmory/tf2:${{ github.event.inputs.image_tag }}
-          echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-  
-  docker-deepspeech-end2end:
-    name: Docker Deepspeech End2End
-    needs: docker-build
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Run Tests Deepspeech Docker
-        run: |
-          imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
-          echo "Running Tests with Image -> $imageName"
-          docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
-  
-  docker-remove:
-    name: Remove Docker Images
-    needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Run Tests Torch Docker
-        run: |
-          docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
-          docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tag }}
-          docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
-
-#### TODO
-#   build:
-#     runs-on: ubuntu-20.04
-#     # timeout-minutes: 45
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         include:
-#           - dockerfile: docker/Dockerfile-base
-#             repository: twosixarmory/base
-#             tagprefix: ''
-#             default: true
-            
-#           - dockerfile: docker/Dockerfile-pytorch
-#             repository: twosixarmory/pytorch
-#             tagprefix: ''
-#             default: true
-            
-#           - dockerfile: Dockerfile-pytorch-deepspeech
-#             repository: twosixarmory/pytorch-deepspeech
-#             tagprefix: ''
-#             default: true
-            
-#           - dockerfile: Dockerfile-tf2
-#             repository: twosixarmory/tf2
-#             tagprefix: ''
-#             default: true
+          echo "${IMAGE_TAG}"
+        env:
+          IMAGE_TAG: ${{ github.event.inputs.image_tag }}
 
 #     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v2
-
-#       - name: Build
-#         uses: docker/build-push-action@v2
+#       - uses: actions/checkout@v2
+#       - uses: actions/setup-python@v2
 #         with:
-#           push: false
-#           context: .
-#           image: |
-#             ${{ matrix.repository }}
-#           tags: v1, latest
-#           dockerfile: |
-#             ${{ matrix.dockerfile }}
+#           python-version: '3.10'
+#       - name: Build Docker
+#         id: docker-build
+#         run: |
+#           pip install -r requirements.txt
+#           pip install -e .
+#           python docker/build.py all
+
+#   docker-pytorch-end2end:
+#     name: Docker Torch End2End
+#     needs: docker-build
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - name: Run Tests Torch Docker
+#         run: |
+#           imageName=twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
+#           echo "Running Tests with Image -> $imageName"
+#           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+
+#   docker-tf2-end2end:
+#     name: Docker TF2 End2End
+#     needs: docker-build
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - name: Run Tests TF2 Docker
+#         run: |
+#           imageName=twosixarmory/tf2:${{ github.event.inputs.image_tag }}
+#           echo "Running Tests with Image -> $imageName"
+#           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+  
+#   docker-deepspeech-end2end:
+#     name: Docker Deepspeech End2End
+#     needs: docker-build
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - name: Run Tests Deepspeech Docker
+#         run: |
+#           imageName=twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
+#           echo "Running Tests with Image -> $imageName"
+#           docker run -w /armory-repo/ $imageName pytest -vs -m "not docker_required and end_to_end" ./tests/
+  
+#   docker-remove:
+#     name: Remove Docker Images
+#     needs: [docker-build, docker-pytorch-end2end, docker-tf2-end2end, docker-deepspeech-end2end]
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - name: Run Tests Torch Docker
+#         run: |
+#           docker rmi twosixarmory/pytorch:${{ github.event.inputs.image_tag }}
+#           docker rmi twosixarmory/tf2:${{ github.event.inputs.image_tag }}
+#           docker rmi twosixarmory/pytorch-deepspeech:${{ github.event.inputs.image_tag }}
+
+# #### TODO
+# #   build:
+# #     runs-on: ubuntu-20.04
+# #     # timeout-minutes: 45
+# #     strategy:
+# #       fail-fast: false
+# #       matrix:
+# #         include:
+# #           - dockerfile: docker/Dockerfile-base
+# #             repository: twosixarmory/base
+# #             tagprefix: ''
+# #             default: true
+            
+# #           - dockerfile: docker/Dockerfile-pytorch
+# #             repository: twosixarmory/pytorch
+# #             tagprefix: ''
+# #             default: true
+            
+# #           - dockerfile: Dockerfile-pytorch-deepspeech
+# #             repository: twosixarmory/pytorch-deepspeech
+# #             tagprefix: ''
+# #             default: true
+            
+# #           - dockerfile: Dockerfile-tf2
+# #             repository: twosixarmory/tf2
+# #             tagprefix: ''
+# #             default: true
+
+# #     steps:
+# #       - name: Checkout
+# #         uses: actions/checkout@v2
+
+# #       - name: Build
+# #         uses: docker/build-push-action@v2
+# #         with:
+# #           push: false
+# #           context: .
+# #           image: |
+# #             ${{ matrix.repository }}
+# #           tags: v1, latest
+# #           dockerfile: |
+# #             ${{ matrix.dockerfile }}
       
