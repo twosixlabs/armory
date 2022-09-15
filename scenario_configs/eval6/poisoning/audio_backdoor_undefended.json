@@ -15,11 +15,10 @@
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "trigger_type": "audio",
             "backdoor_kwargs": {
-                "backdoor_path": "./armory/utils/triggers/bird_call.wav",
+                "backdoor_path": "./armory/utils/triggers/clapping.wav",
                 "scale": 0.1,
-                "sampling_rate": 44100,
+                "sampling_rate": 16000,
                 "shift": 0,
                 "random": false,
                 "duration": 1
