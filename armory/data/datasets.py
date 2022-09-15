@@ -1073,6 +1073,12 @@ def speech_commands(
     shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
+
+    """
+    An audio dataset of spoken commands
+    https://www.tensorflow.org/datasets/catalog/speech_commands
+    """
+
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
