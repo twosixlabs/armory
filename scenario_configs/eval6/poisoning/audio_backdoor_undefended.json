@@ -17,23 +17,22 @@
         "kwargs": {
             "backdoor_kwargs": {
                 "backdoor_path": "./armory/utils/triggers/clapping.wav",
-                "scale": 0.1,
-                "sampling_rate": 16000,
-                "shift": 0,
+                "duration": 1,
                 "random": false,
-                "duration": 1
+                "sampling_rate": 16000,
+                "scale": 0.1,
+                "shift": 0
             }
-            
         },
         "module": "armory.art_experimental.attacks.poison_loader_audio",
         "name": "poison_loader_audio"
     },
     "dataset": {
         "batch_size": 64,
-        "pad_data": true,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "speech_commands"
+        "name": "speech_commands",
+        "pad_data": true
     },
     "defense": null,
     "metric": null,
