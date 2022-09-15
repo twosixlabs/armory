@@ -822,13 +822,8 @@ def librispeech_dev_clean_canonical_preprocessing(batch):
     return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
 
 
-def speech_commands_preprocessing(batch):
-    new_batch = np.zeros((batch.shape[0], 16000))
-    for i in range(batch.shape[0]):
-        new_batch[i, : len(batch[i])] = batch[i]
-    return canonical_audio_preprocess(
-        speech_commands_context, new_batch.astype(np.int64)
-    )
+def speech_commands_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(speech_commands_context, batch)
 
 
 def mnist(
@@ -1060,38 +1055,44 @@ def digit(
     )
 
 
-def mini_speech_commands(
-    split: str = "test",
+def speech_commands(
+    split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = speech_commands_preprocessing,
+    preprocessing_fn: Callable = speech_commands_canonical_preprocessing,
+    label_preprocessing_fn: Callable = None,
+    as_supervised: bool = True,
+    supervised_xy_keys=None,
+    download_and_prepare_kwargs=None,
+    variable_y=False,
+    lambda_map: Callable = None,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
     **kwargs,
 ) -> ArmoryDataGenerator:
-    """
-    An audio dataset of speech commands:
-        https://www.tensorflow.org/datasets/catalog/speech_commands
-    """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "mini_speech_commands:1.0.0",
+        "speech_commands:0.0.2",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
         dataset_dir=dataset_dir,
         preprocessing_fn=preprocessing_fn,
-        variable_length=bool(
-            batch_size > 1
-        ),  # Note: preprocessing function pads examples to the same length
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=as_supervised,
+        supervised_xy_keys=supervised_xy_keys,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
+        variable_length=bool(batch_size > 1),
+        variable_y=variable_y,
+        lambda_map=lambda_map,
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=digit_context,
+        context=speech_commands_context,
         **kwargs,
     )
 
