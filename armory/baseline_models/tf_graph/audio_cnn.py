@@ -1,5 +1,5 @@
 """
-CNN for mini speech commands classification.  
+CNN for speech commands classification.  
 Model and spectrogram function from https://www.tensorflow.org/tutorials/audio/simple_audio
 """
 
@@ -24,11 +24,11 @@ def get_spectrogram(audio):
 
 def make_audio_cnn(**kwargs) -> tf.keras.Model:
     """
-        A CNN for audio poisoning on the mini speech commands dataset
+        A CNN for audio poisoning on the speech commands dataset
     """
     norm_layer = layers.Normalization()
     input_shape = (16000,)
-    num_labels = 8
+    num_labels = 12
     model = models.Sequential([
         layers.Input(shape=input_shape),
         layers.Lambda(get_spectrogram),
@@ -69,7 +69,7 @@ def get_art_model(
                                         loss_object=loss_object, 
                                         train_step=train_step,
                                         input_shape=(16000,),
-                                        nb_classes=8,
+                                        nb_classes=12,
                                         **wrapper_kwargs,
                                         )
 
