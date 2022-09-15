@@ -1086,7 +1086,9 @@ def speech_commands(
         return new_batch.astype(np.int64)
 
     if pad_data:
-        preprocessing_fn = preprocessing_chain(pad_batch, preprocessing_fn, fit_preprocessing_fn)
+        preprocessing_fn = preprocessing_chain(
+            pad_batch, preprocessing_fn, fit_preprocessing_fn
+        )
     else:
         preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
