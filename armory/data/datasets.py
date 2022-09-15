@@ -36,7 +36,6 @@ from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
-from armory.data.mini_speech_commands import mini_speech_commands as msc  # noqa: F401
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -1071,6 +1070,7 @@ def speech_commands(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = True,
+    pad_data: bool = False,
     **kwargs,
 ) -> ArmoryDataGenerator:
 
@@ -1079,7 +1079,16 @@ def speech_commands(
     https://www.tensorflow.org/datasets/catalog/speech_commands
     """
 
-    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+    def pad_batch(batch):
+        new_batch = np.zeros((batch.shape[0], 16000))
+        for i in range(batch.shape[0]):
+            new_batch[i, : len(batch[i])] = batch[i]
+        return new_batch.astype(np.int64)
+
+    if pad_data:
+        preprocessing_fn = preprocessing_chain(pad_batch, preprocessing_fn, fit_preprocessing_fn)
+    else:
+        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
         "speech_commands:0.0.2",
