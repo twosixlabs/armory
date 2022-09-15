@@ -6,7 +6,7 @@
         "explanatory_model": null,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 0,
+        "source_class": 11,
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 15,
@@ -29,10 +29,11 @@
         "name": "poison_loader_audio"
     },
     "dataset": {
-        "batch_size": 1,
+        "batch_size": 64,
+        "pad_data": true,
         "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "mini_speech_commands"
+        "name": "speech_commands"
     },
     "defense": null,
     "metric": null,
