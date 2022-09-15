@@ -57,7 +57,7 @@ the rgb channels and `x[..., 3:]` the depth channels.
 | [librispeech-full](http://www.openslr.org/12/) | Full Librispeech dataset for automatic speech recognition | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, train_clean100, train_clean360, train_other500 |
 | [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | float32 | (N,)  | int64 | 16 kHz | train, validation, test |
 | [librispeech_dev_clean_asr](http://www.openslr.org/12) | Librispeech dev dataset for automatic speech recognition | (N, variable_length) | float32 | (N,) | bytes | 16 kHz | train, validation, test |
-| [mini_speech_commands](https://arxiv.org/abs/1804.03209) | Mini version of speech commands dataset for audio poisoning | (N, 16000) | float32 | (N,) | int64 | 16 kHz | test |
+| [speech_commands](https://www.tensorflow.org/datasets/catalog/speech_commands) | Speech commands dataset for audio poisoning | (N, variable_length) | float32 | (N,) | int64 | 16 kHz | train, validation, test |
 
 NOTE: because the Librispeech dataset is over 300 GB with all splits, the ```librispeech_full``` dataset has
 all splits, whereas the ```librispeech``` dataset does not have the train_clean360 or train_other500 splits.

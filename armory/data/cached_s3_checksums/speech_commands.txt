@@ -1,0 +1,1 @@
+armory-public-data speech_commands/speech_commands_0.0.2.tar.gz 2628293890 2b01805ab1dcf9d3bfa02266b90620d0f0d0a3b484b078813067be8f61ad9e82
