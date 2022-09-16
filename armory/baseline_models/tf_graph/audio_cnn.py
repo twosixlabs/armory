@@ -1,5 +1,5 @@
 """
-CNN for speech commands classification.  
+CNN for speech commands classification.
 Model and spectrogram function from https://www.tensorflow.org/tutorials/audio/simple_audio
 """
 
