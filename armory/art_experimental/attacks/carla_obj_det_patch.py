@@ -2,6 +2,7 @@ import random
 
 from armory.logs import log
 from art.attacks.evasion import RobustDPatch
+import os
 import cv2
 import numpy as np
 from typing import Optional, List, Dict
@@ -277,7 +278,26 @@ class CARLADapricotPatch(RobustDPatch):
         self.max_depth_b = None
         self.min_depth_b = None
 
+        self.patch_base_image = kwargs.pop("patch_base_image", None)
+
         super().__init__(estimator=estimator, **kwargs)
+
+    def create_initial_image(self, size):
+        """
+        Create initial patch based on a user-defined image
+        """
+        module_path = globals()["__file__"]
+        # user-defined image is assumed to reside in the same location as the attack module
+        patch_base_image_path = os.path.abspath(
+            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
+        )
+
+        im = cv2.imread(patch_base_image_path)
+        im = cv2.resize(im, size)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+        patch_base = im / 255.0
+        return patch_base
 
     def inner_generate(  # type: ignore
         self, x: np.ndarray, y: Optional[List[Dict[str, np.ndarray]]] = None, **kwargs
@@ -644,15 +664,39 @@ class CARLADapricotPatch(RobustDPatch):
                 self.apply_realistic_effects = True
 
             # self._patch needs to be re-initialized with the correct shape
-            if self.estimator.clip_values is None:
-                self._patch = np.zeros(shape=self.patch_shape)
+            if self.patch_base_image is not None:
+                self.patch_base = self.create_initial_image(
+                    (patch_width, patch_height),
+                )
+
+                if x.shape[-1] == 3:
+                    self._patch = self.patch_base
+                else:
+                    self._patch = np.vstack(
+                        (
+                            self.patch_base,
+                            np.random.randint(0, 255, size=self.patch_base.shape)
+                            / 255
+                            * (
+                                self.estimator.clip_values[1]
+                                - self.estimator.clip_values[0]
+                            )
+                            + self.estimator.clip_values[0],
+                        )
+                    )
             else:
                 self._patch = (
                     np.random.randint(0, 255, size=self.patch_shape)
                     / 255
                     * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
-                    + self.estimator.clip_values[0]
+                    + self.estimator.clip_values[0],
                 )
+
+            self._patch = np.clip(
+                self._patch,
+                self.estimator.clip_values[0],
+                self.estimator.clip_values[1],
+            )
 
             self.gs_coords = [gs_coords]
 

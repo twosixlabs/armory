@@ -1,5 +1,7 @@
 import numpy as np
 from armory.logs import log
+import os
+import cv2
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
@@ -25,7 +27,27 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         self.max_depth_b = None
         self.min_depth_b = None
 
+        self.patch_base_image = kwargs.pop("patch_base_image", None)
+
         super().__init__(estimator=estimator, **kwargs)
+
+    def create_initial_image(self, size):
+        """
+        Create initial patch based on a user-defined image
+        """
+        module_path = globals()["__file__"]
+        # user-defined image is assumed to reside in the same location as the attack module
+        patch_base_image_path = os.path.abspath(
+            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
+        )
+
+        im = cv2.imread(patch_base_image_path)
+        im = cv2.resize(im, size)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+        patch_base = np.transpose(im, (2, 0, 1))
+        patch_base = patch_base / 255.0
+        return patch_base
 
     def _train_step(
         self,
@@ -330,7 +352,21 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             self.binarized_patch_mask = y_patch_metadata[i]["mask"]
 
             # self._patch needs to be re-initialized with the correct shape
-            patch_init = np.random.randint(0, 255, size=self.patch_shape) / 255
+            if self.patch_base_image is not None:
+                self.patch_base = self.create_initial_image(
+                    (patch_width, patch_height),
+                )
+                if x.shape[-1] == 3:
+                    patch_init = self.patch_base
+                else:
+                    patch_init = np.vstack(
+                        (
+                            self.patch_base,
+                            np.random.randint(0, 255, size=self.patch_base.shape) / 255,
+                        )
+                    )
+            else:
+                patch_init = np.random.randint(0, 255, size=self.patch_shape) / 255
 
             if (
                 self.patch_shape[0] == 6
