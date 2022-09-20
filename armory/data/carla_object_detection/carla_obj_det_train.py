@@ -59,7 +59,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
             "categories": tfds.features.Sequence(
                 tfds.features.FeaturesDict(
                     {
-                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2, 'trafficlight':3}
+                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2}
                         "name": tfds.features.Text(),
                         "supercategory": tfds.features.Text(),
                     }
@@ -72,7 +72,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
                     "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "labels": tfds.features.ClassLabel(num_classes=5),
+                    "labels": tfds.features.ClassLabel(num_classes=3),
                     "is_crowd": tf.bool,
                 }
             ),
