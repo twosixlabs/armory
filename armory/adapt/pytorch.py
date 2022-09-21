@@ -98,7 +98,7 @@ def get_snr_abs(value: float, units: str = "dB"):
     if value != value:
         raise ValueError("SNR value cannot be nan")
 
-    if units.lower() != "dB":
+    if units.lower() == "db":
         # Map to absolute SNR domain
         return 10 ** (value / 10)
     elif units == "abs":
@@ -276,7 +276,7 @@ def project_l2(x: Tensor, x_orig: Tensor, epsilon: float, safe=False, tolerance=
 
     # normalize the delta per example in the batch
     denom = l2(delta)
-    if (denom <= epsilon).any():
+    if (denom <= epsilon).all():
         # already in L2 ball
         return x
     if not torch.isfinite(denom).all():
@@ -547,7 +547,7 @@ class PGD_Linf:
             raise ValueError("iters must be nonnegative")
         self.call_init(
             early_stop=False,
-            best=None,
+            best_x=None,
             x_orig=x_orig,
             y_true=y_true,
             y_target=y_target,
@@ -584,12 +584,108 @@ class PGD_Linf:
 
             self.update()
 
-        return self.best[0]
+        return self.best_x
 
 
 class PGD_Patch(PGD_Linf):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        model,
+        epsilon=255 / 255,
+        eps_step=255 / 255,
+        mask_size=(3, 3, 3),
+        **kwargs,
+    ):
+        super().__init__(model, epsilon=epsilon, eps_step=eps_step, **kwargs)
+        self.mask_size = mask_size
+        self.position = (0, 0, 0)
+
+    def gradient(self):
+        self.x = self.x_zero.clone()
+        self.x[self.mask] = self.delta
+        super().gradient()
+
+    def update(self):
+        self.delta.grad = self.delta.grad.sign()  # "normalize" gradient for FGSM
+        self.optimizer.step()
+        with torch.no_grad():
+            # TODO: how to handle projection?
+            #  self.x_temp = self.project(self.x, self.x_orig, self.epsilon)
+            self.delta_temp = self.clip(self.delta)
+            self.delta.copy_(
+                self.delta_temp
+            )  # need to modify the 'delta' held in optimizer
+
+    def __call__(
+        self,
+        x_orig: torch.Tensor,
+        y_true=None,
+        y_target=None,
+        x_init=None,
+        iters=10,
+    ):
+        # TODO: verify x_orig in domain
+        iters = int(iters)
+        if iters < 0:
+            raise ValueError("iters must be nonnegative")
+        self.call_init(
+            early_stop=False,
+            best_x=None,
+            x_orig=x_orig,
+            y_true=y_true,
+            y_target=y_target,
+            x_init=x_init,
+            iters=iters,
+        )
+        # check that x_orig is in domain
+        self.x = x_orig.detach().clone()
+        if x_init == "random":
+            self.x = self.x + self.random(self.x_orig, epsilon=self.epsilon)
+        elif x_init is not None:
+            raise ValueError(f"x_init {x_init} must be 'random' or None")
+
+        if self.y_target is None:  # targeted
+            self.targeted = True
+            if self.y_true is None:
+                self.y_target = self.model(self.x)
+            else:
+                self.y_target = self.y_true
+        else:
+            self.targeted = False
+
+        # TODO: improve placement of mask
+        #    For now, just use upper left
+        self.position = (0, 0, 0)
+        self.index = (slice(None),) + tuple(
+            slice(i, i + j) for (i, j) in zip(self.position, self.mask_size)
+        )
+        self.mask = torch.zeros(self.x_orig.shape, dtype=bool)
+        self.mask[self.index] = True
+
+        self.delta_orig = self.x_orig[self.mask]
+        self.x_zero = self.x_orig.clone()
+        self.x_zero[self.mask] = 0
+        self.delta = self.delta_orig.clone()
+
+        self.optimizer = torch.optim.SGD(
+            [self.delta], lr=self.eps_step
+        )  # should be part of constructor
+
+        # modify delta (patch) instead of x directly
+        self.delta.requires_grad = True
+        for i in range(iters + 1):
+            self.i = i
+            self.optimizer.zero_grad()
+            self.gradient()
+            self.status()  # check for early stop, best value, bad values, etc.
+            if self.early_stop or self.i >= self.iters:
+                break
+
+            self.update()
+
+        # TODO: work on random placement of patch
+
+        return self.best_x
 
 
 # Create graph of input/output variables and connections?
