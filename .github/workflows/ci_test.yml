@@ -34,9 +34,9 @@ jobs:
       - name: Install Armory
         shell: bash
         run: |
-          pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           armory configure --use-defaults
       - name: Run armory host tests
         shell: bash
@@ -58,10 +58,9 @@ jobs:
       - name: Run armory host tests
         shell: bash
         run: |
-          pip install --user --upgrade pip==22.0.3
-          pip install -r armory-base-requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           armory configure --use-defaults
           pytest -s ./tests/end_to_end/test_no_docker.py
   native-all-unit:
@@ -80,10 +79,9 @@ jobs:
       - name: Run armory host tests
         shell: bash
         run: |
-          pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -r armory-base-requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           armory configure --use-defaults
           pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
@@ -96,8 +94,9 @@ jobs:
           python-version: '3.7'
       - name: Build Docker
         run: |
-          pip install -r requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           python docker/build.py pytorch
       - name: Run Unit tests
         run: |
@@ -112,8 +111,9 @@ jobs:
           python-version: '3.7'
       - name: Build Docker
         run: |
-          pip install -r requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           python docker/build.py tf2
       - name: Run Unit tests
         run: |
@@ -128,8 +128,9 @@ jobs:
           python-version: '3.7'
       - name: Build Docker
         run: |
-          pip install -r requirements.txt
-          pip install -e .
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
           python docker/build.py pytorch-deepspeech
       - name: Run Unit tests
         run: |
@@ -146,6 +147,9 @@ jobs:
         with:
           python-version: '3.7'
       - name: install test requirements
-        run: pip install -r test-requirements.txt
+        run: |
+          pip install --no-compile --editable '.[developer]'
+          pip install --no-compile --editable '.[host]'
+          pip install --no-compile --editable .
       - name: Run commit hooks
         run: bash tools/pre-commit.sh
