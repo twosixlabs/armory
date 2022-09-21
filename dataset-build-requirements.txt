@@ -1,7 +1,0 @@
-# Additional requirements needed to build all datasets
-
-# Currently is necessary for armory datasets which
-# utilizes tfds.  This requires old version of
-# pyarrow (0.17.1) which requires pip 22.0.3
-apache-beam==2.22.0
-pydub==0.24.1

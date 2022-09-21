@@ -1,5 +1,0 @@
-loguru
-docker
-jsonschema
-requests
-pytest # needed by armory.scenarios.main line 93

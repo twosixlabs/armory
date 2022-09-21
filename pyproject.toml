@@ -1,6 +1,278 @@
-# build-system taken from https://github.com/pypa/setuptools_scm/#pyprojecttoml-usage
-[build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+[project]
+requires-python = ">=3.8"
 
-[tool.setuptools_scm]
-# this empty section is needed to make the plugin work
+name        = "armory"
+description = "Adversarial Robustness Test Bed"
+dynamic     = [ "version" ]
+readme      = ".github/README.md"
+license     = "MIT"
+authors = [
+  { name = "Two Six Technologies", email = "armory@twosixtech.com" },
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Environment :: Console",
+  "Natural Language :: English",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Topic :: Utilities",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+  "docopt",
+  "pytest > 7.1.2",
+  "docker",
+  "loguru",
+  "requests",
+  "jsonschema",
+  "toml",
+  "pyyaml",
+]
+
+[project.urls]
+Source        = "https://github.com/twosixlabs/armory"
+Documentation = "https://github.com/twosixlabs/armory"
+
+[project.scripts]
+armory        = "armory.__main__:main"
+
+
+[project.optional-dependencies]
+####################### DEVELOPER #######################
+# Example:
+#   $ pip install --force-reinstall --no-compile --progress-bar="emoji" --editable '.[testing]'
+#########################################################
+developer =[
+  "jinja2",
+  "podman > 4.0.0",
+  "pre-commit >= 2.15.0",
+  "pytest-cov >= 3.0.0",
+  "pytest-mock >= 3.5",
+  "flake8 >= 3.7.9",
+  "yamllint",
+  "click >= 8.0.0",
+  "mkdocs",
+  "tox",
+  "black",
+  "black[jupyter]==22.6.0",
+]
+
+######################## DATASET ########################
+dataset = [
+  "apache-beam >= 2.22.0",
+  "pydub >= 0.24.1",
+]
+
+####################### NO DOCKER #######################
+# NOTE:  Currently, this only provides a `pytorch`
+#        environment, covering the CIFAR-10 & CARLA
+#        armory experiments.  A future release will be
+#        more comprehensive.
+#########################################################
+no-docker = [
+  # ------------- art --------------
+  "adversarial-robustness-toolbox >= 1.11.0",
+  # ----------- pytorch ------------
+  "torch == 1.12.1",
+  "torchvision == 0.13.1",
+  "torchaudio == 0.12.1",
+  # ---------- tensorflow ----------
+  # TODO:
+  # tf-models-official==2.8
+  # protobuf==3.17.3
+  # https://github.com/tensorflow/models/
+  #   BRANCH: 79354e14a4b41ff9019f4a5ebd12cfa498917182
+  "tensorflow == 2.10.0",
+  "tensorboardx == 2.5.1",
+  "tensorflow-datasets == 4.6.0",
+  # ------------- numpy -------------
+  "numpy == 1.23.3",
+  "scipy == 1.9.1",
+  "matplotlib == 3.5.3",
+  # ----------- jupyter ------------
+  "jupyterlab == 3.4.7",
+  # ------------- misc -------------
+  "Pillow == 9.2.0",              # Data dependencies
+  "boto3 == 1.24.72",             # Needed for armory.data.utils
+  "ffmpeg-python == 0.2.0",       # Needed for armory.utils.export
+  "opencv-python == 4.6.0.66",    # Needed for CARLA baseline scenario
+]
+
+######################## HOST ###########################
+# NOTE:  Install these dependencies if running in a
+#        local environment; e.g. w/out Docker.
+#########################################################
+host = [
+  # ------------- art --------------
+  "adversarial-robustness-toolbox >= 1.11.0",
+  # ----------- pytorch ------------
+  "torch == 1.12.1",
+  "torchvision == 0.13.1",
+  "torchaudio == 0.12.1",
+  "pytorch-lightning == 1.4.*",
+  # hydra-lightning = { git = "https://github.com/romesco/hydra-lightning.git" }
+  "librosa",
+  "python-levenshtein",
+  "sox",
+  "hydra-core",
+  "google-cloud-storage",
+  # ---------- tensorflow ----------
+  # TODO:
+  # tf-models-official==2.8
+  # protobuf==3.17.3
+  # https://github.com/tensorflow/models/
+  #   BRANCH: 79354e14a4b41ff9019f4a5ebd12cfa498917182
+  "tensorflow == 2.10.0",
+  "tensorboardx == 2.5.1",
+  "tensorflow-datasets == 4.6.0",
+  # ------------- numpy -------------
+  "numpy == 1.23.3",
+  "scipy == 1.9.1",
+  "matplotlib == 3.5.3",
+  # ----------- jupyter ------------
+  "jupyterlab == 3.4.7",
+  # ------------- misc -------------
+  "Pillow == 9.2.0",           # Data dependencies
+  "boto3 == 1.24.72",          # Needed for armory.data.utils
+  "ffmpeg-python == 0.2.0",    # Needed for armory.utils.export
+  "opencv-python == 4.6.0.66"  # Needed for CARLA baseline scenario
+]
+
+#########################################
+# Build System
+#########################################
+[build-system]
+requires      = [ "hatchling>=1.8.0", "hatch-vcs" ]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+template = "VCS_VERSION = {version!r}"
+version-file = "armory/__about__.py"
+
+[tool.hatch.build]
+include = [
+  "armory/",
+  "tests/",
+  "scenario_configs/",
+  "docker",
+]
+exclude = [
+  "tools/",
+]
+
+#########################################
+# Tools
+#########################################
+# ------------ black ------------
+[tool.black]
+line-length = 120
+# skip_magic_trailing_comma = true
+
+# ------------ pytest ------------
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts    = "-ra -q"
+log_level  = "ERROR"
+testpaths  = [ "tests" ]
+filterwarnings = []
+markers = [
+  "slow",                       # This test is slow
+  "online",                     # This test needs open internet access
+  "keras",                      # This test requires tf1.compat support for keras
+  "tf1",                        # This test requires tf1 support (tf2.compat.v1 adapter)
+  "docker_required",            # This Test Requires Docker to run
+  "end_to_end",                 # Full End to End Test (typically slow)
+  "unit",                       # These are Unit Tests (fast and lightweight)
+  "pytorch_deepspeech",         # This test requires pytorch-deepspeech docker container (or equivalent dependencies) to run
+]
+
+
+# ------------ pylint ------------
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length=120
+disable = [
+  "fixme",
+  "c-extension-no-member",
+  "wrong-spelling-in-comment",
+  "wrong-spelling-in-docstring",
+
+  # Review:
+  "missing-docstring",
+  "unused-argument",
+  "no-member",
+  "line-too-long",
+  "protected-access",
+  "too-few-public-methods",
+  "raise-missing-from",
+  "invalid-name",
+  "logging-fstring-interpolation",
+  "too-many-locals",
+  "duplicate-code",
+  "too-many-arguments",
+  "arguments-differ",
+  "consider-using-f-string",
+  "no-else-return",
+  "unused-variable",
+  "attribute-defined-outside-init",
+  "too-many-instance-attributes",
+  "super-with-arguments",
+  "anomalous-backslash-in-string",
+  "redefined-builtin",
+  "logging-format-interpolation",
+  "f-string-without-interpolation",
+  "abstract-method",
+  "too-many-branches",
+  "trailing-whitespace",
+  "unspecified-encoding",
+  "unidiomatic-typecheck",
+  "no-name-in-module",
+  "dangerous-default-value",
+  "consider-using-with",
+  "redefined-outer-name",
+  "arguments-renamed",
+  "unnecessary-pass",
+  "broad-except",
+  "unnecessary-comprehension",
+  "subprocess-run-check",
+  "singleton-comparison",
+  "consider-iterating-dictionary",
+  "too-many-nested-blocks",
+  "undefined-loop-variable",
+  "too-many-statements",
+  "consider-using-in",
+  "bare-except",
+  "too-many-lines",
+  "unexpected-keyword-arg",
+  "simplifiable-if-expression",
+  "use-list-literal",
+
+  # Immediate Review:
+  "cyclic-import",
+  "import-outside-toplevel",
+  "deprecated-method",
+]
+[tool.pylint.'DESIGN']
+max-args=7
+[tool.pylint.'SIMILARITIES']
+min-similarity-lines=6
+
+
+# ------------ pre-commit hooks ------------
+[tool.vulture]
+paths             = ["src"]
+ignore_decorators = ["#~vulture.ignore~#"]
+min_confidence    = 80
+make_whitelist    = true
+sort_by_size      = true
+verbose           = true
+
