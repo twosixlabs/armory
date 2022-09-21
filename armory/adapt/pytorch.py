@@ -335,9 +335,9 @@ def project_l1(x: Tensor, x_orig: Tensor, epsilon: float, safe=False):
 
 def l0(x: Tensor):
     """
-    Note: nans will be treated as different values
+    Note: nans will be treated as nonzero values
     """
-    return (x != x).sum(dim=tuple(range(1, x.ndim)), keepdims=True)
+    return (x != 0).sum(dim=tuple(range(1, x.ndim)), keepdims=True)
 
 
 def l0_dist(x: Tensor, x_orig: Tensor):
@@ -345,6 +345,13 @@ def l0_dist(x: Tensor, x_orig: Tensor):
     Note: non-finite values will be treated as different
     """
     return l0(x - x_orig)
+
+
+def l0_dist_normalized(x: Tensor, x_orig: Tensor):
+    """
+    Normalized by size of tensors to [0, 1] range
+    """
+    return l0_dist(x, x_orig) / x.numel()
 
 
 def project_l0(
@@ -492,7 +499,7 @@ class PGD_Linf:
 
     def status(self):
         self.task_acc = self.task_metric(self.y_pred, self.y_true)
-        self.pert = self.distance(self.x_orig.detach(), self.x.detach())
+        self.pert = self.distance(self.x_orig.detach(), self.x.detach()).squeeze()
         # TODO: verify x in domain
 
         if (
@@ -517,7 +524,7 @@ class PGD_Linf:
     def gradient(self):
         self.y_pred = self.model(self.x)
         self.loss = self.loss_fn(self.y_pred, self.y_target)
-        if self.targeted:
+        if not self.targeted:
             self.loss = -self.loss
         self.loss.backward()
 
@@ -564,14 +571,14 @@ class PGD_Linf:
         self.optimizer = torch.optim.SGD(
             [self.x], lr=self.eps_step
         )  # should be part of constructor
-        if self.y_target is None:  # targeted
-            self.targeted = True
+        if self.y_target is None:  # untargeted
+            self.targeted = False
             if self.y_true is None:
                 self.y_target = self.model(self.x)
             else:
                 self.y_target = self.y_true
         else:
-            self.targeted = False
+            self.targeted = True
 
         self.x.requires_grad = True
         for i in range(iters + 1):
@@ -599,6 +606,7 @@ class PGD_Patch(PGD_Linf):
         super().__init__(model, epsilon=epsilon, eps_step=eps_step, **kwargs)
         self.mask_size = mask_size
         self.position = (0, 0, 0)
+        self.distance = l0_dist
 
     def gradient(self):
         self.x = self.x_zero.clone()
@@ -644,14 +652,14 @@ class PGD_Patch(PGD_Linf):
         elif x_init is not None:
             raise ValueError(f"x_init {x_init} must be 'random' or None")
 
-        if self.y_target is None:  # targeted
-            self.targeted = True
+        if self.y_target is None:  # untargeted
+            self.targeted = False
             if self.y_true is None:
                 self.y_target = self.model(self.x)
             else:
                 self.y_target = self.y_true
         else:
-            self.targeted = False
+            self.targeted = True
 
         # TODO: improve placement of mask
         #    For now, just use upper left
