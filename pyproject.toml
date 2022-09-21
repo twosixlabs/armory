@@ -59,55 +59,21 @@ developer =[
   "yamllint",
   "click >= 8.0.0",
   "mkdocs",
+  "markdown==3.2.1",
   "tox",
   "black",
   "black[jupyter]==22.6.0",
 ]
 
-######################## DATASET ########################
-dataset = [
-  "apache-beam >= 2.22.0",
-  "pydub >= 0.24.1",
-]
-
-####################### NO DOCKER #######################
-# NOTE:  Currently, this only provides a `pytorch`
-#        environment, covering the CIFAR-10 & CARLA
-#        armory experiments.  A future release will be
-#        more comprehensive.
-#########################################################
-no-docker = [
-  # ------------- art --------------
-  "adversarial-robustness-toolbox >= 1.11.0",
-  # ----------- pytorch ------------
-  "torch == 1.12.1",
-  "torchvision == 0.13.1",
-  "torchaudio == 0.12.1",
-  # ---------- tensorflow ----------
-  # TODO:
-  # tf-models-official==2.8
-  # protobuf==3.17.3
-  # https://github.com/tensorflow/models/
-  #   BRANCH: 79354e14a4b41ff9019f4a5ebd12cfa498917182
-  "tensorflow == 2.10.0",
-  "tensorboardx == 2.5.1",
-  "tensorflow-datasets == 4.6.0",
-  # ------------- numpy -------------
-  "numpy == 1.23.3",
-  "scipy == 1.9.1",
-  "matplotlib == 3.5.3",
-  # ----------- jupyter ------------
-  "jupyterlab == 3.4.7",
-  # ------------- misc -------------
-  "Pillow == 9.2.0",              # Data dependencies
-  "boto3 == 1.24.72",             # Needed for armory.data.utils
-  "ffmpeg-python == 0.2.0",       # Needed for armory.utils.export
-  "opencv-python == 4.6.0.66",    # Needed for CARLA baseline scenario
-]
 
 ######################## HOST ###########################
 # NOTE:  Install these dependencies if running in a
 #        local environment; e.g. w/out Docker.
+#
+# NOTE:  Currently, this only provides a `pytorch`
+#        environment, covering the CIFAR-10 & CARLA
+#        armory experiments.  A future release will be
+#        more comprehensive.
 #########################################################
 host = [
   # ------------- art --------------
@@ -117,7 +83,7 @@ host = [
   "torchvision == 0.13.1",
   "torchaudio == 0.12.1",
   "pytorch-lightning == 1.4.*",
-  # hydra-lightning = { git = "https://github.com/romesco/hydra-lightning.git" }
+  "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
   "librosa",
   "python-levenshtein",
   "sox",
@@ -132,10 +98,14 @@ host = [
   "tensorflow == 2.10.0",
   "tensorboardx == 2.5.1",
   "tensorflow-datasets == 4.6.0",
+  # ------------ dataset ------------
+  "apache-beam >= 2.22.0",
+  "pydub >= 0.24.1",
   # ------------- numpy -------------
   "numpy == 1.23.3",
   "scipy == 1.9.1",
   "matplotlib == 3.5.3",
+  "setuptools<=60.0.0",
   # ----------- jupyter ------------
   "jupyterlab == 3.4.7",
   # ------------- misc -------------
@@ -169,6 +139,9 @@ include = [
 exclude = [
   "tools/",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 #########################################
 # Tools
