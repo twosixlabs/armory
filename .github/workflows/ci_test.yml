@@ -23,8 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
+        os: ['ubuntu-20.04', 'macos-latest']
+        python-version: ['3.9']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -47,8 +47,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
+        os: ['ubuntu-20.04', 'macos-latest']
+        python-version: ['3.9']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -68,8 +68,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
+        os: ['ubuntu-20.04', 'macos-latest']
+        python-version: ['3.9']
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -86,12 +86,12 @@ jobs:
           pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
     name: Docker Pytorch Unit Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
@@ -103,12 +103,12 @@ jobs:
           docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
   docker-tf2-unit:
     name: Docker TF2 Unit Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
@@ -120,12 +120,12 @@ jobs:
           docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
   docker-deepspeech-unit:
     name: Docker Deepspeech Unit Tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
@@ -140,12 +140,12 @@ jobs:
           pytest -m "pytorch_deepspeech" ./tests/
   formatting-test:
     name: Check Code Formatting
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
         with:
-          python-version: '3.7'
+          python-version: '3.9'
       - name: install test requirements
         run: |
           pip install --no-compile --editable '.[developer]'
