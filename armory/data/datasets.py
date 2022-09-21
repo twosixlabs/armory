@@ -778,7 +778,7 @@ def canonical_audio_preprocess(context, batch):
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
 
-        items_are_different_lengths = np.any([len(i)-len(batch[0]) for i in batch])
+        items_are_different_lengths = np.any([len(i) - len(batch[0]) for i in batch])
 
         if items_are_different_lengths or len(batch) == 1:
             # The following would convert batch items to dtype 'object' if they are the same length; hence the conditional.
@@ -788,7 +788,9 @@ def canonical_audio_preprocess(context, batch):
             )
         else:
             new_batch = np.empty(batch.shape, dtype=object)
-            new_batch[:] = [x.astype(context.output_type) / context.quantization for x in batch]
+            new_batch[:] = [
+                x.astype(context.output_type) / context.quantization for x in batch
+            ]
             batch = new_batch
 
         for x in batch:
