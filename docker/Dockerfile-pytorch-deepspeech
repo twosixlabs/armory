@@ -3,7 +3,7 @@ ARG armory_version
 ARG armory_build_type
 
 
-FROM armory-build AS armory-local
+FROM twosixarmory/base:${base_image_tag} AS armory-local
 
 COPY dist /tmp
 
