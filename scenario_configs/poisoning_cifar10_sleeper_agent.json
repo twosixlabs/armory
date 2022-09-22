@@ -4,11 +4,11 @@
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "cifar10_silhouette_model",
-        "fraction_poisoned": 0.1,
+        "fraction_poisoned": 0.3,
         "poison_dataset": true,
-        "source_class": 1,
+        "source_class": 0,
         "split_id": 0,
-        "target_class": 2,
+        "target_class": 1,
         "train_epochs": 80,
         "use_poison_filtering_defense": true
     },
@@ -21,7 +21,8 @@
             "learning_rate_schedule": [
                 [1e-1, 1e-2, 1e-3, 1e-4, 1e-5], [250, 350, 400, 430, 460]
             ],
-            "max_epochs": 250,
+	    "device_name": "cuda",
+            "max_epochs": 500,
             "max_trials": 1,
             "batch_size": 500,
             "patching_strategy": "random",
