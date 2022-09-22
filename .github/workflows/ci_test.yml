@@ -31,16 +31,33 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Ensure latest pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install build dependencies
+        run: python -m pip install --upgrade build
+
+      - name: Build Armory
+        run: python -m build
+
       - name: Install Armory
         shell: bash
         run: |
+          echo "---------------------------------------------------------------"
+          ls -lisa
+          git describe --always --abbrev=0
+          echo "---------------------------------------------------------------"
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
+
       - name: Run armory host tests
         shell: bash
         run: |
           pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
+
+
   native-simple:
     name: Native Mode test_no_docker.py
     runs-on: ${{ matrix.os }}
