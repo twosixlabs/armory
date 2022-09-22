@@ -135,7 +135,7 @@ jobs:
 
   end-to-end-test:
     name: 📝 End-to-end No Docker Tests [Bare Metal]
-    needs: [ code_quality ]
+    needs: [ code-quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -186,7 +186,7 @@ jobs:
 
   unit-tests:
     name: 📝 Unit Tests [Bare Metal]
-    needs: [ code_quality ]
+    needs: [ code-quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
