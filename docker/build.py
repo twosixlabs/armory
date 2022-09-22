@@ -34,13 +34,12 @@ def rm_tree(pth):
 
 
 def package_worker():
+    '''Builds armory sdist & wheel.
+    '''
     dist_dir   = Path(root_dir  / "dist")
-    # Cleanup old builds
-    if dist_dir.is_dir(): rm_tree(dist_dir)
-    # Build the armory pip package
+    if dist_dir.is_dir(): rm_tree(dist_dir)  # Cleanup old builds
     subprocess.run(["hatch", "build", "--clean"])
-    armory_wheel = [f for f in dist_dir.iterdir() if f.name.startswith("armory") and f.name.endswith(".whl")][0]
-    return armory_wheel
+    return [f for f in dist_dir.iterdir() if f.name.startswith("armory")]
 
 
 # Parse arguments
@@ -73,8 +72,14 @@ except ModuleNotFoundError as e:
         sys.exit(1)
     raise
 
+
 print("Retrieving armory version")
 print(f"armory docker builder version {armory.__version__}")
+
+
+# Build armory pip packages
+armory_wheel = package_worker()
+
 
 # Execute docker builds
 for framework in frameworks:
@@ -84,17 +89,18 @@ for framework in frameworks:
         raise ValueError(f"Dockerfile not found: {dockerfile}")
 
     cmd = [
-        "docker",
-        "build",
-        "--file",
-        str(dockerfile),
-        "--tag",
+        f"docker",
+        f"build",
+        f"--file",
+        f"{dockerfile}",
+        f"--tag",
         f"twosixarmory/{framework}:{armory.__version__}",
-        "--build-arg",
+        f"--build-arg",
         f"base_image_tag={args.base_tag}",
-        "--build-arg",
+        f"--build-arg",
         f"armory_version={armory.__version__}",
-        "--force-rm",
+        f"--force-rm",
+        f"--squash",
     ]
     if args.no_cache:
         cmd.append("--no-cache")

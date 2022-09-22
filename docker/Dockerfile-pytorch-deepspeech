@@ -3,36 +3,34 @@ ARG armory_version
 ARG armory_build_type
 
 
-FROM twosixarmory/base:${base_image_tag} as armory-local
-
-WORKDIR /armory-repo
-
-COPY pyproject.toml setup.py pytest.ini /armory-repo/
-COPY ./.git /armory-repo/.git
-COPY ./armory /armory-repo/armory/
-COPY ./tests /armory-repo/tests/
-COPY ./scenario_configs /armory-repo/scenario_configs/
-
-
+FROM twosixarmory/base:${base_image_tag} as armory-build
 # NOTE: installed after pip installs in base container,
 #       but doesn't seem to cause issues at the moment
 #       pip install librosa does not install sndfile dependency
 RUN /opt/conda/bin/conda install -c conda-forge librosa && \
 
-    echo "Installing ART" && \
-    /opt/conda/bin/pip install --no-cache-dir adversarial-robustness-toolbox==1.10.3 && \
 
-    echo "Updating Base Image"            && \
-    pip install hatch hatch-vcs           && \
-    python -m pip install --upgrade pip   && \
+FROM armory-build AS armory-local
 
-    echo "Building Armory from local source" && \
-    # Currently ALL versioning methods rely on the `.git` directory being
-    # present. Alternatively, one could patch `pyproject.toml` to use
-    # `__about__.py` in the local armory directory.
-    # sed -i 's/source = "vcs"/#source = "vcs"/g' pyproject.toml  && \
-    pip install --no-cache-dir --no-compile '.[host]' && \
-    armory configure --use-default
+COPY dist /tmp
+
+WORKDIR /armory-repo
+
+RUN echo "Installing ART"                                               ; \
+    pip install --no-cache-dir adversarial-robustness-toolbox==1.10.3   ; \
+    echo "Building Armory from local source"                            ; \
+    echo "Updating Base Image..."                                       ; \
+      python -m pip install --upgrade pip                               ; \
+    echo "Unpacking sdist into `/armory-repo`..."                       ; \
+      tar -zxvf /tmp/*.tar.gz                                             \
+         --strip-components=1                                             \
+         --directory /armory-repo                                       ; \
+    echo "Installing Armory..."                                         ; \
+      pip install --no-compile --no-cache-dir --editable .[host]        ; \
+    echo "Configuring Armory..."                                        ; \
+      armory configure --use-default                                    ; \
+    echo "Cleaning up..."                                               ; \
+      rm -rf /tmp/*
 
 WORKDIR /workspace
 
