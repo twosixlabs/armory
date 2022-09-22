@@ -9,6 +9,7 @@ from armory.logs import log
 from armory.utils import config_loading
 from armory import metrics, paths
 from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
+from armory.scenarios.utils import from_categorical
 
 
 class DatasetPoisonerSleeperAgent:
@@ -41,23 +42,20 @@ class DatasetPoisonerSleeperAgent:
 
         if fraction == 1:
             # During the run_attack/run_benign cycle, poison test samples by adding patch
-            # TODO untested yet
-            for x_, y_ in zip(x, y):
-                if y_[0] == self.attack.class_source:
-                    self.attack.apply_trigger_patch(x_)
-            
+            for i in range(len(y)):
+                if y[i] == self.attack.class_source:
+                    x[i] = self.attack._apply_trigger_patch(np.expand_dims(x[i], 0))[0]
             return x, y
         
-        # else: poison the whole trian set
+        # otherwise, poison the whole trian set
 
         x_poison, y_poison = self.attack.poison(self.x_trigger, self.y_trigger, x, y, self.x_test, self.y_test)  
         # I think x_trigger is test images to poison in-place.  x_test and y_test are for model retraining.
-        # TODO Blocked here.  Sleeper Agent code has bugs that transpose data and then it can't broadcast right.
 
 
         poison_index = self.attack.get_poison_indices()
 
-        return x_poison, y_poison, poison_index 
+        return x_poison, from_categorical(y_poison), poison_index 
 
 
 
@@ -142,7 +140,7 @@ class SleeperAgentScenario(Poison):
             (
                 self.x_poison,
                 self.y_poison,
-                self.poison_index,  # TODO What shape are the returns from sleeper agent?  need to uncategoricalize?
+                self.poison_index,
             ) = self.poisoner.poison_dataset(
                 self.x_clean, self.label_function(self.y_clean), return_index=True,
             )
