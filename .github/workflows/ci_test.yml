@@ -83,7 +83,7 @@ jobs:
   # ----------- Bare Metal Tests -------------
   host-test:
     name: 📝 Basic Configuration Tests [Bare Metal]
-    needs: [ code_quality ]
+    needs: [ code-quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
