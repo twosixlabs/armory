@@ -11,17 +11,45 @@ if not (root_dir / "armory").is_dir():
     print("ERROR: make sure you run this script from the root of the armory repo")
     sys.exit(1)
 
+
+def move_file(src, dest, name=False):
+    if dest.is_dir():
+        dest_abs  = dest.absolute()
+        dest_name = src.name if not name else name
+        src.rename(dest_abs / dest_name)
+        return Path(dest_abs / dest_name)
+    return False
+
+
+def rm_tree(pth):
+    pth = Path(pth)
+    if not pth.exists(): return
+
+    for child in pth.glob('*'):
+        if child.is_file():
+            child.unlink()
+        else:
+            rm_tree(child)
+    pth.rmdir()
+
+
+def package_worker():
+    dist_dir   = Path(root_dir  / "dist")
+    # Cleanup old builds
+    if dist_dir.is_dir(): rm_tree(dist_dir)
+    # Build the armory pip package
+    subprocess.run(["hatch", "build", "--clean"])
+    armory_wheel = [f for f in dist_dir.iterdir() if f.name.startswith("armory") and f.name.endswith(".whl")][0]
+    return armory_wheel
+
+
 # Parse arguments
 FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
-parser.add_argument(
-    "-b", "--base-tag", help="version tag for twosixarmory", default="latest"
-)
+parser.add_argument("-b", "--base-tag", help="version tag for twosixarmory", default="latest")
 parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
 parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
-parser.add_argument(
-    "-n", "--dry-run", action="store_true", help="show what would be done"
-)
+parser.add_argument("-n", "--dry-run", action="store_true", help="show what would be done")
 parser.add_argument(
     "framework",
     choices=FRAMEWORKS + ["all"],
@@ -41,10 +69,7 @@ try:
     import armory
 except ModuleNotFoundError as e:
     if str(e) == "No module named 'armory'":
-        print(
-            "ERROR: could not import armory. "
-            "make sure you run this script from the root of the armory repo"
-        )
+        print("ERROR: could not import armory. " "make sure you run this script from the root of the armory repo")
         sys.exit(1)
     raise
 
