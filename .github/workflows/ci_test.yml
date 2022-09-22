@@ -35,8 +35,6 @@ jobs:
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           armory configure --use-defaults
       - name: Run armory host tests
         shell: bash
@@ -59,8 +57,6 @@ jobs:
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           armory configure --use-defaults
           pytest -s ./tests/end_to_end/test_no_docker.py
   native-all-unit:
@@ -80,8 +76,6 @@ jobs:
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           armory configure --use-defaults
           pytest -m "not docker_required and unit" ./tests/
   docker-torch-unit:
@@ -95,8 +89,6 @@ jobs:
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           python docker/build.py pytorch
       - name: Run Unit tests
         run: |
@@ -112,8 +104,6 @@ jobs:
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           python docker/build.py tf2
       - name: Run Unit tests
         run: |
@@ -129,8 +119,6 @@ jobs:
       - name: Build Docker
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          pip install --no-compile --editable .
           python docker/build.py pytorch-deepspeech
       - name: Run Unit tests
         run: |
@@ -149,7 +137,6 @@ jobs:
       - name: install test requirements
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
           pip install --no-compile --editable .
       - name: Run commit hooks
         run: bash tools/pre-commit.sh
