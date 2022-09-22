@@ -37,13 +37,16 @@ def package_worker():
     '''Builds armory sdist & wheel.
     '''
     dist_dir   = Path(root_dir  / "dist")
-    if dist_dir.is_dir(): rm_tree(dist_dir)  # Cleanup old builds
+    if dist_dir.is_dir(): rm_tree(dist_dir) # Cleanup old builds
     subprocess.run(["hatch", "build", "--clean"])
-    return [f for f in dist_dir.iterdir() if f.name.startswith("armory")]
+    package = [f for f in dist_dir.iterdir() if f.name.startswith("armory")][0]
+    return ".".join(str(package.stem).split('-')[1].split('.')[:3])
 
 
 # Parse arguments
 FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
+
+
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
 parser.add_argument("-b", "--base-tag", help="version tag for twosixarmory", default="latest")
 parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
@@ -62,23 +65,12 @@ if args.framework == "all":
 else:
     frameworks = [args.framework]
 
-# Enable import without pip installation and retrieve armory version
-sys.path.insert(0, str(root_dir))
-try:
-    import armory
-except ModuleNotFoundError as e:
-    if str(e) == "No module named 'armory'":
-        print("ERROR: could not import armory. " "make sure you run this script from the root of the armory repo")
-        sys.exit(1)
-    raise
 
-
+# Build armory pip packages & retrieve the version
+# based on pip package naming scheme.
+print(f"Bundling armory python packages.")
+armory_version = package_worker()
 print("Retrieving armory version")
-print(f"armory docker builder version {armory.__version__}")
-
-
-# Build armory pip packages
-armory_wheel = package_worker()
 
 
 # Execute docker builds
@@ -94,13 +86,12 @@ for framework in frameworks:
         f"--file",
         f"{dockerfile}",
         f"--tag",
-        f"twosixarmory/{framework}:{armory.__version__}",
+        f"twosixarmory/{framework}:{armory_version}",
         f"--build-arg",
         f"base_image_tag={args.base_tag}",
         f"--build-arg",
-        f"armory_version={armory.__version__}",
+        f"armory_version={armory_version}",
         f"--force-rm",
-        f"--squash",
     ]
     if args.no_cache:
         cmd.append("--no-cache")
