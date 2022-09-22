@@ -173,13 +173,17 @@ __version__ = {version!r}
 version_tuple = {version_tuple!r}
 """
 
+
 #########################################
 # Tools
 #########################################
 # ------------ black ------------
 [tool.black]
+include = '\.py$'
 line-length = 120
+target-version = ['py37', 'py38', 'py39', 'py310']
 skip_magic_trailing_comma = true
+
 
 # ------------ pytest ------------
 [tool.pytest.ini_options]
@@ -188,6 +192,11 @@ addopts    = "-ra -q"
 log_level  = "ERROR"
 testpaths  = [ "tests" ]
 filterwarnings = []
+norecursedirs = [
+  "tests/*",
+  "tools/*",
+  "docker/*",
+]
 markers = [
   "slow",                       # This test is slow
   "online",                     # This test needs open internet access
