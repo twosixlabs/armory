@@ -52,9 +52,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -104,9 +105,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -156,9 +158,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -207,9 +210,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -260,9 +264,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -327,9 +332,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
@@ -389,9 +395,10 @@ jobs:
         # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
-          if [[ ${{ env.ACT }} != 'true' ]]; then
-            git fetch --prune --unshallow
-          fi
+          # This will fail in local CI pipelines
+          set +e
+          git fetch --prune --unshallow
+          set -e
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
