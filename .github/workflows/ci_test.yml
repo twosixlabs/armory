@@ -32,6 +32,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Get history and tags for SCM versioning to work
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
       - name: Ensure latest pip
         run: python -m pip install --upgrade pip
 
@@ -44,10 +49,6 @@ jobs:
       - name: Install Armory
         shell: bash
         run: |
-          echo "---------------------------------------------------------------"
-          ls -lisa
-          git describe --always --abbrev=0
-          echo "---------------------------------------------------------------"
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
