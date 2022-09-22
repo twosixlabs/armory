@@ -1,4 +1,6 @@
-from setuptools import setup
+#!/usr/bin/env python
+import setuptools
 
-# Needed for GitHubs dependency graph.
-setup(name="armory")
+if __name__ == "__main__":
+    # Needed for GitHubs dependency graph.
+    setuptools.setup()
