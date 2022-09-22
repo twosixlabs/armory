@@ -26,6 +26,7 @@ classifiers = [
 ]
 
 dependencies = [
+  "wheel",
   "requests",
   "docker==6.0.0",
   "docopt==0.6.2",
