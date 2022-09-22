@@ -40,7 +40,7 @@ jobs:
       - name: Run armory host tests
         shell: bash
         run: |
-          pytest -s ./tests/unit/test_configuration.py
+          pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
   native-simple:
     name: Native Mode test_no_docker.py
     runs-on: ${{ matrix.os }}
@@ -60,7 +60,7 @@ jobs:
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
-          pytest -s ./tests/end_to_end/test_no_docker.py
+          pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
   native-all-unit:
     name: Native Mode All unit tests
     runs-on: ${{ matrix.os }}
@@ -80,7 +80,7 @@ jobs:
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
-          pytest -m "not docker_required and unit" ./tests/
+          pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
   docker-torch-unit:
     name: Docker Pytorch Unit Tests
     runs-on: ubuntu-20.04
