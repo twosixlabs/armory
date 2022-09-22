@@ -1,39 +1,66 @@
 ---
-name: 🐛📦 CI Tests
+name: 🐛📦 Build & Test
 
 on:
+  workflow_dispatch: # Activate this workflow manually
+
   push:
     branches:
       - master
       - develop
+      # release branches have the form v1.9.x
+      - 'v[0-9].*[0-9].x'
 
   pull_request:
     branches:
       - master
       - develop
+    # types:
+    #   - opened
+    #   - reopened
+    #   - synchronize
+    #   - ready_for_review
 
-  workflow_dispatch:
 
 env:
   DOCKER_BUILDKIT: 1
 
+
 jobs:
   # ------------- Code Quality ---------------
-  formatting-test:
+  # TODO: Save Artifacts
+  code-quality:
     name: 🦄 Code Quality
+    timeout-minutes: 10
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: true
       matrix:
-        os:
-        - ubuntu
-        python-version:
-          - 3.9
+        os: [ ubuntu ]
+        python-version: [ 3.9 ]
     steps:
-      - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+      - name: 🐍 Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
       - name: 🌱 Setup Test Enviroment
         run: |
@@ -41,23 +68,13 @@ jobs:
           python -m pip install --upgrade build
           pip install --no-compile --editable '.[developer]'
 
-      - name: 🐄 Got git?
-        uses: actions/checkout@v2
-
-        # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-
-      - name: Run commit hooks
+      - name: 🚀 Run commit hooks
         run: |
           VERSION=`git describe --tags $(git rev-list --tags --max-count=1)`
           echo "💄 Running pre-commit hooks for Armory version ${VERSION}"
 
           bash tools/pre-commit.sh
-        # RESULT=$?
-        # if [ $RESULT -ne 0 ]; then
+        # if [ $? -ne 0 ]; then
         #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
         #   exit 1
         # fi
@@ -66,37 +83,41 @@ jobs:
   # ----------- Bare Metal Tests -------------
   host-test:
     name: 📝 Basic Configuration Tests [Bare Metal]
+    needs: [ code_quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu
-        - macos
-        python-version:
-        - 3.7
-        - 3.8
-        - 3.9
-        - 3.10
+        os: [ ubuntu, macos ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
     steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
       - name: 🌱 Setup Test Enviroment
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
-
-      - name: 🐄 Got git?
-        uses: actions/checkout@v2
-
-        # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: ⚙️ Install Armory
         shell: bash
@@ -108,42 +129,47 @@ jobs:
       - name: 🤞 Run Host Configuration Tests
         shell: bash
         run: |
+          echo "Testing Python Version: ${{ matrix.python-version }}"
           pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
 
 
   end-to-end-test:
     name: 📝 End-to-end No Docker Tests [Bare Metal]
+    needs: [ code_quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu
-        - macos
-        python-version:
-        - 3.7
-        - 3.8
-        - 3.9
-        - 3.10
+        os: [ ubuntu, macos ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
     steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
       - name: 🌱 Setup Test Enviroment
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
-
-      - name: 🐄 Got git?
-        uses: actions/checkout@v2
-
-        # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: ⚙️ Install Armory
         shell: bash
@@ -152,7 +178,7 @@ jobs:
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
 
-      - name: 🤞 Run End-to-end Tests
+      - name: 🤞 Run Host Configuration Tests
         shell: bash
         run: |
           pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
@@ -160,37 +186,41 @@ jobs:
 
   unit-tests:
     name: 📝 Unit Tests [Bare Metal]
+    needs: [ code_quality ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - ubuntu
-        - macos
-        python-version:
-        - 3.7
-        - 3.8
-        - 3.9
-        - 3.10
+        os: [ ubuntu, macos ]
+        python-version: [ "3.7", "3.8", "3.9", "3.10" ]
     steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
       - name: 🌱 Setup Test Enviroment
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
-
-      - name: 🐄 Got git?
-        uses: actions/checkout@v2
-
-        # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: ⚙️ Install Armory
         shell: bash
@@ -199,7 +229,7 @@ jobs:
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
 
-      - name: 🤞 Run Unit Tests
+      - name: 🤞 Run Host Configuration Tests
         shell: bash
         run: |
           pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
@@ -207,92 +237,251 @@ jobs:
 
   # ------------ Container Tests -------------
   docker-torch-unit:
-    name: ☁️ Pytorch Unit Tests [Container]
+    name: ☁️ Pytorch Image Tests [Container]
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: true
       matrix:
-        os:
-        - ubuntu
-        python-version:
-          - 3.9
+        # TODO: Add 'macos' back in.
+        os: [ ubuntu ]
+        python-version: [ "3.9" ]
     steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
       - name: 🌱 Setup Test Enviroment
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
 
-      - name: 🐄 Got git?
-        uses: actions/checkout@v2
-
-        # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-
-      - name: ⚙️ Install Armory
+      - name: ⚙️ Install Armory Developer Tools
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          armory configure --use-defaults
 
       - name: 🚧 Build the Container
         run: |
           python docker/build.py pytorch
 
-      - name: 🤞 Run Unit tests
+      # TODO: Create/mount a volume with the tests can config files.
+      - name: 🤞 Run Image tests
+        env:
+          PYTEST_PARAMS: --maxfail=5 --durations=10 --suppress-no-test-exit-code
         run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-
-  # docker-tf2-unit:
-  #   name: ☁️ Docker TF2 Unit Tests
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-python@v1
-  #       with:
-  #         python-version: '3.9'
-  #     - name: 🚧 Build Docker
-  #       run: |
-  #         pip install --no-compile --editable '.[developer]'
-  #         pip install --no-compile --editable '.[host]'
-  #         python docker/build.py tf2
-  #     - name: Run Unit tests
-  #       run: |
-  #         docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-
-  # docker-deepspeech-unit:
-  #   name: ☁️ Docker Deepspeech Unit Tests
-  #   runs-on: ubuntu-20.04
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-python@v1
-  #       with:
-  #         python-version: '3.9'
-  #     - name: 🚧 Build Docker
-  #       run: |
-  #         pip install --no-compile --editable '.[developer]'
-  #         pip install --no-compile --editable '.[host]'
-  #         python docker/build.py pytorch-deepspeech
-  #     - name: Run Unit tests
-  #       run: |
-  #         docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-  #         pytest -m "not docker_required and unit" ./tests/
-  #         docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-  #         pytest -m "pytorch_deepspeech" ./tests/
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/pytorch:$(armory --version)  \
+              pytest                                  \
+                -c pyproject.toml                     \
+                -m "not docker_required and unit"     \
+                ./tests/
+      # TODO:
+      # - name: Dump docker logs on failure
+      #   if: failure()
+      #   uses: jwalton/gh-docker-logs@v1
 
 
-      # - name: 📦 Test Build
-      #   run: python -m build
+  docker-tf2-unit:
+    name: ☁️ Docker TF2 Image Tests
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        # TODO: Add 'macos' back in.
+        os: [ ubuntu ]
+        python-version: [ "3.9" ]
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-# --------------------|---------------------
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Install Armory Developer Tools
+        shell: bash
+        run: |
+          pip install --no-compile --editable '.[developer]'
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py tf2
+
+      - name: 🤞 Run Image tests
+        env:
+          PYTEST_PARAMS: --maxfail=5 --durations=10 --suppress-no-test-exit-code
+        run: |
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/tf2:$(armory --version)      \
+              pytest                                  \
+                -c pyproject.toml                     \
+                -m "not docker_required and unit"     \
+                ./tests/
+
+
+  docker-deepspeech-unit:
+    name: ☁️ Docker Deepspeech Image Tests
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        # TODO: Add 'macos' back in.
+        os: [ ubuntu ]
+        python-version: [ "3.9" ]
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+        # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          if [[ ${{ env.ACT }} != 'true' ]]; then
+            git fetch --prune --unshallow
+          fi
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Install Armory Developer Tools
+        shell: bash
+        run: |
+          pip install --no-compile --editable '.[developer]'
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py pytorch-deepspeech
+
+      - name: 🤞 Run Image tests
+        env:
+          PYTEST_PARAMS: --maxfail=5 --durations=10 --suppress-no-test-exit-code
+        run: |
+          VERSION=$(armory --version)
+
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/pytorch-deepspeech:$VERSION  \
+              pytest                                  \
+                -c pyproject.toml                     \
+                -m "not docker_required and unit"     \
+                ./tests/
+
+            docker run                                \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/pytorch-deepspeech:$VERSION  \
+              pytest                                  \
+                -c pyproject.toml                     \
+                -m "pytorch_deepspeech"               \
+                ./tests/
+
+
+
+
+# -----------------------------------------
+# Developer Notes:
+#   TODOS:
+#        - name: 📦 Test Build
+#          run: python -m build
+#
+#        env:
+#          PUSH_PACKAGES: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+#          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+#        - uses: act10ns/slack@v1
+#          with:
+#            status: ${{ job.status }}
+#            channel: '#tech-gard'
+#          if: ${{ env.PUSH_PACKAGES }}
+#
+#  - Debugging:
+#    - Start a tmux session after failed actions:
+#        >>> - name: Setup tmate session
+#        >>>   if: success() || failure()
+#        >>>   uses: mxschmitt/action-tmate@v3
+#    - Dump GitHub context:
+#        >>> - name: Dump GitHub context
+#        >>>   env:
+#        >>>     GITHUB_CONTEXT: ${{ toJson(github) }}
+#        >>>     GITHUB_ENV: ${{ toJson(env) }}
+#        >>>   run: |
+#        >>>     echo "$GITHUB_CONTEXT"
+#        >>>     echo "$GITHUB_ENV"
 #
 #
-# --------------------|---------------------
+#  - Run action locally with `act`:
+#      https://github.com/nektos/act
+#      Example:
+#        $ act workflow_dispatch -j formatting-test
+#
+#  - Emojis:
+#    🤓 🥰 😅 🤕 😡 💩 👻 💀 ☠️ 👽 👾 🤖
+#    ✌️ 🤞 🖖 🤌 👍 👎 🐵 🙈 🙉 🙊 🦄 🐍
+#    💪 🦾 🧠 🦴 👀 👄 💎 ⌛️ ⏳ 🪚 🔩 🛑
+#    ⚙️ 🪤 📁 📂 📃 📄 📑 📦 🪅 💻 ⌨️
+#
+#  - Documentation
+#      https://github.com/github/docs/blob/main/content/actions/using-workflows/workflow-syntax-for-github-actions.md
+#
+# -----------------------------------------

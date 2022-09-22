@@ -24,7 +24,7 @@ RUN echo "Installing ART"                                               ; \
          --strip-components=1                                             \
          --directory /armory-repo                                       ; \
     echo "Installing Armory..."                                         ; \
-      pip install --no-compile --no-cache-dir --editable .[host]        ; \
+      pip install --no-compile --no-cache-dir --editable '.[host]'      ; \
     echo "Configuring Armory..."                                        ; \
       armory configure --use-default                                    ; \
     echo "Cleaning up..."                                               ; \
