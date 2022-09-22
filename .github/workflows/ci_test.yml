@@ -18,149 +18,245 @@ env:
   DOCKER_BUILDKIT: 1
 
 jobs:
-  host-test:
-    name: Basic `native` configuration
-    runs-on: ${{ matrix.os }}
+  # ------------- Code Quality ---------------
+  formatting-test:
+    name: 🦄 Code Quality
+    runs-on: ${{ matrix.os }}-latest
     strategy:
+      fail-fast: true
       matrix:
-        os: ['ubuntu-20.04', 'macos-latest']
-        python-version: ['3.9']
-      fail-fast: false
+        os:
+        - ubuntu
+        python-version:
+          - 3.9
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - name: 🌱 Setup Test Enviroment
+        uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+          pip install --no-compile --editable '.[developer]'
 
-      - name: Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        uses: actions/checkout@v2
         run: |
           git fetch --prune --unshallow
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
-      - name: Ensure latest pip
-        run: python -m pip install --upgrade pip
+      - name: Run commit hooks
+        run: bash tools/pre-commit.sh
 
-      - name: Install build dependencies
-        run: python -m pip install --upgrade build
+  # ----------- Bare Metal Tests -------------
+  host-test:
+    name: 📝 Basic Configuration Tests [Bare Metal]
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        python-version:
+        - 3.7
+        - 3.8
+        - 3.9
+        - 3.10
+    steps:
+      - name: 🐍 Switch to Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
 
-      - name: Build Armory
-        run: python -m build
+      - name: 📩 Checkout the Source
+        uses: actions/checkout@v2
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
-      - name: Install Armory
+      - name: ⚙️ Install Armory
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
 
-      - name: Run armory host tests
+      - name: 🤞 Run Host Configuration Tests
         shell: bash
         run: |
           pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
 
 
-  native-simple:
-    name: Native Mode test_no_docker.py
-    runs-on: ${{ matrix.os }}
+  end-to-end-test:
+    name: 📝 End-to-end No Docker Tests [Bare Metal]
+    runs-on: ${{ matrix.os }}-latest
     strategy:
-      matrix:
-        os: ['ubuntu-20.04', 'macos-latest']
-        python-version: ['3.9']
       fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        python-version:
+        - 3.7
+        - 3.8
+        - 3.9
+        - 3.10
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - name: 🐍 Switch to Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: 📩 Checkout the Source
+        uses: actions/checkout@v2
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: ⚙️ Install Armory
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
+
+      - name: 🤞 Run End-to-end Tests
+        shell: bash
+        run: |
           pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
-  native-all-unit:
-    name: Native Mode All unit tests
-    runs-on: ${{ matrix.os }}
+
+
+  unit-tests:
+    name: 📝 Unit Tests [Bare Metal]
+    runs-on: ${{ matrix.os }}-latest
     strategy:
-      matrix:
-        os: ['ubuntu-20.04', 'macos-latest']
-        python-version: ['3.9']
       fail-fast: false
+      matrix:
+        os:
+        - ubuntu
+        - macos
+        python-version:
+        - 3.7
+        - 3.8
+        - 3.9
+        - 3.10
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - name: 🐍 Switch to Python v${{ matrix.python-version }}
+        uses: actions/setup-python@v1
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: 📩 Checkout the Source
+        uses: actions/checkout@v2
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: ⚙️ Install Armory
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
           armory configure --use-defaults
+
+      - name: 🤞 Run Unit Tests
+        shell: bash
+        run: |
           pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
+
+
+  # ------------ Container Tests -------------
   docker-torch-unit:
-    name: Docker Pytorch Unit Tests
-    runs-on: ubuntu-20.04
+    name: ☁️ Pytorch Unit Tests [Container]
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+        - ubuntu
+        python-version:
+          - 3.9
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
+      - name: 🌱 Setup Test Enviroment
+        uses: actions/setup-python@v1
         with:
-          python-version: '3.9'
-      - name: Build Docker
+          python-version: ${{ matrix.python-version }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+          pip install --no-compile --editable '.[developer]'
+
+      - name: 📩 Checkout the Source
+        uses: actions/checkout@v2
+        run: |
+          git fetch --prune --unshallow
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: ⚙️ Install Armory
+        shell: bash
         run: |
           pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
           python docker/build.py pytorch
-      - name: Run Unit tests
+      - name: 🤞 Run Unit tests
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-  docker-tf2-unit:
-    name: Docker TF2 Unit Tests
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.9'
-      - name: Build Docker
-        run: |
-          pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          python docker/build.py tf2
-      - name: Run Unit tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-  docker-deepspeech-unit:
-    name: Docker Deepspeech Unit Tests
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.9'
-      - name: Build Docker
-        run: |
-          pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-          python docker/build.py pytorch-deepspeech
-      - name: Run Unit tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-          pytest -m "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-          pytest -m "pytorch_deepspeech" ./tests/
-  formatting-test:
-    name: Check Code Formatting
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.9'
-      - name: install test requirements
-        run: |
-          pip install --no-compile --editable '.[developer]'
-          pip install --no-compile --editable '.[host]'
-      - name: Run commit hooks
-        run: bash tools/pre-commit.sh
+
+  # docker-tf2-unit:
+  #   name: ☁️ Docker TF2 Unit Tests
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-python@v1
+  #       with:
+  #         python-version: '3.9'
+  #     - name: 🚧 Build Docker
+  #       run: |
+  #         pip install --no-compile --editable '.[developer]'
+  #         pip install --no-compile --editable '.[host]'
+  #         python docker/build.py tf2
+  #     - name: Run Unit tests
+  #       run: |
+  #         docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
+
+  # docker-deepspeech-unit:
+  #   name: ☁️ Docker Deepspeech Unit Tests
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - uses: actions/setup-python@v1
+  #       with:
+  #         python-version: '3.9'
+  #     - name: 🚧 Build Docker
+  #       run: |
+  #         pip install --no-compile --editable '.[developer]'
+  #         pip install --no-compile --editable '.[host]'
+  #         python docker/build.py pytorch-deepspeech
+  #     - name: Run Unit tests
+  #       run: |
+  #         docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
+  #         pytest -m "not docker_required and unit" ./tests/
+  #         docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
+  #         pytest -m "pytorch_deepspeech" ./tests/
+
+
+      # - name: 📦 Test Build
+      #   run: python -m build
+
+# --------------------|---------------------
+#
+# --------------------|---------------------
