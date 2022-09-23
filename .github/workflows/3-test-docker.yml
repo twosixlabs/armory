@@ -103,7 +103,7 @@ jobs:
 
       - name: 🚧 Build the Container
         run: |
-          python docker/build.py tf2
+          python docker/build.py --framework tf2
 
       - name: 🤞 Run Image tests
         run: |
@@ -155,7 +155,7 @@ jobs:
 
       - name: 🚧 Build the Container
         run: |
-          python docker/build.py pytorch-deepspeech
+          python docker/build.py --framework pytorch-deepspeech
 
       - name: 🤞 Run Image tests
         run: |
