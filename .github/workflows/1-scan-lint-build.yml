@@ -102,12 +102,18 @@ jobs:
               --show-source           \
               --color=always          \
               --config=.flake8        \
-                > /tmp/artifacts/flake8.txt
+              --output-file /tmp/artifacts/flake8.txt
+          # TODO: C901 - Determine if `# noqa: C901` is needed
+          #   python3 -m pip install astpretty
+          #   if flake8 code == C901:
+          #     astpretty(file) => save to artifacts
+
 
 
       - name: 🖋️ mypy Type Checking
         run: |
-          pip install mypy
+          python3 -m pip install mypy
+          python3 -m pip install types-requests
           mypy                         \
             armory                     \
             --ignore-missing-imports   \
@@ -115,7 +121,6 @@ jobs:
             --show-error-codes         \
             --show-column-numbers      \
             --pretty                   \
-            --color-output             \
             > /tmp/artifacts/mypy.txt  \
           || $( exit 0 ); echo $?
 

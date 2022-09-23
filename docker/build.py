@@ -1,15 +1,60 @@
-import argparse
-import subprocess
-from pathlib import Path
+
 import os
 import sys
+import shutil
+import argparse
+import subprocess
 
-# Ensure correct location
+from pathlib import Path
+
+
 script_dir = Path(__file__).parent
-root_dir = script_dir.parent
-if not (root_dir / "armory").is_dir():
-    print("ERROR: make sure you run this script from the root of the armory repo")
-    sys.exit(1)
+root_dir   = script_dir.parent
+
+armory_frameworks  = ["pytorch", "pytorch-deepspeech", "tf2"]
+container_platform = "docker" if shutil.which("docker") else "podman"
+
+
+def cli_parser(argv=sys.argv[1:]):
+    parser    = argparse.ArgumentParser("Armory Container Build Script")
+    arguments = (
+        (("-f", "--framework"), dict(
+            choices  = armory_frameworks + ["all"],
+            help     = "Framework to build",
+            required = True,
+        )),
+        (("-b", "--base-tag"), dict(
+            help     = "Version tag for twosixarmory/armory-base",
+            default  = "latest",
+            required = False,
+        )),
+        (("-nc", "--no-cache"), dict(
+            action = "store_true",
+            help   = "Do not use docker cache",
+        )),
+        (("-np", "--no-pull"), dict(
+            action = "store_true",
+            help   = "Do not pull latest base",
+        )),
+        (("-n", "--dry-run"), dict(
+            action = "store_true",
+            help   = "Do not build, only print commands",
+        )),
+        (("-v", "--verbose"), dict(
+            action = "store_true",
+            help   = "Print verbose output",
+        )),
+        (("-p", "--platform"), dict(
+            choices  = ["docker", "podman"],
+            help     ="Print verbose output",
+            default  = container_platform,
+            required = False,
+        )),
+    )
+    for args, kwargs in arguments:
+        parser.add_argument(*args, **kwargs)
+    parser.set_defaults(func=init)
+    return parser.parse_args(argv)
 
 
 def move_file(src, dest, name=False):
@@ -24,7 +69,6 @@ def move_file(src, dest, name=False):
 def rm_tree(pth):
     pth = Path(pth)
     if not pth.exists(): return
-
     for child in pth.glob('*'):
         if child.is_file():
             child.unlink()
@@ -43,65 +87,65 @@ def package_worker():
     return ".".join(str(package.stem).split('-')[1].split('.')[:3])
 
 
-# Parse arguments
-FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
-
-
-parser = argparse.ArgumentParser(description="builds a docker image for armory")
-parser.add_argument("-b", "--base-tag", help="version tag for twosixarmory", default="latest")
-parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
-parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
-parser.add_argument("-n", "--dry-run", action="store_true", help="show what would be done")
-parser.add_argument(
-    "framework",
-    choices=FRAMEWORKS + ["all"],
-    metavar="framework",
-    help=f"framework to build ({FRAMEWORKS + ['all']})",
-)
-args = parser.parse_args()
-
-if args.framework == "all":
-    frameworks = FRAMEWORKS
-else:
-    frameworks = [args.framework]
-
-
-# Build armory pip packages & retrieve the version
-# based on pip package naming scheme.
-print(f"Bundling armory python packages.")
-armory_version = package_worker()
-print("Retrieving armory version")
-
-
-# Execute docker builds
-for framework in frameworks:
-    dockerfile = script_dir / f"Dockerfile-{framework}"
-    if not dockerfile.exists():
-        print("make sure you run this script from the root of the armory repo")
-        raise ValueError(f"Dockerfile not found: {dockerfile}")
-
-    cmd = [
-        f"docker",
+def build_worker(framework, version, platform, base_tag, **kwargs):
+    '''Builds armory container for a given framework.
+    '''
+    dockerfile    = script_dir / f"Dockerfile-{framework}"
+    build_command = [
+        f"{platform}",
         f"build",
+        f"--force-rm",
+        f"--tag",
+        f"twosixarmory/{framework}:{version}",
+        f"--build-arg",
+        f"base_image_tag={base_tag}",
+        f"--build-arg",
+        f"armory_version={version}",
         f"--file",
         f"{dockerfile}",
-        f"--tag",
-        f"twosixarmory/{framework}:{armory_version}",
-        f"--build-arg",
-        f"base_image_tag={args.base_tag}",
-        f"--build-arg",
-        f"armory_version={armory_version}",
-        f"--force-rm",
+        f"{Path().cwd()}",
     ]
-    if args.no_cache:
-        cmd.append("--no-cache")
-    if not args.no_pull:
-        cmd.append("--pull")
+    if kwargs.get('no_cache'):    build_command.insert(3, "--no-cache")
+    if not kwargs.get('no_pull'): build_command.insert(3, "--pull")
 
-    cmd.append(os.getcwd())
+    if not dockerfile.exists():
+        sys.exit(f"ERROR:\tError building {framework}!\n" \
+                 f"\tDockerfile not found: {dockerfile}\n")
 
-    print("about to run: ", " ".join(cmd))
-    if args.dry_run:
-        print("dry-run requested, not executing build")
-    else:
-        subprocess.run(cmd)
+    print(f"EXEC\tPreparing to run:\n"    \
+          f"\t\t{' '.join(build_command)}")
+
+    if not kwargs.get("dry_run"):
+        subprocess.run(build_command)
+
+
+def init(*args, **kwargs):
+    '''Kicks off the build process.
+    '''
+    if (frameworks := [kwargs.get('framework')]) == ["all"]:
+        frameworks = armory_frameworks
+
+    # Build armory pip packages & retrieve the version
+    # based on pip package naming scheme.
+    print(f"EXEC:\tBundling armory python packages.")
+    armory_version = package_worker()
+
+    print(f"EXEC:\tCleaning up...")
+    for key in ["framework", "func"]: del kwargs[key]
+
+    for framework in frameworks:
+        print(f"EXEC:\tBuilding {framework} container.")
+        build_worker(framework, armory_version, **kwargs)
+
+
+
+if __name__ == "__main__":
+    # Ensure correct location
+    if not (root_dir / "armory").is_dir():
+        sys.exit(f"ERROR:\tEnsure this script is ran from the root of the armory repo.\n" \
+                 f"\tEXAMPLE:\n"                                                          \
+                 f"\t\t$ python3 {script_dir / 'build.py'}")
+
+    # Parse CLI arguments
+    arguments = cli_parser()
+    arguments.func(**vars(arguments))

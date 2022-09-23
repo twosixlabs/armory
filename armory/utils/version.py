@@ -18,9 +18,9 @@ import subprocess
 
 try:
     from importlib import metadata
-except (ModuleNotFoundError, ImportError):
+except ModuleNotFoundError:
     # Python <= 3.7
-    import importlib_metadata as metadata  # type: ignore
+    from importlib_metadata import version, PackageNotFoundError  # type: ignore
 
 
 from armory.logs import log
@@ -30,35 +30,35 @@ def make_version_tuple(version_str: str) -> tuple:
     return tuple(map(int, (version_str.split("."))))
 
 
-def trim_version(version_str) -> str:
+def trim_version(version_str = '') -> str:
     git_tag_regex = re.compile(r"[vV]?(?P<version>\d+(?:\.\d+){0,2})")
     tag_match     = git_tag_regex.match(version_str)
     if tag_match is not None:
         return tag_match.group("version")
-    return None
+    return version_str
 
 
-def get_build_hook_version() -> str:
+def get_build_hook_version(version_str = '') -> str:
     try:
         from armory.__about__ import version_tuple
         return ".".join(map(str, version_tuple[:3]))
-    except Exception as error:
+    except ModuleNotFoundError:
         log.error(f"ERROR: Unable to extract version from __about__.py")
-    return None
+    return version_str
 
 
-def get_metadata_version(package: str, version=None) -> str:
+def get_metadata_version(package: str, version_str = '') -> str:
     try:
         return trim_version(str(metadata.version(package)))
-    except PackageNotFoundError:
+    except metadata.PackageNotFoundError:
         log.error(f"version.py: Unable to find the specified package! Package {package} not installed.")
-    return None
+    return version_str
 
 
-def get_tag_version() -> str:
+def get_tag_version(version_str = '') -> str:
     # See: https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/git.py
     git_dir  = None
-    git_describe = [ "git", "describe", "--dirty", "--tags", "--long" ]
+    git_describe = ["git", "describe", "--dirty", "--tags", "--long"]
 
     for exec_path in (pathlib.Path(__file__), pathlib.Path.cwd()):
         if pathlib.Path(exec_path / ".git").is_dir():
@@ -68,7 +68,7 @@ def get_tag_version() -> str:
     if git_dir is None or shutil.which('git') is None:
         # Unable to find `.git` directory or git executable
         # is not installed.
-        return None
+        return version_str
 
     describe_out = subprocess.run(
         git_describe,
@@ -81,13 +81,13 @@ def get_tag_version() -> str:
     if tag_version is not None:
         return tag_version
 
-    return None
+    return version_str
 
 
-def get_version() -> str:
-    version = get_metadata_version("armory")
-    if version is None:
-        version = get_build_hook_version()
-    if version is None:
-        version = get_tag_version()
-    return version or "0.0.0"
+def get_version(version_str = '') -> str:
+    version_str = get_metadata_version("armory")
+    if not bool(version_str):
+        version_str = get_build_hook_version()
+    if not bool(version_str):
+        version_str = get_tag_version()
+    return version_str or "0.0.0"

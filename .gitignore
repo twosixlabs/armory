@@ -1,3 +1,9 @@
+# -------------- Project ------------------
+*/__about__.py
+
+
+
+# ------------- Template ------------------
 # Ignore dataset, tmp, and output directories
 /datasets/
 /tmp/

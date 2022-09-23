@@ -21,7 +21,6 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Topic :: Utilities",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
@@ -63,17 +62,17 @@ developer =[
   "bandit[toml]",
   # ---------- formatting ----------
   "black",
-  "black[jupyter]==22.6.0",
+  "black[jupyter]",
   "flake8",
-  "tox==3.26.0",
+  "tox",
   "mkdocs==1.3.1",
   "Markdown==3.3.7",
   "yamllint==1.28.0",
   # ----------- testing ------------
-  # "click==8.1.3",
   "Jinja2==3.1.2",
-  "podman==4.2.0",
-
+  "podman",
+  # -------- configuration ---------
+  "hydra-core",
 ]
 
 ######################## HOST ###########################
@@ -189,6 +188,12 @@ local_scheme   = "no-local-version"
 recursive = true
 # exclude_dirs = ["venv","tests"]
 targets = [ "armory" ]
+skips   = [
+  "B101",  # Ignore defensive `assert`s (especially useful for mypy)
+  "B404",  # Ignore warnings about importing subprocess
+  "B603",  # Ignore warnings about calling subprocess.Popen without shell=True
+  "B607",  # Ignore warnings about calling subprocess.Popen without a full path to executable
+]
 
 # ------------ black ------------
 [tool.black]
@@ -201,10 +206,6 @@ extend-ignore = [
   "E203",                         # See https://github.com/PyCQA/pycodestyle/issues/373
 ]
 
-# ------------ flake8 ------------
-[tool.flake8]
-indent-size = 4
-max-line-length = 120
 
 # ------------ pytest ------------
 [tool.pytest.ini_options]
@@ -223,6 +224,15 @@ markers = [
   "unit",                       # These are Unit Tests (fast and lightweight)
   "pytorch_deepspeech",         # This test requires pytorch-deepspeech docker container (or equivalent dependencies) to run
 ]
+# TODO: Add these to the pytest options. From armory/validation/test_config
+# addopts = -p no:cacheprovider
+# filterwarnings =
+#     ignore::DeprecationWarning
+#     ignore::RuntimeWarning
+#     ignore::UserWarning:tensorflow*
+#     ignore::UserWarning:torch*
+#     ignore::Warning:art*
+
 
 # ------------ pre-commit hooks ------------
 [tool.vulture]
