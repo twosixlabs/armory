@@ -146,6 +146,11 @@ if __name__ == "__main__":
                  f"\tEXAMPLE:\n"                                                          \
                  f"\t\t$ python3 {script_dir / 'build.py'}")
 
+    # Ensure docker/podman is installed
+    if not shutil.which(container_platform):
+        sys.exit(f"ERROR:\tCannot find compatible container on the system.\n" \
+                 f"\tAsk your system administrator to install either `docker` or `podman`.")
+
     # Parse CLI arguments
     arguments = cli_parser()
     arguments.func(**vars(arguments))
