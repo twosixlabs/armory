@@ -1,5 +1,3 @@
----
-
 name: 🙈 🙉 🙊 Scan & Lint
 
 on: workflow_call
