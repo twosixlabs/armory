@@ -8,7 +8,6 @@ env:
 jobs:
   docker-torch-unit:
     name: ☁️ Pytorch Image Tests [Container]
-    timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: true
@@ -72,7 +71,6 @@ jobs:
 
   docker-tf2-unit:
     name: ☁️ Docker TF2 Image Tests
-    timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: true
@@ -129,7 +127,6 @@ jobs:
 
   docker-deepspeech-unit:
     name: ☁️ Docker Deepspeech Image Tests
-    timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: true
