@@ -165,6 +165,7 @@ exclude = [
 source = "vcs"
 path   = "armory/__about__.py"
 
+
 [tool.hatch.build.hooks.vcs]
 version-file = "armory/__about__.py"
 template = """
