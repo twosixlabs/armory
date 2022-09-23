@@ -80,6 +80,6 @@ bandit_scan() {
 #######################################
 python_lint || $( exit 1 ); echo $?
 markup_lint || $( exit 1 ); echo $?
-bandit_scan || $( exit 1 ); echo $?
+# bandit_scan || $( exit 1 ); echo $?
 
 $( exit 0 ); echo $?
