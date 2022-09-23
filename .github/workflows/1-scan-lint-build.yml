@@ -6,12 +6,7 @@ jobs:
   code-quality:
     name: 🦄 Code Quality
     timeout-minutes: 10
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu ]
-        python-version: [ 3.9 ]
+    runs-on: ubuntu-latest
     steps:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
@@ -29,10 +24,10 @@ jobs:
             exit 1
           fi
 
-      - name: 🐍 Switch Python ${{ matrix.python-version }}
+      - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
 
       - name: 🌱 Setup Test Enviroment
         run: |
@@ -134,7 +129,4 @@ jobs:
           retention-days: 1
           path: |
             /tmp/artifacts
-
-
-
 
