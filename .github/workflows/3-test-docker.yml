@@ -42,9 +42,11 @@ jobs:
           pip install --no-compile --editable '.[developer,host]'
           armory configure --use-defaults
 
+
+      # TODO: This should really be handled by Dockerfile/Compose.yml
       - name: 🚧 Build the Container
         run: |
-          python docker/build.py pytorch
+          python docker/build.py --framework pytorch
 
       # TODO: Create/mount a volume with the tests can config files.
       - name: 🤞 Run Image tests

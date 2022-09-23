@@ -73,6 +73,7 @@ developer =[
   "podman",
   # -------- configuration ---------
   "hydra-core",
+  "omegaconf",
 ]
 
 ######################## HOST ###########################
