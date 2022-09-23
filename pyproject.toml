@@ -162,10 +162,8 @@ exclude = [
 ]
 
 [tool.hatch.version]
-source      = "vcs"
-raw-options = { version_scheme = "post-release", local_scheme = "no-local-version" }
-path        = "armory/__about__.py"
-# fallback-version = "0.0.0"
+source = "vcs"
+path   = "armory/__about__.py"
 
 [tool.hatch.build.hooks.vcs]
 version-file = "armory/__about__.py"
@@ -176,6 +174,10 @@ template = """
 __version__ = {version!r}
 version_tuple = {version_tuple!r}
 """
+
+[tool.hatch.version.raw-options]
+version_scheme = "post-release"
+local_scheme   = "no-local-version"
 
 
 #########################################
