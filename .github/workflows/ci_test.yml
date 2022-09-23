@@ -2,7 +2,19 @@
 name: 🐛📦 Build & Test
 
 on:
-  workflow_dispatch: # Activate this workflow manually
+  workflow_dispatch:
+    # inputs:
+    #   test-run:
+    #     type: choice
+    #     description: Type of workflow to run
+    #     options:
+    #       - Q & A Test
+    #       - Build Test
+    #       - Host Test
+    #       - Docker Test
+    #       - All Tests
+    # TODO: Use menu for dispatching workflows
+    #  >>> if: github.event.inputs.test-run == 'All Tests' || github.event.inputs.test-run == 'Q & A Test'
 
   push:
     branches:
@@ -33,8 +45,73 @@ env:
 
 
 jobs:
-  host-baseline:
-    name: 🦾 Build Standalone Host
+  # ------------- Code Quality ---------------
+  code-quality:
+    name: 🦄 Code Quality
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu ]
+        python-version: [ 3.9 ]
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Install Armory
+        shell: bash
+        run: |
+          pip install --no-compile --editable '.[developer]'
+          armory configure --use-defaults
+
+      - name: 🚀 Run commit hooks
+        env:
+          ARMORY_VERSION: ${{ env.ARMORY_VERSION }}
+        run: |
+          echo $ARMORY_VERSION
+          echo ${{ env.ARMORY_ROOT }}
+
+          echo "💄 Running pre-commit hooks for Armory version ${VERSION}"
+
+          bash tools/pre-commit.sh
+        # if [ $? -ne 0 ]; then
+        #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
+        #   exit 1
+        # fi
+
+
+  # -------------- Host Tests ----------------
+  host-test:
+    name: 📝 Basic Configuration Tests [Stand Alone]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -47,12 +124,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🐍 Switch Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-        # Get history and tags for SCM versioning to work
+      # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -63,66 +135,14 @@ jobs:
             exit 1
           fi
 
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: 🌱 Setup Test Enviroment
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
-      - name: ⚙️ Install Armory
-        shell: bash
-        run: |
-          pip install --no-compile --editable '.[developer]'
           pip install --no-compile --editable '.[host]'
-          armory configure --use-defaults
-
-
-
-  # ------------- Code Quality ---------------
-  code-quality:
-    name: 🦄 Code Quality
-    needs: [ host-baseline ]
-    timeout-minutes: 10
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu ]
-        python-version: [ 3.9 ]
-    steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: 🚀 Run commit hooks
-        run: |
-          VERSION=`git describe --tags $(git rev-list --tags --max-count=1)`
-          echo "💄 Running pre-commit hooks for Armory version ${VERSION}"
-
-          bash tools/pre-commit.sh
-        # if [ $? -ne 0 ]; then
-        #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
-        #   exit 1
-        # fi
-
-
-  # ----------- Bare Metal Tests -------------
-
-
-  host-test:
-    name: 📝 Basic Configuration Tests [Bare Metal]
-    needs: [ host-baseline ]
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu, macos ]
-        python-version: [ "3.8", "3.9", "3.10" ]
-    steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: 🤞 Run Host Configuration Tests
         shell: bash
@@ -131,9 +151,9 @@ jobs:
           pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
 
 
-  end-to-end-test:
-    name: 📝 End-to-end No Docker Tests [Bare Metal]
-    needs: [ host-baseline ]
+  unit-test:
+    name: 📝 Unit Tests [Stand Alone]
+    needs: [ host-test ]
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -141,31 +161,30 @@ jobs:
         os: [ ubuntu, macos ]
         python-version: [ "3.8", "3.9", "3.10" ]
     steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          fetch-depth: 0
 
-      - name: 🤞 Run Host Configuration Tests
-        shell: bash
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
         run: |
-          pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
 
-
-  unit-tests:
-    name: 📝 Unit Tests [Bare Metal]
-    needs: [ host-baseline ]
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu, macos ]
-        python-version: [ "3.8", "3.9", "3.10" ]
-    steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          pip install --no-compile --editable '.[host]'
 
       - name: 🤞 Run Host Configuration Tests
         shell: bash
@@ -173,10 +192,53 @@ jobs:
           pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
 
 
+  end-to-end-test:
+    name: 📝 End-to-end No Docker Tests [Stand Alone]
+    needs: [ unit-test ]
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu, macos ]
+        python-version: [ "3.8", "3.9", "3.10" ]
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          pip install --no-compile --editable '.[host]'
+
+      - name: 🤞 Run Host Configuration Tests
+        shell: bash
+        run: |
+          pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
+
+
+
+
+
   # ------------ Container Tests -------------
   docker-torch-unit:
     name: ☁️ Pytorch Image Tests [Container]
-    needs: [ host-baseline ]
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
@@ -186,11 +248,30 @@ jobs:
         os: [ ubuntu ]
         python-version: [ "3.9" ]
     steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          pip install --no-compile --editable '.[host]'
       - name: 🚧 Build the Container
         run: |
           python docker/build.py pytorch
@@ -216,7 +297,6 @@ jobs:
 
   docker-tf2-unit:
     name: ☁️ Docker TF2 Image Tests
-    needs: [ host-baseline ]
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
@@ -225,10 +305,30 @@ jobs:
         os: [ ubuntu ]
         python-version: [ "3.9" ]
     steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          pip install --no-compile --editable '.[host]'
 
       - name: 🚧 Build the Container
         run: |
@@ -250,7 +350,6 @@ jobs:
 
   docker-deepspeech-unit:
     name: ☁️ Docker Deepspeech Image Tests
-    needs: [ host-baseline ]
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}-latest
     strategy:
@@ -259,10 +358,30 @@ jobs:
         os: [ ubuntu ]
         python-version: [ "3.9" ]
     steps:
-      - name: 🐍 Setup Python ${{ matrix.python-version }}
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          pip install --no-compile --editable '.[host]'
 
       - name: 🚧 Build the Container
         run: |
@@ -291,8 +410,6 @@ jobs:
                 -c pyproject.toml                     \
                 -m "pytorch_deepspeech"               \
                 ./tests/
-
-
 
 
 # -----------------------------------------
