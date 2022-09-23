@@ -39,7 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade build
 
-      - name: ⚙️ Install Armory
+      - name: ⚙️ Installing Armory
         shell: bash
         run: |
           pip install --no-compile --editable '.[developer,host]'

@@ -1,0 +1,140 @@
+name: 🙈 🙉 🙊 Scan & Lint
+
+on: workflow_call
+
+jobs:
+  code-quality:
+    name: 🦄 Code Quality
+    timeout-minutes: 10
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu ]
+        python-version: [ 3.9 ]
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install --upgrade build
+
+          export ARMORY_ROOT_DIR=`git rev-parse --show-toplevel`
+          export ARMORY_SRC_DIR="${ARMORY_ROOT_DIR}/armory"
+
+          mkdir -p /tmp/artifacts
+
+
+      - name: ⚙️ Installing Armory
+        shell: bash
+        run: |
+          pip3 install --no-compile --editable '.[developer]'
+
+          armory configure --use-defaults
+
+          echo `armory --version` > /tmp/artifacts/version.txt
+
+
+      - name: 🚀 Run commit hooks
+        run: |
+          echo "💄 Running commit hooks for Armory version ${VERSION}"
+
+          bash tools/pre-commit.sh
+        # if [ $? -ne 0 ]; then
+        #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
+        #   exit 1
+        # fi
+
+
+      - name: 📦 Build Testing
+        run: |
+          python -m          \
+            build            \
+            --sdist          \
+            --wheel          \
+            --outdir dist/   \
+            .
+
+          pip3 install --no-compile dist/*.whl
+
+          armory configure --use-defaults
+
+          if [ $? -ne 0 ]; then
+            echo "🚨 Build failed. Please fix the issues 🚑"
+            exit 1
+          fi
+
+
+      - name: 🦹‍♂️ Scanning with Bandit
+        run: |
+          bandit                                    \
+            -v                                      \
+            -f txt                                  \
+            -r ./armory                             \
+            -c "pyproject.toml"                     \
+            --output /tmp/artifacts/bandit_scan.txt \
+          || $( exit 0 ); echo $?
+
+
+      - name: ❄️ Running Flake8
+        run: |
+            flake8 ${ARMORY_SRC_DIR}  \
+              --count                 \
+              --exit-zero             \
+              --max-complexity=10     \
+              --max-line-length=127   \
+              --statistics            \
+              --show-source           \
+              --color=always          \
+              --config=.flake8        \
+                > /tmp/artifacts/flake8.txt
+
+
+      - name: 🖋️ mypy Type Checking
+        run: |
+          pip install mypy
+          mypy                         \
+            armory                     \
+            --ignore-missing-imports   \
+            --follow-imports=skip      \
+            --show-error-codes         \
+            --show-column-numbers      \
+            --pretty                   \
+            --color-output             \
+            > /tmp/artifacts/mypy.txt  \
+          || $( exit 0 ); echo $?
+
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ !failure() }}
+        continue-on-error: true
+        with:
+          name: scan-artifacts
+          retention-days: 1
+          path: |
+            /tmp/artifacts
+
+
+
+

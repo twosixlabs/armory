@@ -44,10 +44,11 @@ env:
 
 
 jobs:
-  scan-and-lint:
-    uses: ./.github/workflows/1-scan-and-lint.yml
+  scan-lint-build:
+    uses: ./.github/workflows/1-scan-lint-build.yml
 
   test-stand-alone-builds:
+    needs: scan-and-lint
     uses: ./.github/workflows/2-test-stand-alone.yml
 
   test-docker-builds:
