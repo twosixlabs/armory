@@ -1,33 +1,46 @@
 ARG base_image_tag
-FROM twosixarmory/base:${base_image_tag} as armory-base
 ARG armory_version
 ARG armory_build_type
 
-# This section installs tensorflow object detection API from
-# https://github.com/tensorflow/models/blob/79354e14a4b41ff9019f4a5ebd12cfa498917182/research/object_detection/packages/tf2/setup.py
-WORKDIR /tmp
-RUN git clone https://github.com/tensorflow/models.git && cd models/research && git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182
+
+FROM twosixarmory/base:${base_image_tag} as armory-base
+
+# This section installs tensorflow object detection API from:
+#    - repo:           https://github.com/tensorflow/models/
+#    - commit:        79354e14a4b41ff9019f4a5ebd12cfa498917182
+#    - subdirectory:  /research/object_detection/packages/tf2/setup.py
+
 WORKDIR /tmp/models/research
-RUN protoc object_detection/protos/*.proto --python_out=.
-RUN cp object_detection/packages/tf2/setup.py .
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    tf-models-official==2.8
-RUN /opt/conda/bin/pip install --use-feature=in-tree-build .
+
+RUN git clone https://github.com/tensorflow/models.git                  && \
+      cd models/research                                                && \
+      git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182             && \
+    protoc object_detection/protos/*.proto --python_out=.               && \
+    cp object_detection/packages/tf2/setup.py .                         && \
+    /opt/conda/bin/pip install --no-cache-dir tf-models-official==2.8   && \
+    /opt/conda/bin/pip install --use-feature=in-tree-build .
 
 
 FROM armory-base AS armory-local
-RUN echo "Installing ART"
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    adversarial-robustness-toolbox==1.10.3
 
-RUN echo "Building Armory from local source"
+COPY dist /tmp
+
 WORKDIR /armory-repo
-COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt /armory-repo/
-COPY pytest.ini /armory-repo/
-COPY ./scenario_configs /armory-repo/scenario_configs/
-COPY ./tests /armory-repo/tests/
-COPY ./armory /armory-repo/armory/
-RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN armory configure --use-default
+
+RUN echo "Installing ART"                                               && \
+    pip install --no-cache-dir adversarial-robustness-toolbox==1.10.3   && \
+    echo "Building Armory from local source"                            && \
+    echo "Updating Base Image..."                                       && \
+      python -m pip install --upgrade pip                               && \
+    echo "Unpacking sdist into `/armory-repo`..."                       && \
+      tar -zxvf /tmp/*.tar.gz                                              \
+         --strip-components=1                                              \
+         --directory /armory-repo                                       && \
+    echo "Installing Armory..."                                         && \
+      pip install --no-compile --no-cache-dir --editable '.[host]'      && \
+    echo "Configuring Armory..."                                        && \
+      armory configure --use-default                                    && \
+    echo "Cleaning up..."                                               && \
+      rm -rf /tmp/*
 
 WORKDIR /workspace

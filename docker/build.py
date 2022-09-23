@@ -11,17 +11,47 @@ if not (root_dir / "armory").is_dir():
     print("ERROR: make sure you run this script from the root of the armory repo")
     sys.exit(1)
 
+
+def move_file(src, dest, name=False):
+    if dest.is_dir():
+        dest_abs  = dest.absolute()
+        dest_name = src.name if not name else name
+        src.rename(dest_abs / dest_name)
+        return Path(dest_abs / dest_name)
+    return False
+
+
+def rm_tree(pth):
+    pth = Path(pth)
+    if not pth.exists(): return
+
+    for child in pth.glob('*'):
+        if child.is_file():
+            child.unlink()
+        else:
+            rm_tree(child)
+    pth.rmdir()
+
+
+def package_worker():
+    '''Builds armory sdist & wheel.
+    '''
+    dist_dir   = Path(root_dir  / "dist")
+    if dist_dir.is_dir(): rm_tree(dist_dir) # Cleanup old builds
+    subprocess.run(["hatch", "build", "--clean"])
+    package = [f for f in dist_dir.iterdir() if f.name.startswith("armory")][0]
+    return ".".join(str(package.stem).split('-')[1].split('.')[:3])
+
+
 # Parse arguments
 FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
+
+
 parser = argparse.ArgumentParser(description="builds a docker image for armory")
-parser.add_argument(
-    "-b", "--base-tag", help="version tag for twosixarmory", default="latest"
-)
+parser.add_argument("-b", "--base-tag", help="version tag for twosixarmory", default="latest")
 parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
 parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
-parser.add_argument(
-    "-n", "--dry-run", action="store_true", help="show what would be done"
-)
+parser.add_argument("-n", "--dry-run", action="store_true", help="show what would be done")
 parser.add_argument(
     "framework",
     choices=FRAMEWORKS + ["all"],
@@ -35,21 +65,13 @@ if args.framework == "all":
 else:
     frameworks = [args.framework]
 
-# Enable import without pip installation and retrieve armory version
-sys.path.insert(0, str(root_dir))
-try:
-    import armory
-except ModuleNotFoundError as e:
-    if str(e) == "No module named 'armory'":
-        print(
-            "ERROR: could not import armory. "
-            "make sure you run this script from the root of the armory repo"
-        )
-        sys.exit(1)
-    raise
 
+# Build armory pip packages & retrieve the version
+# based on pip package naming scheme.
+print(f"Bundling armory python packages.")
+armory_version = package_worker()
 print("Retrieving armory version")
-print(f"armory docker builder version {armory.__version__}")
+
 
 # Execute docker builds
 for framework in frameworks:
@@ -59,17 +81,17 @@ for framework in frameworks:
         raise ValueError(f"Dockerfile not found: {dockerfile}")
 
     cmd = [
-        "docker",
-        "build",
-        "--file",
-        str(dockerfile),
-        "--tag",
-        f"twosixarmory/{framework}:{armory.__version__}",
-        "--build-arg",
+        f"docker",
+        f"build",
+        f"--file",
+        f"{dockerfile}",
+        f"--tag",
+        f"twosixarmory/{framework}:{armory_version}",
+        f"--build-arg",
         f"base_image_tag={args.base_tag}",
-        "--build-arg",
-        f"armory_version={armory.__version__}",
-        "--force-rm",
+        f"--build-arg",
+        f"armory_version={armory_version}",
+        f"--force-rm",
     ]
     if args.no_cache:
         cmd.append("--no-cache")

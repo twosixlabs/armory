@@ -1,21 +1,28 @@
 ARG base_image_tag
-FROM twosixarmory/base:${base_image_tag} as armory-base
 ARG armory_version
 ARG armory_build_type
 
-FROM armory-base AS armory-local
-RUN echo "Installing ART"
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    adversarial-robustness-toolbox==1.10.3
 
-RUN echo "Building Armory from local source"
-WORKDIR /armory-repo/
-COPY setup.py LICENSE MANIFEST.in README.md requirements.txt test-requirements.txt armory-base-requirements.txt /armory-repo/
-COPY pytest.ini /armory-repo/
-COPY ./tests /armory-repo/tests/
-COPY ./scenario_configs /armory-repo/scenario_configs/
-COPY ./armory /armory-repo/armory/
-RUN SETUPTOOLS_SCM_PRETEND_VERSION=${armory_version} /opt/conda/bin/pip install --use-feature=in-tree-build --no-cache-dir .
-RUN armory configure --use-default
+FROM twosixarmory/base:${base_image_tag} AS armory-local
+
+COPY dist /tmp
+
+WORKDIR /armory-repo
+
+RUN echo "Installing ART"                                               && \
+    pip install --no-cache-dir adversarial-robustness-toolbox==1.10.3   && \
+    echo "Building Armory from local source"                            && \
+    echo "Updating Base Image..."                                       && \
+      python -m pip install --upgrade pip                               && \
+    echo "Unpacking sdist into `/armory-repo`..."                       && \
+      tar -zxvf /tmp/*.tar.gz                                              \
+         --strip-components=1                                              \
+         --directory /armory-repo                                       && \
+    echo "Installing Armory..."                                         && \
+      pip install --no-compile --no-cache-dir --editable '.[host]'      && \
+    echo "Configuring Armory..."                                        && \
+      armory configure --use-default                                    && \
+    echo "Cleaning up..."                                               && \
+      rm -rf /tmp/*
 
 WORKDIR /workspace

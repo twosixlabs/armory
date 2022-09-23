@@ -1,5 +1,7 @@
-# ignore .git, .conda, etc.
+# ignore .conda, etc.
 .*
+# Allowing .git
+!.git/
 # ignore large directories
 datasets/
 # ignore temp directories
