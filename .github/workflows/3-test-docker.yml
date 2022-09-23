@@ -8,13 +8,7 @@ env:
 jobs:
   docker-torch-unit:
     name: ☁️ Pytorch Image Tests [Container]
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        # TODO: Add 'macos' back in.
-        os: [ ubuntu ]
-        python-version: [ "3.9" ]
+    runs-on: ubuntu-latest
     steps:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
@@ -35,7 +29,7 @@ jobs:
       - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
 
       - name: 🌱 Setup Test Enviroment
         run: |
@@ -71,18 +65,14 @@ jobs:
 
   docker-tf2-unit:
     name: ☁️ Docker TF2 Image Tests
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu ]
-        python-version: [ "3.9" ]
+    runs-on: ubuntu-latest
     steps:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
+      # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -96,7 +86,7 @@ jobs:
       - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
 
       - name: 🌱 Setup Test Enviroment
         run: |
@@ -127,18 +117,14 @@ jobs:
 
   docker-deepspeech-unit:
     name: ☁️ Docker Deepspeech Image Tests
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu ]
-        python-version: [ "3.9" ]
+    runs-on: ubuntu-latest
     steps:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
+      # Get history and tags for SCM versioning to work
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -152,7 +138,7 @@ jobs:
       - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.9
 
       - name: 🌱 Setup Test Enviroment
         run: |
