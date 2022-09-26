@@ -1,3 +1,22 @@
+"""
+Adaptive Attack Framework
+
+Design goals:
+    1) Easy to understand
+    2) Easy to modify
+    3) Easy to compose
+    4) Fast and efficient
+    5) Minimal dependencies (framework-specific)
+
+User stories:
+    a) Initialize an attack with an interesting input
+    b) Use a different optimizer (e.g., Adam)
+    c) Apply modifications of parameters over time (i.e., start with eps=16/255, then go to 8/255 after success)
+    d) Enable orthogonal PGD (switching between two objective functions with each step)
+    e) Statistical measures for stochastic defenses
+"""
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -252,6 +271,13 @@ def l2_dist(x: Tensor, x_orig: Tensor):
     return l2(x - x_orig)
 
 
+def l2_normalize(x: Tensor, tolerance=TOL):
+    return x / (l2(x) + tolerance)
+
+
+snr_normalize = l2_normalize
+
+
 def project_l2(x: Tensor, x_orig: Tensor, epsilon: float, safe=False, tolerance=TOL):
     """
     Project `x` into L2 epsilon ball around `x_orig`
@@ -295,6 +321,10 @@ def linf(x: Tensor):
 
 def linf_dist(x: Tensor, x_orig: Tensor):
     return linf(x - x_orig)
+
+
+def linf_normalize(x: Tensor):
+    return x.sign()
 
 
 def project_linf(x: Tensor, x_orig: Tensor, epsilon: float, safe=False):
@@ -471,16 +501,28 @@ def project_l0(
 # )
 
 
-class PGD_L2:
-    def __init__(
-        self, model, epsilon=2, eps_step=0.1, min_clip=0, max_clip=1, dist=None
-    ):
-        pass
+class ProbLoss(nn.NLLLoss):
+    """
+    Cross Entropy Loss with probability inputs
+    """
+
+    def forward(self, input: Tensor, target: Tensor) -> Tensor:
+        return super().forward(torch.log(input), target)
 
 
-class PGD_Linf:
+class PGD:
     def __init__(
-        self, model, epsilon=8 / 255, eps_step=1 / 255, min_clip=0, max_clip=1
+        self,
+        model,
+        epsilon=8 / 255,
+        eps_step=1 / 255,
+        min_clip=0,
+        max_clip=1,
+        random=None,
+        project=None,
+        distance=None,
+        normalize=None,
+        output="prob",
     ):
         self.model = model
         self.proxy = model
@@ -488,13 +530,26 @@ class PGD_Linf:
         self.eps_step = eps_step
 
         # TODO: specify these in init
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.output_map = {
+            "logit": nn.CrossEntropyLoss(),
+            "logprob": nn.NLLLoss(),
+            "prob": ProbLoss(),
+        }
+        if output not in self.output_map:
+            raise ValueError(f"output {output} not in {list(self.output_map)}")
+        self.output = output
+        self.loss_fn = self.output_map[self.output]
+
+        # logits:
         self.task_metric = lambda y_pred, y_true: (
             y_pred.detach().argmax(dim=1) == y_true.detach()
         ).sum() / len(y_true)
-        self.distance = linf_dist
-        self.random = random_linf
-        self.project = project_linf
+        # probabilities:
+
+        self.distance = distance
+        self.random = random
+        self.project = project
+        self.normalize = normalize
         self.clip = Clipper(min=min_clip, max=max_clip)
 
     def status(self):
@@ -529,7 +584,7 @@ class PGD_Linf:
         self.loss.backward()
 
     def update(self):
-        self.x.grad = self.x.grad.sign()  # "normalize" gradient for FGSM
+        self.x.grad = self.normalize(self.x.grad)  # normalize gradient
         self.optimizer.step()
         with torch.no_grad():
             self.x_temp = self.project(self.x, self.x_orig, self.epsilon)
@@ -565,6 +620,7 @@ class PGD_Linf:
         self.x = x_orig.detach().clone()
         if x_init == "random":
             self.x = self.x + self.random(self.x_orig, epsilon=self.epsilon)
+            self.x = self.clip(self.x)
         elif x_init is not None:
             raise ValueError(f"x_init {x_init} must be 'random' or None")
 
@@ -594,6 +650,60 @@ class PGD_Linf:
         return self.best_x
 
 
+class PGD_Linf(PGD):
+    def __init__(
+        self, *args, random=None, project=None, distance=None, normalize=None, **kwargs
+    ):
+        super().__init__(
+            *args,
+            random=random_linf,
+            project=project_linf,
+            distance=linf_dist,
+            normalize=linf_normalize,
+            **kwargs,
+        )
+
+
+class PGD_L2(PGD):
+    def __init__(
+        self, *args, random=None, project=None, distance=None, normalize=None, **kwargs
+    ):
+        super().__init__(
+            *args,
+            random=random_l2,
+            project=project_l2,
+            distance=l2_dist,
+            normalize=l2_normalize,
+            **kwargs,
+        )
+
+
+class PGD_SNR(PGD):
+    def __init__(
+        self, *args, random=None, project=None, distance=None, normalize=None, **kwargs
+    ):
+        super().__init__(
+            *args,
+            random=random_snr,
+            project=project_snr,
+            distance=snr_dist,
+            normalize=snr_normalize,
+            **kwargs,
+        )
+
+
+# TODO: consider distributions package
+class RandomMaskPosition:
+    # NOTE: assumes NCHW, with ...
+    def __init__(self, mask_size, image_size):
+        self.mask_size = mask_size
+        self.image_size = image_size
+
+    def sample(self):
+        pass
+        # self.position = (image_size
+
+
 class PGD_Patch(PGD_Linf):
     def __init__(
         self,
@@ -614,7 +724,7 @@ class PGD_Patch(PGD_Linf):
         super().gradient()
 
     def update(self):
-        self.delta.grad = self.delta.grad.sign()  # "normalize" gradient for FGSM
+        self.delta.grad = self.normalize(self.delta.grad)
         self.optimizer.step()
         with torch.no_grad():
             # TODO: how to handle projection?
@@ -645,12 +755,6 @@ class PGD_Patch(PGD_Linf):
             x_init=x_init,
             iters=iters,
         )
-        # check that x_orig is in domain
-        self.x = x_orig.detach().clone()
-        if x_init == "random":
-            self.x = self.x + self.random(self.x_orig, epsilon=self.epsilon)
-        elif x_init is not None:
-            raise ValueError(f"x_init {x_init} must be 'random' or None")
 
         if self.y_target is None:  # untargeted
             self.targeted = False
@@ -674,6 +778,11 @@ class PGD_Patch(PGD_Linf):
         self.x_zero = self.x_orig.clone()
         self.x_zero[self.mask] = 0
         self.delta = self.delta_orig.clone()
+        # check that x_orig is in domain
+        if x_init == "random":
+            self.delta = torch.rand(self.delta)
+        elif x_init is not None:
+            raise ValueError(f"x_init {x_init} must be 'random' or None")
 
         self.optimizer = torch.optim.SGD(
             [self.delta], lr=self.eps_step
@@ -694,6 +803,10 @@ class PGD_Patch(PGD_Linf):
         # TODO: work on random placement of patch
 
         return self.best_x
+
+
+class PGD_RandomPatch(PGD_Patch):
+    pass
 
 
 # Create graph of input/output variables and connections?
