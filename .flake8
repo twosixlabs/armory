@@ -1,24 +1,12 @@
+# TODO: move this to pyproject.toml when supported, see https://github.com/PyCQA/flake8/issues/234
+
+
 [flake8]
-
-ignore =
-    # defaults flake8 ignores
-    E121,E123,E126,E226,E24,E704,W503,W504
-    # import not at top
-    E402
-
-    # whitespace before ':'
-    # https://black.readthedocs.io/en/stable/the_black_code_style.html#slices
-    E203
-    # missing whitespace after ','
-    # black takes care of that. Sometimes it may
-    # add a comma at the end of lists.
-    E231
-    # Line too long
-    # We use black, no need to enforce line length
-    E501
-
+indent-size = 4
+max-complexity = 10
 #imported but unused in __init__.py, that's ok.
 per-file-ignores = **/__init__.py:F401
+
 
 exclude =
     .git,
@@ -27,3 +15,24 @@ exclude =
     __pycache__,
     build,
     dist,
+
+
+ignore =
+    # defaults flake8 ignores
+    E121,E123,E126,E221,F541,E226,E24,F401,E251,E704,W503,W504
+
+    # import not at top
+    E402
+
+    # whitespace before ':'
+    # https://black.readthedocs.io/en/stable/the_black_code_style.html#slices
+    E203
+
+    # missing whitespace after ','
+    # black takes care of that. Sometimes it may
+    # add a comma at the end of lists.
+    E231
+
+    # Line too long
+    # We use black, no need to enforce line length
+    E501
