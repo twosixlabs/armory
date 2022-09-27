@@ -76,6 +76,16 @@ developer =[
   "omegaconf",
 ]
 
+###################### DATASETS #########################
+# Additional requirements needed to build all datasets
+# NOTE: Currently is necessary for armory datasets which
+#       utilizes tfds.  This requires old version of
+#       pyarrow (0.17.1) which requires pip 22.0.3
+datasets = [
+  "apache-beam == 2.22.0",
+  "pydub == 0.24.1",
+]
+
 ######################## HOST ###########################
 # NOTE:  Install these dependencies if running in a
 #        local environment; e.g. w/out Docker.
@@ -126,12 +136,6 @@ host = [
   "botocore == 1.27.77",       # Needed for armory.data.utils
   "ffmpeg-python == 0.2.0",    # Needed for armory.utils.export
   "opencv-python == 4.6.0.66"  # Needed for CARLA baseline scenario
-]
-
-testing = [
-  "onnxruntime",
-  "onnxruntime_tools",
-  "onnxruntime-gpu",
 ]
 
 
