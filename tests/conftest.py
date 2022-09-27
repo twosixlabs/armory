@@ -43,9 +43,15 @@ def ensure_armory_dirs(request):
 @pytest.fixture()
 def scenario_configs():
     """Pointer to armory.scenario_configs file"""
-    dirname = os.path.join(os.path.dirname(os.path.dirname(__file__)), "scenario_configs")
+    dirname = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "scenario_configs"
+    )
     if not os.path.exists(dirname):
-        raise Exception("Something is wrong... Scenario Config Dir: {} does not exist".format(dirname))
+        raise Exception(
+            "Something is wrong... Scenario Config Dir: {} does not exist".format(
+                dirname
+            )
+        )
     return dirname
 
 
@@ -89,7 +95,9 @@ def pytest_configure(config):
 def pytest_runtest_setup(item):
 
     # Setting up for `--armory-mode`
-    parameters = [mark.args[0] for mark in item.iter_markers(name="skip_test_if_armory_mode")]
+    parameters = [
+        mark.args[0] for mark in item.iter_markers(name="skip_test_if_armory_mode")
+    ]
     if parameters:
         if item.config.getoption("--armory-mode") in parameters:
             pytest.skip("Test skipped because armory-mode is {!r}".format(parameters))
@@ -138,7 +146,9 @@ def dataset_generator():
         }
 
         if framework not in instance_types:
-            raise Exception("Unrecognized Armory Dataset Framework: {}".format(framework))
+            raise Exception(
+                "Unrecognized Armory Dataset Framework: {}".format(framework)
+            )
 
         ds = getattr(datasets, name)
         dataset = ds(
@@ -154,7 +164,9 @@ def dataset_generator():
         assert isinstance(dataset, instance_types[framework])
         if framework == "numpy":
             assert dataset.batch_size == batch_size
-            assert dataset.batches_per_epoch == (dataset.size // batch_size + bool(dataset.size % batch_size))
+            assert dataset.batches_per_epoch == (
+                dataset.size // batch_size + bool(dataset.size % batch_size)
+            )
         return dataset
 
     return generator
