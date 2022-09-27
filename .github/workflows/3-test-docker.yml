@@ -48,7 +48,7 @@ jobs:
         run: |
           python docker/build.py --framework pytorch
 
-      # TODO: Create/mount a volume with the tests can config files.
+      # TODO: Create/mount a volume with the tests and config files.
       - name: 🤞 Run Image tests
         run: |
           docker run                                  \
@@ -56,7 +56,7 @@ jobs:
             --workdir /armory-repo                    \
             twosixarmory/pytorch:$(armory --version)  \
               pytest                                  \
-                -c pyproject.toml                     \
+                -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
       # TODO:
@@ -112,7 +112,7 @@ jobs:
             --workdir /armory-repo                    \
             twosixarmory/tf2:$(armory --version)      \
               pytest                                  \
-                -c pyproject.toml                     \
+                -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
 
@@ -166,7 +166,7 @@ jobs:
             --workdir /armory-repo                    \
             twosixarmory/pytorch-deepspeech:$VERSION  \
               pytest                                  \
-                -c pyproject.toml                     \
+                -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
 
@@ -175,6 +175,6 @@ jobs:
             --workdir /armory-repo                    \
             twosixarmory/pytorch-deepspeech:$VERSION  \
               pytest                                  \
-                -c pyproject.toml                     \
+                -c /armory-repo/pyproject.toml        \
                 -m "pytorch_deepspeech"               \
                 ./tests/
