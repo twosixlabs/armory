@@ -5,7 +5,7 @@ Resnet for speech commands classification.
 from typing import Optional
 
 import tensorflow as tf
-from tensorflow.keras import models, layers, losses
+from tensorflow.keras import losses
 from tensorflow.keras.layers import Lambda
 from tensorflow import keras
 
@@ -22,26 +22,26 @@ def get_spectrogram(audio):
     return spectrogram  # shape (124, 129, 1)
 
 
-
 def make_audio_resnet(**kwargs) -> tf.keras.Model:
 
     inputs = keras.Input(shape=(16000,))
     spectrogram = Lambda(lambda audio: get_spectrogram(audio))(inputs)
 
-    resnet = keras.applications.ResNet50(  
-        weights=None, input_tensor=spectrogram, classes=12, **kwargs,
+    resnet = keras.applications.ResNet50(
+        weights=None,
+        input_tensor=spectrogram,
+        classes=12,
+        **kwargs,
     )
 
     model = keras.Model(resnet.inputs, resnet.outputs)
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=['accuracy'],
+        metrics=["accuracy"],
     )
-    
+
     return model
-
-
 
 
 def get_art_model(
@@ -65,12 +65,12 @@ def get_art_model(
         model.optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
     art_classifier = TensorFlowV2Classifier(
-    model=model,
-    loss_object=loss_object,
-    train_step=train_step,
-    nb_classes=12,
-    input_shape=(16000,),
-    **wrapper_kwargs,
+        model=model,
+        loss_object=loss_object,
+        train_step=train_step,
+        nb_classes=12,
+        input_shape=(16000,),
+        **wrapper_kwargs,
     )
 
     return art_classifier
