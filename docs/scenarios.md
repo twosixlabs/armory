@@ -220,7 +220,7 @@ To be added
 * **Baseline Defense Performance:**
 To be added
 
-### Librispeech automatic speech recognition (Updated July 2021)
+### Librispeech automatic speech recognition (Updated June 2022)
 
 * **Description:**
 In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
@@ -247,16 +247,17 @@ may also be loaded by the model.
     * To place an evaluation bound on the perceptibility of perturbations, the SNR is restricted to >20 dB.
 * **Metrics of Interest:**
   * Primary metrics:
-    * Word error rate, SNR
+    * Word error rate, SNR, entailment rate
   * Derivative metrics - see end of document
   * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Attacks:**
   * [Imperceptible ASR attack](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/imperceptible_asr/imperceptible_asr.py)
   * [PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
-  * [Kenansville attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/kenansville_dft.py)
+  * [Kenansville attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/kenansville_dft.py)  
 * **Baseline Defense**: [MP3 Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/mp3_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+* **Baseline Model Performance: (Table 1 results are obtained using Armory v0.13.3, Table 2 results are obtained using Armory v0.15.2)**
 
+Table 1
 | Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
 |--------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
 | Imperceptible ASR        | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
@@ -277,11 +278,20 @@ may also be loaded by the model.
 | PGD (multiple channels)* | yes      | snr=20dB       | 0.13                    | 0.99                         | N/A                   | N/A                        | 100       |
 | PGD (multiple channels)* | yes      | snr=30dB       | 0.13                    | 0.92                         | N/A                   | N/A                        | 100       |
 | PGD (multiple channels)* | yes      | snr=40dB       | 0.13                    | 0.75                         | N/A                   | N/A                        | 100       |
-
-* \*Target attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
+* \*Targeted attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
 * Missing defended baseline is due to current incompatibility of the attack and defense.
+
+Table 2
+| Attack | Targeted |  Budget  |      Attack Parameters      | Entailment/Contradiction/Neutral Rates (Benign Undefended) | Number of Entailment/Contradiction/Neutral Rates (Adversarial Undefended) | Entailment/Contradiction/Neutral Rates (Benign Defended) | Entailment/Contradiction/Neutral Rates (Adversarial Defended) | Test Size |
+|:------:|:--------:|:--------:|:---------------------------:|:----------------------------------------------------------:|:-------------------------------------------------------------------------:|:--------------------------------------------------------:|:-------------------------------------------------------------:|:---------:|
+| PGD*   | yes      | snr=20dB | eps_step=0.05, max_iter=500 | 0.95/0.05/0.00                                             | 0.01/0.98/0.01                                                            | 0.93/0.07/0.00                                           | 0.02/0.96/0.02                                                | 100       |
+| PGD*   | yes      | snr=30dB | eps_step=0.03, max_iter=500 | 0.95/0.05/0.00                                             | 0.04/0.95/0.01                                                            | 0.93/0.07/0.00                                           | 0.19/0.79/0.02                                                | 100       |
+| PGD*   | yes      | snr=40dB | eps_step=0.01, max_iter=500 | 0.95/0.05/0.00                                             | 0.43/0.53/0.04                                                            | 0.93/0.07/0.00                                           | 0.66/0.34/0.00                                                | 100       |
+* \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.2/scenario_configs/eval5/asr_librispeech)
 
 
 ### so2sat multimodal image classification (Updated July 2021)
@@ -447,12 +457,11 @@ Baseline defense performance is evaluated for a transfer attack.
   * Baseline MSCOCO Objects mAP: 7.83% (all test examples)
   * Baseline Targeted Patch mAP: 4.59% (all test examples)
 
-### CARLA object detection (Updated January 2022)
+### CARLA object detection (Updated July 2022)
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify vehicles, pedestrians, and traffic lights.
 * **Dataset:**
-The development dataset is the [CARLA Object Detection dataset](https://carla.org), which includes RGB and depth channels for 165 synthetic images of driving scenes, each of
-which contains a green-screen intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+The development dataset is generated using [CARLA](https://carla.org), which includes RGB and depth channels for 31 synthetic images from both vehicle and security camera perspectives. Each image contains a green-screen intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
   * Single-modality:
     * Pretrained [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
@@ -462,10 +471,10 @@ which contains a green-screen intended for adversarial patch insertion. The data
   * Adversary objectives:
     * To degrade the performance of an object detector through the insertion of adversarial patches.
   * Adversary Operating Environment:
-    * Non-real time, digital and physical-like patch attacks
+    * Non-real time, physical-like patch attacks
     * Adaptive attacks will be performed on defenses.
 * Adversary Capabilities and Resources
-    * Patch size of different size/shape as dictated by the green-screen in each image. In the multimodal case, only RGB channels are to be perturbed.
+    * Patch size of different size/shape as dictated by the green-screen in each image. In the multimodal case, both RGB and depth channels are to be perturbed.
 * **Metrics of Interest:**
   * Primary metrics:
     * mAP
@@ -474,30 +483,35 @@ which contains a green-screen intended for adversarial patch insertion. The data
     * Misclassification rate
     * True positive rate
 * **Baseline Attacks:**
-  * [Custom Robust DPatch with Input-Dependent Transformation and Color-Correction](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/attacks/carla_obj_det_patch.py)
-* **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/master/armory/data/adversarial/carla_obj_det_test.py))**
+  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_patch.py)
+  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
+* **Baseline Defense**: [JPEG Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/jpeg_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_obj_det_dev.py), results are obtained using Armory v0.15.2; for [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_obj_det_test.py), results are obtained using Armory v0.15.4)**
 
 Single Modality (RGB) Object Detection
-| Patch Size | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|:----------:|:-----------:|:---------------------------:|:--------------------------------:|:-------------------------------:|:---------------------------:|:----------------:|:--------------------------------:|:------------------------------------:|:-----------------------------------:|:-------------------------------:|:---------:|
-|    Small   |  0.43/0.40  |          0.37/0.45          |              0.8/1.0             |            0.06/0.08            |          0.57/0.47          |     0.19/0.21    |             0.40/0.48            |                7.6/7.6               |              0.06/0.08              |            0.54/0.45            |     10    |
-|   Medium   |  0.48/0.37  |          0.39/0.50          |              1.2/1.3             |            0.01/0.01            |          0.60/0.49          |     0.24/0.16    |             0.39/0.51            |               12.4/6.8               |              0.01/0.01              |            0.61/0.48            |     10    |
-|    Large   |  0.38/0.31  |          0.36/0.43          |              1.0/1.0             |            0.05/0.02            |          0.59/0.55          |     0.17/0.14    |             0.37/0.34            |               10.3/10.2              |              0.05/0.02              |            0.57/0.55            |     10    |
+| Data | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
+| Dev  | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.76/0.72   | 0.19/0.22                   | 3.97/3.48                        | 0.06/0.06                       | 0.75/0.71                   | 0.68/0.66        | 0.27/0.28                        | 4.48/3.65                            | 0.06/0.07                           | 0.67/0.65                       | 31        |
+| Dev  | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.76/0.72   | 0.19/0.22                   | 3.97/3.48                        | 0.06/0.06                       | 0.75/0.71                   | 0.54/*           | 0.32/*                           | 22.16/*                              | 0.05/*                              | 0.62/*                          | 31        |
+| Test | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.79/0.74   | 0.16/0.25                   | 4.10/3.50                        | 0.03/0.01                       | 0.82/0.75                   | 0.72/0.64        | 0.32/0.39                        | 4.80/4.0                             | 0.03/0.01                           | 0.65/0.60                       | 20        |
+| Test | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.79/0.74   | 0.16/0.25                   | 4.10/3.50                        | 0.03/0.01                       | 0.82/0.75                   | 0.38/*           | 0.40/*                           | 42.55/*                              | 0.03/*                              | 0.57/*                          | 20        |
 
 Multimodality (RGB+depth) Object Detection
-| Attacked  Modality | Patch Size | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|--------------------|:----------:|:-----------:|:---------------------------:|:--------------------------------:|:-------------------------------:|:---------------------------:|:----------------:|:--------------------------------:|:------------------------------------:|:-----------------------------------:|:-------------------------------:|:---------:|
-| RGB                |    Small   |  0.51/0.48  |          0.35/0.35          |              0.0/0.3             |            0.05/0.05            |          0.61/0.61          |     0.48/0.48    |             0.36/0.35            |                1.2/3.1               |              0.08/0.05              |            0.56/0.61            |     10    |
-| RGB                |   Medium   |  0.58/0.59  |          0.34/0.34          |              0.5/0.8             |             0.0/0.2             |          0.66/0.64          |     0.56/0.58    |             0.34/0.34            |                1.7/1.4               |               0.0/0.02              |            0.66/0.64            |     10    |
-| RGB                |    Large   |  0.46/0.46  |          0.32/0.34          |              0.5/0.8             |            0.03/0.02            |          0.64/0.64          |     0.42/0.46    |             0.32/0.34            |                1.7/0.9               |              0.03/0.02              |            0.64/0.64            |     10    |
+| Data | Attack            | Attack Parameters                                                                    | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|------|-------------------|--------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
+| Dev  | Robust DPatch     | depth_delta_meters=3, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.76/0.83        | 0.10/0.06                        | 5.68/4.87                            | 0.05/0.05                           | 0.84/0.89                       | 31        |
+| Dev  | Adversarial Patch | depth_delta_meters=3, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.66/0.76        | 0.11/0.10                        | 10.74/7.13                           | 0.06/0.05                           | 0.83/0.85                       | 31        |
+| Test | Robust DPatch     | depth_delta_meters=3, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.90/0.89   | 0.03/0.04                   | 1.0/1.45                         | 0.03/0.02                       | 0.94/0.94                   | 0.81/0.89        | 0.13/0.06                        | 4.75/2.05                            | 0.03/0.02                           | 0.83/0.91                       | 20        |
+| Test | Adversarial Patch | depth_delta_meters=3, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.90/0.89   | 0.03/0.04                   | 1.0/1.45                         | 0.03/0.02                       | 0.94/0.94                   | 0.50/0.57        | 0.21/0.14                        | 22.55/13.70                          | 0.04/0.03                           | 0.75/0.83                       | 20        |
 
-\*a/b in the tables refer to undefended/defended performance results, respectively.
+a/b in the tables refer to undefended/defended performance results, respectively.
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
+\* Undefended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_object_detection)
 
 
-### CARLA video tracking (Updated January 2022)
+### CARLA video tracking (Updated July 2022)
 * **Description:**
 In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
 * **Dataset:**
@@ -509,23 +523,27 @@ which contains a green-screen in all frames intended for adversarial patch inser
   * Adversary objectives:
     * To degrade the performance of the tracker through the insertion of adversarial patches.
   * Adversary Operating Environment:
-    * Non-real time, digital and physical-like patch attacks
+    * Non-real time, physical-like patch attacks
     * Adaptive attacks will be performed on defenses.
 * Adversary Capabilities and Resources
-    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a constant patch across all frames in the video.
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
 * **Metrics of Interest:**
   * Primary metrics:
     * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
 * **Baseline Attacks:**
-  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
-* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/art_experimental/defences/video_compression_normalized.py)
-* **Baseline Model Performance: (results obtained using Armory v0.14.2 and [test data](https://github.com/twosixlabs/armory/blob/r0.14.2/armory/data/adversarial/carla_video_tracking_test.py))**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
 
-| Benign Mean IoU (Undefended) | Benign Mean IoU (Defended) | Adversarial Mean IoU (Undefended) | Adversarial Mean IoU (Defended) | Test Size |
-|:----------------------------:|:--------------------------:|:---------------------------------:|:-------------------------------:|:---------:|
-|             0.59             |            0.50            |                0.18               |               0.18              |     20    |
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/r0.14.2/scenario_configs)
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
 
 ## Academic Scenarios
 

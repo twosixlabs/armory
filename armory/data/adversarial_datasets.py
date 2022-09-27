@@ -39,10 +39,10 @@ carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(960, 1280,
 carla_video_tracking_dev_context = datasets.VideoContext(
     x_shape=(None, 960, 1280, 3), frame_rate=10
 )
-carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
 carla_video_tracking_test_context = datasets.VideoContext(
-    x_shape=(None, 600, 800, 3), frame_rate=10
+    x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 
 
@@ -674,7 +674,7 @@ def carla_obj_det_dev(
 
 
 def carla_obj_det_test(
-    split: str = "large+medium+small",
+    split: str = "test",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -695,9 +695,6 @@ def carla_obj_det_test(
         )
     if batch_size != 1:
         raise ValueError("carla_obj_det_test batch size must be set to 1")
-
-    if split == "test":
-        split = "large+medium+small"
 
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
@@ -727,7 +724,7 @@ def carla_obj_det_test(
     )
 
     return datasets._generator_from_tfds(
-        "carla_obj_det_test:1.0.0",
+        "carla_obj_det_test:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -742,6 +739,25 @@ def carla_obj_det_test(
         supervised_xy_keys=("image", ("objects", "patch_metadata")),
         **kwargs,
     )
+
+
+class ClipVideoTrackingLabels:
+    """
+    Truncate labels for CARLA video tracking, when max_frames is set
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, x, labels):
+        boxes, patch_metadata_dict = labels
+        boxes = boxes[:, : self.max_frames, :]
+        for k in patch_metadata_dict:
+            patch_metadata_dict[k] = patch_metadata_dict[k][:, : self.max_frames, ::]
+        return boxes, patch_metadata_dict
 
 
 def carla_video_tracking_label_preprocessing(x, y):
@@ -762,6 +778,7 @@ def carla_video_tracking_dev(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
+    max_frames: int = None,
     **kwargs,
 ):
     """
@@ -774,6 +791,18 @@ def carla_video_tracking_dev(
         )
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    if max_frames:
+        clip = datasets.ClipFrames(max_frames)
+        clip_labels = ClipVideoTrackingLabels(max_frames)
+    else:
+        clip = None
+        clip_labels = None
+
+    preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
+    label_preprocessing_fn = datasets.label_preprocessing_chain(
+        clip_labels, label_preprocessing_fn
+    )
 
     return datasets._generator_from_tfds(
         "carla_video_tracking_dev:2.0.0",
@@ -817,7 +846,7 @@ def carla_video_tracking_test(
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
 
     return datasets._generator_from_tfds(
-        "carla_video_tracking_test:1.0.0",
+        "carla_video_tracking_test:2.0.0",
         split=split,
         epochs=epochs,
         batch_size=batch_size,
