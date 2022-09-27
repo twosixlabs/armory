@@ -5,9 +5,9 @@ ARG armory_build_type
 
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
-COPY dist /tmp
-
 WORKDIR /armory-repo
+
+COPY ./ /armory-repo
 
 # NOTE: installed after pip installs in base container,
 #       but doesn't seem to cause issues at the moment
@@ -17,16 +17,12 @@ RUN /opt/conda/bin/conda install -c conda-forge librosa
 RUN echo "Building Armory from local source"                            && \
     echo "Updating Base Image..."                                       && \
       python -m pip install --upgrade pip                               && \
-    echo "Unpacking sdist into `/armory-repo`..."                       && \
-      tar -zxvf /tmp/*.tar.gz                                              \
-         --strip-components=1                                              \
-         --directory /armory-repo                                       && \
     echo "Installing Armory..."                                         && \
       pip install --no-compile --no-cache-dir --editable '.[host]'      && \
     echo "Configuring Armory..."                                        && \
       armory configure --use-default                                    && \
     echo "Cleaning up..."                                               && \
-      rm -rf /tmp/*
+      rm -rf /armory-repo/.git
 
 WORKDIR /workspace
 

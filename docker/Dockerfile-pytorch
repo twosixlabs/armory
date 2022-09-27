@@ -17,6 +17,6 @@ RUN echo "Building Armory from local source"                            && \
     echo "Configuring Armory..."                                        && \
       armory configure --use-default                                    && \
     echo "Cleaning up..."                                               && \
-      rm -rf /armory-repo
+      rm -rf /armory-repo/.git
 
 WORKDIR /workspace
