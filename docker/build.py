@@ -12,6 +12,9 @@ script_dir = Path(__file__).parent
 root_dir   = script_dir.parent
 
 armory_frameworks  = ["pytorch", "pytorch-deepspeech", "tf2"]
+
+# NOTE: Podman is not officially supported, but this enables
+#       use as a drop-in replacement for building.
 container_platform = "docker" if shutil.which("docker") else "podman"
 
 
@@ -57,26 +60,6 @@ def cli_parser(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def move_file(src, dest, name=False):
-    if dest.is_dir():
-        dest_abs  = dest.absolute()
-        dest_name = src.name if not name else name
-        src.rename(dest_abs / dest_name)
-        return Path(dest_abs / dest_name)
-    return False
-
-
-def rm_tree(pth):
-    pth = Path(pth)
-    if not pth.exists(): return
-    for child in pth.glob('*'):
-        if child.is_file():
-            child.unlink()
-        else:
-            rm_tree(child)
-    pth.rmdir()
-
-
 def get_version_tag():
     '''Returns the current git tag version.
     '''
@@ -84,7 +67,7 @@ def get_version_tag():
         sys.exit(f"Unable to find `.git` directory or git is not installed.")
 
     git_tag = subprocess.run(
-        ["git", "describe", "--tags", "--abbrev=0"],
+        ["git", "describe"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -92,16 +75,6 @@ def get_version_tag():
         sys.exit(f"ERROR:\tError retrieving git tag version!\n" \
                  f"\t{git_tag.stderr.decode('utf-8')}")
     return git_tag.stdout.decode('utf-8').strip()[1:]
-
-
-def package_worker():
-    '''Builds armory sdist & wheel.
-    '''
-    dist_dir   = Path(root_dir  / "dist")
-    if dist_dir.is_dir(): rm_tree(dist_dir) # Cleanup old builds
-    subprocess.run(["hatch", "build", "--clean"])
-    package = [f for f in dist_dir.iterdir() if f.name.startswith("armory")][0]
-    return ".".join(str(package.stem).split('-')[1].split('.')[:3])
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
