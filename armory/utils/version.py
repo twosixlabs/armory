@@ -20,7 +20,7 @@ try:
     from importlib import metadata
 except ModuleNotFoundError:
     # Python <= 3.7
-    from importlib_metadata import version, PackageNotFoundError  # type: ignore
+    from importlib_metadata import version, PackageNotFoundError  # noqa
 
 
 from armory.logs import log
@@ -30,24 +30,24 @@ def make_version_tuple(version_str: str) -> tuple:
     return tuple(map(int, (version_str.split("."))))
 
 
-def trim_version(version_str = '') -> str:
+def trim_version(version_str: str = '') -> str:
     git_tag_regex = re.compile(r"[vV]?(?P<version>\d+(?:\.\d+){0,2})")
-    tag_match     = git_tag_regex.match(version_str)
+    tag_match = git_tag_regex.match(version_str)
     if tag_match is not None:
         return tag_match.group("version")
     return version_str
 
 
-def get_build_hook_version(version_str = '') -> str:
+def get_build_hook_version(version_str: str = '') -> str:
     try:
         from armory.__about__ import version_tuple
         return ".".join(map(str, version_tuple[:3]))
     except ModuleNotFoundError:
-        log.error(f"ERROR: Unable to extract version from __about__.py")
+        log.error("ERROR: Unable to extract version from __about__.py")
     return version_str
 
 
-def get_metadata_version(package: str, version_str = '') -> str:
+def get_metadata_version(package: str, version_str: str = '') -> str:
     try:
         return trim_version(str(metadata.version(package)))
     except metadata.PackageNotFoundError:
@@ -55,9 +55,9 @@ def get_metadata_version(package: str, version_str = '') -> str:
     return version_str
 
 
-def get_tag_version(version_str = '') -> str:
+def get_tag_version(version_str: str = '') -> str:
     # See: https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/git.py
-    git_dir  = None
+    git_dir = None
     git_describe = ["git", "describe", "--dirty", "--tags", "--long"]
 
     for exec_path in (pathlib.Path(__file__), pathlib.Path.cwd()):
@@ -84,7 +84,7 @@ def get_tag_version(version_str = '') -> str:
     return version_str
 
 
-def get_version(version_str = '') -> str:
+def get_version(version_str: str = '') -> str:
     version_str = get_metadata_version("armory")
     if not bool(version_str):
         version_str = get_build_hook_version()

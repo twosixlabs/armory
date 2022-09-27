@@ -1,11 +1,39 @@
 # ignore .conda, etc.
 .*
+
 # Allowing .git
 !.git/
+
+# Ignore Documentation
+docs/
+docker/
+notebooks/
+tutorials/
+
 # ignore large directories
+scenario_configs/
 datasets/
+
 # ignore temp directories
 outputs/
+dist/
 tmp/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+venv*
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
+
+# mypy
+.mypy_cache/

@@ -77,6 +77,23 @@ def rm_tree(pth):
     pth.rmdir()
 
 
+def get_version_tag():
+    '''Returns the current git tag version.
+    '''
+    if Path('.git') is None or shutil.which('git') is None:
+        sys.exit(f"Unable to find `.git` directory or git is not installed.")
+
+    git_tag = subprocess.run(
+        ["git", "describe", "--tags", "--abbrev=0"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if git_tag.returncode != 0:
+        sys.exit(f"ERROR:\tError retrieving git tag version!\n" \
+                 f"\t{git_tag.stderr.decode('utf-8')}")
+    return git_tag.stdout.decode('utf-8').strip()[1:]
+
+
 def package_worker():
     '''Builds armory sdist & wheel.
     '''
@@ -125,10 +142,8 @@ def init(*args, **kwargs):
     if (frameworks := [kwargs.get('framework')]) == ["all"]:
         frameworks = armory_frameworks
 
-    # Build armory pip packages & retrieve the version
-    # based on pip package naming scheme.
-    print(f"EXEC:\tBundling armory python packages.")
-    armory_version = package_worker()
+    print(f"EXEC:\tRetrieving version from `git` tags.")
+    armory_version = get_version_tag()
 
     print(f"EXEC:\tCleaning up...")
     for key in ["framework", "func"]: del kwargs[key]
@@ -154,3 +169,4 @@ if __name__ == "__main__":
     # Parse CLI arguments
     arguments = cli_parser()
     arguments.func(**vars(arguments))
+
