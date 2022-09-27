@@ -191,7 +191,6 @@ local_scheme   = "no-local-version"
 # ------------ bandit -----------
 [tool.bandit]
 recursive = true
-# exclude_dirs = ["venv","tests"]
 targets = [ "armory" ]
 skips   = [
   "B101",  # Ignore defensive `assert`s (especially useful for mypy)
