@@ -43,10 +43,6 @@ def cli_parser(argv=sys.argv[1:]):
             action = "store_true",
             help   = "Do not build, only print commands",
         )),
-        (("-s", "--short-tag"), dict(
-            action = "store_true",
-            help   = "Use dirty git tag.",
-        )),
         (("-p", "--platform"), dict(
             choices  = ["docker", "podman"],
             help     ="Print verbose output",
@@ -60,16 +56,13 @@ def cli_parser(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def get_version_tag(use_short_tag=False):
+def get_version_tag():
     '''Returns the current git tag version.
     '''
     if Path('.git') is None or shutil.which('git') is None:
         sys.exit(f"Unable to find `.git` directory or git is not installed.")
 
-    git_command = ["git", "describe"]
-
-    if use_short_tag:
-        git_command.extend(["--tags", "--abbrev=0"])
+    git_command = ["git", "describe", "--tags", "--long"]
 
     git_tag = subprocess.run(
         git_command,
@@ -80,8 +73,12 @@ def get_version_tag(use_short_tag=False):
     if git_tag.returncode != 0:
         sys.exit(f"ERROR:\tError retrieving git tag version!\n" \
                  f"\t{git_tag.stderr.decode('utf-8')}")
+    # This is a mess...
+    git_tag = git_tag.stdout.decode('utf-8').strip()[1:]
+    git_tag = git_tag.split('-')
+    git_tag = f"{git_tag[0]}.post{git_tag[1]}"
 
-    return git_tag.stdout.decode('utf-8').strip()[1:]
+    return git_tag
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
@@ -123,8 +120,7 @@ def init(*args, **kwargs):
         frameworks = armory_frameworks
 
     print(f"EXEC:\tRetrieving version from `git` tags.")
-    use_short_tag = kwargs.get('short_tag', False)
-    armory_version = get_version_tag(use_short_tag)
+    armory_version = get_version_tag()
 
     print(f"EXEC:\tCleaning up...")
     for key in ["framework", "func"]: del kwargs[key]
