@@ -14,9 +14,7 @@ WORKDIR /armory-repo
 #       pip install librosa does not install sndfile dependency
 RUN /opt/conda/bin/conda install -c conda-forge librosa
 
-RUN echo "Installing ART"                                               && \
-    pip install --no-cache-dir adversarial-robustness-toolbox==1.10.3   && \
-    echo "Building Armory from local source"                            && \
+RUN echo "Building Armory from local source"                            && \
     echo "Updating Base Image..."                                       && \
       python -m pip install --upgrade pip                               && \
     echo "Unpacking sdist into `/armory-repo`..."                       && \
