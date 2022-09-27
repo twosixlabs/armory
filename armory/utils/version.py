@@ -11,7 +11,6 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
-import re
 import shutil
 import pathlib
 import subprocess
@@ -30,14 +29,6 @@ def make_version_tuple(version_str: str) -> tuple:
     return tuple(map(int, (version_str.split("."))))
 
 
-def trim_version(version_str: str = '') -> str:
-    git_tag_regex = re.compile(r"[vV]?(?P<version>\d+(?:\.\d+){0,2})")
-    tag_match = git_tag_regex.match(version_str)
-    if tag_match is not None:
-        return tag_match.group("version")
-    return version_str
-
-
 def get_build_hook_version(version_str: str = '') -> str:
     try:
         from armory.__about__ import version_tuple
@@ -49,7 +40,7 @@ def get_build_hook_version(version_str: str = '') -> str:
 
 def get_metadata_version(package: str, version_str: str = '') -> str:
     try:
-        return trim_version(str(metadata.version(package)))
+        return str(metadata.version(package))
     except metadata.PackageNotFoundError:
         log.error(f"version.py: Unable to find the specified package! Package {package} not installed.")
     return version_str
@@ -58,7 +49,7 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
 def get_tag_version(version_str: str = '') -> str:
     # See: https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/git.py
     git_dir = None
-    git_describe = ["git", "describe", "--dirty", "--tags", "--long"]
+    git_describe = ["git", "describe", "--tags", "--long"]
 
     for exec_path in (pathlib.Path(__file__), pathlib.Path.cwd()):
         if pathlib.Path(exec_path / ".git").is_dir():
