@@ -1,4 +1,4 @@
-
+import re
 import sys
 import shutil
 import argparse
@@ -59,12 +59,27 @@ def cli_parser(argv=sys.argv[1:]):
 
 def get_version_tag():
     '''Returns the current git tag version.'''
+    # TODO: Finish after completing build hook
+    version_regex = re.compile(r"(?P<version>\d+(?:\.\d+){2})(?:\.post\w{1,4}\+g)(?P<hash>[0-9a-f]{5,8}).*$")
     scm_config = {
         'root': root_dir,
         'relative_to': __file__,
         'version_scheme': "post-release",
-        'local_scheme': "no-local-version"
     }
+    scm_version  = setuptools_scm.get_version(**scm_config)
+    regex_result = version_regex.match(scm_version)
+
+    if not regex_result:
+        raise ValueError(f"Unable to parse version from {scm_version}")
+
+    sane_version = '.'.join([regex_result.group('version'), regex_result.group('hash')])
+    print(scm_version.replace('+', '.'))
+    exit(sane_version)
+    # 0.15.4.post174+g4dc951a.d20220928
+    # TODO: Use regex to extract version + commit hash; 0.15.4.4dc951a
+    # TODO: Change in `version.py`
+    # scm_version = scm_version.split(".", "-")
+
     return setuptools_scm.get_version(**scm_config)
 
 
