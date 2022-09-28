@@ -11,9 +11,8 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
-import shutil
-import pathlib
-import subprocess
+import setuptools_scm
+from pathlib import Path
 
 try:
     from importlib import metadata
@@ -21,24 +20,20 @@ except ModuleNotFoundError:
     # Python <= 3.7
     from importlib_metadata import version, PackageNotFoundError  # noqa
 
-
 from armory.logs import log
 
 
-def make_version_tuple(version_str: str) -> tuple:
-    return tuple(map(int, (version_str.split("."))))
-
-
 def get_build_hook_version(version_str: str = '') -> str:
+    '''Retrieve the version from the build hook'''
     try:
-        from armory.__about__ import version_tuple
-        return ".".join(map(str, version_tuple[:3]))
+        from armory.__about__ import __version__ as version_str
     except ModuleNotFoundError:
         log.error("ERROR: Unable to extract version from __about__.py")
     return version_str
 
 
 def get_metadata_version(package: str, version_str: str = '') -> str:
+    '''Retrieve the version from the package metadata'''
     try:
         return str(metadata.version(package))
     except metadata.PackageNotFoundError:
@@ -46,33 +41,24 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
     return version_str
 
 
-def get_tag_version(version_str: str = '') -> str:
-    # See: https://github.com/pypa/setuptools_scm/blob/main/src/setuptools_scm/git.py
-    git_dir = None
-    git_describe = ["git", "describe", "--tags", "--long"]
-
-    for exec_path in (pathlib.Path(__file__), pathlib.Path.cwd()):
-        if pathlib.Path(exec_path / ".git").is_dir():
-            git_dir = exec_path
-            break
-
-    if git_dir is None or shutil.which('git') is None:
-        # Unable to find `.git` directory or git executable
-        # is not installed.
-        return version_str
-
-    describe_out = subprocess.run(
-        git_describe,
-        capture_output=True,
-        cwd=str(git_dir),
-        text=True,
-    ).stdout
-
-    tag_version = trim_version(describe_out)
-    if tag_version is not None:
-        return tag_version
-
-    return version_str
+def get_tag_version(git_dir: Path = None) -> str:
+    '''Retrieve the version from the most recent git tag'''
+    scm_config = {
+        'root': git_dir,
+        'relative_to': __file__,
+        'version_scheme': "post-release",
+        'local_scheme': "no-local-version"
+    }
+    if git_dir is None:
+        for exec_path in (Path(__file__), Path.cwd()):
+            if Path(exec_path / ".git").is_dir():
+                scm_config['root'] = exec_path
+                break
+    # Unable to find `.git` directory...
+    if scm_config['root'] is None:
+        log.error("ERROR: Unable to find `.git` directory!")
+        return
+    return setuptools_scm.get_version(**scm_config)
 
 
 def get_version(version_str: str = '') -> str:
