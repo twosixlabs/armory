@@ -25,6 +25,8 @@ FROM armory-base AS armory-local
 
 WORKDIR /armory-repo
 
+# NOTE: This COPY command is filtered using the `.dockerignore` file
+#       in the root of the repo.
 COPY ./ /armory-repo
 
 RUN echo "Building Armory from local source"                            && \
