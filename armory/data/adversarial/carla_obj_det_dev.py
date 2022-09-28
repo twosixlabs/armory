@@ -24,18 +24,19 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev_2.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev_3.0.0.tar.gz"
 # fmt: on
 
 
 class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_dev dataset."""
 
-    VERSION = tfds.core.Version("2.0.0")
+    VERSION = tfds.core.Version("3.0.0")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
         "1.0.1": "Correcting error to RGB and depth image pairing",
         "2.0.0": "Eval5 update with higher resolution, HD textures, accurate annotations, and objects overlapping patch",
+        "3.0.0": "Eval6 update with images collected from overhead perspectives",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -113,13 +114,12 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         """yield examples"""
 
         # For each image, gets its annotations and yield relevant data
-        depth_folder = "_out/sensor.camera.depth.2"
-        foreground_mask_folder = "_out/foreground_mask"
-        patch_metadata_folder = "_out/patch_metadata"
+        rgb_folder = "rgb"
+        depth_folder = "depth"
+        foreground_mask_folder = "foreground_mask"
+        patch_metadata_folder = "patch_metadata"
 
-        annotation_path = os.path.join(
-            path, "_out", "kwcoco_annotations_without_patch_and_sans_tiny_objects.json"
-        )
+        annotation_path = os.path.join(path, "kwcoco_annotations.json")
 
         cocoanno = COCOAnnotation(annotation_path)
 
@@ -137,12 +137,10 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
             image_rgb.pop("license")
             image_rgb.pop("coco_url")
             image_rgb.pop("flickr_url")
-            image_rgb.pop("video_id")
-            image_rgb.pop("frame_index")
 
             # Pairing RGB and depth
-            fpath_rgb = image_rgb["file_name"]  # rgb image path
-            fname = fpath_rgb.split("/")[-1]
+            fname = image_rgb["file_name"]
+            fpath_rgb = os.path.join(rgb_folder, fname)  # rgb image path
             fname_no_ext = fname.split(".")[0]
             fpath_depth = os.path.join(depth_folder, fname)  # depth image path
             image_depth = deepcopy(image_rgb)
@@ -151,14 +149,13 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
 
-            # For unknown reasons, when kwcoco is saved after removing tiny objects,
-            # bbox format changes from [x,y,w,h] to [x1,y1,x2,y1]
-            def build_bbox(x1, y1, x2, y2):
+            # convert bbox to Pytorch format
+            def build_bbox(x, y, width, height):
                 return tfds.features.BBox(
-                    ymin=y1 / image_rgb["height"],
-                    xmin=x1 / image_rgb["width"],
-                    ymax=y2 / image_rgb["height"],
-                    xmax=x2 / image_rgb["width"],
+                    ymin=y / image_rgb["height"],
+                    xmin=x / image_rgb["width"],
+                    ymax=(y + height) / image_rgb["height"],
+                    xmax=(x + width) / image_rgb["width"],
                 )
 
             example = {
