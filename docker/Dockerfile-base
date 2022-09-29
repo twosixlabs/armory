@@ -9,7 +9,7 @@
 ###########################################################################################
 
 
-FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
 
 # Temporary fix for broken nvidia package checksum
 RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
@@ -28,7 +28,7 @@ RUN apt-get -y -qq update && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
     /opt/conda/bin/conda clean -tipsy && \
@@ -45,11 +45,12 @@ ENV PATH=/opt/conda/bin:$PATH
 
 # Conda Install for Channel: pytorch
 RUN /opt/conda/bin/conda install \
-    pytorch=1.10 \
+    pytorch \
     torchvision \
     torchaudio \
-    cudatoolkit=11.3 \
+    cudatoolkit=11.6 \
     -c pytorch \
+    -c conda-forge \
     && /opt/conda/bin/conda clean --all
 # pytorch==1.10.2
 # torchvision==0.11.3
@@ -102,10 +103,16 @@ RUN /opt/conda/bin/conda install \
     && /opt/conda/bin/conda clean --all
 # protobuf==3.19.1
 
+# cudnn is required for tensorflow
+RUN /opt/conda/bin/conda install \
+    cudnn \
+    -c conda-forge \
+    && /opt/conda/bin/conda clean --all
+
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets==4.5 \
-    tensorflow==2.8 \
-    tensorboardx==2.4 \
+    tensorflow-datasets==4.6 \
+    tensorflow==2.10 \
+    tensorboardx==2.5 \
     boto3==1.20 \
     opencv-python \
     ffmpeg-python \
@@ -126,5 +133,8 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     pydub
 # pydub==0.25.1
 # required for ART mp3 defense
+
+# TensorFlow requirement
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
 
 WORKDIR /workspace
