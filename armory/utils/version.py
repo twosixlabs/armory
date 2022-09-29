@@ -73,9 +73,9 @@ def get_tag_version(git_dir: Path = None) -> str:
 
 
 def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
-    # version_str = get_metadata_version(package_name)
-    # if not bool(version_str):
-    #     version_str = get_build_hook_version()
-    # if not bool(version_str):
-    version_str = get_tag_version()
+    version_str = get_metadata_version(package_name)
+    if not bool(version_str):
+        version_str = get_build_hook_version()
+    if not bool(version_str):
+        version_str = get_tag_version()
     return version_str or "0.0.0"
