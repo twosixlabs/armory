@@ -24,6 +24,11 @@ except ModuleNotFoundError:
 from armory.logs import log
 
 
+def to_docker_tag(version_str: str) -> str:
+    '''Convert version string to docker tag'''
+    return version_str.replace('+', '.')
+
+
 def normalize_git_version(git_output: str) -> str:
     '''Normalizes `git describe` output for pip.
     NOTE: This does not add a `+build` tag if pulled from a tagged release.
