@@ -91,7 +91,6 @@ def version_hook():
     if shutil.which('git') is None:
         raise RuntimeError('git is not installed')
     git_dir = Path(execute_command(GIT_DIR_CMD)).absolute()
-    # repo_root = Path(git_dir).parent
     version_file = Path((git_dir.parent) / SOURCE_DIR / VERSION_FILE)
     version_string = get_version(git_dir)
     # Write version to file. This is useful as a durable source of truth for the version.
@@ -100,6 +99,8 @@ def version_hook():
     return version_string
 
 
+# This is used by `hatch` to determine the version.
+# See: https://hatch.pypa.io/latest/plugins/version-source/code/
 __version__ = version_hook()
 
 
