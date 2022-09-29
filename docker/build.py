@@ -1,12 +1,9 @@
-import re
 import sys
 import shutil
 import argparse
 import subprocess
 
 from pathlib import Path
-
-import setuptools_scm
 
 
 script_dir = Path(__file__).parent
@@ -57,30 +54,46 @@ def cli_parser(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def get_version_tag():
-    '''Returns the current git tag version.'''
-    # TODO: Finish after completing build hook
-    version_regex = re.compile(r"(?P<version>\d+(?:\.\d+){2})(?:\.post\w{1,4}\+g)(?P<hash>[0-9a-f]{5,8}).*$")
-    scm_config = {
-        'root': root_dir,
-        'relative_to': __file__,
-        'version_scheme': "post-release",
-    }
-    scm_version  = setuptools_scm.get_version(**scm_config)
-    regex_result = version_regex.match(scm_version)
+def normalize_git_version(git_output: str) -> str:
+    """Normalize `git describe` output.
+    NOTE: This method is similar to the one found in `setup.py` except this
+          will return a valid `docker` tag from the version string. This is
+          done by replacing `+` characters with `.` characters.
 
-    if not regex_result:
-        raise ValueError(f"Unable to parse version from {scm_version}")
+    EXAMPLE:
+        >>> git_version = "1.2.3+build4567abc"
+        >>> pip_version = git_version
+        >>> docker_version = pip_version.replace("+", ".")
+    """
+    normalized_version = git_output[1:] if git_output.startswith('v') else git_output
+    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
+    normalized_version = '.build'.join(normalized_version[0::2])
+    return normalized_version
 
-    sane_version = '.'.join([regex_result.group('version'), regex_result.group('hash')])
-    print(scm_version.replace('+', '.'))
-    exit(sane_version)
-    # 0.15.4.post174+g4dc951a.d20220928
-    # TODO: Use regex to extract version + commit hash; 0.15.4.4dc951a
-    # TODO: Change in `version.py`
-    # scm_version = scm_version.split(".", "-")
 
-    return setuptools_scm.get_version(**scm_config)
+def get_version_tag(git_dir: Path = None) -> str:
+    '''Retrieve the version from the most recent git tag
+    NOTE: In order to ensure consistent versioning, across Armory packaging and
+          containers, parts of this method are similar to the ones found in
+          `setup.py` and `armory/utils/version`.
+    '''
+    if git_dir is None:
+        for exec_path in (Path(__file__), Path.cwd()):
+            if Path(exec_path / ".git").is_dir():
+                git_dir = exec_path
+                break
+    if git_dir is None:
+        sys.exit("ERROR: Unable to find `.git` directory!")
+        return
+
+    git_describe = subprocess.run(
+        ['git', 'describe', '--tags'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout.decode('utf-8').strip()
+
+    return normalize_git_version(git_describe)
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
@@ -121,11 +134,11 @@ def init(*args, **kwargs):
     armory_version = get_version_tag()
     print(f"EXEC:\tRetrieved version {armory_version} from `git` tags.")
     print("EXEC:\tCleaning up...")
-    for key in ["framework", "func"]: del kwargs[key]
+    for key in ["framework", "func"]:
+        del kwargs[key]
     for framework in frameworks:
         print(f"EXEC:\tBuilding {framework} container.")
         build_worker(framework, armory_version, **kwargs)
-
 
 
 if __name__ == "__main__":
