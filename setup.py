@@ -50,6 +50,7 @@ def working_directory(path):
 
 def execute_command(command: list, cwd: Path = None) -> str:
     """Execute a command and return the output."""
+    # TODO: Return (exitcode, stdout, stderr) tuple
     def command_runner(command:list) -> str:
         return subprocess.run(
             command,

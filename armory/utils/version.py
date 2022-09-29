@@ -1,4 +1,4 @@
-"""
+'''
 ARMORY Versions use "Semantic Version" scheme where stable releases will have versions
 like `0.14.6`.  Armory uses the most recent git tag for versioning. For example if the
 most recent git tag is `v0.14.6`, then the version will be `0.14.6`.
@@ -9,8 +9,9 @@ if the most recent git tag is v0.14.6 and the most recent commit hash is 1234567
 the version will be 0.14.6.g1234567. This scheme does differ from the scm strings
 which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d20220314181920
 which is a bit ungainly.
-"""
+'''
 
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -21,6 +22,16 @@ except ModuleNotFoundError:
     from importlib_metadata import version, PackageNotFoundError  # noqa
 
 from armory.logs import log
+
+
+def normalize_git_version(git_output: str) -> str:
+    '''Normalizes `git describe` output for pip.
+    NOTE: This does not add a `+build` tag if pulled from a tagged release.
+    '''
+    normalized_version = git_output.strip().lstrip('v')
+    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
+    normalized_version = '+build'.join(normalized_version[0::2])
+    return normalized_version
 
 
 def get_build_hook_version(version_str: str = '') -> str:
@@ -37,46 +48,29 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
     try:
         return str(metadata.version(package))
     except metadata.PackageNotFoundError:
-        log.error(f"version.py: Unable to find the specified package! Package {package} not installed.")
+        log.error(f"ERROR: Unable to find the specified package! Package {package} not installed.")
     return version_str
-
-
-def normalize_git_version(git_output: str) -> str:
-    """Normalize `git describe` output.
-    NOTE: This does not add a `+build` tag if pulled from a tagged release.
-    """
-    normalized_version = git_output[1:] if git_output.startswith('v') else git_output
-    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
-    normalized_version = '+build'.join(normalized_version[0::2])
-    return normalized_version
 
 
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
-    if git_dir is None:
-        for exec_path in (Path(__file__), Path.cwd()):
-            if Path(exec_path / ".git").is_dir():
-                git_dir = exec_path
-                break
-    # Unable to find `.git` directory...
-    if git_dir is None:
-        log.error("ERROR: Unable to find `.git` directory!")
-        return
-
+    if shutil.which('git') is None:
+        raise RuntimeError('git is not installed')
     git_describe = subprocess.run(
         ['git', 'describe', '--tags'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,
-    ).stdout.decode('utf-8').strip()
-
-    return normalize_git_version(git_describe)
+    )
+    if bool(git_describe.returncode) or not bool(git_describe.stdout):
+        raise RuntimeError('Unable to retrieve git tag')
+    return normalize_git_version(git_describe.stdout.decode('utf-8'))
 
 
 def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
-    version_str = get_metadata_version(package_name)
-    if not bool(version_str):
-        version_str = get_build_hook_version()
-    if not bool(version_str):
-        version_str = get_tag_version()
+    # version_str = get_metadata_version(package_name)
+    # if not bool(version_str):
+    #     version_str = get_build_hook_version()
+    # if not bool(version_str):
+    version_str = get_tag_version()
     return version_str or "0.0.0"

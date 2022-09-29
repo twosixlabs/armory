@@ -65,35 +65,32 @@ def normalize_git_version(git_output: str) -> str:
         >>> pip_version = git_version
         >>> docker_version = pip_version.replace("+", ".")
     """
-    normalized_version = git_output[1:] if git_output.startswith('v') else git_output
+    normalized_version = git_output.strip().lstrip('v')
     normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
     normalized_version = '.build'.join(normalized_version[0::2])
     return normalized_version
 
 
-def get_version_tag(git_dir: Path = None) -> str:
+def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag
     NOTE: In order to ensure consistent versioning, across Armory packaging and
           containers, parts of this method are similar to the ones found in
           `setup.py` and `armory/utils/version`.
     '''
-    if git_dir is None:
-        for exec_path in (Path(__file__), Path.cwd()):
-            if Path(exec_path / ".git").is_dir():
-                git_dir = exec_path
-                break
-    if git_dir is None:
-        sys.exit("ERROR: Unable to find `.git` directory!")
-        return
+    # TODO: Eventually... there should be a separate method for retrieving version
+    #       information that does not require git.
+    if shutil.which('git') is None:
+        raise RuntimeError('git is not installed')
 
     git_describe = subprocess.run(
         ['git', 'describe', '--tags'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=True,
-    ).stdout.decode('utf-8').strip()
-
-    return normalize_git_version(git_describe)
+    )
+    if bool(git_describe.returncode) or not bool(git_describe.stdout):
+        raise RuntimeError('Unable to retrieve git tag')
+    return normalize_git_version(git_describe.stdout.decode('utf-8'))
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
@@ -131,7 +128,7 @@ def init(*args, **kwargs):
     frameworks = [kwargs.get('framework', False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    armory_version = get_version_tag()
+    armory_version = get_tag_version()
     print(f"EXEC:\tRetrieved version {armory_version} from `git` tags.")
     print("EXEC:\tCleaning up...")
     for key in ["framework", "func"]:
