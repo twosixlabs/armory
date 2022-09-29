@@ -25,8 +25,6 @@ classifiers = [
 ]
 
 dependencies = [
-  "wheel",
-  "setuptools_scm",
   "docker==6.0.0",
   "jsonschema==4.16.0",
   "loguru==0.6.0",
@@ -143,7 +141,7 @@ host = [
 #     - https://microsoft.github.io/nlp-recipes/VERSIONING.html
 #########################################
 [build-system]
-requires = ["hatchling>=1.10.0", "hatch-vcs"]
+requires = ["hatchling>=1.10.0", "setuptools"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
