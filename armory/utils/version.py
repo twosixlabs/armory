@@ -11,7 +11,7 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
-import setuptools_scm
+import subprocess
 from pathlib import Path
 
 try:
@@ -41,28 +41,40 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
     return version_str
 
 
+def normalize_git_version(git_output: str) -> str:
+    """Normalize `git describe` output.
+    NOTE: This does not add a `+build` tag if pulled from a tagged release.
+    """
+    normalized_version = git_output[1:] if git_output.startswith('v') else git_output
+    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
+    normalized_version = '+build'.join(normalized_version[0::2])
+    return normalized_version
+
+
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
-    scm_config = {
-        'root': git_dir,
-        'relative_to': __file__,
-        'version_scheme': "post-release",
-        'local_scheme': "no-local-version"
-    }
     if git_dir is None:
         for exec_path in (Path(__file__), Path.cwd()):
             if Path(exec_path / ".git").is_dir():
-                scm_config['root'] = exec_path
+                git_dir = exec_path
                 break
     # Unable to find `.git` directory...
-    if scm_config['root'] is None:
+    if git_dir is None:
         log.error("ERROR: Unable to find `.git` directory!")
         return
-    return setuptools_scm.get_version(**scm_config)
+
+    git_describe = subprocess.run(
+        ['git', 'describe', '--tags'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    ).stdout.decode('utf-8').strip()
+
+    return normalize_git_version(git_describe)
 
 
-def get_version(version_str: str = '') -> str:
-    version_str = get_metadata_version("armory")
+def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
+    version_str = get_metadata_version(package_name)
     if not bool(version_str):
         version_str = get_build_hook_version()
     if not bool(version_str):
