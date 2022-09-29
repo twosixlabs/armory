@@ -51,10 +51,11 @@ jobs:
       # TODO: Create/mount a volume with the tests and config files.
       - name: 🤞 Run Image tests
         run: |
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/pytorch:$(armory --version)  \
+            twosixarmory/pytorch:${ARMORY_VERSION}    \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
@@ -107,10 +108,11 @@ jobs:
 
       - name: 🤞 Run Image tests
         run: |
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/tf2:$(armory --version)      \
+            twosixarmory/tf2:${ARMORY_VERSION}        \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
@@ -159,22 +161,22 @@ jobs:
 
       - name: 🤞 Run Image tests
         run: |
-          VERSION=$(armory --version)
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
 
-          docker run                                  \
-            --rm                                      \
-            --workdir /armory-repo                    \
-            twosixarmory/pytorch-deepspeech:$VERSION  \
-              pytest                                  \
-                -c /armory-repo/pyproject.toml        \
-                -m "not docker_required and unit"     \
+          docker run                                           \
+            --rm                                               \
+            --workdir /armory-repo                             \
+            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+              pytest                                           \
+                -c /armory-repo/pyproject.toml                 \
+                -m "not docker_required and unit"              \
                 ./tests/
 
-            docker run                                \
-            --rm                                      \
-            --workdir /armory-repo                    \
-            twosixarmory/pytorch-deepspeech:$VERSION  \
-              pytest                                  \
-                -c /armory-repo/pyproject.toml        \
-                -m "pytorch_deepspeech"               \
+            docker run                                         \
+            --rm                                               \
+            --workdir /armory-repo                             \
+            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+              pytest                                           \
+                -c /armory-repo/pyproject.toml                 \
+                -m "pytorch_deepspeech"                        \
                 ./tests/
