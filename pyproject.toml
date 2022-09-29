@@ -24,16 +24,18 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
+# the minimal set needed to run armory.main (launcher)
 dependencies = [
-  "docker==6.0.0",
-  "jsonschema==4.16.0",
-  "loguru==0.6.0",
-  "pytest==7.1.3",
-  "PyYAML==5.4.1",
-  "requests==2.28.1",
-  "toml==0.10.2",
+    "wheel",
+    "setuptools_scm",
+    "docker",
+    "jsonschema",
+    "loguru",
+    "pytest",
+    "PyYAML",
+    "requests",
+    "toml",
 ]
-
 
 [project.urls]
 Source        = "https://github.com/twosixlabs/armory"
@@ -43,97 +45,93 @@ Documentation = "https://armory.readthedocs.io/en/latest/"
 armory = "armory.__main__:main"
 
 
+
+# please see docs/getting_started.md#the-armory-flavors for how these
+# optional dependencies work
 [project.optional-dependencies]
-####################### DEVELOPER #######################
-# Example:
-#   $ pip install --force-reinstall --no-compile --editable '.[developer]'
-#   $ hatch build --clean
-#########################################################
+
 developer =[
-  # --------- build tools ----------
-  "hatch",
-  "pre-commit",
-  # -------- code scanning ---------
-  "bandit[toml]",
-  # ---------- formatting ----------
-  "black",
-  "black[jupyter]",
-  "flake8",
-  "tox",
-  "mkdocs==1.3.1",
-  "Markdown==3.3.7",
-  "yamllint==1.28.0",
-  # ----------- testing ------------
-  "Jinja2==3.1.2",
-  "podman",
-  # -------- configuration ---------
-  "hydra-core",
-  "omegaconf",
+    "hatch", # build tools
+    "bandit[toml]", # code scanning
+    "black", # formatting
+    "black[jupyter]",
+    "flake8",
+    "mkdocs",
+    "Markdown",
+    "yamllint",
+    "tox", # testing
+    "Jinja2",
+    "podman",
+    "hydra-core", # configuration
+    "omegaconf",
 ]
 
+engine = [
+    "adversarial-robustness-toolbox==1.12.1",
+    "python-levenshtein",
+    "Pillow == 9.2.0",           # Data dependencies
+    "boto3 == 1.24.72",          # Needed for armory.data.utils
+    "botocore == 1.27.77",       # Needed for armory.data.utils
+    "ffmpeg-python == 0.2.0",    # Needed for armory.utils.export
+    "opencv-python == 4.6.0.66"  # Needed for CARLA baseline scenario
+]
 
-###################### DATASETS #########################
-# Additional requirements needed to build all datasets
-# NOTE: Currently is necessary for armory datasets which
-#       utilizes tfds.  This requires old version of
-#       pyarrow (0.17.1) which requires pip 22.0.3
 datasets = [
-  "apache-beam == 2.22.0",
-  "pydub == 0.24.1",
+    "tensorflow-datasets == 4.6.0",
+    "apache-beam >= 2.22.0",
+    "pydub >= 0.24.1",
 ]
 
-######################## HOST ###########################
-# NOTE:  Install these dependencies if running in a
-#        local environment; e.g. w/out Docker.
-#
-# NOTE:  Currently, this only provides a `pytorch`
-#        environment, covering the CIFAR-10 & CARLA
-#        armory experiments.  A future release will be
-#        more comprehensive.
-#########################################################
-host = [
-  # ------------- art --------------
-  "adversarial-robustness-toolbox == 1.11.1",
-  # ----------- pytorch ------------
-  "sox == 1.4.1",
-  "librosa == 0.9.2",
-  "google-cloud-storage == 2.5.0",
-  "torch == 1.12.1",
-  "torchvision == 0.13.1",
-  "torchaudio == 0.12.1",
-  "torchmetrics >= 0.7.0",
-  "transformers",
-  "pytorch-lightning == 1.4.9",
-  "hydra-core == 1.2.0",
-  "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
-  # ---------- tensorflow ----------
-  "protobuf==3.20.1",
-  "pycocotools==2.0.5",
-  "tensorflow == 2.8.0",
-  "tensorboardx == 2.5.1",
-  "tensorflow-datasets == 4.6.0",
-  "tf-models-official",
-  "object_detection @ git+https://github.com/tensorflow/models/#subdirectory=research/object_detection/packages/tf2",
-  # ------------ dataset ------------
-  "apache-beam >= 2.22.0",
-  "pydub >= 0.24.1",
-  # ------------- numpy -------------
-  "numpy",
-  "scipy>=1.3.2",
-  "scikit-learn>=1.0.0",
-  "matplotlib == 3.5.3",
-  "setuptools==60.0.0",
-  # ----------- jupyter ------------
-  "jupyterlab == 3.4.7",
-  # ------------- misc -------------
-  "python-levenshtein",
-  "Pillow == 9.2.0",           # Data dependencies
-  "boto3 == 1.24.72",          # Needed for armory.data.utils
-  "botocore == 1.27.77",       # Needed for armory.data.utils
-  "ffmpeg-python == 0.2.0",    # Needed for armory.utils.export
-  "opencv-python == 4.6.0.66"  # Needed for CARLA baseline scenario
+
+math = [
+    "numpy==1.21.*",
+    "scipy>=1.3.2",
+    "scikit-learn>=1.0.0",
+    "matplotlib == 3.5.3",
 ]
 
+pytorch = [
+    "armory-testbed[engine,datasets,math]",
+    "sox == 1.4.1",
+    "librosa == 0.9.2",
+    "google-cloud-storage == 2.5.0",
+    "torch == 1.12.1",
+    "torchvision == 0.13.1",
+    "torchaudio == 0.12.1",
+    "torchmetrics >= 0.7.0",
+    "transformers",
+    "pytorch-lightning == 1.4.9",
+    "hydra-core == 1.2.0",
+    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
+]
+
+tensorflow = [
+    "armory-testbed[engine,datasets,math]",
+    "protobuf==3.20.1",
+    "pycocotools==2.0.5",
+    "tensorflow == 2.8.0",
+    "tensorboardx == 2.5.1",
+    "tf-models-official",
+    "object_detection @ git+https://github.com/tensorflow/models/#subdirectory=research/object_detection/packages/tf2",
+]
+
+deepspeech = [
+    "armory-testbed[engine,datasets,math]",
+    "pytorch-lightning==1.4.*",
+    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
+    "python-levenshtein",
+    "hydra-core",
+    "google-cloud-storage",
+    "sox",
+]
+
+jupyter = [
+    "jupyterlab == 3.4.7",
+]
+
+all = [
+    "armory-testbed[pytorch,tensorflow,deepspeech,jupyter,datasets]",
+]
 
 #########################################
 # Build System
