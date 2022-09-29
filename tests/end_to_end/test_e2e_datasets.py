@@ -705,6 +705,36 @@ def test_ucf101_adversarial_112x112(armory_dataset_dir):
         assert y.shape == (batch_size,)
 
 
+def test_speech_commands(armory_dataset_dir):
+
+    batch_size = 16
+    ds_test_size = 4890
+    ds_train_size = 85511
+    sample_length = 16000
+
+    ds = datasets.speech_commands(
+        split="test",
+        pad_data=True,
+        batch_size=batch_size,
+        dataset_dir=armory_dataset_dir,
+    )
+    assert ds.size == ds_test_size
+    assert ds.batch_size == batch_size
+
+    x, y = ds.get_batch()
+    assert x.shape[0] == batch_size
+    assert x.shape[1] == sample_length
+    assert y.shape == (batch_size,)
+
+    ds = datasets.speech_commands(
+        split="train",
+        pad_data=True,
+        batch_size=batch_size,
+        dataset_dir=armory_dataset_dir,
+    )
+    assert ds.size == ds_train_size
+
+
 def test_variable_length(armory_dataset_dir):
     """
     Test batches with variable length items using digit dataset
