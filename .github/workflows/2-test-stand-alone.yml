@@ -42,7 +42,7 @@ jobs:
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          pip install --no-compile --editable '.[developer,host]'
+          pip install --no-compile --editable '.[developer,all]'
           armory configure --use-defaults
 
       - name: 🤞 Run Host Configuration Tests
