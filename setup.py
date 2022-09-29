@@ -49,62 +49,54 @@ def working_directory(path):
 
 
 def execute_command(command: list, cwd: Path = None) -> str:
-  """Execute a command and return the output."""
-  def command_runner(command:list) -> str:
-    return subprocess.run(
-      command,
-      stdout=subprocess.PIPE,
-      stderr=subprocess.PIPE,
-      check=True,
-    ).stdout.decode('utf-8').strip()
+    """Execute a command and return the output."""
+    def command_runner(command:list) -> str:
+        return subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        ).stdout.decode('utf-8').strip()
 
-  if cwd is not None:
-    with working_directory(cwd):
-      return command_runner(command)
-  return command_runner(command)
+    if cwd is not None:
+        with working_directory(cwd):
+            return command_runner(command)
+    return command_runner(command)
 
 
 def normalize_version(git_output: str) -> str:
-  """Normalize `git describe` output.
-  NOTE: This does not add a `+build` tag if pulled from a tagged release.
-  """
-  normalized_version = git_output[1:] if git_output.startswith('v') else git_output
-  normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
-  normalized_version = '+build'.join(normalized_version[0::2])
-  return normalized_version
+    """Normalize `git describe` output.
+    NOTE: This does not add a `+build` tag if pulled from a tagged release.
+    """
+    normalized_version = git_output[1:] if git_output.startswith('v') else git_output
+    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
+    normalized_version = '+build'.join(normalized_version[0::2])
+    return normalized_version
 
 
 def get_version(git_dir: Path = None) -> str:
-  """Retrieve the version from git."""
-  git_describe = execute_command(GIT_DESCRIBE_CMD, cwd=git_dir)
-  version_string = normalize_version(git_describe)
-  # Check if the version is PEP 440 compliant
-  try:
-    version_check = Version(version_string)
-  except ValueError:
-    raise ValueError(f'Version {version_string} is not PEP 440 compliant')
-  return version_string
+    """Retrieve the version from git."""
+    git_describe = execute_command(GIT_DESCRIBE_CMD, cwd=git_dir)
+    version_string = normalize_version(git_describe)
+    # Check if the version is PEP 440 compliant
+    try:
+        version_string = str(Version(version_string))
+    except ValueError:
+        raise ValueError(f'Version {version_string} is not PEP 440 compliant')
+    return version_string
 
 
 def version_hook():
-  if shutil.which('git') is None:
-    raise RuntimeError('git is not installed')
-
-  git_dir = Path(execute_command(GIT_DIR_CMD)).absolute()
-  repo_root = Path(git_dir).parent
-  version_file = Path(repo_root / SOURCE_DIR / VERSION_FILE)
-  version_string = get_version(git_dir)
-
-  # Write version to file. This is useful as a durable source of truth for the version.
-  version_file.write_text(VERSION_FILE_TEMPLATE.format(version=version_string))
-  version_file.chmod(0o644)
-
-  return version_string
-
-
-
-
-# TODO: Check how docker/images handles `+` characters in version strings
+    if shutil.which('git') is None:
+        raise RuntimeError('git is not installed')
+    git_dir = Path(execute_command(GIT_DIR_CMD)).absolute()
+    # repo_root = Path(git_dir).parent
+    version_file = Path((git_dir.parent) / SOURCE_DIR / VERSION_FILE)
+    version_string = get_version(git_dir)
+    # Write version to file. This is useful as a durable source of truth for the version.
+    version_file.write_text(VERSION_FILE_TEMPLATE.format(version=version_string))
+    version_file.chmod(0o644)
+    return version_string
 
 
 __version__ = version_hook()
