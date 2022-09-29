@@ -16,14 +16,14 @@ COPY ./ /armory-repo
 #       pip install librosa does not install sndfile dependency
 RUN /opt/conda/bin/conda install -c conda-forge librosa
 
-RUN echo "Building Armory from local source"                            && \
-    echo "Updating Base Image..."                                       && \
-      python -m pip install --upgrade pip                               && \
-    echo "Installing Armory..."                                         && \
-      pip install --no-compile --no-cache-dir --editable '.[host]'      && \
-    echo "Configuring Armory..."                                        && \
-      armory configure --use-default                                    && \
-    echo "Cleaning up..."                                               && \
+RUN echo "Building Armory from local source"                                     && \
+    echo "Updating Base Image..."                                                && \
+      python -m pip install --upgrade pip                                        && \
+    echo "Installing Armory..."                                                  && \
+      pip install --no-compile --no-cache-dir --editable '.[deepspeech,jupyter]' && \
+    echo "Configuring Armory..."                                                 && \
+      armory configure --use-default                                             && \
+    echo "Cleaning up..."                                                        && \
       rm -rf /armory-repo/.git
 
 WORKDIR /workspace
