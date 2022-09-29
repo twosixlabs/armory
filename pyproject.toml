@@ -45,11 +45,9 @@ Documentation = "https://armory.readthedocs.io/en/latest/"
 armory = "armory.__main__:main"
 
 
-
 # please see docs/getting_started.md#the-armory-flavors for how these
 # optional dependencies work
 [project.optional-dependencies]
-
 developer =[
     "hatch", # build tools
     "bandit[toml]", # code scanning
@@ -81,7 +79,6 @@ datasets = [
     "apache-beam >= 2.22.0",
     "pydub >= 0.24.1",
 ]
-
 
 math = [
     "numpy==1.21.*",
@@ -116,13 +113,8 @@ tensorflow = [
 ]
 
 deepspeech = [
-    "armory-testbed[engine,datasets,math]",
-    "pytorch-lightning==1.4.*",
-    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
+    "armory-testbed[pytorch,engine,datasets,math]",
     "python-levenshtein",
-    "hydra-core",
-    "google-cloud-storage",
-    "sox",
 ]
 
 jupyter = [
@@ -130,7 +122,7 @@ jupyter = [
 ]
 
 all = [
-    "armory-testbed[pytorch,tensorflow,deepspeech,jupyter,datasets]",
+    "armory-testbed[pytorch,tensorflow,deepspeech,jupyter]",
 ]
 
 #########################################
