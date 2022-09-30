@@ -11,8 +11,6 @@ from tensorflow import keras
 
 from art.estimators.classification import TensorFlowV2Classifier
 
-tf.compat.v1.disable_eager_execution()
-
 
 def get_spectrogram(audio):
     waveform = tf.convert_to_tensor(audio, dtype=tf.float32)
