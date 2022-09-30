@@ -20,18 +20,17 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_train_val_2.0.0_dataset.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_train_val_dataset_1.0.0.tar.gz"
 # fmt: on
 
 
-class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
+class CarlaOverObjDetTrain(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_train dataset."""
 
-    VERSION = tfds.core.Version("2.0.0")
+    VERSION = tfds.core.Version("1.0.0")
+    # Migrated from carla_obj_det_train name during Version 3 update
     RELEASE_NOTES = {
-        "1.0.0": "Initial release.",
-        "1.0.1": "Correcting error to RGB and depth image pairing",
-        "2.0.0": "Eval5 update with higher resolution, HD textures, and accurate annotations",
+        "1.0.0": "Eval6 update from CarlaObjDetTrain with images collected from overhead perspectives",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -58,7 +57,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
             "categories": tfds.features.Sequence(
                 tfds.features.FeaturesDict(
                     {
-                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2, 'trafficlight':3}
+                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2}
                         "name": tfds.features.Text(),
                         "supercategory": tfds.features.Text(),
                     }
@@ -71,7 +70,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
                     "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "labels": tfds.features.ClassLabel(num_classes=5),
+                    "labels": tfds.features.ClassLabel(num_classes=3),
                     "is_crowd": tf.bool,
                 }
             ),
@@ -118,7 +117,7 @@ class CarlaObjDetTrain(tfds.core.GeneratorBasedBuilder):
             image.pop("license", None)
             image.pop("flickr_url", None)
             image.pop("coco_url", None)
-            image.pop("data_captured", None)
+            image.pop("date_captured", None)
 
             fname = image["file_name"]
 
