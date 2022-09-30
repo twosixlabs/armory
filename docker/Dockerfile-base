@@ -37,11 +37,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     echo "conda activate base" >> ~/.bashrc && \
     echo 'alias ll="ls -al"' >> ~/.bashrc
 
-ENV PATH=/opt/conda/bin:$PATH
-
 # conda installations ordered by channel
-
-# TODO Figure out why we need to support this and `armory-base-requirements` separately.
 
 # Conda Install for Channel: pytorch
 RUN /opt/conda/bin/conda install \
@@ -112,8 +108,8 @@ RUN /opt/conda/bin/conda install \
 RUN /opt/conda/bin/pip install --no-cache-dir \
     tensorflow-datasets==4.6 \
     tensorflow==2.10 \
-    tensorboardx==2.5 \
-    boto3==1.20 \
+    tensorboardx \
+    boto3 \
     opencv-python \
     ffmpeg-python \
     pytest \
@@ -134,6 +130,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 # pydub==0.25.1
 # required for ART mp3 defense
 
+ENV PATH=/opt/conda/bin:$PATH
 # TensorFlow requirement
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
 
