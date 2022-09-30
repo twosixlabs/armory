@@ -49,35 +49,39 @@ armory = "armory.__main__:main"
 # optional dependencies work
 [project.optional-dependencies]
 developer =[
-    "hatch", # build tools
+    "hatch", # build tool
     "bandit[toml]", # code scanning
-    "black", # formatting
-    "black[jupyter]",
+    "black[jupyter]==22.*",
     "flake8",
     "mkdocs",
-    "Markdown",
     "yamllint",
     "tox", # testing
-    "Jinja2",
     "podman",
     "hydra-core", # configuration
-    "omegaconf",
 ]
 
 engine = [
     "adversarial-robustness-toolbox==1.12.1",
-    "python-levenshtein",
     "Pillow == 9.2.0",           # Data dependencies
     "boto3 == 1.24.72",          # Needed for armory.data.utils
     "botocore == 1.27.77",       # Needed for armory.data.utils
     "ffmpeg-python == 0.2.0",    # Needed for armory.utils.export
-    "opencv-python == 4.6.0.66"  # Needed for CARLA baseline scenario
+    "opencv-python == 4.6.0.66",  # Needed for CARLA baseline scenario
+    "pydub >= 0.24.1",           # this is in ART's extra-requires
+    "tensorboardx == 2.5.1",
 ]
 
 datasets = [
     "tensorflow-datasets == 4.6.0",
+    # TODO: this duplicate "tensorflow" is unclean. Unfortunately, tfds does
+    # not require "tensorflow" so we need to add it here.
+    "tensorflow == 2.8.0",
+    "protobuf==3.20.1",
+]
+
+datasets-builder = [
+    "armory-testbed[datasets,engine]",
     "apache-beam >= 2.22.0",
-    "pydub >= 0.24.1",
 ]
 
 math = [
@@ -89,25 +93,14 @@ math = [
 
 pytorch = [
     "armory-testbed[engine,datasets,math]",
-    "sox == 1.4.1",
-    "librosa == 0.9.2",
-    "google-cloud-storage == 2.5.0",
     "torch == 1.12.1",
     "torchvision == 0.13.1",
     "torchaudio == 0.12.1",
-    "torchmetrics == 0.9.3",
-    "transformers",
-    "pytorch-lightning == 1.4.9",
-    "hydra-core == 1.2.0",
-    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
 ]
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
-    "protobuf==3.20.1",
-    "pycocotools==2.0.5",
     "tensorflow == 2.8.0",
-    "tensorboardx == 2.5.1",
     "tf-models-official",
     "object_detection @ git+https://github.com/tensorflow/models/#subdirectory=research/object_detection/packages/tf2",
 ]
@@ -115,6 +108,14 @@ tensorflow = [
 deepspeech = [
     "armory-testbed[pytorch,engine,datasets,math]",
     "python-levenshtein",
+    "torchmetrics == 0.9.3",
+    "sox == 1.4.1",
+    "librosa == 0.9.2",
+    "google-cloud-storage == 2.5.0",
+    "transformers",
+    "pytorch-lightning == 1.4.9",
+    "hydra-core == 1.2.0",
+    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
 ]
 
 jupyter = [

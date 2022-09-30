@@ -105,6 +105,10 @@ set:
 
     pip install armory-testbed[deepspeech,developer,jupyterlab]
 
+Developers who are creating new Armory datasets will need
+
+    pip install armory-testbed[datasets-builder]
+
 ## editable installs
 
 As before, the `--editable` flag can be used to install in editable mode
