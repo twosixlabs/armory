@@ -38,7 +38,7 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
     try:
         return str(metadata.version(package))
     except metadata.PackageNotFoundError:
-        log.error(f"ERROR: Unable to find the specified package! Package {package} not installed.")
+        log.warning(f"ERROR: Unable to find the specified package! Package {package} not installed.")
     return version_str
 
 
@@ -93,7 +93,7 @@ def developer_mode_version(
         version_regex = r'(?P<prefix>^Version: )(?P<version>.*)$'
         [package_meta] = [f for f in metadata.files(package_name) if str(f).endswith('METADATA')] or False
         if not package_meta:
-            log.error(f'Unable to find package metadata for {package_name}')
+            log.warning(f'Unable to find package metadata for {package_name}')
             return version_str
         for path in site.getsitepackages():
             metadata_path = Path(path / package_meta)
