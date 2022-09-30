@@ -36,7 +36,9 @@ from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
-from armory.data.carla_overhead_object_detection import carla_over_obj_det_train as coodt
+from armory.data.carla_overhead_object_detection import (
+    carla_over_obj_det_train as coodt,
+)
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -1019,6 +1021,7 @@ def carla_over_obj_det_train(
         supervised_xy_keys=("image", "objects"),
         **kwargs,
     )
+
 
 def cifar10(
     split: str = "train",
