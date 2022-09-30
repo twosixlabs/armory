@@ -26,7 +26,6 @@ classifiers = [
 
 # the minimal set needed to run armory.main (launcher)
 dependencies = [
-    "wheel",
     "setuptools_scm",
     "docker",
     "jsonschema",
@@ -50,13 +49,13 @@ armory = "armory.__main__:main"
 [project.optional-dependencies]
 developer =[
     "hatch", # build tool
-    "bandit[toml]", # code scanning
+    "wheel",
+    "mkdocs",
     "black[jupyter]==22.*",
     "flake8",
-    "mkdocs",
     "yamllint",
+    "bandit[toml]", # code scanning
     "tox", # testing
-    "podman",
     "hydra-core", # configuration
 ]
 
