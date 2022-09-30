@@ -33,6 +33,7 @@ class CacheTrigger:
         self.random = random
         self.shift = shift
         self.scale = scale
+
     def insert(self, x: np.ndarray) -> np.ndarray:
         """
         :param x: N x L matrix or length L array, where N is number of examples, L is the length in number of samples.
@@ -104,6 +105,8 @@ class CacheToneTrigger(CacheTrigger):
         """
         trigger = librosa.tone(frequency, sr=sampling_rate, duration=duration)
         super().__init__(trigger, **kwargs)
+
+
 def poison_loader_audio(**kwargs):
     backdoor_kwargs = kwargs.pop("backdoor_kwargs")
 
