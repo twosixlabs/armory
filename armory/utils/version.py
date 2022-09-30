@@ -21,7 +21,7 @@ from pathlib import Path
 
 try:
     from importlib import metadata
-except ModuleNotFoundError:
+except ImportError:
     # Python <= 3.7
     import importlib_metadata as metadata # noqa
 
