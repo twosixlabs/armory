@@ -53,7 +53,7 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "tfds_upgrade:4.6.0",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

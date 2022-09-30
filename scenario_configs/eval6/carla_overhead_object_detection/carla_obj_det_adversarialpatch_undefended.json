@@ -6,7 +6,7 @@
         "kwargs": {
             "batch_size": 1,
             "learning_rate": 0.003,
-            "max_iter": 10,
+            "max_iter": 1000,
             "optimizer": "pgd",
             "targeted": false,
             "verbose": true
@@ -53,7 +53,7 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "tfds_upgrade:4.6.0",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
