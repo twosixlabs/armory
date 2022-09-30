@@ -5,21 +5,23 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "learning_rate": 0.002,
-            "max_iter": 2000,
+            "learning_rate": 0.003,
+            "max_iter": 1000,
+            "optimizer": "pgd",
+            "targeted": false,
             "verbose": true
         },
-        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
-        "name": "CARLADapricotPatch",
-        "use_label": false
+        "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
+        "name": "CARLAAdversarialPatchPyTorch",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 1,
-        "eval_split": "dev",
+        "eval_split": "val",
         "framework": "numpy",
         "modality": "rgb",
-        "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev"
+        "module": "armory.data.datasets",
+        "name": "carla_over_obj_det_train"
     },
     "defense": null,
     "metric": {
@@ -51,8 +53,8 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "tfds_upgrade:4.6.0",
-        "external_github_repo": "colour-science/colour@v0.3.16",
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,

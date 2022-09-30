@@ -1,10 +1,6 @@
-"""carla_obj_det_dev dataset."""
-
 import collections
 import json
 import os
-from copy import deepcopy
-import numpy as np
 
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
@@ -24,18 +20,17 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev_2.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_train_val_1.0.0.tar.gz"
 # fmt: on
 
 
-class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
-    """DatasetBuilder for carla_obj_det_dev dataset."""
+class CarlaOverObjDetTrain(tfds.core.GeneratorBasedBuilder):
+    """DatasetBuilder for carla_obj_det_train dataset."""
 
-    VERSION = tfds.core.Version("2.0.0")
+    VERSION = tfds.core.Version("1.0.0")
+    # Migrated from carla_obj_det_train name during Version 3 update
     RELEASE_NOTES = {
-        "1.0.0": "Initial release.",
-        "1.0.1": "Correcting error to RGB and depth image pairing",
-        "2.0.0": "Eval5 update with higher resolution, HD textures, accurate annotations, and objects overlapping patch",
+        "1.0.0": "Eval6 update from CarlaObjDetTrain with images collected from overhead perspectives",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -62,7 +57,7 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
             "categories": tfds.features.Sequence(
                 tfds.features.FeaturesDict(
                     {
-                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2, 'trafficlight':3}
+                        "id": tf.int64,  # {'pedstrian':1, 'vehicles':2}
                         "name": tfds.features.Text(),
                         "supercategory": tfds.features.Text(),
                     }
@@ -75,19 +70,8 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
                     "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "labels": tfds.features.ClassLabel(num_classes=5),
+                    "labels": tfds.features.ClassLabel(num_classes=3),
                     "is_crowd": tf.bool,
-                }
-            ),
-            # these data only apply to the "green screen patch" objects, which both modalities share
-            "patch_metadata": tfds.features.FeaturesDict(
-                {
-                    # green screen vertices in (x,y) starting from top-left moving clockwise
-                    "gs_coords": tfds.features.Tensor(shape=[4, 2], dtype=tf.int32),
-                    # binarized segmentation mask of patch.
-                    # mask[x,y] == 1 indicates patch pixel; 0 otherwise
-                    "mask": tfds.features.Image(shape=(960, 1280, 3)),
-                    "avg_patch_depth": tfds.features.Tensor(shape=(), dtype=tf.float64),
                 }
             ),
         }
@@ -104,61 +88,49 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
         path = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name="dev",
-                gen_kwargs={"path": os.path.join(path, "dev")},
+                name=split,
+                gen_kwargs={"path": os.path.join(path, split)},
             )
+            for split in ["train", "val"]
         ]
 
     def _generate_examples(self, path):
         """yield examples"""
-
         # For each image, gets its annotations and yield relevant data
-        depth_folder = "_out/sensor.camera.depth.2"
-        foreground_mask_folder = "_out/foreground_mask"
-        patch_metadata_folder = "_out/patch_metadata"
 
-        annotation_path = os.path.join(
-            path, "_out", "kwcoco_annotations_without_patch_and_sans_tiny_objects.json"
-        )
+        yield_id = 0
+
+        annotation_path = os.path.join(path, "kwcoco_annotations.json")
 
         cocoanno = COCOAnnotation(annotation_path)
 
-        images_rgb = (
+        images = (
             cocoanno.images()
-        )  # list of dictionaries of RGB image id, height, width, file_name
+        )  # list of dictionaries of image id, height, width, file_name
 
         # sort images alphabetically
-        images_rgb = sorted(images_rgb, key=lambda x: x["file_name"].lower())
+        images = sorted(images, key=lambda x: x["file_name"].lower())
 
-        for idx, image_rgb in enumerate(images_rgb):
+        for image in images:
 
-            # Discard irrelevant fields
-            image_rgb.pop("date_captured")
-            image_rgb.pop("license")
-            image_rgb.pop("coco_url")
-            image_rgb.pop("flickr_url")
-            image_rgb.pop("video_id")
-            image_rgb.pop("frame_index")
+            # remove unimportant keys/values
+            image.pop("license", None)
+            image.pop("flickr_url", None)
+            image.pop("coco_url", None)
+            image.pop("date_captured", None)
 
-            # Pairing RGB and depth
-            fpath_rgb = image_rgb["file_name"]  # rgb image path
-            fname = fpath_rgb.split("/")[-1]
-            fname_no_ext = fname.split(".")[0]
-            fpath_depth = os.path.join(depth_folder, fname)  # depth image path
-            image_depth = deepcopy(image_rgb)
-            image_depth["file_name"] = fpath_depth
+            fname = image["file_name"]
 
             # get object annotations for each image
-            annotations = cocoanno.get_annotations(image_rgb["id"])
+            annotations = cocoanno.get_annotations(image["id"])
 
-            # For unknown reasons, when kwcoco is saved after removing tiny objects,
-            # bbox format changes from [x,y,w,h] to [x1,y1,x2,y1]
-            def build_bbox(x1, y1, x2, y2):
+            # convert bbox to Tensorflow format
+            def build_bbox(x, y, width, height):
                 return tfds.features.BBox(
-                    ymin=y1 / image_rgb["height"],
-                    xmin=x1 / image_rgb["width"],
-                    ymax=y2 / image_rgb["height"],
-                    xmax=x2 / image_rgb["width"],
+                    ymin=y / image["height"],
+                    xmin=x / image["width"],
+                    ymax=(y + height) / image["height"],
+                    xmax=(x + width) / image["width"],
                 )
 
             example = {
@@ -167,9 +139,12 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
                         path,
                         modality,
                     )
-                    for modality in [fpath_rgb, fpath_depth]
+                    for modality in [
+                        os.path.join("rgb", fname),
+                        os.path.join("depth", fname),
+                    ]
                 ],
-                "images": [image_rgb, image_depth],
+                "images": [image, image],
                 "categories": cocoanno.categories(),
                 "objects": [
                     {
@@ -178,26 +153,15 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
                         "area": anno["area"],
                         "boxes": build_bbox(*anno["bbox"]),
                         "labels": anno["category_id"],
-                        "is_crowd": bool(anno["iscrowd"]),
+                        "is_crowd": 0,
                     }
                     for anno in annotations
                 ],
-                "patch_metadata": {
-                    "gs_coords": np.load(
-                        os.path.join(
-                            path, patch_metadata_folder, fname_no_ext + "_coords.npy"
-                        )
-                    ),
-                    "avg_patch_depth": np.load(
-                        os.path.join(
-                            path, patch_metadata_folder, fname_no_ext + "_avg_depth.npy"
-                        )
-                    ),
-                    "mask": os.path.join(path, foreground_mask_folder, fname),
-                },
             }
 
-            yield idx, example
+            yield_id = yield_id + 1
+
+            yield yield_id, example
 
 
 class COCOAnnotation(object):

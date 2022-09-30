@@ -1,25 +1,29 @@
 {
-    "_description": "CARLA single modality object detection, contributed by MITRE Corporation",
+    "_description": "CARLA multimodality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "learning_rate": 0.002,
-            "max_iter": 2000,
+            "depth_delta_meters": 0.03,
+            "learning_rate": 0.003,
+            "learning_rate_depth": 0.0001,
+            "max_iter": 1000,
+            "optimizer": "pgd",
+            "targeted": false,
             "verbose": true
         },
-        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
-        "name": "CARLADapricotPatch",
-        "use_label": false
+        "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
+        "name": "CARLAAdversarialPatchPyTorch",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 1,
         "eval_split": "dev",
         "framework": "numpy",
-        "modality": "rgb",
+        "modality": "both",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev"
+        "name": "carla_over_obj_det_dev"
     },
     "defense": null,
     "metric": {
@@ -37,12 +41,10 @@
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {
-            "num_classes": 3
-        },
-        "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
-        "name": "get_art_model",
-        "weights_file": "carla_rgb_weights_eval6.pt",
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn",
+        "name": "get_art_model_mm",
+        "weights_file": "carla_multimodal_naive_weights_eval6.pt",
         "wrapper_kwargs": {}
     },
     "scenario": {
@@ -51,8 +53,8 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "tfds_upgrade:4.6.0",
-        "external_github_repo": "colour-science/colour@v0.3.16",
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
