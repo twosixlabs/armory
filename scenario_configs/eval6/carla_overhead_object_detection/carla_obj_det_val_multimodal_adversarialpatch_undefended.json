@@ -22,7 +22,7 @@
         "eval_split": "val",
         "framework": "numpy",
         "modality": "both",
-        "module": "armory.data.adversarial_datasets",
+        "module": "armory.data.datasets",
         "name": "carla_over_obj_det_train"
     },
     "defense": null,
