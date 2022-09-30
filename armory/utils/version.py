@@ -14,6 +14,7 @@ which is a bit ungainly.
 import os
 import re
 import site
+import functools
 import setuptools_scm
 
 from pathlib import Path
@@ -46,7 +47,7 @@ def get_build_hook_version(version_str: str = '') -> str:
     try:
         from armory.__about__ import __version__ as version_str
     except ModuleNotFoundError:
-        log.error("ERROR: Unable to extract version from __about__.py")
+        log.warning("ERROR: Unable to extract version from __about__.py")
     return version_str
 
 
@@ -109,6 +110,7 @@ def developer_mode_version(
     return version_str
 
 
+@functools.lru_cache(maxsize=1, typed=False)
 def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
     if os.getenv('ARMORY_DEV_MODE'):
         pretend_version = os.getenv('ARMORY_PRETEND_VERSION')
