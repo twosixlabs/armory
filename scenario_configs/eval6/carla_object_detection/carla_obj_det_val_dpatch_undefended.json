@@ -15,26 +15,13 @@
     },
     "dataset": {
         "batch_size": 1,
-        "eval_split": "dev",
+        "eval_split": "val",
         "framework": "numpy",
         "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev"
+        "name": "carla_obj_det_train"
     },
-    "defense": {
-        "kwargs": {
-            "apply_fit": false,
-            "apply_predict": true,
-            "clip_values": [
-                0.0,
-                1.0
-            ],
-            "quality": 50
-        },
-        "module": "art.defences.preprocessor",
-        "name": "JpegCompression",
-        "type": "Preprocessor"
-    },
+    "defense": null,
     "metric": {
         "means": true,
         "perturbation": "l0",
