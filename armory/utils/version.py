@@ -111,15 +111,20 @@ def developer_mode_version(
 
 
 @functools.lru_cache(maxsize=1, typed=False)
-def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
+def get_version() -> str:
+    package_name = 'armory-testbed'
+
     if os.getenv('ARMORY_DEV_MODE'):
         pretend_version = os.getenv('ARMORY_PRETEND_VERSION')
         update_metadata = os.getenv('ARMORY_UPDATE_METADATA')
         return developer_mode_version(package_name, pretend_version, update_metadata)
 
-    version_str = get_build_hook_version()
+    version_str = get_tag_version()
+    if not version_str:
+        version_str = get_build_hook_version()
     if not version_str:
         version_str = get_metadata_version(package_name)
-    if not version_str:
-        version_str = get_tag_version()
-    return version_str
+    if version_str:
+        return version_str
+
+    raise RuntimeError("Unable to determine version number!")
