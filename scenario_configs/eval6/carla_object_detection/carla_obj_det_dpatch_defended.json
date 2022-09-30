@@ -19,7 +19,7 @@
         "framework": "numpy",
         "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev"
+        "name": "carla_over_obj_det_dev"
     },
     "defense": {
         "kwargs": {
