@@ -65,7 +65,7 @@ def get_tag_version(git_dir: Path = None) -> str:
         log.error("ERROR: Unable to find `.git` directory!")
         return
     scm_config.update({'root': git_dir[0]})
-    return setuptools_scm.get_version(**scm_config).replace("+", ".")
+    return setuptools_scm.get_version(**scm_config)
 
 
 def developer_mode_version(
