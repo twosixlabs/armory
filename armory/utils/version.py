@@ -11,15 +11,18 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 '''
 
-import shutil
-import subprocess
+import os
+import re
+import site
+import setuptools_scm
+
 from pathlib import Path
 
 try:
     from importlib import metadata
 except ModuleNotFoundError:
     # Python <= 3.7
-    from importlib_metadata import version, PackageNotFoundError  # noqa
+    import importlib_metadata as metadata # noqa
 
 from armory.logs import log
 
@@ -27,25 +30,6 @@ from armory.logs import log
 def to_docker_tag(version_str: str) -> str:
     '''Convert version string to docker tag'''
     return version_str.replace('+', '.')
-
-
-def normalize_git_version(git_output: str) -> str:
-    '''Normalizes `git describe` output for pip.
-    NOTE: This does not add a `+build` tag if pulled from a tagged release.
-    '''
-    normalized_version = git_output.strip().lstrip('v')
-    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
-    normalized_version = '+build'.join(normalized_version[0::2])
-    return normalized_version
-
-
-def get_build_hook_version(version_str: str = '') -> str:
-    '''Retrieve the version from the build hook'''
-    try:
-        from armory.__about__ import __version__ as version_str
-    except ModuleNotFoundError:
-        log.error("ERROR: Unable to extract version from __about__.py")
-    return version_str
 
 
 def get_metadata_version(package: str, version_str: str = '') -> str:
@@ -57,25 +41,83 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
     return version_str
 
 
+def get_build_hook_version(version_str: str = '') -> str:
+    '''Retrieve the version from the build hook'''
+    try:
+        from armory.__about__ import __version__ as version_str
+    except ModuleNotFoundError:
+        log.error("ERROR: Unable to extract version from __about__.py")
+    return version_str
+
+
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
-    if shutil.which('git') is None:
-        raise RuntimeError('git is not installed')
-    git_describe = subprocess.run(
-        ['git', 'describe', '--tags'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    )
-    if bool(git_describe.returncode) or not bool(git_describe.stdout):
-        raise RuntimeError('Unable to retrieve git tag')
-    return normalize_git_version(git_describe.stdout.decode('utf-8'))
+    project_paths = [Path(__file__).parent.parent, Path.cwd()]
+    git_dir = list(filter(lambda path: Path(path / ".git").is_dir(), project_paths))
+    scm_config = {
+        'root': git_dir,
+        'relative_to': __file__,
+        'version_scheme': "post-release",
+        'local_scheme': "node-and-date",
+    }
+    if not git_dir:
+        log.error("ERROR: Unable to find `.git` directory!")
+        return
+    scm_config.update({'root': git_dir[0]})
+    return setuptools_scm.get_version(**scm_config).replace("+", ".")
+
+
+def developer_mode_version(
+        package_name: str,
+        pretend_version: str = False,
+        update_metadata: bool = False) -> str:
+    '''Return the version in developer mode
+
+    Args:
+        param1 (int): The first parameter.
+        package_name (str): The name of the package.
+        pretend_version (str): The version to pretend to be.
+        update_metadata (bool): Whether to update the metadata.
+
+    Example:
+        $ ARMORY_DEV_MODE=1 ARMORY_PRETEND_VERSION="1.2.3" armory --version
+    '''
+    old_version = get_metadata_version(package_name)
+    version_str = pretend_version or get_tag_version()
+
+    if pretend_version:
+        log.info(f'Spoofing version {pretend_version} for {package_name}')
+        return version_str
+    if update_metadata:
+        version_regex = r'(?P<prefix>^Version: )(?P<version>.*)$'
+        [package_meta] = [f for f in metadata.files(package_name) if str(f).endswith('METADATA')] or False
+        if not package_meta:
+            log.error(f'Unable to find package metadata for {package_name}')
+            return version_str
+        for path in site.getsitepackages():
+            metadata_path = Path(path / package_meta)
+            if metadata_path.is_file():
+                break
+        metadata_update = re.sub(
+            version_regex,
+            f'\g<prefix>{version_str}',  # noqa
+            metadata_path.read_text(),
+            flags=re.M)
+        metadata_path.write_text(metadata_update)
+        log.info(f'Version updated from {old_version} to {version_str}')
+
+    return version_str
 
 
 def get_version(package_name: str = 'armory-testbed', version_str: str = '') -> str:
-    version_str = get_metadata_version(package_name)
-    if not bool(version_str):
-        version_str = get_build_hook_version()
-    if not bool(version_str):
+    if os.getenv('ARMORY_DEV_MODE'):
+        pretend_version = os.getenv('ARMORY_PRETEND_VERSION')
+        update_metadata = os.getenv('ARMORY_UPDATE_METADATA')
+        return developer_mode_version(package_name, pretend_version, update_metadata)
+
+    version_str = get_build_hook_version()
+    if not version_str:
+        version_str = get_metadata_version(package_name)
+    if not version_str:
         version_str = get_tag_version()
-    return version_str or "0.0.0"
+    return version_str

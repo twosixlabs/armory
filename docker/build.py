@@ -2,6 +2,7 @@ import sys
 import shutil
 import argparse
 import subprocess
+import setuptools_scm
 
 from pathlib import Path
 
@@ -54,43 +55,22 @@ def cli_parser(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def normalize_git_version(git_output: str) -> str:
-    """Normalize `git describe` output.
-    NOTE: This method is similar to the one found in `setup.py` except this
-          will return a valid `docker` tag from the version string. This is
-          done by replacing `+` characters with `.` characters.
-
-    EXAMPLE:
-        >>> git_version = "1.2.3+build4567abc"
-        >>> pip_version = git_version
-        >>> docker_version = pip_version.replace("+", ".")
-    """
-    normalized_version = git_output.strip().lstrip('v')
-    normalized_version = [part.lstrip('g') for part in normalized_version.split('-')]
-    normalized_version = '.build'.join(normalized_version[0::2])
-    return normalized_version
-
-
 def get_tag_version(git_dir: Path = None) -> str:
-    '''Retrieve the version from the most recent git tag
-    NOTE: In order to ensure consistent versioning, across Armory packaging and
-          containers, parts of this method are similar to the ones found in
-          `setup.py` and `armory/utils/version`.
-    '''
-    # TODO: Eventually... there should be a separate method for retrieving version
-    #       information that does not require git.
-    if shutil.which('git') is None:
-        raise RuntimeError('git is not installed')
-
-    git_describe = subprocess.run(
-        ['git', 'describe', '--tags'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    )
-    if bool(git_describe.returncode) or not bool(git_describe.stdout):
-        raise RuntimeError('Unable to retrieve git tag')
-    return normalize_git_version(git_describe.stdout.decode('utf-8'))
+    '''Retrieve the version from the most recent git tag'''
+    project_paths = [Path(__file__).parent.parent, Path.cwd()]
+    git_dir = list(filter(lambda path: Path(path / ".git").is_dir(), project_paths))
+    scm_config = {
+        'root': git_dir,
+        'relative_to': __file__,
+        'version_scheme': "post-release",
+        'local_scheme': "node-and-date",
+    }
+    if not git_dir:
+        sys.exit("ERROR: Unable to find `.git` directory!")
+        return
+    scm_config.update({'root': git_dir[0]})
+    # Note: The replace is used to convert the version to a valid docker tag.
+    return setuptools_scm.get_version(**scm_config).replace("+", ".")
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
