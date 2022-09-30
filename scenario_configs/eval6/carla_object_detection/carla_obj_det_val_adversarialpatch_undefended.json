@@ -21,7 +21,7 @@
         "framework": "numpy",
         "modality": "rgb",
         "module": "armory.data.datasets",
-        "name": "carla_obj_det_train"
+        "name": "carla_over_obj_det_train"
     },
     "defense": null,
     "metric": {
