@@ -1,5 +1,5 @@
 {
-    "_description": "CIFAR10 DLBD poison image classification",
+    "_description": "Speech Commands DLBD poison audio classification",
     "adhoc": {
         "compute_fairness_metrics": false,
         "experiment_id": 0,
@@ -40,7 +40,7 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.tf_graph.audio_cnn",
+        "module": "armory.baseline_models.tf_graph.audio_resnet50",
         "name": "get_art_model",
         "weights_file": null,
         "wrapper_kwargs": {}
