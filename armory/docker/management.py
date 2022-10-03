@@ -2,7 +2,7 @@
 Docker orchestration managers for ARMORY.
 """
 
-
+import os
 import docker
 
 import armory
@@ -28,6 +28,10 @@ class ArmoryInstance(object):
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
+        mount_paths = ["dataset_dir", "output_dir", "saved_model_dir", "tmp_dir"]
+
+        if os.getenv('ARMORY_DEV_MODE'):
+            mount_paths.extend(["local_git_dir", "cwd"])
 
         mounts = [
             docker.types.Mount(
@@ -36,7 +40,7 @@ class ArmoryInstance(object):
                 type="bind",
                 read_only=False,
             )
-            for dir in "cwd dataset_dir local_git_dir output_dir saved_model_dir tmp_dir".split()
+            for dir in mount_paths
         ]
 
         container_args = {
