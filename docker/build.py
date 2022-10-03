@@ -61,20 +61,6 @@ def cli_parser(argv=sys.argv[1:]):
     return parser.parse_args(argv)
 
 
-def get_tag_version(git_dir: Path = None) -> str:
-    '''Retrieve the version from the most recent git tag'''
-    try:
-        from armory import __version__ as version
-    except ImportError:
-        project_paths = [Path(__file__).parent.parent, Path.cwd()]
-        git_dir = list(filter(lambda path: Path(path / ".git").is_dir(), project_paths))
-        version = setuptools_scm.get_version(
-            root=git_dir, relative_to=__file__, git_exe="git", version_scheme="post-release"
-        )
-    # Note: The replace is used to convert the version to a valid docker tag.
-    return version.replace("+", ".")
-
-
 def build_worker(framework, version, platform, base_tag, **kwargs):
     '''Builds armory container for a given framework.'''
     dockerfile = script_dir / f"Dockerfile-{framework}"
@@ -110,8 +96,10 @@ def init(*args, **kwargs):
     frameworks = [kwargs.get('framework', False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    armory_version = get_tag_version()
-    print(f"EXEC:\tRetrieved version {armory_version} from `git` tags.")
+    # Note: The replace is used to convert the version to a valid docker tag.
+    from armory import __version__ as armory_version
+    armory_version = armory_version.replace("+", ".")
+    print(f"EXEC:\tRetrieved version {armory_version}.")
     print("EXEC:\tCleaning up...")
     for key in ["framework", "func"]:
         del kwargs[key]
@@ -125,7 +113,7 @@ if __name__ == "__main__":
     if not (root_dir / "armory").is_dir():
         sys.exit(f"ERROR:\tEnsure this script is ran from the root of the armory repo.\n"
                  "\tEXAMPLE:\n"
-                 f"\t\t$ python3 {script_dir / 'build.py'}")
+                 f"\t\t$ python3 {root_dir / 'build.py'}")
 
     # Ensure docker/podman is installed
     if not shutil.which(container_platform):
