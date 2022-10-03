@@ -33,24 +33,6 @@ def to_docker_tag(version_str: str) -> str:
     return version_str.replace('+', '.')
 
 
-def get_metadata_version(package: str, version_str: str = '') -> str:
-    '''Retrieve the version from the package metadata'''
-    try:
-        return str(metadata.version(package))
-    except metadata.PackageNotFoundError:
-        log.warning(f"ERROR: Unable to find the specified package! Package {package} not installed.")
-    return version_str
-
-
-def get_build_hook_version(version_str: str = '') -> str:
-    '''Retrieve the version from the build hook'''
-    try:
-        from armory.__about__ import __version__ as version_str
-    except ModuleNotFoundError:
-        log.warning("ERROR: Unable to extract version from __about__.py")
-    return version_str
-
-
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
     project_paths = [Path(__file__).parent.parent, Path.cwd()]
@@ -66,6 +48,15 @@ def get_tag_version(git_dir: Path = None) -> str:
         return
     scm_config.update({'root': git_dir[0]})
     return setuptools_scm.get_version(**scm_config)
+
+
+def get_build_hook_version(version_str: str = '') -> str:
+    '''Retrieve the version from the build hook'''
+    try:
+        from armory.__about__ import __version__ as version_str
+    except ModuleNotFoundError:
+        log.warning("ERROR: Unable to extract version from __about__.py")
+    return version_str
 
 
 def developer_mode_version(
@@ -88,7 +79,11 @@ def developer_mode_version(
 
     if update_metadata:
         version_regex = r'(?P<prefix>^Version: )(?P<version>.*)$'
-        [package_meta] = [f for f in metadata.files(package_name) if str(f).endswith('METADATA')] or False
+        package_meta = None
+        for f in metadata.files(package_name):
+            if str(f).endswith("METADATA"):
+                package_meta = f
+                break
         if not package_meta:
             log.warning(f'Unable to find package metadata for {package_name}')
             return version_str
