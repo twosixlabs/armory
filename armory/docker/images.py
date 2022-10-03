@@ -101,7 +101,7 @@ def last_armory_release(image_name: str):
 
     if len(tokens) == 3:
         return image_name
-    elif len(tokens) > 4:
+    elif len(tokens) >= 4:
         # remove hash and decrement patch
         major, minor, patch = tokens[0:3]
         patch = int(patch)
