@@ -33,6 +33,15 @@ def to_docker_tag(version_str: str) -> str:
     return version_str.replace('+', '.')
 
 
+def get_metadata_version(package: str, version_str: str = '') -> str:
+    '''Retrieve the version from the package metadata'''
+    try:
+        return str(metadata.version(package))
+    except metadata.PackageNotFoundError:
+        log.warning(f"ERROR: Unable to find the specified package! Package {package} not installed.")
+    return version_str
+
+
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
     project_paths = [Path(__file__).parent.parent, Path.cwd()]
@@ -77,6 +86,9 @@ def developer_mode_version(
     old_version = get_metadata_version(package_name)
     version_str = pretend_version or get_tag_version()
 
+    if pretend_version:
+        log.info(f'Spoofing version {pretend_version} for {package_name}')
+
     if update_metadata:
         version_regex = r'(?P<prefix>^Version: )(?P<version>.*)$'
         package_meta = None
@@ -98,10 +110,6 @@ def developer_mode_version(
             flags=re.M)
         metadata_path.write_text(metadata_update)
         log.info(f'Version updated from {old_version} to {version_str}')
-
-    if pretend_version:
-        log.info(f'Spoofing version {pretend_version} for {package_name}')
-        return version_str
 
     return version_str
 
