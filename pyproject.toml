@@ -180,15 +180,15 @@ skips   = [
 ]
 
 # ------------ black ------------
-[tool.black]
-include = '\.py$'
-line-length = 120
-target-version = ['py37', 'py38', 'py39', 'py310']
-skip_magic_trailing_comma = true
-skip-string-normalization = true  # Ignore double quote replacements
-extend-ignore = [
-  "E203",                         # See https://github.com/PyCQA/pycodestyle/issues/373
-]
+#[tool.black]
+#include = '\.py$'
+#line-length = 120
+#target-version = ['py37', 'py38', 'py39', 'py310']
+#skip_magic_trailing_comma = true
+#skip-string-normalization = true  # Ignore double quote replacements
+#extend-ignore = [
+#  "E203",                         # See https://github.com/PyCQA/pycodestyle/issues/373
+#]
 
 
 # ------------ pytest ------------

@@ -2,6 +2,7 @@
 name: 🐛📦 Build & Test
 
 on:
+  # yamllint disable rule:comments-indentation
   workflow_dispatch:
     # inputs:
     #   test-run:
@@ -14,13 +15,13 @@ on:
     #       - All Tests
     # TODO: Use menu for dispatching workflows
     #  >>> if: github.event.inputs.test-run == 'All Tests' || github.event.inputs.test-run == 'Q & A Test'
+  # yamllint disable rule:comments-indentation
 
   push:
     branches:
       - master
       - develop
-      # release branches have the form v1.9.x
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # release branches have the form v1.9.x
 
   pull_request:
     branches:
@@ -54,4 +55,3 @@ jobs:
   test-docker-builds:
     needs: test-stand-alone-builds
     uses: ./.github/workflows/3-test-docker.yml
-

@@ -1,3 +1,4 @@
+---
 name: 💻 Stand Alone Tests
 
 on: workflow_call
@@ -10,8 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu, macos ]
-        python-version: [ "3.8", "3.9", "3.10" ]
+        os: [ubuntu, macos]
+        python-version: ["3.8", "3.9", "3.10"]
     steps:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
@@ -19,6 +20,7 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -28,6 +30,7 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4

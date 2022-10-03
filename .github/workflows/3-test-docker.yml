@@ -1,3 +1,4 @@
+---
 name: 🤖 Docker Tests
 
 on: workflow_call
@@ -17,6 +18,7 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -26,6 +28,7 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
@@ -48,6 +51,7 @@ jobs:
           python docker/build.py --framework pytorch
 
       # TODO: Create/mount a volume with the tests and config files.
+      # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
           ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
@@ -63,6 +67,7 @@ jobs:
       # - name: Dump docker logs on failure
       #   if: failure()
       #   uses: jwalton/gh-docker-logs@v1
+      # yamllint enable rule:indentation
 
 
   docker-tf2-unit:
@@ -75,6 +80,7 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -84,6 +90,7 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
@@ -105,6 +112,7 @@ jobs:
         run: |
           python docker/build.py --framework tf2
 
+      # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
           ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
@@ -116,6 +124,7 @@ jobs:
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
+      # yamllint enable rule:indentation
 
 
   docker-deepspeech-unit:
@@ -128,6 +137,7 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -137,6 +147,7 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
@@ -158,6 +169,7 @@ jobs:
         run: |
           python docker/build.py --framework pytorch-deepspeech
 
+      # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
           ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
@@ -179,3 +191,4 @@ jobs:
                 -c /armory-repo/pyproject.toml                 \
                 -m "pytorch_deepspeech"                        \
                 ./tests/
+      # yamllint enable rule:indentation
