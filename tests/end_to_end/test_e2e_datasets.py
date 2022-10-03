@@ -647,7 +647,6 @@ def test_carla_overhead_obj_det_train():
             ds_batch_size2 = datasets.carla_over_obj_det_train(
                 split=split, batch_size=batch_size, modality=modality
             )
-            print(ds_batch_size2.size)
             if split == "train":
                 assert ds_batch_size2.size == 3600
             elif split == "val":
@@ -676,7 +675,6 @@ def test_carla_overhead_obj_det_dev():
                 assert x.shape == (1, 960, 1280, 3)
 
             y_object, y_patch_metadata = y
-            print(y_patch_metadata.keys())
             assert isinstance(y_object, dict)
             for obj_key in ["labels", "boxes", "area"]:
                 assert obj_key in y_object
