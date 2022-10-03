@@ -49,16 +49,16 @@ jobs:
 
           echo `armory --version` > /tmp/artifacts/version.txt
 
-      # Re-enable with sane checks; e.g. not linting EVERYTHING in the repo
-      # - name: 🚀 Run commit hooks
-      #   run: |
-      #     echo "💄 Running commit hooks for Armory version ${VERSION}"
 
-      #     bash tools/pre-commit.sh
-      #   # if [ $? -ne 0 ]; then
-      #   #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
-      #   #   exit 1
-      #   # fi
+      - name: 🚀 Run commit hooks
+        run: |
+          echo "💄 Running commit hooks for Armory version ${VERSION}"
+
+          bash tools/pre-commit.sh
+        # if [ $? -ne 0 ]; then
+        #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
+        #   exit 1
+        # fi
 
 
       - name: 📦 Build Testing
