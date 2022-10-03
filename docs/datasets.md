@@ -33,6 +33,7 @@ NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 |:----------: |:-----------: |:----------------------:|:--------: |:--------: |:-------: |:-----------------:|
 | [so2sat](https://mediatum.ub.tum.de/1454690) | Co-registered synthetic aperture radar and multispectral optical images |    (N, 32, 32, 14)     | float32 | (N,) | int64 | train, validation |
 | [carla_obj_det_train](https://carla.org/) | CARLA Simulator Object Detection | (N, 960, 1280, 3 or 6) | float32 | n/a | List[dict] |    train, val     | 
+| [carla_over_obj_det_train](https://carla.org/) | CARLA Simulator Object Detection | (N, 960, 1280, 3 or 6) | float32 | n/a | List[dict] |    train, val     | 
 <br>
 
 ##### CARLA Object Detection
@@ -47,6 +48,8 @@ is specified in the dataset_config as such:
 ```
 When `modality` is set to `"both"`, the input will be of shape `(nb=1, 960, 1280, 6)` where `x[..., :3]` are 
 the rgb channels and `x[..., 3:]` the depth channels.
+
+The carla_over_obj_det_train dataset has the same properties as the above mentioned dataset but is collected utilizing overhead perspectives.
 
 
 ### Audio Datasets
