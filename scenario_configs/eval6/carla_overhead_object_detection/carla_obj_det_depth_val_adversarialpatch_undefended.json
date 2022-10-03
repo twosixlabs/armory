@@ -17,11 +17,11 @@
     },
     "dataset": {
         "batch_size": 1,
-        "eval_split": "dev",
+        "eval_split": "val",
         "framework": "numpy",
         "modality": "depth",
-        "module": "armory.data.adversarial_datasets",
-        "name": "carla_over_obj_det_dev"
+        "module": "armory.data.datasets",
+        "name": "carla_over_obj_det_train"
     },
     "defense": null,
     "metric": {
