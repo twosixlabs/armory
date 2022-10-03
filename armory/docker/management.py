@@ -30,7 +30,7 @@ class ArmoryInstance(object):
         docker_paths = paths.DockerPaths()
         mount_paths = ["dataset_dir", "output_dir", "saved_model_dir", "tmp_dir"]
 
-        if os.getenv('ARMORY_DEV_MODE'):
+        if os.getenv("ARMORY_DEV_MODE"):
             mount_paths.extend(["local_git_dir", "cwd"])
 
         mounts = [
