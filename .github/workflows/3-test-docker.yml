@@ -1,0 +1,181 @@
+name: 🤖 Docker Tests
+
+on: workflow_call
+
+env:
+  DOCKER_BUILDKIT: 1
+
+# TODO: Add independent job that builds the images.
+jobs:
+  docker-torch-unit:
+    name: ☁️ Pytorch Image Tests [Container]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Installing Armory
+        shell: bash
+        run: |
+          pip install --no-compile --editable .
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py --framework pytorch
+
+      # TODO: Create/mount a volume with the tests and config files.
+      - name: 🤞 Run Image tests
+        run: |
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/pytorch:${ARMORY_VERSION}    \
+              pytest                                  \
+                -c /armory-repo/pyproject.toml        \
+                -m "not docker_required and unit"     \
+                ./tests/
+      # TODO:
+      # - name: Dump docker logs on failure
+      #   if: failure()
+      #   uses: jwalton/gh-docker-logs@v1
+
+
+  docker-tf2-unit:
+    name: ☁️ Docker TF2 Image Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Installing Armory
+        shell: bash
+        run: |
+          pip install --no-compile --editable .
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py --framework tf2
+
+      - name: 🤞 Run Image tests
+        run: |
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/tf2:${ARMORY_VERSION}        \
+              pytest                                  \
+                -c /armory-repo/pyproject.toml        \
+                -m "not docker_required and unit"     \
+                ./tests/
+
+
+  docker-deepspeech-unit:
+    name: ☁️ Docker Deepspeech Image Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: 🐍 Switch Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade build
+
+      - name: ⚙️ Installing Armory
+        shell: bash
+        run: |
+          pip install --no-compile --editable .
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py --framework pytorch-deepspeech
+
+      - name: 🤞 Run Image tests
+        run: |
+          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+
+          docker run                                           \
+            --rm                                               \
+            --workdir /armory-repo                             \
+            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+              pytest                                           \
+                -c /armory-repo/pyproject.toml                 \
+                -m "not docker_required and unit"              \
+                ./tests/
+
+            docker run                                         \
+            --rm                                               \
+            --workdir /armory-repo                             \
+            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+              pytest                                           \
+                -c /armory-repo/pyproject.toml                 \
+                -m "pytorch_deepspeech"                        \
+                ./tests/
