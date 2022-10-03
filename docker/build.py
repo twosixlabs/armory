@@ -18,7 +18,7 @@ container_platform = "docker" if shutil.which("docker") else "podman"
 
 
 def cli_parser(argv=sys.argv[1:]):
-    parser = argparse.ArgumentParser("Armory Container Build Script")
+    parser = argparse.ArgumentParser("build.py")
     arguments = (
         (("-f", "--framework"), dict(
             choices=armory_frameworks + ["all"],
@@ -30,11 +30,11 @@ def cli_parser(argv=sys.argv[1:]):
             default="latest",
             required=False,
         )),
-        (("-nc", "--no-cache"), dict(
+        (("--no-cache"), dict(
             action="store_true",
             help="Do not use docker cache",
         )),
-        (("-np", "--no-pull"), dict(
+        (("--no-pull"), dict(
             action="store_true",
             help="Do not pull latest base",
         )),
@@ -50,8 +50,14 @@ def cli_parser(argv=sys.argv[1:]):
         )),
     )
     for args, kwargs in arguments:
+        args = args if isinstance(args, tuple) else (args,)
         parser.add_argument(*args, **kwargs)
     parser.set_defaults(func=init)
+
+    if len(argv) == 0 or argv[0] in ('usage', 'help'):
+        parser.print_help()
+        sys.exit(1)
+
     return parser.parse_args(argv)
 
 
