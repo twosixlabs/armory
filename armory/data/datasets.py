@@ -778,10 +778,20 @@ def canonical_audio_preprocess(context, batch):
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
 
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
+        items_are_different_lengths = np.any([len(i) - len(batch[0]) for i in batch])
+
+        if items_are_different_lengths:
+            # The following would convert batch items to dtype 'object' if they are the same length; hence the conditional.
+            batch = np.array(
+                [x.astype(context.output_type) / context.quantization for x in batch],
+                dtype=object,
+            )
+        else:
+            new_batch = np.empty(batch.shape, dtype=object)
+            new_batch[:] = [
+                x.astype(context.output_type) / context.quantization for x in batch
+            ]
+            batch = new_batch
 
         for x in batch:
             assert x.dtype == context.output_type
@@ -806,6 +816,7 @@ def canonical_audio_preprocess(context, batch):
 digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
 librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
 librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+speech_commands_context = AudioContext(x_shape=(None,), sample_rate=16000)
 
 
 def digit_canonical_preprocessing(batch):
@@ -818,6 +829,10 @@ def librispeech_canonical_preprocessing(batch):
 
 def librispeech_dev_clean_canonical_preprocessing(batch):
     return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
+
+
+def speech_commands_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(speech_commands_context, batch)
 
 
 def mnist(
@@ -1045,6 +1060,66 @@ def digit(
         framework=framework,
         shuffle_files=shuffle_files,
         context=digit_context,
+        **kwargs,
+    )
+
+
+def speech_commands(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = speech_commands_canonical_preprocessing,
+    label_preprocessing_fn: Callable = None,
+    as_supervised: bool = True,
+    supervised_xy_keys=None,
+    download_and_prepare_kwargs=None,
+    variable_y=False,
+    lambda_map: Callable = None,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    pad_data: bool = False,
+    **kwargs,
+) -> ArmoryDataGenerator:
+
+    """
+    An audio dataset of spoken commands
+    https://www.tensorflow.org/datasets/catalog/speech_commands
+    """
+
+    def pad_batch(batch):
+        new_batch = np.zeros((batch.shape[0], 16000))
+        for i in range(batch.shape[0]):
+            new_batch[i, : len(batch[i])] = batch[i]
+        return new_batch.astype(np.int64)
+
+    if pad_data:
+        preprocessing_fn = preprocessing_chain(
+            pad_batch, preprocessing_fn, fit_preprocessing_fn
+        )
+    else:
+        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "speech_commands:0.0.2",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=as_supervised,
+        supervised_xy_keys=supervised_xy_keys,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
+        variable_length=bool(batch_size > 1),
+        variable_y=variable_y,
+        lambda_map=lambda_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=speech_commands_context,
         **kwargs,
     )
 
