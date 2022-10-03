@@ -1,10 +1,8 @@
-import sys
-import shutil
 import argparse
-import subprocess
-import setuptools_scm
-
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 
 
 script_dir = Path(__file__).parent
@@ -20,41 +18,59 @@ container_platform = "docker" if shutil.which("docker") else "podman"
 def cli_parser(argv=sys.argv[1:]):
     parser = argparse.ArgumentParser("build.py")
     arguments = (
-        (("-f", "--framework"), dict(
-            choices=armory_frameworks + ["all"],
-            help="Framework to build",
-            required=True,
-        )),
-        (("-b", "--base-tag"), dict(
-            help="Version tag for twosixarmory/armory-base",
-            default="latest",
-            required=False,
-        )),
-        (("--no-cache"), dict(
-            action="store_true",
-            help="Do not use docker cache",
-        )),
-        (("--no-pull"), dict(
-            action="store_true",
-            help="Do not pull latest base",
-        )),
-        (("-n", "--dry-run"), dict(
-            action="store_true",
-            help="Do not build, only print commands",
-        )),
-        (("-p", "--platform"), dict(
-            choices=["docker", "podman"],
-            help="Print verbose output",
-            default=container_platform,
-            required=False,
-        )),
+        (
+            ("-f", "--framework"),
+            dict(
+                choices=armory_frameworks + ["all"],
+                help="Framework to build",
+                required=True,
+            ),
+        ),
+        (
+            ("-b", "--base-tag"),
+            dict(
+                help="Version tag for twosixarmory/armory-base",
+                default="latest",
+                required=False,
+            ),
+        ),
+        (
+            ("--no-cache"),
+            dict(
+                action="store_true",
+                help="Do not use docker cache",
+            ),
+        ),
+        (
+            ("--no-pull"),
+            dict(
+                action="store_true",
+                help="Do not pull latest base",
+            ),
+        ),
+        (
+            ("-n", "--dry-run"),
+            dict(
+                action="store_true",
+                help="Do not build, only print commands",
+            ),
+        ),
+        (
+            ("-p", "--platform"),
+            dict(
+                choices=["docker", "podman"],
+                help="Print verbose output",
+                default=container_platform,
+                required=False,
+            ),
+        ),
     )
     for args, kwargs in arguments:
         args = args if isinstance(args, tuple) else (args,)
         parser.add_argument(*args, **kwargs)
     parser.set_defaults(func=init)
 
-    if len(argv) == 0 or argv[0] in ('usage', 'help'):
+    if len(argv) == 0 or argv[0] in ("usage", "help"):
         parser.print_help()
         sys.exit(1)
 
@@ -62,7 +78,7 @@ def cli_parser(argv=sys.argv[1:]):
 
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
-    '''Builds armory container for a given framework.'''
+    """Builds armory container for a given framework."""
     dockerfile = script_dir / f"Dockerfile-{framework}"
     build_command = [
         f"{platform}",
@@ -78,26 +94,28 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
         f"{dockerfile}",
         f"{Path().cwd()}",
     ]
-    if kwargs.get('no_cache'):
+    if kwargs.get("no_cache"):
         build_command.insert(3, "--no-cache")
-    if not kwargs.get('no_pull'):
+    if not kwargs.get("no_pull"):
         build_command.insert(3, "--pull")
     if not dockerfile.exists():
-        sys.exit(f"ERROR:\tError building {framework}!\n"
-                 f"\tDockerfile not found: {dockerfile}\n")
-    print(f"EXEC\tPreparing to run:\n"
-          f"\t\t{' '.join(build_command)}")
+        sys.exit(
+            f"ERROR:\tError building {framework}!\n"
+            f"\tDockerfile not found: {dockerfile}\n"
+        )
+    print(f"EXEC\tPreparing to run:\n" f"\t\t{' '.join(build_command)}")
     if not kwargs.get("dry_run"):
         subprocess.run(build_command)
 
 
 def init(*args, **kwargs):
-    '''Kicks off the build process.'''
-    frameworks = [kwargs.get('framework', False)]
+    """Kicks off the build process."""
+    frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
     # Note: The replace is used to convert the version to a valid docker tag.
     from armory import __version__ as armory_version
+
     armory_version = armory_version.replace("+", ".")
     print(f"EXEC:\tRetrieved version {armory_version}.")
     print("EXEC:\tCleaning up...")
@@ -111,14 +129,18 @@ def init(*args, **kwargs):
 if __name__ == "__main__":
     # Ensure correct location
     if not (root_dir / "armory").is_dir():
-        sys.exit(f"ERROR:\tEnsure this script is ran from the root of the armory repo.\n"
-                 "\tEXAMPLE:\n"
-                 f"\t\t$ python3 {root_dir / 'build.py'}")
+        sys.exit(
+            f"ERROR:\tEnsure this script is ran from the root of the armory repo.\n"
+            "\tEXAMPLE:\n"
+            f"\t\t$ python3 {root_dir / 'build.py'}"
+        )
 
     # Ensure docker/podman is installed
     if not shutil.which(container_platform):
-        sys.exit("ERROR:\tCannot find compatible container on the system.\n"
-                 "\tAsk your system administrator to install either `docker` or `podman`.")
+        sys.exit(
+            "ERROR:\tCannot find compatible container on the system.\n"
+            "\tAsk your system administrator to install either `docker` or `podman`."
+        )
 
     # Parse CLI arguments
     arguments = cli_parser()

@@ -1,3 +1,4 @@
+---
 name: 🙈 🙉 🙊 Scan & Lint
 
 on: workflow_call
@@ -14,6 +15,7 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -23,6 +25,7 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
@@ -60,7 +63,7 @@ jobs:
         #   exit 1
         # fi
 
-
+      # yamllint disable rule:indentation
       - name: 📦 Build Testing
         run: |
           python -m          \
@@ -79,7 +82,6 @@ jobs:
             exit 1
           fi
 
-
       - name: 🦹‍♂️ Scanning with Bandit
         run: |
           bandit                                    \
@@ -89,7 +91,6 @@ jobs:
             -c "pyproject.toml"                     \
             --output /tmp/artifacts/bandit_scan.txt \
           || $( exit 0 ); echo $?
-
 
       - name: ❄️ Running Flake8
         run: |
@@ -108,8 +109,6 @@ jobs:
           #   if flake8 code == C901:
           #     astpretty(file) => save to artifacts
 
-
-
       - name: 🖋️ mypy Type Checking
         run: |
           python3 -m pip install mypy
@@ -123,7 +122,7 @@ jobs:
             --pretty                   \
             > /tmp/artifacts/mypy.txt  \
           || $( exit 0 ); echo $?
-
+      # yamllint enable rule:indentation
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3
@@ -134,4 +133,3 @@ jobs:
           retention-days: 1
           path: |
             /tmp/artifacts
-

@@ -22,6 +22,7 @@ jobs:
       - name: TODO
         run: echo "🦄 pass"
 
+  # yamllint disable rule:comments-indentation
   # docker-build:
   #   name: Build Docker Image
   #   runs-on: ubuntu-18.04
@@ -78,3 +79,4 @@ jobs:
   #         docker rmi twosixarmory/pytorch:${{ needs.docker-build.outputs.imageTag }}
   #         docker rmi twosixarmory/tf2:${{ needs.docker-build.outputs.imageTag }}
   #         docker rmi twosixarmory/pytorch-deepspeech:${{ needs.docker-build.outputs.imageTag }}
+  # yamllint disable rule:comments-indentation
