@@ -1,8 +1,8 @@
 """
-Modified ByteTrack (https://arxiv.org/pdf/2110.06864.pdf) by replacing YOLOX object 
-detector with a PyTorch Faster-RCNN Resnet50-FPN object detector 
+Modified ByteTrack (https://arxiv.org/pdf/2110.06864.pdf) by replacing YOLOX object
+detector with a PyTorch Faster-RCNN Resnet50-FPN object detector
 """
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 from art.estimators.object_detection import PyTorchFasterRCNN
