@@ -44,18 +44,14 @@ def get_metadata_version(package: str, version_str: str = '') -> str:
 
 def get_tag_version(git_dir: Path = None) -> str:
     '''Retrieve the version from the most recent git tag'''
-    project_paths = [Path(__file__).parent.parent, Path.cwd()]
-    git_dir = list(filter(lambda path: Path(path / ".git").is_dir(), project_paths))
+    project_root = Path(__file__).parent.parent.parent
     scm_config = {
-        'root': git_dir,
-        'relative_to': __file__,
+        'root': project_root,
         'version_scheme': "post-release",
-        'local_scheme': "node-and-date",
     }
-    if not git_dir:
+    if not Path(project_root / ".git").is_dir():
         log.error("ERROR: Unable to find `.git` directory!")
         return
-    scm_config.update({'root': git_dir[0]})
     return setuptools_scm.get_version(**scm_config)
 
 
