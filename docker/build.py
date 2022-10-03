@@ -79,6 +79,8 @@ def cli_parser(argv=sys.argv[1:]):
 
 def build_worker(framework, version, platform, base_tag, **kwargs):
     """Builds armory container for a given framework."""
+    # Note: The replace is used to convert the version to a valid docker tag.
+    version = version.replace("+", ".")
     dockerfile = script_dir / f"Dockerfile-{framework}"
     build_command = [
         f"{platform}",
@@ -88,8 +90,6 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
         f"twosixarmory/{framework}:{version}",
         "--build-arg",
         f"base_image_tag={base_tag}",
-        "--build-arg",
-        f"armory_version={version}",
         "--file",
         f"{dockerfile}",
         f"{Path().cwd()}",
@@ -113,10 +113,8 @@ def init(*args, **kwargs):
     frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    # Note: The replace is used to convert the version to a valid docker tag.
     from armory import __version__ as armory_version
 
-    armory_version = armory_version.replace("+", ".")
     print(f"EXEC:\tRetrieved version {armory_version}.")
     print("EXEC:\tCleaning up...")
     for key in ["framework", "func"]:
