@@ -18,6 +18,7 @@ EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
         },
         "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
         "name": "get_model",
+        "resize_image": False,
         "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
     },
     "gtsrb_silhouette_model": {
