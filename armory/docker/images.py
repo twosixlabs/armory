@@ -97,12 +97,13 @@ def last_armory_release(image_name: str):
     user, repo, tag = split_name(image_name)
     if not user or not tag:
         raise ValueError("Must be a full user/repo:tag docker image_name")
-    tokens = tag.split(".")
+    tokens = version.to_docker_tag(tag).split(".")
+
     if len(tokens) == 3:
         return image_name
-    elif len(tokens) == 4:
+    elif len(tokens) > 4:
         # remove hash and decrement patch
-        major, minor, patch, _ = tokens
+        major, minor, patch = tokens[0:3]
         patch = int(patch)
         if patch == 0:
             raise ValueError(f"Tag {tag}: patch cannot be 0 for SCM with hash appended")
