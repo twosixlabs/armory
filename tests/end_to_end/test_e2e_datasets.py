@@ -657,15 +657,26 @@ def test_carla_overhead_obj_det_train():
             assert len(y) == batch_size
             for label_dict in y:
                 assert isinstance(label_dict, dict)
-                for obj_key in ["area", "boxes", "id", "image_id", "is_crowd", "labels"]:
+                for obj_key in [
+                    "area",
+                    "boxes",
+                    "id",
+                    "image_id",
+                    "is_crowd",
+                    "labels",
+                ]:
                     assert obj_key in label_dict
 
 
 def test_carla_overhead_obj_det_dev():
 
     ds_rgb = adversarial_datasets.carla_over_obj_det_dev(split="dev", modality="rgb")
-    ds_depth = adversarial_datasets.carla_over_obj_det_dev(split="dev", modality="depth")
-    ds_multimodal = adversarial_datasets.carla_over_obj_det_dev(split="dev", modality="both")
+    ds_depth = adversarial_datasets.carla_over_obj_det_dev(
+        split="dev", modality="depth"
+    )
+    ds_multimodal = adversarial_datasets.carla_over_obj_det_dev(
+        split="dev", modality="both"
+    )
 
     for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
         for x, y in ds:
