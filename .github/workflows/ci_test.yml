@@ -1,151 +1,57 @@
 ---
-name: CI Tests
+name: 🐛📦 Build & Test
 
 on:
+  workflow_dispatch:
+    # inputs:
+    #   test-run:
+    #     type: choice
+    #     description: CI Workflow to Execute
+    #     options:
+    #       - Q & A Test
+    #       - Stand Alone Test
+    #       - Docker Test
+    #       - All Tests
+    # TODO: Use menu for dispatching workflows
+    #  >>> if: github.event.inputs.test-run == 'All Tests' || github.event.inputs.test-run == 'Q & A Test'
+
   push:
     branches:
       - master
       - develop
+      # release branches have the form v1.9.x
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
   pull_request:
     branches:
       - master
       - develop
+    # types:
+    #   - opened
+    #   - reopened
+    #   - synchronize
+    #   - ready_for_review
 
-  workflow_dispatch:
+
+# Limit workflow concurrency to one job per branch.
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
+
 
 env:
   DOCKER_BUILDKIT: 1
 
+
 jobs:
-  host-test:
-    name: Basic `native` configuration
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Armory
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
-          armory configure --use-defaults
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pytest -s ./tests/unit/test_configuration.py
-  native-simple:
-    name: Native Mode test_no_docker.py
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pip install --user --upgrade pip==22.0.3
-          pip install -r armory-base-requirements.txt
-          pip install -r test-requirements.txt
-          pip install -e .
-          armory configure --use-defaults
-          pytest -s ./tests/end_to_end/test_no_docker.py
-  native-all-unit:
-    name: Native Mode All unit tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: ['ubuntu-18.04', 'macos-latest']
-        python-version: ['3.7']
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Run armory host tests
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install -r test-requirements.txt
-          pip install -r armory-base-requirements.txt
-          pip install -e .
-          armory configure --use-defaults
-          pytest -m "not docker_required and unit" ./tests/
-  docker-torch-unit:
-    name: Docker Pytorch Unit Tests
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          pip install -e .
-          python docker/build.py pytorch
-      - name: Run Unit tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-  docker-tf2-unit:
-    name: Docker TF2 Unit Tests
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          pip install -e .
-          python docker/build.py tf2
-      - name: Run Unit tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/tf2:$(armory --version) pytest -m "not docker_required and unit" ./tests/
-  docker-deepspeech-unit:
-    name: Docker Deepspeech Unit Tests
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build Docker
-        run: |
-          pip install -r requirements.txt
-          pip install -e .
-          python docker/build.py pytorch-deepspeech
-      - name: Run Unit tests
-        run: |
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-          pytest -m "not docker_required and unit" ./tests/
-          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
-          pytest -m "pytorch_deepspeech" ./tests/
-  formatting-test:
-    name: Check Code Formatting
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: install test requirements
-        run: pip install -r test-requirements.txt
-      - name: Run commit hooks
-        run: bash tools/pre-commit.sh
+  scan-lint-build:
+    uses: ./.github/workflows/1-scan-lint-build.yml
+
+  test-stand-alone-builds:
+    needs: scan-lint-build
+    uses: ./.github/workflows/2-test-stand-alone.yml
+
+  test-docker-builds:
+    needs: test-stand-alone-builds
+    uses: ./.github/workflows/3-test-docker.yml
+
