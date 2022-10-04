@@ -85,7 +85,7 @@ def get_armory_name(image_name: str):
     user, repo, tag = split_name(image_name)
     user = "twosixarmory"
     if tag:  # tag is explicitly defined, use it
-        tag = tag.replace("+", ".")  # ensure docker format version
+        tag = version.to_docker_tag(tag)  # ensure docker format version
         return join_name(user, repo, tag)
     return IMAGE_MAP[repo]
 
@@ -102,7 +102,7 @@ def last_armory_release(image_name: str):
 
     if len(tokens) == 3:
         return image_name
-    elif len(tokens) >= 4:
+    elif len(tokens) == 4:
         # remove hash and decrement patch
         major, minor, patch = tokens[0:3]
         patch = int(patch)
