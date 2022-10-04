@@ -1,24 +1,24 @@
 ARG base_image_tag
-ARG armory_version
-ARG armory_build_type
-
 
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
 WORKDIR /armory-repo
 
+RUN echo "Updating pip" && \
+    pip install --upgrade pip && \
+    echo "Building ART" && \
+    pip install --no-cache-dir \
+    adversarial-robustness-toolbox==1.12.1
+
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
 COPY ./ /armory-repo
 
-RUN echo "Building Armory from local source"                                  && \
-    echo "Updating Base Image..."                                             && \
-      python -m pip install --upgrade pip                                     && \
-    echo "Installing Armory..."                                               && \
-      pip install --no-compile --no-cache-dir --editable '.[pytorch,jupyter]' && \
-    echo "Configuring Armory..."                                              && \
-      armory configure --use-default                                          && \
-    echo "Cleaning up..."                                                     && \
-      rm -rf /armory-repo/.git
+RUN echo "Building Armory from local source" && \
+    pip install --no-compile --no-cache-dir --editable . && \
+    echo "Configuring Armory..." && \
+    armory configure --use-default && \
+    echo "Cleaning up..." && \
+    rm -rf /armory-repo/.git
 
 WORKDIR /workspace
