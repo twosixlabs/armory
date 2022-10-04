@@ -39,11 +39,7 @@ def to_docker_tag(version_str: str) -> str:
 
 
 def version_resource() -> str:
-    checks = [
-        get_tag_version,
-        get_build_version,
-        get_pip_version
-    ]
+    checks = [get_tag_version, get_build_version, get_pip_version]
     for i, check in enumerate(checks):
         if isinstance(check, FunctionType):
             try:
@@ -61,7 +57,9 @@ def get_pip_version() -> str:
     try:
         return str(metadata.version("armory-testbed"))
     except metadata.PackageNotFoundError:
-        raise VersionError(f"ERROR: Unable to find Armory package! Armory is not installed.")
+        raise VersionError(
+            f"ERROR: Unable to find Armory package! Armory is not installed."
+        )
 
 
 def get_build_version(version_str: str = "") -> str:
@@ -132,6 +130,8 @@ def get_version() -> str:
     if os.getenv("ARMORY_DEV_MODE"):
         pretend_version = os.getenv("ARMORY_PRETEND_VERSION")
         update_metadata = os.getenv("ARMORY_UPDATE_METADATA")
-        return developer_mode_version("armory-testbed", pretend_version, update_metadata)
+        return developer_mode_version(
+            "armory-testbed", pretend_version, update_metadata
+        )
 
     return version_resource()
