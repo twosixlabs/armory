@@ -58,7 +58,7 @@ def get_pip_version() -> str:
         return str(metadata.version("armory-testbed"))
     except metadata.PackageNotFoundError:
         raise VersionError(
-            f"ERROR: Unable to find Armory package! Armory is not installed."
+            "ERROR: Unable to find Armory package! Armory is not installed."
         )
 
 
