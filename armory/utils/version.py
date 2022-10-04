@@ -18,6 +18,7 @@ import functools
 import setuptools_scm
 
 from pathlib import Path
+from types import FunctionType
 
 try:
     from importlib import metadata
@@ -28,42 +29,60 @@ except ImportError:
 from armory.logs import log
 
 
+class VersionError(Exception):
+    pass
+
+
 def to_docker_tag(version_str: str) -> str:
     """Convert version string to docker tag"""
     return version_str.replace("+", ".")
 
 
-def get_metadata_version(package: str, version_str: str = "") -> str:
+def version_resource() -> str:
+    checks = [
+        get_tag_version,
+        get_build_version,
+        get_pip_version
+    ]
+    for i, check in enumerate(checks):
+        if isinstance(check, FunctionType):
+            try:
+                return check()
+            except Exception as e:
+                checks[i] = e
+    for check in checks:
+        if isinstance(check, Exception):
+            log.warning(f"Unable to retrieve version: {check}")
+    raise RuntimeError("Unable to determine version number!")
+
+
+def get_pip_version() -> str:
     """Retrieve the version from the package metadata"""
     try:
-        return str(metadata.version(package))
+        return str(metadata.version("armory-testbed"))
     except metadata.PackageNotFoundError:
-        log.warning(
-            f"ERROR: Unable to find the specified package! Package {package} not installed."
-        )
+        raise VersionError(f"ERROR: Unable to find Armory package! Armory is not installed.")
+
+
+def get_build_version(version_str: str = "") -> str:
+    """Retrieve the version from the build hook"""
+    try:
+        from armory.__about__ import __version__ as version_str
+    except ModuleNotFoundError:
+        raise VersionError("Unable to extract version from __about__.py")
     return version_str
 
 
-def get_tag_version(git_dir: Path = None) -> str:
+def get_tag_version() -> str:
     """Retrieve the version from the most recent git tag"""
     project_root = Path(__file__).parent.parent.parent
     scm_config = {
         "root": project_root,
         "version_scheme": "post-release",
     }
-    if not Path(project_root / ".git").is_dir():
-        log.error("ERROR: Unable to find `.git` directory!")
-        return
-    return setuptools_scm.get_version(**scm_config)
-
-
-def get_build_hook_version(version_str: str = "") -> str:
-    """Retrieve the version from the build hook"""
-    try:
-        from armory.__about__ import __version__ as version_str
-    except ModuleNotFoundError:
-        log.warning("ERROR: Unable to extract version from __about__.py")
-    return version_str
+    if Path(project_root / ".git").is_dir():
+        return setuptools_scm.get_version(**scm_config)
+    raise VersionError("ERROR: Unable to find `.git` directory!")
 
 
 def developer_mode_version(
@@ -72,7 +91,6 @@ def developer_mode_version(
     """Return the version in developer mode
 
     Args:
-        param1 (int): The first parameter.
         package_name (str): The name of the package.
         pretend_version (str): The version to pretend to be.
         update_metadata (bool): Whether to update the metadata.
@@ -80,12 +98,10 @@ def developer_mode_version(
     Example:
         $ ARMORY_DEV_MODE=1 ARMORY_PRETEND_VERSION="1.2.3" armory --version
     """
-    old_version = get_metadata_version(package_name)
+    old_version = get_pip_version(package_name)
     version_str = pretend_version or get_tag_version()
-
     if pretend_version:
         log.info(f"Spoofing version {pretend_version} for {package_name}")
-
     if update_metadata:
         version_regex = r"(?P<prefix>^Version: )(?P<version>.*)$"
         package_meta = None
@@ -108,25 +124,14 @@ def developer_mode_version(
         )
         metadata_path.write_text(metadata_update)
         log.info(f"Version updated from {old_version} to {version_str}")
-
     return version_str
 
 
 @functools.lru_cache(maxsize=1, typed=False)
 def get_version() -> str:
-    package_name = "armory-testbed"
-
     if os.getenv("ARMORY_DEV_MODE"):
         pretend_version = os.getenv("ARMORY_PRETEND_VERSION")
         update_metadata = os.getenv("ARMORY_UPDATE_METADATA")
-        return developer_mode_version(package_name, pretend_version, update_metadata)
+        return developer_mode_version("armory-testbed", pretend_version, update_metadata)
 
-    version_str = get_tag_version()
-    if not version_str:
-        version_str = get_build_hook_version()
-    if not version_str:
-        version_str = get_metadata_version(package_name)
-    if version_str:
-        return version_str
-
-    raise RuntimeError("Unable to determine version number!")
+    return version_resource()
