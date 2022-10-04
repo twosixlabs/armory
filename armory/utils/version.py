@@ -28,20 +28,17 @@ except ImportError:
 from armory.logs import log
 
 
+PYPI_PACKAGE_NAME = "armory-testbed"
+
+
 def to_docker_tag(version_str: str) -> str:
     """Convert version string to docker tag"""
     return version_str.replace("+", ".")
 
 
-def get_metadata_version(package: str, version_str: str = "") -> str:
+def get_metadata_version(package: str = PYPI_PACKAGE_NAME) -> str:
     """Retrieve the version from the package metadata"""
-    try:
-        return str(metadata.version(package))
-    except metadata.PackageNotFoundError:
-        log.warning(
-            f"ERROR: Unable to find the specified package! Package {package} not installed."
-        )
-    return version_str
+    return str(metadata.version(package))
 
 
 def get_tag_version(git_dir: Path = None) -> str:
@@ -52,18 +49,18 @@ def get_tag_version(git_dir: Path = None) -> str:
         "version_scheme": "post-release",
     }
     if not Path(project_root / ".git").is_dir():
-        log.error("ERROR: Unable to find `.git` directory!")
-        return
+        raise LookupError("Unable to find `.git` directory!")
     return setuptools_scm.get_version(**scm_config)
 
 
-def get_build_hook_version(version_str: str = "") -> str:
+def get_build_hook_version() -> str:
     """Retrieve the version from the build hook"""
     try:
-        from armory.__about__ import __version__ as version_str
+        from armory.__about__ import __version__
+
+        return __version__
     except ModuleNotFoundError:
-        log.warning("ERROR: Unable to extract version from __about__.py")
-    return version_str
+        raise ModuleNotFoundError("Unable to extract armory version from __about__.py")
 
 
 def developer_mode_version(
@@ -113,20 +110,30 @@ def developer_mode_version(
 
 
 @functools.lru_cache(maxsize=1, typed=False)
-def get_version() -> str:
-    package_name = "armory-testbed"
-
+def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
     if os.getenv("ARMORY_DEV_MODE"):
         pretend_version = os.getenv("ARMORY_PRETEND_VERSION")
         update_metadata = os.getenv("ARMORY_UPDATE_METADATA")
         return developer_mode_version(package_name, pretend_version, update_metadata)
 
-    version_str = get_tag_version()
-    if not version_str:
-        version_str = get_build_hook_version()
-    if not version_str:
-        version_str = get_metadata_version(package_name)
-    if version_str:
-        return version_str
+    errors = []
+    try:
+        return get_tag_version()
+    except LookupError as e:
+        errors.append(str(e))
 
-    raise RuntimeError("Unable to determine version number!")
+    try:
+        return get_build_hook_version()
+    except ModuleNotFoundError as e:
+        errors.append(str(e))
+
+    try:
+        return get_metadata_version(package_name)
+    except metadata.PackageNotFoundError as e:
+        errors.append(
+            f"Unable to find the specified package! Package {e} not installed."
+        )
+
+    errors.append("Unable to determine version number!")
+    log.error("\n".join(errors))
+    raise RuntimeError("\n".join(errors))
