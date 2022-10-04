@@ -4,14 +4,14 @@
 # Allowing .git
 !.git/
 
-# Ignore Documentation
-docs/
-docker/
-notebooks/
-tutorials/
+# Ensure all git files are present. Otherwise, armory will be "dirty" inside container, which will change the version
+!.dockerignore
+!.flake8
+!.github/
+!.gitignore
+!.yamllint
 
 # ignore large directories
-scenario_configs/
 datasets/
 
 # ignore temp directories
