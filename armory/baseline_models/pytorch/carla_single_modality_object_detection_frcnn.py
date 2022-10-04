@@ -27,6 +27,9 @@ def get_art_model(
     if weights_path:
         checkpoint = torch.load(weights_path, map_location=DEVICE)
         assert (
+            "roi_heads.box_predictor.cls_score.bias" in checkpoint
+        ), "invalid checkpoint for current model, layers do no match."
+        assert (
             model.roi_heads.box_predictor.cls_score.out_features
             == checkpoint["roi_heads.box_predictor.cls_score.bias"].shape[0]
         ), (
