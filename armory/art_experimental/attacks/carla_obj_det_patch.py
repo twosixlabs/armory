@@ -689,7 +689,7 @@ class CARLADapricotPatch(RobustDPatch):
                     np.random.randint(0, 255, size=self.patch_shape)
                     / 255
                     * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
-                    + self.estimator.clip_values[0],
+                    + self.estimator.clip_values[0]
                 )
 
             self._patch = np.clip(
