@@ -87,7 +87,9 @@ RUN apt-key adv --fetch-keys \
 
 # Create a non-root user
 RUN groupadd -r armory && \
-    useradd --gid $GID --uid $UID -r -g armory -m -d /workspace -s /bin/bash armory && \
+    # TODO: UID/GID
+    #   useradd --gid $GID --uid $UID -r -g armory -m -d /workspace -s /bin/bash armory && \
+    useradd -r -g armory -m -d /workspace -s /bin/bash armory && \
     usermod -aG sudo armory && \
     echo "armory ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/armory && \
     chmod 0440 /etc/sudoers.d/armory && \
