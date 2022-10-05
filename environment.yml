@@ -4,6 +4,8 @@ name: armory-venv
 
 prefix: /opt/conda
 
+auto_activate_base: false
+
 channels:
   - pytorch
   - conda-forge
@@ -11,7 +13,8 @@ channels:
 
 dependencies:
   - conda-forge:python==3.9.7
-  - pip
+  - pip==22.2.2
+  - setuptools==65.4.1
   - protobuf
   # - librosa
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the
