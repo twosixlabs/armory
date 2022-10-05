@@ -1,25 +1,6 @@
 ARG base_image_tag
-ARG armory_version
-ARG armory_build_type
-
 
 FROM twosixarmory/base:${base_image_tag} as armory-base
-
-# This section installs tensorflow object detection API from:
-#    - repo:           https://github.com/tensorflow/models/
-#    - commit:        79354e14a4b41ff9019f4a5ebd12cfa498917182
-#    - subdirectory:  /research/object_detection/packages/tf2/setup.py
-
-WORKDIR /tmp/models/research
-
-RUN git clone https://github.com/tensorflow/models.git                  && \
-      cd models/research                                                && \
-      git checkout 79354e14a4b41ff9019f4a5ebd12cfa498917182             && \
-    protoc object_detection/protos/*.proto --python_out=.               && \
-    cp object_detection/packages/tf2/setup.py .                         && \
-    /opt/conda/bin/pip install --no-cache-dir tf-models-official==2.8   && \
-    /opt/conda/bin/pip install --use-feature=in-tree-build .
-
 
 FROM armory-base AS armory-local
 

@@ -1,7 +1,4 @@
 ARG base_image_tag
-ARG armory_version
-ARG armory_build_type
-
 
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
@@ -10,11 +7,6 @@ WORKDIR /armory-repo
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
 COPY ./ /armory-repo
-
-# NOTE: installed after pip installs in base container,
-#       but doesn't seem to cause issues at the moment
-#       pip install librosa does not install sndfile dependency
-RUN /opt/conda/bin/conda install -c conda-forge librosa
 
 RUN echo "Building Armory from local source"                                     && \
     echo "Updating Base Image..."                                                && \
