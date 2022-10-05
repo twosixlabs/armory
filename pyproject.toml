@@ -121,11 +121,6 @@ jupyter = [
     "jupyterlab == 3.4.7",
 ]
 
-all = [
-    "armory-testbed[pytorch,tensorflow,deepspeech,jupyter]",
-]
-
-
 [build-system]
 build-backend = "hatchling.build"
 requires = [
