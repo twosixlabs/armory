@@ -39,17 +39,16 @@ def to_docker_tag(version_str: str) -> str:
 
 
 def version_resource() -> str:
-    checks = [get_tag_version, get_build_version, get_pip_version]
-    for i, check in enumerate(checks):
-        if isinstance(check, FunctionType):
-            try:
-                return check()
-            except Exception as e:
-                checks[i] = e
-    for check in checks:
-        if isinstance(check, Exception):
-            log.warning(f"Unable to retrieve version: {check}")
-    raise RuntimeError("Unable to determine version number!")
+    for check in [get_tag_version, get_build_version, get_pip_version]:
+        try:
+            version = check()
+            if version:
+                log.info(f"obtained {version} from {check.__name__}")
+                return version
+        except Exception as e:
+            log.error(f"failed to get version from {check.__name__}: {e}")
+
+    raise RuntimeError("Unable to determine armory version number!")
 
 
 def get_pip_version() -> str:
