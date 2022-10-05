@@ -35,6 +35,14 @@ if [[ -z "${cached}" ]]; then
         --file "${DOCKER_BASE}" \
         --target armory-build \
         --cache-from=twosixarmory/armory-base:latest \
+        -t twosixarmory/base-build:latest \
+        --progress=auto \
+        .
+
+    $dryrun docker build \
+        --file "${DOCKER_BASE}" \
+        --target armory-release \
+        --cache-from=twosixarmory/armory-build:latest \
         -t twosixarmory/base:latest \
         --progress=auto \
         .
