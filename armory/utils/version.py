@@ -118,22 +118,33 @@ def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
 
     errors = []
     try:
-        return get_tag_version()
+        version = get_tag_version()
+        log.info(f"version {version} found via git tag")
+        return version
     except LookupError as e:
-        errors.append(str(e))
+        error_str = f"version not found via git tag: {e}"
+        log.debug(error_str)
+        errors.append(error_str)
 
     try:
-        return get_build_hook_version()
+        version = get_build_hook_version()
+        log.info(f"version {version} found via build hook at armory/__about__.py")
+        return version
     except ModuleNotFoundError as e:
-        errors.append(str(e))
+        error_str = f"version not found via build hook at armory/__about__.py: {e}"
+        log.debug(error_str)
+        errors.append(error_str)
 
     try:
-        return get_metadata_version(package_name)
+        version = get_metadata_version(package_name)
+        log.info(f"version {version} found via package metadata")
+        return version
     except metadata.PackageNotFoundError as e:
-        errors.append(
-            f"Unable to find the specified package! Package {e} not installed."
-        )
+        error_str = f"version not found via package metadata: Package {e} not installed"
+        log.debug(error_str)
+        errors.append(error_str)
 
     errors.append("Unable to determine version number!")
-    log.error("\n".join(errors))
-    raise RuntimeError("\n".join(errors))
+    verbose_errors = "\n".join(errors)
+    log.error(verbose_errors)
+    raise RuntimeError(verbose_errors)
