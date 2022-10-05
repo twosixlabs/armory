@@ -11,7 +11,7 @@ COPY ./ /armory-repo
 RUN echo "Updating pip" && \
     pip install --upgrade pip && \
     echo "Building Armory from local source" && \
-    pip install --no-compile --no-cache-dir --editable ".[engine]" && \
+    pip install --no-compile --no-cache-dir --editable . && \
     echo "Configuring Armory..." && \
     armory configure --use-default && \
     echo "Cleaning up..." && \
