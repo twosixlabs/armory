@@ -31,6 +31,10 @@ IMAGE_MAP = {
 }
 
 
+def get_image(name: str, docker_client=None):
+    ...
+
+
 def split_name(name: str):
     """
     Return the components of user/repo:tag as (user, repo, tag)

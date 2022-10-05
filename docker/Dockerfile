@@ -12,7 +12,7 @@
 #   [1] https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/gpu.Dockerfile
 #   [2] https://bcourses.berkeley.edu/courses/1478831/pages/glibcxx-missing
 #   [3] https://docs.ycrc.yale.edu/clusters-at-yale/guides/conda/#mamba-the-conda-alternative
-#   [4]
+#   [4] https://github.com/tensorflow/models/tree/master/research/object_detection
 #   [5]
 #
 ##########################################################################################
@@ -22,6 +22,10 @@ ARG CUDNN_VERSION=8
 ARG CUDA_VERSION=11.6.2
 ARG CUDA=11.6
 ARG LIBNVINFER_MAJOR_VERSION=8
+
+
+# FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS conda-base
+
 
 
 FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS armory-base
@@ -95,6 +99,7 @@ RUN groupadd -r armory && \
     useradd -r -g armory -m -d /workspace -s /bin/bash armory && \
     usermod -aG sudo armory && \
     echo "armory ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/armory && \
+    cp /etc/skel/{.bashrc,.profile} /workspace && \
     chmod 0440 /etc/sudoers.d/armory && \
     chown -R armory:armory /armory-repo && \
     chown -R armory:armory /workspace
@@ -102,6 +107,7 @@ RUN groupadd -r armory && \
 # Conda
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
 # TODO: Build the conda environment in a separate image, and copy it over.
+# TODO: Create ENV.yml based off base environment.yml
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
     /bin/bash /tmp/miniconda.sh -b -p /opt/conda && \
     rm /tmp/miniconda.sh && \
@@ -110,6 +116,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     mamba env create --name ${CONDA_ENV_NAME} --file environment.yml && \
     ln -s /opt/conda/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo "source activate ${CONDA_ENV_NAME}" >> ~/.bashrc && \
+    echo "source activate ${CONDA_ENV_NAME}" >> /workspace/.bashrc && \
     source activate ${CONDA_ENV_NAME} && \
     # Some TF tools expect a "python" binary ( 1 )
     ln -s $(which python3) /usr/local/bin/python && \
@@ -117,8 +124,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 
 # TensorFlow requirement ( 2 )
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/${CONDA_ENV_NAME}/lib/
+# TensorFlow requirement ( 4 )
+# TODO: Object Detection API
 
-from armory-base as armory-build
+from armory-base AS armory-build
 
 # Install Armory
 RUN source activate ${CONDA_ENV_NAME} && \
@@ -133,6 +142,13 @@ RUN source activate ${CONDA_ENV_NAME} && \
 #     (nohup -c "export PASSWORD=armory && export SHELL=/bin/bash && code-server --host 0.0.0.0 /workspace" 2> /dev/null&);
 
 # TODO: Configure Jupyter(add notebooks, extensions, config, etc)
+# TODO: Move launches to release
+# RUN (nohup \
+#         runuser \
+#             -l armory \
+#             -c "export PASSWORD=armory&&jupyter notebook --ip=0.0.0.0 --notebook-dir=/workspace/notebooks" \
+#         2> /dev/null & \
+#     );
 
 # Clean Up
 RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \

@@ -22,17 +22,17 @@ while [ "${1:-}" != "" ]; do
 done
 
 if [[ -z "${cached}" ]]; then
-    DOCKER_BASE="./docker/Dockerfile-base"
+    ARMORY_DOCKERFILE="./docker/Dockerfile-base"
 
     $dryrun docker build \
-        --file "${DOCKER_BASE}" \
+        --file "${ARMORY_DOCKERFILE}" \
         --target armory-base \
         -t twosixarmory/armory-base:latest \
         --progress=auto \
         .
 
     $dryrun docker build \
-        --file "${DOCKER_BASE}" \
+        --file "${ARMORY_DOCKERFILE}" \
         --target armory-build \
         --cache-from=twosixarmory/armory-base:latest \
         -t twosixarmory/base-build:latest \
@@ -40,12 +40,16 @@ if [[ -z "${cached}" ]]; then
         .
 
     $dryrun docker build \
-        --file "${DOCKER_BASE}" \
+        --file "${ARMORY_DOCKERFILE}" \
         --target armory-release \
         --cache-from=twosixarmory/armory-build:latest \
         -t twosixarmory/base:latest \
         --progress=auto \
         .
+
+    # docker scan --accept-license --dependency-tree --file "${ARMORY_DOCKERFILE}" twosixarmory/base:latest
+    # docker system prune --all --force
+    # docker run --gpus all --rm -it -v `pwd`:/tmp --entrypoint /bin/bash twosixarmory/base:latest
 
 else
     echo "Building the base image locally"
