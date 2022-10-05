@@ -6,76 +6,163 @@
 # based images should inhereit from this image using:
 #       FROM twosixlabs/armory-baseline AS armory-baseline
 #
+#
+#            ~~! Please remove/modify the following lines as updates are made to the image. !~~
+# Notes:
+#   [1] https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/gpu.Dockerfile
+#   [2] https://bcourses.berkeley.edu/courses/1478831/pages/glibcxx-missing
+#   [3] https://docs.ycrc.yale.edu/clusters-at-yale/guides/conda/#mamba-the-conda-alternative
+#   [4]
+#   [5]
+#
 ##########################################################################################
 
-FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
+ARG UBUNTU_VERSION=20.04
+ARG CUDNN_VERSION=8
+ARG CUDA_VERSION=11.6.2
+ARG CUDA=11.6
+ARG LIBNVINFER_MAJOR_VERSION=8
 
-# Temporary fix for broken nvidia package checksum
-# RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
-# Basic Apt-get Bits
-RUN apt-get -y -qq update && \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y \
-    wget \
-    vim \
-    build-essential \
-    git \
-    curl \
-#    libgl1-mesa-glx \
-#    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS armory-base
 
-# Install Conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    /opt/conda/bin/conda clean -tipsy && \
-    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
-#    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-#    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-#    echo "conda activate base" >> ~/.bashrc && \
-#    echo 'alias ll="ls -al"' >> ~/.bashrc
+ARG CUDA
+ARG CUDA_VERSION
+ARG LIBNVINFER_MAJOR_VERSION
+ARG UBUNTU_VERSION
+ARG UID=1000
+ARG GID=$UID
 
-ENV PATH=/opt/conda/bin:$PATH
+ENV ARMORY_CONTAINER="1"
+ENV LC_ALL="C.UTF-8"
+ENV LANG="C.UTF-8"
+ENV TZ="UTC"
+ENV CONDA_PYTHON_VERSION="3.9"
+ENV CONDA_ENV_NAME="armory"
+ENV PYTHONDONTWRITEBYTECODE="1"
+ENV PATH="/opt/conda/envs/$CONDA_ENV_NAME/bin:/opt/conda/bin:${PATH}"
+ENV DEBIAN_FRONTEND="noninteractive"
 
-# TensorFlow requirement
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
+COPY ./ /armory-repo
 
-# NOTE: using mamba because conda fails when trying to solve for environment
-RUN conda install -c conda-forge -n base mamba \
-    && conda clean --all
+WORKDIR /armory-repo
 
-WORKDIR /armory-repo/
-COPY environment.yml /armory-repo/
+# Needed for string substitution
+SHELL ["/bin/bash", "-c"]
 
-RUN mamba env update -f environment.yml -n base --prune \
-    && mamba clean --all
+# Install tools
+RUN apt-key adv --fetch-keys \
+        "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION/./}/x86_64/7fa2af80.pub" && \
+    apt-key adv --fetch-keys \
+        "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu${UBUNTU_VERSION/./}/x86_64/7fa2af80.pub" && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu${UBUNTU_VERSION/./}/x86_64 /" \
+        > /etc/apt/sources.list.d/tensorRT.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        sudo \
+        wget \
+        vim \
+        git \
+        curl \
+        # TF dependencies ( 1 )
+        build-essential \
+        ca-certificates \
+        cuda-command-line-tools-${CUDA/./-} \
+        libcublas-${CUDA/./-} \
+        cuda-nvrtc-${CUDA/./-} \
+        libcufft-${CUDA/./-} \
+        libcurand-${CUDA/./-} \
+        libcusolver-${CUDA/./-} \
+        libcusparse-${CUDA/./-} \
+        curl \
+        libfreetype6-dev \
+        libhdf5-serial-dev \
+        libzmq3-dev \
+        pkg-config \
+        software-properties-common \
+        unzip \
+        # TensorRT ( 1 )
+        libnvinfer${LIBNVINFER_MAJOR_VERSION} \
+        libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}
 
-#RUN /opt/conda/bin/conda env update -f environment.yml --prune \
-#    && /opt/conda/bin/conda clean --all
+# Create a non-root user
+RUN groupadd -r armory && \
+    useradd --gid $GID --uid $UID -r -g armory -m -d /workspace -s /bin/bash armory && \
+    usermod -aG sudo armory && \
+    echo "armory ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/armory && \
+    chmod 0440 /etc/sudoers.d/armory && \
+    chown -R armory:armory /armory-repo && \
+    chown -R armory:armory /workspace
+
+# Conda
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
+# TODO: Build the conda environment in a separate image, and copy it over.
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    /bin/bash /tmp/miniconda.sh -b -p /opt/conda && \
+    rm /tmp/miniconda.sh && \
+    conda install -c conda-forge -n base nomkl mamba && \
+    # Utilize mamba for faster conda installs ( 3 )
+    mamba env create --name ${CONDA_ENV_NAME} --file environment.yml && \
+    ln -s /opt/conda/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo "source activate ${CONDA_ENV_NAME}" >> ~/.bashrc && \
+    source activate ${CONDA_ENV_NAME} && \
+    # Update pip
+    pip --no-cache-dir install --upgrade pip setuptools && \
+    # Some TF tools expect a "python" binary ( 1 )
+    ln -s $(which python3) /usr/local/bin/python && \
+    conda deactivate
 
-# NOTE: Armory requirements and ART requirements are installed here to make patch updates fast and small
-RUN echo "Installing TensorFlow and ART/Armory requirements via pip"
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets==4.6 \
-    tensorflow==2.10 \
-    tensorboardx \
-    boto3 \
-    opencv-python \
-    ffmpeg-python \
-    pytest \
-    loguru \
-    docker \
-    jsonschema \
-    requests \
-    pydub \
-    transformers \
-    six \
-    setuptools \
-    tqdm
-# transformers is used for the Entailment metric only
-# pydub required for ART mp3 defense
+# TensorFlow requirement ( 2 )
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/${CONDA_ENV_NAME}/lib/
 
+# Clean Up
+RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    apt-get clean -y && \
+    conda clean -afy && \
+    # mamba clean --all --quiet --yes && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -f /var/log/*gz
+
+
+from armory-base as armory-build
+
+RUN source activate ${CONDA_ENV_NAME} && \
+    # Install Armory
+    pip install --no-compile --no-cache-dir --editable ".[all]" && \
+    armory configure --use-defaults && \
+    # Clean up
+    pip cache purge && \
+    mamba clean
+
+# Install VS Code Server
+# RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+#     apt-get install -y nodejs && \
+#     npm install -g yarn && \
+#     yarn global add code-server
+#     (nohup -c "export PASSWORD=armory && export SHELL=/bin/bash && code-server --host 0.0.0.0 /workspace" 2> /dev/null&);
+
+# TODO: Configure Jupyter(add notebooks, extensions, config, etc)
+
+
+from armory-build as armory-release
+
+USER armory
 WORKDIR /workspace
+
+# TODO: Volumes
+#VOLUMES = ["/workspace", "/armory-repo"]
+
+# Jupyter
+EXPOSE 8888
+
+# HEALTH
+# %{IRONBANK}% - HEALTHCHECK required every 10 seconds
+# HEALTHCHECK --interval=10s --timeout=1s --retries=5 \
+#   CMD curl -I -f --max-time 5 http://localhost:8080 || exit 1
+STOPSIGNAL SIGQUIT
+
+# ENTRYPOINT
+# %{IRONBANK}% - ENTRYPOINT is not allowed. Use CMD instead.
+CMD ["/bin/bash"]
