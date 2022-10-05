@@ -108,8 +108,6 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     ln -s /opt/conda/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo "source activate ${CONDA_ENV_NAME}" >> ~/.bashrc && \
     source activate ${CONDA_ENV_NAME} && \
-    # Update pip
-    pip --no-cache-dir install --upgrade pip setuptools && \
     # Some TF tools expect a "python" binary ( 1 )
     ln -s $(which python3) /usr/local/bin/python && \
     conda deactivate
