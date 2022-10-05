@@ -84,7 +84,7 @@ datasets-builder = [
 math = [
     "numpy",
     "scipy",
-    "scikit-learn",
+    "scikit-learn < 1.1.0",
     "matplotlib",
 ]
 
