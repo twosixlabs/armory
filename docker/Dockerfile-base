@@ -85,6 +85,9 @@ RUN apt-key adv --fetch-keys \
         libnvinfer${LIBNVINFER_MAJOR_VERSION} \
         libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}
 
+# Setup App Directories
+RUN mkdir {/armory-repo, /workspace}
+
 # Create a non-root user
 RUN groupadd -r armory && \
     # TODO: UID/GID
