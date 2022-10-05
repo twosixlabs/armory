@@ -1,5 +1,6 @@
 # bootstrap process creation and command line arguments
 
+## Command Trace
 This traces how command options percolate through armory instantiation
 
 `armory.__main__.py` is the entry point for armory run. It has an `if __name__` block on
@@ -24,3 +25,30 @@ result in unpredictable behavior
 In armory.scenarios.main in the `if __name__` block, first we have an independent
 duplicate (and out of sync) argument processor which then calls main.run_config which
 calls scenario.evaluate which finally runs application code.
+
+
+## Environmental Variables
+Armory currently utilizes 3 environmental variables to toggle on developer/testing features.
+These variables can be set globaly- e.g. in an `rc` file or via the `export` command- or in
+an ad hoc fashion on the command line like so, `ARMORY_DEV_MODE=1 armory run ...`
+
+The current variables are as follow:
+
+  - `ARMORY_DEV_MODE` (bool): Toggles developer mode💪 allowing the following variables to be read in.
+
+  - `ARMORY_PRETEND_VERSION` (str): Overrides versioning mechanism with a custom version string. Useful when building containers locally.
+
+  - `ARMORY_UPDATE_METADATA` (bool): Updates Armory's metadata in Python's site-package.
+
+  - `ARMORY_BIND_MOUNT` (bool): Mounts your current working directory into the container.
+
+### Example
+```bash
+ARMORY_DEV_MODE=1            \ # Toggle Developer Mode
+ARMORY_PRETEND_VERSION=1.2.3 \ # Set the version to "1.2.3"
+ARMORY_UPDATE_METADATA=1     \ # Update the pip version to "1.2.3"
+ARMORY_BIN_MOUNT=1           \ # Mount `pwd` into the container
+armory run                   \ # Off to the races!
+  scenario_configs/eval6/poisoning/audio_backdoor_undefended.json \
+  --use-gpu
+```
