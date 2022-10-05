@@ -86,7 +86,7 @@ RUN apt-key adv --fetch-keys \
         libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}
 
 # Setup App Directories
-RUN mkdir {/armory-repo, /workspace}
+RUN mkdir /{armory-repo, workspace}
 
 # Create a non-root user
 RUN groupadd -r armory && \
@@ -120,8 +120,8 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/${CONDA_ENV_NAME}/lib/
 
 from armory-base as armory-build
 
+# Install Armory
 RUN source activate ${CONDA_ENV_NAME} && \
-    # Install Armory
     pip install --no-compile --no-cache-dir --editable ".[all]" && \
     armory configure --use-defaults
 
