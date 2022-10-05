@@ -192,7 +192,7 @@ def total_wer(sample_wers):
     """
 
     if isinstance(sample_wers, list):
-        if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
+        if not all(len(wer_tuple) == 2 for wer_tuple in sample_wers):
             raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
     elif isinstance(sample_wers, np.ndarray):
         if sample_wers.ndim != 2 or sample_wers.shape[-1] != 2:
