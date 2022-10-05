@@ -118,26 +118,12 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # TensorFlow requirement ( 2 )
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/${CONDA_ENV_NAME}/lib/
 
-# Clean Up
-RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    apt-get clean -y && \
-    conda clean -afy && \
-    # mamba clean --all --quiet --yes && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -f /var/log/*gz
-
-
 from armory-base as armory-build
 
 RUN source activate ${CONDA_ENV_NAME} && \
     # Install Armory
     pip install --no-compile --no-cache-dir --editable ".[all]" && \
-    armory configure --use-defaults && \
-    # Clean up
-    pip cache purge && \
-    mamba clean
+    armory configure --use-defaults
 
 # Install VS Code Server
 # RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
@@ -147,6 +133,17 @@ RUN source activate ${CONDA_ENV_NAME} && \
 #     (nohup -c "export PASSWORD=armory && export SHELL=/bin/bash && code-server --host 0.0.0.0 /workspace" 2> /dev/null&);
 
 # TODO: Configure Jupyter(add notebooks, extensions, config, etc)
+
+# Clean Up
+RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    apt-get clean -y && \
+    conda clean -afy && \
+    # mamba clean --all --quiet --yes && \
+    pip cache purge && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm -f /var/log/*gz
 
 
 from armory-build as armory-release
