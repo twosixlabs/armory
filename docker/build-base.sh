@@ -13,32 +13,55 @@ while [ "${1:-}" != "" ]; do
             dryrun="echo" ;;
         --push)
             push=true ;;
+        --cached)
+            cached=true ;;
         *)
             usage ;;
     esac
     shift
 done
 
-echo "Building the base image locally"
-$dryrun docker build --force-rm --file ./docker/Dockerfile-base -t twosixarmory/base:latest --progress=auto .
+if [[ -z "${cached}" ]]; then
+    DOCKER_BASE="./docker/Dockerfile-base"
 
-if [[ -z "$push" ]]; then
-    echo ""
-    echo "If building the framework images locally, use the '--no-pull' argument. E.g.:"
-    echo "    python docker/build.py all --no-pull"
-    exit 0
+    $dryrun docker build \
+        --file "${DOCKER_BASE}" \
+        --target armory-base \
+        -t twosixarmory/armory-base:latest \
+        --progress=auto \
+        .
+
+    $dryrun docker build \
+        --file "${DOCKER_BASE}" \
+        --target armory-build \
+        --cache-from=twosixarmory/armory-base:latest \
+        -t twosixarmory/base:latest \
+        --progress=auto \
+        .
+
+else
+    echo "Building the base image locally"
+    $dryrun docker build --force-rm --file ./docker/Dockerfile-base -t twosixarmory/base:latest --progress=auto .
 fi
 
-tag=$(python -m armory --version)
-echo tagging twosixarmory/base:latest as $tag for dockerhub tracking
-$dryrun docker tag twosixarmory/base:latest twosixarmory/base:$tag
 
-echo ""
-echo "If you have not run 'docker login', with the proper credentials, these pushes will fail"
-echo "see docs/docker.md for instructions"
-echo ""
+# if [[ -z "$push" ]]; then
+#     echo ""
+#     echo "If building the framework images locally, use the '--no-pull' argument. E.g.:"
+#     echo "    python docker/build.py all --no-pull"
+#     exit 0
+# fi
 
-# the second push should result in no new upload, it just tag the new image as
-# latest
-$dryrun docker push twosixarmory/base:$tag
-$dryrun docker push twosixarmory/base:latest
+# tag=$(python -m armory --version)
+# echo tagging twosixarmory/base:latest as $tag for dockerhub tracking
+# $dryrun docker tag twosixarmory/base:latest twosixarmory/base:$tag
+
+# echo ""
+# echo "If you have not run 'docker login', with the proper credentials, these pushes will fail"
+# echo "see docs/docker.md for instructions"
+# echo ""
+
+# # the second push should result in no new upload, it just tag the new image as
+# # latest
+# $dryrun docker push twosixarmory/base:$tag
+# $dryrun docker push twosixarmory/base:latest
