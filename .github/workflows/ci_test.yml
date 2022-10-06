@@ -45,15 +45,14 @@ env:
 
 
 jobs:
+  test-docker-builds:
+    needs: test-stand-alone-builds
+    uses: ./.github/workflows/3-test-docker.yml
 # TODO WARNING: this is just for mwartell testing to not merge to develop
-# with these lines commented out
+# with these lines commented out. revert this whole file to the original
 #   scan-lint-build:
 #     uses: ./.github/workflows/1-scan-lint-build.yml
 
 #   test-stand-alone-builds:
 #     needs: scan-lint-build
 #     uses: ./.github/workflows/2-test-stand-alone.yml
-
-  test-docker-builds:
-    needs: test-stand-alone-builds
-    uses: ./.github/workflows/3-test-docker.yml
