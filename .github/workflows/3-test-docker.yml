@@ -18,16 +18,16 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune
-          git fetch origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-          git log --oneline --decorate -n 1
+    #   - name: 📩 Checkout the Source
+    #     run: |
+    #       git fetch --prune
+    #       git fetch origin +refs/tags/*:refs/tags/*
+    #       # Verify .git folder
+    #       if [ ! -d "./.git" ]; then
+    #         echo "Expected ./.git folder to exist"
+    #         exit 1
+    #       fi
+    #       git log --oneline --decorate -n 1
 
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
