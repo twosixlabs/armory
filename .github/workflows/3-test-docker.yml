@@ -9,7 +9,7 @@ env:
 # TODO: Add independent job that builds the images.
 jobs:
   docker-torch-unit:
-    name: ☁️ Pytorch Image Tests
+    name: ☁️ Docker Pytorch Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
