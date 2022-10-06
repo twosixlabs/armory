@@ -1,6 +1,6 @@
 {
-  "action": "workflow_dispatch",
-  "inputs": {
-      "dry_run": true
-  }
+    "action": "workflow_dispatch",
+    "inputs": {
+        "dry_run": true
+    }
 }
