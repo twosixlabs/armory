@@ -22,7 +22,7 @@ _CITATION = """
 }
 """
 
-_URLS = "carla_mot_dev_1.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.0.tar.gz"
 
 
 class CarlaMOTDev(tfds.core.GeneratorBasedBuilder):
