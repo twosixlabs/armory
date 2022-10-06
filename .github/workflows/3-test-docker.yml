@@ -28,6 +28,9 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
+          python -m setuptools_scm
+          pwd
+          git log --oneline --decorate -n 1
       # yamllint enable rule:indentation
 
       - name: 🐍 Use Python 3.9
