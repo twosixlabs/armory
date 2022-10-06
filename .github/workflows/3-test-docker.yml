@@ -19,15 +19,15 @@ jobs:
 
       # Get history and tags for SCM versioning to work
       # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
+    #   - name: 📩 Checkout the Source
+    #     run: |
+    #       git fetch --prune --unshallow || true
+    #       git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    #       # Verify .git folder
+    #       if [ ! -d "./.git" ]; then
+    #         echo "Expected ./.git folder to exist"
+    #         exit 1
+    #       fi
       # yamllint enable rule:indentation
 
       - name: 🐍 setup python
@@ -51,7 +51,7 @@ jobs:
       # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          ARMORY_VERSION=`python -m armory.utils.version`
           echo "docker friendly ARMORY_VERSION=${ARMORY_VERSION}"
           docker run                                  \
             --rm                                      \
@@ -61,12 +61,6 @@ jobs:
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
-      # TODO:
-      # - name: Dump docker logs on failure
-      #   if: failure()
-      #   uses: jwalton/gh-docker-logs@v1
-      # yamllint enable rule:indentation
-
 
   docker-tf2-unit:
     name: ☁️ Docker TF2 Image Tests
