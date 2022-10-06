@@ -137,7 +137,7 @@ jobs:
         run: |
           echo "Armory Version: ${{ env.ARMORY_VERSION }}"
           echo "Building Armory ${{ matrix.image }} Image"
-          python docker/build.py --framework ${{ matrix.image }} > /tmp/build.log
+          python docker/build.py --framework ${{ matrix.image }} >> /tmp/build.log
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3
