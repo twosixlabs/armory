@@ -46,7 +46,6 @@ env:
 
 jobs:
   test-docker-builds:
-    needs: test-stand-alone-builds
     uses: ./.github/workflows/3-test-docker.yml
 # TODO WARNING: this is just for mwartell testing to not merge to develop
 # with these lines commented out. revert this whole file to the original
