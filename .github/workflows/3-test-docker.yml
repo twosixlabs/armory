@@ -17,6 +17,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Get history and tags for SCM versioning to work
+      # yamllint disable rule:indentation
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+      # yamllint enable rule:indentation
+
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -37,7 +49,7 @@ jobs:
       # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
-          IMAGE_VERSION=`python -m armory.utils.get_docker_version`
+          IMAGE_VERSION=`armory --show-docker-version-tag`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
