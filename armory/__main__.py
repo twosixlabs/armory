@@ -28,6 +28,7 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils.configuration import load_config, load_config_stdin
+import armory.utils.version
 import armory.logs
 
 
