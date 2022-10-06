@@ -760,6 +760,10 @@ def main():
     elif sys.argv[1] in ("-v", "--version", "version"):
         print(f"{armory.__version__}")
         sys.exit(0)
+    elif sys.argv[1] == "--show-docker-version-tag":
+        version = armory.utils.version.get_version()
+        print(armory.utils.version.to_docker_tag(version))
+        sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
     parser.add_argument(
