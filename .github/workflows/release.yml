@@ -2,7 +2,6 @@
 # yamllint disable rule:comments-indentation
 # yamllint disable rule:indentation
 
-
 name: 🎁 Armory Release Workflow
 
 on:
@@ -20,6 +19,11 @@ on:
     #     description: 'Release Version'
     #     required: false
     #     default: '0.0.0'
+
+# Limit workflow to one job per branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   RELEASE_DRY_RUN: "${{ github.event_name != 'repository_dispatch' && github.event.inputs.dry_run }}"
@@ -65,6 +69,16 @@ jobs:
           password: ${{ secrets.pypi_token }}
           packages_dir: dist
           verbose: true
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ !failure() }}
+        continue-on-error: true
+        with:
+          name: armory-release-artifacts
+          retention-days: 1
+          path: |
+            dist/*.whl
 
 
   release-docker:
@@ -115,8 +129,19 @@ jobs:
       - name: 🔨 Build Release Images
         run: |
           echo "Building Armory ${{ env.ARMORY_VERSION }} Images"
-          python docker/build.py --framework all
-          docker image ls
+          python docker/build.py --framework all > /tmp/build.log
+          docker image ls > /tmp/images.log
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ !failure() }}
+        continue-on-error: true
+        with:
+          name: armory-release-artifacts
+          retention-days: 1
+          path: |
+            /tmp/build.log
+            /tmp/images.log
 
       - name: 📦 Push Release Images
         if: ${{ env.RELEASE_DRY_RUN == 'false' }}
