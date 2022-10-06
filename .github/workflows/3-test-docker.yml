@@ -18,31 +18,29 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          git fetch origin +refs/tags/*:refs/tags/*
           # Verify .git folder
           if [ ! -d "./.git" ]; then
             echo "Expected ./.git folder to exist"
             exit 1
           fi
-      # yamllint enable rule:indentation
+          git log --oneline --decorate -n 1
 
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-      - name: ⚙️ Installing Armory
+      - name: ⚙️ Install Armory
         shell: bash
         run: |
-          pip install setuptools_scm
-          python -m setuptools_scm
+          python -m pip install --upgrade pip build setuptools_scm
           pwd
           git log --oneline --decorate -n 1
-          python -m pip install --upgrade pip build
+          python -m setuptools_scm
           pip install .
           armory configure --use-defaults
 
