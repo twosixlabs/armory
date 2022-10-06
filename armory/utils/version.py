@@ -51,10 +51,7 @@ def get_tag_version(git_dir: Path = None) -> str:
         "root": project_root,
         "version_scheme": "post-release",
     }
-    if not Path(project_root / ".git").is_dir():
-        # TODO: in CI this error goes to stdout and hides the return of `armory --version`
-        log.error("ERROR: Unable to find `.git` directory!")
-        return
+    # TODO: what should happen if (when) get_version faults?
     return setuptools_scm.get_version(**scm_config)
 
 
@@ -131,8 +128,3 @@ def get_version() -> str:
         return version_str
 
     raise RuntimeError("Unable to determine version number!")
-
-
-# TODO: ugly hack to allow python -m armory.utils.version to spit out docker tag
-if __name__ == "__main__":
-    print(to_docker_tag(get_version()))
