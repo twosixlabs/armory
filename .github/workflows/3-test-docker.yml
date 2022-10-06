@@ -30,20 +30,17 @@ jobs:
           fi
       # yamllint enable rule:indentation
 
-      - name: 🐍 Switch Python 3.9
+      - name: 🐍 setup python
         uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
 
-      - name: 🌱 Setup Test Enviroment
+      - name: 🌱 Setup Test Environment
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
+          python -m pip install --upgrade pip build
 
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          pip install --no-compile --editable .
+          pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
@@ -55,6 +52,7 @@ jobs:
       - name: 🤞 Run Image tests
         run: |
           ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          echo "docker friendly ARMORY_VERSION=${ARMORY_VERSION}"
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
@@ -79,33 +77,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
 
-      - name: 🐍 Switch Python 3.9
+      - name: 🐍 setup python
         uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
 
       - name: 🌱 Setup Test Enviroment
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
+          python -m pip install --upgrade pip build
 
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          pip install --no-compile --editable .
+          pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
