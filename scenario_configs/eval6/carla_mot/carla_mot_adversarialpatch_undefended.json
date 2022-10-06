@@ -59,11 +59,11 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.carla_mot",
-        "name": "CarlaMOTTask"
+        "name": "CarlaMOT"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch",
-        "external_github_repo": null,
+        "docker_image": "twosixsarmory/armory-bytetrack",
+        "external_github_repo": "ifzhang/ByteTrack",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
