@@ -22,6 +22,7 @@ from armory.data.adversarial import (  # noqa: F401
     carla_obj_det_test as codt,
     carla_video_tracking_dev as cvtd,
     carla_video_tracking_test as cvtt,
+    carla_mot_dev as cmotd,
 )
 from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
@@ -817,7 +818,7 @@ def carla_video_tracking_dev(
         shuffle_files=shuffle_files,
         context=carla_video_tracking_dev_context,
         as_supervised=False,
-        supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
+        supervised_xy_keys=("video", ("annotations", "patch_metadata")),
         **kwargs,
     )
 
@@ -859,5 +860,59 @@ def carla_video_tracking_test(
         context=carla_video_tracking_test_context,
         as_supervised=False,
         supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
+        **kwargs,
+    )
+
+
+def carla_multi_object_tracking_dev(
+    split: str = "dev",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
+    label_preprocessing_fn=None, # Mike's example code does not squeeze off the batch dimension so this may not need preprocessing.
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+    max_frames: int = None,
+    **kwargs,
+):
+    """
+    Dev set for CARLA multi-object video tracking dataset, The dev set also contains green screens
+    for adversarial patch insertion.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_multi_object_tracking_dev dataset"
+        )
+    if batch_size != 1:
+        raise ValueError("carla_multi_object_tracking_dev batch size must be set to 1")
+
+    if max_frames:
+        clip = datasets.ClipFrames(max_frames)
+        clip_labels = ClipVideoTrackingLabels(max_frames)
+    else:
+        clip = None
+        clip_labels = None
+
+    preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
+    label_preprocessing_fn = datasets.label_preprocessing_chain(
+        clip_labels, label_preprocessing_fn
+    )
+
+    return datasets._generator_from_tfds(
+        "carla_mot_dev:1.0.0",
+        split=split,
+        epochs=epochs,
+        batch_size=batch_size,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=carla_video_tracking_dev_context,
+        as_supervised=False,
+        supervised_xy_keys=("video", ("annotations", "patch_metadata")),
         **kwargs,
     )
