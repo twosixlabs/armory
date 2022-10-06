@@ -2,6 +2,7 @@
 # yamllint disable rule:comments-indentation
 # yamllint disable rule:indentation
 
+
 name: 🎁 Armory Release Workflow
 
 on:
@@ -133,7 +134,7 @@ jobs:
           done
 
 # yamllint enable rule:indentation
-# yamllint enable rule:indentation
+# yamllint enable rule:comments-indentation
 
 # Workflow Test:
 # act --detect-event -j release-wheel
