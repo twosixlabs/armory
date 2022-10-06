@@ -9,7 +9,7 @@ env:
 # TODO: Add independent job that builds the images.
 jobs:
   docker-torch-unit:
-    name: ☁️ Pytorch Image Tests [Container]
+    name: ☁️ Pytorch Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
@@ -130,7 +130,7 @@ jobs:
             docker run                                         \
             --rm                                               \
             --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+            twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
               pytest                                           \
                 -c /armory-repo/pyproject.toml                 \
                 -m "pytorch_deepspeech"                        \
