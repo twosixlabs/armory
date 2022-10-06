@@ -863,6 +863,11 @@ def carla_video_tracking_test(
         **kwargs,
     )
 
+def carla_mot_label_preprocessing(x, y):
+    annotations, patch_metadata = y
+    # TODO convert annotations
+    return (annotations, patch_metadata)
+
 
 def carla_multi_object_tracking_dev(
     split: str = "dev",
@@ -870,7 +875,7 @@ def carla_multi_object_tracking_dev(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
-    label_preprocessing_fn=None, # Mike's example code does not squeeze off the batch dimension so this may not need preprocessing.
+    label_preprocessing_fn=carla_mot_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
