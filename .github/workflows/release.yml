@@ -1,5 +1,6 @@
 ---
 # yamllint disable rule:comments-indentation
+# yamllint disable rule:indentation
 
 name: 🎁 Armory Release Workflow
 
@@ -131,6 +132,7 @@ jobs:
             docker push twosixarmory/${image}:latest
           done
 
+# yamllint enable rule:indentation
 # yamllint enable rule:indentation
 
 # Workflow Test:
