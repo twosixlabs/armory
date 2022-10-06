@@ -94,7 +94,7 @@ jobs:
 
       - name: 🌎 Setup Build Environment
         run: |
-          pip install pip==22.2.2
+          pip install pip>=22.2.2
           pip install .
 
           armory configure --use-defaults
