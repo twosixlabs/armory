@@ -38,7 +38,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: 🐄 Got git?
+      - name: 🐄 Checkout Armory w/ full depth(for tags and SCM)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
@@ -98,7 +98,7 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: 🐄 Got git?
+      - name: 🐄 Checkout Armory w/ full depth(for tags and SCM)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
