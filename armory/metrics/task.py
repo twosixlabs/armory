@@ -1548,3 +1548,19 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
             ):
                 return 1
     return 0
+
+
+@batchwise 
+def hota(**args):
+    # TODO
+    return 1
+
+@batchwise
+def deta(**args):
+    # TODO
+    return 1
+
+@batchwise
+def assa(**args):
+    # TODO
+    return 1
