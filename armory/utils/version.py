@@ -45,14 +45,19 @@ def get_metadata_version(package: str, version_str: str = "") -> str:
 
 
 def get_tag_version(git_dir: Path = None) -> str:
-    """Retrieve the version from the most recent git tag"""
+    """Retrieve the version from the most recent git tag, return empty string on
+    failure"""
     project_root = Path(__file__).parent.parent.parent
     scm_config = {
         "root": project_root,
         "version_scheme": "post-release",
     }
-    # TODO: what should happen if (when) get_version faults?
-    return setuptools_scm.get_version(**scm_config)
+
+    try:
+        # setuptools_scm is really persnickety, this fails often
+        return setuptools_scm.get_version(**scm_config)
+    except LookupError:
+        return ""
 
 
 def get_build_hook_version(version_str: str = "") -> str:
