@@ -59,7 +59,7 @@
         "name": "Poison"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech",
+        "docker_image": "twosixarmory/pytorch",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
