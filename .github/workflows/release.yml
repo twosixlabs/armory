@@ -68,7 +68,7 @@ jobs:
 
 
   release-docker:
-    name: Build and release tf2 docker image
+    name: Build and Release Docker Images
     needs: [release-wheel]
     runs-on: ubuntu-latest
     steps:
