@@ -668,6 +668,8 @@ def launch(command_args, prog, description):
     (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
+    if not args.interactive and not args.jupyter:
+        args.interactive = True
     exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -699,9 +701,8 @@ def exec(command_args, prog, description):
     if exec_args:
         command = " ".join(exec_args)
     else:
-        print("ERROR: exec command required")
-        parser.print_help()
-        sys.exit(1)
+        print("WARNING: no exec command provided. Using no-op.")
+        command = "true # No-op"
 
     args = parser.parse_args(armory_args)
     armory.logs.update_filters(args.log_level, args.debug)

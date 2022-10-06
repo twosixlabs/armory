@@ -22,9 +22,10 @@ RUN apt-get -y -qq update && \
     build-essential \
     git \
     curl \
-#    libgl1-mesa-glx \
+    libgl1-mesa-glx \
 #    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
+# libgl1-mesa-glx is needed for cv2 (opencv-python)
 
 # Install Conda
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
