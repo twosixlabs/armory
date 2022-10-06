@@ -85,6 +85,13 @@ jobs:
     name: Build and Release Docker Images
     needs: [release-wheel]
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: pytorch
+          - image: pytorch-deepspeech
+          - image: tf2
     steps:
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
@@ -126,11 +133,11 @@ jobs:
         #   docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
       # TODO: Build Base Image
-      - name: 🔨 Build Release Images
+      - name: 🔨 Build Release Image
         run: |
-          echo "Building Armory ${{ env.ARMORY_VERSION }} Images"
-          python docker/build.py --framework all > /tmp/build.log
-          docker image ls > /tmp/images.log
+          echo "Armory Version: ${{ env.ARMORY_VERSION }}"
+          echo "Building Armory ${{ matrix.image }} Image"
+          python docker/build.py --framework ${{ matrix.image }} > /tmp/build.log
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3
@@ -141,23 +148,21 @@ jobs:
           retention-days: 1
           path: |
             /tmp/build.log
-            /tmp/images.log
 
       - name: 📦 Push Release Images
         if: ${{ env.RELEASE_DRY_RUN == 'false' }}
         run: |
           ARMORY_VERSION="${{ env.ARMORY_VERSION }}"
-          ARMORY_IMAGES=(pytorch pytorch-deepspeech tf2)
 
-          echo "Preparing Armory $ARMORY_VERSION Images"
-          for image in "${ARMORY_IMAGES[@]}"; do
-            echo "Pushing ${image}:${ARMORY_VERSION}"
-            docker push twosixarmory/${image}:${ARMORY_VERSION}
-            echo "Tagging ${image}:${ARMORY_VERSION} as ${image}:latest"
-            docker tag twosixarmory/${image}:${ARMORY_VERSION} twosixarmory/${image}:latest
-            echo "Pushing ${image}:latest"
-            docker push twosixarmory/${image}:latest
-          done
+          echo "Pushing ${{ matrix.image }}:${ARMORY_VERSION}"
+          docker push twosixarmory/${{ matrix.image }}:${ARMORY_VERSION}
+
+          echo "Tagging ${{ matrix.image }}:${ARMORY_VERSION} as ${{ matrix.image }}:latest"
+          docker tag twosixarmory/${{ matrix.image }}:${ARMORY_VERSION} twosixarmory/${{ matrix.image }}:latest
+
+          echo "Pushing ${{ matrix.image }}:latest"
+          docker push twosixarmory/${{ matrix.image }}:latest
+
 
 # yamllint enable rule:indentation
 # yamllint enable rule:comments-indentation
