@@ -113,7 +113,7 @@ jobs:
       - name: 🔨 Build Release Images
         run: |
           echo "Building Armory ${{ env.ARMORY_VERSION }} Images"
-          # python docker/build.py --framework all
+          python docker/build.py --framework all
 
       - name: 📦 Push Release Images
         if: ${{ env.RELEASE_DRY_RUN == 'false' }}
