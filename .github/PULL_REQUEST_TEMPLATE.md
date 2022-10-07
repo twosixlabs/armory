@@ -17,4 +17,4 @@ If you made changes to the `armory` directory, a table will populate in a commen
 ### Check off the following:
 
 - [ ] I have reviewed my changes in staging (look for the "Automatically generated comment" and click the links in the "Preview" column to view your latest changes).
-- [ ] For content changes, I have completed the [self-review checklist](/../../docs/contributing/self-review.md#self-review).
+- [ ] For content changes, I have completed the [self-review checklist](/docs/contributing/self-review.md#self-review).
