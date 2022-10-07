@@ -119,6 +119,8 @@ def init(*args, **kwargs):
     docker_tag = to_docker_tag(get_version())
 
     print(f"building {frameworks} with tag {docker_tag}")
+    print("why is this line not printing in CI?")
+    print("why is this line not printing in CI?", file=sys.stderr)
     for key in ["framework", "func"]:
         del kwargs[key]
     for framework in frameworks:
@@ -127,6 +129,8 @@ def init(*args, **kwargs):
 
 
 if __name__ == "__main__":
+    print("starting build.py")
+    print("starting build.py", file=sys.stderr)
     # Ensure correct location
     if not (root_dir / "armory").is_dir():
         sys.exit(
