@@ -9,41 +9,24 @@ env:
 # TODO: Add independent job that builds the images.
 jobs:
   docker-torch-unit:
-    name: ☁️ Pytorch Image Tests [Container]
+    name: ☁️ Docker Pytorch Image Tests
     runs-on: ubuntu-latest
     steps:
-      - name: 🐄 Got git?
+      - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
-
-      - name: 🐍 Switch Python 3.9
+      - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-      - name: 🌱 Setup Test Enviroment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
-      - name: ⚙️ Installing Armory
+      - name: ⚙️ Install Armory
         shell: bash
         run: |
-          pip install --no-compile --editable .
+          python -m pip install --upgrade pip build
+          pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
@@ -54,58 +37,36 @@ jobs:
       # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          IMAGE_VERSION=`armory --show-docker-version-tag`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/pytorch:${ARMORY_VERSION}    \
+            twosixarmory/pytorch:${IMAGE_VERSION}    \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
-      # TODO:
-      # - name: Dump docker logs on failure
-      #   if: failure()
-      #   uses: jwalton/gh-docker-logs@v1
       # yamllint enable rule:indentation
-
 
   docker-tf2-unit:
     name: ☁️ Docker TF2 Image Tests
     runs-on: ubuntu-latest
     steps:
-      - name: 🐄 Got git?
+      - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
-
-      - name: 🐍 Switch Python 3.9
+      - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-      - name: 🌱 Setup Test Enviroment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          pip install --no-compile --editable .
+          python -m pip install --upgrade pip build
+          pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
@@ -115,11 +76,11 @@ jobs:
       # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          IMAGE_VERSION=`armory --show-docker-version-tag`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/tf2:${ARMORY_VERSION}        \
+            twosixarmory/tf2:${IMAGE_VERSION}        \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
@@ -131,38 +92,21 @@ jobs:
     name: ☁️ Docker Deepspeech Image Tests
     runs-on: ubuntu-latest
     steps:
-      - name: 🐄 Got git?
+      - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
-
-      - name: 🐍 Switch Python 3.9
+      - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-      - name: 🌱 Setup Test Enviroment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          pip install --no-compile --editable .
+          python -m pip install --upgrade pip build
+          pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
@@ -172,12 +116,12 @@ jobs:
       # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
+          IMAGE_VERSION=`armory --show-docker-version-tag`
 
           docker run                                           \
             --rm                                               \
             --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+            twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
               pytest                                           \
                 -c /armory-repo/pyproject.toml                 \
                 -m "not docker_required and unit"              \
@@ -186,7 +130,7 @@ jobs:
             docker run                                         \
             --rm                                               \
             --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
+            twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
               pytest                                           \
                 -c /armory-repo/pyproject.toml                 \
                 -m "pytorch_deepspeech"                        \
