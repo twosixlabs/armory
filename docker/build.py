@@ -120,6 +120,7 @@ def init(*args, **kwargs):
     from armory.utils.version import get_version, to_docker_tag
 
     docker_tag = to_docker_tag(get_version())
+    print(f"probably empty tag {docker_tag}
 
     print(f"building {frameworks} with tag {docker_tag}")
     print("why is this line not printing in CI?")
