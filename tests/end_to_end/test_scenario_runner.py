@@ -205,6 +205,8 @@ def test_scenarios(capsys, scenario_runner):
         else:
             return obj
 
+    # TODO: Catalog all the result keys different models use.
+    keys = set()
     for runner in scenario_runner:
         try:
             scenario_log_path, scenario_log_data = runner.evaluate()
@@ -215,6 +217,7 @@ def test_scenarios(capsys, scenario_runner):
             continue
 
         scenario_log_path = Path(scenario_log_path)
+        results = runner.results
 
         # Ensure the file exists.
         assert scenario_log_path.exists(), f"Missing result file: {scenario_log_path}"
@@ -227,11 +230,18 @@ def test_scenarios(capsys, scenario_runner):
             # Simple object comparison.
             assert (ordered(json.loads(Path(scenario_log_path).read_text())) == ordered(scenario_log_data)), "Scenario log data does not match."
 
+        # TODO: Check result tolerance.
+        keys.update(results.keys())
+        benign_mean = results['benign_mean_categorical_accuracy']
+        adversarial_mean = results['adversarial_mean_categorical_accuracy']
         with capsys.disabled():
             print(runner.results)
+            print(f"Benign mean: {benign_mean}")
+            print(f"Adversarial mean: {adversarial_mean}")
 
-        # TODO: Check result tolerance.
-        # TODO: Clean up artifacts after tests.
+    with capsys.disabled():
+        print(keys)
+
 
 # TODO:
 # def test_results(capsys):
