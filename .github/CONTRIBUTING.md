@@ -18,7 +18,7 @@ useful to set up the [Armory pre-commit hooks](/tools/pre-commit.sh).  For more 
 ## Setting up the Development Environment
 Armory follows the [GitHub Standard Fork & Pull Request Workflow](https://gist.github.com/Chaser324/ce0505fbed06b947d962) and therefore, to
 get started with contributing to armory, you will first need to head over to [https://github.com/twosixlabs/armory](https://github.com/twosixlabs/armory)
-and fork the repo.  Once forked, clone that fork to your computer and cd into the forked repo location (herein refered to as `[armory-fork-repo]`).
+and fork the repo.  Once forked, clone that fork to your computer and cd into the forked repo location (herein refered to as `YOUR_ARMORY_REPO`).
 
 From here, you will need to setup your python virtual environment and, depending on your use case, other applications such as Docker.  The following
 section will describe the details here in a bit more detail.
@@ -30,7 +30,7 @@ to install some additional requirements.  Typically, it is useful to use the `-e
 will point to your local directory, therefore utilizing code edits without requiring follow-on installs.  To accomplish
 this run:
 ```bash
-cd [armory-fork-repo]
+cd YOUR_ARMORY_REPO
 pip install -e .[developer]
 ```
 Now that you have the environment setup, kickoff the baseline tests to make sure its all good:
@@ -55,7 +55,7 @@ Once docker is installed, armory downloads and launches containers based on the 
 Note: only release versions of armory will be published to [Dockerhub](https://hub.docker.com/), therefore,
 development branch images much be built locally using:
 ```bash
-cd [armory-fork-repo]
+cd YOUR_ARMORY_REPO
 bash docker/build.sh <tf2|pytorch|pytorch-deepspeech|all> dev
 ```
 
