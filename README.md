@@ -10,7 +10,7 @@
   ** -->
 <div align="center">
 
-[![CI][ci-badge]][ci-url]
+[![:octocat: CI][ci-badge]][ci-url]
 [![PyPI Status Badge][pypi-badge]][pypi-url]
 [![PyPI - Python Version][python-badge]][python-url]
 [![License: MIT][license-badge]][license-url]
@@ -28,14 +28,14 @@
   </a>
 
   <p align="center">
-    Adversarial Defense Evaluation Playground for Machine Learning Models
+    Adversarial Robustness Playground
     <br />
-    <a href="/docs"><strong>Explore the docs »</strong></a>
+    <a href="/docs"><strong>🔍 Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="/../../issues">Report Bug</a>
+    <a href="/../../issues">🐛 Report a Bug</a>
     ·
-    <a href="/../../issues">Request Feature</a>
+    <a href="/../../issues">📝 Request a Feature</a>
   </p>
 
 </div>
@@ -67,7 +67,7 @@ To change these default directories simply run `armory configure` after installa
 
 # Usage
 
-There are three ways to interact with the armory container system.
+There are three ways to interact with Armory's container system.
 
 1) `armory run`
 * `armory run <path/to/config.json>`.
@@ -124,7 +124,7 @@ datasets, and scenarios can be utilized.
 
 Additionally, volumes (such as your current working directory) will be mounted from
 your system host so that you can modify code to be ran, and retrieve outputs.
-For more information on these mounts, please see our [Docker documentation](/docs/docker.md#docker-volume-mounts)
+For more information on these mounts, please see our [🐳 Docker documentation](/docs/docker.md#docker-volume-mounts)
 
 # Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities.
