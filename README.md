@@ -8,13 +8,12 @@
   ** See the bottom of this document for the declaration of the reference variables.
   ** https://www.markdownguide.org/basic-syntax/#reference-style-links
   ** -->
-[![CI]([ci-shield])][ci-url]
-
-  <!-- [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
-  [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/armory-testbed)](https://pypi.org/project/armory-testbed)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Docs](https://readthedocs.org/projects/armory/badge/)](https://armory.readthedocs.io/en/latest/)
-  [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black) -->
+[![CI][ci-badge]][ci-url]
+[![PyPI Status Badge][pypi-badge]][pypi-url]
+[![PyPI - Python Version][python-badge]][python-url]
+[![License: MIT][license-badge]][license-url]
+[![Docs][docs-badge]][docs-url]
+[![Code style: black][style-badge]][style-url]
 
 
 <!-- PROJECT LOGO !-->
@@ -152,3 +151,13 @@ Agency (DARPA).
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [ci-shield]: /workflows/GitHub%20CI/badge.svg
 [ci-url]: /actions/workflows/
+[pypi-badge]: https://badge.fury.io/py/armory-testbed.svg
+[pypi-url]: https://pypi.org/project/armory-testbed
+[python-badge]: https://img.shields.io/pypi/pyversions/armory-testbed
+[python-url]: https://pypi.org/project/armory-testbed
+[license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
+[license-url]: https://opensource.org/licenses/MIT
+[docs-badge]: https://readthedocs.org/projects/armory/badge/
+[docs-url]: https://readthedocs.org/projects/armory/
+[style-badge]: https://img.shields.io/badge/code%20style-black-000000.svg
+[style-url]: https://github.com/ambv/black
