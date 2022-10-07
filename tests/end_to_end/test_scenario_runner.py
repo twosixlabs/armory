@@ -197,7 +197,6 @@ def test_scenarios(capsys, scenario_runner):
     Raises:
             AssertionError: If the scenario runner fails.
     """
-    # Check that the results were written.
     for runner in scenario_runner:
         try:
             scenario_log_path, scenario_log_data = runner.evaluate()
@@ -222,6 +221,8 @@ def test_scenarios(capsys, scenario_runner):
         # Ensure the file exists.
         # result_file = Path(log_path)
         # assert result_file.exists(), f"Missing result file: {result_file}"
+
+        # Check that the results were written.
 
 
 # TODO:
