@@ -12,8 +12,8 @@ For more details, including how to set up your development environment for eithe
 
 Armory Development follows the [GitHub Standard Fork & Pull Request Workflow](https://gist.github.com/Chaser324/ce0505fbed06b947d962).
 
-Armory uses GitHub Actions to test contributions, for more details see [Armory CI](../.github/ci_test.yml).  Generally it will be most
-useful to set up the [Armory pre-commit hooks](../tools/pre-commit.sh).  For more information see the [Armory Style Guide](./style.md).
+Armory uses GitHub Actions to test contributions, for more details see [Armory CI](/.github/ci_test.yml).  Generally it will be most
+useful to set up the [Armory pre-commit hooks](/tools/pre-commit.sh).  For more information see the [Armory Style Guide](/docs/style.md).
 
 ## Setting up the Development Environment
 Armory follows the [GitHub Standard Fork & Pull Request Workflow](https://gist.github.com/Chaser324/ce0505fbed06b947d962) and therefore, to
@@ -44,7 +44,7 @@ python -m pytest -s tests/test_host
 ```
 
 If this is successful you are off to the races!  If you would like to run armory in `--no-docker` mode, see:
-[Armory No Docker Setup](./no_docker_mode.md).
+[Armory No Docker Setup](/docs/no_docker_mode.md).
 
 ### Docker Operation Mode
 Armory can utilize [docker](https://www.docker.com/) to launch containers for execution of armory experiments.
@@ -62,7 +62,7 @@ bash docker/build.sh <tf2|pytorch|pytorch-deepspeech|all> dev
 ## Style Guide
 Armory enforces code / file styling using [Flake8](https://flake8.pycqa.org/), [black](https://github.com/psf/black),
 [yamllint](https://yamllint.readthedocs.io/en/stable/), etc.  For more information about
-how we configure these tools, see [Armory Style Guide](./style.md).
+how we configure these tools, see [Armory Style Guide](/docs/style.md).
 
 ## Pull Requests
 
@@ -87,5 +87,5 @@ This has tests for docker and native modes as well as formatting.
 
 ## Documentation
 When adding new functionality or modifying existing functionality, please update documentation.
-Docs are all markdown (`.md`) files located in [docs](./docs/) directory or its subdirectories.
-If doc files are added or removed, please also update the [markdown yaml](./mkdocs.yml)
+Docs are all markdown (`.md`) files located in [docs](/docs/) directory or its subdirectories.
+If doc files are added or removed, please also update the [markdown yaml](/mkdocs.yml)
