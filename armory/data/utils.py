@@ -320,7 +320,26 @@ def download_verify_dataset_cache(dataset_dir, checksum_file, name):
         if completedprocess.returncode:
             log.warning("bash tar failed. Reverting to python tar unpacking")
             with tarfile.open(tar_filepath, "r:gz") as tar_ref:
-                tar_ref.extractall(tmp_dir)
+                def is_within_directory(directory, target):
+                    
+                    abs_directory = os.path.abspath(directory)
+                    abs_target = os.path.abspath(target)
+                
+                    prefix = os.path.commonprefix([abs_directory, abs_target])
+                    
+                    return prefix == abs_directory
+                
+                def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+                
+                    for member in tar.getmembers():
+                        member_path = os.path.join(path, member.name)
+                        if not is_within_directory(path, member_path):
+                            raise Exception("Attempted Path Traversal in Tar File")
+                
+                    tar.extractall(path, members, numeric_owner=numeric_owner) 
+                    
+                
+                safe_extract(tar_ref, tmp_dir)
     except tarfile.ReadError:
         log.warning(f"Could not read tarfile: {tar_filepath}")
         log.warning("Falling back to processing data...")
