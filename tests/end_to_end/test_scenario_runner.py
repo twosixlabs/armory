@@ -201,8 +201,8 @@ def test_scenarios(capsys, scenario_runner):
     for runner in scenario_runner:
         try:
             scenario_log_path, scenario_log_data = runner.evaluate()
-            # out, err = capsys.readouterr()
-            assert scenario_log is not None, "Scenario log is None."
+            # stdout, stderr = capsys.readouterr()
+            assert scenario_log_path is not None, "Scenario log is None."
         except:
             assert False, "Error occured while executing scenario."
             continue
