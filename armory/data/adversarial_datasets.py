@@ -818,7 +818,7 @@ def carla_video_tracking_dev(
         shuffle_files=shuffle_files,
         context=carla_video_tracking_dev_context,
         as_supervised=False,
-        supervised_xy_keys=("video", ("annotations", "patch_metadata")),
+        supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
         **kwargs,
     )
 
