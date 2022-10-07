@@ -149,7 +149,7 @@ Agency (DARPA).
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[ci-shield]: /workflows/GitHub%20CI/badge.svg
+[ci-badge]: /workflows/GitHub%20CI/badge.svg
 [ci-url]: /actions/workflows/
 [pypi-badge]: https://badge.fury.io/py/armory-testbed.svg
 [pypi-url]: https://pypi.org/project/armory-testbed
