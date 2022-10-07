@@ -123,12 +123,13 @@ def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
     errors = []
     try:
         version = get_tag_version()
-        log.info(f"version {version} found via git tag")
-        return version
     except LookupError as e:
         error_str = f"version not found via git tag: {e}"
         log.debug(error_str)
         errors.append(error_str)
+    finally:
+        log.info(f"version |{version}| found via git tag")
+        return version
 
     try:
         version = get_build_hook_version()
