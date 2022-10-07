@@ -6,7 +6,7 @@
 
 <div align="center">
 
-  <a href="/actions/workflows/ci_test.yml">![GitHub CI]([ci-shield])</a>
+  <a href="/actions/workflows/">![GitHub CI]([ci-shield])</a>
 
 
   <!-- [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
@@ -17,7 +17,7 @@
 
 </div>
 
-[ci-shield]: /workflows/ci/badge.svg
+[ci-shield]: /workflows/GitHub%20CI/badge.svg
 
 
 # Overview
