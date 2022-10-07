@@ -197,6 +197,14 @@ def test_scenarios(capsys, scenario_runner):
     Raises:
             AssertionError: If the scenario runner fails.
     """
+    def ordered(obj):
+        if isinstance(obj, dict):
+            return sorted((k, ordered(v)) for k, v in obj.items())
+        if isinstance(obj, list):
+            return sorted(ordered(x) for x in obj)
+        else:
+            return obj
+
     for runner in scenario_runner:
         try:
             scenario_log_path, scenario_log_data = runner.evaluate()
@@ -206,24 +214,24 @@ def test_scenarios(capsys, scenario_runner):
             assert False, "Error occured while executing scenario."
             continue
 
-        with capsys.disabled():
-            print(scenario_log_path)
-            print(scenario_log_data)
-            print(runner.results)
-
-        # TODO:
-        #    1. Check that file exists.
-        #    2. Check that file is not empty.
-        #  X 3. Check that file is valid json.
-        #    4. Check that file has the correct keys.
-        #    5. Check that file has the correct values.
+        scenario_log_path = Path(scenario_log_path)
 
         # Ensure the file exists.
-        # result_file = Path(log_path)
-        # assert result_file.exists(), f"Missing result file: {result_file}"
+        assert scenario_log_path.exists(), f"Missing result file: {scenario_log_path}"
+
+        # Ensure the file is not empty.
+        assert scenario_log_path.stat().st_size > 0, f"Empty result file: {scenario_log_path}"
 
         # Check that the results were written.
+        with capsys.disabled():
+            # Simple object comparison.
+            assert (ordered(json.loads(Path(scenario_log_path).read_text())) == ordered(scenario_log_data)), "Scenario log data does not match."
 
+        with capsys.disabled():
+            print(runner.results)
+
+        # TODO: Check result tolerance.
+        # TODO: Clean up artifacts after tests.
 
 # TODO:
 # def test_results(capsys):
