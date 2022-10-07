@@ -213,11 +213,11 @@ def test_scenarios(capsys, scenario_runner):
             print(runner.results)
 
         # TODO:
-        #  1. Check that file exists.
-        #  2. Check that file is not empty.
-        #  3. Check that file is valid json.
-        #  4. Check that file has the correct keys.
-        #  5. Check that file has the correct values.
+        #    1. Check that file exists.
+        #    2. Check that file is not empty.
+        #  X 3. Check that file is valid json.
+        #    4. Check that file has the correct keys.
+        #    5. Check that file has the correct values.
 
         # Ensure the file exists.
         # result_file = Path(log_path)
@@ -228,28 +228,17 @@ def test_scenarios(capsys, scenario_runner):
 # def test_results(capsys):
 #     scores = {}
 #     model_results = json.loads(test_data.read_text())
-
 #     result_tolerance = 0.05
-
 #     for result in results_path.glob("**/*.json"):
-
 #         result_json = json.loads(result.read_text())
-
 #         results = result_json['results']
-
 #         filepath = result_json['config']['sysconfig']['filepath']
 #         check_used = result_json['config']['sysconfig']['use_gpu']
 #         gpu_used = result_json['config']['sysconfig']['use_gpu']
-
-
 #         adversarial_scores = results['adversarial_mean_categorical_accuracy']
 #         benign_scores      = results['benign_mean_categorical_accuracy']
-
-
 #         adversarial_median = statistics.median(adversarial_scores)
 #         benign_median      = statistics.median(benign_scores)
-
-
 #         with capsys.disabled():
 #             print("\n\n")
 #             print(math.isclose(adversarial_median, benign_median, abs_tol = result_tolerance))
@@ -258,7 +247,6 @@ def test_scenarios(capsys, scenario_runner):
 #                     zip(adversarial_scores, benign_scores)
 #                     if at != 0.0 and bt != 0.0
 #             )))
-
 #         # SETUP
 #         scores[filepath] = {
 #             'delta': 0,
@@ -273,6 +261,5 @@ def test_scenarios(capsys, scenario_runner):
 #             ]
 #         }
 #         # /SETUP
-
 #     with capsys.disabled():
 #         print(json.dumps(scores, indent=2))
