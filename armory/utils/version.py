@@ -119,7 +119,7 @@ def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
     errors = []
     try:
         version = get_tag_version()
-        log.info(f"version {version} found via git tag")
+        log.debug(f"version {version} found via git tag")
         return version
     except LookupError as e:
         error_str = f"version not found via git tag: {e}"
@@ -128,7 +128,7 @@ def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
 
     try:
         version = get_build_hook_version()
-        log.info(f"version {version} found via build hook at armory/__about__.py")
+        log.debug(f"version {version} found via build hook at armory/__about__.py")
         return version
     except ModuleNotFoundError as e:
         error_str = f"version not found via build hook at armory/__about__.py: {e}"
@@ -137,7 +137,7 @@ def get_version(package_name=PYPI_PACKAGE_NAME) -> str:
 
     try:
         version = get_metadata_version(package_name)
-        log.info(f"version {version} found via package metadata")
+        log.debug(f"version {version} found via package metadata")
         return version
     except metadata.PackageNotFoundError as e:
         error_str = f"version not found via package metadata: Package {e} not installed"
