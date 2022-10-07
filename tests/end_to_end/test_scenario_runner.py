@@ -4,10 +4,8 @@
 """End-to-end pytest fixtures for testing scenario configs.
 
 Example:
+    $ pip install -e .[developer,engine,math,datasets,pytorch]
     $ pytest --verbose --show-capture=no tests/end_to_end/test_scenario_runner.py
-
-Todo:
-    * Decalare this test as being '--no-docker'. Use pytest mark. [woodall]
 """
 
 import re
@@ -17,7 +15,8 @@ import pytest
 from pathlib import Path
 
 from armory import paths
-from armory.__main__ import run
+# from armory.__main__ import run
+from armory.scenarios.main import get as get_scenario
 
 
 # Marks all tests in this file as `end_to_end`
@@ -35,6 +34,8 @@ def setup():
     Raises:
         Exception: If `scenario_path` or `result_path` are missing.
     """
+    # Setup Armory paths
+    paths.set_mode("host")
     if not all([Path(d).exists() for d in [scenario_path, result_path]]):
         raise Exception(f"Required application paths do not exist!")
         pytest.exit("Previous tests indicate catastrophic failure.")
@@ -48,7 +49,7 @@ def test_scenarios(capsys):
         capsys    (:pytest.CaptureFixture:`str`): PyYest builtin fixture to capture stdin/stdout.
     """
 
-    # TODO: Handle cases where docker/torch error out;e.g. GPU not
+    # TODO: Handle cases where docker/torch error out; e.g. GPU not
     #       available or memory is too low. [woodall]
     skip = [
         # 'carla_video_tracking.json',
@@ -77,7 +78,7 @@ def test_scenarios(capsys):
         # "apricot_frcnn.json",
         # "apricot_frcnn_defended.json",
         # "dapricot_frcnn_masked_pgd.json",
-        # # "mnist_baseline.json",
+        "mnist_baseline.json",
         # "so2sat_sar_masked_pgd_undefended.json",
         # "so2sat_sar_masked_pgd_defended.json",
         # "so2sat_eo_masked_pgd_undefended.json",
@@ -165,6 +166,7 @@ def test_scenarios(capsys):
         # # "carla_short.json",
     ]
 
+
     # Skip scenarios that require large resource allocations.
     # scenarios = [ Path(f) for f in list(scenario_path.glob("**/*.json")) if f.name not in skip ]
     scenarios = [ Path(f) for f in list(scenario_path.glob("**/*.json")) if f.name in skip ]
@@ -184,27 +186,32 @@ def test_scenarios(capsys):
                 print(f"\n\n{'=' * 42}")
                 print(f"\tTesting: {scenario.name}")
 
-            scenario_path = str(scenario.absolute())
-            armory_command = [scenario_path, "--no-docker", "--check"]
+            # scenario_path = str(scenario.absolute())
+            # armory_command = [scenario_path, "--no-docker", "--check"]
+            # # Run the scenario & capture the output.
+            # assert run(armory_command, "armory", None) == 0, "Error occured while executing scenario."
+            # out, err = capsys.readouterr()
 
-            # Run the scenario & capture the output.
-            assert run(armory_command, "armory", None) == 0, "Error occured while executing scenario."
-            out, err = capsys.readouterr()
+            runner = get_scenario(scenario, check_run=True).load()
+            output = runner.evaluate()
 
-            yield str(out).strip()
+            yield output + (runner.results,)
 
 
     # Check that the results were written.
-    for result in scenario_runner():
+    for scenario in scenario_runner():
+        # assert result[0] == 0, "Error occured while executing scenario."
+        log_path, log_data, result = scenario
         with capsys.disabled():
             print(result)
-    #     result_stdout = str(result).strip()
-    #     test_results_written = "results output written to" in result_stdout.lower()
-    #     test_results_json    = result_stdout.endswith(".json")
-    #     if not all([test_results_written, test_results_json]):
-    #         assert False, f"Invalid output: {out}"
-    #         continue
+            print(log_path)
+    # #     result_stdout = str(result).strip()
+    # #     test_results_written = "results output written to" in result_stdout.lower()
+    # #     test_results_json    = result_stdout.endswith(".json")
+    # #     if not all([test_results_written, test_results_json]):
+    # #         assert False, f"Invalid output: {out}"
+    # #         continue
 
-    #     # Ensure the file exists.
-    #     result_file = Path(result_stdout.split(" ")[-1])
-    #     assert result_file.exists(), f"Missing result file: {result_file}"
+    # #     # Ensure the file exists.
+    # #     result_file = Path(result_stdout.split(" ")[-1])
+    # #     assert result_file.exists(), f"Missing result file: {result_file}"
