@@ -8,12 +8,16 @@
   ** See the bottom of this document for the declaration of the reference variables.
   ** https://www.markdownguide.org/basic-syntax/#reference-style-links
   ** -->
+<div align="center">
+
 [![CI][ci-badge]][ci-url]
 [![PyPI Status Badge][pypi-badge]][pypi-url]
 [![PyPI - Python Version][python-badge]][python-url]
 [![License: MIT][license-badge]][license-url]
 [![Docs][docs-badge]][docs-url]
 [![Code style: black][style-badge]][style-url]
+
+</div>
 
 
 <!-- PROJECT LOGO !-->
