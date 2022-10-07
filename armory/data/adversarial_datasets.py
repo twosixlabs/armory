@@ -864,7 +864,6 @@ def carla_video_tracking_test(
     )
 
 
-
 def carla_mot_label_preprocessing(x, y):
     annotations, patch_metadata = y
     patch_metadata = {k: np.squeeze(v, axis=0) for k, v in patch_metadata.items()}

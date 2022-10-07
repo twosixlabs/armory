@@ -1550,35 +1550,43 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
     return 0
 
 
-
-@batchwise 
+@batchwise
 def hota(arg1, arg2):
     # TODO
     return -1
+
 
 @batchwise
 def deta(arg1, arg2):
     # TODO
     return -1
 
+
 @batchwise
 def assa(arg1, arg2):
     # TODO
     return -1
 
-class HOTA_metrics():
-    def __init__(self, tracked_classes=['pedestrian']):
-        from collections import defaultdict
-        from TrackEval.trackeval.metrics.hota import HOTA # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
 
-        self.class_name_to_class_id = {'pedestrian': 1, 'vehicle': 2}
+class HOTA_metrics:
+    def __init__(self, tracked_classes=["pedestrian"]):
+        from collections import defaultdict
+        from TrackEval.trackeval.metrics.hota import (
+            HOTA,
+        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
         self.tracked_classes = tracked_classes
-        self.hota_metrics_per_class_per_videos = {key: defaultdict(dict) for key in self.tracked_classes}
-        self.hota_metrics_per_class_all_videos = {key: {} for key in self.tracked_classes}
+        self.hota_metrics_per_class_per_videos = {
+            key: defaultdict(dict) for key in self.tracked_classes
+        }
+        self.hota_metrics_per_class_all_videos = {
+            key: {} for key in self.tracked_classes
+        }
         self.HOTA_calc = HOTA()
 
     def preprocess(self, gt_data, tracker_data, tracked_class):
-        '''
+        """
         This function preprocesses data into a format required for HOTA metrics calculation.
 
         It simplifies get_preprocessed_seq_data() at https://github.com/JonathonLuiten/TrackEval/blob/master/trackeval/datasets/mot_challenge_2d_box.py
@@ -1590,18 +1598,28 @@ class HOTA_metrics():
             - gt_data and tracker_data are 2D NDArrays, where each row is a detection in the format of:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
             - tracked_class is a string representing the class for which HOTA is calculated.
-        '''
-        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
-        from TrackEval.trackeval.metrics.hota import HOTA
+        """
+        from TrackEval.trackeval.datasets._base_dataset import (
+            _BaseDataset,
+        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
 
         assert len(gt_data.shape) == 2
         assert len(tracker_data.shape) == 2
-                
+
         cls_id = self.class_name_to_class_id[tracked_class]
 
-        assert(len(set(gt_data[:,0])) == len(set(tracker_data[:,0]))), 'Number of timesteps in ground truth and tracker data are different.'
-        num_timesteps = len(set(gt_data[:,0]))
-        data_keys = ['gt_ids', 'tracker_ids', 'gt_dets', 'tracker_dets', 'tracker_confidences', 'similarity_scores']
+        assert len(set(gt_data[:, 0])) == len(
+            set(tracker_data[:, 0])
+        ), "Number of timesteps in ground truth and tracker data are different."
+        num_timesteps = len(set(gt_data[:, 0]))
+        data_keys = [
+            "gt_ids",
+            "tracker_ids",
+            "gt_dets",
+            "tracker_dets",
+            "tracker_confidences",
+            "similarity_scores",
+        ]
         data = {key: [None] * num_timesteps for key in data_keys}
         unique_gt_ids = []
         unique_tracker_ids = []
@@ -1610,32 +1628,34 @@ class HOTA_metrics():
         for t in range(num_timesteps):
 
             # Get all data
-            gt_ids = gt_data[gt_data[:,0] == t+1, 1]
-            gt_dets = gt_data[gt_data[:,0] == t+1, 2:6]
-            gt_classes = gt_data[gt_data[:,0] == t+1, 7]
+            gt_ids = gt_data[gt_data[:, 0] == t + 1, 1]
+            gt_dets = gt_data[gt_data[:, 0] == t + 1, 2:6]
+            gt_classes = gt_data[gt_data[:, 0] == t + 1, 7]
 
-            tracker_ids = tracker_data[tracker_data[:,0] == t+1, 1]
-            tracker_dets = tracker_data[tracker_data[:,0] == t+1, 2:6]
-            tracker_confidences = tracker_data[tracker_data[:,0] == t+1, 6]
-            tracker_classes = tracker_data[tracker_data[:,0] == t+1, 7]
-            similarity_scores = _BaseDataset._calculate_box_ious(gt_dets, tracker_dets, box_format='xywh')
+            tracker_ids = tracker_data[tracker_data[:, 0] == t + 1, 1]
+            tracker_dets = tracker_data[tracker_data[:, 0] == t + 1, 2:6]
+            tracker_confidences = tracker_data[tracker_data[:, 0] == t + 1, 6]
+            tracker_classes = tracker_data[tracker_data[:, 0] == t + 1, 7]
+            similarity_scores = _BaseDataset._calculate_box_ious(
+                gt_dets, tracker_dets, box_format="xywh"
+            )
 
             # Keep only tracker associated with given class
             tracker_to_keep_mask = np.equal(tracker_classes, cls_id)
-            data['tracker_ids'][t] = tracker_ids[tracker_to_keep_mask].astype(int)
-            data['tracker_dets'][t] = tracker_dets[tracker_to_keep_mask]
-            data['tracker_confidences'][t] = tracker_confidences[tracker_to_keep_mask]
+            data["tracker_ids"][t] = tracker_ids[tracker_to_keep_mask].astype(int)
+            data["tracker_dets"][t] = tracker_dets[tracker_to_keep_mask]
+            data["tracker_confidences"][t] = tracker_confidences[tracker_to_keep_mask]
 
             # Keep only detections associated with given class
             gt_to_keep_mask = np.equal(gt_classes, cls_id)
-            data['gt_ids'][t] = gt_ids[gt_to_keep_mask].astype(int)
-            data['gt_dets'][t] = gt_dets[gt_to_keep_mask, :]
-            data['similarity_scores'][t] = similarity_scores[gt_to_keep_mask]
+            data["gt_ids"][t] = gt_ids[gt_to_keep_mask].astype(int)
+            data["gt_dets"][t] = gt_dets[gt_to_keep_mask, :]
+            data["similarity_scores"][t] = similarity_scores[gt_to_keep_mask]
 
-            unique_gt_ids += list(np.unique(data['gt_ids'][t]))
-            unique_tracker_ids += list(np.unique(data['tracker_ids'][t]))
-            num_tracker_dets += len(data['tracker_ids'][t])
-            num_gt_dets += len(data['gt_ids'][t])    
+            unique_gt_ids += list(np.unique(data["gt_ids"][t]))
+            unique_tracker_ids += list(np.unique(data["tracker_ids"][t]))
+            num_tracker_dets += len(data["tracker_ids"][t])
+            num_gt_dets += len(data["gt_ids"][t])
 
         # Re-label IDs such that there are no empty IDs
         if len(unique_gt_ids) > 0:
@@ -1643,22 +1663,24 @@ class HOTA_metrics():
             gt_id_map = np.nan * np.ones((np.max(unique_gt_ids) + 1))
             gt_id_map[unique_gt_ids] = np.arange(len(unique_gt_ids))
             for t in range(num_timesteps):
-                if len(data['gt_ids'][t]) > 0:
-                    data['gt_ids'][t] = gt_id_map[data['gt_ids'][t]].astype(int)
+                if len(data["gt_ids"][t]) > 0:
+                    data["gt_ids"][t] = gt_id_map[data["gt_ids"][t]].astype(int)
         if len(unique_tracker_ids) > 0:
             unique_tracker_ids = np.unique(unique_tracker_ids)
             tracker_id_map = np.nan * np.ones((np.max(unique_tracker_ids) + 1))
             tracker_id_map[unique_tracker_ids] = np.arange(len(unique_tracker_ids))
             for t in range(num_timesteps):
-                if len(data['tracker_ids'][t]) > 0:
-                    data['tracker_ids'][t] = tracker_id_map[data['tracker_ids'][t]].astype(int)
+                if len(data["tracker_ids"][t]) > 0:
+                    data["tracker_ids"][t] = tracker_id_map[
+                        data["tracker_ids"][t]
+                    ].astype(int)
 
         # Record overview statistics.
-        data['num_tracker_dets'] = num_tracker_dets
-        data['num_gt_dets'] = num_gt_dets
-        data['num_tracker_ids'] = len(unique_tracker_ids)
-        data['num_gt_ids'] = len(unique_gt_ids)
-        data['num_timesteps'] = num_timesteps
+        data["num_tracker_dets"] = num_tracker_dets
+        data["num_gt_dets"] = num_gt_dets
+        data["num_tracker_ids"] = len(unique_tracker_ids)
+        data["num_gt_ids"] = len(unique_gt_ids)
+        data["num_timesteps"] = num_timesteps
 
         # Ensure ids are unique per timestep after preproc.
         _BaseDataset._check_unique_ids(data, after_preproc=True)
@@ -1666,14 +1688,22 @@ class HOTA_metrics():
         return data
 
     # Function to calculate the main HOTA metric and its component sub-metrics
-    def calculate_hota_metrics_per_class_per_video(self, gt_data, tracker_data, tracked_class, video_name):
+    def calculate_hota_metrics_per_class_per_video(
+        self, gt_data, tracker_data, tracked_class, video_name
+    ):
 
         # Calculate per-video HOTA metrics
         data = self.preprocess(gt_data, tracker_data, tracked_class)
-        self.hota_metrics_per_class_per_videos[tracked_class][video_name] = self.HOTA_calc.eval_sequence(data)
-    
+        self.hota_metrics_per_class_per_videos[tracked_class][
+            video_name
+        ] = self.HOTA_calc.eval_sequence(data)
+
     def calculate_hota_metrics_per_class_all_videos(self, tracked_class):
-        self.hota_metrics_per_class_all_videos[tracked_class] = self.HOTA_calc.combine_sequences(self.hota_metrics_per_class_per_videos[tracked_class])
+        self.hota_metrics_per_class_all_videos[
+            tracked_class
+        ] = self.HOTA_calc.combine_sequences(
+            self.hota_metrics_per_class_per_videos[tracked_class]
+        )
 
     def get_per_class_per_video_metrics(self):
         return self.hota_metrics_per_class_per_videos
