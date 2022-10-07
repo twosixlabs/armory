@@ -584,7 +584,6 @@ class CARLAMOTDapricotPatch(RobustDPatch):
                 patch_width,
                 x.shape[-1],
             )
-            print("patch_shape: {}".format(self.patch_shape))
 
             patch_geometric_shape = y_patch_metadata[i].get("shape", "rect")
             self.patch_geometric_shape = str(patch_geometric_shape)
