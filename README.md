@@ -4,9 +4,15 @@
 
 ---
 
-<div align="center">
-
-  <a href="/actions/workflows/">![GitHub CI]([ci-shield])</a>
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+![GitHub CI]([ci-shield])[ci-link]
 
 
   <!-- [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
@@ -15,9 +21,7 @@
   [![Docs](https://readthedocs.org/projects/armory/badge/)](https://armory.readthedocs.io/en/latest/)
   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black) -->
 
-</div>
 
-[ci-shield]: /workflows/GitHub%20CI/badge.svg
 
 
 # Overview
@@ -125,3 +129,9 @@ Agency (DARPA) under Contract No. HR001120C0114. Any opinions, findings and
 conclusions or recommendations expressed in this material are those of the author(s)
 and do not necessarily reflect the views of the Defense Advanced Research Projects
 Agency (DARPA).
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[ci-shield]: /workflows/GitHub%20CI/badge.svg
+[ci-link]: /actions/workflows/
