@@ -43,6 +43,6 @@ body:
     attributes:
       label: Additional Information
       description: |
-        If there is any any additional information such as logs, screenshots, scenarios in which the bug occurs so that it facilitates resolving the issue.
+        Include any additional information such as logs, screenshots, or scenarios in which the bug occurs in order to facilitates resolving the issue.
 
 # yamllint enable rule:line-length
