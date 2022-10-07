@@ -382,7 +382,7 @@ class Scenario:
         log.debug("Clearing global instrumentation variables")
         del_globals()
 
-    def evaluate(self):
+    def evaluate(self) -> tuple:
         """
         Evaluate a config for robustness against attack and save results JSON
         """
@@ -402,7 +402,7 @@ class Scenario:
         if self.results is None:
             log.warning(f"{self._evaluate} did not set self.results to a dict")
 
-        self.save()
+        return self.save()
 
     def prepare_results(self) -> dict:
         """
@@ -422,7 +422,7 @@ class Scenario:
         }
         return output
 
-    def save(self):
+    def save(self) -> tuple:
         """
         Write results JSON file to Armory scenario output directory
         """
@@ -446,3 +446,4 @@ class Scenario:
                 "Results json file exceeds 128 MB! "
                 "Recommend checking what is being recorded!"
             )
+        return (output_path, output)
