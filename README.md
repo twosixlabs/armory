@@ -1,8 +1,5 @@
-<div align="center">
-  <img src="/docs/assets/logo.png" width="50%" title="ARMORY Logo">
-</div>
+<a name="readme-top"></a>
 
----
 
 <!-- PROJECT SHIELDS -->
 <!--
@@ -12,7 +9,7 @@
 *** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
 *** https://www.markdownguide.org/basic-syntax/#reference-style-links
 -->
-![GitHub CI]([ci-shield])[ci-link]
+![CI]([ci-shield])[ci-url]
 
 
   <!-- [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
@@ -21,6 +18,28 @@
   [![Docs](https://readthedocs.org/projects/armory/badge/)](https://armory.readthedocs.io/en/latest/)
   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black) -->
 
+
+<!-- PROJECT LOGO !-->
+<br />
+<div align="center">
+  <a href="/">
+    <img src="/docs/assets/logo.png" width="50%" title="ARMORY Logo">
+  </a>
+
+  <h3 align="center">Armory</h3>
+
+  <p align="center">
+    Scalable test bed for evaluating machine learning model adversarial defenses.
+    <br />
+    <a href="/docs"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="/issues">Report Bug</a>
+    ·
+    <a href="/issues">Request Feature</a>
+  </p>
+
+</div>
 
 
 
@@ -134,4 +153,4 @@ Agency (DARPA).
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [ci-shield]: /workflows/GitHub%20CI/badge.svg
-[ci-link]: /actions/workflows/
+[ci-url]: /actions/workflows/
