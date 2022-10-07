@@ -15,10 +15,6 @@ on:
         description: Execute a dry-run(no uploads) of the workflow
         required: true
         default: true
-    #   release-version:
-    #     description: 'Release Version'
-    #     required: false
-    #     default: '0.0.0'
 
 # Limit workflow to one job per branch.
 concurrency:
@@ -38,20 +34,10 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: 🐄 Checkout Armory w/ full depth(for tags and SCM)
+      - name: 📩 Checkout Armory w/ full depth(for tags and SCM)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
 
       - name: 🔨 Build wheel
         run: |
@@ -98,20 +84,10 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: 🐄 Checkout Armory w/ full depth(for tags and SCM)
+      - name: 📩 Checkout Armory w/ full depth(for tags and SCM)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
 
       - name: 🌎 Setup Build Environment
         run: |
