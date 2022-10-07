@@ -3,6 +3,8 @@ name: 🤖 Docker Tests
 
 on: workflow_call
 
+# TODO: do NOT MERGE this stripped down version of the workflow
+
 env:
   DOCKER_BUILDKIT: 1
 
@@ -46,12 +48,17 @@ jobs:
           pip install --no-compile --editable .
           armory configure --use-defaults
 
+      - name: check environment for scm
+        run: |
+            python -m setuptools_scm
+            armory --version
+            armory --show-docker-version-tag
+            ls -la .git
+
       - name: 🚧 Build the Container
         run: |
           python docker/build.py --framework pytorch
 
-      # TODO: Create/mount a volume with the tests and config files.
-      # yamllint disable rule:indentation
       - name: 🤞 Run Image tests
         run: |
           ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
@@ -63,132 +70,3 @@ jobs:
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
                 ./tests/
-      # TODO:
-      # - name: Dump docker logs on failure
-      #   if: failure()
-      #   uses: jwalton/gh-docker-logs@v1
-      # yamllint enable rule:indentation
-
-
-  docker-tf2-unit:
-    name: ☁️ Docker TF2 Image Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🐄 Got git?
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
-
-      - name: 🐍 Switch Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-
-      - name: 🌱 Setup Test Enviroment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
-      - name: ⚙️ Installing Armory
-        shell: bash
-        run: |
-          pip install --no-compile --editable .
-          armory configure --use-defaults
-
-      - name: 🚧 Build the Container
-        run: |
-          python docker/build.py --framework tf2
-
-      # yamllint disable rule:indentation
-      - name: 🤞 Run Image tests
-        run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
-          docker run                                  \
-            --rm                                      \
-            --workdir /armory-repo                    \
-            twosixarmory/tf2:${ARMORY_VERSION}        \
-              pytest                                  \
-                -c /armory-repo/pyproject.toml        \
-                -m "not docker_required and unit"     \
-                ./tests/
-      # yamllint enable rule:indentation
-
-
-  docker-deepspeech-unit:
-    name: ☁️ Docker Deepspeech Image Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🐄 Got git?
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-      # yamllint enable rule:indentation
-
-      - name: 🐍 Switch Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-
-      - name: 🌱 Setup Test Enviroment
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade build
-
-      - name: ⚙️ Installing Armory
-        shell: bash
-        run: |
-          pip install --no-compile --editable .
-          armory configure --use-defaults
-
-      - name: 🚧 Build the Container
-        run: |
-          python docker/build.py --framework pytorch-deepspeech
-
-      # yamllint disable rule:indentation
-      - name: 🤞 Run Image tests
-        run: |
-          ARMORY_VERSION=`armory --version | sed -r 's/\+/\./g'`
-
-          docker run                                           \
-            --rm                                               \
-            --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
-              pytest                                           \
-                -c /armory-repo/pyproject.toml                 \
-                -m "not docker_required and unit"              \
-                ./tests/
-
-            docker run                                         \
-            --rm                                               \
-            --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${ARMORY_VERSION}  \
-              pytest                                           \
-                -c /armory-repo/pyproject.toml                 \
-                -m "pytorch_deepspeech"                        \
-                ./tests/
-      # yamllint enable rule:indentation

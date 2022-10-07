@@ -43,15 +43,8 @@ on:
 env:
   DOCKER_BUILDKIT: 1
 
+# DO NOT MERGE: This is a stripped down version of the workflow
 
 jobs:
-  scan-lint-build:
-    uses: ./.github/workflows/1-scan-lint-build.yml
-
-  test-stand-alone-builds:
-    needs: scan-lint-build
-    uses: ./.github/workflows/2-test-stand-alone.yml
-
   test-docker-builds:
-    needs: test-stand-alone-builds
     uses: ./.github/workflows/3-test-docker.yml
