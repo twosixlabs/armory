@@ -7,9 +7,9 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Docs](https://readthedocs.org/projects/armory/badge/)](https://armory.readthedocs.io/en/latest/)
   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
-
-    [GitHub CI]: https://github.com/twosixlabs/armory/workflows/GitHub%20CI/badge.svg "CI Status"
 </div>
+[GitHub CI]: https://github.com/twosixlabs/armory/workflows/GitHub%20CI/badge.svg "CI Status"
+
 
 # Overview
 
