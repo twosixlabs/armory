@@ -28,7 +28,7 @@
   </a>
 
   <p align="center">
-    Scalable test bed for evaluating machine learning model adversarial defenses.
+    Scalable Evaluation Playground for Machine Learning Models
     <br />
     <a href="/docs"><strong>Explore the docs »</strong></a>
     <br />
