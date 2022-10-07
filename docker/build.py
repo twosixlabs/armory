@@ -80,7 +80,10 @@ def cli_parser(argv=sys.argv[1:]):
 def build_worker(framework, version, platform, base_tag, **kwargs):
     """Builds armory container for a given framework."""
     # Note: The replace is used to convert the version to a valid docker tag.
-    version = version.replace("+", ".")
+    print(
+        f"enter build_worker {framework} {version} {platform} {base_tag}",
+        file=sys.stderr,
+    )
     dockerfile = script_dir / f"Dockerfile-{framework}"
     build_command = [
         f"{platform}",
