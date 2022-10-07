@@ -10,7 +10,7 @@
   ** -->
 <div align="center">
 
-[![:octocat: CI][ci-badge]][ci-url]
+[![CI][ci-badge]][ci-url]
 [![PyPI Status Badge][pypi-badge]][pypi-url]
 [![PyPI - Python Version][python-badge]][python-url]
 [![License: MIT][license-badge]][license-url]
