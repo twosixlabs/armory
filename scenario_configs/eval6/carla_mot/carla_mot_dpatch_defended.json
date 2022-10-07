@@ -1,0 +1,87 @@
+{
+    "_description": "CARLA single modality multi-object tracking, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_frame_size": 2,
+            "learning_rate": 0.002,
+            "max_iter": 1000,
+            "verbose": true
+        },
+        "module": "armory.art_experimental.attacks.carla_mot_patch",
+        "name": "CARLAMOTDapricotPatch",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "eval_split": "dev",
+        "framework": "numpy",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_multi_object_tracking_dev"
+    },
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 50
+        },
+        "module": "art.defences.preprocessor",
+        "name": "JpegCompression",
+        "type": "Preprocessor"
+    },
+    "metric": {
+        "means": true,
+        "perturbation": "l0",
+        "record_metric_per_sample": false,
+        "task": [
+            "hota",
+            "deta",
+            "assa"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {
+            "num_classes": 3
+        },
+        "module": "armory.baseline_models.pytorch.carla_mot_frcnn_byte",
+        "name": "get_art_model",
+        "weights_file": "carla_rgb_weights_eval6.pt",
+        "wrapper_kwargs": {
+            "BYTE_kwargs": {
+                "frame_rate": 30,
+                "match_thresh": 1,
+                "track_buffer": 60,
+                "track_thresh": 0.2
+            },
+            "conf_thresh": 0.0,
+            "nms_thresh": 0.9,
+            "tracked_classes": [
+                "pedestrian"
+            ]
+        }
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.carla_mot",
+        "name": "CarlaMOT"
+    },
+    "sysconfig": {
+        "docker_image": "twosixsarmory/armory-bytetrack",
+        "external_github_repo": [
+            "ifzhang/ByteTrack",
+            "JonathonLuiten/TrackEval",
+            "colour-science/colour@v0.3.16"
+        ],
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}
