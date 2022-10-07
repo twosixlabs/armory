@@ -55,7 +55,7 @@ their respective implementations in the [Adversarial Robustness Toolbox (ART)](h
 
 
 # Installation & Configuration
-```
+```bash
 pip install armory-testbed
 ```
 
@@ -109,7 +109,7 @@ Note: Since ARMORY launches Docker containers, the python package must be ran on
 system host (i.e. not inside of a docker container).
 
 ### Example usage:
-```
+```bash
 pip install armory-testbed
 armory configure
 
