@@ -23,8 +23,6 @@
     <img src="/docs/assets/logo.png" width="50%" title="ARMORY Logo">
   </a>
 
-  <h3 align="center">Armory</h3>
-
   <p align="center">
     Scalable test bed for evaluating machine learning model adversarial defenses.
     <br />
@@ -150,7 +148,7 @@ Agency (DARPA).
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 [ci-badge]: /../../workflows/GitHub%20CI/badge.svg
-[ci-url]: /../../actions/workflows/
+[ci-url]: /../../actions/
 [pypi-badge]: https://badge.fury.io/py/armory-testbed.svg
 [pypi-url]: https://pypi.org/project/armory-testbed
 [python-badge]: https://img.shields.io/pypi/pyversions/armory-testbed
