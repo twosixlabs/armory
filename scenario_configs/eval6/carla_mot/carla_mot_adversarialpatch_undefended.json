@@ -63,7 +63,7 @@
     },
     "sysconfig": {
         "docker_image": "twosixsarmory/armory-bytetrack",
-        "external_github_repo": "ifzhang/ByteTrack",
+        "external_github_repo": ["ifzhang/ByteTrack","JonathonLuiten/TrackEval"],
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,
