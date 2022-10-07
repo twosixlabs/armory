@@ -113,15 +113,17 @@ def init(*args, **kwargs):
     frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    from armory import __version__ as armory_version
 
-    print(f"EXEC:\tRetrieved version {armory_version}.")
-    print("EXEC:\tCleaning up...")
+    from armory.utils.version import get_version, to_docker_tag
+
+    docker_tag = to_docker_tag(get_version())
+
+    print(f"building {frameworks} with tag {docker_tag}")
     for key in ["framework", "func"]:
         del kwargs[key]
     for framework in frameworks:
-        print(f"EXEC:\tBuilding {framework} container.")
-        build_worker(framework, armory_version, **kwargs)
+        print(f"Building {framework} container")
+        build_worker(framework, docker_tag, **kwargs)
 
 
 if __name__ == "__main__":
