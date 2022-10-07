@@ -28,7 +28,7 @@
   </a>
 
   <p align="center">
-    Scalable Evaluation Playground for Machine Learning Models
+    Adversarial Defense Evaluation Playground for Machine Learning Models
     <br />
     <a href="/docs"><strong>Explore the docs »</strong></a>
     <br />
