@@ -1,6 +1,10 @@
 <div align="center">
   <img src="/docs/assets/logo.png" width="50%" title="ARMORY logo">
-  <hr />
+</div>
+
+---
+
+<div align="center">
   [![GitHub CI]](https://github.com/twosixlabs/armory/actions?query=workflow%3A%22GitHub+CI%22)
   [![PyPI Status Badge](https://badge.fury.io/py/armory-testbed.svg)](https://pypi.org/project/armory-testbed)
   [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/armory-testbed)](https://pypi.org/project/armory-testbed)
