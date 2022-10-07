@@ -48,7 +48,7 @@ can be installed using:
 ```bash
 pip install .[developer]
 ```
-For more information about how to contribute to armory, see [Contributing to Armory](/../../.github/CONTRIBUTING.md).
+For more information about how to contribute to armory, see [Contributing to Armory](/.github/CONTRIBUTING.md).
 
 
 # Import Style

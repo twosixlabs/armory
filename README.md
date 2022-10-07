@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo.png" width="50%" title="ARMORY logo">
+  <img src="/docs/assets/logo.png" width="50%" title="ARMORY logo">
 </div>
 
 -----------------
@@ -39,7 +39,7 @@ There are three ways to interact with the armory container system.
 
 1) `armory run`
 * `armory run <path/to/config.json>`.
-This will run a [configuration file](docs/configuration_files.md) end to end. Stdout
+This will run a [configuration file](/docs/configuration_files.md) end to end. Stdout
 and stderror logs will be displayed to the user, and the container will be removed
 gracefully upon completion. Results from the evaluation can be found in your output
 directory.
@@ -92,22 +92,22 @@ datasets, and scenarios can be utilized.
 
 Additionally, volumes (such as your current working directory) will be mounted from
 your system host so that you can modify code to be ran, and retrieve outputs.
-For more information on these mounts, please see our [Docker documentation](docs/docker.md#docker-volume-mounts)
+For more information on these mounts, please see our [Docker documentation](/docs/docker.md#docker-volume-mounts)
 
 # Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities.
 When running an armory configuration file, the robustness of a defense will be
 evaluated against that given scenario. For more information please see our
-[Scenario Documentation](docs/scenarios.md).
+[Scenario Documentation](/docs/scenarios.md).
 
 # FAQs
-Please see the [frequently asked questions](docs/faqs.md) documentation for more information on:
+Please see the [frequently asked questions](/docs/faqs.md) documentation for more information on:
 * Dataset format and preprocessing
 * Access to underlying models from wrapped classifiers.
 
 # Contributing
 Armory is an open source project and as such we welcome contributions! Please refer to
-our [contribution docs](docs/contributing.md) for how to get started.
+our [contribution docs](/.github/CONTRIBUTING.md) for how to get started.
 
 # Acknowledgment
 This material is based upon work supported by the Defense Advanced Research Projects
