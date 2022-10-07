@@ -124,6 +124,9 @@ requires = [
   "hatch-vcs",
 ]
 
+[tool.setuptools_scm]
+# the presence of this empty block stops setuptools_scm from complaining
+
 [tool.hatch.version]
 source = "vcs"
 path   = "armory/__about__.py"

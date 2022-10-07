@@ -42,7 +42,8 @@ def get_metadata_version(package: str = PYPI_PACKAGE_NAME) -> str:
 
 
 def get_tag_version(git_dir: Path = None) -> str:
-    """Retrieve the version from the most recent git tag"""
+    """Retrieve the version from the most recent git tag, return empty string on
+    failure"""
     project_root = Path(__file__).parent.parent.parent
     scm_config = {
         "root": project_root,

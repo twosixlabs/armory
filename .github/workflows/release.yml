@@ -1,96 +1,148 @@
 ---
-name: armory-release
+# yamllint disable rule:comments-indentation
+# yamllint disable rule:indentation
+
+name: 🎁 Armory Release Workflow
 
 on:
   repository_dispatch:
     types: build-and-release
 
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        type: boolean
+        description: Execute a dry-run(no uploads) of the workflow
+        required: true
+        default: true
+
+# Limit workflow to one job per branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RELEASE_DRY_RUN: "${{ github.event_name != 'repository_dispatch' && github.event.inputs.dry_run }}"
+
 jobs:
   release-wheel:
-    name: Build release wheel
-    runs-on: ubuntu-18.04
+    name: 🛞 Build release wheel
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: 🐍 Setup Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 📩 Checkout Armory w/ full depth(for tags and SCM)
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build and release wheel
+
+      - name: 🔨 Build wheel
         run: |
-          pip install wheel
-          python setup.py bdist_wheel
-      - uses: pypa/gh-action-pypi-publish@master
+          pip install pip==22.2.2
+          # Ensure `hatch` is installed
+          pip install hatch
+          hatch build --clean --target wheel
+
+      # TODO: Add pre-release steps; e.g. publish to TestPyPI
+      - name: 🐦 Release wheel
+        if: ${{ env.RELEASE_DRY_RUN == 'false' }}
+        uses: pypa/gh-action-pypi-publish@master
         with:
-          user: __token__
+          # user: __token__
           password: ${{ secrets.pypi_token }}
-  release-tf2-docker:
-    name: Build and release tf2 docker image
+          packages_dir: dist
+          verbose: true
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ !failure() }}
+        continue-on-error: true
+        with:
+          name: armory-release-artifacts
+          retention-days: 1
+          path: |
+            dist/*.whl
+
+
+  release-docker:
+    name: Build and Release Docker Images
     needs: [release-wheel]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: pytorch
+          - image: pytorch-deepspeech
+          - image: tf2
     steps:
-      - uses: actions/checkout@v2
+      - name: 🐍 Setup Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 📩 Checkout Armory w/ full depth(for tags and SCM)
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build and release docker images
+
+      - name: 🌎 Setup Build Environment
         run: |
-          rm -rf /usr/share/dotnet &
-          pip install -r requirements.txt
-          version=$(python -m armory --version)
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          docker pull twosixarmory/tf2:latest
-          python docker/build.py tf2
-          docker push twosixarmory/tf2:${version}
-          docker tag twosixarmory/tf2:${version} twosixarmory/tf2:latest
-          docker push twosixarmory/tf2:latest
-  release-pytorch-docker:
-    name: Build and release pytorch docker image
-    needs: [release-wheel]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
+          pip install pip>=22.2.2
+          pip install .
+
+          armory configure --use-defaults
+
+          ARMORY_VERSION=`python -m armory --version 2> /dev/null | sed -r 's/\+/\./g'`
+          echo "ARMORY_VERSION=${ARMORY_VERSION}" >> $GITHUB_ENV
+
+      - name: ☁️ Login to DockerHub
+        if: ${{ env.RELEASE_DRY_RUN == 'false' }}
+        uses: docker/login-action@v1
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build and release docker images
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        # run: |
+        #   docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      # TODO: Build Base Image
+      - name: 🔨 Build Release Image
         run: |
-          rm -rf /usr/share/dotnet &
-          pip install -r requirements.txt
-          version=$(python -m armory --version)
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          docker pull twosixarmory/pytorch:latest
-          python docker/build.py pytorch
-          docker push twosixarmory/pytorch:${version}
-          docker tag twosixarmory/pytorch:${version} twosixarmory/pytorch:latest
-          docker push twosixarmory/pytorch:latest
-  release-pytorch-deepspeech-docker:
-    name: Build and release pytorch-deepspeech docker image
-    needs: [release-wheel]
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
+          echo "Armory Version: ${{ env.ARMORY_VERSION }}"
+          echo "Building Armory ${{ matrix.image }} Image"
+          python docker/build.py --framework ${{ matrix.image }} >> /tmp/build.log
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ !failure() }}
+        continue-on-error: true
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7'
-      - name: Build and release docker images
+          name: armory-release-artifacts
+          retention-days: 1
+          path: |
+            /tmp/build.log
+
+      - name: 📦 Push Release Images
+        if: ${{ env.RELEASE_DRY_RUN == 'false' }}
         run: |
-          rm -rf /usr/share/dotnet &
-          pip install -r requirements.txt
-          version=$(python -m armory --version)
-          docker login --username ${{ secrets.DOCKER_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
-          docker pull twosixarmory/pytorch-deepspeech:latest
-          python docker/build.py pytorch-deepspeech
-          docker push twosixarmory/pytorch-deepspeech:${version}
-          docker tag twosixarmory/pytorch-deepspeech:${version} twosixarmory/pytorch-deepspeech:latest
-          docker push twosixarmory/pytorch-deepspeech:latest
+          ARMORY_VERSION="${{ env.ARMORY_VERSION }}"
+
+          echo "Pushing ${{ matrix.image }}:${ARMORY_VERSION}"
+          docker push twosixarmory/${{ matrix.image }}:${ARMORY_VERSION}
+
+          echo "Tagging ${{ matrix.image }}:${ARMORY_VERSION} as ${{ matrix.image }}:latest"
+          docker tag twosixarmory/${{ matrix.image }}:${ARMORY_VERSION} twosixarmory/${{ matrix.image }}:latest
+
+          echo "Pushing ${{ matrix.image }}:latest"
+          docker push twosixarmory/${{ matrix.image }}:latest
+
+
+# yamllint enable rule:indentation
+# yamllint enable rule:comments-indentation
+
+# Workflow Test:
+# act --detect-event -j release-wheel
+# act workflow_dispatch -j release-docker --eventpath .github/workflows/tests/release-dry-run.json
