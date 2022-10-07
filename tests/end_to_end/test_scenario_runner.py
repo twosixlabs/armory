@@ -185,7 +185,7 @@ def test_scenarios(capsys):
                 print(f"\tTesting: {scenario.name}")
 
             scenario_path = str(scenario.absolute())
-            armory_command = [scenario_path, "--check", "--use-gpu"]
+            armory_command = [scenario_path, "--no-docker", "--check"]
 
             # Run the scenario & capture the output.
             assert run(armory_command, "armory", None) == 0, "Error occured while executing scenario."
