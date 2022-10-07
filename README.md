@@ -28,7 +28,7 @@
   </a>
 
   <p align="center">
-    Adversarial Robustness Playground
+    Adversarial Robustness Evaluation Test Bed
     <br />
     <a href="/docs"><strong>🔍 Explore the docs »</strong></a>
     <br />
