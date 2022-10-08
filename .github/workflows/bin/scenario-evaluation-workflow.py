@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import subprocess
 
 from pathlib import Path
 
@@ -41,7 +42,7 @@ class ScenarioWorkflow(Workflow):
 
   def run(self):
     if self.config['app']['command'] == "generate-matrix":
-      print(self.generate_matrix())
+      self.generate_matrix()
 
 
   def generate_matrix(self):
@@ -51,8 +52,11 @@ class ScenarioWorkflow(Workflow):
       }
       for f in Path(self.config['args'][1]).glob("**/*.json")
     ]
-    # matrix_out = f'::set-output name=matrix::{json.dumps(self.results["scenarios"])}'
+
     return json.dumps(self.results["scenarios"])
+    matrix_out = f'::set-output name=matrix::{json.dumps(self.results["scenarios"])}'
+    subprocess.Popen(['echo', matrix_str], bufsize=1)
+
 
 
 if __name__ == "__main__":

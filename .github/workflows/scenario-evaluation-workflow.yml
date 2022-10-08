@@ -1,9 +1,11 @@
+---
+
 name: 💻 Scenario Evaluation
 
 on: workflow_call
 
 jobs:
-  matrix-generator:
+  matrix_generator:
     name: Matrix Generator
     runs-on: ubuntu-latest
     outputs:
@@ -14,38 +16,84 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: ⚙️ Load Environment
-        uses: ./.github/actions/evaluations/setup_environment
+      - name: 📩 Checkout the Source
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      # - name: ⚙️ Load Environment
+      #   uses: ./.github/actions/evaluations/setup_environment
+
+      # - name: 🐍 Use Python 3.9
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: 3.9
+
+      # - name: 🌱 Setup Test Enviroment
+      #   run: |
+      #     python -m pip install --upgrade pip
+
+      # - name: ⚙️ Installing Armory
+      #   shell: bash
+      #   run: |
+      #     pip install --no-compile --editable '.[developer]'
+      #     armory configure --use-defaults
+      #     # pip install --no-compile --editable '.[developer,engine,math,datasets,pytorch]'
 
       - name: 👩‍💻 Generating Matrix
         id: generate-matrix
-        working-directory: .github/workflows/
-        env:
-          ENV_PRODUCTION: false
         run: |
-          SCENARIO_STR=`python ./bin/scenario-evaluation-workflow.py generate-matrix "${GITHUB_WORKSPACE}/scenario_configs"`
-          #SCENARIO_STR=`python ./bin/scenario-evaluation-workflow.py run-scenario "${GITHUB_WORKSPACE}/scenario_configs"`
-          echo SCENARIO_STR=$SCENARIO_STR >> $GITHUB_ENV
-          # TODO: If this doesnt work, try echoing to env.GTIHUB then jsonifying it.
-          MATRIX_STR=${{ toJSON(env.SCENARIO_STR) }}
-          echo $MATRIX_STR
-          echo "::set-output name=matrix::${MATRIX_STR}"
-
-      - name: 📝 Echo matrix
-        run: |
-          echo "================================================="
-          echo ${{ steps.generate-matrix.outputs.matrix }}
+          echo "::set-output name=matrix::$(find ./scenario_configs -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
 
 
-  matrix-job:
+  matrix_job:
     runs-on: ubuntu-latest
-    needs: matrix-generator
+    needs: matrix_generator
     strategy:
-      matrix: ${{ fromJson(needs.matrix-generator.outputs.matrix) }}
+      matrix:
+        scenario_path: ${{ fromJson(needs.matrix_generator.outputs.matrix) }}
     steps:
+      # - name: 🐄 Got git?
+      #   uses: actions/checkout@v3
+      #   with:
+      #     fetch-depth: 0
+
+      # - name: 🐍 Use Python 3.9
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: 3.9
+
+      # - name: 🌱 Setup Test Enviroment
+      #   run: |
+      #     python -m pip install --upgrade pip
+
+      # - name: ⚙️ Installing Armory
+      #   shell: bash
+      #   run: |
+      #     pip install --no-compile --editable '.[developer]'
+      #     armory configure --use-defaults
+      #     # pip install --no-compile --editable '.[developer,engine,math,datasets,pytorch]'
+
       - run: |
-          echo "${{ $GITHUB_ENV }}"
           echo "${{ matrix.scenario_path }}"
+
+      # - name: 👩‍💻 Generating Matrix
+      #   id: generate-matrix
+      #   # working-directory: .github/workflows/
+      #   env:
+      #     ENV_PRODUCTION: false
+      #   run: |
+      #     echo "::set-output name=matrix::$(find ./scenario_configs -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
+
+      #     # python ./bin/scenario-evaluation-workflow.py generate-matrix "${GITHUB_WORKSPACE}/scenario_configs"
+      #     #SCENARIO_STR=`python ./bin/scenario-evaluation-workflow.py run-scenario "${GITHUB_WORKSPACE}/scenario_configs"`
+      #     # echo SCENARIO_STR=$SCENARIO_STR >> $GITHUB_ENV
+      #     # echo "::set-output name=matrix::${SCENARIO_STR}"
 
       # - name: 📝 Echo Environs
       #   shell: python
