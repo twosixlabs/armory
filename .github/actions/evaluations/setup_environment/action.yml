@@ -29,7 +29,6 @@ runs:
 
     - name: ⚙️ Installing Armory
       shell: bash
-      if: steps.cached-dependencies.outputs.cache-hit != 'true'
       run: |
         pip install --no-compile --editable '.[developer]'
         armory configure --use-defaults
