@@ -2,7 +2,10 @@
 
 name: 💻 Scenario Evaluation
 
-on: workflow_call
+on:
+  workflow_call
+  workflow_dispatch
+
 
 jobs:
   matrix_generator:
