@@ -33,11 +33,10 @@ class ScenarioWorkflow(Workflow):
       "platform": "ubuntu-latest",
       "scenarios": []
     }
-
     # matrix["platform"].append("macOS-latest")
-
     # if (is_prod_env := os.environ.get('ENV_PRODUCTION', "false")) == "false":
     #   matrix["prod"] = bool(is_prod_env.title())
+    return True
 
 
   def run(self):
@@ -46,12 +45,7 @@ class ScenarioWorkflow(Workflow):
 
 
   def generate_matrix(self):
-    self.results["scenarios"] = [
-      {
-        "scenario_path": f.as_posix(),
-        "result_path": self.config['app']['result_path']
-      }
-      for f in self.config['app']['scenario_path'].glob("**/*.json")]
+    self.results["scenarios"] = [f.as_posix() for f in self.config['app']['scenario_path'].glob("**/*.json")]
     # matrix_out = f'::set-output name=matrix::{json.dumps(self.results["scenarios"])}'
     return json.dumps(self.results["scenarios"])
 
