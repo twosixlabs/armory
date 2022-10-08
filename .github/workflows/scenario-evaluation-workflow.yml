@@ -1,0 +1,68 @@
+name: 💻 Scenario Evaluation
+
+on: workflow_call
+
+jobs:
+  matrix-generator:
+    name: Matrix Generator
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Load Environment
+        uses: ./.github/actions/evaluations/setup_environment
+
+      - name: 👩‍💻 Generating Matrix
+        id: generate-matrix
+        working-directory: .github/workflows/
+        env:
+          ENV_PRODUCTION: false
+        run: |
+          MATRIX_STR=`python ./bin/scenario-evaluation-workflow.py generate-matrix "${GITHUB_WORKSPACE}/scenario_configs"`
+          #MATRIX_STR=`python ./bin/scenario-evaluation-workflow.py run-scenario "${GITHUB_WORKSPACE}/scenario_configs"`
+
+          # echo "::set-output name=matrix::${MATRIX_STR}"
+          echo "::set-output name=matrix::{\"include\":[${MATRIX_STR}"]}"
+
+      # - name: 📝 Echo matrix
+      #   run: |
+      #     echo "================================================="
+      #     echo ${{ steps.generate-matrix.outputs.matrix }}
+
+
+  matrix-job:
+    runs-on: ubuntu-latest
+    needs: matrix-generator
+    strategy:
+      matrix: ${{ fromJson(needs.matrix-generator.outputs.matrix) }}
+    steps:
+      - run: |
+          echo "${{ matrix }}"
+          echo "${{ matrix.scenario_path }}"
+          echo "${{ matrix.result_path }}"
+
+
+  # matrix_runner:
+  #     - name: 🤞 Running Evals
+  #       env:
+  #         PYTEST_PARAMS: --exitfirst --suppress-no-test-exit-code
+  #       shell: bash
+  #       run: |
+  #         echo "Testing Python Version: ${{ matrix.python-version }}"
+  #         pytest -c pyproject.toml --verbose --show-capture=no -s ./tests/end_to_end/test_scenario_runner.py
+
+
+  # debugger:
+  #   name: Debugger
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 📝 Echo Environs
+  #       shell: python
+  #       run: |
+  #         print(__import__(os).environ)
+
