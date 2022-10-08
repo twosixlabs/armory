@@ -23,8 +23,10 @@ jobs:
         env:
           ENV_PRODUCTION: false
         run: |
-          MATRIX_STR=`python ./bin/scenario-evaluation-workflow.py generate-matrix "${GITHUB_WORKSPACE}/scenario_configs"`
-          #MATRIX_STR=`python ./bin/scenario-evaluation-workflow.py run-scenario "${GITHUB_WORKSPACE}/scenario_configs"`
+          SCENARIO_STR=`python ./bin/scenario-evaluation-workflow.py generate-matrix "${GITHUB_WORKSPACE}/scenario_configs"`
+          #SCENARIO_STR=`python ./bin/scenario-evaluation-workflow.py run-scenario "${GITHUB_WORKSPACE}/scenario_configs"`
+          # TODO: If this doesnt work, try echoing to env.GTIHUB then jsonifying it.
+          MATRIX_STR=${{ toJSON(SCENARIO_STR) }}
           echo $MATRIX_STR
           echo "::set-output name=matrix::${MATRIX_STR}"
 
