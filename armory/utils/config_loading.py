@@ -1,8 +1,11 @@
 """
 Helper utilies to load things from armory configuration files.
 """
+import copy
 
 from importlib import import_module
+
+
 from armory.logs import log
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
@@ -11,6 +14,7 @@ try:
     import torch  # noqa: F401
 except ImportError:
     pass
+
 from art.attacks import Attack
 
 try:
@@ -29,7 +33,6 @@ from armory.art_experimental.attacks.sweep import SweepAttack
 from armory.data.datasets import ArmoryDataGenerator, EvalGenerator
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
-import copy
 
 
 def load(sub_config):
