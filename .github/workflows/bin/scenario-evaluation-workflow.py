@@ -45,7 +45,12 @@ class ScenarioWorkflow(Workflow):
 
 
   def generate_matrix(self):
-    self.results["scenarios"] = [f.as_posix() for f in Path(self.config['args'][1]).glob("**/*.json")]
+    self.results["scenarios"] = [
+      {
+        "scenario_path": f.as_posix()
+      }
+      for f in Path(self.config['args'][1]).glob("**/*.json")
+    ]
     # matrix_out = f'::set-output name=matrix::{json.dumps(self.results["scenarios"])}'
     return json.dumps(self.results["scenarios"])
 
