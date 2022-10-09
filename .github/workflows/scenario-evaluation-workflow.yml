@@ -19,16 +19,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 📩 Checkout the Source
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-          # Verify .git folder
-          if [ ! -d "./.git" ]; then
-            echo "Expected ./.git folder to exist"
-            exit 1
-          fi
-
       - name: 👩‍💻 Generating Matrix
         id: generate-matrix
         run: |
@@ -37,15 +27,26 @@ jobs:
 
   matrix_job:
     runs-on: ubuntu-latest
-    needs: matrix_generator
+    # needs: matrix_generator
     strategy:
       matrix:
-        scenario_path: ${{ fromJson(needs.matrix_generator.outputs.matrix) }}
+        # scenario_path: ${{ fromJson(needs.matrix_generator.outputs.matrix) }}
+        scenario_path:
+          - scenario_configs/cifar10_baseline.json
+          - scenario_configs/mnist_baseline.json
     steps:
-      # - name: 🐄 Got git?
-      #   uses: actions/checkout@v3
-      #   with:
-      #     fetch-depth: 0
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+
+      - name: Setup Environment
+        uses: ./.github/actions/evaluations/setup_environment
+        with:
+          cache_version: ${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+
+      - name: Install Prerequisites
+        run: |
+          source $VENV
+
 
       # - name: 🐍 Use Python 3.9
       #   uses: actions/setup-python@v4

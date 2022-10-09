@@ -7,22 +7,6 @@ description: "Install Armory"
 runs:
   using: "composite"
   steps:
-    # - name: 🐄 Got git?
-    #   uses: actions/checkout@v3
-    #   with:
-    #     fetch-depth: 0
-
-    #   # Get history and tags for SCM versioning to work
-    #   - name: 📩 Checkout the Source
-    #     run: |
-    #       git fetch --prune --unshallow || true
-    #       git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-    #       # Verify .git folder
-    #       if [ ! -d "./.git" ]; then
-    #         echo "Expected ./.git folder to exist"
-    #         exit 1
-    #       fi
-
     - name: 🐍 Use Python 3.9
       uses: actions/setup-python@v4
       with:
