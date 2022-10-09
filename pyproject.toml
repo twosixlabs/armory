@@ -93,6 +93,7 @@ pytorch = [
     "torch",
     "torchvision",
     "torchaudio",
+    "thop",
 ]
 
 tensorflow = [
