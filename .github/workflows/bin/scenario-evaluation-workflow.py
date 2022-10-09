@@ -43,6 +43,8 @@ class ScenarioWorkflow(Workflow):
   def run(self):
     if self.config['app']['command'] == "generate-matrix":
       self.generate_matrix()
+    elif self.config['app']['command'] == "run-scenario":
+      self.run_scenario()
 
 
   def generate_matrix(self):
@@ -57,6 +59,11 @@ class ScenarioWorkflow(Workflow):
     matrix_out = f'::set-output name=matrix::{json.dumps(self.results["scenarios"])}'
     subprocess.Popen(['echo', matrix_str], bufsize=1)
 
+
+  def run_scenario(self):
+      runner = get_scenario(scenario, check_run=True).load()
+      scenario_log_path, scenario_log_data = runner.evaluate()
+      print(scenario_log_data)
 
 
 if __name__ == "__main__":
