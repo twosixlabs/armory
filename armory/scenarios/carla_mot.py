@@ -3,8 +3,9 @@ CARLA Multi-Object Tracking Scenario
 
 """
 
-from armory.scenarios.carla_video_tracking import CarlaVideoTracking
+import numpy as np
 
+from armory.scenarios.carla_video_tracking import CarlaVideoTracking
 from armory.metrics.task import HOTA_metrics
 
 tracked_classes = ["pedestrian"]
@@ -25,7 +26,9 @@ class CarlaMOT(CarlaVideoTracking):
                     y[0], y_pred, tracked_class, self.i
                 )
         self.y_pred = y_pred
-        self.probe.update(y_pred=y_pred)
+        self.probe.update(
+            y_pred=np.expand_dims(y_pred, 0)
+        )  # probe expects y_pred to have a batch dimension
 
     def run_attack(self):
         self._check_x("run_attack")
@@ -57,7 +60,9 @@ class CarlaMOT(CarlaVideoTracking):
                 y[0], y_pred_adv, tracked_class, self.i
             )
 
-        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+        self.probe.update(
+            x_adv=x_adv, y_pred_adv=np.expand_dims(y_pred_adv, 0)
+        )  # probe expects y_pred to have a batch dimension
         if self.targeted:
             self.probe.update(y_target=y_target)
 
