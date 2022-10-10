@@ -1692,3 +1692,60 @@ class HOTA_metrics:
 
     def get_per_class_all_videos_metrics(self):
         return self.hota_metrics_per_class_all_videos
+
+
+class GlobalHOTA:
+    # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
+    METRICS = ("hota", "deta", "assa")
+
+    def __init__(
+        self,
+        metrics=("hota", "deta", "assa"),
+        means=True,
+        record_metric_per_sample=True,
+        **kwargs,
+    ):
+        for k in metrics:
+            if k not in self.METRICS:
+                raise ValueError(f"{k} not in {self.METRICS}")
+        self.metrics = tuple(metrics)
+        self.means = bool(means)
+        self.record_metric_per_sample = bool(record_metric_per_sample)
+
+        self.hota_metrics = HOTA_metrics(**kwargs)
+
+    def __call__(self, y_list, y_pred_list):
+        for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+            for tracked_class in self.hota_metrics.tracked_classes:
+                self.hota_metrics.calculate_hota_metrics_per_class_per_video(
+                    y[0], y_pred[0], tracked_class, i
+                )
+
+        for tracked_class in self.hota_metrics.tracked_classes:
+            self.hota_metrics.calculate_hota_metrics_per_class_all_videos(tracked_class)
+
+        results = {}
+        if self.record_metric_per_sample:
+            per_class_per_video_metrics = (
+                self.hota_metrics.get_per_class_per_video_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["hota", "deta", "assa"]:
+                    self.results[f"benign_{k}"] = []
+                for vid in per_class_per_video_metrics[tracked_class].keys():
+                    for k in ["HOTA", "DetA", "AssA"]:
+                        value = per_class_per_video_metrics[tracked_class][vid][
+                            k
+                        ].mean()
+                        self.results[f"benign_{k.lower()}"].append(value)
+
+        if self.means:
+            per_class_all_videos_metrics = (
+                self.hota_metrics.get_per_class_all_videos_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["HOTA", "DetA", "AssA"]:
+                    value = per_class_all_videos_metrics[tracked_class][k].mean()
+                    self.results[f"mean_{k.lower()}"] = value
+
+        return results
