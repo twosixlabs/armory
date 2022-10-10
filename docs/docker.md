@@ -86,7 +86,7 @@ When using a released version of armory, docker images will be pulled as needed 
 evaluations are ran. However if there are issues downloading the images (e.g. proxy)
 they can be built from the release branch of the repo:
 ```
-git checkout -b r0.15.0
+git checkout -b r0.16.0
 bash docker/build-base.sh
 python docker/build.py <tf2|pytorch|pytorch-deepspeech|all> [--no-pull]
 ```
@@ -177,25 +177,25 @@ armory exec pytorch --gpus=0 -- nvidia-smi
 
 ### CUDA
 
-Armory docker images currently use CUDA 11.3 as the base image ( see [Dockerfile-Base](../docker/Dockerfile-base))
-and the TensorFlow versions we support require CUDA 10+. Previous versions of CUDA (e.g. CUDA<11.3) are not actively tested 
+Armory docker images currently use CUDA 11.6 as the base image ( see [Dockerfile-Base](../docker/Dockerfile-base))
+and the TensorFlow versions we support require CUDA 10+. Previous versions of CUDA (e.g. CUDA<11.6) are not actively tested
 by armory developers or CI tools.  However, if previous versions of CUDA are needed, the following instructions should
 provide a decent starting point.
 
 To use CUDA 10.2, you will need to rebuild the base image and the derived images with the following changes:
 in [docker/Dockerfile-base](../docker/Dockerfile-base) change:
 ```bash
-FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:11.6.1-cudnn8-runtime-ubuntu20.04
 ```
 to
 ```bash
 FROM nvidia/cuda:10.2-cudnn8-runtime-ubuntu18.04
 ```
-and then change `cudatoolkit=11.3 \` to `cudatoolkit=10.2 \`.
+and then change `cudatoolkit=11.6 \` to `cudatoolkit=10.2 \`.
 
-Again, this is not actively tested, so it may require further modification of library dependencies to 
-work appropriately. Also, while PyTorch does support CUDA 9, we do not provide support in armory due to 
-TFDS dependencies and we do not recommend using versions less than the standard 11.3.
+Again, this is not actively tested, so it may require further modification of library dependencies to
+work appropriately. Also, while PyTorch does support CUDA 9, we do not provide support in armory due to
+TFDS dependencies and we do not recommend using versions less than the standard 11.6.
 
 ## Docker Setup
 Depending on the evaluation, you may need to increase the default memory allocation for
@@ -255,7 +255,7 @@ x, y = next(ds)
 
 ### Environment setup
 NOTE: The listing of libraries needed for Armory when run on host is available at
-`host-requirements.txt`. You will need to manually install the requirements in
+`pyproject.toml`. You will need to manually install the requirements in
 that file that match your framework (TF1, TF2, PyTorch).
 
 # publishing a new base

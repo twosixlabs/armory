@@ -40,7 +40,7 @@ about what is available and what pretrained weights can be pulled from S3:
 
 ## Running an evaluation
 Evaluations are typically run through the use of configuration files. See the
-[config file documentation](configuration_files.md) for information regarding the
+[config file documentation](/docs/configuration_files.md) for information regarding the
 schema and what the fields refer to.
 
 To run a configuration:
@@ -53,7 +53,7 @@ armory run official_scenario_configs/cifar10_baseline.json
 ## External Repos
 You may want to include code from an external repository that is outside of your
 current working directory project. This is fully supported by Armory and more
-information can be found in the [external repo documentation](external_repos.md).
+information can be found in the [external repo documentation](/docs/external_repos.md).
 
 ## the armory flavors
 
