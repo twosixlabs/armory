@@ -69,10 +69,10 @@ def linear_depth_to_rgb(depth_m):
     Converts linear depth in meters to RGB values between [0,1]
     Reference: https://carla.readthedocs.io/en/stable/cameras_and_sensors/#camera-depth-map
     """
-    depth = depth_m / 1000.0 * (256 * 256 * 256 - 1)
-    r = int(depth % 256)
-    g = int((depth - r) / 256.0 % 256)
-    b = int((depth - r - g * 256) / (256 ^ 2))
+    depth = depth_m / 1000.0 * (256**3 - 1)
+    r = depth % 256
+    g = ((depth - r) / 256.0) % 256
+    b = (depth - r - g * 256) / 256**2
     r = r / 255.0
     g = g / 255.0
     b = b / 255.0
