@@ -1550,24 +1550,6 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
     return 0
 
 
-@batchwise
-def hota(arg1, arg2):
-    # TODO
-    return -1
-
-
-@batchwise
-def deta(arg1, arg2):
-    # TODO
-    return -1
-
-
-@batchwise
-def assa(arg1, arg2):
-    # TODO
-    return -1
-
-
 class HOTA_metrics:
     def __init__(self, tracked_classes=["pedestrian"]):
         from collections import defaultdict

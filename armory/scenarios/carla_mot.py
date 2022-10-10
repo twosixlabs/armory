@@ -6,6 +6,7 @@ CARLA Multi-Object Tracking Scenario
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
 
 from armory.metrics.task import HOTA_metrics
+from armory.logs import log
 
 
 class CarlaMOT(CarlaVideoTracking):
@@ -13,13 +14,21 @@ class CarlaMOT(CarlaVideoTracking):
         self.tracked_classes = config.get("scenario", {}).get(
             "tracked_classes", ["pedestrian"]
         )
+        super().__init__(config, **kwargs)
+
+    def load_metrics(self):
+        all_tasks = self.config["metric"]["task"]
+        hotas = ["hota", "deta", "assa"]
+        self.hota_tasks = [t for t in all_tasks if t in hotas]
+        self.config["metric"]["task"] = [t for t in all_tasks if t not in hotas]
+        super().load_metrics()
+        self.config["metric"]["task"] = all_tasks  # revert to original
 
         # metrics collector
         self.hota_metrics_benign = HOTA_metrics(tracked_classes=self.tracked_classes)
         self.hota_metrics_adversarial = HOTA_metrics(
             tracked_classes=self.tracked_classes
         )
-        super().__init__(config, **kwargs)
 
     def run_benign(self):
         self._check_x("run_benign")
@@ -82,7 +91,7 @@ class CarlaMOT(CarlaVideoTracking):
                 tracked_class
             )
 
-        print("Final HOTA metrics")
+        log.success("Final HOTA metrics")
         bengin_per_class_per_video_metrics = (
             self.hota_metrics_benign.get_per_class_per_video_metrics()
         )
@@ -96,58 +105,39 @@ class CarlaMOT(CarlaVideoTracking):
             self.hota_metrics_adversarial.get_per_class_all_videos_metrics()
         )
         for tracked_class in self.tracked_classes:
-            print("Benign metrics for each video of {} class".format(tracked_class))
+            log.success(f"Benign metrics for each video of {tracked_class} class")
+            for k in ["hota", "deta", "assa"]:
+                self.results[f"benign_{k}"] = []
             for vid in bengin_per_class_per_video_metrics[tracked_class].keys():
-                for key_metric in [
-                    "HOTA",
-                    "DetA",
-                    "AssA",
-                ]:  # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
-                    print(
-                        "Video {}, {} metric: {}".format(
-                            vid,
-                            key_metric,
-                            bengin_per_class_per_video_metrics[tracked_class][vid][
-                                key_metric
-                            ].mean(),
-                        )
-                    )
+                for k in ["HOTA", "DetA", "AssA"]:
+                    # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
+                    value = bengin_per_class_per_video_metrics[tracked_class][vid][
+                        k
+                    ].mean()
+                    log.success(f"Video {vid}, {k} metric: {value}")
+                    self.results[f"benign_{k.lower()}"].append(value)
 
-            print("Benign metrics for all videos of {} class".format(tracked_class))
-            for key_metric in ["HOTA", "DetA", "AssA"]:
-                print(
-                    "{} metric: {}".format(
-                        key_metric,
-                        bengin_per_class_all_videos_metrics[tracked_class][
-                            key_metric
-                        ].mean(),
-                    )
-                )
+            log.success(f"Benign metrics for all videos of {tracked_class} class")
+            for k in ["HOTA", "DetA", "AssA"]:
+                value = bengin_per_class_all_videos_metrics[tracked_class][k].mean()
+                log.success(f"{k} metric: {value}")
+                self.results[f"benign_mean_{k.lower()}"] = value
 
-            print(
-                "Adversarial metrics for each video of {} class".format(tracked_class)
-            )
+            log.success(f"Adversarial metrics for each video of {tracked_class} class")
+            for k in ["hota", "deta", "assa"]:
+                self.results[f"adversarial_{k}"] = []
             for vid in adversarial_per_class_per_video_metrics[tracked_class].keys():
-                for key_metric in ["HOTA", "DetA", "AssA"]:
-                    print(
-                        "Video {}, {} metric: {}".format(
-                            vid,
-                            key_metric,
-                            adversarial_per_class_per_video_metrics[tracked_class][vid][
-                                key_metric
-                            ].mean(),
-                        )
-                    )
+                for k in ["HOTA", "DetA", "AssA"]:
+                    value = adversarial_per_class_per_video_metrics[tracked_class][vid][
+                        k
+                    ].mean()
+                    log.success(f"Video {vid}, {k} metric: {value}")
+                    self.results[f"adversarial_{k.lower()}"].append(value)
 
-            print(
-                "Adversarial metrics for all videos of {} class".format(tracked_class)
-            )
-            for key_metric in ["HOTA", "DetA", "AssA"]:
-                print(
-                    "{} metric: {}".format(
-                        key_metric,
-                        adversarial_per_class_all_videos_metrics[tracked_class][
-                            key_metric
-                        ].mean(),
-                    )
-                )
+            log.success(f"Adversarial metrics for all videos of {tracked_class} class")
+            for k in ["HOTA", "DetA", "AssA"]:
+                value = adversarial_per_class_all_videos_metrics[tracked_class][
+                    k
+                ].mean()
+                log.success(f"{k} metric: {value}")
+                self.results[f"adversarial_mean_{k.lower()}"] = value
