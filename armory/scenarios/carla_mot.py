@@ -19,8 +19,8 @@ class CarlaMOT(CarlaVideoTracking):
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, **self.predict_kwargs)
-            for tracked_class in tracked_classes:
-                hota_metrics_benign.calculate_hota_metrics_per_class_per_video(
+            for tracked_class in self.tracked_classes:
+                self.hota_metrics_benign.calculate_hota_metrics_per_class_per_video(
                     y, y_pred, tracked_class, self.i
                 )
         self.y_pred = y_pred
@@ -51,8 +51,8 @@ class CarlaMOT(CarlaVideoTracking):
 
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
-        for tracked_class in tracked_classes:
-            hota_metrics_adversarial.calculate_hota_metrics_per_class_per_video(
+        for tracked_class in self.tracked_classes:
+            self.hota_metrics_adversarial.calculate_hota_metrics_per_class_per_video(
                 y, y_pred_adv, tracked_class, self.i
             )
 
