@@ -3,8 +3,6 @@ CARLA Multi-Object Tracking Scenario
 
 """
 
-import numpy as np
-
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
 from armory.metrics.task import HOTA_metrics
 
