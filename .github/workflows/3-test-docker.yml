@@ -138,7 +138,7 @@ jobs:
       # yamllint enable rule:indentation
 
   docker-mot-unit:
-    name: ☁️ Docker Pytorch Image Tests
+    name: ☁️ Docker CARLA MOT Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
