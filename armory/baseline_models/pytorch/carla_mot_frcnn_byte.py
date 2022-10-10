@@ -9,7 +9,7 @@ from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 from torchvision import models
 import dataclasses
-from ByteTrack.yolox.tracker.byte_tracker import (
+from yolox.tracker.byte_tracker import (
     BYTETracker,
 )  # clone from https://github.com/ifzhang/ByteTrack
 
