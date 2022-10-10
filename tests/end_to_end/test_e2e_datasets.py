@@ -735,6 +735,24 @@ def test_speech_commands(armory_dataset_dir):
     assert ds.size == ds_train_size
 
 
+def test_carla_multi_object_tracking_dev():
+
+    dataset = adversarial_datasets.carla_multi_object_tracking_dev(split="dev")
+    assert dataset.size == 20
+    for x, y in dataset:
+        assert x.shape[0] == 1
+        assert x.shape[2:] == (960, 1280, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        annotations, y_patch_metadata = y
+        assert isinstance(annotations, np.ndarray)
+        assert annotations.shape[0] == 1
+        assert annotations.shape[2] == 9
+        assert isinstance(y_patch_metadata, dict)
+        for key in ["gs_coords", "masks"]:
+            assert key in y_patch_metadata
+
+
 def test_variable_length(armory_dataset_dir):
     """
     Test batches with variable length items using digit dataset

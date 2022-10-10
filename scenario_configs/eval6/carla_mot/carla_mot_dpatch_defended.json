@@ -70,12 +70,14 @@
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.carla_mot",
-        "name": "CarlaMOT"
+        "name": "CarlaMOT",
+        "tracked_classes": [
+            "pedestrian"
+        ]
     },
     "sysconfig": {
         "docker_image": "twosixsarmory/armory-bytetrack",
         "external_github_repo": [
-            "ifzhang/ByteTrack",
             "JonathonLuiten/TrackEval",
             "colour-science/colour@v0.3.16"
         ],

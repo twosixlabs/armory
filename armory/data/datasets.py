@@ -1144,7 +1144,7 @@ def imagenette(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "imagenette/full-size:0.1.0",
+        "imagenette/full-size:1.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
