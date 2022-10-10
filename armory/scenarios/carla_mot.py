@@ -9,14 +9,17 @@ from armory.metrics.task import HOTA_metrics
 
 
 class CarlaMOT(CarlaVideoTracking):
-    def __init__(self, tracked_classes=("pedestrian",), **kwargs):
-        self.tracked_classes = list(tracked_classes)
+    def __init__(self, config, **kwargs):
+        self.tracked_classes = config.get("scenario", {}).get(
+            "tracked_classes", ["pedestrian"]
+        )
+
         # metrics collector
         self.hota_metrics_benign = HOTA_metrics(tracked_classes=self.tracked_classes)
         self.hota_metrics_adversarial = HOTA_metrics(
             tracked_classes=self.tracked_classes
         )
-        super().__init__(**kwargs)
+        super().__init__(config, **kwargs)
 
     def run_benign(self):
         self._check_x("run_benign")
