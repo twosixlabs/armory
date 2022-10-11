@@ -4,7 +4,6 @@ CARLA Multi-Object Tracking Scenario
 """
 
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
-
 from armory.metrics.task import HOTA_metrics
 
 
@@ -27,10 +26,10 @@ class CarlaMOT(CarlaVideoTracking):
         x, y = self.x, self.y
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
-            y_pred = self.model.predict(x[0], **self.predict_kwargs)
+            y_pred = self.model.predict(x, **self.predict_kwargs)
             for tracked_class in self.tracked_classes:
                 self.hota_metrics_benign.calculate_hota_metrics_per_class_per_video(
-                    y[0], y_pred, tracked_class, self.i
+                    y, y_pred, tracked_class, self.i
                 )
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
@@ -58,11 +57,11 @@ class CarlaMOT(CarlaVideoTracking):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
 
-        y_pred_adv = self.model.predict(x_adv[0], **self.predict_kwargs)
+        y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
         for tracked_class in self.tracked_classes:
             self.hota_metrics_adversarial.calculate_hota_metrics_per_class_per_video(
-                y[0], y_pred_adv, tracked_class, self.i
+                y, y_pred_adv, tracked_class, self.i
             )
 
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
