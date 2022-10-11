@@ -1736,13 +1736,13 @@ class GlobalHOTA:
             )
             for tracked_class in self.hota_metrics.tracked_classes:
                 for k in ["hota", "deta", "assa"]:
-                    results[f"benign_{k}"] = []
+                    results[f"{k}"] = []
                 for vid in per_class_per_video_metrics[tracked_class].keys():
                     for k in ["HOTA", "DetA", "AssA"]:
                         value = per_class_per_video_metrics[tracked_class][vid][
                             k
                         ].mean()
-                        results[f"benign_{k.lower()}"].append(value)
+                        results[f"{k.lower()}"].append(value)
 
         if self.means:
             per_class_all_videos_metrics = (
