@@ -4,6 +4,7 @@ CARLA Multi-Object Tracking Scenario
 """
 
 from armory.instrument import GlobalMeter
+from armory.instrument.config import ResultsLogWriter
 from armory.metrics.task import GlobalHOTA
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
 
@@ -33,34 +34,49 @@ class CarlaMOT(CarlaVideoTracking):
 
         if self.hota_tasks:
             if not self.skip_benign:
-                self.hub.connect_meter(
-                    GlobalMeter(
-                        "benign_hota_metrics",
-                        GlobalHOTA(
-                            metrics=self.hota_tasks,
-                            tracked_classes=self.tracked_classes,
-                            means=means,
-                            record_metric_per_sample=record_metric_per_sample,
-                        ),
-                        "scenario.y",
-                        "scenario.y_pred",
-                    )
+                meter = GlobalMeter(
+                    "benign_hota_metrics",
+                    GlobalHOTA(
+                        metrics=self.hota_tasks,
+                        tracked_classes=self.tracked_classes,
+                        means=means,
+                        record_metric_per_sample=record_metric_per_sample,
+                    ),
+                    "scenario.y",
+                    "scenario.y_pred",
                 )
+                for writer in self.hub.writers:
+                    if (
+                        isinstance(writer, ResultsLogWriter)
+                        and writer.task_type == "benign"
+                    ):
+                        meter.add_writer(writer)
+                        break
+
+                self.hub.connect_meter(meter)
 
             if not self.skip_attack:
-                self.hub.connect_meter(
-                    GlobalMeter(
-                        "adversarial_hota_metrics",
-                        GlobalHOTA(
-                            metrics=self.hota_tasks,
-                            tracked_classes=self.tracked_classes,
-                            means=means,
-                            record_metric_per_sample=record_metric_per_sample,
-                        ),
-                        "scenario.y",
-                        "scenario.y_pred_adv",
-                    )
+                meter = GlobalMeter(
+                    "adversarial_hota_metrics",
+                    GlobalHOTA(
+                        metrics=self.hota_tasks,
+                        tracked_classes=self.tracked_classes,
+                        means=means,
+                        record_metric_per_sample=record_metric_per_sample,
+                    ),
+                    "scenario.y",
+                    "scenario.y_pred_adv",
                 )
+                for writer in self.hub.writers:
+                    if (
+                        isinstance(writer, ResultsLogWriter)
+                        and writer.task_type == "adversarial"
+                        and self.wrt == "ground truth"
+                    ):
+                        meter.add_writer(writer)
+                        break
+
+                self.hub.connect_meter(meter)
 
     def run_benign(self):
         self._check_x("run_benign")
