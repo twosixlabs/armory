@@ -5,6 +5,7 @@ Scenario Contributor: MITRE Corporation
 """
 
 from armory.scenarios.scenario import Scenario
+from armory.instrument.export import VideoClassificationExporter
 
 
 class Ucf101(Scenario):
@@ -15,3 +16,9 @@ class Ucf101(Scenario):
                 "    If training, set config['model']['fit_kwargs']['fit_batch_size']"
             )
         super().load_dataset()
+
+    def _load_sample_exporter(self):
+        return VideoClassificationExporter(
+            self.export_dir,
+            frame_rate=self.test_dataset.context.frame_rate,
+        )

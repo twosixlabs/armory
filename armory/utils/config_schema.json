@@ -95,6 +95,12 @@
         },
         "metric": {
             "properties": {
+                "max_record_size": {
+                    "type": [
+                        "null",
+                        "integer"
+                    ]
+                },
                 "means": {
                     "type": "boolean"
                 },
@@ -103,10 +109,14 @@
                 },
                 "profiler_type": {
                     "enum": [
-                        "Basic",
-                        "Deterministic"
+                        null,
+                        "basic",
+                        "deterministic"
                     ],
-                    "type": "string"
+                    "type": [
+                        "null",
+                        "string"
+                    ]
                 },
                 "record_metric_per_sample": {
                     "type": "boolean"
@@ -210,6 +220,7 @@
         },
         "supported_metric_enum": {
             "enum": [
+                "entailment",
                 "dapricot_patch_target_success",
                 "dapricot_patch_targeted_AP_per_class",
                 "apricot_patch_targeted_AP_per_class",
@@ -227,8 +238,6 @@
                 "snr_spectrogram",
                 "snr_spectrogram_db",
                 "image_circle_patch_diameter",
-                "mars_mean_l2",
-                "mars_mean_patch",
                 "mean_l0",
                 "max_l0",
                 "mean_l1",
@@ -238,6 +247,7 @@
                 "mean_linf",
                 "max_linf",
                 "video_tracking_mean_iou",
+                "video_tracking_mean_success_rate",
                 "mean_image_circle_patch_diameter",
                 "max_image_circle_patch_diameter",
                 "word_error_rate",

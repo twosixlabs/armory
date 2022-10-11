@@ -135,12 +135,16 @@ jobs:
         run: |
           docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
           pytest -m "not docker_required and unit" ./tests/
+          docker run -w /armory-repo/ twosixarmory/pytorch-deepspeech:$(armory --version) \
+          pytest -m "pytorch_deepspeech" ./tests/
   formatting-test:
     name: Check Code Formatting
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
       - name: install test requirements
         run: pip install -r test-requirements.txt
       - name: Run commit hooks

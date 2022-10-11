@@ -170,3 +170,23 @@ def dataset_generator():
         return dataset
 
     return generator
+
+
+# override caplog fixture to receve loguru messages as described in
+# https://loguru.readthedocs.io/en/stable/resources/migration.html#making-things-work-with-pytest-and-caplog
+
+from loguru import logger as loguru_logger
+from _pytest.logging import LogCaptureFixture
+
+# It is good that this fixture is implemented as a generator function so
+# that we don't have to worry about the armory.logs sinks added or removed.
+# This fixture adds and removes it's own sink only for the duration of the
+# pytest function. If we find that messages disappear after this fixture is
+# used, we might have to be more delicate in setting up the other sinks.
+
+
+@pytest.fixture
+def caplog(caplog: LogCaptureFixture):
+    handler_id = loguru_logger.add(caplog.handler, format="{message}")
+    yield caplog
+    loguru_logger.remove(handler_id)

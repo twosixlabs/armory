@@ -117,12 +117,12 @@ def _make_builder_configs():
         tfds.deprecated.text.TextEncoderConfig(
             name="subwords8k",
             encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
-            vocab_size=2 ** 13,
+            vocab_size=2**13,
         ),
         tfds.deprecated.text.TextEncoderConfig(
             name="subwords32k",
             encoder_cls=tfds.deprecated.text.SubwordTextEncoder,
-            vocab_size=2 ** 15,
+            vocab_size=2**15,
         ),
     ]
     configs = []
@@ -158,7 +158,9 @@ class LibrispeechDevCleanSplit(tfds.core.BeamBasedBuilder):
             supervised_keys=("speech", "label"),
             homepage=_URL,
             citation=_CITATION,
-            metadata=tfds.core.MetadataDict(sample_rate=16000,),
+            metadata=tfds.core.MetadataDict(
+                sample_rate=16000,
+            ),
         )
 
     def _vocab_text_gen(self, dirs):

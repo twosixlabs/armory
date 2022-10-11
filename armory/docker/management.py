@@ -66,7 +66,12 @@ class ArmoryInstance(object):
         #  but `exec_run()` cannot both return the code and stream logs
         # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
         result = self.docker_container.exec_run(
-            cmd, stdout=True, stderr=True, stream=True, tty=True, user=user,
+            cmd,
+            stdout=True,
+            stderr=True,
+            stream=True,
+            tty=True,
+            user=user,
         )
 
         # the sentinel should be the last output from the container
@@ -117,10 +122,17 @@ class ManagementInstance(object):
         self.name = image_name
 
     def start_armory_instance(
-        self, envs: dict = None, ports: dict = None, user: str = "",
+        self,
+        envs: dict = None,
+        ports: dict = None,
+        user: str = "",
     ) -> ArmoryInstance:
         temp_inst = ArmoryInstance(
-            self.name, runtime=self.runtime, envs=envs, ports=ports, user=user,
+            self.name,
+            runtime=self.runtime,
+            envs=envs,
+            ports=ports,
+            user=user,
         )
         self.instances[temp_inst.docker_container.short_id] = temp_inst
         return temp_inst

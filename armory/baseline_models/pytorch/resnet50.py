@@ -13,7 +13,9 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class OuterModel(torch.nn.Module):
     def __init__(
-        self, weights_path: Optional[str], **model_kwargs,
+        self,
+        weights_path: Optional[str],
+        **model_kwargs,
     ):
         super().__init__()
         self.inner_model = models.resnet50(**model_kwargs)

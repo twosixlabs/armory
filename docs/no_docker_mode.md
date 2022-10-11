@@ -48,7 +48,7 @@ python -m pytest -s ./tests/unit/test_no_docker.py
 If you would like to run the example interactively you 
 enter a python session in the virtualenv and type:
 ```python
-from armory import scenarios
+from armory.scenarios.main import get as get_scenario
 from armory import paths
 from pathlib import Path
 
@@ -56,7 +56,7 @@ from pathlib import Path
 paths.set_mode("host")
 
 config = Path("scenario_configs/no_docker/cifar_short.json")
-s = scenarios.get(config).load()
+s = get_scenario(config).load()
 s.evaluate()
 ```
 

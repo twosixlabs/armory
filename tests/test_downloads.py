@@ -24,7 +24,9 @@ def test_valid_model_weight(tmp_path):
         )
 
     download_file_from_s3(
-        "armory-public-data", f"model-weights/{weights_file}", filepath,
+        "armory-public-data",
+        f"model-weights/{weights_file}",
+        filepath,
     )
     assert os.path.isfile(filepath)
     shutil.rmtree(str(dir))

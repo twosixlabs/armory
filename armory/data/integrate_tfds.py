@@ -46,7 +46,13 @@ def main():
 
     log.info("Creating tarball (may take some time)...")
     completedprocess = subprocess.run(
-        ["tar", "cvzf", tar_full_filepath, name,], cwd=dataset_dir
+        [
+            "tar",
+            "cvzf",
+            tar_full_filepath,
+            name,
+        ],
+        cwd=dataset_dir,
     )
     if completedprocess.returncode:
         raise Exception("bash tar failed. Please manually tar file and upload to S3")

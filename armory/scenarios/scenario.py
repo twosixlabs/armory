@@ -3,7 +3,6 @@ Primary class for scenario
 """
 
 import copy
-import json
 import os
 import sys
 import time
@@ -13,8 +12,10 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths
-from armory.utils import config_loading, metrics
-from armory.utils.export import SampleExporter
+from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
+from armory.instrument.export import ExportMeter, PredictionMeter
+from armory.metrics import compute
+from armory.utils import config_loading, metrics, json_utils
 from armory.logs import log
 
 
@@ -34,6 +35,8 @@ class Scenario:
         skip_misclassified: Optional[bool] = False,
         check_run: bool = False,
     ):
+        self.probe = get_probe("scenario")
+        self.hub = get_hub()
         self.check_run = bool(check_run)
         if num_eval_batches is not None and num_eval_batches < 0:
             raise ValueError("num_eval_batches cannot be negative")
@@ -52,7 +55,6 @@ class Scenario:
             config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
         )
         self.config = config
-        self._set_output_dir(self.config)
         self.num_eval_batches = num_eval_batches
         self.skip_benign = bool(skip_benign)
         self.skip_attack = bool(skip_attack)
@@ -62,12 +64,25 @@ class Scenario:
         if skip_attack:
             log.info("Skipping attack generation...")
         self.time_stamp = time.time()
+        self.export_subdir = "saved_samples"
+        self._set_output_dir(self.config.get("eval_id"))
+        if os.path.exists(f"{self.scenario_output_dir}/{self.export_subdir}"):
+            log.warning(
+                f"Export output directory {self.scenario_output_dir}/{self.export_subdir} already exists, will create new directory"
+            )
+            self._set_export_dir(f"{self.export_subdir}_{self.time_stamp}")
+        self.results = None
 
-    def _set_output_dir(self, config: Config) -> None:
+    def _set_output_dir(self, eval_id) -> None:
         runtime_paths = paths.runtime_paths()
-        self.scenario_output_dir = os.path.join(
-            runtime_paths.output_dir, config["eval_id"]
-        )
+        self.scenario_output_dir = os.path.join(runtime_paths.output_dir, eval_id)
+        self.hub._set_output_dir(self.scenario_output_dir)
+        self._set_export_dir(self.export_subdir)
+
+    def _set_export_dir(self, output_subdir) -> None:
+        self.export_dir = f"{self.scenario_output_dir}/{output_subdir}"
+        self.export_subdir = output_subdir
+        self.hub._set_export_dir(output_subdir)
 
     def _check_config_and_cli_args(
         self, config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
@@ -199,37 +214,58 @@ class Scenario:
         self.i = -1
 
     def load_metrics(self):
-        if hasattr(self, "targeted"):
-            targeted = self.targeted
-        else:
-            targeted = False
+        if not hasattr(self, "targeted"):
             log.warning(
                 "Run 'load_attack' before 'load_metrics' if not just doing benign inference"
             )
 
         metrics_config = self.config["metric"]
-        metrics_logger = metrics.MetricsLogger.from_config(
+        metrics_logger = MetricsLogger.from_config(
             metrics_config,
-            skip_benign=self.skip_benign,
-            skip_attack=self.skip_attack,
-            targeted=targeted,
+            include_benign=not self.skip_benign,
+            include_adversarial=not self.skip_attack,
+            include_targeted=self.targeted,
         )
-
-        self.profiler_kwargs = dict(
-            profiler=metrics_config.get("profiler_type"),
-            computational_resource_dict=metrics_logger.computational_resource_dict,
-        )
-
-        export_samples = self.config["scenario"].get("export_samples")
-        if export_samples is not None and export_samples > 0:
-            sample_exporter = SampleExporter(
-                self.scenario_output_dir, self.test_dataset.context, export_samples
-            )
-        else:
-            sample_exporter = None
-
+        self.profiler = compute.profiler_from_config(metrics_config)
         self.metrics_logger = metrics_logger
-        self.sample_exporter = sample_exporter
+
+    def load_export_meters(self):
+        if self.config["scenario"].get("export_samples") is not None:
+            log.warning(
+                "The export_samples field was deprecated in Armory 0.15.0. Please use export_batches instead."
+            )
+
+        num_export_batches = self.config["scenario"].get("export_batches", 0)
+        if num_export_batches is True:
+            num_export_batches = len(self.test_dataset)
+        self.num_export_batches = int(num_export_batches)
+        self.sample_exporter = self._load_sample_exporter()
+
+        for probe_value in ["x", "x_adv"]:
+            export_meter = ExportMeter(
+                f"{probe_value}_exporter",
+                self.sample_exporter,
+                f"scenario.{probe_value}",
+                max_batches=self.num_export_batches,
+            )
+            self.hub.connect_meter(export_meter, use_default_writers=False)
+            if self.skip_attack:
+                break
+
+        pred_meter = PredictionMeter(
+            "pred_dict_exporter",
+            self.export_dir,
+            y_probe="scenario.y",
+            y_pred_clean_probe="scenario.y_pred" if not self.skip_benign else None,
+            y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
+            max_batches=self.num_export_batches,
+        )
+        self.hub.connect_meter(pred_meter, use_default_writers=False)
+
+    def _load_sample_exporter(self):
+        raise NotImplementedError(
+            f"_load_sample_exporter() method is not implemented for scenario {self.__class__}"
+        )
 
     def load(self):
         self.load_model()
@@ -239,6 +275,7 @@ class Scenario:
         self.load_attack()
         self.load_dataset()
         self.load_metrics()
+        self.load_export_meters()
         return self
 
     def evaluate_all(self):
@@ -246,11 +283,15 @@ class Scenario:
         for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
             self.next()
             self.evaluate_current()
+        self.hub.set_context(stage="finished")
 
     def next(self):
+        self.hub.set_context(stage="next")
         x, y = next(self.test_dataset)
         i = self.i + 1
+        self.hub.set_context(batch=i)
         self.i, self.x, self.y = i, x, y
+        self.probe.update(i=i, x=x, y=y)
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
 
     def _check_x(self, function_name):
@@ -259,21 +300,24 @@ class Scenario:
 
     def run_benign(self):
         self._check_x("run_benign")
+        self.hub.set_context(stage="benign")
+
         x, y = self.x, self.y
         x.flags.writeable = False
-        with metrics.resource_context(name="Inference", **self.profiler_kwargs):
+        with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(y, y_pred)
         self.y_pred = y_pred
+        self.probe.update(y_pred=y_pred)
 
         if self.skip_misclassified:
             self.misclassified = not any(metrics.categorical_accuracy(y, y_pred))
 
     def run_attack(self):
         self._check_x("run_attack")
+        self.hub.set_context(stage="attack")
         x, y, y_pred = self.x, self.y, self.y_pred
 
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.skip_misclassified and self.misclassified:
                 y_target = None
 
@@ -298,6 +342,7 @@ class Scenario:
 
                 x_adv = self.attack.generate(x=x, y=y_target, **self.generate_kwargs)
 
+        self.hub.set_context(stage="adversarial")
         if self.skip_misclassified and self.misclassified:
             y_pred_adv = y_pred
         else:
@@ -305,15 +350,9 @@ class Scenario:
             x_adv.flags.writeable = False
             y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
-        self.metrics_logger.update_task(y, y_pred_adv, adversarial=True)
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
-            self.metrics_logger.update_task(
-                y_target, y_pred_adv, adversarial=True, targeted=True
-            )
-        self.metrics_logger.update_perturbation(x, x_adv)
-
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(x, x_adv, y, y_pred_adv)
+            self.probe.update(y_target=y_target)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
@@ -325,31 +364,28 @@ class Scenario:
             self.run_attack()
 
     def finalize_results(self):
-        metrics_logger = self.metrics_logger
-        metrics_logger.log_task()
-        metrics_logger.log_task(adversarial=True)
-        if self.targeted:
-            metrics_logger.log_task(adversarial=True, targeted=True)
-        self.results = metrics_logger.results()
-
-        if self.sample_exporter is not None:
-            self.sample_exporter.write()
+        self.metric_results = self.metrics_logger.results()
+        self.compute_results = self.profiler.results()
+        self.results = {}
+        self.results.update(self.metric_results)
+        self.results["compute"] = self.compute_results
 
     def _evaluate(self) -> dict:
         """
-        Evaluate the config and return a results dict
+        Evaluate the config and set the results dict self.results
         """
         self.load()
         self.evaluate_all()
         self.finalize_results()
-        return self.results
+        log.debug("Clearing global instrumentation variables")
+        del_globals()
 
     def evaluate(self):
         """
-        Evaluate a config for robustness against attack.
+        Evaluate a config for robustness against attack and save results JSON
         """
         try:
-            results = self._evaluate()
+            self._evaluate()
         except Exception as e:
             if str(e) == "assignment destination is read-only":
                 log.exception(
@@ -361,33 +397,35 @@ class Scenario:
                 log.exception("Encountered error during scenario evaluation.")
             sys.exit(1)
 
-        if results is None:
-            log.warning(f"{self._evaluate} returned None, not a dict")
-        output = self._prepare_results(self.config, results)
-        self._save(output)
+        if self.results is None:
+            log.warning(f"{self._evaluate} did not set self.results to a dict")
 
-    def _prepare_results(self, config: dict, results: dict, adv_examples=None) -> dict:
-        """
-        Build the JSON results blob for _save()
+        self.save()
 
-        adv_examples are (optional) instances of the actual examples used.
-            They will be saved in a binary format.
+    def prepare_results(self) -> dict:
         """
-        if adv_examples is not None:
-            raise NotImplementedError("saving adversarial examples")
+        Return the JSON results blob to be used in save() method
+        """
+        if not hasattr(self, "results"):
+            raise AttributeError(
+                "Results have not been finalized. Please call "
+                "finalize_results() before saving output."
+            )
 
         output = {
             "armory_version": armory.__version__,
-            "config": config,
-            "results": results,
+            "config": self.config,
+            "results": self.results,
             "timestamp": int(self.time_stamp),
         }
         return output
 
-    def _save(self, output: dict):
+    def save(self):
         """
-        Save json-formattable output to a file
+        Write results JSON file to Armory scenario output directory
         """
+        output = self.prepare_results()
+
         override_name = output["config"]["sysconfig"].get("output_filename", None)
         scenario_name = (
             override_name if override_name else output["config"]["scenario"]["name"]
@@ -398,5 +436,11 @@ class Scenario:
             f"{self.scenario_output_dir}/{filename} "
             "inside container."
         )
-        with open(os.path.join(self.scenario_output_dir, filename), "w") as f:
-            f.write(json.dumps(output, sort_keys=True, indent=4) + "\n")
+        output_path = os.path.join(self.scenario_output_dir, filename)
+        with open(output_path, "w") as f:
+            json_utils.dump(output, f)
+        if os.path.getsize(output_path) > 2**27:
+            log.warning(
+                "Results json file exceeds 128 MB! "
+                "Recommend checking what is being recorded!"
+            )

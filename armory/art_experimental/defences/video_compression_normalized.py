@@ -41,7 +41,7 @@ class VideoCompressionNormalized(VideoCompression):
         return x, y
 
 
-class VideoCompressionNormalizedPytorch(VideoCompressionPyTorch):
+class VideoCompressionNormalizedPyTorch(VideoCompressionPyTorch):
     """
     Convert x from [0,1] to [0, 255] and back, if necessary
     """

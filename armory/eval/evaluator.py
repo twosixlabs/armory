@@ -24,7 +24,10 @@ from armory.logs import log, is_debug, added_filters
 
 class Evaluator(object):
     def __init__(
-        self, config: dict, no_docker: bool = False, root: bool = False,
+        self,
+        config: dict,
+        no_docker: bool = False,
+        root: bool = False,
     ):
         log.info("Constructing Evaluator Object")
         if not isinstance(config, dict):
@@ -123,8 +126,16 @@ class Evaluator(object):
         try:
             os.rmdir(self.output_dir)
             log.warning(f"removed output_dir {self.output_dir} because it was empty")
+        except FileNotFoundError:
+            log.warning(f"output_dir {self.output_dir} was deleted or never created")
         except OSError:
-            pass
+            jsons = [x for x in os.listdir(self.output_dir) if x.endswith(".json")]
+            if len(jsons) == 1:
+                json = jsons[0]
+            else:
+                json = ""
+            output_path = os.path.join(self.output_dir, json)
+            log.info(f"results output written to:\n{output_path}")
 
     def run(
         self,
@@ -145,7 +156,9 @@ class Evaluator(object):
                 raise ValueError(
                     "jupyter, interactive, or bash commands only supported when running Docker containers."
                 )
-            runner = self.manager.start_armory_instance(envs=self.extra_env_vars,)
+            runner = self.manager.start_armory_instance(
+                envs=self.extra_env_vars,
+            )
             try:
                 exit_code = self._run_config(
                     runner,
@@ -179,7 +192,9 @@ class Evaluator(object):
 
         try:
             runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars, ports=ports, user=self.get_id(),
+                envs=self.extra_env_vars,
+                ports=ports,
+                user=self.get_id(),
             )
             try:
                 if jupyter:
@@ -410,19 +425,29 @@ class Evaluator(object):
                 )
             ),
             "",
-            bold("# To run, inside of a notebook:"),
-            bold(
-                red(
-                    "from armory.scenarios.main import get as get_scenario\n"
-                    f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
-                    "s.evaluate()"
-                )
-            ),
-            "",
-            bold("# To gracefully shut down container, press: Ctrl-C"),
-            "",
-            "Jupyter notebook log:",
         ]
+        if "scenario" in self.config:
+            # If not, config is not valid to load into scenario
+            lines.extend(
+                [
+                    bold("# To run, inside of a notebook:"),
+                    bold(
+                        red(
+                            "from armory.scenarios.main import get as get_scenario\n"
+                            f's = get_scenario("{docker_config_path}"{init_options}).load()\n'
+                            "s.evaluate()"
+                        )
+                    ),
+                    "",
+                ]
+            )
+        lines.extend(
+            [
+                bold("# To gracefully shut down container, press: Ctrl-C"),
+                "",
+                "Jupyter notebook log:",
+            ]
+        )
         log.info("\n".join(lines))
         runner.exec_cmd(
             f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser",

@@ -18,7 +18,7 @@ torchvision==0.11.*
 torchaudio==0.10.*
 
 # TensorFlow
-tensorflow==2.8.0
+tensorflow==2.8.1
 tensorflow-datasets==4.5.*
 tensorboardx==2.4.*
 
@@ -29,7 +29,7 @@ matplotlib==3.*
 jupyterlab==3.*
 
 # ART
-adversarial-robustness-toolbox==1.10.0
+adversarial-robustness-toolbox==1.10.3
 
 # Data dependencies
 Pillow==9.0.*

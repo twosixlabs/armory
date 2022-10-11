@@ -39,5 +39,9 @@ def get_art_model(
     if weights_path:
         model.load_weights(weights_path)
 
-    wrapped_model = KerasClassifier(model, clip_values=(0.0, 1.0), **wrapper_kwargs,)
+    wrapped_model = KerasClassifier(
+        model,
+        clip_values=(0.0, 1.0),
+        **wrapper_kwargs,
+    )
     return wrapped_model

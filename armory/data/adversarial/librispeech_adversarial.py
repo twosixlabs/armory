@@ -97,7 +97,10 @@ class LibrispeechAdversarial(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager):
         """Returns SplitGenerators"""
-        path = os.path.join(dl_manager.download_and_extract(_URL), "data",)
+        path = os.path.join(
+            dl_manager.download_and_extract(_URL),
+            "data",
+        )
         splits = [
             tfds.core.SplitGenerator(
                 name="adversarial", gen_kwargs={"data_dir_path": path}

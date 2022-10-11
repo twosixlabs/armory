@@ -135,7 +135,8 @@ def test_model_creation(
             else None,
         )
         classifier.fit_generator(
-            train_ds, nb_epochs=fit_nb_epochs,
+            train_ds,
+            nb_epochs=fit_nb_epochs,
         )
 
     test_ds = dataset_generator(
@@ -204,7 +205,11 @@ def test_pytorch_carla_video_tracking():
     tracker_module = import_module("armory.baseline_models.pytorch.carla_goturn")
     tracker_fn = getattr(tracker_module, "get_art_model")
     weights_path = maybe_download_weights_from_s3("pytorch_goturn.pth.tar")
-    tracker = tracker_fn(model_kwargs={}, wrapper_kwargs={}, weights_path=weights_path,)
+    tracker = tracker_fn(
+        model_kwargs={},
+        wrapper_kwargs={},
+        weights_path=weights_path,
+    )
 
     # TODO Figure out why this different pattern is used
     from armory.utils.config_loading import load_dataset
@@ -478,14 +483,21 @@ def test_keras_mnist(armory_dataset_dir):
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.mnist(
-        split="train", epochs=1, batch_size=600, dataset_dir=armory_dataset_dir,
+        split="train",
+        epochs=1,
+        batch_size=600,
+        dataset_dir=armory_dataset_dir,
     )
     test_dataset = datasets.mnist(
-        split="test", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="test",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
 
     classifier.fit_generator(
-        train_dataset, nb_epochs=1,
+        train_dataset,
+        nb_epochs=1,
     )
 
     accuracy = 0
@@ -510,7 +522,10 @@ def test_keras_mnist_pretrained(armory_dataset_dir):
     )
 
     test_dataset = datasets.mnist(
-        split="test", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="test",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
 
     accuracy = 0
@@ -532,14 +547,21 @@ def test_keras_cifar(armory_dataset_dir):
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.cifar10(
-        split="train", epochs=1, batch_size=500, dataset_dir=armory_dataset_dir,
+        split="train",
+        epochs=1,
+        batch_size=500,
+        dataset_dir=armory_dataset_dir,
     )
     test_dataset = datasets.cifar10(
-        split="test", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="test",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
 
     classifier.fit_generator(
-        train_dataset, nb_epochs=1,
+        train_dataset,
+        nb_epochs=1,
     )
 
     accuracy = 0
@@ -564,7 +586,10 @@ def test_keras_imagenet(armory_dataset_dir):
     )
 
     dataset = adversarial_datasets.imagenet_adversarial(
-        split="adversarial", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="adversarial",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
 
     accuracy_clean = 0
@@ -595,7 +620,10 @@ def test_keras_imagenet_transfer(armory_dataset_dir):
     )
 
     dataset = adversarial_datasets.imagenet_adversarial(
-        split="adversarial", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="adversarial",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
     accuracy_clean = 0
     accuracy_adv = 0
@@ -624,14 +652,21 @@ def test_tf1_mnist(armory_dataset_dir):
     classifier = classifier_fn(model_kwargs={}, wrapper_kwargs={})
 
     train_dataset = datasets.mnist(
-        split="train", epochs=1, batch_size=600, dataset_dir=armory_dataset_dir,
+        split="train",
+        epochs=1,
+        batch_size=600,
+        dataset_dir=armory_dataset_dir,
     )
     test_dataset = datasets.mnist(
-        split="test", epochs=1, batch_size=100, dataset_dir=armory_dataset_dir,
+        split="test",
+        epochs=1,
+        batch_size=100,
+        dataset_dir=armory_dataset_dir,
     )
 
     classifier.fit_generator(
-        train_dataset, nb_epochs=1,
+        train_dataset,
+        nb_epochs=1,
     )
 
     accuracy = 0

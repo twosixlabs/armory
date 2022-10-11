@@ -34,19 +34,19 @@ The model files can be found in [armory/baseline_models/keras](../armory/baselin
 ### PyTorch
 The model files can be found in [armory/baseline_models/pytorch](../armory/baseline_models/pytorch)
 
-| Model   | S3 weight_files   | 
-|:----------: | :-----------: | 
-| Cifar10 CNN |  |  
-| DeepSpeech 2 |   |
-| Sincnet CNN | `sincnet_librispeech_v1.pth` |
+| Model   |                S3 weight_files                | 
+|:----------: |:---------------------------------------------:| 
+| Cifar10 CNN |                                               |  
+| DeepSpeech 2 |                                               |
+| Sincnet CNN |         `sincnet_librispeech_v1.pth`          |
 | MARS | `mars_ucf101_v1.pth` , `mars_kinetics_v1.pth` |
-| ResNet50 CNN | `resnet50_imagenet_v1.pth` |
-| MNIST CNN | `undefended_mnist_5epochs.pth` |
-| xView Faster-RCNN | `xview_model_state_dict_epoch_99_loss_0p67` |
-| CARLA Faster-RCNN (rgb)| `carla_rgb_weights.pt` |
-| CARLA Faster-RCNN (depth)| `carla_depth_weights.pt` |
-| CARLA Faster-RCNN (multimodal)| `carla_multimodal_naive_weights.pt` |
-| CARLA GoTurn| `pytorch_goturn.pth.tar` |
+| ResNet50 CNN |          `resnet50_imagenet_v1.pth`           |
+| MNIST CNN |        `undefended_mnist_5epochs.pth`         |
+| xView Faster-RCNN |  `xview_model_state_dict_epoch_99_loss_0p67`  |
+| CARLA Faster-RCNN (rgb)|         `carla_rgb_weights_eval5.pt`          |
+| CARLA Faster-RCNN (depth)|        `carla_depth_weights_eval5.pt`         |
+| CARLA Faster-RCNN (multimodal)|      `carla_multimodal_naive_weights.pt`      |
+| CARLA GoTurn|           `pytorch_goturn.pth.tar`            |
 
 ### TensorFlow 1
 The model file can be found in [armory/baseline_models/tf_graph](../armory/baseline_models/tf_graph). 

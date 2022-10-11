@@ -14,7 +14,8 @@ from torch import nn
 from armory.utils.external_repo import ExternalRepoImport
 
 with ExternalRepoImport(
-    repo="hkakitani/SincNet", experiment="librispeech_baseline_sincnet.json",
+    repo="hkakitani/SincNet",
+    experiment="librispeech_baseline_sincnet.json",
 ):
     from SincNet import dnn_models
 

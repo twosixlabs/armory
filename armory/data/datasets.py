@@ -15,6 +15,7 @@ from typing import Callable, Union, Tuple, List
 
 import numpy as np
 from armory.logs import log
+from PIL import ImageOps, Image
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -400,7 +401,8 @@ def _generator_from_tfds(
 
     if cache_dataset:
         _cache_dataset(
-            dataset_dir, dataset_name=dataset_name,
+            dataset_dir,
+            dataset_name=dataset_name,
         )
 
     if not isinstance(split, str):
@@ -546,7 +548,7 @@ def _generator_from_tfds(
 
 def preprocessing_chain(*args):
     """
-    Wraps and returns a sequence of functions
+    Wraps and returns a sequence of preprocessing functions
     """
     functions = [x for x in args if x is not None]
     if not functions:
@@ -556,6 +558,24 @@ def preprocessing_chain(*args):
         for function in functions:
             x = function(x)
         return x
+
+    return wrapped
+
+
+def label_preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of label preprocessing functions.
+    Note that this function differs from preprocessing_chain() in that
+    it chains across (x, y) instead of just x
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x, y):
+        for function in functions:
+            y = function(x, y)
+        return y
 
     return wrapped
 
@@ -664,8 +684,8 @@ imagenette_context = ImageContext(x_shape=(None, None, 3))
 xview_context = ImageContext(x_shape=(None, None, 3))
 coco_context = ImageContext(x_shape=(None, None, 3))
 ucf101_context = VideoContext(x_shape=(None, None, None, 3), frame_rate=25)
-carla_obj_det_single_modal_context = ImageContext(x_shape=(600, 800, 3))
-carla_obj_det_multimodal_context = ImageContext(x_shape=(600, 800, 6))
+carla_obj_det_single_modal_context = ImageContext(x_shape=(960, 1280, 3))
+carla_obj_det_multimodal_context = ImageContext(x_shape=(960, 1280, 6))
 
 
 def mnist_canonical_preprocessing(batch):
@@ -681,7 +701,26 @@ def cifar100_canonical_preprocessing(batch):
 
 
 def gtsrb_canonical_preprocessing(batch):
-    return canonical_variable_image_preprocess(gtsrb_context, batch)
+    img_size = 48
+    img_out = []
+    quantization = 255.0
+    for im in batch:
+        img_eq = ImageOps.equalize(Image.fromarray(im))
+        width, height = img_eq.size
+        min_side = min(img_eq.size)
+        center = width // 2, height // 2
+
+        left = center[0] - min_side // 2
+        top = center[1] - min_side // 2
+        right = center[0] + min_side // 2
+        bottom = center[1] + min_side // 2
+
+        img_eq = img_eq.crop((left, top, right, bottom))
+        img_eq = np.array(img_eq.resize([img_size, img_size])) / quantization
+
+        img_out.append(img_eq)
+
+    return np.array(img_out, dtype=np.float32)
 
 
 def resisc45_canonical_preprocessing(batch):
@@ -721,11 +760,11 @@ class AudioContext:
     def __init__(self, x_shape, sample_rate, input_type=np.int64):
         self.x_shape = x_shape
         self.input_type = input_type
-        self.input_min = -(2 ** 15)
-        self.input_max = 2 ** 15 - 1
+        self.input_min = -(2**15)
+        self.input_max = 2**15 - 1
 
         self.sample_rate = 16000
-        self.quantization = 2 ** 15
+        self.quantization = 2**15
         self.output_type = np.float32
         self.output_min = -1.0
         self.output_max = 1.0
@@ -831,7 +870,7 @@ def carla_obj_det_label_preprocessing(x, y):
     for i, label_dict in enumerate(y):
         orig_boxes = label_dict["boxes"].reshape((-1, 4))
         converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
-        height, width = x[i].shape[1:3]  # shape is (2, 600, 800, 3)
+        height, width = x[i].shape[1:3]
         converted_boxes *= [width, height, width, height]
         label_dict["boxes"] = converted_boxes
         label_dict["labels"] = label_dict["labels"].reshape((-1,))
@@ -891,7 +930,7 @@ def carla_obj_det_train(
     )
 
     return _generator_from_tfds(
-        "carla_obj_det_train:1.0.1",
+        "carla_obj_det_train:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
@@ -1624,7 +1663,9 @@ def coco_label_preprocessing(x, y):
     for label_dict in y:
         label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
         label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
-            label_dict.pop("label").reshape(-1,)
+            label_dict.pop("label").reshape(
+                -1,
+            )
         )
     return y
 
@@ -1762,7 +1803,9 @@ def _cache_dataset(dataset_dir: str, dataset_name: str):
 
     if not os.path.isdir(os.path.join(dataset_dir, name, subpath)):
         download_verify_dataset_cache(
-            dataset_dir=dataset_dir, checksum_file=name + ".txt", name=name,
+            dataset_dir=dataset_dir,
+            checksum_file=name + ".txt",
+            name=name,
         )
 
 

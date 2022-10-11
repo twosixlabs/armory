@@ -1,3 +1,9 @@
+# The APRICOT dataset uses class ID 12 to correspond to adversarial patches. Since this
+# number may correspond to real classes in other datasets, we convert this label 12 in the
+# APRICOT dataset to the ADV_PATCH_MAGIC_NUMBER_LABEL_ID. We choose a negative integer
+# since it is unlikely that such a number represents the ID of a class in another dataset
+ADV_PATCH_MAGIC_NUMBER_LABEL_ID = -10
+
 APRICOT_MODELS = [
     {
         "classifier": "resnet50",

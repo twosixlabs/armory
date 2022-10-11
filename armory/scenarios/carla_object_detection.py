@@ -4,18 +4,14 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.scenario import Scenario
-from armory.utils import metrics
+from armory.scenarios.object_detection import ObjectDetectionTask
+from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
 
 
-class CarlaObjectDetectionTask(Scenario):
+class CarlaObjectDetectionTask(ObjectDetectionTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.skip_misclassified:
-            raise ValueError(
-                "skip_misclassified shouldn't be set for carla_object_detection scenario"
-            )
         if self.skip_benign:
             raise ValueError(
                 "skip_benign shouldn't be set for carla_object_detection scenario, as "
@@ -27,94 +23,62 @@ class CarlaObjectDetectionTask(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
 
-    def run_benign(self):
-        x, y = self.x, self.y
-        y_object, y_patch_metadata = y
-
-        # convert dict to List[dict] to comply with ART format
-        y_object = [y_object]
-
-        x.flags.writeable = False
-
-        with metrics.resource_context(name="Inference", **self.profiler_kwargs):
-            y_pred = self.model.predict(x, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred)
-        self.y_pred = y_pred
+    def next(self):
+        super().next()
+        # The CARLA dev and test sets (as opposed to train/val) contain green-screens
+        # and thus have a tuple of two types of labels that we separate here
+        if isinstance(self.y, tuple):
+            self.y, self.y_patch_metadata = [[y_i] for y_i in self.y]
+            self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_attack(self):
+        self._check_x("run_attack")
+        if not hasattr(self, "y_patch_metadata"):
+            raise AttributeError(
+                "y_patch_metadata attribute does not exist. Please set --skip-attack if using "
+                "CARLA train set"
+            )
+        self.hub.set_context(stage="attack")
         x, y = self.x, self.y
-        y_object, y_patch_metadata = y
 
-        # convert dict to List[dict] to comply with ART format
-        y_object = [y_object]
-
-        with metrics.resource_context(name="Attack", **self.profiler_kwargs):
+        with self.profiler.measure("Attack"):
             if self.use_label:
-                y_target = [y_object]
+                y_target = y
             elif self.targeted:
-                y_target = self.label_targeter.generate(y_object)
+                y_target = self.label_targeter.generate(y)
             else:
                 y_target = None
 
             x_adv = self.attack.generate(
                 x=x,
                 y=y_target,
-                y_patch_metadata=[y_patch_metadata],
-                **self.generate_kwargs
+                y_patch_metadata=self.y_patch_metadata,
+                **self.generate_kwargs,
             )
 
         # Ensure that input sample isn't overwritten by model
+        self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
-        self.metrics_logger.update_task(y_object, y_pred_adv, adversarial=True)
-        self.metrics_logger_wrt_benign_preds.update_task(
-            self.y_pred, y_pred_adv, adversarial=True
-        )
+
+        self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
-            self.metrics_logger.update_task(
-                y_target, y_pred_adv, adversarial=True, targeted=True
-            )
-        self.metrics_logger.update_perturbation(x, x_adv)
+            self.probe.update(y_target=y_target)
 
         # If using multimodal input, add a warning if depth channels are perturbed
         if x.shape[-1] == 6:
             if (x[..., 3:] != x_adv[..., 3:]).sum() > 0:
                 log.warning("Adversarial attack perturbed depth channels")
 
-        if self.sample_exporter is not None:
-            self.sample_exporter.export(
-                x,
-                x_adv,
-                y,
-                y_pred_adv,
-                self.y_pred,
-                plot_bboxes=True,
-                classes_to_skip=4,
-            )
-
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
-
-    def finalize_results(self):
-        super(CarlaObjectDetectionTask, self).finalize_results()
-
-        self.metrics_logger_wrt_benign_preds.log_task(
-            adversarial=True, used_preds_as_labels=True
-        )
-        self.results_wrt_benign_preds = {
-            metric_name + "_wrt_benign_preds": result
-            for metric_name, result in self.metrics_logger_wrt_benign_preds.results().items()
-        }
-        self.results = {**self.results, **self.results_wrt_benign_preds}
 
     def load_metrics(self):
         super().load_metrics()
-        # Add a MetricsLogger to measure adversarial results using benign predictions as labels
-        metric_config = self.config["metric"]
-        subset_config = {
-            k: metric_config[k]
-            for k in ("means", "record_metric_per_sample", "task", "task_kwargs")
-            if k in metric_config
-        }
-        self.metrics_logger_wrt_benign_preds = metrics.MetricsLogger.from_config(
-            subset_config, skip_benign=True, targeted=False
+        # measure adversarial results using benign predictions as labels
+        self.metrics_logger.add_tasks_wrt_benign_predictions()
+
+    def _load_sample_exporter_with_boxes(self):
+        return ObjectDetectionExporter(
+            self.export_dir,
+            default_export_kwargs={"with_boxes": True, "classes_to_skip": [4]},
         )
