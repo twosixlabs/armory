@@ -8,7 +8,7 @@ import sys
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
 
-armory_frameworks = ["pytorch", "pytorch-deepspeech", "tf2"]
+armory_frameworks = ["pytorch", "pytorch-deepspeech", "tf2", "carla-mot"]
 
 # NOTE: Podman is not officially supported, but this enables
 #       use as a drop-in replacement for building.

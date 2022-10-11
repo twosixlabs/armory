@@ -38,6 +38,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.client_payload.branch }}
 
       - name: 🔨 Build wheel
         run: |
@@ -78,6 +79,7 @@ jobs:
           - image: pytorch
           - image: pytorch-deepspeech
           - image: tf2
+          - image: carla-mot
     steps:
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
@@ -88,6 +90,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.client_payload.branch }}
 
       - name: 🌎 Setup Build Environment
         run: |
