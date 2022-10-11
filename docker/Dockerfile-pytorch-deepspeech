@@ -8,6 +8,8 @@ WORKDIR /armory-repo
 #       in the root of the repo.
 COPY ./ /armory-repo
 
+RUN pip install git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
+
 RUN echo "Building Armory from local source"                                     && \
     echo "Updating Base Image..."                                                && \
       python -m pip install --upgrade pip                                        && \
