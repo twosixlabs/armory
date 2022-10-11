@@ -20,6 +20,7 @@ from armory.data.adversarial import (  # noqa: F401
     dapricot_test,
     carla_obj_det_dev as codd,
     carla_obj_det_test as codt,
+    carla_over_obj_det_dev as coodd,
     carla_video_tracking_dev as cvtd,
     carla_video_tracking_test as cvtt,
     carla_mot_dev as cmotd,
@@ -658,6 +659,74 @@ def carla_obj_det_dev(
 
     return datasets._generator_from_tfds(
         "carla_obj_det_dev:2.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=context,
+        as_supervised=False,
+        supervised_xy_keys=("image", ("objects", "patch_metadata")),
+        **kwargs,
+    )
+
+
+def carla_over_obj_det_dev(
+    split: str = "dev",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_obj_det_dev_canonical_preprocessing,
+    label_preprocessing_fn=carla_obj_det_label_preprocessing,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = False,
+    **kwargs,
+):
+    """
+    Dev set for CARLA object detection dataset, containing RGB and depth channels. The dev
+    set also contains green screens for adversarial patch insertion.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_dev dataset"
+        )
+    if batch_size != 1:
+        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+    mode_split_fn = func_dict[modality]
+    preprocessing_fn = datasets.preprocessing_chain(mode_split_fn, preprocessing_fn)
+
+    context = (
+        carla_obj_det_dev_multimodal_context
+        if modality == "both"
+        else carla_obj_det_dev_single_modal_context
+    )
+
+    return datasets._generator_from_tfds(
+        "carla_over_obj_det_dev:1.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

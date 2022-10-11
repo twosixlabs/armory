@@ -182,7 +182,7 @@ def get_art_model_mm_robust(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchFasterRCNN:
 
-    num_classes = model_kwargs.pop("num_classes", 4)
+    num_classes = model_kwargs.pop("num_classes", 3)
 
     backbone = MultimodalRobust(**model_kwargs)
 
