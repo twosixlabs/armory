@@ -33,7 +33,7 @@ class CarlaMOT(CarlaVideoTracking):
 
         if self.hota_tasks:
             if not self.skip_benign:
-                self.hub.connect(
+                self.hub.connect_meter(
                     GlobalMeter(
                         "benign_hota_metrics",
                         GlobalHOTA(
@@ -48,7 +48,7 @@ class CarlaMOT(CarlaVideoTracking):
                 )
 
             if not self.skip_attack:
-                self.hub.connect(
+                self.hub.connect_meter(
                     GlobalMeter(
                         "adversarial_hota_metrics",
                         GlobalHOTA(
