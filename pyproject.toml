@@ -3,6 +3,7 @@ requires-python = ">=3.7"
 
 name        = "armory-testbed"
 description = "Adversarial Robustness Test Bed"
+readme      = "README.md"
 dynamic     = [ "version" ]
 license     = "MIT"
 authors = [
