@@ -17,6 +17,10 @@ class CarlaMOT(CarlaVideoTracking):
 
     def load_metrics(self):
         all_tasks = self.config["metric"]["task"]
+        if all_tasks is None:
+            super().load_metrics()
+            return
+
         hotas = ["hota", "deta", "assa"]
         self.hota_tasks = [t for t in all_tasks if t in hotas]
         self.config["metric"]["task"] = [t for t in all_tasks if t not in hotas]

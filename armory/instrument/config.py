@@ -342,6 +342,8 @@ def construct_meters_for_task_metrics(
         )
         tuples.append(task)
 
+    if not tuples:
+        return
     benign, adversarial, targeted = zip(*tuples)
     meters = [
         m for tup in tuples for m in tup if m is not None
