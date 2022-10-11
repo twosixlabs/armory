@@ -71,7 +71,7 @@ class CarlaMOT(CarlaVideoTracking):
                     if (
                         isinstance(writer, ResultsLogWriter)
                         and writer.task_type == "adversarial"
-                        and self.wrt == "ground truth"
+                        and writer.wrt == "ground truth"
                     ):
                         meter.add_writer(writer)
                         break
