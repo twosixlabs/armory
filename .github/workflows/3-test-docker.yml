@@ -136,3 +136,43 @@ jobs:
                 -m "pytorch_deepspeech"                        \
                 ./tests/
       # yamllint enable rule:indentation
+
+  docker-mot-unit:
+    name: ☁️ Docker CARLA MOT Image Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 checkout armory full depth with tags for scm
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Use Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: ⚙️ Install Armory
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip build
+          pip install .
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py --framework carla-mot
+
+      # TODO: Create/mount a volume with the tests and config files.
+      # yamllint disable rule:indentation
+      - name: 🤞 Run Image tests
+        run: |
+          IMAGE_VERSION=`armory --show-docker-version-tag`
+          docker run                                  \
+            --rm                                      \
+            --workdir /armory-repo                    \
+            twosixarmory/carla-mot:${IMAGE_VERSION}    \
+              pytest                                  \
+                -c /armory-repo/pyproject.toml        \
+                -m "not docker_required and unit"     \
+                ./tests/
+      # yamllint enable rule:indentation

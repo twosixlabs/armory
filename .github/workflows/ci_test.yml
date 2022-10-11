@@ -53,5 +53,4 @@ jobs:
     uses: ./.github/workflows/2-test-stand-alone.yml
 
   test-docker-builds:
-    needs: test-stand-alone-builds
     uses: ./.github/workflows/3-test-docker.yml

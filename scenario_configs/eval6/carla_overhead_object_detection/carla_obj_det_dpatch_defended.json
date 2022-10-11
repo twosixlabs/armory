@@ -1,24 +1,25 @@
 {
-    "_description": "CARLA single modality multi-object tracking, contributed by MITRE Corporation",
+    "_description": "CARLA single modality object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "batch_frame_size": 2,
+            "batch_size": 1,
             "learning_rate": 0.002,
-            "max_iter": 1000,
+            "max_iter": 2000,
             "verbose": true
         },
-        "module": "armory.art_experimental.attacks.carla_mot_patch",
-        "name": "CARLAMOTDapricotPatch",
+        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
+        "name": "CARLADapricotPatch",
         "use_label": false
     },
     "dataset": {
         "batch_size": 1,
         "eval_split": "dev",
         "framework": "numpy",
+        "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_multi_object_tracking_dev"
+        "name": "carla_over_obj_det_dev"
     },
     "defense": {
         "kwargs": {
@@ -39,9 +40,11 @@
         "perturbation": "l0",
         "record_metric_per_sample": false,
         "task": [
-            "hota",
-            "deta",
-            "assa"
+            "carla_od_AP_per_class",
+            "carla_od_disappearance_rate",
+            "carla_od_hallucinations_per_image",
+            "carla_od_misclassification_rate",
+            "carla_od_true_positive_rate"
         ]
     },
     "model": {
@@ -50,37 +53,19 @@
         "model_kwargs": {
             "num_classes": 3
         },
-        "module": "armory.baseline_models.pytorch.carla_mot_frcnn_byte",
+        "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
         "name": "get_art_model",
         "weights_file": "carla_rgb_weights_eval6.pt",
-        "wrapper_kwargs": {
-            "BYTE_kwargs": {
-                "frame_rate": 30,
-                "match_thresh": 1,
-                "track_buffer": 60,
-                "track_thresh": 0.2
-            },
-            "conf_thresh": 0.0,
-            "nms_thresh": 0.9,
-            "tracked_classes": [
-                "pedestrian"
-            ]
-        }
+        "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.carla_mot",
-        "name": "CarlaMOT",
-        "tracked_classes": [
-            "pedestrian"
-        ]
+        "module": "armory.scenarios.carla_object_detection",
+        "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/carla-mot",
-        "external_github_repo": [
-            "JonathonLuiten/TrackEval",
-            "colour-science/colour@v0.3.16"
-        ],
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": "colour-science/colour@v0.3.16",
         "gpus": "all",
         "output_dir": null,
         "output_filename": null,

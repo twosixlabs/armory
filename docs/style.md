@@ -1,7 +1,7 @@
 Armory Style Guide
 =====================
 The following describes the stlying approach used during `armory` development.  If you plan to make
-contributions to armory, please follow these style guidelines.  Note: Some of these are enforced by 
+contributions to armory, please follow these style guidelines.  Note: Some of these are enforced by
 our CI process and we have provided some `git hooks` to help with the formatting.  For more information
 see [Pre-commit Hooks](#pre-commit-hooks) below.
 
@@ -46,9 +46,9 @@ chmod 755 .git/hooks/pre-commit
 Note: these hooks depend on some python tools being installed in your environment. These
 can be installed using:
 ```bash
-pip install -r test-requirements.txt
+pip install .[developer]
 ```
-For more information about how to contribute to armory, see [Contributing to Armory](./contributing.md).
+For more information about how to contribute to armory, see [Contributing to Armory](docs/CONTRIBUTING.md).
 
 
 # Import Style
