@@ -7,7 +7,7 @@ import json
 import pytest
 
 from armory.instrument import instrument
-from armory.utils import metrics
+from armory import metrics
 
 pytestmark = pytest.mark.unit
 
@@ -518,6 +518,47 @@ def test_meter(caplog):
     assert m.final_result() == 15
 
 
+def test_global_meter():
+    GlobalMeter = instrument.GlobalMeter
+    with pytest.raises(ValueError):
+        GlobalMeter("name", "not callable")
+    with pytest.raises(ValueError):
+        GlobalMeter("name", lambda x: x, final_kwargs="not a dict")
+
+    def sum_rows(a, b, c, **kwargs):
+        if not kwargs:
+            raise ValueError("please pass in kwargs")
+        d = []
+        for a_i, b_i, c_i in zip(a, b, c):
+            d.append(a_i + b_i + c_i)
+        return d
+
+    a = list(range(10))
+    b = list(range(2, 12))
+    c = list(range(5, 15))
+    d = sum_rows(a, b, c, kwargs={})
+    m = GlobalMeter("sum", sum_rows, "a", "b", "c", final_kwargs={"any_key": "value"})
+    writer = LastRecordWriter()
+    m.add_writer(writer)
+    step = 3
+    for i in range(0, 10, step):
+        for array_name, array in zip(["a", "b", "c"], [a, b, c]):
+            m.set(array_name, array[i : i + step], i)
+    assert writer.num_writes == 0
+    m.finalize()
+    assert writer.num_writes == 1
+    assert writer.record == ("sum", None, d)
+    assert m.final_result() == d
+
+    m = GlobalMeter("sum", sum_rows, "a", "b", "c")
+    for i in range(0, 10, step):
+        for array_name, array in zip(["a", "b", "c"], [a, b, c]):
+            m.set(array_name, array[i : i + step], i)
+    # ValueError raised by sum_rows since kwargs == {}
+    with pytest.raises(ValueError):
+        m.finalize()
+
+
 def test_writer():
     writer = instrument.Writer()
     with pytest.raises(ValueError):
@@ -682,7 +723,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(
             "postprocessed_l2_distance",
-            metrics.l2,
+            metrics.perturbation.batch.l2,
             "model.prep_output[benign]",
             "model.prep_output[adversarial]",
         )
@@ -697,7 +738,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(
             "categorical_accuracy",
-            metrics.categorical_accuracy,
+            metrics.task.batch.categorical_accuracy,
             "scenario.y",
             "scenario.y_pred",
         )
@@ -705,7 +746,7 @@ def test_integration():
     hub.connect_meter(
         instrument.Meter(  # Never measured, since 'y_target' is never set
             "targeted_categorical_accuracy",
-            metrics.categorical_accuracy,
+            metrics.task.batch.categorical_accuracy,
             "scenario.y_target",
             "scenario.y_pred",
         )
@@ -725,21 +766,21 @@ def test_integration():
         hub.set_context(stage="get_batch", batch=i)
         x = np.random.random(100)
         y = np.random.randint(10)
-        scenario_probe.update(x=x, y=y)
+        scenario_probe.update(x=[x], y=[y])
         not_connected_probe.update(x)  # should send a warning once
 
         hub.set_context(stage="benign")
         y_pred = model.predict(x)
-        scenario_probe.update(y_pred=y_pred)
+        scenario_probe.update(y_pred=[y_pred])
 
         hub.set_context(stage="benign")
         x_adv = x
         for j in range(5):
             model.predict(x_adv)
             x_adv = x_adv + np.random.random(100) * 0.1
-            attack_probe.update(x_adv=x_adv)
+            attack_probe.update(x_adv=[x_adv])
 
         hub.set_context(stage="benign")
         y_pred_adv = model.predict(x_adv)
-        scenario_probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+        scenario_probe.update(x_adv=[x_adv], y_pred_adv=[y_pred_adv])
     hub.close()

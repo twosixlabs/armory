@@ -316,6 +316,30 @@ class VideoClassificationExporter(SampleExporter):
 
 
 class VideoTrackingExporter(VideoClassificationExporter):
+    def convert_y_from_mot_format(self, y):
+        # multi-object tracking format:
+        # <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
+        # desired format:
+        # {'boxes': {<timestep>:[[x0, y0, x1, y1]...]}}
+
+        if y.ndim == 1:
+            y = np.expand_dims(y, 0)
+        y_dict = {
+            int(timestep - 1): [] for timestep in set(y[:, 0])
+        }  # 0-index timesteps
+
+        for pred in y:
+            # TODO filter out boxes with low confidence?
+            timestep = int(pred[0] - 1)
+            x0, y0 = pred[2], pred[3]
+            x1, y1 = pred[2] + pred[4], pred[3] + pred[5]
+            y_dict[timestep].append([x0, y0, x1, y1])
+
+        for timestep in y_dict:
+            y_dict[timestep] = np.array(y_dict[timestep]).astype("float32")
+
+        return {"boxes": y_dict}
+
     def _export(self, x, basename, with_boxes=False, y=None, y_pred=None):
         if with_boxes:
             folder = str(basename)
@@ -341,6 +365,13 @@ class VideoTrackingExporter(VideoClassificationExporter):
                 .overwrite_output()
                 .run_async(pipe_stdin=True, quiet=True)
             )
+
+            # reformat y and y_pred if in MOT format
+            if isinstance(y, np.ndarray):
+                y = self.convert_y_from_mot_format(y)
+            if isinstance(y_pred, np.ndarray):
+                y_pred = self.convert_y_from_mot_format(y_pred)
+
             self.frames_with_boxes = self.get_sample(
                 x, with_boxes=True, y=y, y_pred=y_pred
             )
@@ -382,12 +413,21 @@ class VideoTrackingExporter(VideoClassificationExporter):
             pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
+
             if y is not None:
-                bbox_true = y["boxes"][n_frame].astype("float32")
-                box_layer.rectangle(bbox_true, outline="red", width=2)
+                bboxes_true = y["boxes"][n_frame].astype("float32")
+                if bboxes_true.ndim == 1:
+                    box_layer.rectangle(bboxes_true, outline="red", width=2)
+                else:
+                    for bbox_true in bboxes_true:
+                        box_layer.rectangle(bbox_true, outline="red", width=2)
             if y_pred is not None:
-                bbox_pred = y_pred["boxes"][n_frame]
-                box_layer.rectangle(bbox_pred, outline="white", width=2)
+                bboxes_pred = y_pred["boxes"][n_frame]
+                if bboxes_pred.ndim == 1:
+                    box_layer.rectangle(bboxes_pred, outline="white", width=2)
+                else:
+                    for bbox_pred in bboxes_pred:
+                        box_layer.rectangle(bbox_pred, outline="white", width=2)
             pil_frames.append(image)
 
         return pil_frames

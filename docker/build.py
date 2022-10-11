@@ -1,85 +1,145 @@
 import argparse
-import subprocess
 from pathlib import Path
-import os
+import shutil
+import subprocess
 import sys
 
-# Ensure correct location
+
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
-if not (root_dir / "armory").is_dir():
-    print("ERROR: make sure you run this script from the root of the armory repo")
-    sys.exit(1)
 
-# Parse arguments
-FRAMEWORKS = ["pytorch", "pytorch-deepspeech", "tf2"]
-parser = argparse.ArgumentParser(description="builds a docker image for armory")
-parser.add_argument(
-    "-b", "--base-tag", help="version tag for twosixarmory", default="latest"
-)
-parser.add_argument("--no-cache", action="store_true", help="do not use docker cache")
-parser.add_argument("--no-pull", action="store_true", help="do not pull latest base")
-parser.add_argument(
-    "-n", "--dry-run", action="store_true", help="show what would be done"
-)
-parser.add_argument(
-    "framework",
-    choices=FRAMEWORKS + ["all"],
-    metavar="framework",
-    help=f"framework to build ({FRAMEWORKS + ['all']})",
-)
-args = parser.parse_args()
+armory_frameworks = ["pytorch", "pytorch-deepspeech", "tf2", "carla-mot"]
 
-if args.framework == "all":
-    frameworks = FRAMEWORKS
-else:
-    frameworks = [args.framework]
+# NOTE: Podman is not officially supported, but this enables
+#       use as a drop-in replacement for building.
+container_platform = "docker" if shutil.which("docker") else "podman"
 
-# Enable import without pip installation and retrieve armory version
-sys.path.insert(0, str(root_dir))
-try:
-    import armory
-except ModuleNotFoundError as e:
-    if str(e) == "No module named 'armory'":
-        print(
-            "ERROR: could not import armory. "
-            "make sure you run this script from the root of the armory repo"
-        )
+
+def cli_parser(argv=sys.argv[1:]):
+    parser = argparse.ArgumentParser("build.py")
+    arguments = (
+        (
+            ("-f", "--framework"),
+            dict(
+                choices=armory_frameworks + ["all"],
+                help="Framework to build",
+                required=True,
+            ),
+        ),
+        (
+            ("-b", "--base-tag"),
+            dict(
+                help="Version tag for twosixarmory/armory-base",
+                default="latest",
+                required=False,
+            ),
+        ),
+        (
+            ("--no-cache"),
+            dict(
+                action="store_true",
+                help="Do not use docker cache",
+            ),
+        ),
+        (
+            ("--no-pull"),
+            dict(
+                action="store_true",
+                help="Do not pull latest base",
+            ),
+        ),
+        (
+            ("-n", "--dry-run"),
+            dict(
+                action="store_true",
+                help="Do not build, only print commands",
+            ),
+        ),
+        (
+            ("-p", "--platform"),
+            dict(
+                choices=["docker", "podman"],
+                help="Print verbose output",
+                default=container_platform,
+                required=False,
+            ),
+        ),
+    )
+    for args, kwargs in arguments:
+        args = args if isinstance(args, tuple) else (args,)
+        parser.add_argument(*args, **kwargs)
+    parser.set_defaults(func=init)
+
+    if len(argv) == 0 or argv[0] in ("usage", "help"):
+        parser.print_help()
         sys.exit(1)
-    raise
 
-print("Retrieving armory version")
-print(f"armory docker builder version {armory.__version__}")
+    return parser.parse_args(argv)
 
-# Execute docker builds
-for framework in frameworks:
+
+def build_worker(framework, version, platform, base_tag, **kwargs):
+    """Builds armory container for a given framework."""
+    # Note: The replace is used to convert the version to a valid docker tag.
+    version = version.replace("+", ".")
     dockerfile = script_dir / f"Dockerfile-{framework}"
-    if not dockerfile.exists():
-        print("make sure you run this script from the root of the armory repo")
-        raise ValueError(f"Dockerfile not found: {dockerfile}")
-
-    cmd = [
-        "docker",
+    build_command = [
+        f"{platform}",
         "build",
-        "--file",
-        str(dockerfile),
-        "--tag",
-        f"twosixarmory/{framework}:{armory.__version__}",
-        "--build-arg",
-        f"base_image_tag={args.base_tag}",
-        "--build-arg",
-        f"armory_version={armory.__version__}",
         "--force-rm",
+        "--tag",
+        f"twosixarmory/{framework}:{version}",
+        "--build-arg",
+        f"base_image_tag={base_tag}",
+        "--file",
+        f"{dockerfile}",
+        f"{Path().cwd()}",
     ]
-    if args.no_cache:
-        cmd.append("--no-cache")
-    if not args.no_pull:
-        cmd.append("--pull")
+    if kwargs.get("no_cache"):
+        build_command.insert(3, "--no-cache")
+    if not kwargs.get("no_pull"):
+        build_command.insert(3, "--pull")
+    if not dockerfile.exists():
+        sys.exit(
+            f"ERROR:\tError building {framework}!\n"
+            f"\tDockerfile not found: {dockerfile}\n"
+        )
+    print(f"EXEC\tPreparing to run:\n" f"\t\t{' '.join(build_command)}")
+    if not kwargs.get("dry_run"):
+        subprocess.run(build_command)
 
-    cmd.append(os.getcwd())
 
-    print("about to run: ", " ".join(cmd))
-    if args.dry_run:
-        print("dry-run requested, not executing build")
-    else:
-        subprocess.run(cmd)
+def init(*args, **kwargs):
+    """Kicks off the build process."""
+    frameworks = [kwargs.get("framework", False)]
+    if frameworks == ["all"]:
+        frameworks = armory_frameworks
+    from armory import __version__ as armory_version
+
+    print(f"EXEC:\tRetrieved version {armory_version}.")
+    print("EXEC:\tCleaning up...")
+    for key in ["framework", "func"]:
+        del kwargs[key]
+    for framework in frameworks:
+        print(f"EXEC:\tBuilding {framework} container.")
+        build_worker(framework, armory_version, **kwargs)
+
+
+if __name__ == "__main__":
+    # Ensure correct location
+    if not (root_dir / "armory").is_dir():
+        sys.exit(
+            f"ERROR:\tEnsure this script is ran from the root of the armory repo.\n"
+            "\tEXAMPLE:\n"
+            f"\t\t$ python3 {root_dir / 'build.py'}"
+        )
+
+    # Ensure docker/podman is installed
+    if not shutil.which(container_platform):
+        sys.exit(
+            "ERROR:\tCannot find compatible container on the system.\n"
+            "\tAsk your system administrator to install either `docker` or `podman`."
+        )
+
+    # Parse CLI arguments
+    arguments = cli_parser()
+    arguments.func(**vars(arguments))

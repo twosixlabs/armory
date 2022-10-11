@@ -200,14 +200,14 @@ class SweepAttack(EvasionAttack):
         metric_module_name = metric_dict.get("module")
         if metric_module_name is None:
             # by default use categorical accuracy to measure attack success
-            from armory.utils.metrics import categorical_accuracy
+            from armory import metrics
 
             log.info(
                 "Using default categorical accuracy to measure attack success "
                 "since attack_config['sweep_params']['metric']['module'] is "
                 "unspecified."
             )
-            self.metric_fn = categorical_accuracy
+            self.metric_fn = metrics.get("categorical_accuracy")
             self.metric_threshold = (
                 0.5  # for binary metric, any x s.t. 0 < x < 1 suffices
             )

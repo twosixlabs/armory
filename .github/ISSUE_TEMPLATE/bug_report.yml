@@ -1,0 +1,48 @@
+---
+# yamllint disable rule:line-length
+
+name: 🐛Bug Report
+description: File a bug report here
+title: "[BUG]: "
+labels: ["bug"]
+
+assignees:
+  - mwartell
+  - christopherwoodall
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        🤗 Thank you for taking the time to fill out this bug report!
+        Be sure to check the [open](https://github.com/twosixlabs/armory/issues)/[closed](https://github.com/twosixlabs/armory/issues?q=is%3Aissue+is%3Aclosed) issues possible resolutions or updates 😃
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Description of the bug
+      description: Give us a brief description of what happened and what should have happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Add configuration '...'
+        3. Run command '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional Information
+      description: |
+        Include any additional information such as logs, screenshots, or scenarios in which the bug occurs in order to facilitates resolving the issue.
+
+# yamllint enable rule:line-length

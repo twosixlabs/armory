@@ -1,0 +1,61 @@
+{
+    "_description": "CARLA multimodality object detection, contributed by MITRE Corporation",
+    "adhoc": null,
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "depth_delta_meters": 0.03,
+            "learning_rate": 0.002,
+            "learning_rate_depth": 0.0001,
+            "max_iter": 2000,
+            "verbose": true
+        },
+        "module": "armory.art_experimental.attacks.carla_obj_det_patch",
+        "name": "CARLADapricotPatch",
+        "use_label": false
+    },
+    "dataset": {
+        "batch_size": 1,
+        "eval_split": "dev",
+        "framework": "numpy",
+        "modality": "both",
+        "module": "armory.data.adversarial_datasets",
+        "name": "carla_over_obj_det_dev"
+    },
+    "defense": null,
+    "metric": {
+        "means": true,
+        "perturbation": "l0",
+        "record_metric_per_sample": false,
+        "task": [
+            "carla_od_AP_per_class",
+            "carla_od_disappearance_rate",
+            "carla_od_hallucinations_per_image",
+            "carla_od_misclassification_rate",
+            "carla_od_true_positive_rate"
+        ]
+    },
+    "model": {
+        "fit": false,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion",
+        "name": "get_art_model_mm_robust",
+        "weights_file": "carla_multimodal_robust_weights_eval6.pt",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.carla_object_detection",
+        "name": "CarlaObjectDetectionTask"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": "colour-science/colour@v0.3.16",
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}

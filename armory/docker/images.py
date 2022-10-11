@@ -7,9 +7,10 @@ import docker.errors
 import requests
 
 import armory
+from armory.utils import version
 from armory.logs import log, is_progress
 
-TAG = armory.__version__
+TAG = version.to_docker_tag(armory.__version__)
 log.trace(f"armory.__version__: {armory.__version__}")
 
 DOCKER_REPOSITORY = "twosixarmory"
@@ -17,16 +18,19 @@ DOCKER_REPOSITORY = "twosixarmory"
 PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
 PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
 TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
+CARLA_MOT = f"{DOCKER_REPOSITORY}/carla-mot:{TAG}"
 ALL = (
     PYTORCH,
     PYTORCH_DEEPSPEECH,
     TF2,
+    CARLA_MOT,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
     "pytorch": PYTORCH,
     "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
     "tf2": TF2,
+    "carla-mot": CARLA_MOT,
 }
 
 
@@ -84,6 +88,7 @@ def get_armory_name(image_name: str):
     user, repo, tag = split_name(image_name)
     user = "twosixarmory"
     if tag:  # tag is explicitly defined, use it
+        tag = tag.replace("+", ".")  # ensure docker format version
         return join_name(user, repo, tag)
     return IMAGE_MAP[repo]
 
@@ -109,10 +114,20 @@ def last_armory_release(image_name: str):
         patch = str(patch)
         release_tag = ".".join([major, minor, patch])
         return join_name(user, repo, release_tag)
+    elif len(tokens) in (5, 6):
+        major, minor, patch, post, ghash = tokens[:5]
+        if len(tokens) == 6:
+            date = tokens[5]
+            if not date.startswith("d20"):
+                raise ValueError(f"Tag {tag} date must start with 'd20'")
+        if not post.startswith("post"):
+            raise ValueError(f"Tag {tag} post must start with 'post'")
+        if not ghash.startswith("g"):
+            raise ValueError(f"Tag {tag} git hash must start with 'g'")
+        release_tag = ".".join([major, minor, patch])
+        return join_name(user, repo, release_tag)
     else:
-        raise ValueError(
-            f"Tag {tag} must be in major.minor.patch[.hash] SCM version format"
-        )
+        raise ValueError(f"Tag {tag} must be in major.minor.patch[.SCM version format]")
 
 
 def is_image_local(docker_client, image_name):
@@ -157,6 +172,19 @@ def ensure_image_present(image_name: str) -> str:
     if canon_image_name != prev_release:  # currently on hashed dev branch
         if is_image_local(docker_client, canon_image_name):
             return canon_image_name
+
+        user, repo, tag = split_name(canon_image_name)
+        tokens = tag.split(".")
+        if len(tokens) == 6:
+            tokens = tokens[:5]
+            tag = ".".join(tokens)
+            clean_canon_image_name = join_name(user, repo, tag)
+            log.info(
+                f"Current workdir is dirty. Reverting to non-dirty image {clean_canon_image_name}"
+            )
+            if is_image_local(docker_client, clean_canon_image_name):
+                return clean_canon_image_name
+
         log.info(f"reverting to previous release tag image {prev_release}")
 
     if is_image_local(docker_client, prev_release):

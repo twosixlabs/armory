@@ -36,6 +36,9 @@ from armory.data.xview import xview as xv  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
+from armory.data.carla_overhead_object_detection import (  # noqa: F401
+    carla_over_obj_det_train as coodt,
+)
 
 
 os.environ["KMP_WARNINGS"] = "0"
@@ -778,10 +781,20 @@ def canonical_audio_preprocess(context, batch):
             assert x.min() >= context.input_min
             assert x.max() <= context.input_max
 
-        batch = np.array(
-            [x.astype(context.output_type) / context.quantization for x in batch],
-            dtype=object,
-        )
+        items_are_different_lengths = np.any([len(i) - len(batch[0]) for i in batch])
+
+        if items_are_different_lengths:
+            # The following would convert batch items to dtype 'object' if they are the same length; hence the conditional.
+            batch = np.array(
+                [x.astype(context.output_type) / context.quantization for x in batch],
+                dtype=object,
+            )
+        else:
+            new_batch = np.empty(batch.shape, dtype=object)
+            new_batch[:] = [
+                x.astype(context.output_type) / context.quantization for x in batch
+            ]
+            batch = new_batch
 
         for x in batch:
             assert x.dtype == context.output_type
@@ -806,6 +819,7 @@ def canonical_audio_preprocess(context, batch):
 digit_context = AudioContext(x_shape=(None,), sample_rate=8000)
 librispeech_context = AudioContext(x_shape=(None,), sample_rate=16000)
 librispeech_dev_clean_context = AudioContext(x_shape=(None,), sample_rate=16000)
+speech_commands_context = AudioContext(x_shape=(None,), sample_rate=16000)
 
 
 def digit_canonical_preprocessing(batch):
@@ -818,6 +832,10 @@ def librispeech_canonical_preprocessing(batch):
 
 def librispeech_dev_clean_canonical_preprocessing(batch):
     return canonical_audio_preprocess(librispeech_dev_clean_context, batch)
+
+
+def speech_commands_canonical_preprocessing(batch):
+    return canonical_audio_preprocess(speech_commands_context, batch)
 
 
 def mnist(
@@ -949,6 +967,77 @@ def carla_obj_det_train(
     )
 
 
+def carla_over_obj_det_train(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = carla_obj_det_canonical_preprocessing,
+    label_preprocessing_fn: Callable = carla_obj_det_label_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    Training set for CARLA object detection dataset, containing RGB and depth channels.
+    """
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the carla_obj_det_train dataset"
+        )
+    modality = kwargs.pop("modality", "rgb")
+    if modality not in ["rgb", "depth", "both"]:
+        raise ValueError(
+            'Unknown modality: {}.  Must be one of "rgb", "depth", or "both"'.format(
+                modality
+            )
+        )
+
+    def rgb_fn(batch):
+        return batch[:, 0]
+
+    def depth_fn(batch):
+        return batch[:, 1]
+
+    def both_fn(batch):
+        return np.concatenate((batch[:, 0], batch[:, 1]), axis=-1)
+
+    func_dict = {"rgb": rgb_fn, "depth": depth_fn, "both": both_fn}
+
+    mode_split_fn = func_dict[modality]
+
+    preprocessing_fn = preprocessing_chain(
+        mode_split_fn, preprocessing_fn, fit_preprocessing_fn
+    )
+
+    carla_context = (
+        carla_obj_det_multimodal_context
+        if modality == "both"
+        else carla_obj_det_single_modal_context
+    )
+
+    return _generator_from_tfds(
+        "carla_over_obj_det_train:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        variable_y=bool(batch_size > 1),
+        variable_length=False,
+        shuffle_files=shuffle_files,
+        context=carla_context,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        **kwargs,
+    )
+
+
 def cifar10(
     split: str = "train",
     epochs: int = 1,
@@ -1049,6 +1138,66 @@ def digit(
     )
 
 
+def speech_commands(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = speech_commands_canonical_preprocessing,
+    label_preprocessing_fn: Callable = None,
+    as_supervised: bool = True,
+    supervised_xy_keys=None,
+    download_and_prepare_kwargs=None,
+    variable_y=False,
+    lambda_map: Callable = None,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    pad_data: bool = False,
+    **kwargs,
+) -> ArmoryDataGenerator:
+
+    """
+    An audio dataset of spoken commands
+    https://www.tensorflow.org/datasets/catalog/speech_commands
+    """
+
+    def pad_batch(batch):
+        new_batch = np.zeros((batch.shape[0], 16000))
+        for i in range(batch.shape[0]):
+            new_batch[i, : len(batch[i])] = batch[i]
+        return new_batch.astype(np.int64)
+
+    if pad_data:
+        preprocessing_fn = preprocessing_chain(
+            pad_batch, preprocessing_fn, fit_preprocessing_fn
+        )
+    else:
+        preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    return _generator_from_tfds(
+        "speech_commands:0.0.2",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=as_supervised,
+        supervised_xy_keys=supervised_xy_keys,
+        download_and_prepare_kwargs=download_and_prepare_kwargs,
+        variable_length=bool(batch_size > 1),
+        variable_y=variable_y,
+        lambda_map=lambda_map,
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=speech_commands_context,
+        **kwargs,
+    )
+
+
 def imagenette(
     split: str = "train",
     epochs: int = 1,
@@ -1069,7 +1218,7 @@ def imagenette(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     return _generator_from_tfds(
-        "imagenette/full-size:0.1.0",
+        "imagenette/full-size:1.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

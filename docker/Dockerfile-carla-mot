@@ -1,0 +1,35 @@
+ARG base_image_tag
+
+FROM twosixarmory/pytorch:${base_image_tag}
+
+RUN pip install --no-cache-dir \
+    git+https://github.com/ifzhang/ByteTrack.git \
+    thop \
+    lap \
+    Cython
+
+# Requires cython for install, so will fail if run in the same pip install as cython
+RUN pip install --no-cache-dir \
+    cython-bbox
+
+
+WORKDIR /armory-repo
+
+RUN echo "Updating pip" && \
+    pip install --upgrade pip && \
+    echo "Building ART" && \
+    pip install --no-cache-dir \
+    adversarial-robustness-toolbox==1.12.1
+
+# NOTE: This COPY command is filtered using the `.dockerignore` file
+#       in the root of the repo.
+COPY ./ /armory-repo
+
+RUN echo "Building Armory from local source" && \
+    pip install --no-compile --no-cache-dir --editable . && \
+    echo "Configuring Armory..." && \
+    armory configure --use-default && \
+    echo "Cleaning up..." && \
+    rm -rf /armory-repo/.git
+
+WORKDIR /workspace
