@@ -111,7 +111,6 @@ deepspeech = [
     "transformers",
     "pytorch-lightning < 1.5.0",
     "hydra-core",
-    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
 ]
 
 jupyter = [
