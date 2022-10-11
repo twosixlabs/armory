@@ -84,7 +84,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
         """
         Perform tracking prediction for a batch of inputs by performing object detection, updating Kalman filters, and outputing filter predictions.
 
-        :param x: Samples of shape (nb_samples, height, width, nb_channels) representing one video.
+        :param x: Samples of shape (n_batch, nb_samples, height, width, nb_channels) representing one video.  n_batch is assumed to be 1.
         :return: tracker detections as 2D ndarray, where each row has format:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score> <-1> <-1> <-1>
         """
@@ -94,7 +94,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
         self._model.eval()
 
         # Apply preprocessing
-        x, _ = self._apply_preprocessing(x, y=None, fit=False)
+        x, _ = self._apply_preprocessing(x[0], y=None, fit=False)
 
         transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
         image_tensor_list: List[np.ndarray] = []
@@ -191,7 +191,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
         ]
         output = np.asarray(output)
 
-        return output
+        return np.expand_dims(output, 0)
 
 
 # NOTE: PyTorchFasterRCNN expects numpy input, not torch.Tensor input

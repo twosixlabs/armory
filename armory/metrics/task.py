@@ -1585,6 +1585,11 @@ class HOTA_metrics:
             _BaseDataset,
         )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
 
+        if gt_data.ndim == 3:
+            gt_data = gt_data[0]
+        if tracker_data.ndim == 3:
+            tracker_data = tracker_data[0]
+
         assert len(gt_data.shape) == 2
         assert len(tracker_data.shape) == 2
 

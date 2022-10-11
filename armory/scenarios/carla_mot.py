@@ -68,7 +68,7 @@ class CarlaMOT(CarlaVideoTracking):
         x = self.x
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
-            y_pred = self.model.predict(x[0], **self.predict_kwargs)
+            y_pred = self.model.predict(x, **self.predict_kwargs)
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
 
@@ -95,7 +95,7 @@ class CarlaMOT(CarlaVideoTracking):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
 
-        y_pred_adv = self.model.predict(x_adv[0], **self.predict_kwargs)
+        y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
