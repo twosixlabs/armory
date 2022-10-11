@@ -1723,7 +1723,7 @@ class GlobalHOTA:
         for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
             for tracked_class in self.hota_metrics.tracked_classes:
                 self.hota_metrics.calculate_hota_metrics_per_class_per_video(
-                    y[0], y_pred[0], tracked_class, i
+                    y, y_pred, tracked_class, i
                 )
 
         for tracked_class in self.hota_metrics.tracked_classes:
@@ -1736,13 +1736,13 @@ class GlobalHOTA:
             )
             for tracked_class in self.hota_metrics.tracked_classes:
                 for k in ["hota", "deta", "assa"]:
-                    self.results[f"benign_{k}"] = []
+                    results[f"benign_{k}"] = []
                 for vid in per_class_per_video_metrics[tracked_class].keys():
                     for k in ["HOTA", "DetA", "AssA"]:
                         value = per_class_per_video_metrics[tracked_class][vid][
                             k
                         ].mean()
-                        self.results[f"benign_{k.lower()}"].append(value)
+                        results[f"benign_{k.lower()}"].append(value)
 
         if self.means:
             per_class_all_videos_metrics = (
@@ -1751,6 +1751,6 @@ class GlobalHOTA:
             for tracked_class in self.hota_metrics.tracked_classes:
                 for k in ["HOTA", "DetA", "AssA"]:
                     value = per_class_all_videos_metrics[tracked_class][k].mean()
-                    self.results[f"mean_{k.lower()}"] = value
+                    results[f"mean_{k.lower()}"] = value
 
         return results
