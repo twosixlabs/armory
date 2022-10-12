@@ -2,7 +2,7 @@ Armory No-Docker Mode
 =======================
 In order to run armory in `--no-docker` mode, you will need a properly
 setup environment.  Generally folks have used conda in the past, however this
-document only requires a python (>=3.7, <3.9) environment to get going.
+document only requires a python (>=3.7) environment to get going.
 
 First you will need to clone the armory repo (or if you plan to be a developer,
 see [Contributing to Armory](./contributing.md) to clone a fork of the repo).
@@ -23,6 +23,16 @@ you can setup the environment with the following:
 pip install --upgrade pip==22.0.3
 pip install -e .[engine,datasets,math,pytorch,deepspeech,tensorflow]
 ```
+
+If you are using the `deepspeech` scenarios, you will also need to
+install the `hydra-lightning` configs with:
+
+    pip install git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning
+
+as described [in that package's README](https://github.com/romesco/hydra-lightning#readme).
+This is necessary because there is no proper release of that package (nor does one
+appear likely).
+
 Once this completes, you should run `armory configure` (If you haven't already done this
 previously) to setup the armory configuration
 (e.g. dataset download directory, output directory, etc.).
