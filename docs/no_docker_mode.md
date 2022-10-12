@@ -25,7 +25,7 @@ python38 -m venv venv38
 source venv38/bin/activate
 ```
 
-Check out the [Dockerfiles](../docker) for more information on enviroment setup.
+Check out the [Dockerfiles](../docker) for more information on environment setup.
 
 Once this is complete, and you have ensured you are in the `[armory-repo]` directory,
 you can setup the environment with the following:
