@@ -200,9 +200,9 @@ def get_art_model(
 ) -> PyTorchFasterRCNN:
 
     if weights_path:
-        assert model_kwargs.get("num_classes", None) == 3, (
-            "model trained on CARLA data outputs predictions for 3 classes, "
-            "set model_kwargs['num_classes'] to 3."
+        assert model_kwargs.get("num_classes", None) == 2, (
+            "model trained on CARLA data outputs predictions for 2 classes, "
+            "set model_kwargs['num_classes'] to 2."
         )
         assert not model_kwargs.get("pretrained", False), (
             "model trained on CARLA data should not use COCO-pretrained weights, set "

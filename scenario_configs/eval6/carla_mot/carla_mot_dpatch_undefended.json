@@ -35,15 +35,15 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
-            "num_classes": 3
+            "num_classes": 2
         },
         "module": "armory.baseline_models.pytorch.carla_mot_frcnn_byte",
         "name": "get_art_model",
-        "weights_file": "carla_rgb_weights_eval6.pt",
+        "weights_file": "carla_mot_weights_eval6.pt",
         "wrapper_kwargs": {
             "BYTE_kwargs": {
                 "frame_rate": 30,
-                "match_thresh": 1,
+                "match_thresh": 0.95,
                 "track_buffer": 60,
                 "track_thresh": 0.2
             },
