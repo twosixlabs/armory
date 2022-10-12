@@ -8,7 +8,7 @@ First you will need to clone the armory repo (or if you plan to be a developer,
 see [Contributing to Armory](./contributing.md) to clone a fork of the repo).
 For the following, the repo directory will be referred to as `[armory-repo]`.
 
-Virtual environment setup for conda is failry straight forward:
+Virtual environment setup for conda is fairly straight forward:
 ```bash
 wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
 /bin/bash ~/miniconda.sh -b -p /opt/conda
