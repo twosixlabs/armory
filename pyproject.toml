@@ -3,6 +3,7 @@ requires-python = ">=3.7"
 
 name        = "armory-testbed"
 description = "Adversarial Robustness Test Bed"
+readme      = "README.md"
 dynamic     = [ "version" ]
 license     = "MIT"
 authors = [
@@ -110,7 +111,6 @@ deepspeech = [
     "transformers",
     "pytorch-lightning < 1.5.0",
     "hydra-core",
-    "hydra-configs-pytorch-lightning @ git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning",
 ]
 
 jupyter = [

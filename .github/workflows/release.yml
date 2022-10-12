@@ -50,7 +50,7 @@ jobs:
       # TODO: Add pre-release steps; e.g. publish to TestPyPI
       - name: 🐦 Release wheel
         if: ${{ env.RELEASE_DRY_RUN == 'false' }}
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           # user: __token__
           password: ${{ secrets.pypi_token }}
