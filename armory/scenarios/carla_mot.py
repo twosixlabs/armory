@@ -3,9 +3,10 @@ CARLA Multi-Object Tracking Scenario
 
 """
 
+from armory.instrument import GlobalMeter
+from armory.instrument.config import ResultsLogWriter
+from armory.metrics.task import GlobalHOTA
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
-
-from armory.metrics.task import HOTA_metrics
 
 
 class CarlaMOT(CarlaVideoTracking):
@@ -13,25 +14,77 @@ class CarlaMOT(CarlaVideoTracking):
         self.tracked_classes = config.get("scenario", {}).get(
             "tracked_classes", ["pedestrian"]
         )
-
-        # metrics collector
-        self.hota_metrics_benign = HOTA_metrics(tracked_classes=self.tracked_classes)
-        self.hota_metrics_adversarial = HOTA_metrics(
-            tracked_classes=self.tracked_classes
-        )
         super().__init__(config, **kwargs)
+
+    def load_metrics(self):
+        all_tasks = self.config["metric"]["task"]
+        if all_tasks is None:
+            super().load_metrics()
+            return
+
+        hotas = ["hota", "deta", "assa"]
+        self.hota_tasks = [t for t in all_tasks if t in hotas]
+        self.config["metric"]["task"] = [t for t in all_tasks if t not in hotas]
+        super().load_metrics()
+        self.config["metric"]["task"] = all_tasks  # revert to original
+        means = self.config["metric"].get("means", True)
+        record_metric_per_sample = self.config["metric"].get(
+            "record_metric_per_sample", True
+        )
+
+        if self.hota_tasks:
+            if not self.skip_benign:
+                meter = GlobalMeter(
+                    "benign_hota_metrics",
+                    GlobalHOTA(
+                        metrics=self.hota_tasks,
+                        tracked_classes=self.tracked_classes,
+                        means=means,
+                        record_metric_per_sample=record_metric_per_sample,
+                    ),
+                    "scenario.y",
+                    "scenario.y_pred",
+                )
+                for writer in self.hub.writers:
+                    if (
+                        isinstance(writer, ResultsLogWriter)
+                        and writer.task_type == "benign"
+                    ):
+                        meter.add_writer(writer)
+                        break
+
+                self.hub.connect_meter(meter)
+
+            if not self.skip_attack:
+                meter = GlobalMeter(
+                    "adversarial_hota_metrics",
+                    GlobalHOTA(
+                        metrics=self.hota_tasks,
+                        tracked_classes=self.tracked_classes,
+                        means=means,
+                        record_metric_per_sample=record_metric_per_sample,
+                    ),
+                    "scenario.y",
+                    "scenario.y_pred_adv",
+                )
+                for writer in self.hub.writers:
+                    if (
+                        isinstance(writer, ResultsLogWriter)
+                        and writer.task_type == "adversarial"
+                        and writer.wrt == "ground truth"
+                    ):
+                        meter.add_writer(writer)
+                        break
+
+                self.hub.connect_meter(meter)
 
     def run_benign(self):
         self._check_x("run_benign")
         self.hub.set_context(stage="benign")
-        x, y = self.x, self.y
+        x = self.x
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
-            y_pred = self.model.predict(x[0], **self.predict_kwargs)
-            for tracked_class in self.tracked_classes:
-                self.hota_metrics_benign.calculate_hota_metrics_per_class_per_video(
-                    y[0], y_pred, tracked_class, self.i
-                )
+            y_pred = self.model.predict(x, **self.predict_kwargs)
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
 
@@ -58,96 +111,10 @@ class CarlaMOT(CarlaVideoTracking):
         # Ensure that input sample isn't overwritten by model
         x_adv.flags.writeable = False
 
-        y_pred_adv = self.model.predict(x_adv[0], **self.predict_kwargs)
-
-        for tracked_class in self.tracked_classes:
-            self.hota_metrics_adversarial.calculate_hota_metrics_per_class_per_video(
-                y[0], y_pred_adv, tracked_class, self.i
-            )
+        y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
             self.probe.update(y_target=y_target)
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
-
-    def finalize_results(self):
-        super().finalize_results()
-
-        for tracked_class in self.tracked_classes:
-            self.hota_metrics_benign.calculate_hota_metrics_per_class_all_videos(
-                tracked_class
-            )
-            self.hota_metrics_adversarial.calculate_hota_metrics_per_class_all_videos(
-                tracked_class
-            )
-
-        print("Final HOTA metrics")
-        bengin_per_class_per_video_metrics = (
-            self.hota_metrics_benign.get_per_class_per_video_metrics()
-        )
-        bengin_per_class_all_videos_metrics = (
-            self.hota_metrics_benign.get_per_class_all_videos_metrics()
-        )
-        adversarial_per_class_per_video_metrics = (
-            self.hota_metrics_adversarial.get_per_class_per_video_metrics()
-        )
-        adversarial_per_class_all_videos_metrics = (
-            self.hota_metrics_adversarial.get_per_class_all_videos_metrics()
-        )
-        for tracked_class in self.tracked_classes:
-            print("Benign metrics for each video of {} class".format(tracked_class))
-            for vid in bengin_per_class_per_video_metrics[tracked_class].keys():
-                for key_metric in [
-                    "HOTA",
-                    "DetA",
-                    "AssA",
-                ]:  # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
-                    print(
-                        "Video {}, {} metric: {}".format(
-                            vid,
-                            key_metric,
-                            bengin_per_class_per_video_metrics[tracked_class][vid][
-                                key_metric
-                            ].mean(),
-                        )
-                    )
-
-            print("Benign metrics for all videos of {} class".format(tracked_class))
-            for key_metric in ["HOTA", "DetA", "AssA"]:
-                print(
-                    "{} metric: {}".format(
-                        key_metric,
-                        bengin_per_class_all_videos_metrics[tracked_class][
-                            key_metric
-                        ].mean(),
-                    )
-                )
-
-            print(
-                "Adversarial metrics for each video of {} class".format(tracked_class)
-            )
-            for vid in adversarial_per_class_per_video_metrics[tracked_class].keys():
-                for key_metric in ["HOTA", "DetA", "AssA"]:
-                    print(
-                        "Video {}, {} metric: {}".format(
-                            vid,
-                            key_metric,
-                            adversarial_per_class_per_video_metrics[tracked_class][vid][
-                                key_metric
-                            ].mean(),
-                        )
-                    )
-
-            print(
-                "Adversarial metrics for all videos of {} class".format(tracked_class)
-            )
-            for key_metric in ["HOTA", "DetA", "AssA"]:
-                print(
-                    "{} metric: {}".format(
-                        key_metric,
-                        adversarial_per_class_all_videos_metrics[tracked_class][
-                            key_metric
-                        ].mean(),
-                    )
-                )

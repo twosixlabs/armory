@@ -65,7 +65,7 @@
         ]
     },
     "sysconfig": {
-        "docker_image": "twosixsarmory/armory-bytetrack",
+        "docker_image": "twosixarmory/carla-mot",
         "external_github_repo": [
             "JonathonLuiten/TrackEval"
         ],

@@ -30,6 +30,7 @@ from Two Six's public S3 dataset repository.
 | "dapricot_test_adversarial" | ["small", medium", "large", "adversarial"] * | Physical Adversarial Attacks on Object Detection|     test     |        (nb, 3, 1008, 756, 3)        | uint8 | 2-tuple | 324 examples (3 images per example) |
 |     "carla_obj_det_dev"     |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      |      (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              31 images     |
 |    "carla_obj_det_test"     |                   ["test"]                   | [CARLA Simulator Object Detection](https://carla.org) |     test     |    (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              30 images              |
+|  "carla_over_obj_det_dev"   |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      |      (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              20 images     |
 | "carla_video_tracking_dev"  |                   ["dev"]                    | [CARLA Simulator Video Tracking](https://carla.org) |     dev      |  (nb=1, num_frames, 960, 1280, 3)   | uint8 | 2-tuple |              20 videos              |
 | "carla_video_tracking_test" |                   ["test"]                   | [CARLA Simulator Video Tracking](https://carla.org) |     test     | (nb=1, num_frames, 960, 1280, 3)     | uint8 | 2-tuple |              20 videos              |
 | "carla_multi_object_tracking_dev" ** |          ["dev"]                    | [CARLA Simulator Multi-object Video Tracking](https://carla.org) | dev | (nb=1, num_frames, 960, 1280, 3) | float32 | 2-tuple | 20 videos |
@@ -68,6 +69,8 @@ When using the dataset function imported from [armory.data.adversarial_datasets]
 ```
 When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 960, 1280, 6)` where `x[..., :3]` are
 the rgb channels and `x[..., 3:]` the depth channels.
+
+The carla_over_obj_det_dev dataset has the same properties as the above mentioned datasets but is collected utilizing overhead perspectives.
 
 ### Usage of Preloaded Adversarial Datasets
 To use a preloaded adversarial dataset for evaluation, set `attack_config["type"]` to `"preloaded"` and specify

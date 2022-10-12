@@ -18,16 +18,19 @@ DOCKER_REPOSITORY = "twosixarmory"
 PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
 PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
 TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
+CARLA_MOT = f"{DOCKER_REPOSITORY}/carla-mot:{TAG}"
 ALL = (
     PYTORCH,
     PYTORCH_DEEPSPEECH,
     TF2,
+    CARLA_MOT,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
     "pytorch": PYTORCH,
     "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
     "tf2": TF2,
+    "carla-mot": CARLA_MOT,
 }
 
 

@@ -1550,24 +1550,6 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
     return 0
 
 
-@batchwise
-def hota(arg1, arg2):
-    # TODO
-    return -1
-
-
-@batchwise
-def deta(arg1, arg2):
-    # TODO
-    return -1
-
-
-@batchwise
-def assa(arg1, arg2):
-    # TODO
-    return -1
-
-
 class HOTA_metrics:
     def __init__(self, tracked_classes=["pedestrian"]):
         from collections import defaultdict
@@ -1602,6 +1584,11 @@ class HOTA_metrics:
         from TrackEval.trackeval.datasets._base_dataset import (
             _BaseDataset,
         )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        if gt_data.ndim == 3:
+            gt_data = gt_data[0]
+        if tracker_data.ndim == 3:
+            tracker_data = tracker_data[0]
 
         assert len(gt_data.shape) == 2
         assert len(tracker_data.shape) == 2
@@ -1710,3 +1697,60 @@ class HOTA_metrics:
 
     def get_per_class_all_videos_metrics(self):
         return self.hota_metrics_per_class_all_videos
+
+
+class GlobalHOTA:
+    # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
+    METRICS = ("hota", "deta", "assa")
+
+    def __init__(
+        self,
+        metrics=("hota", "deta", "assa"),
+        means=True,
+        record_metric_per_sample=True,
+        **kwargs,
+    ):
+        for k in metrics:
+            if k not in self.METRICS:
+                raise ValueError(f"{k} not in {self.METRICS}")
+        self.metrics = tuple(metrics)
+        self.means = bool(means)
+        self.record_metric_per_sample = bool(record_metric_per_sample)
+
+        self.hota_metrics = HOTA_metrics(**kwargs)
+
+    def __call__(self, y_list, y_pred_list):
+        for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+            for tracked_class in self.hota_metrics.tracked_classes:
+                self.hota_metrics.calculate_hota_metrics_per_class_per_video(
+                    y, y_pred, tracked_class, i
+                )
+
+        for tracked_class in self.hota_metrics.tracked_classes:
+            self.hota_metrics.calculate_hota_metrics_per_class_all_videos(tracked_class)
+
+        results = {}
+        if self.record_metric_per_sample:
+            per_class_per_video_metrics = (
+                self.hota_metrics.get_per_class_per_video_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["hota", "deta", "assa"]:
+                    results[f"{k}"] = []
+                for vid in per_class_per_video_metrics[tracked_class].keys():
+                    for k in ["HOTA", "DetA", "AssA"]:
+                        value = per_class_per_video_metrics[tracked_class][vid][
+                            k
+                        ].mean()
+                        results[f"{k.lower()}"].append(value)
+
+        if self.means:
+            per_class_all_videos_metrics = (
+                self.hota_metrics.get_per_class_all_videos_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["HOTA", "DetA", "AssA"]:
+                    value = per_class_all_videos_metrics[tracked_class][k].mean()
+                    results[f"mean_{k.lower()}"] = value
+
+        return results
