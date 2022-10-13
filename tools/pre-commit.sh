@@ -26,3 +26,10 @@ fi
 yamllint --no-warnings ./
 
 python -m flake8
+
+if ! isort --check-only * ; then
+    isort *
+    echo Some Python files were reformatted by isort
+    echo You need to do git add and git commit again
+    exit 1
+fi
