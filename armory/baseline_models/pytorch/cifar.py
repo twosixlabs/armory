@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from art.estimators.classification import PyTorchClassifier
 
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

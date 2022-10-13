@@ -1,11 +1,11 @@
-import torch
-import torch.nn as nn
-from torchvision.transforms import RandomErasing
 from typing import Optional
 
-from armory.baseline_models.pytorch.cifar import Net
+import torch
+import torch.nn as nn
 from art.estimators.classification import PyTorchClassifier
+from torchvision.transforms import RandomErasing
 
+from armory.baseline_models.pytorch.cifar import Net
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

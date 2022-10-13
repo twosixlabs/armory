@@ -4,8 +4,8 @@ Test cases for perturbation metrics
 
 import itertools
 
-import pytest
 import numpy as np
+import pytest
 
 from armory.metrics import perturbation
 

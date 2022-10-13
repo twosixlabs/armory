@@ -3,10 +3,9 @@ ResNet18 CNN model for NxNx3 image classification
 """
 from typing import Optional
 
-from art.estimators.classification import PyTorchClassifier
 import torch
+from art.estimators.classification import PyTorchClassifier
 from torchvision import models
-
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

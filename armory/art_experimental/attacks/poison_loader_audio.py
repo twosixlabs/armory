@@ -1,6 +1,5 @@
 import librosa
 import numpy as np
-
 from art.attacks.poisoning import PoisoningAttackBackdoor
 
 # from art.attacks.poisoning.perturbations.audio_perturbations import (

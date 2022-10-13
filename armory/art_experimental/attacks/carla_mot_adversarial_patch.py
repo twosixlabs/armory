@@ -1,14 +1,15 @@
-import numpy as np
-from armory.logs import log
 import os
-import cv2
+from typing import Optional, Tuple
 
+import cv2
+import numpy as np
+import torch
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
-from typing import Optional, Tuple
 from tqdm import trange
-import torch
+
+from armory.logs import log
 
 
 class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):

@@ -6,7 +6,6 @@ import importlib
 
 import numpy as np
 
-
 # Targeters assume a numpy 1D array as input to generate
 
 

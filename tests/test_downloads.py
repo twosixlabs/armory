@@ -1,6 +1,8 @@
 import os
 import shutil
+
 import pytest
+
 from armory.data.utils import download_file_from_s3, maybe_download_weights_from_s3
 from armory.utils.external_repo import download_and_extract_repos
 

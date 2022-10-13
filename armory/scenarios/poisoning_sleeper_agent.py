@@ -3,10 +3,10 @@ import copy
 import numpy as np
 from PIL import Image
 
-from armory.scenarios.poison import Poison
 from armory.logs import log
-from armory.utils import config_loading
+from armory.scenarios.poison import Poison
 from armory.scenarios.utils import from_categorical
+from armory.utils import config_loading
 
 
 class DatasetPoisonerSleeperAgent:

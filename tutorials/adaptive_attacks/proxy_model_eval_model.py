@@ -1,9 +1,10 @@
-import torch
-import torch.nn as nn
 from typing import Optional
 
-from armory.baseline_models.pytorch.cifar import Net
+import torch
+import torch.nn as nn
 from art.estimators.classification import PyTorchClassifier
+
+from armory.baseline_models.pytorch.cifar import Net
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

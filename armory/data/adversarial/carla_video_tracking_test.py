@@ -1,12 +1,12 @@
 """carla_video_tracking_test dataset."""
 
-import os
 import glob
+import os
+
 import numpy as np
-from PIL import Image
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
-
+from PIL import Image
 
 _DESCRIPTION = """
 Synthetic single modality dataset generated using CARLA (https://carla.org).

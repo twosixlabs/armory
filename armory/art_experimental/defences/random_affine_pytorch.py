@@ -1,4 +1,4 @@
-from typing import Tuple, List, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from art.preprocessing.expectation_over_transformation.pytorch import EoTPyTorch
 

@@ -5,8 +5,8 @@ from typing import Optional
 
 import torch
 import torchvision
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from art.estimators.object_detection import PyTorchFasterRCNN
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

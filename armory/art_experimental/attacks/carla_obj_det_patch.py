@@ -1,18 +1,16 @@
-import random
-
-from armory.logs import log
-from art.attacks.evasion import RobustDPatch
+import math
 import os
+import random
+from typing import Dict, List, Optional
+
 import cv2
 import numpy as np
-from typing import Optional, List, Dict
+from art.attacks.evasion import RobustDPatch
 from tqdm.auto import trange
-import math
 
+from armory.art_experimental.attacks.carla_obj_det_utils import linear_depth_to_rgb
+from armory.logs import log
 from armory.utils.external_repo import ExternalRepoImport
-from armory.art_experimental.attacks.carla_obj_det_utils import (
-    linear_depth_to_rgb,
-)
 
 with ExternalRepoImport(
     repo="colour-science/colour@v0.3.16",

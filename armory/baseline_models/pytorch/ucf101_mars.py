@@ -2,11 +2,11 @@
 Model contributed by: MITRE Corporation
 Adapted from: https://github.com/craston/MARS
 """
-from typing import Union, Optional, Tuple
+from typing import Optional, Tuple, Union
 
-from art.estimators.classification import PyTorchClassifier
 import numpy as np
 import torch
+from art.estimators.classification import PyTorchClassifier
 from torch import optim
 
 from armory.utils.external_repo import ExternalRepoImport
@@ -19,7 +19,6 @@ with ExternalRepoImport(
     from MARS.models.model import generate_model
 
 from armory.logs import log
-
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

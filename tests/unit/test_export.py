@@ -1,22 +1,21 @@
 import os
 import subprocess
 
-import pytest
 import numpy as np
 import PIL
+import pytest
 
+from armory.instrument import get_hub, get_probe
 from armory.instrument.export import (
+    CocoBoxFormatMeter,
+    ExportMeter,
     ImageClassificationExporter,
     ObjectDetectionExporter,
+    PredictionMeter,
+    So2SatExporter,
     VideoClassificationExporter,
     VideoTrackingExporter,
-    So2SatExporter,
-    ExportMeter,
-    PredictionMeter,
-    CocoBoxFormatMeter,
 )
-
-from armory.instrument import get_probe, get_hub
 
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit

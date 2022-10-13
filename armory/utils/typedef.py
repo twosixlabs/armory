@@ -6,8 +6,7 @@ Documentation:
 
 """
 
-from typing import Dict, Any
-
+from typing import Any, Dict
 
 # Used for JSON-like configuration specification.
 Config = Dict[str, Any]

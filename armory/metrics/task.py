@@ -2,9 +2,9 @@
 Task metrics (comparing y to y_pred)
 """
 
-from collections import Counter
 import functools
 import os
+from collections import Counter
 
 import numpy as np
 
@@ -121,7 +121,7 @@ class Entailment:
             package="transformers",
             dockerimage="twosixarmory/pytorch-deepspeech",
         ):
-            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+            from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
         self.model = AutoModelForSequenceClassification.from_pretrained(
@@ -1553,9 +1553,10 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 class HOTA_metrics:
     def __init__(self, tracked_classes=["pedestrian"]):
         from collections import defaultdict
-        from TrackEval.trackeval.metrics.hota import (
+
+        from TrackEval.trackeval.metrics.hota import (  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
             HOTA,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+        )
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
         self.tracked_classes = tracked_classes
@@ -1581,9 +1582,9 @@ class HOTA_metrics:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
             - tracked_class is a string representing the class for which HOTA is calculated.
         """
-        from TrackEval.trackeval.datasets._base_dataset import (
+        from TrackEval.trackeval.datasets._base_dataset import (  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
             _BaseDataset,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+        )
 
         if gt_data.ndim == 3:
             gt_data = gt_data[0]

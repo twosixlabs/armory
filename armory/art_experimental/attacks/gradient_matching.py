@@ -1,8 +1,8 @@
 import os
 
 import numpy as np
-
 from art.attacks.poisoning.gradient_matching_attack import GradientMatchingAttack
+
 from armory.logs import log
 
 

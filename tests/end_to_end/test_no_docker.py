@@ -1,7 +1,9 @@
-import pytest
-from armory.logs import log
 import os
 import subprocess
+
+import pytest
+
+from armory.logs import log
 
 # Marks all tests in this file as `end_to_end`
 pytestmark = pytest.mark.end_to_end
@@ -30,8 +32,8 @@ def test_run(scenario_configs, config, args):
 def test_interactive(scenario_configs, config):
     # log.info("Executing Config Dir: {}".format(scenario_configs))
     log.info("Running Armory Scenarios interactive in `--no-docker` mode")
-    from armory.scenarios.main import get as get_scenario
     from armory import paths
+    from armory.scenarios.main import get as get_scenario
 
     log.info("Setting Paths to `host`")
     paths.set_mode("host")

@@ -1,5 +1,4 @@
 import numpy as np
-
 from art.attacks.evasion import ProjectedGradientDescent
 
 

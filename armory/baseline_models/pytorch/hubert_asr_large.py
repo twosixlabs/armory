@@ -8,10 +8,9 @@ from typing import List
 import numpy as np
 import torch
 import torchaudio
+from art.estimators.pytorch import PyTorchEstimator
 
 # from torchaudio.models.decoder import ctc_decoder
-
-from art.estimators.pytorch import PyTorchEstimator
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -1,8 +1,8 @@
+from typing import Optional
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-
-from typing import Optional
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

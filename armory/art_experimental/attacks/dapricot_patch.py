@@ -1,10 +1,10 @@
 """
 Copyright 2021 The MITRE Corporation. All rights reserved
 """
-import numpy as np
-import cv2
 import math
 
+import cv2
+import numpy as np
 from art.attacks.evasion import ProjectedGradientDescent
 
 

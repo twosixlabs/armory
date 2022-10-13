@@ -3,25 +3,25 @@ Utils for data processing
 
 """
 import hashlib
-import tarfile
-import os
-import shutil
-import random
-import string
 import json
+import os
+import random
+import shutil
+import string
 import subprocess
+import tarfile
 
 import boto3
+import requests
 from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import ClientError
-import requests
 from tqdm import tqdm
 
 from armory import paths
-from armory.logs import log, is_progress
-from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
 from armory.configuration import get_verify_ssl
+from armory.data.progress_percentage import ProgressPercentage, ProgressPercentageUpload
+from armory.logs import is_progress, log
 
 CHECKSUMS_DIRS = []
 

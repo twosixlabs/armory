@@ -5,11 +5,10 @@ Resnet for speech commands classification.
 from typing import Optional
 
 import tensorflow as tf
+from art.estimators.classification import TensorFlowV2Classifier
+from tensorflow import keras
 from tensorflow.keras import losses
 from tensorflow.keras.layers import Lambda
-from tensorflow import keras
-
-from art.estimators.classification import TensorFlowV2Classifier
 
 
 def get_spectrogram(audio):

@@ -1,7 +1,9 @@
 from importlib import import_module
-import pytest
-from armory.data.utils import maybe_download_weights_from_s3
+
 import numpy as np
+import pytest
+
+from armory.data.utils import maybe_download_weights_from_s3
 
 # Marks all tests in this file as `end_to_end`
 pytestmark = pytest.mark.end_to_end
@@ -450,8 +452,8 @@ def test_carla_od(
     module, fn, classifier = get_armory_module_and_fn(
         module_name, fn_attr_name, weights_path, model_kwargs
     )
-    from armory.utils.config_loading import load_dataset
     from armory import metrics
+    from armory.utils.config_loading import load_dataset
 
     object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
 
@@ -686,8 +688,9 @@ def test_tf1_mnist(armory_dataset_dir):
 @pytest.mark.tf1
 def test_tf1_coco(armory_dataset_dir):
     import os
-    from armory.data import datasets
+
     from armory import metrics
+    from armory.data import datasets
 
     object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")
 
@@ -721,6 +724,7 @@ def test_tf1_coco(armory_dataset_dir):
 @pytest.mark.tf1
 def test_tf1_apricot(armory_dataset_dir):
     import os
+
     from armory import metrics
 
     object_detection_AP_per_class = metrics.get("object_detection_AP_per_class")

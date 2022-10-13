@@ -1,7 +1,8 @@
-import torch
 import numpy as np
 import pytest
 import tensorflow as tf
+import torch
+
 from armory.data import datasets
 
 # TODO Right now unit tests only run for `mnist`, `cifar10`, and `resisc10`

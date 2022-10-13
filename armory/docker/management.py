@@ -3,9 +3,8 @@ Docker orchestration managers for ARMORY.
 """
 
 
-import docker
-
 import armory
+import docker
 from armory import paths
 from armory.logs import log
 

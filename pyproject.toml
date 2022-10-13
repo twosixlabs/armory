@@ -52,6 +52,7 @@ developer =[
     "hatch", # build tool
     "wheel",
     "mkdocs",
+    "isort",
     "black[jupyter]==22.*",
     "flake8",
     "yamllint",
@@ -220,3 +221,6 @@ min_confidence    = 80
 make_whitelist    = true
 sort_by_size      = true
 verbose           = true
+
+[tool.isort]
+profile = "black"
