@@ -13,7 +13,6 @@ import requests
 
 import armory
 from armory.configuration import load_global_config
-
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
