@@ -16,10 +16,6 @@ def get_art_model(
 ) -> PyTorchFasterRCNN:
 
     if weights_path:
-        assert model_kwargs.get("num_classes", None) == 4, (
-            "model trained on CARLA data outputs predictions for 4 classes, "
-            "set model_kwargs['num_classes'] to 4."
-        )
         assert not model_kwargs.get("pretrained", False), (
             "model trained on CARLA data should not use COCO-pretrained weights, set "
             "model_kwargs['pretrained'] to False."
@@ -30,6 +26,16 @@ def get_art_model(
 
     if weights_path:
         checkpoint = torch.load(weights_path, map_location=DEVICE)
+        assert (
+            "roi_heads.box_predictor.cls_score.bias" in checkpoint
+        ), "invalid checkpoint for current model, layers do no match."
+        assert (
+            model.roi_heads.box_predictor.cls_score.out_features
+            == checkpoint["roi_heads.box_predictor.cls_score.bias"].shape[0]
+        ), (
+            f"provided model checkpoint does not match supplied model_kwargs['num_classes']: "
+            f"{model_kwargs['num_classes']} != {checkpoint['roi_heads.box_predictor.cls_score.bias'].shape[0]}"
+        )
         model.load_state_dict(checkpoint)
 
     wrapped_model = PyTorchFasterRCNN(

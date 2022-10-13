@@ -252,7 +252,9 @@ def test_word_error_rate():  # and total
     with pytest.raises(TypeError):
         task.word_error_rate("hi there", 3)
 
-    for err in [1, (3, 4)], [(1, 2, 3)], [(1,)]:
+    with pytest.raises(TypeError):
+        task.total_wer([1, (3, 4)])
+    for err in [(1, 2, 3)], [(1,)]:
         with pytest.raises(ValueError):
             task.total_wer(err)
 

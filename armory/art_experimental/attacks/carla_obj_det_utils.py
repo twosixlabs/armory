@@ -62,3 +62,18 @@ def log_to_linear(depth_log):
     normalized_depth = np.exp((depth_log - 1.0) * 5.70378)
     depth_meters = normalized_depth * 1000.0
     return depth_meters
+
+
+def linear_depth_to_rgb(depth_m):
+    """
+    Converts linear depth in meters to RGB values between [0,1]
+    Reference: https://carla.readthedocs.io/en/stable/cameras_and_sensors/#camera-depth-map
+    """
+    depth = depth_m / 1000.0 * (256**3 - 1)
+    r = depth % 256
+    g = ((depth - r) / 256.0) % 256
+    b = (depth - r - g * 256) / 256**2
+    r = r / 255.0
+    g = g / 255.0
+    b = b / 255.0
+    return r, g, b

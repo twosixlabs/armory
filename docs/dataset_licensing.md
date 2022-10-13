@@ -22,6 +22,7 @@ the Creative Commons 4.0 International ShareAlike license and are Copyright Two 
 | APRICOT | [Apache License Version 2.0](https://apricot.mitre.org/) |
 | DAPRICOT | Creative Commons 4.0 |
 | CARLA | MIT |
+| Speech Commands | [Creative Commons BY 4.0](https://ai.googleblog.com/2017/08/launching-speech-commands-dataset.html)
 
 ## Attributions
 

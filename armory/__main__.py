@@ -28,6 +28,7 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils.configuration import load_config, load_config_stdin
+import armory.utils.version
 import armory.logs
 
 
@@ -668,6 +669,8 @@ def launch(command_args, prog, description):
     (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
+    if not args.interactive and not args.jupyter:
+        args.interactive = True
     exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -699,9 +702,8 @@ def exec(command_args, prog, description):
     if exec_args:
         command = " ".join(exec_args)
     else:
-        print("ERROR: exec command required")
-        parser.print_help()
-        sys.exit(1)
+        print("WARNING: no exec command provided. Using no-op.")
+        command = "true # No-op"
 
     args = parser.parse_args(armory_args)
     armory.logs.update_filters(args.log_level, args.debug)
@@ -758,6 +760,10 @@ def main():
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version", "version"):
         print(f"{armory.__version__}")
+        sys.exit(0)
+    elif sys.argv[1] == "--show-docker-version-tag":
+        version = armory.utils.version.get_version()
+        print(armory.utils.version.to_docker_tag(version))
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
