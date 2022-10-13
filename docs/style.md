@@ -36,6 +36,10 @@ yamllint --no-warnings
 
 Our repo-specific configuration for yamllint is found in `.yamllint`.
 
+We use [isort](https://pycqa.github.io/isort/) to sort Python imports.
+
+    isort --profile black *
+
 ### Pre-commit Hooks
 
 If you want those tools to run automatically before each commit, run:
