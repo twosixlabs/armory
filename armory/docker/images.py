@@ -88,7 +88,7 @@ def get_armory_name(image_name: str):
     user, repo, tag = split_name(image_name)
     user = "twosixarmory"
     if tag:  # tag is explicitly defined, use it
-        tag = tag.replace("+", ".")  # ensure docker format version
+        tag = version.to_docker_tag(tag)
         return join_name(user, repo, tag)
     return IMAGE_MAP[repo]
 
