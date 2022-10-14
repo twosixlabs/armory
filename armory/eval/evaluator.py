@@ -71,7 +71,6 @@ class Evaluator(object):
             kwargs["image_name"] = None
             self.manager = HostManagementInstance()
         else:
-            kwargs["image_name"] = image_name
             self.manager = ManagementInstance(**kwargs)
 
     def _gather_env_variables(self):
