@@ -13,6 +13,7 @@ import requests
 
 import armory
 from armory.configuration import load_global_config
+from armory.docker import images
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
@@ -71,6 +72,7 @@ class Evaluator(object):
             kwargs["image_name"] = None
             self.manager = HostManagementInstance()
         else:
+            kwargs["image_name"] = images.ensure_image_present(image_name)
             self.manager = ManagementInstance(**kwargs)
 
     def _gather_env_variables(self):

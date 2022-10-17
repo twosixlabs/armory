@@ -7,7 +7,6 @@ import docker
 
 import armory
 from armory import paths
-from armory.docker import images
 from armory.logs import log
 
 
@@ -120,7 +119,7 @@ class ManagementInstance(object):
     def __init__(self, image_name: str, runtime="runc"):
         self.instances = {}
         self.runtime = runtime
-        self.name = images.ensure_image_present(image_name)
+        self.name = image_name
 
     def start_armory_instance(
         self,
