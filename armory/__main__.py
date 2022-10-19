@@ -28,7 +28,6 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils.configuration import load_config, load_config_stdin
-from armory.utils.version import to_docker_tag
 import armory.logs
 
 
@@ -284,7 +283,7 @@ def _set_outputs(config, output_dir, output_filename):
 # Commands
 
 
-def run(command_args, prog, description):
+def run(command_args, prog, description) -> int:
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument(
         "filepath",
@@ -353,7 +352,7 @@ def run(command_args, prog, description):
                 log.error(
                     "Cannot read config from raw 'stdin'; must pipe or redirect a file"
                 )
-                sys.exit(1)
+                return 1
             log.info("Reading config from stdin...")
             config = load_config_stdin()
         else:
@@ -362,7 +361,7 @@ def run(command_args, prog, description):
         log.error(
             f"Could not validate config: {e.message} @ {'.'.join(e.absolute_path)}"
         )
-        sys.exit(1)
+        return 1
     except json.decoder.JSONDecodeError:
         if args.filepath == "-":
             log.error("'stdin' did not provide a json-parsable input")
@@ -370,7 +369,7 @@ def run(command_args, prog, description):
             log.error(f"Could not decode '{args.filepath}' as a json file.")
             if not args.filepath.lower().endswith(".json"):
                 log.warning(f"{args.filepath} is not a '*.json' file")
-        sys.exit(1)
+        return 1
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     _set_outputs(config, args.output_dir, args.output_filename)
     log.debug(f"unifying sysconfig {config['sysconfig']} and args {args}")
@@ -399,7 +398,7 @@ def run(command_args, prog, description):
         skip_misclassified=args.skip_misclassified,
         validate_config=args.validate_config,
     )
-    sys.exit(exit_code)
+    return exit_code
 
 
 def _pull_docker_images(docker_client=None):
@@ -669,8 +668,6 @@ def launch(command_args, prog, description):
     (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
-    if not args.interactive and not args.jupyter:
-        args.interactive = True
     exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
@@ -702,8 +699,9 @@ def exec(command_args, prog, description):
     if exec_args:
         command = " ".join(exec_args)
     else:
-        print("WARNING: no exec command provided. Using no-op.")
-        command = "true # No-op"
+        print("ERROR: exec command required")
+        parser.print_help()
+        sys.exit(1)
 
     args = parser.parse_args(armory_args)
     armory.logs.update_filters(args.log_level, args.debug)
@@ -754,15 +752,14 @@ def usage():
     return "\n".join(lines)
 
 
-def main():
+def main() -> int:
+    # TODO the run method now returns a status code instead of sys.exit directly
+    # the rest of the COMMANDS should conform
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help", "help"):
         print(usage())
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version", "version"):
         print(f"{armory.__version__}")
-        sys.exit(0)
-    elif sys.argv[1] == "--show-docker-version-tag":
-        print(to_docker_tag(armory.__version__))
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
@@ -777,8 +774,8 @@ def main():
 
     func, description = COMMANDS[args.command]
     prog = f"{PROGRAM} {args.command}"
-    func(sys.argv[2:], prog, description)
+    return func(sys.argv[2:], prog, description)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
