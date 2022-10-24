@@ -46,10 +46,3 @@ runs:
         path: |
           .venv/
         key: ${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
-
-    # - name: ⚙️ Installing Armory
-    #   shell: bash
-    #   if: steps.cache.outputs.cache-hit != 'true'
-    #   run: |
-    #     armory configure --use-defaults
-      # pip install --no-compile --editable '.[developer,engine,math,datasets,pytorch]'
