@@ -1,4 +1,7 @@
 ---
+# yamllint disable rule:comments-indentation
+# yamllint disable rule:indentation
+
 name: End-to-End Tests
 
 on:
