@@ -2,6 +2,7 @@
 # Copy or link this script into .git/hooks/
 # It runs automatically in the project root directory (parent of .git/).
 
+EXIT_STATUS=0
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
 
@@ -14,6 +15,8 @@ pushd $PROJECT_ROOT > /dev/null
     # git add -u
 popd > /dev/null
 
+
+exit $EXIT_STATUS
 
 # yamllint --no-warnings ./
 
