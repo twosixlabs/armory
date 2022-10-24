@@ -1,71 +1,39 @@
 {
-    "_description": "CIFAR10 poison image classification, witches' brew attack, spectral signature defense",
+    "_description": "CIFAR10 dirty label backdoor, watermark trigger, spectral signature defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
         "explanatory_model": "cifar10_silhouette_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9
-        ],
+        "source_class": 0,
         "split_id": 0,
-        "target_class": [
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            0
-        ],
-        "train_epochs": 100,
-        "trigger_index": null,
+        "target_class": 2,
+        "train_epochs": 200,
         "use_poison_filtering_defense": true
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "batch_size": 750,
-            "data_filepath": null,
-            "epsilon": 0.125,
-            "learning_rate_schedule": [
-                [
-                    0.1,
-                    0.01,
-                    0.001,
-                    0.0001,
-                    1e-05
-                ],
-                [
-                    94,
-                    156,
-                    219,
-                    250,
-                    350
-                ]
-            ],
-            "max_epochs": 500,
-            "max_trials": 1,
-            "verbose": 1
+            "backdoor_packaged_with_armory": true,
+            "backdoor_path": "./armory/utils/triggers/copyright.png",
+            "base_img_size_x": 32,
+            "base_img_size_y": 32,
+            "blend": 0.18,
+            "channels_first": false,
+            "mode": "RGB",
+            "poison_module": "art.attacks.poisoning.perturbations",
+            "poison_type": "image",
+            "size": [
+                32,
+                32
+            ]
         },
-        "module": "armory.art_experimental.attacks.gradient_matching",
-        "name": "GradientMatchingWrapper"
+        "module": "armory.art_experimental.attacks.poison_loader_dlbd",
+        "name": "poison_loader_dlbd"
     },
     "dataset": {
-        "batch_size": 128,
+        "batch_size": 512,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "cifar10"
@@ -110,10 +78,9 @@
         }
     },
     "scenario": {
-        "export_batches": false,
         "kwargs": {},
-        "module": "armory.scenarios.poisoning_witches_brew",
-        "name": "WitchesBrewScenario"
+        "module": "armory.scenarios.poison",
+        "name": "Poison"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/pytorch",
