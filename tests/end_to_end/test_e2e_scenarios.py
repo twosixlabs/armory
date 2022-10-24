@@ -20,7 +20,6 @@ from pathlib import Path
 from armory import paths
 
 from armory.__main__ import run
-# from armory.scenarios.main import get as get_scenario
 
 
 # Marks all tests in this file as `end_to_end`
@@ -66,7 +65,6 @@ class TestScenarios(unittest.TestCase):
 
                 if scenario not in block_list:
                     try:
-                        # scenario_log_path, scenario_log_data = self.run_scenario(scenario)
                         armory_flags = [
                             scenario.as_posix(),
                             "--no-docker",
@@ -88,39 +86,3 @@ class TestScenarios(unittest.TestCase):
         runner.evaluate()
         scenario_log_path, scenario_log_data = runner.save()
         return runner.save()
-
-
-# TODO:
-#     scores = {}
-#     model_results = json.loads(test_data.read_text())
-#     result_tolerance = 0.05
-#         result_json = json.loads(result.read_text())
-#         results = result_json['results']
-#         adversarial_scores = results['adversarial_mean_categorical_accuracy']
-#         benign_scores      = results['benign_mean_categorical_accuracy']
-#         adversarial_median = statistics.median(adversarial_scores)
-#         benign_median      = statistics.median(benign_scores)
-#         with capsys.disabled():
-#             print("\n\n")
-#             print(math.isclose(adversarial_median, benign_median, abs_tol = result_tolerance))
-#             print(all((
-#                 math.isclose(bt, at, abs_tol = result_tolerance) for at, bt in
-#                     zip(adversarial_scores, benign_scores)
-#                     if at != 0.0 and bt != 0.0
-#             )))
-#         # SETUP
-#         scores[filepath] = {
-#             'delta': 0,
-#             'results': [
-#                 {
-#                 'tolerance': result_tolerance,
-#                 'adversarial_median': adversarial_median,
-#                 'benign_median': benign_median,
-#                 'check_used': check_used,
-#                 'gpu_used': gpu_used
-#                 }
-#             ]
-#         }
-#         # /SETUP
-#     with capsys.disabled():
-#         print(json.dumps(scores, indent=2))
