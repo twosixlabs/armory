@@ -10,15 +10,11 @@ Example:
     $ clear; pytest --verbose tests/end_to_end/test_scenario_runner.py --scenario-path scenario_configs/cifar10_baseline.json --github-ci
 """
 
-import re
-import json
-import pytest
 import unittest
 
 from pathlib import Path
 
 from armory import paths
-
 from armory.__main__ import run
 
 
@@ -47,7 +43,6 @@ class TestScenarios(unittest.TestCase):
         )
         scenario_configs = Path("scenario_configs")
         host_paths = paths.runtime_paths()
-        result_path = host_paths.output_dir
 
         # Setup Armory paths
         paths.set_mode("host")
@@ -73,16 +68,10 @@ class TestScenarios(unittest.TestCase):
                         ]
                         run(armory_flags, "armory", None)
                         out, err = capsys.readouterr()
-                    except:
+                    except Exception as e:
                         assert False, f"Failed to run scenario: {scenario}"
 
                     if trapped_in_ci:
                         Path(f"/tmp/.armory/{scenario.name}.log").write_text(
                             "\n\n".join([out, err])
                         )
-
-    def run_scenario(self, scenario_path):
-        runner = get_scenario(scenario_path, check_run=True).load()
-        runner.evaluate()
-        scenario_log_path, scenario_log_data = runner.save()
-        return runner.save()
