@@ -1,4 +1,5 @@
 ---
+# yamllint disable
 name: "Setup Matrix and Armory"
 
 description: "Install Armory"

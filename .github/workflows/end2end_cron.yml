@@ -1,7 +1,7 @@
 ---
 # yamllint disable
 
-name: End-to-End Tests
+name: 🚂 End-to-End Tests
 
 on:
   schedule:
@@ -57,7 +57,7 @@ jobs:
       - name: 🐍 Setup Environment
         uses: ./.github/actions/evaluations_environment_setup
 
-      - name: Install Prerequisites
+      - name: ⚒️ Install Prerequisites
         run: |
           source .venv/bin/activate
 
