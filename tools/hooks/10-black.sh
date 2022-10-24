@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Copy or link this script into .git/hooks/
-# It runs automatically in the project root directory (parent of .git/).
-
 echo "Executing 'black' formatter..."
 
 pushd "`git rev-parse --git-dir`/../" > /dev/null
