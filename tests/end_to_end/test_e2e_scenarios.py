@@ -28,7 +28,7 @@ block_list = [
 ]
 
 
-@pytest.mark.usefixtures("pass_parameters")
+@pytest.mark.usefixtures("pass_parameters")  # noqa: F821
 class TestScenarios(unittest.TestCase):
     @pytest.fixture(autouse=True)
     def capsys(self, capsys):
@@ -42,7 +42,7 @@ class TestScenarios(unittest.TestCase):
             [Path(self.scenario_path)] if hasattr(self, "scenario_path") else []
         )
         scenario_configs = Path("scenario_configs")
-        host_paths = paths.runtime_paths()
+        host_paths = paths.runtime_paths()  # noqa: F841
 
         # Setup Armory paths
         paths.set_mode("host")
@@ -67,7 +67,7 @@ class TestScenarios(unittest.TestCase):
                     run(armory_flags, "armory", None)
                     out, err = capsys.readouterr()
                 except Exception as e:
-                    assert False, f"Failed to run scenario: {scenario}"
+                    assert False, f"Failed to run scenario: {scenario} - {e}"
 
                 if trapped_in_ci:
                     Path(f"/tmp/.armory/{scenario.name}.log").write_text(
