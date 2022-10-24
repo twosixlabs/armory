@@ -19,7 +19,7 @@ from armory.__main__ import run
 
 
 # Marks all tests in this file as `end_to_end`
-pytestmark = pytest.mark.end_to_end
+pytestmark = pytest.mark.end_to_end  # noqa: F821
 
 
 # TODO: Turn into a block-list
@@ -30,7 +30,7 @@ block_list = [
 
 @pytest.mark.usefixtures("pass_parameters")  # noqa: F821
 class TestScenarios(unittest.TestCase):
-    @pytest.fixture(autouse=True)
+    @pytest.fixture(autouse=True)  # noqa: F821
     def capsys(self, capsys):
         self.capsys = capsys
 
