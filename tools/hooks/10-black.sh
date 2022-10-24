@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Executing 'black' formatter..."
 
-pushd "`git rev-parse --git-dir`/../" > /dev/null
+pushd `git rev-parse --show-toplevel` > /dev/null
   if black --check --diff --color .; then
     exit 0
   else
