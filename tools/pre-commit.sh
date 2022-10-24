@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copy or link this script into .git/hooks/
-#   $ ln -s tools/pre-commit.sh .git/hooks/pre-commit.sh
+#   $ ln -s tools/pre-commit.sh .git/hooks/pre-commit
 # It runs automatically in the project root directory (parent of .git/).
 
 EXIT_STATUS=0
