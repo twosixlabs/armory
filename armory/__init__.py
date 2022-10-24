@@ -11,7 +11,7 @@ from armory.utils import version, typedef
 Config = typedef.Config
 
 
-ROOT_DIR = Path(__file__).parent
+SRC_ROOT = Path(__file__).parent
 
 
 def __getattr__(name):
