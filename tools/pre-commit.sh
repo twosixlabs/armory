@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copy or link this script into .git/hooks/
-#   $ ln -s tools/pre-commit.sh .git/hooks/pre-commit
+#   $ cp tools/pre-commit.sh .git/hooks/pre-commit
 # It runs automatically in the project root directory (parent of .git/).
 
 EXIT_STATUS=0
@@ -15,9 +15,6 @@ pushd $PROJECT_ROOT > /dev/null
             EXIT_STATUS=1
         fi
     done
-
-    # TODO: Auto add files back?
-    # git add -u
 popd > /dev/null
 
 if [ $EXIT_STATUS -ne 0 ]; then
