@@ -6,9 +6,8 @@ pushd `git rev-parse --show-toplevel` > /dev/null
     exit 0
   else
     python -m black ./
-    # git add -u
     echo "Some files were formatted."
-    # echo "You need to do git add and git commit again."
+    echo "You need to do git add and git commit again."
     exit 1
   fi
 popd
