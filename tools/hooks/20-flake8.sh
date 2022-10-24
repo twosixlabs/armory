@@ -12,8 +12,6 @@ pushd `git rev-parse --show-toplevel` > /dev/null
     --show-source         \
     --config=.flake8 ./
 
-  EXIT_STATUS=$?
-
 popd
 
 # TODO: C901 - Determine if `# noqa: C901` is needed
