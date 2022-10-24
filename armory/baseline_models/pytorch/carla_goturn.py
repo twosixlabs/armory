@@ -1,8 +1,8 @@
 from typing import Optional
 
+from art.estimators.object_tracking import PyTorchGoturn
 import numpy as np
 import torch
-from art.estimators.object_tracking import PyTorchGoturn
 
 from armory.utils.external_repo import ExternalRepoImport
 

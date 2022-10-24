@@ -5,9 +5,9 @@ Model contributed by: MITRE Corporation
 """
 from typing import Optional
 
+from art.estimators.classification import KerasClassifier
 import numpy as np
 import tensorflow as tf
-from art.estimators.classification import KerasClassifier
 from tensorflow.keras.applications.densenet import DenseNet121
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Lambda
 from tensorflow.keras.models import Model

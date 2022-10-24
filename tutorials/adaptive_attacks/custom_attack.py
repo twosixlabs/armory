@@ -1,5 +1,5 @@
-import numpy as np
 from art.attacks.evasion import ProjectedGradientDescent
+import numpy as np
 
 
 class CustomAttack(ProjectedGradientDescent):

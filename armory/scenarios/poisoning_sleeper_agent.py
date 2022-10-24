@@ -1,7 +1,7 @@
 import copy
 
-import numpy as np
 from PIL import Image
+import numpy as np
 
 from armory.logs import log
 from armory.scenarios.poison import Poison

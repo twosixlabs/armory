@@ -4,8 +4,8 @@ import os
 import pytest
 import requests
 
-import docker
 from armory import __version__, paths
+import docker
 from docker.errors import ImageNotFound
 
 logger = logging.getLogger(__name__)

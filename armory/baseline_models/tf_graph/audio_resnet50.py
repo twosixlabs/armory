@@ -4,8 +4,8 @@ Resnet for speech commands classification.
 
 from typing import Optional
 
-import tensorflow as tf
 from art.estimators.classification import TensorFlowV2Classifier
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import losses
 from tensorflow.keras.layers import Lambda

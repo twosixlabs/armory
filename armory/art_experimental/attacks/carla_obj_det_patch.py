@@ -3,9 +3,9 @@ import os
 import random
 from typing import Dict, List, Optional
 
+from art.attacks.evasion import RobustDPatch
 import cv2
 import numpy as np
-from art.attacks.evasion import RobustDPatch
 from tqdm.auto import trange
 
 from armory.art_experimental.attacks.carla_obj_det_utils import linear_depth_to_rgb

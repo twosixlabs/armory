@@ -5,9 +5,9 @@ detector with a PyTorch Faster-RCNN Resnet50-FPN object detector
 import dataclasses
 from typing import List, Optional
 
+from art.estimators.object_detection import PyTorchFasterRCNN
 import numpy as np
 import torch
-from art.estimators.object_detection import PyTorchFasterRCNN
 from torchvision import models
 from yolox.tracker.byte_tracker import (  # clone from https://github.com/ifzhang/ByteTrack
     BYTETracker,

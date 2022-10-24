@@ -3,8 +3,8 @@ CNN model for 32x32x3 image classification
 """
 from typing import Optional
 
-import tensorflow as tf
 from art.estimators.classification import KerasClassifier
+import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, Dense, Flatten, MaxPooling2D
 from tensorflow.keras.models import Sequential
 

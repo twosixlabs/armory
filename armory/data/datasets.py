@@ -13,11 +13,11 @@ import os
 import re
 from typing import Callable, List, Tuple, Union
 
+from PIL import Image, ImageOps
+from art.data_generators import DataGenerator
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from art.data_generators import DataGenerator
-from PIL import Image, ImageOps
 
 from armory import paths
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401

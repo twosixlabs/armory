@@ -1,8 +1,8 @@
 from typing import Optional
 
+from art.estimators.classification import PyTorchClassifier
 import torch
 import torch.nn as nn
-from art.estimators.classification import PyTorchClassifier
 from torchvision.transforms import RandomErasing
 
 from armory.baseline_models.pytorch.cifar import Net

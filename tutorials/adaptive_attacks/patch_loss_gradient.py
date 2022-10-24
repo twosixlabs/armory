@@ -1,6 +1,6 @@
-import torch
 from art.attacks.evasion import ProjectedGradientDescent
 from patch_loss_gradient_model import get_art_model
+import torch
 from torch.autograd import Variable
 from torchvision.transforms import RandomErasing
 

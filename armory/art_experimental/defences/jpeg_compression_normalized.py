@@ -1,5 +1,5 @@
-import numpy as np
 from art.defences.preprocessor import JpegCompression
+import numpy as np
 
 
 class JpegCompressionNormalized(JpegCompression):

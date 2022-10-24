@@ -2,8 +2,8 @@
 Computational metrics
 """
 
-import contextlib
 import cProfile
+import contextlib
 import io
 import pstats
 import time

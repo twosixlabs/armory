@@ -2,8 +2,8 @@
 Automatic speech recognition scenario
 """
 
-import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
+import numpy as np
 
 from armory.instrument.export import AudioExporter
 from armory.logs import log

@@ -3,9 +3,9 @@ Copyright 2021 The MITRE Corporation. All rights reserved
 """
 import math
 
+from art.attacks.evasion import ProjectedGradientDescent
 import cv2
 import numpy as np
-from art.attacks.evasion import ProjectedGradientDescent
 
 
 def shape_coords(h, w, obj_shape):

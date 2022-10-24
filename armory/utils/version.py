@@ -13,9 +13,9 @@ which is a bit ungainly.
 
 import functools
 import os
+from pathlib import Path
 import re
 import site
-from pathlib import Path
 
 import setuptools_scm
 

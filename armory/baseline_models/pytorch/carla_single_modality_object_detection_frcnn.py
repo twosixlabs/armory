@@ -3,8 +3,8 @@ PyTorch Faster-RCNN Resnet50-FPN object detection model
 """
 from typing import Optional
 
-import torch
 from art.estimators.object_detection import PyTorchFasterRCNN
+import torch
 from torchvision import models
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -12,10 +12,10 @@ import subprocess
 import tarfile
 
 import boto3
-import requests
 from botocore import UNSIGNED
 from botocore.client import Config
 from botocore.exceptions import ClientError
+import requests
 from tqdm import tqdm
 
 from armory import paths

@@ -1,6 +1,6 @@
 import argparse
-import pathlib
 from glob import glob
+import pathlib
 
 import jsonschema
 import pytest

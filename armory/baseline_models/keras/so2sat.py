@@ -1,9 +1,9 @@
 from copy import deepcopy
 from typing import Optional
 
+from art.estimators.classification import KerasClassifier
 import numpy as np
 import tensorflow as tf
-from art.estimators.classification import KerasClassifier
 from tensorflow import slice
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import (

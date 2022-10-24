@@ -4,8 +4,8 @@ Plot output json files
 import json
 import os
 
-import numpy as np
 from matplotlib import pyplot as plt
+import numpy as np
 
 from armory.logs import log
 

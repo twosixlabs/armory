@@ -1,9 +1,9 @@
 from typing import Optional
 
-import torch
-import torch.nn as nn
 from art.attacks.evasion import ProjectedGradientDescent
 from art.estimators.classification import PyTorchClassifier
+import torch
+import torch.nn as nn
 
 from armory.baseline_models.pytorch.cifar import Net
 

@@ -5,8 +5,8 @@ Model contributed by: MITRE Corporation
 """
 from typing import Optional
 
-import tensorflow as tf
 from art.estimators.classification import KerasClassifier
+import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import (
     Activation,

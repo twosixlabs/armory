@@ -1,12 +1,12 @@
 import os
 from typing import Optional, Tuple
 
-import cv2
-import numpy as np
-import torch
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
+import cv2
+import numpy as np
+import torch
 from tqdm import trange
 
 from armory.logs import log

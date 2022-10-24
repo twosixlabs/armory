@@ -1,5 +1,5 @@
-import numpy as np
 from art.defences.preprocessor import VideoCompression, VideoCompressionPyTorch
+import numpy as np
 
 
 class VideoCompressionNormalized(VideoCompression):

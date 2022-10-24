@@ -3,10 +3,10 @@
 import glob
 import os
 
+from PIL import Image
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
-from PIL import Image
 
 _DESCRIPTION = """
 Synthetic single modality dataset generated using CARLA (https://carla.org).

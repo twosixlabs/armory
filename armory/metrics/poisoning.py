@@ -1,9 +1,9 @@
 import copy
 from importlib import import_module
 
+from PIL import Image
 import numpy as np
 import torch
-from PIL import Image
 
 from armory.data.utils import maybe_download_weights_from_s3
 

@@ -6,9 +6,9 @@ Adapted from: https://github.com/mravanelli/SincNet
 """
 from typing import Optional
 
+from art.estimators.classification import PyTorchClassifier
 import numpy as np
 import torch
-from art.estimators.classification import PyTorchClassifier
 from torch import nn
 
 from armory.utils.external_repo import ExternalRepoImport

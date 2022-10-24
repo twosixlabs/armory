@@ -5,8 +5,8 @@ TensorFlow1 Detection Model Zoo
 object_detection/g3doc/tf1_detection_zoo.md)
 """
 
-import tensorflow as tf
 from art.estimators.object_detection.tensorflow_faster_rcnn import TensorFlowFasterRCNN
+import tensorflow as tf
 
 tf.compat.v1.disable_eager_execution()
 

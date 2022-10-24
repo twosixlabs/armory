@@ -1,8 +1,8 @@
 import os
 import subprocess
 
-import numpy as np
 import PIL
+import numpy as np
 import pytest
 
 from armory.instrument import get_hub, get_probe

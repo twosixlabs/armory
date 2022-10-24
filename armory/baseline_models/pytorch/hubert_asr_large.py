@@ -5,10 +5,10 @@ Updated model for LibriSpeech ASR that doesn't require extra dependencies
 # https://pytorch.org/audio/stable/pipelines.html#torchaudio.pipelines.Wav2Vec2Bundle
 from typing import List
 
+from art.estimators.pytorch import PyTorchEstimator
 import numpy as np
 import torch
 import torchaudio
-from art.estimators.pytorch import PyTorchEstimator
 
 # from torchaudio.models.decoder import ctc_decoder
 

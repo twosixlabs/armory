@@ -2,10 +2,10 @@
 Utilities for handling the global armory configuration file
 """
 
+from collections import defaultdict
 import json
 import os
 import warnings  # armory.logs initialization depends on this module, use warnings instead
-from collections import defaultdict
 
 
 def get_verify_ssl():

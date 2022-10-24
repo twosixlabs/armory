@@ -4,9 +4,9 @@ Docker orchestration managers for ARMORY.
 
 
 import armory
-import docker
 from armory import paths
 from armory.logs import log
+import docker
 
 
 class ArmoryInstance(object):

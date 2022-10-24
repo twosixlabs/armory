@@ -4,9 +4,9 @@ Adapted from: https://github.com/craston/MARS
 """
 from typing import Optional, Tuple, Union
 
+from art.estimators.classification import PyTorchClassifier
 import numpy as np
 import torch
-from art.estimators.classification import PyTorchClassifier
 from torch import optim
 
 from armory.utils.external_repo import ExternalRepoImport

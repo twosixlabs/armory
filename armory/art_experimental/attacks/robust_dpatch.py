@@ -1,5 +1,5 @@
-import numpy as np
 from art.attacks.evasion import RobustDPatch
+import numpy as np
 
 from armory.logs import log
 

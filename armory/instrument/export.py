@@ -1,12 +1,12 @@
 import abc
+from copy import deepcopy
 import json
 import os
 import pickle
-from copy import deepcopy
 
+from PIL import Image, ImageDraw
 import ffmpeg
 import numpy as np
-from PIL import Image, ImageDraw
 from scipy.io import wavfile
 
 from armory.instrument import Meter
