@@ -2,15 +2,6 @@
 name: End-to-End Tests
 
 on:
-  push:
-    branches:
-      - master
-      - develop
-
-  pull_request:
-    branches:
-      - master
-      - develop
   schedule:
     - cron: 0 0 * * * # At Midnight Every Day
 
@@ -20,13 +11,10 @@ on:
         type: choice
         description: 'Tactic Directory'
         required: false
-        default: 1000-evaluation
+        default: eval6
         options:
-        - 10-reconnaissance
-        - 20-resource-development
-        - '...'
-        - 120-impact
-        - 1000-evaluation
+        - eval5
+        - eval1-4
 
       debug_enabled:
         type: boolean
@@ -50,7 +38,7 @@ jobs:
       - name: 👩‍💻 Generating Matrix
         id: generate-matrix
         run: |
-          echo "::set-output name=matrix::$(find ./scenario_configs/eval6 -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
+          echo "::set-output name=matrix::$(find ./scenario_configs/${{ github.event.inputs.tactic_dir }} -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
 
 
   matrix_job:
