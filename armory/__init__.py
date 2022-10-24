@@ -1,11 +1,17 @@
 """
 Adversarial Robustness Evaluation Test Bed
 """
+
+from pathlib import Path
+
 from armory.logs import log
 from armory.utils import version, typedef
 
 
 Config = typedef.Config
+
+
+ROOT_DIR = Path(__file__).parent
 
 
 def __getattr__(name):
