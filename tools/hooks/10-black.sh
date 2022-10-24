@@ -4,14 +4,12 @@
 
 echo "Executing 'black' formatter..."
 
-# python -m black --check ./ > /dev/null 2>&1
-# need_format=$?
-# set -e
-# if [ $need_format -ne 0 ]
-# then
-#     python -m black ./
-#     echo Some Python files were formatted
-#     echo You need to do git add and git commit again
-#     exit $need_format
-# fi
-# set +e
+if python -m black --check ./; then
+  exit 0
+else
+  python -m black ./
+  # git add -u
+  echo "Some files were formatted."
+  # echo "You need to do git add and git commit again."
+  exit 1
+fi
