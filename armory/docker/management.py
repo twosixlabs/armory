@@ -80,7 +80,7 @@ class ArmoryInstance(object):
         #  ie after the sentinel
         sentinel_found = False
         for out in result.output:
-            output = out.decode(encoding='utf-8', errors='replace').strip()
+            output = out.decode(encoding="utf-8", errors="replace").strip()
             if not output:  # skip empty lines
                 continue
             # this looks absurd, but in some circumstances result.output will combine
