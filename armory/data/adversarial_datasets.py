@@ -998,12 +998,13 @@ def mot_array_to_coco(batch):
     return output
 
 
-def mot_array_to_coco_with_x(x, y):
+def mot_array_to_coco_label_preprocessing(x, y):
     """
     x is given in the label preprocessing pipeline
     """
     del x
-    return mot_array_to_coco(y)
+    annotations, patch_metadata = y
+    return (mot_array_to_coco(annotations), patch_metadata)
 
 
 def mot_coco_to_array(batch):
@@ -1084,7 +1085,7 @@ def carla_multi_object_tracking_dev(
         clip_labels = None
 
     if coco_format:
-        coco_label_preprocess = mot_array_to_coco_with_x
+        coco_label_preprocess = mot_array_to_coco_label_preprocessing
     else:
         coco_label_preprocess = None
 
