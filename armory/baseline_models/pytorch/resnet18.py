@@ -11,18 +11,31 @@ from torchvision import models
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def modify_for_cifar(model):
+    model.conv1 = torch.nn.Conv2d(
+        3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+    )
+    model.maxpool = torch.nn.Identity()
+
+
 class OuterModel(torch.nn.Module):
     def __init__(
         self,
         weights_path: Optional[str],
+        cifar_stem: bool = False,
         **model_kwargs,
     ):
+        """
+        If cifar_stem is True, resnet stem is modified in the following manner:
+            The 7x7 convolution with stride 2 and 3x3 maxpool is replaced with 3x3 conv
+        """
         # default to imagenet mean and std
         data_means = model_kwargs.pop("data_means", [0.485, 0.456, 0.406])
         data_stds = model_kwargs.pop("data_stds", [0.229, 0.224, 0.225])
 
         super().__init__()
         self.inner_model = models.resnet18(**model_kwargs)
+
         self.inner_model.to(DEVICE)
 
         if weights_path:
