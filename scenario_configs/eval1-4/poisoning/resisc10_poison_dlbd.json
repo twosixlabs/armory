@@ -15,8 +15,7 @@
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "backdoor_packaged_with_armory": true,
-            "backdoor_path": "./armory/utils/triggers/letter_A.png",
+            "backdoor_path": "letter_A.png",
             "base_img_size_x": 64,
             "base_img_size_y": 64,
             "blend": 0.8,

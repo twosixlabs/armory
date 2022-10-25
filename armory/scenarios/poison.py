@@ -200,7 +200,7 @@ class Poison(Scenario):
             self.x_poison, self.y_poison, self.poison_index = (
                 self.x_clean,
                 self.y_clean,
-                np.array([]),
+                np.array([], dtype=np.int64),
             )
 
         self.record_poison_and_data_info()

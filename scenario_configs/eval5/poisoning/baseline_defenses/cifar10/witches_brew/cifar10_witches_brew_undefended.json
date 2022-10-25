@@ -6,18 +6,41 @@
         "explanatory_model": "cifar10_silhouette_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 1,
+        "source_class": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+        ],
         "split_id": 0,
-        "target_class": 2,
-        "train_epochs": 200,
+        "target_class": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            0
+        ],
+        "train_epochs": 100,
         "trigger_index": null,
         "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "data_filepath": "cifar_gradient_matching_precomputed.npz",
-            "epsilon": 0.1,
+            "batch_size": 750,
+            "data_filepath": null,
+            "epsilon": 0.125,
             "learning_rate_schedule": [
                 [
                     0.1,
@@ -27,11 +50,11 @@
                     1e-05
                 ],
                 [
+                    94,
+                    156,
+                    219,
                     250,
-                    350,
-                    400,
-                    430,
-                    460
+                    350
                 ]
             ],
             "max_epochs": 500,
@@ -42,7 +65,7 @@
         "name": "GradientMatchingWrapper"
     },
     "dataset": {
-        "batch_size": 512,
+        "batch_size": 128,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "cifar10"

@@ -2,20 +2,30 @@ Armory No-Docker Mode
 =======================
 In order to run armory in `--no-docker` mode, you will need a properly
 setup environment.  Generally folks have used conda in the past, however this
-document only requires a python (>=3.7, <3.9) environment to get going.
+document only requires a python (>=3.7) environment to get going.
 
 First you will need to clone the armory repo (or if you plan to be a developer,
 see [Contributing to Armory](./contributing.md) to clone a fork of the repo).
 For the following, the repo directory will be referred to as `[armory-repo]`.
 
-Now you will want to create a clean python virtual environment and activate
-that environment.  For example:
+Virtual environment setup for conda is fairly straight forward:
+```bash
+wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+/bin/bash ~/miniconda.sh -b -p /opt/conda
+conda install -c conda-forge -n base mamba \
+mamba env update -f environment.yml -n base --prune
+mamba clean --all
+```
+
+Alternatively, if your system already has the necessary libraries installed, a virtual
+environment can be created with the following commands:
 ```bash
 cd [armory-repo]
-python37 -m venv venv37
-source venv37/bin/activate
+python38 -m venv venv38
+source venv38/bin/activate
 ```
-or you can setup your virtualenv using another tool (e.g. conda, pyenv, etc.).
+
+Check out the [Dockerfiles](../docker) for more information on environment setup.
 
 Once this is complete, and you have ensured you are in the `[armory-repo]` directory,
 you can setup the environment with the following:
@@ -23,6 +33,16 @@ you can setup the environment with the following:
 pip install --upgrade pip==22.0.3
 pip install -e .[engine,datasets,math,pytorch,deepspeech,tensorflow]
 ```
+
+If you are using the `deepspeech` scenarios, you will also need to
+install the `hydra-lightning` configs with:
+
+    pip install git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning
+
+as described [in that package's README](https://github.com/romesco/hydra-lightning#readme).
+This is necessary because there is no proper release of that package (nor does one
+appear likely).
+
 Once this completes, you should run `armory configure` (If you haven't already done this
 previously) to setup the armory configuration
 (e.g. dataset download directory, output directory, etc.).

@@ -15,10 +15,10 @@
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "backdoor_path": "watermarking.png",
+            "backdoor_path": "copyright.png",
             "base_img_size_x": 32,
             "base_img_size_y": 32,
-            "blend": 1.0,
+            "blend": 0.18,
             "channels_first": false,
             "mode": "RGB",
             "poison_module": "art.attacks.poisoning.perturbations",
