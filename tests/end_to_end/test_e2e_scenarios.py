@@ -10,6 +10,7 @@ Example:
     $ clear; pytest --verbose tests/end_to_end/test_scenario_runner.py --scenario-path scenario_configs/cifar10_baseline.json --github-ci
 """
 
+import pytest
 import unittest
 
 from pathlib import Path
