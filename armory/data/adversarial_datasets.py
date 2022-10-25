@@ -997,22 +997,29 @@ def mot_array_to_coco_with_x(x, y):
 def mot_coco_to_array(batch):
     """
     Map from extended coco format to 3D array (batch_size x detections x 9)
+
+    An additional field, 'object_id', is required.
+    If 'visibility' is not present, it defaults to 1 (visible)
     """
-    output = []
-    for video in batch:
-        rows = []
-        for coco_dict in video:
-            rows.append(
-                [
-                    coco_dict["image_id"],
-                    coco_dict["object_id"],
-                    *coco_dict["bbox"],
-                    coco_dict["score"],
-                    coco_dict["category_id"],
-                    coco_dict["visibility"],
-                ]
-            )
-        output.append(rows)
+    try:
+        output = []
+        for video in batch:
+            rows = []
+            for coco_dict in video:
+                rows.append(
+                    [
+                        coco_dict["image_id"],
+                        coco_dict["object_id"],
+                        *coco_dict["bbox"],
+                        coco_dict["score"],
+                        coco_dict["category_id"],
+                        coco_dict.get("visibility", 1),
+                    ]
+                )
+            output.append(rows)
+    except KeyError as e:
+        raise KeyError(f"{e} is a required label key for multi-object tracking")
+
     if len(batch) == 1:
         output_array = np.array(output, dtype=np.float32)
     else:
