@@ -189,7 +189,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
             for result in results
             for [f, i, b, s, c, v] in zip(*result)
         ]
-        output = np.asarray(output)
+        output = np.asarray(output).astype(np.float32)
 
         return np.expand_dims(output, 0)
 

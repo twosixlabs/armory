@@ -952,6 +952,76 @@ def carla_mot_label_preprocessing(x, y):
     return (annotations, patch_metadata)
 
 
+def mot_array_to_coco(batch):
+    """
+    Map from 3D array (batch_size x detections x 9) to extended coco format
+        of dimension (batch_size x frames x detections_per_frame)
+
+    NOTE: 'image_id' is given as the frame of a video, so is not unique
+    """
+    output = np.empty(len(batch), dtype=object)
+    for i, array in enumerate(batch):
+        if not len(array):
+            # no object detections
+            output.append([])
+            continue
+
+        frames = []
+        for detection in array:
+            frames.append(
+                {
+                    # TODO: should image_id include video number as well?
+                    "image_id": int(np.round(detection[0])),
+                    "category_id": int(np.round(detection[7])),
+                    "bbox": [float(x) for x in detection[2:6]],
+                    "score": float(detection[6]),
+                    # The following are extended fields
+                    "object_id": int(
+                        np.round(detection[1])
+                    ),  # for a specific object across frames
+                    "visibility": float(detection[8]),
+                }
+            )
+        output[i] = frames
+    return output
+
+
+def mot_array_to_coco_with_x(x, y):
+    """
+    x is given in the label preprocessing pipeline
+    """
+    del x
+    return mot_array_to_coco(y)
+
+
+def mot_coco_to_array(batch):
+    """
+    Map from extended coco format to 3D array (batch_size x detections x 9)
+    """
+    output = []
+    for video in batch:
+        rows = []
+        for coco_dict in video:
+            rows.append(
+                [
+                    coco_dict["image_id"],
+                    coco_dict["object_id"],
+                    *coco_dict["bbox"],
+                    coco_dict["score"],
+                    coco_dict["category_id"],
+                    coco_dict["visibility"],
+                ]
+            )
+        output.append(rows)
+    if len(batch) == 1:
+        output_array = np.array(output, dtype=np.float32)
+    else:
+        output_array = np.empty(len(batch), dtype=object)
+        for i, out in enumerate(output):
+            output_array[i] = np.array(out, dtype=np.float32)
+    return output_array
+
+
 def carla_multi_object_tracking_dev(
     split: str = "dev",
     epochs: int = 1,
@@ -963,6 +1033,7 @@ def carla_multi_object_tracking_dev(
     framework: str = "numpy",
     shuffle_files: bool = False,
     max_frames: int = None,
+    coco_format: bool = False,
     **kwargs,
 ):
     """
@@ -983,9 +1054,15 @@ def carla_multi_object_tracking_dev(
         clip = None
         clip_labels = None
 
+    if coco_format:
+        coco_label_preprocess = mot_array_to_coco_with_x
+    else:
+        coco_label_preprocess = None
+
     preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
+
     label_preprocessing_fn = datasets.label_preprocessing_chain(
-        clip_labels, label_preprocessing_fn
+        clip_labels, coco_label_preprocess, label_preprocessing_fn
     )
 
     return datasets._generator_from_tfds(
