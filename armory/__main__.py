@@ -28,6 +28,7 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.docker import images
 from armory.utils.configuration import load_config, load_config_stdin
+from armory.utils.version import to_docker_tag
 import armory.logs
 
 
@@ -760,6 +761,9 @@ def main() -> int:
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version", "version"):
         print(f"{armory.__version__}")
+        sys.exit(0)
+    elif sys.argv[1] == "--show-docker-version-tag":
+        print(to_docker_tag(armory.__version__))
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=usage())
