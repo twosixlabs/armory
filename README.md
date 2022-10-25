@@ -33,6 +33,8 @@ evaluation outputs.
 
 To change these default directories simply run `armory configure` after installation.
 
+If installing from the git repo in editable mode, ensure that your pip version is 22+. 
+
 # Usage
 
 There are three ways to interact with Armory's container system.
