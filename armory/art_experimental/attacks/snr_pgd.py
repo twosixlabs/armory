@@ -308,16 +308,10 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
                      perturbed.
         :return: Perturbations.
         """
-        # Get gradient wrt loss; invert it if attack is targeted
-        import art
-        import torch  # lgtm [py/repeated-import]
+        import torch
 
-        if art.__version__.startswith("1.4"):
-            grad = self.estimator.loss_gradient_framework(x, y) * (
-                1 - 2 * int(self.targeted)
-            )
-        else:
-            grad = self.estimator.loss_gradient(x=x, y=y) * (1 - 2 * int(self.targeted))
+        # Get gradient wrt loss; invert it if attack is targeted
+        grad = self.estimator.loss_gradient(x=x, y=y) * (1 - 2 * int(self.targeted))
         assert x.shape == grad.shape
 
         # Apply mask
