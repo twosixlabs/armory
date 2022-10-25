@@ -2,7 +2,7 @@
 echo "Executing 'black' formatter..."
 
 pushd `git rev-parse --show-toplevel` > /dev/null
-  black --check --diff --color .
+  python -m black --check --diff --color .
   if [ $? -ne 0 ]; then
     python -m black ./
     echo "Some files were formatted."
