@@ -17,7 +17,7 @@
         "knowledge": "black",
         "kwargs": {
             "backdoor_kwargs": {
-                "backdoor_path": "./armory/utils/triggers/clapping.wav",
+                "backdoor_path": "clapping.wav",
                 "duration": 1,
                 "random": false,
                 "sampling_rate": 16000,

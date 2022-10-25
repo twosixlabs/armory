@@ -3,6 +3,8 @@ import numpy as np
 
 from art.attacks.poisoning import PoisoningAttackBackdoor
 
+from armory.utils import triggers
+
 # from art.attacks.poisoning.perturbations.audio_perturbations import (
 #    insert_audio_trigger,
 #    insert_tone_trigger,
@@ -66,7 +68,7 @@ class CacheAudioTrigger(CacheTrigger):
     def __init__(
         self,
         sampling_rate: int = 16000,
-        backdoor_path: str = "../../../utils/data/backdoors/cough_trigger.wav",
+        backdoor_path: str = "whistle.wav",
         duration: float = 1.0,
         **kwargs,
     ):
@@ -75,6 +77,7 @@ class CacheAudioTrigger(CacheTrigger):
         :param backdoor_path: The path to the audio to insert as a trigger.
         :param duration: Duration of the trigger in seconds. Default `None` if full trigger is to be used.
         """
+        backdoor_path = triggers.get_path(backdoor_path)
         trigger, bd_sampling_rate = librosa.load(
             backdoor_path, mono=True, sr=None, duration=duration
         )
