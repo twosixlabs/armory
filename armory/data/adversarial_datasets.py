@@ -959,6 +959,14 @@ def mot_array_to_coco(batch):
 
     NOTE: 'image_id' is given as the frame of a video, so is not unique
     """
+    if batch.ndim == 2:
+        not_batch = True
+        batch = [batch]
+    elif batch.ndim == 3:
+        not_batch = False
+    else:
+        raise ValueError(f"batch.ndim {batch.ndim} is not in (2, 3)")
+
     output = np.empty(len(batch), dtype=object)
     for i, array in enumerate(batch):
         if not len(array):
@@ -983,6 +991,10 @@ def mot_array_to_coco(batch):
                 }
             )
         output[i] = frames
+
+    if not_batch:
+        output = output[0]
+
     return output
 
 
@@ -1001,6 +1013,12 @@ def mot_coco_to_array(batch):
     An additional field, 'object_id', is required.
     If 'visibility' is not present, it defaults to 1 (visible)
     """
+    if len(batch) == 0 or not isinstance(batch[0], dict):
+        not_batch = True
+        batch = [batch]
+    else:
+        not_batch = False
+
     try:
         output = []
         for video in batch:
@@ -1026,6 +1044,10 @@ def mot_coco_to_array(batch):
         output_array = np.empty(len(batch), dtype=object)
         for i, out in enumerate(output):
             output_array[i] = np.array(out, dtype=np.float32)
+
+    if not_batch:
+        output_array = output_array[0]
+
     return output_array
 
 

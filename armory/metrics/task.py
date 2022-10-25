@@ -1551,14 +1551,15 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 class HOTA_metrics:
-    def __init__(self, tracked_classes=["pedestrian"]):
+    def __init__(self, tracked_classes=("pedestrian",), coco_format=False):
         from collections import defaultdict
         from TrackEval.trackeval.metrics.hota import (
             HOTA,
         )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
-        self.tracked_classes = tracked_classes
+        self.tracked_classes = list(tracked_classes)
+        self.coco_format = coco_format
         self.hota_metrics_per_class_per_videos = {
             key: defaultdict(dict) for key in self.tracked_classes
         }
@@ -1584,6 +1585,11 @@ class HOTA_metrics:
         from TrackEval.trackeval.datasets._base_dataset import (
             _BaseDataset,
         )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+        from armory.data.adversarial_datasets import mot_coco_to_array
+
+        if self.coco_format:
+            gt_data = mot_coco_to_array(gt_data)
+            tracker_data = mot_coco_to_array(tracker_data)
 
         if gt_data.ndim == 3:
             gt_data = gt_data[0]
