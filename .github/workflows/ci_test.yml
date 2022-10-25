@@ -2,7 +2,6 @@
 name: 🐛📦 Build & Test
 
 on:
-  # yamllint disable rule:comments-indentation
   workflow_dispatch:
     # inputs:
     #   test-run:
@@ -15,7 +14,6 @@ on:
     #       - All Tests
     # TODO: Use menu for dispatching workflows
     #  >>> if: github.event.inputs.test-run == 'All Tests' || github.event.inputs.test-run == 'Q & A Test'
-  # yamllint disable rule:comments-indentation
 
   push:
     branches:
@@ -33,12 +31,6 @@ on:
     #   - reopened
     #   - synchronize
     #   - ready_for_review
-
-
-# Limit workflow concurrency to one job per branch.
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
 
 
 env:
