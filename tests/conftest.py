@@ -109,7 +109,6 @@ def docker_client():
 
 def pytest_addoption(parser):
     for args, kwargs in armory_test_parameters:
-        args = args if isinstance(args, tuple) else (args,)
         parser.addoption(*args, **kwargs)
 
 
