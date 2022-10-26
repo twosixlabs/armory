@@ -27,6 +27,7 @@ runs:
         pip install --no-compile --editable '.[developer,engine,math,datasets,pytorch,datasets-builder]'
         armory configure --use-defaults
 
+    # TODO: Resolve differences between dockerized conda and runner.
     - name: ⚙️ Installing Dependencies
       shell: bash
       run: |
@@ -46,4 +47,4 @@ runs:
       with:
         path: |
           .venv/
-        key: ${{ runner.os }}-${{ hashFiles('pyproject.toml') }}
+        key: ${{ runner.os }}-${{ hashFiles('armory/__about__.py') }}
