@@ -5,6 +5,7 @@
         "knowledge": "white",
         "kwargs": {
             "batch_frame_size": 2,
+            "coco_format": true,
             "learning_rate": 0.02,
             "max_iter": 100,
             "optimizer": "pgd",
