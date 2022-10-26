@@ -24,27 +24,27 @@ REQUIRED_DOCKER_IMAGES = [
 armory_test_parameters = (
     (
         ("--armory-mode"),
-        dict(
-            choices=["native", "docker", "both"],
-            default="docker",
-            help="Set Armory Mode [native|docker|both]",
-            required=False,
-        ),
+        {
+            "choices": ["native", "docker", "both"],
+            "default": "docker",
+            "help": "Set Armory Mode [native|docker|both]",
+            "required": False,
+        },
     ),
     (
         ("--scenario-path"),
-        dict(
-            default="None",
-            help="Set path to scenario config file",
-            required=False,
-        ),
+        {
+            "default": "None",
+            "help": "Set path to scenario config file",
+            "required": False,
+        },
     ),
     (
         ("--github-ci"),
-        dict(
-            action="store_true",
-            help="Running in a GitHub CI environment",
-        ),
+        {
+            "action": "store_true",
+            "help": "Running in a GitHub CI environment",
+        },
     ),
 )
 
