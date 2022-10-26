@@ -1659,7 +1659,7 @@ class HOTA_metrics:
             num_gt_dets += len(data["gt_ids"][t])
 
         # Re-label IDs such that there are no empty IDs
-        def relabel(unique_ids, id_map, num_timesteps, sub_data):
+        def relabel(unique_ids, num_timesteps, sub_data):
             if len(unique_ids) > 0:
                 unique_ids = np.unique(unique_ids)
                 id_map = np.nan * np.ones((np.max(unique_ids) + 1))
