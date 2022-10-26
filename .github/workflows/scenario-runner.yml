@@ -1,12 +1,9 @@
 ---
 # yamllint disable
 
-name: 🚂 End-to-End Tests
+name: 🚂 Scenario Runner
 
 on:
-  schedule:
-    - cron: 0 0 * * * # At Midnight Every Day
-
   workflow_dispatch:
     inputs:
       tactic_dir:
