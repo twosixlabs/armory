@@ -23,7 +23,9 @@ from armory.__main__ import run
 pytestmark = pytest.mark.end_to_end  # noqa: F821
 
 
-# TODO: Turn into a block-list
+# NOTE: This is a list of all the scenarios that are currently failing to run based
+#       on resource constraints. This list should be updated as new scenarios are
+#       added to the repo.
 block_list = [
     "./scenario_configs/eval6/carla_mot/carla_mot_dpatch_defended.json",  # waiting on #1655
 ]
