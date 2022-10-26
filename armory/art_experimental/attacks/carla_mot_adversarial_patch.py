@@ -383,7 +383,6 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                 y_gt_coco = self.create_art_annotations_from_coco(y[i])
             else:
                 y_gt_coco = self.create_art_annotations_from_mot(y[i])
-            y_gt_coco = self.create_coco_anno_from_mot_anno(y[i])
             self.gs_coords = y_patch_metadata[i]["gs_coords"]  # patch coordinates
             patch_width = np.max(self.gs_coords[:, :, 0]) - np.min(
                 self.gs_coords[:, :, 0]
