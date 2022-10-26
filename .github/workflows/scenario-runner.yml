@@ -6,7 +6,7 @@ name: 🚂 Scenario Runner
 on:
   workflow_dispatch:
     inputs:
-      tactic_dir:
+      experiments_dir:
         type: choice
         description: 'Tactic Directory'
         required: false
@@ -37,7 +37,7 @@ jobs:
       - name: 👩‍💻 Generating Matrix
         id: generate-matrix
         run: |
-          echo "::set-output name=matrix::$(find ./scenario_configs/${{ github.event.inputs.tactic_dir }} -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
+          echo "::set-output name=matrix::$(find ./scenario_configs/${{ github.event.inputs.experiments_dir }} -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
 
 
   matrix_job:
