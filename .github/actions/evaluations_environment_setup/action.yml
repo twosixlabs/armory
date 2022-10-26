@@ -2,8 +2,7 @@
 # yamllint disable
 name: "Setup Matrix and Armory"
 
-description: "Install Armory"
-
+description: "Install Armory and binary dependencies"
 
 runs:
   using: "composite"
@@ -11,6 +10,7 @@ runs:
     - uses: actions/setup-python@v4
       with:
         python-version: 3.9
+
 
     - name: 🌱 Setup Test Enviroment
       shell: bash
@@ -21,11 +21,13 @@ runs:
         virtualenv .venv
         source .venv/bin/activate
 
+
     - name: ⚙️ Installing Armory
       shell: bash
       run: |
         pip install --no-compile --editable '.[developer,engine,math,datasets,pytorch,datasets-builder]'
         armory configure --use-defaults
+
 
     # TODO: Resolve differences between dockerized conda and runner.
     - name: ⚙️ Installing Dependencies
@@ -40,6 +42,7 @@ runs:
         python3 setup.py develop
         # Requires cython for install, so will fail if run in the same pip install as cython
         pip install --no-cache-dir cython-bbox
+
 
     - name: 🐍 Load Cached Venv
       id: cache
