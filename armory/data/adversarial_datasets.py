@@ -1047,7 +1047,7 @@ def mot_coco_to_array(batch):
     An additional field, 'object_id', is required.
     If 'visibility' is not present, it defaults to 1 (visible)
     """
-    if len(batch) == 0 or not isinstance(batch[0], dict):
+    if len(batch) == 0 or isinstance(batch[0], dict):
         not_batch = True
         batch = [batch]
     else:
