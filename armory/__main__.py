@@ -701,9 +701,8 @@ def exec(command_args, prog, description):
     if exec_args:
         command = " ".join(exec_args)
     else:
-        print("ERROR: exec command required")
-        parser.print_help()
-        sys.exit(1)
+        print("WARNING: no exec command provided. Using no-op.")
+        command = "true # No-op"
 
     args = parser.parse_args(armory_args)
     armory.logs.update_filters(args.log_level, args.debug)
