@@ -57,12 +57,13 @@
         }
     },
     "scenario": {
-        "kwargs": {},
+        "kwargs": {
+            "tracked_classes": [
+                "pedestrian"
+            ]
+        },
         "module": "armory.scenarios.carla_mot",
-        "name": "CarlaMOT",
-        "tracked_classes": [
-            "pedestrian"
-        ]
+        "name": "CarlaMOT"
     },
     "sysconfig": {
         "docker_image": "twosixarmory/carla-mot",

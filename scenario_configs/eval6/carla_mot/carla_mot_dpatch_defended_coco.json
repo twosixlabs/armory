@@ -5,16 +5,13 @@
         "knowledge": "white",
         "kwargs": {
             "batch_frame_size": 2,
-            "coco_format": true,
-            "learning_rate": 0.02,
-            "max_iter": 100,
-            "optimizer": "pgd",
-            "targeted": false,
+            "learning_rate": 0.002,
+            "max_iter": 1000,
             "verbose": true
         },
-        "module": "armory.art_experimental.attacks.carla_mot_adversarial_patch",
-        "name": "CARLAMOTAdversarialPatchPyTorch",
-        "use_label": true
+        "module": "armory.art_experimental.attacks.carla_mot_patch",
+        "name": "CARLAMOTDapricotPatch",
+        "use_label": false
     },
     "dataset": {
         "batch_size": 1,
@@ -24,7 +21,20 @@
         "module": "armory.data.adversarial_datasets",
         "name": "carla_multi_object_tracking_dev"
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "clip_values": [
+                0.0,
+                1.0
+            ],
+            "quality": 50
+        },
+        "module": "art.defences.preprocessor",
+        "name": "JpegCompression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": true,
         "perturbation": "l0",
@@ -72,7 +82,8 @@
     "sysconfig": {
         "docker_image": "twosixarmory/carla-mot",
         "external_github_repo": [
-            "JonathonLuiten/TrackEval"
+            "JonathonLuiten/TrackEval",
+            "colour-science/colour@v0.3.16"
         ],
         "gpus": "all",
         "output_dir": null,

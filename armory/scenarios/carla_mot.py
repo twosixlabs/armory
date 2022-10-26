@@ -12,11 +12,11 @@ from armory.logs import log
 
 
 class CarlaMOT(CarlaVideoTracking):
-    def __init__(self, config, **kwargs):
-        self.tracked_classes = config.get("scenario", {}).get(
-            "tracked_classes", ["pedestrian"]
-        )
-        self.coco_format = config.get("scenario", {}).get("coco_format", False)
+    def __init__(
+        self, config, tracked_classes=("pedestrian",), coco_format=False, **kwargs
+    ):
+        self.tracked_classes = list(tracked_classes)
+        self.coco_format = coco_format
         if self.coco_format and not config["dataset"].get("coco_format"):
             log.warning(
                 "Overriding dataset kwarg coco_format to True, mirroring scenario config"
