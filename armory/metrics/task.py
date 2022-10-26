@@ -1556,7 +1556,7 @@ class HOTA_metrics:
 
         # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
         from TrackEval.trackeval.metrics.hota import HOTA
-        from TrackEval.trackeval.dataset._base_dataset import _BaseDataset
+        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset
         from armory.data.adversarial_datasets import mot_coco_to_array
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
