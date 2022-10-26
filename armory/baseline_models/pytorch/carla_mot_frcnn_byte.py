@@ -175,8 +175,8 @@ class PyTorchTracker(PyTorchFasterRCNN):
                         results.append(
                             (
                                 [
-                                    frame_id + 1 for _ in range(len(online_ids))
-                                ],  # MOT frame index is 1-based
+                                    frame_id for _ in range(len(online_ids))
+                                ],  # Use 0-based index for MOT frame
                                 online_ids,
                                 online_tlwhs,
                                 online_scores,

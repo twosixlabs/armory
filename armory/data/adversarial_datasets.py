@@ -830,6 +830,29 @@ class ClipVideoTrackingLabels:
         return boxes, patch_metadata_dict
 
 
+class ClipMOTVideoTrackingLabels(ClipVideoTrackingLabels):
+    """
+    Truncate labels for CARLA multi-object video tracking, when max_frames is set
+        Assumes zero indexing for frames
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, x, labels):
+        y, patch_metadata_dict = labels
+        if len(y) == 1:
+            y = np.expand_dims(y[y[:, :, 0] < self.max_frames], 0)
+        else:
+            for i in range(len(y)):
+                y_i = y[i]
+                y[i] = y_i[y_i[:, 0] < self.max_frames]
+        return y, patch_metadata_dict
+
+
 def carla_video_tracking_label_preprocessing(x, y):
     box_labels, patch_metadata = y
     box_array = np.squeeze(box_labels, axis=0)
@@ -949,6 +972,16 @@ def carla_video_tracking_test(
 def carla_mot_label_preprocessing(x, y):
     annotations, patch_metadata = y
     patch_metadata = {k: np.squeeze(v, axis=0) for k, v in patch_metadata.items()}
+    return (annotations, patch_metadata)
+
+
+def mot_zero_index(x, y):
+    annotations, patch_metadata = y
+    if annotations.ndim == 2:
+        annotations[:, 0] -= 1
+    else:
+        for annotation in annotations:
+            annotation[:, 0] -= 1
     return (annotations, patch_metadata)
 
 
@@ -1092,7 +1125,7 @@ def carla_multi_object_tracking_dev(
     preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
 
     label_preprocessing_fn = datasets.label_preprocessing_chain(
-        clip_labels, coco_label_preprocess, label_preprocessing_fn
+        mot_zero_index, clip_labels, coco_label_preprocess, label_preprocessing_fn
     )
 
     return datasets._generator_from_tfds(
