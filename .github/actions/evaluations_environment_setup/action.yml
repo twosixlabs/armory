@@ -47,4 +47,4 @@ runs:
       with:
         path: |
           .venv/
-        key: ${{ runner.os }}-${{ hashFiles('armory/__about__.py') }}
+        key: ${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('armory/__about__.py') }}
