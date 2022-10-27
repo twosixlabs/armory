@@ -748,7 +748,6 @@ def usage():
         lines.append(f"    {name} - {description}")
     lines.extend(
         [
-            "    --interactive - start an interactive session",
             "    -v, --version - get current armory version",
             "",
             f"Run '{PROGRAM} <command> --help' for more information on a command.",
