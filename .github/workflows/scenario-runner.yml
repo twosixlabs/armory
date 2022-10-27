@@ -4,6 +4,12 @@
 name: 🚂 Scenario Runner
 
 on:
+  # Trigger update
+  push:
+    branches:
+      - master
+      - develop
+
   workflow_dispatch:
     inputs:
       experiments_dir:
