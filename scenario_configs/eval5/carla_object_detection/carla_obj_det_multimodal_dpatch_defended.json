@@ -39,7 +39,9 @@
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {"num_classes": 4},
+        "model_kwargs": {
+            "num_classes": 4
+        },
         "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn_robust_fusion",
         "name": "get_art_model_mm_robust",
         "weights_file": "carla_multimodal_robust_weights_eval5.pt",
