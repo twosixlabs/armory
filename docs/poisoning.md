@@ -1,13 +1,13 @@
 # Poisoning
 
-Updated May 2022
+Updated October 2022
 
-Amory supports a handful of specific poisoning threat models and attacks.  This document will first describe these, providing enough background for newcomers to get up to speed on what these attacks do.  Then, the peculiarities of the poisoning configs will be addressed, including lots of helpful information about Witches' Brew.  Finally, we will describe the poisoning-specific metrics.
+Armory supports a handful of specific poisoning threat models and attacks.  This document will first describe these, providing enough background for newcomers to get up to speed on what these attacks do.  Then, the peculiarities of the poisoning configs will be addressed, including lots of helpful information about Witches' Brew.  Finally, we will describe the poisoning-specific metrics.
 
 
 ## Threat Models
 
-There are currently three threat models handled by Armory: dirty-label backdoor, clean-label backdoor, and Witches' Brew (clean-label gradient matching).  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
+There are currently four threat models handled by Armory: dirty-label backdoor, clean-label backdoor, Witches' Brew (clean-label gradient matching), and Sleeper Agent.  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
 The trigger is usually a small (but not imperceptible) image superposed on the data, and the adversary's goal is to force the model to misclassify test images that have the trigger applied.  Armory includes several trigger images under `utils/triggers/`.
 
 
@@ -18,6 +18,9 @@ In poisoning attacks, the term _source class_ refers to the label of the image(s
 
 In a [Dirty-label Backdoor (DLBD) Attack](https://arxiv.org/abs/1708.06733), training images are chosen from the source class, have a trigger applied to them, and then have their labels flipped to the target class.  The model is then trained on this modified data.  The adversary's goal is that test images from the source class will be classified as `target` when the trigger is applied at test time.
 
+#### Audio
+
+The DLBD attack for audio is similar to that of video. The difference is that instead of the trigger being an image that is placed over the existing image, the trigger is a short audio clip that is mixed with the existing audio. Example configs for speech are [here](../scenario_configs/eval6/poisoning)
 
 
 ### Clean-label backdoor
@@ -34,6 +37,11 @@ At test time, the adversary applies the trigger to source-class images in order 
 Because witches' brew is so different a threat model from the backdoor attacks that `poison.py` was initially built for, it has its own scenario.
 
 
+### Sleeper Agent
+
+[Sleeper Agent](https://arxiv.org/abs/2106.08970) is a clean-label attack that applies $l_\infty$ bounded perturbations to a set of training images to embed a hidden trigger into the model that can be applied at inference time.
+This threat model does not assume access to the target architecture, but instead trains a surrogate model to produce the perturbations.
+This approach uses gradient alignment to optimize the perturbations for the trigger.
 
 
 ## Configuration files
