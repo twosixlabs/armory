@@ -668,8 +668,11 @@ def launch(command_args, prog, description):
     _set_gpus(config, args.use_gpu, args.no_gpu, args.gpus)
     (config, args) = arguments.merge_config_and_args(config, args)
 
-    # this is the expected meaning of `launch()` that is, start an interactive session even if `--interactive` was not specified
     rig = Evaluator(config, root=args.root)
+    if not args.interactive and not args.jupyter:
+        args.interactive = True
+
+    # this is the expected meaning of `launch()` that is, start an interactive session even if `--interactive` was not specified
     exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
