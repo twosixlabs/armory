@@ -4,6 +4,9 @@
 name: 🚂 Scenario Runner
 
 on:
+  # Trigger update
+  # push:
+
   workflow_dispatch:
     inputs:
       experiments_dir:
@@ -12,6 +15,7 @@ on:
         required: false
         default: eval6
         options:
+        - eval6
         - eval5
         - eval1-4
 
@@ -74,7 +78,7 @@ jobs:
           pytest \
             -c pyproject.toml \
             --verbose \
-            -s ./tests/end_to_end/test_scenario_runner.py \
+            -s ./tests/end_to_end/test_e2e_scenarios.py \
             --scenario-path ${{ matrix.scenario_path }} \
             --github-ci | tee "scenario_evaluation.log"
 
