@@ -21,7 +21,7 @@ In a [Dirty-label Backdoor (DLBD) Attack](https://arxiv.org/abs/1708.06733), tra
 #### Audio
 
 The DLBD attack for audio is similar to that of video. The difference is that instead of the trigger being an image that is placed over the existing image, the trigger is a short audio clip that is mixed with the existing audio. Example configs for speech are [here](../scenario_configs/eval6/poisoning)
-
+Current triggers include a whistle and clapping.
 
 ### Clean-label backdoor
 
@@ -57,6 +57,13 @@ The `adhoc` section of the config is where most of the configuration action happ
 The `adhoc` section is where `source_class`, `target_class`, and `train_epochs` are set.  The fields `compute_fairness_metrics` and `explanatory_model` go together, because the explanatory model is used to compute the fairness metrics, as described in the next section.  If the defense is a filtering defense and is separate from the model, it can be turned off with `use_poison_filtering_defense:false`.  Dataset poisoning can be turned off by setting `poison_dataset:false`; this has been the de facto approach to testing 0% poison, because ART throws an error in some cases when fraction poisoned is set to 0.  A final flag to note is `fit_defense_classifier_outside_defense`; this pertains to filters or other defenses that are external to the model and defaults to `true`.  If the defense does not require a trained model to operate, you can save time by setting this to `false`, because even if no defense classifier is provided, it will automatically train a copy of the model under evaluation .
 
 The remaining sections are fairly straightforward.  The `attack` section carries the parameters for the attack (those not specified under `adhoc`, that is), including the size, position, and blend of backdoor triggers if applicable.  The `defense` section for the _perfect filter_ baseline defense merits some explanation.  Because a perfect filter requires knowledge of which data were poisoned, and this information is not available to defenses, the perfect filter is implemented directly in scenario code.  However, Armory config validation currently requires a value for `module` and `name` under the `defense` section: the baseline configs set these to `"null"` (the string) although any string will work because the scenario ignores those values if `perfect_filter:true` is present in `defense/kwargs`.
+
+### Sleeper Agent parameters
+
+The configuration parameters for sleeper agent largely follows from the [ART implementation](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/poisoning/sleeper_agent_attack.py).
+A couple of key differences include the `patch` kwarg being a path to a file instead of an array, with `patch_size` being used to resize the image to the desired size, and `k_trigger` being the number of train images to select for generating the trigger.
+Other differences are minor word changes, and can be found [here](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poisoning_sleeper_agent.py#L101-L113).
+
 
 ### Witches' Brew trigger specification
 
