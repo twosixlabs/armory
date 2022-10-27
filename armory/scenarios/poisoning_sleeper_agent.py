@@ -103,7 +103,7 @@ class SleeperAgentScenario(Poison):
                     "indices_target": np.asarray(
                         self.y_clean == self.target_class
                     ).nonzero()[0],
-                    "percent_poison": "fraction_poisoned",
+                    "percent_poison": adhoc_config["fraction_poisoned"],
                     "class_source": self.source_class,
                     "class_target": self.target_class,
                     # convert to tuple as required by ART attack
