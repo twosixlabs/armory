@@ -17,7 +17,6 @@
         "knowledge": "black",
         "kwargs": {
             "batch_size": 500,
-            "device_name": "cuda",
             "epsilon": 0.0627,
             "k_trigger": 1000,
             "learning_rate_schedule": [

@@ -98,6 +98,15 @@ class SleeperAgentScenario(Poison):
             patch_size = kwargs.pop("patch_size")
             patch = Image.open(triggers.get_path(kwargs["patch"]))
             patch = np.asarray(patch.resize((patch_size, patch_size)))
+            device_name = kwargs.pop("device_name", None)
+            if device_name is None:
+                try:
+                    import torch
+
+                    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+                except ImportError:
+                    device_name = "cpu"
+
             kwargs.update(
                 {
                     "indices_target": np.asarray(
@@ -109,6 +118,7 @@ class SleeperAgentScenario(Poison):
                     # convert to tuple as required by ART attack
                     "learning_rate_schedule": tuple(kwargs["learning_rate_schedule"]),
                     "patch": patch,
+                    "device_name": device_name,
                 }
             )
             K = kwargs.pop("k_trigger")
