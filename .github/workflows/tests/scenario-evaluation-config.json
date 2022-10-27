@@ -1,0 +1,8 @@
+{
+    "dataset_dir": "/tmp/armory/datasets",
+    "local_git_dir": "/tmp/armory/git",
+    "output_dir": "/tmp/armory/outputs",
+    "saved_model_dir": "/tmp/armory/saved_models",
+    "tmp_dir": "/tmp/armory/tmp",
+    "verify_ssl": true
+}
