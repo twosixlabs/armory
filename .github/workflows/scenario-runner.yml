@@ -8,7 +8,7 @@ on:
     inputs:
       experiments_dir:
         type: choice
-        description: 'Tactic Directory'
+        description: 'Experiments Directory'
         required: false
         default: eval6
         options:
