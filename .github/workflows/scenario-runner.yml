@@ -1,0 +1,93 @@
+---
+# yamllint disable
+
+name: 🚂 Scenario Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiments_dir:
+        type: choice
+        description: 'Experiments Directory'
+        required: false
+        default: eval6
+        options:
+        - eval5
+        - eval1-4
+
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+
+jobs:
+  matrix_generator:
+    name: Matrix Generator
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 👩‍💻 Generating Matrix
+        id: generate-matrix
+        run: |
+          echo "::set-output name=matrix::$(find ./scenario_configs/${{ github.event.inputs.experiments_dir }} -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
+
+
+  matrix_job:
+    runs-on: ubuntu-latest
+    needs: matrix_generator
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario_path: ${{ fromJson(needs.matrix_generator.outputs.matrix) }}
+    steps:
+      - name: 🐄 Got git?
+        uses: actions/checkout@v3
+
+      - name: 🐍 Setup Environment
+        uses: ./.github/actions/evaluations_environment_setup
+
+      - name: ⚒️ Install Prerequisites
+        run: |
+          source .venv/bin/activate
+
+      - name: 🚀 Run Scenario Evaluation
+        timeout-minutes: 30
+        env:
+          ARMORY_INSTALL: "/tmp"
+          HOME: "/tmp"
+        run: |
+          mkdir -p "/tmp/logs"
+
+          mkdir -p "${HOME}/armory/outputs/"
+          mkdir -p "${HOME}/.armory/"
+
+          armory configure --use-defaults
+
+          pytest \
+            -c pyproject.toml \
+            --verbose \
+            -s ./tests/end_to_end/test_scenario_runner.py \
+            --scenario-path ${{ matrix.scenario_path }} \
+            --github-ci | tee "scenario_evaluation.log"
+
+
+      - name: 📁 Archiving Artifacts
+        uses: actions/upload-artifact@v3
+        # if: ${{ !failure() }}
+        continue-on-error: true
+        with:
+          name: evaluation-artifacts
+          retention-days: 1
+          path: |
+            /tmp/logs/
+            /tmp/results/
+            /tmp/armory/outputs/
+            /tmp/.armory/outputs/

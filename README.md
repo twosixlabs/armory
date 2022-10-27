@@ -33,6 +33,8 @@ evaluation outputs.
 
 To change these default directories simply run `armory configure` after installation.
 
+If installing from the git repo in editable mode, ensure that your pip version is 22+. 
+
 # Usage
 
 There are three ways to interact with Armory's container system.
@@ -119,8 +121,8 @@ Agency (DARPA).
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[ci-badge]: /../../workflows/GitHub%20CI/badge.svg
-[ci-url]: /../../actions/
+[ci-badge]: https://github.com/twosixlabs/armory/workflows/GitHub%20CI/badge.svg
+[ci-url]: https://github.com/twosixlabs/armory/actions/
 [pypi-badge]: https://badge.fury.io/py/armory-testbed.svg
 [pypi-url]: https://pypi.org/project/armory-testbed
 [python-badge]: https://img.shields.io/pypi/pyversions/armory-testbed

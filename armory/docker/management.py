@@ -7,6 +7,7 @@ import docker
 
 import armory
 from armory import paths
+from armory.docker import images
 from armory.logs import log
 
 
@@ -79,7 +80,7 @@ class ArmoryInstance(object):
         #  ie after the sentinel
         sentinel_found = False
         for out in result.output:
-            output = out.decode().strip()
+            output = out.decode(encoding="utf-8", errors="replace").strip()
             if not output:  # skip empty lines
                 continue
             # this looks absurd, but in some circumstances result.output will combine
@@ -119,7 +120,7 @@ class ManagementInstance(object):
     def __init__(self, image_name: str, runtime="runc"):
         self.instances = {}
         self.runtime = runtime
-        self.name = image_name
+        self.name = images.ensure_image_present(image_name)
 
     def start_armory_instance(
         self,

@@ -1,11 +1,11 @@
 """
 This module enables loading of different perturbation functions in poisoning
 """
-import os
 
 from art.attacks.poisoning import PoisoningAttackBackdoor
 from art.attacks.poisoning import perturbations
-import armory
+
+from armory.utils import triggers
 
 
 def poison_loader_dlbd(**kwargs):
@@ -26,15 +26,8 @@ def poison_loader_dlbd(**kwargs):
             raise ValueError(
                 "poison_type 'image' requires 'backdoor_path' kwarg path to image"
             )
-        backdoor_packaged_with_armory = kwargs.get(
-            "backdoor_packaged_with_armory", False
-        )
-        if backdoor_packaged_with_armory:
-            backdoor_path = os.path.join(
-                # Get base directory where armory is pip installed
-                os.path.dirname(os.path.dirname(armory.__file__)),
-                backdoor_path,
-            )
+        backdoor_path = triggers.get_path(backdoor_path)
+
         size = kwargs.get("size")
         if size is None:
             raise ValueError("poison_type 'image' requires 'size' kwarg tuple")

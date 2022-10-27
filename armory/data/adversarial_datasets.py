@@ -902,6 +902,7 @@ def carla_video_tracking_test(
     cache_dataset: bool = True,
     framework: str = "numpy",
     shuffle_files: bool = False,
+    max_frames: int = None,
     **kwargs,
 ):
     """
@@ -914,6 +915,18 @@ def carla_video_tracking_test(
         )
     if batch_size != 1:
         raise ValueError("carla_obj_det_dev batch size must be set to 1")
+
+    if max_frames:
+        clip = datasets.ClipFrames(max_frames)
+        clip_labels = ClipVideoTrackingLabels(max_frames)
+    else:
+        clip = None
+        clip_labels = None
+
+    preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
+    label_preprocessing_fn = datasets.label_preprocessing_chain(
+        clip_labels, label_preprocessing_fn
+    )
 
     return datasets._generator_from_tfds(
         "carla_video_tracking_test:2.0.0",

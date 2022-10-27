@@ -1,5 +1,5 @@
 {
-    "_description": "CIFAR10 dirty label backdoor, watermark trigger, spectral signature defense",
+    "_description": "CIFAR10 dirty label backdoor, watermark trigger, activation defense",
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
@@ -15,10 +15,10 @@
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "backdoor_path": "watermarking.png",
+            "backdoor_path": "copyright.png",
             "base_img_size_x": 32,
             "base_img_size_y": 32,
-            "blend": 1.0,
+            "blend": 0.18,
             "channels_first": false,
             "mode": "RGB",
             "poison_module": "art.attacks.poisoning.perturbations",
@@ -39,10 +39,14 @@
     },
     "defense": {
         "kwargs": {
-            "expected_pp_poison": 0.3
+            "cluster_analysis": "smaller",
+            "clustering_method": "KMeans",
+            "nb_clusters": 2,
+            "nb_dims": 43,
+            "reduce": "PCA"
         },
-        "module": "art.defences.detector.poison.spectral_signature_defense",
-        "name": "SpectralSignatureDefense",
+        "module": "art.defences.detector.poison.activation_defence",
+        "name": "ActivationDefence",
         "type": "PoisonFilteringDefence"
     },
     "metric": null,
