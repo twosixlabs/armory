@@ -669,10 +669,11 @@ def launch(command_args, prog, description):
     (config, args) = arguments.merge_config_and_args(config, args)
 
     rig = Evaluator(config, root=args.root)
+
+    # this is the expected meaning of `launch()` that is, start an interactive session even if `--interactive` was not specified
     if not args.interactive and not args.jupyter:
         args.interactive = True
 
-    # this is the expected meaning of `launch()` that is, start an interactive session even if `--interactive` was not specified
     exit_code = rig.run(
         interactive=args.interactive,
         jupyter=args.jupyter,
