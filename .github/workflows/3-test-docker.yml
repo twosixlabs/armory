@@ -1,5 +1,4 @@
 ---
-# yamllint disable
 name: 🤖 Docker Tests
 
 on: workflow_call

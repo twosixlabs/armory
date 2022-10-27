@@ -1,12 +1,10 @@
 import logging
 import os
-import requests
-
-import pytest
 
 import docker
 from docker.errors import ImageNotFound
-
+import pytest
+import requests
 
 from armory import paths, __version__
 
@@ -17,37 +15,7 @@ REQUIRED_DOCKER_IMAGES = [
     f"twosixarmory/pytorch:{__version__}",
     f"twosixarmory/tf2:{__version__}",
     f"twosixarmory/pytorch-deepspeech:{__version__}",
-    f"twosixarmory/carla-mot:{__version__}",
 ]
-
-
-armory_test_parameters = (
-    (
-        ("--armory-mode"),
-        {
-            "choices": ["native", "docker", "both"],
-            "default": "docker",
-            "help": "Set Armory Mode [native|docker|both]",
-            "required": False,
-        },
-    ),
-    (
-        ("--scenario-path"),
-        {
-            "default": "None",
-            "help": "Set path to scenario config file",
-            "required": False,
-        },
-    ),
-    (
-        ("--github-ci"),
-        {
-            "action": "store_true",
-            "help": "Running in a GitHub CI environment",
-        },
-    ),
-)
-
 
 # Added this to make run local
 paths.set_mode("host")
@@ -108,9 +76,13 @@ def docker_client():
 
 
 def pytest_addoption(parser):
-    for args, kwargs in armory_test_parameters:
-        args = args if isinstance(args, tuple) else (args,)
-        parser.addoption(*args, **kwargs)
+    parser.addoption(
+        "--armory-mode",
+        action="store",
+        default="docker",
+        choices=["native", "docker", "both"],
+        help="Set Armory Mode [native|docker|both]",
+    )
 
 
 def pytest_configure(config):
@@ -121,6 +93,7 @@ def pytest_configure(config):
 
 
 def pytest_runtest_setup(item):
+
     # Setting up for `--armory-mode`
     parameters = [
         mark.args[0] for mark in item.iter_markers(name="skip_test_if_armory_mode")
@@ -131,16 +104,8 @@ def pytest_runtest_setup(item):
 
 
 @pytest.fixture()
-def pass_parameters(request):
-    setattr(request.cls, "config", request.config)
-
-    for args, kwargs in armory_test_parameters:
-        param = args.replace("--", "").replace("-", "_")
-        setattr(request.cls, param, request.config.getoption(param))
-
-
-@pytest.fixture()
 def external_resources():
+
     try:
         requests.get("https://www.google.com/").status_code
     except Exception as e:
