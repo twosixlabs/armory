@@ -2,7 +2,6 @@
 echo "Executing 'flake8' formatter..."
 
 pushd `git rev-parse --show-toplevel` > /dev/null
-
   python -m flake8        \
     --count               \
     --exit-zero           \
@@ -11,6 +10,5 @@ pushd `git rev-parse --show-toplevel` > /dev/null
     --statistics          \
     --show-source         \
     --config=.flake8 ./
-
 popd
 
