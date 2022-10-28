@@ -5,6 +5,7 @@
         "knowledge": "white",
         "kwargs": {
             "batch_frame_size": 2,
+            "coco_format": true,
             "learning_rate": 0.02,
             "max_iter": 100,
             "optimizer": "pgd",
@@ -17,6 +18,7 @@
     },
     "dataset": {
         "batch_size": 1,
+        "coco_format": true,
         "eval_split": "dev",
         "framework": "numpy",
         "module": "armory.data.adversarial_datasets",
@@ -49,6 +51,7 @@
                 "track_buffer": 60,
                 "track_thresh": 0.2
             },
+            "coco_format": true,
             "conf_thresh": 0.0,
             "nms_thresh": 0.9,
             "tracked_classes": [
@@ -58,6 +61,7 @@
     },
     "scenario": {
         "kwargs": {
+            "coco_format": true,
             "tracked_classes": [
                 "pedestrian"
             ]
