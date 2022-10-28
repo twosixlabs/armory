@@ -1,11 +1,12 @@
 ---
-# yamllint disable
 name: 🤖 Docker Tests
 
 on: workflow_call
 
+
 env:
   DOCKER_BUILDKIT: 1
+
 
 # TODO: Add independent job that builds the images.
 jobs:

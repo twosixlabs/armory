@@ -1,11 +1,11 @@
 ---
-# yamllint disable
 name: 💻 Stand Alone Tests
 
-on: workflow_call
+on:
+  workflow_call:
+
 
 jobs:
-
   stand-alone-test:
     name: 📝 Stand Alone Test Suite
     runs-on: ${{ matrix.os }}-latest
