@@ -29,7 +29,7 @@ popd > /dev/null
 
 
 if [ "${EXIT_STATUS}" -ne 0 ]; then
-  echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
+  echo "🚨 Pre-commit hooks failed. Please re-run 'git add' to fix the issues 🚑"
 fi
 
 
