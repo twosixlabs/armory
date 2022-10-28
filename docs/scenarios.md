@@ -1,22 +1,216 @@
 # Scenarios
-Armory is intended to evaluate threat-model scenarios. Baseline evaluation scenarios
-are described below. Additionally, we've provided some academic standard scenarios.
+Armory is intended to evaluate threat-model scenarios.
+Baseline evaluation scenarios are described below.
+Additionally, we've provided some academic standard scenarios.
 
 ## Configuration Files
-
 Scenario configuration files are found in the `scenario_configs` directory [here](scenario_configs).
-The most recent config files are found in the `eval5` subfolder and older configs are found in the `eval1-4` subfolder.
+The most recent config files are found in the `eval6` subfolder and older configs are found in the `eval5` and `eval1-4` subfolders.
 There are also symlinks to representative configs found in the base of the `scenario_configs` directory.
 
 ## Base Scenario Class
-All scenarios inherit from the [Base Armory Scenario](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/base.py). The
-base class parses an armory configuration file and calls a particular scenario's
-private `_evaluate` to perform all of the computation for a given threat-models
-robustness to attack. All `_evaluate` methods return a  dictionary of recorded metrics
-which are saved into the armory `output_dir` upon  completion.
+All scenarios inherit from the [Scenario](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/scenario.py) class.
+This class parses an armory configuration file and calls its `evaluate` method to perform all of the computation for a given threat-models robustness to attack.
+All `evaluate` methods save a dictionary of recorded metrics which are saved into the armory `output_dir` upon  completion.
+Scenarios are implemented as subclasses of `Scenario`, and typically given their own file in the [Scenario's Directory](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/).
+
+Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed from.
+More information on poisoning scenarios are documented [here](poisoning.md).
 
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
+These are presented here as a combination of scenario, dataset, baseline model, and attack, as they correspond to configuration files.
+
+### CARLA Overhead Multi-Object tracking (MOT) (Updated October 2022)
+
+TODO: fix for current
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
+
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
+
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
+
+
+
+### CARLA Overhead [Multimodal] Object Detection (Updated October 2022)
+
+TODO: fix for current
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
+
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
+
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
+
+
+
+### Poisoning on Speech Commands Audio with Dirty Label Attack (Updated October 2022)
+
+TODO: fix for current
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
+
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
+
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
+
+
+
+### Sleeper Attack Poisoning on CIFAR10 (Updated October 2022)
+
+TODO: fix for current
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
+
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
+
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
+
+
+
+### Librispeech automatic speech recognition with HuBERT (Updated October 2022)
+
+TODO: fix for current
+* **Description:**
+In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+* **Dataset:**
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
+which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+* **Baseline Model:**
+  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
+  * Adversary Operating Environment:
+    * Non-real time, physical-like patch attacks
+    * Adaptive attacks will be performed on defenses.
+* Adversary Capabilities and Resources
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * mean IOU
+    * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
+* **Baseline Attacks:**
+  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
+* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
+
+| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
+|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
+| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
+| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
+
+a/b in the tables refer to undefended/defended performance results, respectively.
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
+
+
+
 
 ### RESISC image classification (Updated June 2020)
 
