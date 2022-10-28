@@ -10,7 +10,7 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 pushd $PROJECT_ROOT > /dev/null
     for FILE in `ls -1 ./tools/hooks/*.sh | sort`; do
         echo "Importing ${FILE}..."
-        . "${FILE}"
+        source "${FILE}"
         if [ $? -ne 0 ]; then
             EXIT_STATUS=1
         fi
