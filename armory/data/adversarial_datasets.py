@@ -845,11 +845,12 @@ class ClipMOTVideoTrackingLabels(ClipVideoTrackingLabels):
 
     def clip_boxes(self, boxes):
         if len(boxes) == 1:
-            boxes = np.expand_dims(boxes[boxes[:, :, 0] < self.max_frames], 0)
+            boxes_out = np.expand_dims(boxes[boxes[:, :, 0] < self.max_frames], 0)
         else:
-            for i in range(len(boxes)):
-                boxes[i] = boxes[i][boxes[i][:, 0] < self.max_frames]
-        return boxes
+            boxes_out = np.empty(len(boxes), dtype=object)
+            for i, b in enumerate(boxes):
+                boxes_out[i] = b[b[:, 0] < self.max_frames]
+        return boxes_out
 
 
 def carla_video_tracking_label_preprocessing(x, y):
