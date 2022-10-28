@@ -822,35 +822,33 @@ class ClipVideoTrackingLabels:
             raise ValueError(f"max_frames {max_frames} must be > 0")
         self.max_frames = max_frames
 
+    def clip_boxes(self, boxes):
+        return boxes[:, : self.max_frames, :]
+
+    def clip_metadata(self, patch_metadata_dict):
+        return {
+            k: v[:, : self.max_frames, ::] for (k, v) in patch_metadata_dict.items()
+        }
+
     def __call__(self, x, labels):
         boxes, patch_metadata_dict = labels
-        boxes = boxes[:, : self.max_frames, :]
-        for k in patch_metadata_dict:
-            patch_metadata_dict[k] = patch_metadata_dict[k][:, : self.max_frames, ::]
-        return boxes, patch_metadata_dict
+        return self.clip_boxes(boxes), self.clip_metadata(patch_metadata_dict)
 
 
 class ClipMOTVideoTrackingLabels(ClipVideoTrackingLabels):
     """
     Truncate labels for CARLA multi-object video tracking, when max_frames is set
         Assumes zero indexing for frames
+        Also assumes shape is (batch, num_detections, 9)
+            The first value in the 9-dim vector is the frame_id
     """
 
-    def __init__(self, max_frames):
-        max_frames = int(max_frames)
-        if max_frames <= 0:
-            raise ValueError(f"max_frames {max_frames} must be > 0")
-        self.max_frames = max_frames
-
-    def __call__(self, x, labels):
-        y, patch_metadata_dict = labels
-        if len(y) == 1:
-            y = np.expand_dims(y[y[:, :, 0] < self.max_frames], 0)
+    def clip_boxes(self, boxes):
+        if len(boxes) == 1:
+            boxes = np.expand_dims(boxes[boxes[:, :, 0] < self.max_frames], 0)
         else:
-            for i in range(len(y)):
-                y_i = y[i]
-                y[i] = y_i[y_i[:, 0] < self.max_frames]
-        return y, patch_metadata_dict
+            for i in range(len(boxes)):
+                boxes[i] = boxes[i][boxes[i][:, 0] < self.max_frames]
 
 
 def carla_video_tracking_label_preprocessing(x, y):
@@ -1112,7 +1110,7 @@ def carla_multi_object_tracking_dev(
 
     if max_frames:
         clip = datasets.ClipFrames(max_frames)
-        clip_labels = ClipVideoTrackingLabels(max_frames)
+        clip_labels = ClipMOTVideoTrackingLabels(max_frames)
     else:
         clip = None
         clip_labels = None
