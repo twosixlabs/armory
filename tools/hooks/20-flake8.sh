@@ -14,7 +14,3 @@ pushd `git rev-parse --show-toplevel` > /dev/null
 
 popd
 
-# TODO: C901 - Determine if `# noqa: C901` is needed
-#   python3 -m pip install astpretty
-#   if flake8 code == C901:
-#     astpretty(file) => save to artifacts
