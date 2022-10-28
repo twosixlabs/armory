@@ -2,7 +2,7 @@
 echo "Executing 'black' formatter..."
 
 cd `git rev-parse --show-toplevel` > /dev/null
-  python -m black --check --diff --color .
+  python -m black --check --diff --color {armory,tests,docker}/*.py
   if [ $? -ne 0 ]; then
     python -m black ./
     echo "Some files were formatted."
