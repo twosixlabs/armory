@@ -1584,6 +1584,17 @@ class HOTA_metrics:
             raise ValueError(f"Input data must be 2D or 3D, not {data.ndim}")
         return data
 
+    @staticmethod
+    def relabel(unique_ids, list_of_id_arrays):
+        """
+        Re-label int IDs to 1-indexed sequential IDs
+        """
+        unique_ids = sorted(set(unique_ids))
+        new_unique_ids = list(range(1, len(unique_ids) + 1))
+        id_map = {k: v for k, v in zip(unique_ids, new_unique_ids)}
+        new_list = [np.array([id_map[x] for x in array]) for array in list_of_id_arrays]
+        return new_unique_ids, new_list
+
     def preprocess(self, gt_data, tracker_data, tracked_class):
         """
         This function preprocesses data into a format required for HOTA metrics calculation.
@@ -1614,10 +1625,8 @@ class HOTA_metrics:
             "similarity_scores",
         ]
         data = {key: [None] * num_timesteps for key in data_keys}
-        unique_gt_ids = []
-        unique_tracker_ids = []
-        num_gt_dets = 0
-        num_tracker_dets = 0
+        unique_gt_ids, unique_tracker_ids = set(), set()
+        num_gt_dets, num_tracker_dets = 0, 0
         for t in range(num_timesteps):
             # Get all data
             t_index = gt_data[:, 0] == t
@@ -1646,25 +1655,15 @@ class HOTA_metrics:
             data["gt_dets"][t] = gt_dets[gt_to_keep_mask, :]
             data["similarity_scores"][t] = similarity_scores[gt_to_keep_mask]
 
-            unique_gt_ids += list(np.unique(data["gt_ids"][t]))
-            unique_tracker_ids += list(np.unique(data["tracker_ids"][t]))
+            unique_gt_ids.update(data["gt_ids"][t])
+            unique_tracker_ids.update(data["tracker_ids"][t])
             num_tracker_dets += len(data["tracker_ids"][t])
             num_gt_dets += len(data["gt_ids"][t])
 
-        # Re-label IDs such that there are no empty IDs
-        def relabel(unique_ids, num_timesteps, sub_data):
-            if len(unique_ids) > 0:
-                unique_ids = np.unique(unique_ids)
-                id_map = np.nan * np.ones((np.max(unique_ids) + 1))
-                id_map[unique_ids] = np.arange(len(unique_ids))
-                for t in range(num_timesteps):
-                    if len(sub_data[t]) > 0:
-                        sub_data[t] = id_map[sub_data[t]].astype(int)
-            return unique_ids
-
-        unique_gt_ids = relabel(unique_gt_ids, num_timesteps, data["gt_ids"])
-        unique_tracker_ids = relabel(
-            unique_tracker_ids, num_timesteps, data["tracker_ids"]
+        # Re-label int IDs to 1-indexed sequential IDs
+        unique_gt_ids, data["gt_ids"] = self.relabel(unique_gt_ids, data["gt_ids"])
+        unique_tracker_ids, data["tracker_ids"] = self.relabel(
+            unique_tracker_ids, data["tracker_ids"]
         )
 
         # Record overview statistics.
