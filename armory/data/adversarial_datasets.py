@@ -849,6 +849,7 @@ class ClipMOTVideoTrackingLabels(ClipVideoTrackingLabels):
         else:
             for i in range(len(boxes)):
                 boxes[i] = boxes[i][boxes[i][:, 0] < self.max_frames]
+        return boxes
 
 
 def carla_video_tracking_label_preprocessing(x, y):
