@@ -57,7 +57,7 @@ jobs:
       - name: 🚀 Run commit hooks
         run: |
           echo "💄 Running commit hooks for Armory version ${VERSION}"
-
+          export CI_TEST=1
           bash tools/pre-commit.sh
 
 
