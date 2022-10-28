@@ -20,17 +20,18 @@ More information on poisoning scenarios are documented [here](poisoning.md).
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
 These are presented here as a combination of scenario, dataset, baseline model, and attack, as they correspond to configuration files.
+For many scenarios, we also provide metrics of interest and results from the baseline model(s).
 
 ### CARLA Overhead Multi-Object tracking (MOT) (Updated October 2022)
 
 TODO: fix for current
 * **Description:**
-In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+In this scenario, the system under evaluation is an object tracker trained to localize multiple pedestrians in video in an urban environment.
 * **Dataset:**
-The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
-which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of which contains a green-screen in all frames intended for adversarial patch insertion.
+The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
-  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+  * Pretrained [ByteTrack](https://arxiv.org/pdf/2110.06864.pdf) model with an [Faster-RCNN](../armory/baseline_models/pytorch/carla_mot_frcnn_byte.py) base instead of Yolo.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of the tracker through the insertion of adversarial patches.
@@ -44,8 +45,8 @@ which contains a green-screen in all frames intended for adversarial patch inser
     * mean IOU
     * mean succss rate (mean IOUs are calculated for multiple IOU thresholds and averaged)
 * **Baseline Attacks:**
-  * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
-* **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
+  * [Custom Adversarial Texture with Input-Dependent Transformation]()
+* **Baseline Defense**: [JPEG Frame Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
 * **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
 
 | Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
