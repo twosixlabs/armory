@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+echo "Executing 'yamllint' formatter..."
+
+TARGET_FILES=`$TRACKED_FILES | grep -P '^((yaml)|(yml)).*\.py$'`
+
+pushd $PROJECT_ROOT > /dev/null
+  yamllint --no-warnings ./
+popd

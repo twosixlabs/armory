@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-echo "Executing 'yamllint' formatter..."
-
-pushd $PROJECT_ROOT > /dev/null
-
-  yamllint --no-warnings ./
-
-popd
