@@ -10,5 +10,7 @@ pushd $PROJECT_ROOT > /dev/null
     --statistics          \
     --show-source         \
     --config=.flake8 ./
+
+    EXIT_STATUS=$?
 popd
 
