@@ -3,7 +3,7 @@ echo "Executing 'json' formatter..."
 
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
-pushd `git rev-parse --show-toplevel` > /dev/null
+pushd $PROJECT_ROOT > /dev/null
     for FILE in `git diff HEAD --name-only | grep -P '\.json'`; do
         python -mjson.tool $FILE 2>&1 /dev/null
         if [ $? -ne 0 ] ; then

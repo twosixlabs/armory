@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Executing 'yamllint' formatter..."
 
-pushd `git rev-parse --show-toplevel` > /dev/null
+pushd $PROJECT_ROOT > /dev/null
 
   yamllint --no-warnings ./
 
