@@ -1587,10 +1587,10 @@ class HOTA_metrics:
     @staticmethod
     def relabel(unique_ids, list_of_id_arrays):
         """
-        Re-label int IDs to 1-indexed sequential IDs
+        Re-label int IDs to 0-indexed sequential IDs
         """
         unique_ids = sorted(set(unique_ids))
-        new_unique_ids = list(range(1, len(unique_ids) + 1))
+        new_unique_ids = list(range(len(unique_ids)))
         id_map = {k: v for k, v in zip(unique_ids, new_unique_ids)}
         new_list = [np.array([id_map[x] for x in array]) for array in list_of_id_arrays]
         return new_unique_ids, new_list
