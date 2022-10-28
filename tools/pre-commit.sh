@@ -7,11 +7,11 @@ EXIT_STATUS=0
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
 # Environmental variable used to notify hooks we are running in a workflow.
-CI_TEST="${CI_TEST:-0}"
+ARMORY_CI_TEST="${ARMORY_CI_TEST:-0}"
 
-# Collect tracked files based on CI_TEST
+# Collect tracked files based on ARMORY_CI_TEST
 TRACKED_FILES="git diff HEAD --name-only"
-if [ "${CI_TEST}" -ne 0 ]; then
+if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
     TRACKED_FILES="git ls-files"
 fi
 
