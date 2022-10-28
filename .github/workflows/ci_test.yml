@@ -1,4 +1,5 @@
 ---
+# yamllint disable
 name: 🐛📦 Build & Test
 
 on:
