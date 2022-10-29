@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Executing 'black' formatter..."
 
-TARGET_FILES=`$TRACKED_FILES | grep -P '^((armory)|(tests)|(docker)).*\.py$'`
+TARGET_FILES=`$TRACKED_FILES | grep -E '.*\.py$'`
 
 pushd $PROJECT_ROOT > /dev/null
   python -m black --check --diff --color $TARGET_FILES

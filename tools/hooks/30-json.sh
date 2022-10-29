@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Executing 'json' formatter..."
 
-TARGET_FILES=`$TRACKED_FILES | grep -P '\.json'`
+TARGET_FILES=`$TRACKED_FILES | grep -E '\.json'`
 
 pushd $PROJECT_ROOT > /dev/null
     for FILE in ${TARGET_FILES}; do
