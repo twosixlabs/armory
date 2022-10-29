@@ -14,13 +14,7 @@ black .
 ```
 We will update black versioning annually following their [Stability Policy](https://black.readthedocs.io/en/stable/the_black_code_style/index.html#stability-policy).
 
-All JSON files committed to the repository must be formatted using the following command:
-```
-python -m tools.format_json
-```
-It is based off of Python's [json.tool](https://docs.python.org/3/library/json.html#module-json.tool)
-with the `--sort-keys` argument, though overcomes an issue in 3.6 which made it unable to rewrite
-the file it was reading from.
+As of version 0.16.1 `tools/format_json.py` no longer exists. Instead the built-in [json.tool](https://docs.python.org/3/library/json.html#module-json.tool) is used.
 
 We use [Flake8](https://flake8.pycqa.org/) for non-formatting PEP style enforcement.
 ```
@@ -31,13 +25,16 @@ Our repo-specific Flake8 configuration is detailed in `.flake8`.
 
 ### Pre-commit Hooks
 
-If you want those tools to run automatically before each commit, run:
+The above tools can be ran automatically, prior to each commit, by linking `/.git/hooks/pre-commit` to `/tools/pre-commit.sh`. See the example below:
+
 ```bash
-cat tools/pre-commit.sh > .git/hooks/pre-commit
-chmod 755 .git/hooks/pre-commit
+ln -s "`pwd`/tools/pre-commit.sh" "`pwd`/.git/hooks/pre-commit"
+chmod 755 "`pwd`/tools/pre-commit.sh"
 ```
+
 Note: these hooks depend on some python tools being installed in your environment. These
 can be installed using:
+
 ```bash
 pip install .[developer]
 ```

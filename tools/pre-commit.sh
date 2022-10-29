@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copy or link this script into .git/hooks/
-#   $ cp tools/pre-commit.sh .git/hooks/pre-commit
-# It runs automatically in the project root directory (parent of .git/).
+#   $ ln -s "`pwd`/tools/pre-commit.sh" "`pwd`/.git/hooks/pre-commit"
+# This script runs automatically in the project's root directory (parent of .git/).
 
 EXIT_STATUS=0
 PROJECT_ROOT=`git rev-parse --show-toplevel`
