@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copy or link this script into .git/hooks/
-#   $ ln -s "`pwd`/tools/pre-commit.sh" "`pwd`/.git/hooks/pre-commit"
+#   $ cp "`pwd`/tools/pre-commit.sh" "`pwd`/.git/hooks/pre-commit"
 # This script runs automatically in the project's root directory (parent of .git/).
 
 EXIT_STATUS=0
