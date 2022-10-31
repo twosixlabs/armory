@@ -5,7 +5,7 @@ TARGET_FILES=`echo ${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
 
 pushd $PROJECT_ROOT > /dev/null
     for TARGET_FILE in ${TARGET_FILES}; do
-        echo "Checking ${FILE}..."
+        echo "Checking ${TARGET_FILE}..."
         python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
