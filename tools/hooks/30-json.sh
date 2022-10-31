@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 echo "Executing 'json' formatter..."
 
-TARGET_FILES=`$TRACKED_FILES | grep -E '\.json'`
+TARGET_FILES=`echo ${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
 
 pushd $PROJECT_ROOT > /dev/null
-    for FILE in ${TARGET_FILES}; do
-        python -m json.tool --sort-keys $FILE 2>&1 /dev/null
+    for TARGET_FILE in ${TARGET_FILES}; do
+        echo "Checking ${FILE}..."
+        python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -
         if [ $? -ne 0 ] ; then
+            JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
+            echo "${JSON_PATCH}" > $TARGET_FILE    # The double quotes are important here!
             echo "Lint check of JSON object failed. Your changes were not commited."
-            echo "in ${PROJECT_ROOT}/${FILE}:"
-            python -mjson.tool "${FILE}"
+            echo "in ${PROJECT_ROOT}/${TARGET_FILE}"
             EXIT_STATUS=1
         fi
     done
