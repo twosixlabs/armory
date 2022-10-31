@@ -180,7 +180,7 @@ class Scenario:
         else:
             attack = config_loading.load_attack(attack_config, self.model)
             self.attack = attack
-            targeted = getattr(attack, "targeted", False)
+            targeted = attack_config.get("kwargs", {}).get("targeted", False)
             if targeted:
                 label_targeter = config_loading.load_label_targeter(
                     attack_config["targeted_labels"]
