@@ -14,7 +14,7 @@ black .
 ```
 We will update black versioning annually following their [Stability Policy](https://black.readthedocs.io/en/stable/the_black_code_style/index.html#stability-policy).
 
-As of version 0.16.1 `tools/format_json.py` no longer exists. Instead the built-in [json.tool](https://docs.python.org/3/library/json.html#module-json.tool) is used along with the `--sort-keys` flag.
+As of version 0.16.1 `tools/format_json.py` no longer exists. Instead the built-in [json.tool](https://docs.python.org/3/library/json.html#module-json.tool) is used along with the `--sort-keys` and `--indent=4` flags.
 
 We use [Flake8](https://flake8.pycqa.org/) for non-formatting PEP style enforcement.
 ```
