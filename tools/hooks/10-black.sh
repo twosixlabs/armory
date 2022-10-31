@@ -3,7 +3,7 @@ echo "Executing 'black' formatter..."
 
 TARGET_FILES=`$TRACKED_FILES | grep -E '.*\.py$'`
 
-pushd $PROJECT_ROOT > /dev/null
+pushd $PROJECT_ROOT > /dev/null || exit 1
   python -m black --check --diff --color $TARGET_FILES
   if [ $? -ne 0 ]; then
     python -m black $TARGET_FILES

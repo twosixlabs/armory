@@ -3,7 +3,7 @@ echo "Executing 'json' formatter..."
 
 TARGET_FILES=`echo ${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
 
-pushd $PROJECT_ROOT > /dev/null
+pushd $PROJECT_ROOT > /dev/null || exit 1
     for TARGET_FILE in ${TARGET_FILES}; do
         echo "Checking ${TARGET_FILE}..."
         python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -

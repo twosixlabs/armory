@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Executing 'flake8' formatter..."
 
-pushd $PROJECT_ROOT > /dev/null
+pushd $PROJECT_ROOT > /dev/null || exit 1
   python -m flake8        \
     --count               \
     --exit-zero           \
