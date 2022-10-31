@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 echo "Executing 'black' formatter..."
 
-TARGET_FILES=`$TRACKED_FILES | grep -E '.*\.py$'`
+TARGET_FILES=`echo ${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.py$'`
+[ -z "$TARGET_FILES" ] && exit 0
+
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
   python -m black --check --diff --color $TARGET_FILES

@@ -2,6 +2,8 @@
 echo "Executing 'json' formatter..."
 
 TARGET_FILES=`echo ${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
+[ -z "$TARGET_FILES" ] && exit 0
+
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
     for TARGET_FILE in ${TARGET_FILES}; do
