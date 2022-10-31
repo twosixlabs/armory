@@ -196,6 +196,9 @@ class ResultsLogWriter(LogWriter):
                 result = metrics.get("total_wer")(result)
             total, (num, denom) = result
             f_result = f"total={total:.2%}, {num}/{denom}"
+        elif "hota_metrics" in name:
+            mean_results = {k: v for k, v in result.items() if "mean" in k}
+            f_result = f"{mean_results}"
         elif "entailment" in name:
             if "total_entailment" not in name:
                 result = metrics.get("total_entailment")(result)
@@ -342,13 +345,16 @@ def construct_meters_for_task_metrics(
         )
         tuples.append(task)
 
-    benign, adversarial, targeted = zip(*tuples)
-    meters = [
-        m for tup in tuples for m in tup if m is not None
-    ]  # unroll list of tuples
+    if tuples:
+        benign, adversarial, targeted = zip(*tuples)
+        meters = [
+            m for tup in tuples for m in tup if m is not None
+        ]  # unroll list of tuples
 
-    for m in meters:
-        hub.connect_meter(m)
+        for m in meters:
+            hub.connect_meter(m)
+    else:
+        benign, adversarial, targeted = [], [], []
 
     if include_benign:
         hub.connect_writer(ResultsLogWriter(), meters=benign)

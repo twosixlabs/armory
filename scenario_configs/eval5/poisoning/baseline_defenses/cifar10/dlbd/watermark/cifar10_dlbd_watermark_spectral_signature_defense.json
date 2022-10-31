@@ -15,8 +15,7 @@
     "attack": {
         "knowledge": "black",
         "kwargs": {
-            "backdoor_packaged_with_armory": true,
-            "backdoor_path": "./armory/utils/triggers/watermarking.png",
+            "backdoor_path": "watermarking.png",
             "base_img_size_x": 32,
             "base_img_size_y": 32,
             "blend": 1.0,

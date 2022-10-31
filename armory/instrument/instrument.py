@@ -609,6 +609,62 @@ class Meter:
         return self._final_result
 
 
+class GlobalMeter(Meter):
+    """
+    Meter that only produces a final result after finalize.
+    Concatenates batches of arg inputs for input to final_metric
+
+    This would simplify the following (from poison.py):
+        Meter(
+            "accuracy_on_benign_test_data_per_class",
+            metrics.get_supported_metric("identity_unzip"),
+            "scenario.y",
+            "scenario.y_pred",
+            final=lambda x: per_class_mean_accuracy(*metrics.identity_zip(x)),
+            final_name="accuracy_on_benign_test_data_per_class",
+            record_final_only=True,
+        )
+    To:
+        GlobalMeter(
+            "accuracy_on_benign_test_data_per_class",
+            per_class_mean_accuracy,
+            "scenario.y",
+            "scenario.y_pred",
+        )
+    """
+
+    def __init__(
+        self,
+        final_name,
+        final_metric,
+        *final_metric_arg_names,
+        final_kwargs=None,
+    ):
+        final_name = str(final_name)
+        if not callable(final_metric):
+            raise ValueError(f"final_metric {final_metric} is not callable")
+        final_kwargs = final_kwargs or {}
+        if not isinstance(final_kwargs, dict):
+            raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
+
+        from armory import metrics
+
+        identity_unzip = metrics.get("identity_unzip")
+        identity_zip = metrics.get("identity_zip")
+
+        super().__init__(
+            f"input_to_{final_name}",
+            identity_unzip,
+            *final_metric_arg_names,
+            metric_kwargs=None,
+            auto_measure=True,
+            final=lambda x: final_metric(*identity_zip(x), **final_kwargs),
+            final_name=final_name,
+            final_kwargs=None,
+            record_final_only=True,
+        )
+
+
 # NOTE: Writer could be subclassed to directly push to TensorBoard or MLFlow
 class Writer:
     """

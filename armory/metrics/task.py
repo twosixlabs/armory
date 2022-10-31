@@ -185,11 +185,24 @@ def total_entailment(sample_results):
 @aggregator
 def total_wer(sample_wers):
     """
-    Aggregate a list of per-sample word error rate tuples (edit_distance, words)
+    Aggregate an array or list of per-sample word error rate [edit_distance, words]
         Return global_wer, (total_edit_distance, total_words)
+
+    sample_wers: a list of 2-tuples, or an array of shape (N, 2)
     """
-    if not all(isinstance(wer_tuple, tuple) for wer_tuple in sample_wers):
-        raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+
+    if isinstance(sample_wers, list):
+        if not all(len(wer_tuple) == 2 for wer_tuple in sample_wers):
+            raise ValueError("Inputs must be tuples of size 2: (edit distance, length)")
+    elif isinstance(sample_wers, np.ndarray):
+        if sample_wers.ndim != 2 or sample_wers.shape[-1] != 2:
+            raise ValueError(
+                f"sample_wers must be an array of shape (N, 2). Received shape {sample_wers.shape}"
+            )
+    else:
+        raise ValueError(
+            f"Expected sample_wers to be a list or numpy array. Received type {type(sample_wers)}"
+        )
 
     total_edit_distance = 0
     total_words = 0
@@ -1535,3 +1548,209 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
             ):
                 return 1
     return 0
+
+
+class HOTA_metrics:
+    def __init__(self, tracked_classes=["pedestrian"]):
+        from collections import defaultdict
+        from TrackEval.trackeval.metrics.hota import (
+            HOTA,
+        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
+        self.tracked_classes = tracked_classes
+        self.hota_metrics_per_class_per_videos = {
+            key: defaultdict(dict) for key in self.tracked_classes
+        }
+        self.hota_metrics_per_class_all_videos = {
+            key: {} for key in self.tracked_classes
+        }
+        self.HOTA_calc = HOTA()
+
+    def preprocess(self, gt_data, tracker_data, tracked_class):
+        """
+        This function preprocesses data into a format required for HOTA metrics calculation.
+
+        It simplifies get_preprocessed_seq_data() at https://github.com/JonathonLuiten/TrackEval/blob/master/trackeval/datasets/mot_challenge_2d_box.py
+        and tailors it to MOT data generated using CARLA.
+
+        After preprocessing, the HOTA metrics are caluclated - ref: https://link.springer.com/article/10.1007/s11263-020-01375-2
+
+        Inputs:
+            - gt_data and tracker_data are 2D NDArrays, where each row is a detection in the format of:
+                <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
+            - tracked_class is a string representing the class for which HOTA is calculated.
+        """
+        from TrackEval.trackeval.datasets._base_dataset import (
+            _BaseDataset,
+        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        if gt_data.ndim == 3:
+            gt_data = gt_data[0]
+        if tracker_data.ndim == 3:
+            tracker_data = tracker_data[0]
+
+        assert len(gt_data.shape) == 2
+        assert len(tracker_data.shape) == 2
+
+        cls_id = self.class_name_to_class_id[tracked_class]
+
+        assert len(set(gt_data[:, 0])) == len(
+            set(tracker_data[:, 0])
+        ), "Number of timesteps in ground truth and tracker data are different."
+        num_timesteps = len(set(gt_data[:, 0]))
+        data_keys = [
+            "gt_ids",
+            "tracker_ids",
+            "gt_dets",
+            "tracker_dets",
+            "tracker_confidences",
+            "similarity_scores",
+        ]
+        data = {key: [None] * num_timesteps for key in data_keys}
+        unique_gt_ids = []
+        unique_tracker_ids = []
+        num_gt_dets = 0
+        num_tracker_dets = 0
+        for t in range(num_timesteps):
+
+            # Get all data
+            gt_ids = gt_data[gt_data[:, 0] == t + 1, 1]
+            gt_dets = gt_data[gt_data[:, 0] == t + 1, 2:6]
+            gt_classes = gt_data[gt_data[:, 0] == t + 1, 7]
+
+            tracker_ids = tracker_data[tracker_data[:, 0] == t + 1, 1]
+            tracker_dets = tracker_data[tracker_data[:, 0] == t + 1, 2:6]
+            tracker_confidences = tracker_data[tracker_data[:, 0] == t + 1, 6]
+            tracker_classes = tracker_data[tracker_data[:, 0] == t + 1, 7]
+            similarity_scores = _BaseDataset._calculate_box_ious(
+                gt_dets, tracker_dets, box_format="xywh"
+            )
+
+            # Keep only tracker associated with given class
+            tracker_to_keep_mask = np.equal(tracker_classes, cls_id)
+            data["tracker_ids"][t] = tracker_ids[tracker_to_keep_mask].astype(int)
+            data["tracker_dets"][t] = tracker_dets[tracker_to_keep_mask]
+            data["tracker_confidences"][t] = tracker_confidences[tracker_to_keep_mask]
+
+            # Keep only detections associated with given class
+            gt_to_keep_mask = np.equal(gt_classes, cls_id)
+            data["gt_ids"][t] = gt_ids[gt_to_keep_mask].astype(int)
+            data["gt_dets"][t] = gt_dets[gt_to_keep_mask, :]
+            data["similarity_scores"][t] = similarity_scores[gt_to_keep_mask]
+
+            unique_gt_ids += list(np.unique(data["gt_ids"][t]))
+            unique_tracker_ids += list(np.unique(data["tracker_ids"][t]))
+            num_tracker_dets += len(data["tracker_ids"][t])
+            num_gt_dets += len(data["gt_ids"][t])
+
+        # Re-label IDs such that there are no empty IDs
+        if len(unique_gt_ids) > 0:
+            unique_gt_ids = np.unique(unique_gt_ids)
+            gt_id_map = np.nan * np.ones((np.max(unique_gt_ids) + 1))
+            gt_id_map[unique_gt_ids] = np.arange(len(unique_gt_ids))
+            for t in range(num_timesteps):
+                if len(data["gt_ids"][t]) > 0:
+                    data["gt_ids"][t] = gt_id_map[data["gt_ids"][t]].astype(int)
+        if len(unique_tracker_ids) > 0:
+            unique_tracker_ids = np.unique(unique_tracker_ids)
+            tracker_id_map = np.nan * np.ones((np.max(unique_tracker_ids) + 1))
+            tracker_id_map[unique_tracker_ids] = np.arange(len(unique_tracker_ids))
+            for t in range(num_timesteps):
+                if len(data["tracker_ids"][t]) > 0:
+                    data["tracker_ids"][t] = tracker_id_map[
+                        data["tracker_ids"][t]
+                    ].astype(int)
+
+        # Record overview statistics.
+        data["num_tracker_dets"] = num_tracker_dets
+        data["num_gt_dets"] = num_gt_dets
+        data["num_tracker_ids"] = len(unique_tracker_ids)
+        data["num_gt_ids"] = len(unique_gt_ids)
+        data["num_timesteps"] = num_timesteps
+
+        # Ensure ids are unique per timestep after preproc.
+        _BaseDataset._check_unique_ids(data, after_preproc=True)
+
+        return data
+
+    # Function to calculate the main HOTA metric and its component sub-metrics
+    def calculate_hota_metrics_per_class_per_video(
+        self, gt_data, tracker_data, tracked_class, video_name
+    ):
+
+        # Calculate per-video HOTA metrics
+        data = self.preprocess(gt_data, tracker_data, tracked_class)
+        self.hota_metrics_per_class_per_videos[tracked_class][
+            video_name
+        ] = self.HOTA_calc.eval_sequence(data)
+
+    def calculate_hota_metrics_per_class_all_videos(self, tracked_class):
+        self.hota_metrics_per_class_all_videos[
+            tracked_class
+        ] = self.HOTA_calc.combine_sequences(
+            self.hota_metrics_per_class_per_videos[tracked_class]
+        )
+
+    def get_per_class_per_video_metrics(self):
+        return self.hota_metrics_per_class_per_videos
+
+    def get_per_class_all_videos_metrics(self):
+        return self.hota_metrics_per_class_all_videos
+
+
+class GlobalHOTA:
+    # there are many HOTA sub-metrics. We care mostly about the mean values of these three.
+    METRICS = ("hota", "deta", "assa")
+
+    def __init__(
+        self,
+        metrics=("hota", "deta", "assa"),
+        means=True,
+        record_metric_per_sample=True,
+        **kwargs,
+    ):
+        for k in metrics:
+            if k not in self.METRICS:
+                raise ValueError(f"{k} not in {self.METRICS}")
+        self.metrics = tuple(metrics)
+        self.means = bool(means)
+        self.record_metric_per_sample = bool(record_metric_per_sample)
+
+        self.hota_metrics = HOTA_metrics(**kwargs)
+
+    def __call__(self, y_list, y_pred_list):
+        for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+            for tracked_class in self.hota_metrics.tracked_classes:
+                self.hota_metrics.calculate_hota_metrics_per_class_per_video(
+                    y, y_pred, tracked_class, i
+                )
+
+        for tracked_class in self.hota_metrics.tracked_classes:
+            self.hota_metrics.calculate_hota_metrics_per_class_all_videos(tracked_class)
+
+        results = {}
+        if self.record_metric_per_sample:
+            per_class_per_video_metrics = (
+                self.hota_metrics.get_per_class_per_video_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["hota", "deta", "assa"]:
+                    results[f"{k}"] = []
+                for vid in per_class_per_video_metrics[tracked_class].keys():
+                    for k in ["HOTA", "DetA", "AssA"]:
+                        value = per_class_per_video_metrics[tracked_class][vid][
+                            k
+                        ].mean()
+                        results[f"{k.lower()}"].append(value)
+
+        if self.means:
+            per_class_all_videos_metrics = (
+                self.hota_metrics.get_per_class_all_videos_metrics()
+            )
+            for tracked_class in self.hota_metrics.tracked_classes:
+                for k in ["HOTA", "DetA", "AssA"]:
+                    value = per_class_all_videos_metrics[tracked_class][k].mean()
+                    results[f"mean_{k.lower()}"] = value
+
+        return results

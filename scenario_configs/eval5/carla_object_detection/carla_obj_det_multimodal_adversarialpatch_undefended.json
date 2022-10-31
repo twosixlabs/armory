@@ -6,7 +6,7 @@
         "kwargs": {
             "batch_size": 1,
             "depth_delta_meters": 3,
-            "learning_rate": 0.01,
+            "learning_rate": 0.003,
             "learning_rate_depth": 0.0001,
             "max_iter": 1000,
             "optimizer": "pgd",

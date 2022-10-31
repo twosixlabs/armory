@@ -22,7 +22,6 @@ class GradientMatchingWrapper(GradientMatchingAttack):
 
         super().__init__(
             classifier=classifier,
-            # clip_values=(min_,max_),  get this somewhere
             learning_rate_schedule=learning_rate_schedule,
             **kwargs,
         )

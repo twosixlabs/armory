@@ -5,7 +5,7 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "learning_rate": 0.01,
+            "learning_rate": 0.002,
             "max_iter": 2000,
             "verbose": true
         },

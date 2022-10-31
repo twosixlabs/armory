@@ -1,9 +1,39 @@
-# ignore .git, .conda, etc.
+# ignore .conda, etc.
 .*
+
+# Allowing .git
+!.git/
+
+# Ensure all git files are present. Otherwise, armory will be "dirty" inside container, which will change the version
+!.dockerignore
+!.flake8
+!.github/
+!.gitignore
+!.yamllint
+
 # ignore large directories
 datasets/
+
 # ignore temp directories
 outputs/
+dist/
 tmp/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+venv*
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
+*.py[cod]
+*$py.class
+
+# mypy
+.mypy_cache/

@@ -2,6 +2,7 @@ import random
 
 from armory.logs import log
 from art.attacks.evasion import RobustDPatch
+import os
 import cv2
 import numpy as np
 from typing import Optional, List, Dict
@@ -10,9 +11,7 @@ import math
 
 from armory.utils.external_repo import ExternalRepoImport
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    get_avg_depth_value,
-    log_to_linear,
-    linear_to_log,
+    linear_depth_to_rgb,
 )
 
 with ExternalRepoImport(
@@ -270,12 +269,35 @@ def insert_patch(
 class CARLADapricotPatch(RobustDPatch):
     def __init__(self, estimator, **kwargs):
         # Maximum depth perturbation from a flat patch
-        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 3)
+        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 0.03)
         self.learning_rate_depth = kwargs.pop("learning_rate_depth", 0.0001)
-        self.max_depth = None
-        self.min_depth = None
+        self.max_depth_r = None
+        self.min_depth_r = None
+        self.max_depth_g = None
+        self.min_depth_g = None
+        self.max_depth_b = None
+        self.min_depth_b = None
+
+        self.patch_base_image = kwargs.pop("patch_base_image", None)
 
         super().__init__(estimator=estimator, **kwargs)
+
+    def create_initial_image(self, size):
+        """
+        Create initial patch based on a user-defined image
+        """
+        module_path = globals()["__file__"]
+        # user-defined image is assumed to reside in the same location as the attack module
+        patch_base_image_path = os.path.abspath(
+            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
+        )
+
+        im = cv2.imread(patch_base_image_path)
+        im = cv2.resize(im, size)
+        im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+
+        patch_base = im / 255.0
+        return patch_base
 
     def inner_generate(  # type: ignore
         self, x: np.ndarray, y: Optional[List[Dict[str, np.ndarray]]] = None, **kwargs
@@ -416,10 +438,20 @@ class CARLADapricotPatch(RobustDPatch):
                 )
 
                 # clip Depth channels so perturbation is constrained by meters
-                self._patch[:, :, 3:] = np.clip(
-                    self._patch[:, :, 3:],
-                    a_min=self.min_depth,
-                    a_max=self.max_depth,
+                self._patch[:, :, 3] = np.clip(
+                    self._patch[:, :, 3],
+                    a_min=self.min_depth_r,
+                    a_max=self.max_depth_r,
+                )
+                self._patch[:, :, 4] = np.clip(
+                    self._patch[:, :, 4],
+                    a_min=self.min_depth_g,
+                    a_max=self.max_depth_g,
+                )
+                self._patch[:, :, 5] = np.clip(
+                    self._patch[:, :, 5],
+                    a_min=self.min_depth_b,
+                    a_max=self.max_depth_b,
                 )
 
             if self.estimator.clip_values is not None:
@@ -632,8 +664,26 @@ class CARLADapricotPatch(RobustDPatch):
                 self.apply_realistic_effects = True
 
             # self._patch needs to be re-initialized with the correct shape
-            if self.estimator.clip_values is None:
-                self._patch = np.zeros(shape=self.patch_shape)
+            if self.patch_base_image is not None:
+                self.patch_base = self.create_initial_image(
+                    (patch_width, patch_height),
+                )
+
+                if x.shape[-1] == 3:
+                    self._patch = self.patch_base
+                else:
+                    self._patch = np.vstack(
+                        (
+                            self.patch_base,
+                            np.random.randint(0, 255, size=self.patch_base.shape)
+                            / 255
+                            * (
+                                self.estimator.clip_values[1]
+                                - self.estimator.clip_values[0]
+                            )
+                            + self.estimator.clip_values[0],
+                        )
+                    )
             else:
                 self._patch = (
                     np.random.randint(0, 255, size=self.patch_shape)
@@ -642,22 +692,50 @@ class CARLADapricotPatch(RobustDPatch):
                     + self.estimator.clip_values[0]
                 )
 
+            self._patch = np.clip(
+                self._patch,
+                self.estimator.clip_values[0],
+                self.estimator.clip_values[1],
+            )
+
             self.gs_coords = [gs_coords]
 
             if (
                 self.patch_shape[-1] == 6
             ):  # initialize depth patch with average depth value of green screen
-                if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 5+ metadata
+                # Eval6 data uses linear depth, so this attack is not backward compatible
+                if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
                     avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
-                else:  # backward compatible with Eval 4 metadata
-                    avg_patch_depth = get_avg_depth_value(x[i][:, :, 3], gs_coords)
 
-                avg_patch_depth_meters = log_to_linear(avg_patch_depth)
-                max_depth_meters = avg_patch_depth_meters + self.depth_delta_meters
-                min_depth_meters = avg_patch_depth_meters - self.depth_delta_meters
-                self.max_depth = linear_to_log(max_depth_meters)
-                self.min_depth = linear_to_log(min_depth_meters)
-                self._patch[:, :, 3:] = avg_patch_depth
+                    # check if depth image is log-depth
+                    if (
+                        x.shape[-1] == 6
+                        and np.all(x[i, :, :, 3] == x[i, :, :, 4])
+                        and np.all(x[i, :, :, 3] == x[i, :, :, 5])
+                    ):
+                        raise ValueError(
+                            "Dataset uses log-depth and is not compatible with this attack"
+                        )
+                else:
+                    raise ValueError(
+                        "Dataset does not contain patch metadata for average patch depth"
+                    )
+                max_depth = avg_patch_depth + self.depth_delta_meters
+                min_depth = avg_patch_depth - self.depth_delta_meters
+                (
+                    self.max_depth_r,
+                    self.max_depth_g,
+                    self.max_depth_b,
+                ) = linear_depth_to_rgb(max_depth)
+                (
+                    self.min_depth_r,
+                    self.min_depth_g,
+                    self.min_depth_b,
+                ) = linear_depth_to_rgb(min_depth)
+                rv, gv, bv = linear_depth_to_rgb(avg_patch_depth)
+                self._patch[:, :, 3] = rv
+                self._patch[:, :, 4] = gv
+                self._patch[:, :, 5] = bv
 
             if y is None:
                 patch = self.inner_generate(

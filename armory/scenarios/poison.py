@@ -18,7 +18,7 @@ from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading
 from armory.logs import log
 
-from armory.instrument import Meter, LogWriter, ResultsWriter
+from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
 
 
 class DatasetPoisoner:
@@ -200,7 +200,7 @@ class Poison(Scenario):
             self.x_poison, self.y_poison, self.poison_index = (
                 self.x_clean,
                 self.y_clean,
-                np.array([]),
+                np.array([], dtype=np.int64),
             )
 
         self.record_poison_and_data_info()
@@ -428,14 +428,11 @@ class Poison(Scenario):
 
         per_class_mean_accuracy = metrics.get("per_class_mean_accuracy")
         self.hub.connect_meter(
-            Meter(
+            GlobalMeter(
                 "accuracy_on_benign_test_data_per_class",
-                metrics.get("identity_unzip"),
+                per_class_mean_accuracy,
                 "scenario.y",
                 "scenario.y_pred",
-                final=lambda x: per_class_mean_accuracy(*metrics.task.identity_zip(x)),
-                final_name="accuracy_on_benign_test_data_per_class",
-                record_final_only=True,
             )
         )
 

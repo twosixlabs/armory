@@ -23,21 +23,31 @@ from Two Six's public S3 dataset repository.
 
 
 
-### Green-screen Image Datasets
+### Green-screen Image and Video Datasets
 |           `name`            |                   `split`                    |                Description                | Source Split |               x_shape               | x_type | y_shape |                Size                 |
 |:---------------------------:|:--------------------------------------------:|:-----------------------------------------:|:------------:|:-----------------------------------:|:------:|:-------:|:-----------------------------------:|
 | "dapricot_dev_adversarial"  | ["small", medium", "large", "adversarial"] * | Physical Adversarial Attacks on Object Detection|     dev      |        (nb, 3, 1008, 756, 3)        | uint8 | 2-tuple | 81 examples (3 images per example)  |
 | "dapricot_test_adversarial" | ["small", medium", "large", "adversarial"] * | Physical Adversarial Attacks on Object Detection|     test     |        (nb, 3, 1008, 756, 3)        | uint8 | 2-tuple | 324 examples (3 images per example) |
-|     "carla_obj_det_dev"     |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      |      (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              31 images              |
-|    "carla_obj_det_test"     |   ["small", "medium", "large", "test"] **    | [CARLA Simulator Object Detection](https://carla.org) |     test     |    (nb=1, 600, 800, 3 or 6) ***     | uint8 | 2-tuple |              30 images              |
+|     "carla_obj_det_dev"     |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      |      (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              31 images     |
+|    "carla_obj_det_test"     |                   ["test"]                   | [CARLA Simulator Object Detection](https://carla.org) |     test     |    (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              30 images              |
+|  "carla_over_obj_det_dev"   |                   ["dev"]                    | [CARLA Simulator Object Detection](https://carla.org) |     dev      |      (nb=1, 960, 1280, 3 or 6)      | uint8 | 2-tuple |              20 images     |
 | "carla_video_tracking_dev"  |                   ["dev"]                    | [CARLA Simulator Video Tracking](https://carla.org) |     dev      |  (nb=1, num_frames, 960, 1280, 3)   | uint8 | 2-tuple |              20 videos              |
-| "carla_video_tracking_test" |                   ["test"]                   | [CARLA Simulator Video Tracking](https://carla.org) |     test     | (nb=1, num_frames, 600, 800, 3) *** | uint8 | 2-tuple |              20 videos              |
+| "carla_video_tracking_test" |                   ["test"]                   | [CARLA Simulator Video Tracking](https://carla.org) |     test     | (nb=1, num_frames, 960, 1280, 3)     | uint8 | 2-tuple |              20 videos              |
+| "carla_multi_object_tracking_dev" ** |          ["dev"]                    | [CARLA Simulator Multi-object Video Tracking](https://carla.org) | dev | (nb=1, num_frames, 960, 1280, 3) | float32 | 2-tuple | 20 videos |
 
 \* the "small" split, for example, is the subset of images containing small patch green-screens. Using the "adversarial" split returns the entire dataset.
 
-\** small is <= 0.5% patch ratio, medium is between 0.5% and 0.75%, and large is between 0.75% and 1%. The "test" split returns the entire dataset.
-
-\*** While this is still the case as of Armory 0.15.0, a future release will update the test sets to 960x1280 as well
+##### CARLA Multi-Object Tracking
+The ground truth annotation for CARLA multi-object tracking is a 2D NDArray where each row represents a detection with format: `<timestep> <object id> <bbox top left x> <bbox top left y> <bbox width> <bbox height> <confidence score=1> <class id> <visibility=1>`.  By nature of this dataset, there may be multiple objects present at each timestep; therefore, each object is assigned an ID so that all annotations corresponding to a given object can be identified.
+- `timestep`: The timestep indicates which frame this annotation belongs to; indexing begins at 1.
+- `object id`: An id referring to the unique object in the frame that this annotation describes.
+- `bbox top left x`: The top left x coordinate of the bounding box of this object.
+- `bbox top left y`: The top left y coordinate of the bounding box of this object.
+- `bbox width`: The width of the bounding box of this object in pixels.
+- `bbox height`: The height of the bounding box of this object in pixels.
+- `confidence score`: 1 for ground truth objects; models may output values between 0 and 1 to describe the confidence of their predictions.
+- `class id`: The class label of this object.
+- `visibility`: 1 for all annotations in this dataset.  An object that is not visible will not have an annotation for that timestep.
 
 
 ##### D-APRICOT
@@ -49,17 +59,18 @@ is meant to induce the model to predict a specific class at the location of the 
 
 
 ##### CARLA Object Detection
-The carla_obj_det_dev and carla_obj_det_test datasets contain rgb and depth modalities. The modality defaults to rgb and must be one of `["rgb", "depth", "both"]`.
-When using the dataset function imported from [armory.data.adversarial_datasets](../armory/data/adversarial_datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value
-is specified in the dataset_config as such:
+The carla_obj_det_dev and carla_obj_det_test datasets contain rgb and depth modalities. The modality defaults to `"rgb"` and must be one of `["rgb", "depth", "both"]`.
+When using the dataset function imported from [armory.data.adversarial_datasets](../armory/data/adversarial_datasets.py), this value is passed via the `modality` kwarg. When running an Armory scenario, the value is specified in the dataset_config as such:
 ```json
  "dataset": {
     "batch_size": 1,
     "modality": "rgb",
 }
 ```
-When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 600, 800, 6)` where `x[..., :3]` are
+When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 960, 1280, 6)` where `x[..., :3]` are
 the rgb channels and `x[..., 3:]` the depth channels.
+
+The carla_over_obj_det_dev dataset has the same properties as the above mentioned datasets but is collected utilizing overhead perspectives.
 
 ### Usage of Preloaded Adversarial Datasets
 To use a preloaded adversarial dataset for evaluation, set `attack_config["type"]` to `"preloaded"` and specify
