@@ -23,7 +23,7 @@ fi
 pushd $PROJECT_ROOT > /dev/null || exit 1
     ############
     # Black
-    echo "Executing 'black' formatter..."
+    echo "⚫ - Executing 'black' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
     [ -z "$TARGET_FILES" ] && exit 0
     python -m black --check --diff --color $TARGET_FILES
