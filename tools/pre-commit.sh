@@ -6,23 +6,49 @@
 EXIT_STATUS=0
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
-# Environmental variable used to notify hooks we are running in a workflow.
+# Determine command to use in order to collect
+# tracked files. Toggle between `dif` and `lstree`
+# using the `ARMORY_CI_TEST` environmental variable.
+# Example:
+#   $ ARMORY_CI_TEST=1 ./tools/pre-commit.sh
 ARMORY_CI_TEST="${ARMORY_CI_TEST:-0}"
 
-# Collect tracked files based on ARMORY_CI_TEST
-TRACKED_FILES=`git --no-pager diff --name-only`
+TRACKED_FILES="git --no-pager diff --name-only"
 if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
-    TRACKED_FILES=`git --no-pager ls-files`
+    TRACKED_FILES="git --no-pager ls-files"
 fi
 [ -z "$TRACKED_FILES" ] && exit 0
 
 
-pushd $PROJECT_ROOT > /dev/null
-    # Source hooks
-    for FILE in `ls -1 ./tools/hooks/*.sh | sort`; do
-        echo "Importing ${FILE}..."
-        source "${FILE}"
-        if [ $? -ne 0 ]; then
+pushd $PROJECT_ROOT > /dev/null || exit 1
+    ############
+    # Black
+    echo "Executing 'black' formatter..."
+    TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
+    [ -z "$TARGET_FILES" ] && exit 0
+    python -m black --check --diff --color $TARGET_FILES
+    if [ $? -ne 0 ]; then
+      python -m black $TARGET_FILES
+      echo "⚫ - some files were formatted."
+      EXIT_STATUS=1
+    fi
+
+    ############
+    # Flake8
+    echo "🎱 - Executing 'flake8' formatter..."
+        python -m flake8 --config=.flake8 ./
+        # EXIT_STATUS=$?
+
+    ############
+    # JSON Linting
+    echo "📄 - Executing 'json' formatter..."
+    TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
+    for TARGET_FILE in ${TARGET_FILES}; do
+        python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -
+        if [ $? -ne 0 ] ; then
+            JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
+            echo "${JSON_PATCH}" > $TARGET_FILE    # The double quotes are important here!
+            echo "📄 - modified ${PROJECT_ROOT}/${TARGET_FILE}"
             EXIT_STATUS=1
         fi
     done
@@ -30,7 +56,7 @@ popd > /dev/null
 
 
 if [ "${EXIT_STATUS}" -ne 0 ]; then
-  echo "🚨 Pre-commit hooks failed. Please fix the issues and re-run 'git add' 🚑"
+  echo "🚨 Pre-commit hooks failed. Please fix the issues and re-run 'git add' and 'git commit' 🚑"
 fi
 
 
