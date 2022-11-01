@@ -43,7 +43,7 @@ Documentation = "https://armory.readthedocs.io/en/latest/"
 
 [project.scripts]
 armory = "armory.__main__:main"
-armory-runner = "armory.scenarios.main:entrypoint"
+armory-engine = "armory.scenarios.main:entrypoint"
 
 
 # please see docs/getting_started.md#the-armory-flavors for how these
