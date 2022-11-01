@@ -144,7 +144,7 @@ def run_config(*args, **kwargs):
     scenario.evaluate()
 
 
-if __name__ == "__main__":
+def entrypoint():
     parser = argparse.ArgumentParser(prog="scenario", description="run armory scenario")
     parser.add_argument(
         "config",
@@ -237,3 +237,7 @@ if __name__ == "__main__":
     print(
         armory.END_SENTINEL
     )  # indicates to host that the scenario finished w/out error
+
+
+if __name__ == "__main__":
+    entrypoint()
