@@ -36,8 +36,8 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     ############
     # Flake8
     echo "🎱 - Executing 'flake8' formatter..."
-        python -m flake8 --config=.flake8 ./
-        # EXIT_STATUS=$?
+    python -m flake8 --config=.flake8 ./
+    EXIT_STATUS=$?
 
     ############
     # JSON Linting
