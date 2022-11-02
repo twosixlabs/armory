@@ -50,9 +50,18 @@ class ObjectDetectionTask(ImageClassificationTask):
         self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
-        return ObjectDetectionExporter(self.export_dir, default_export_kwargs={"dataset_modality": self.config["dataset"].get("modality", None)})
+        return ObjectDetectionExporter(
+            self.export_dir,
+            default_export_kwargs={
+                "dataset_modality": self.config["dataset"].get("modality", None)
+            },
+        )
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.export_dir, default_export_kwargs={"with_boxes": True, "dataset_modality": self.config["dataset"].get("modality", None)}
+            self.export_dir,
+            default_export_kwargs={
+                "with_boxes": True,
+                "dataset_modality": self.config["dataset"].get("modality", None),
+            },
         )
