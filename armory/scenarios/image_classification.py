@@ -16,4 +16,4 @@ class ImageClassificationTask(Scenario):
             self.generate_kwargs["mask"] = np.array(self.generate_kwargs["mask"])
 
     def _load_sample_exporter(self):
-        return ImageClassificationExporter(self.export_dir)
+        return ImageClassificationExporter(self.export_dir, default_export_kwargs={"dataset_modality": self.config["dataset"].get("modality", None)})
