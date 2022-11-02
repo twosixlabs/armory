@@ -44,8 +44,6 @@ Or, in an interpreter, you can do:
 ```
 from armory.datasets import load
 info, ds = load.load("mnist")
-# Alternatively:
-info, ds = load.from_directory("/armory/datasets/new_builds/mnist/3.0.1")
 ```
 
 ## Armory standard dataset
