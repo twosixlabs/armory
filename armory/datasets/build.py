@@ -48,7 +48,7 @@ def build_armory_dataset(
     if data_dir is None:
         data_dir = common.get_root()
 
-    source_subdir = armory_builders()[name]
+    source_subdir = common.armory_builders()[name]
 
     cmd = [
         "tfds",
