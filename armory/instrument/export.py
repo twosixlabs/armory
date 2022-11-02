@@ -165,6 +165,26 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                     f"{basename}_with_boxes_grayscale{self.file_extension}",
                 )
 
+            if x.shape[-1] == 6:
+                self.depth_image_with_boxes = self.get_sample(
+                    x[..., 3:],
+                    with_boxes=True,
+                    y=y,
+                    y_pred=y_pred,
+                    score_threshold=score_threshold,
+                    classes_to_skip=classes_to_skip,
+                )
+                self.depth_image_with_boxes.save(
+                    os.path.join(
+                        self.output_dir,
+                        f"{basename}_depth_with_boxes{self.file_extension}",
+                    )
+                )
+                self.convert_depth_image_if_in_rgb_format(
+                    self.depth_image_with_boxes,
+                    f"{basename}_depth_with_boxes_grayscale{self.file_extension}",
+                )
+
         else:
             super()._export(x, basename, dataset_modality)
 
