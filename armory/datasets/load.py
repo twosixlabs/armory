@@ -1,9 +1,17 @@
-from armory.datasets import common
-
 import argparse
 
+import tensorflow_datasets as tfds
 
-def load(name: str, version: str = "") -> (dict, dict):
+from armory.datasets import common
+
+
+def from_directory(builder_dir: str, **as_dataset_kwargs) -> (dict, dict):
+    builder = tfds.builder_from_directory(builder_dir)
+    ds = builder.as_dataset(**as_dataset_kwargs)
+    return builder.info, ds
+
+
+def load(name: str, version: str = None, **as_dataset_kwargs) -> (dict, dict):
     """
     Load the given dataset, optionally with specified version
         If version is not provided, the latest local version will be used
@@ -12,9 +20,9 @@ def load(name: str, version: str = "") -> (dict, dict):
 
     Return (Info, Dataset) tuple
     """
-    common.get_root()
-
-    raise NotImplementedError
+    builder = tfds.builder(name, version=version, data_dir=common.get_root())
+    ds = builder.as_dataset(**as_dataset_kwargs)
+    return builder.info, ds
 
 
 if __name__ == "__main__":
@@ -27,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--version",
         type=str,
-        default="",
+        default=None,
         help="specify the dataset version",
     )
     args = parser.parse_args()
