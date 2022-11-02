@@ -1,5 +1,4 @@
 import argparse
-from functools import lru_cache
 from pathlib import Path
 import subprocess
 
@@ -7,30 +6,6 @@ import tensorflow_datasets as tfds
 
 from armory.datasets import common
 from armory.logs import log
-
-
-@lru_cache
-def tfds_builders() -> list:
-    return tfds.list_builders()
-
-
-@lru_cache
-def armory_builders() -> list:
-    source_root = Path(__file__).parent
-    builders = {}
-    for builder_dir in (source_root / "standard").iterdir():
-        if builder_dir.is_dir():
-            builders[builder_dir.stem] = str(builder_dir)
-    for builder_dir in (source_root / "adversarial").iterdir():
-        if builder_dir.is_dir():
-            if builder_dir.stem in builders:
-                log.warning(
-                    f"{builder_dir.stem} is in both 'standard' and 'adversarial'. Ignoring adversarial duplicate."
-                )
-            else:
-                builders[builder_dir.stem] = str(builder_dir)
-
-    return builders
 
 
 def build_tfds_dataset(name: str, data_dir: str = None, overwrite: bool = False):
@@ -128,7 +103,7 @@ def build(
 
     Return the subdirectory of the built dataset
     """
-    if name in armory_builders():
+    if name in common.armory_builders():
         # build via armory
         return build_armory_dataset(
             name,
@@ -136,7 +111,7 @@ def build(
             overwrite=overwrite,
             register_checksums=register_checksums,
         )
-    elif name in tfds_builders():
+    elif name in common.tfds_builders():
         return build_tfds_dataset(name, data_dir=data_dir, overwrite=overwrite)
     else:
         return build_custom_dataset(
@@ -165,4 +140,6 @@ if __name__ == "__main__":
         help="whether to populate 'checksums.tsv' file for dataset",
     )
     args = parser.parse_args()
-    build(args.name, overwrite=args.overwrite, args.register_checksums)
+    build(
+        args.name, overwrite=args.overwrite, register_checksums=args.register_checksums
+    )
