@@ -71,7 +71,7 @@ class Digit(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        path = dl_manager.download_and_extract("https://todo-data-url")
+        path = dl_manager.download_and_extract(_URL)
         return {
             "train": self._generate_examples(path, "train"),
             "test": self._generate_examples(path, "test"),
