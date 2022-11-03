@@ -56,27 +56,33 @@ class ImageClassificationExporter(SampleExporter):
         )
         self.file_extension = ".png"
 
-    def convert_depth_image_if_in_rgb_format(self, image, name):
-        image_np = np.array(image).astype(np.float64)
-        if image_np.ndim == 1:
-            return
-        R, G, B = image_np[:, :, 0], image_np[:, :, 1], image_np[:, :, 2]
+    def convert_depth_image_if_in_rgb_format(self, image):
+        # Assumes that a depth image can be detected as grayscale format
+        # by checking if all three channels are the same.
+        # Return the grayscale image if a conversion happened, else None
+
+        image = np.clip(image, 0.0, 1.0) * 255.0
+        if image.ndim == 1:
+            return None
+        R, G, B = image[:, :, 0], image[:, :, 1], image[:, :, 2]
         if np.array_equal(R, G) and np.array_equal(G, B):
             # image is grayscale already
-            return
+            return None
         normalized = (R + G * 256 + B * 256 * 256) / (256 * 256 * 256 - 1)
         depth_log = 1.0 + np.log(normalized) / 5.70378
         depth_log = np.clip(depth_log, 0.0, 1.0)
         grayscale = np.array([depth_log, depth_log, depth_log]).transpose(1, 2, 0)
-        grayscale_image = Image.fromarray(
-            np.uint8(np.clip(grayscale, 0.0, 1.0) * 255.0), mode="RGB"
-        )
-        grayscale_image.save(os.path.join(self.output_dir, name))
+        # Reference: https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera
+        return grayscale
 
     def _export(self, x, basename, dataset_modality=None):
+
+        # The first three channels of x could be either depth or rgb
         if dataset_modality == "depth":
-            basename += "_depth"  # this is if we only have depth channels, no rgb.
-        self.image = self.get_sample(x)
+            basename += "_depth"
+        self.image = self.get_sample(
+            x  # This only takes up to the first 3 channels of x
+        )
         self.image.save(
             os.path.join(
                 self.output_dir,
@@ -84,11 +90,17 @@ class ImageClassificationExporter(SampleExporter):
             )
         )
         if "depth" in basename:
-            self.convert_depth_image_if_in_rgb_format(
-                self.image, f"{basename}_grayscale{self.file_extension}"
-            )
+            grayscale = self.convert_depth_image_if_in_rgb_format(x)
+            if grayscale is not None:
+                grayscale_image = self.get_sample(grayscale)
+                grayscale_image.save(
+                    os.path.join(
+                        self.output_dir, f"{basename}_grayscale{self.file_extension}"
+                    )
+                )
 
-        if x.shape[-1] == 6:  # in this case, we had both rgb and depth.
+        # Now, if x has 6 channels, the last three are depth
+        if x.shape[-1] == 6:
             self.depth_image = self.get_sample(x[..., 3:])
             self.depth_image.save(
                 os.path.join(
@@ -96,9 +108,15 @@ class ImageClassificationExporter(SampleExporter):
                     f"{basename}_depth{self.file_extension}",
                 )
             )
-            self.convert_depth_image_if_in_rgb_format(
-                self.depth_image, f"{basename}_depth_grayscale{self.file_extension}"
-            )
+            grayscale = self.convert_depth_image_if_in_rgb_format(x[..., 3:])
+            if grayscale is not None:
+                grayscale_image = self.get_sample(grayscale)
+                grayscale_image.save(
+                    os.path.join(
+                        self.output_dir,
+                        f"{basename}_depth_grayscale{self.file_extension}",
+                    )
+                )
 
     @staticmethod
     def get_sample(x):
@@ -146,8 +164,9 @@ class ObjectDetectionExporter(ImageClassificationExporter):
         classes_to_skip=None,
         dataset_modality=None,
     ):
-        if with_boxes:
-            self.image_with_boxes = self.get_sample(
+        def get_sample_with_boxes_and_save(x, designation):
+            # Helper function to call get_sample with all the right kwargs
+            image_with_boxes = self.get_sample(
                 x,
                 with_boxes=True,
                 y=y,
@@ -155,35 +174,32 @@ class ObjectDetectionExporter(ImageClassificationExporter):
                 score_threshold=score_threshold,
                 classes_to_skip=classes_to_skip,
             )
+            image_with_boxes.save(
+                os.path.join(
+                    self.output_dir, f"{basename}_{designation}{self.file_extension}"
+                )
+            )
+
+        if with_boxes:
+
             if dataset_modality == "depth":
                 basename += "_depth"
-            fname_with_boxes = f"{basename}_with_boxes{self.file_extension}"
-            self.image_with_boxes.save(os.path.join(self.output_dir, fname_with_boxes))
-            if "depth" in basename:
-                self.convert_depth_image_if_in_rgb_format(
-                    self.image_with_boxes,
-                    f"{basename}_with_boxes_grayscale{self.file_extension}",
-                )
 
+            # First three channels of x (either depth or rgb)
+            get_sample_with_boxes_and_save(x, "with_boxes")
+            if dataset_modality == "depth":
+                grayscale = self.convert_depth_image_if_in_rgb_format(x)
+                if grayscale is not None:
+                    get_sample_with_boxes_and_save(grayscale, "with_boxes_grayscale")
+
+            # Second three channels of x (depth if they exist)
             if x.shape[-1] == 6:
-                self.depth_image_with_boxes = self.get_sample(
-                    x[..., 3:],
-                    with_boxes=True,
-                    y=y,
-                    y_pred=y_pred,
-                    score_threshold=score_threshold,
-                    classes_to_skip=classes_to_skip,
-                )
-                self.depth_image_with_boxes.save(
-                    os.path.join(
-                        self.output_dir,
-                        f"{basename}_depth_with_boxes{self.file_extension}",
+                get_sample_with_boxes_and_save(x[..., 3:], "depth_with_boxes")
+                grayscale = self.convert_depth_image_if_in_rgb_format(x[..., 3:])
+                if grayscale is not None:
+                    get_sample_with_boxes_and_save(
+                        grayscale, "depth_with_boxes_grayscale"
                     )
-                )
-                self.convert_depth_image_if_in_rgb_format(
-                    self.depth_image_with_boxes,
-                    f"{basename}_depth_with_boxes_grayscale{self.file_extension}",
-                )
 
         else:
             super()._export(x, basename, dataset_modality)
