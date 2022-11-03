@@ -24,7 +24,7 @@ their respective implementations in the [Adversarial Robustness Toolbox (ART)](h
 
 # Installation & Configuration
 
-TLDR: Try Armory using [Google Colab](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb), or follow the instructions below to install locally.
+TLDR: Try Armory [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb), or follow the instructions below to install locally.
 
 ## `pip`
 
