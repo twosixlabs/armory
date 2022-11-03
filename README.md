@@ -24,7 +24,9 @@ their respective implementations in the [Adversarial Robustness Toolbox (ART)](h
 
 # Installation & Configuration
 
-TLDR: Try Armory using [Google Colab](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb), or follow the instructions below to install.
+TLDR: Try Armory using [Google Colab](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/armory_interactive_scenarios_google_colab.ipynb), or follow the instructions below to install locally.
+
+## `pip`
 
 ```bash
 pip install armory-testbed
@@ -37,6 +39,11 @@ evaluation outputs.
 To change these default directories simply run `armory configure` after installation.
 
 If installing from the git repo in editable mode, ensure that your pip version is 22+.
+
+## `docker`
+
+Simple run `docker pull twosixarmory/<image_name>:latest`.
+
 
 # Usage
 
