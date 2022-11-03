@@ -42,7 +42,7 @@ If installing from the git repo in editable mode, ensure that your pip version i
 
 ## `docker`
 
-Simple run `docker pull twosixarmory/<image_name>:latest`.
+Simply run `docker pull twosixarmory/<image_name>:latest`.
 
 
 # Usage
