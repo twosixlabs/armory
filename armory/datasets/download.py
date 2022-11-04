@@ -47,7 +47,7 @@ def download(
 ):
     info = common.cached_datasets()[name]
     version = info["version"]
-    filepath = common.get_cache_dataset_path(name, version)
+    filepath = common.get_cache_dataset_path(name, version, data_dir=data_dir)
 
     # verify filepath or delete it
     if filepath.is_file():
