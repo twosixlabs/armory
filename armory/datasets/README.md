@@ -24,6 +24,17 @@ tfds new my_dataset
 ```
 This will populate the `armory/datasets/standard/my_dataset` directory.
 
+Similarly, to create a new adversarial dataset with the same name:
+```
+cd armory/datasets/standard
+tfds new my_dataset
+```
+
+NOTE: you may want to run `black` on the directory before modifying, as tfds uses a different spacing style than armory.
+```
+black .
+```
+
 At a minimum, you will need to fill in the `my_dataset.py` and `checksums.tsv` files.
 
 ## Building and loading
@@ -96,6 +107,11 @@ Now, to upload to s3 (you will need `ARMORY_PRIVATE_S3_ID` and `ARMORY_PRIVATE_S
 from armory.datasets import upload
 upload.upload("my_dataset")  # this will fail, as you need to explicitly force it to be public
 upload.upload("my_dataset", public=True)
+```
+
+Or, alternatively to packaging and uploading, you can use this convenience function:
+```
+package.add_to_cache("my_dataset", public=True)
 ```
 
 To download, which will download it directly to the tar cache directory, do:

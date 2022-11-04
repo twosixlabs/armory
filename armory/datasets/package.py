@@ -6,7 +6,7 @@ import string
 import subprocess
 
 from armory.logs import log
-from armory.datasets import build, common
+from armory.datasets import build, common, upload
 
 
 def package(
@@ -66,7 +66,7 @@ def verify(name, data_dir: str = None):
     info = common.cached_datasets()[name]
     version = info["version"]
 
-    filepath = common.get_cache_dataset_path(name, version)
+    filepath = common.get_cache_dataset_path(name, version, data_dir=data_dir)
     if not filepath.is_file():
         raise FileNotFoundError(f"filepath '{filepath}' for dataset {name} not found.")
 
@@ -122,3 +122,26 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
     os.makedirs(target_data_dir.parent, exist_ok=True)
     shutil.move(source_data_dir, target_data_dir)
     shutil.rmtree(tmp_dir)
+
+
+def add_to_cache(
+    name,
+    version: str = None,
+    data_dir: str = None,
+    cache_subdir=common.CACHE_SUBDIR,
+    overwrite: bool = False,
+    public: bool = False,
+):
+    """
+    Convenience function for packaging, uploading, and adding to cache
+    """
+    package(
+        name,
+        version=version,
+        data_dir=data_dir,
+        cache_subdir=cache_subdir,
+        overwrite=overwrite,
+    )
+    update(name, version=version, data_dir=data_dir)
+    verify(name, data_dir=data_dir)
+    upload(name, public=public)
