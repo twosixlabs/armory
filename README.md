@@ -26,7 +26,6 @@ their respective implementations in the [Adversarial Robustness Toolbox (ART)](h
 
 TLDR: Try Armory [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/twosixlabs/armory/blob/master/notebooks/running_armory_scenarios_interactively.ipynb) or follow the instructions below to install locally.
 
-## `pip`
 
 ```bash
 pip install armory-testbed
@@ -39,10 +38,6 @@ evaluation outputs.
 To change these default directories simply run `armory configure` after installation.
 
 If installing from the git repo in editable mode, ensure that your pip version is 22+.
-
-## `docker`
-
-Simply run `docker pull twosixarmory/<image_name>:latest`.
 
 
 # Usage
