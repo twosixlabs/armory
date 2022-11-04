@@ -5,7 +5,6 @@ import subprocess
 import tensorflow_datasets as tfds
 
 from armory.datasets import common
-from armory.logs import log
 
 
 def build_tfds_dataset(name: str, data_dir: str = None, overwrite: bool = False):
@@ -64,9 +63,8 @@ def build_armory_dataset(
     if overwrite:
         cmd.append("--overwrite")
     print(f"Executing: {' '.join(cmd)}")
-    # TODO: if this command fails, why isn't a CalledProcessError raised?
-    # https://docs.python.org/3/library/subprocess.html
-    subprocess.run(cmd, check=True)
+    completed_process = subprocess.run(cmd)
+    completed_process.check_returncode()
 
     build = tfds.builder(name, data_dir=data_dir)
     return build.info.data_dir  # full data subdirectory
@@ -112,6 +110,7 @@ def build(
             register_checksums=register_checksums,
         )
     elif name in common.tfds_builders():
+        # TODO: May not currently handle external community datasets like huggingface with the '<community>:<dataset>' format
         return build_tfds_dataset(name, data_dir=data_dir, overwrite=overwrite)
     else:
         return build_custom_dataset(
@@ -120,6 +119,19 @@ def build(
             overwrite=overwrite,
             register_checksums=register_checksums,
         )
+
+
+def build_info(name: str, version: str = None, data_dir: str = None):
+    """
+    Return version, data_dir, built_data_dir, subdir
+    """
+    if data_dir is None:
+        data_dir = common.get_root()
+    builder = tfds.builder(name, version=version, data_dir=data_dir)
+    version = str(builder.info.version)
+    built_data_dir = builder.info.data_dir
+    subdir = Path(built_data_dir).relative_to(data_dir)
+    return version, data_dir, built_data_dir, subdir
 
 
 if __name__ == "__main__":
