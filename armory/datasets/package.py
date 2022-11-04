@@ -144,4 +144,4 @@ def add_to_cache(
     )
     update(name, version=version, data_dir=data_dir)
     verify(name, data_dir=data_dir)
-    upload(name, public=public)
+    upload.upload(name, public=public)
