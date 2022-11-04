@@ -13,7 +13,6 @@ def package(
     name,
     version: str = None,
     data_dir: str = None,
-    cache_subdir=common.CACHE_SUBDIR,
     overwrite: bool = False,
 ) -> str:
     """
@@ -128,7 +127,6 @@ def add_to_cache(
     name,
     version: str = None,
     data_dir: str = None,
-    cache_subdir=common.CACHE_SUBDIR,
     overwrite: bool = False,
     public: bool = False,
 ):
@@ -139,7 +137,6 @@ def add_to_cache(
         name,
         version=version,
         data_dir=data_dir,
-        cache_subdir=cache_subdir,
         overwrite=overwrite,
     )
     update(name, version=version, data_dir=data_dir)
