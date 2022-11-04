@@ -135,6 +135,7 @@ def update_filters(specs: List[str], armory_debug=None):
 
         if key == "tensorflow_cpp":
             set_tensorflow_cpp_loglevel(level)
+            continue
 
         try:
             log.level(level)
