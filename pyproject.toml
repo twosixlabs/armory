@@ -75,6 +75,8 @@ datasets = [
     "tensorflow-datasets >= 4.6.0",
     "tensorflow >= 2.10.0",
     "protobuf",
+    "boto3",
+    "botocore",
 ]
 
 datasets-builder = [
