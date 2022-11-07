@@ -32,6 +32,8 @@ cp "tools/pre-commit.sh" ".git/hooks/pre-commit"
 chmod 755 ".git/hooks/pre-commit"
 ```
 
+There is an `EARLY_EXIT` variable in `tools/pre-commit.sh` that can be modified that causes the script to exit on the first failure.
+
 Note: these hooks depend on some python tools being installed in your environment. These
 can be installed using:
 
