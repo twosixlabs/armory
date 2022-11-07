@@ -36,9 +36,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     ############
     # Flake8
     echo "🎱 Executing 'flake8' formatter..."
-    # TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
-    # for TARGET_FILE in ${TARGET_FILES}; do
-    python -m flake8 --config=.flake8 $TARGET_FILES
+    python -m flake8 --config=.flake8 ${TARGET_FILES}
     EXIT_STATUS=$?
 
     ############
@@ -46,10 +44,10 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     echo "📄 Executing 'json' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
     for TARGET_FILE in ${TARGET_FILES}; do
-        python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -
+        python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
-            echo "${JSON_PATCH}" > $TARGET_FILE    # The double quotes are important here!
+            echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
             echo "📄 modified ${PROJECT_ROOT}/${TARGET_FILE}"
             EXIT_STATUS=1
         fi
