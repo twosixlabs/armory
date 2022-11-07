@@ -38,7 +38,8 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
       # Execute python pre-commit hooks in seperate processes
       # so that json linting can still occur.
       echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
-    ( # python-pre-commit-hooks
+    (
+        PRE_COMMIT_EXIT_STATUS=0
         echo "📁 collecting files to lint"
         TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
         if [ -z "$TARGET_FILES" ]; then
@@ -53,15 +54,17 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         if [ $? -ne 0 ]; then
             python -m black $TARGET_FILES
             echo "⚫ some files were formatted."
-            CHECK_EXIT_STATUS 1
+            PRE_COMMIT_EXIT_STATUS=1
         fi
 
         ############
         # Flake8
         echo "🎱 Executing 'flake8' formatter..."
         python -m flake8 --config=.flake8 ${TARGET_FILES}
-        CHECK_EXIT_STATUS $?
-    ) # /python-pre-commit-hooks
+        PRE_COMMIT_EXIT_STATUS=$?
+
+        exit PRE_COMMIT_EXIT_STATUS
+    ) || CHECK_EXIT_STATUS $?
 
     ############
     # JSON Linting
