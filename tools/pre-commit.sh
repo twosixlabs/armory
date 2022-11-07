@@ -20,6 +20,14 @@ fi
 [ -z "$TRACKED_FILES" ] && exit 0
 
 
+function CHECK_EXIT_STATUS ()
+{
+    if [ $1 -ne 0 ]; then
+        EXIT_STATUS=1
+    fi
+}
+
+
 pushd $PROJECT_ROOT > /dev/null || exit 1
     ############
     # Black
@@ -30,14 +38,14 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     if [ $? -ne 0 ]; then
       python -m black $TARGET_FILES
       echo "⚫ some files were formatted."
-      EXIT_STATUS=1
+      CHECK_EXIT_STATUS 1
     fi
 
     ############
     # Flake8
     echo "🎱 Executing 'flake8' formatter..."
     python -m flake8 --config=.flake8 ${TARGET_FILES}
-    EXIT_STATUS=$?
+    CHECK_EXIT_STATUS $?
 
     ############
     # JSON Linting
@@ -49,7 +57,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
             echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
             echo "📄 modified ${PROJECT_ROOT}/${TARGET_FILE}"
-            EXIT_STATUS=1
+            CHECK_EXIT_STATUS 1
         fi
     done
 popd > /dev/null
