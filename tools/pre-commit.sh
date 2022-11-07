@@ -42,7 +42,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         ############
         # Black
         echo "⚫ Executing 'black' formatter..."
-        python -m black --check --diff --color ${TARGET_FILES}
+        python -m black --check > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             python -m black $TARGET_FILES
             echo "⚫ some files were formatted."
