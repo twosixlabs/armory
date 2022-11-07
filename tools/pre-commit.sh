@@ -35,23 +35,26 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-    ############
-    # Black
-    echo "⚫ Executing 'black' formatter..."
-    TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
-    [ -z "$TARGET_FILES" ] && exit 0
-    python -m black --check --diff --color ${TARGET_FILES}
-    if [ $? -ne 0 ]; then
-        python -m black $TARGET_FILES
-        echo "⚫ some files were formatted."
-        CHECK_EXIT_STATUS 1
-    fi
+    (
+        TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
+        [ -z "$TARGET_FILES" ] && exit 0
 
-    ############
-    # Flake8
-    echo "🎱 Executing 'flake8' formatter..."
-    python -m flake8 --config=.flake8 ${TARGET_FILES}
-    CHECK_EXIT_STATUS $?
+        ############
+        # Black
+        echo "⚫ Executing 'black' formatter..."
+        python -m black --check --diff --color ${TARGET_FILES}
+        if [ $? -ne 0 ]; then
+            python -m black $TARGET_FILES
+            echo "⚫ some files were formatted."
+            CHECK_EXIT_STATUS 1
+        fi
+
+        ############
+        # Flake8
+        echo "🎱 Executing 'flake8' formatter..."
+        python -m flake8 --config=.flake8 ${TARGET_FILES}
+        CHECK_EXIT_STATUS $?
+    )
 
     ############
     # JSON Linting
