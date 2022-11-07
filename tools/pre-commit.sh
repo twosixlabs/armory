@@ -71,7 +71,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
             echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
-            echo "📄 modified ${TARGET_FILE}"
+            echo -e "\033[1m📄 modified ${TARGET_FILE}\033[0m"
             CHECK_EXIT_STATUS 1
         fi
     done
