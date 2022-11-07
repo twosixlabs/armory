@@ -56,7 +56,7 @@ jobs:
 
       - name: 🚀 Run commit hooks
         env:
-          ARMORY_CI_TEST: 1
+          ARMORY_COMMIT_HOOK_CI: 1
         run: |
           echo "💄 Running commit hooks for Armory version ${VERSION}"
           bash tools/pre-commit.sh

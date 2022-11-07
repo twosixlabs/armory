@@ -11,7 +11,7 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 # using the `ARMORY_CI_TEST` environmental variable.
 # Example:
 #   $ ARMORY_CI_TEST=1 ./tools/pre-commit.sh
-ARMORY_CI_TEST="${ARMORY_CI_TEST:-0}"
+ARMORY_CI_TEST="${ARMORY_COMMIT_HOOK_CI:-0}"
 
 TRACKED_FILES="git --no-pager diff --name-only"
 if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
