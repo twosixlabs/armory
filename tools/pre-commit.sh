@@ -35,11 +35,10 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-      # Execute python pre-commit hooks in seperate processes
-      # so that json linting can still occur.
-      echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
-    (
-        PRE_COMMIT_EXIT_STATUS=0
+    # Execute python pre-commit hooks in seperate processes
+    # so that json linting can still occur.
+    echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
+    (   PRE_COMMIT_EXIT_STATUS=0
         echo "📁 collecting files to lint"
         TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
         if [ -z "$TARGET_FILES" ]; then
