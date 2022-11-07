@@ -62,7 +62,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         python -m flake8 --config=.flake8 ${TARGET_FILES}
         PRE_COMMIT_EXIT_STATUS=$?
 
-        exit PRE_COMMIT_EXIT_STATUS
+        exit `expr PRE_COMMIT_EXIT_STATUS`
     ) || CHECK_EXIT_STATUS $?
 
     ############
