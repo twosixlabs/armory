@@ -23,32 +23,34 @@ fi
 pushd $PROJECT_ROOT > /dev/null || exit 1
     ############
     # Black
-    echo "⚫ - Executing 'black' formatter..."
+    echo "⚫ Executing 'black' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
     [ -z "$TARGET_FILES" ] && exit 0
     python -m black --check --diff --color $TARGET_FILES
     if [ $? -ne 0 ]; then
       python -m black $TARGET_FILES
-      echo "⚫ - some files were formatted."
+      echo "⚫ some files were formatted."
       EXIT_STATUS=1
     fi
 
     ############
     # Flake8
-    echo "🎱 - Executing 'flake8' formatter..."
-    python -m flake8 --config=.flake8 ./
+    echo "🎱 Executing 'flake8' formatter..."
+    # TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
+    # for TARGET_FILE in ${TARGET_FILES}; do
+    python -m flake8 --config=.flake8 $TARGET_FILES
     EXIT_STATUS=$?
 
     ############
     # JSON Linting
-    echo "📄 - Executing 'json' formatter..."
+    echo "📄 Executing 'json' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
     for TARGET_FILE in ${TARGET_FILES}; do
         python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff ${TARGET_FILE} -
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
             echo "${JSON_PATCH}" > $TARGET_FILE    # The double quotes are important here!
-            echo "📄 - modified ${PROJECT_ROOT}/${TARGET_FILE}"
+            echo "📄 modified ${PROJECT_ROOT}/${TARGET_FILE}"
             EXIT_STATUS=1
         fi
     done
