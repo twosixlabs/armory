@@ -35,10 +35,15 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-      # Execute python pre-commit hooks in seperate processes so that json linting can still occur.
+      # Execute python pre-commit hooks in seperate processes
+      # so that json linting can still occur.
+      echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
     ( # python-pre-commit-hooks
+        echo "📁 collecting files to lint"
         TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
-        [ -z "$TARGET_FILES" ] && exit 0
+        if [ -z "$TARGET_FILES" ]; then
+            echo "📁 $(tput bold)no python files to check$(tput sgr0)"
+        fi
 
         ############
         # Black
@@ -73,9 +78,9 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
             JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
             if [[ ! -z "${JSON_PATCH// }" ]]; then
                 echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
-                echo -e "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
+                echo "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
             else
-                echo -e "📄 $(tput bold)${TARGET_FILE} is not valid JSON!$(tput sgr0)"
+                echo "📄 $(tput bold)${TARGET_FILE} is not valid JSON!$(tput sgr0)"
             fi
             CHECK_EXIT_STATUS 1
         fi
