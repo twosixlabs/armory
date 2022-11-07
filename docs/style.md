@@ -25,7 +25,7 @@ Our repo-specific Flake8 configuration is detailed in `.flake8`.
 
 ### Pre-commit Hooks
 
-The above tools can be ran automatically, prior to each commit, by linking `/.git/hooks/pre-commit` to `/tools/pre-commit.sh`. See the example below:
+The above tools can be ran automatically, prior to each commit, by copying `tools/pre-commit.sh` to `.git/hooks/pre-commit`. See the example below:
 
 ```bash
 cp "`pwd`/tools/pre-commit.sh" "`pwd`/.git/hooks/pre-commit"
