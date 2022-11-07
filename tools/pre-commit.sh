@@ -4,6 +4,7 @@
 # This script runs automatically in the project's root directory (parent of .git/).
 
 EXIT_STATUS=0
+EXIT_EARLY=0
 MAX_FILE_SIZE=32 # Max JSON file size in Megabytes.
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
@@ -25,6 +26,10 @@ function CHECK_EXIT_STATUS ()
 {
     if [ $1 -ne 0 ]; then
         EXIT_STATUS=1
+        if [ $EXIT_EARLY -ne 0 ]; then
+          echo "🚨 Pre-commit hooks failed. Please fix the issues and re-run 'git add' and 'git commit' 🚑"
+          exit ${EXIT_STATUS}
+        fi
     fi
 }
 

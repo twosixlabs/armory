@@ -42,6 +42,7 @@ For more information about how to contribute to armory, see [Contributing to Arm
 
 
 # Import Style
+
 Imports in python files should be organized into three blocks, lexically ordered, after the docstring, and before other code:
 * Block 1: built-in package imports
 * Block 2: external package imports
