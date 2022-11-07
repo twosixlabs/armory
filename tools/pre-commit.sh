@@ -67,11 +67,15 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
             echo "📄 Skipping ${TARGET_FILE} (too large)"
             continue
         fi
-        python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
+        python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
         if [ $? -ne 0 ] ; then
-            JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
-            echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
-            echo -e "\033[1m📄 modified ${TARGET_FILE}\033[0m"
+            JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
+            if [ $? -eq 0 ]; then
+                echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
+                echo -e "\033[1m📄 modified ${TARGET_FILE}\033[0m"
+            else
+                echo -e "\033[1m📄 ${TARGET_FILE} is not valid JSON!\033[0m"
+            fi
             CHECK_EXIT_STATUS 1
         fi
     done
