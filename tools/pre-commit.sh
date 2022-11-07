@@ -64,7 +64,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         # Check if file is too large to be linted
         FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
         if [ ${FILE_SIZE} -gt ${MAX_FILE_SIZE} ]; then
-            echo "⚫ Skipping ${TARGET_FILE} (too large)"
+            echo "📄 Skipping ${TARGET_FILE} (too large)"
             continue
         fi
         python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
