@@ -76,7 +76,9 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
             echo "📄 Skipping ${TARGET_FILE} (too large)"
             continue
         fi
+
         python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
+
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
             if [[ ! -z "${JSON_PATCH// }" ]]; then
