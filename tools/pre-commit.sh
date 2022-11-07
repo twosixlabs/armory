@@ -4,6 +4,7 @@
 # This script runs automatically in the project's root directory (parent of .git/).
 
 EXIT_STATUS=0
+MAX_FILE_SIZE=32 # Max JSON file size in Megabytes.
 PROJECT_ROOT=`git rev-parse --show-toplevel`
 
 # Determine command to use in order to collect
@@ -34,7 +35,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     echo "⚫ Executing 'black' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
     [ -z "$TARGET_FILES" ] && exit 0
-    python -m black --check --diff --color $TARGET_FILES
+    python -m black --check --diff --color ${TARGET_FILES}
     if [ $? -ne 0 ]; then
       python -m black $TARGET_FILES
       echo "⚫ some files were formatted."
@@ -52,6 +53,12 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     echo "📄 Executing 'json' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
     for TARGET_FILE in ${TARGET_FILES}; do
+        # Check if file is too large to be linted
+        FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
+        if [ ${FILE_SIZE} -gt ${MAX_FILE_SIZE} ]; then
+            echo "⚫ Skipping ${TARGET_FILE} (too large)"
+            continue
+        fi
         python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -mjson.tool --sort-keys --indent=4 ${TARGET_FILE}`"
