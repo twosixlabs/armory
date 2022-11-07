@@ -35,7 +35,8 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-    (
+      # Execute python pre-commit hooks in seperate processes so that json linting can still occur.
+    ( # python-pre-commit-hooks
         TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
         [ -z "$TARGET_FILES" ] && exit 0
 
@@ -54,7 +55,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         echo "🎱 Executing 'flake8' formatter..."
         python -m flake8 --config=.flake8 ${TARGET_FILES}
         CHECK_EXIT_STATUS $?
-    )
+    ) # /python-pre-commit-hooks
 
     ############
     # JSON Linting
@@ -67,14 +68,14 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
             echo "📄 Skipping ${TARGET_FILE} (too large)"
             continue
         fi
-        python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE}
+        python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
         if [ $? -ne 0 ] ; then
             JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
-            if [ $? -eq 0 ]; then
+            if [[ ! -z "${JSON_PATCH// }" ]]; then
                 echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
-                echo -e "\033[1m📄 modified ${TARGET_FILE}\033[0m"
+                echo -e "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
             else
-                echo -e "\033[1m📄 ${TARGET_FILE} is not valid JSON!\033[0m"
+                echo -e "📄 $(tput bold)${TARGET_FILE} is not valid JSON!$(tput sgr0)"
             fi
             CHECK_EXIT_STATUS 1
         fi
