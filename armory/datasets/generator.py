@@ -9,6 +9,7 @@ x, y = next(gen)
 info, ds = load.load("mnist")
 gen = generator.Generator(info, ds, element_map = lambda z: (generator.image_to_canon(z["image"]), z["label"]), framework="tf", batch_size=5)
 x, y = next(gen)
+
 """
 
 import tensorflow as tf
