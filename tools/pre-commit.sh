@@ -15,7 +15,7 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 #   $ ARMORY_CI_TEST=1 ./tools/pre-commit.sh
 ARMORY_CI_TEST="${ARMORY_COMMIT_HOOK_CI:-0}"
 
-TRACKED_FILES="git --no-pager diff --name-only"
+TRACKED_FILES="git --no-pager diff HEAD --name-only"
 if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
     TRACKED_FILES="git --no-pager ls-files"
 fi
