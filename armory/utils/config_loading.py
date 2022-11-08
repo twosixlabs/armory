@@ -142,9 +142,6 @@ def load_attack(attack_config, classifier):
         kwargs = original_kwargs.copy()
         apply_patch_args = kwargs.pop("apply_patch_args", [])
         apply_patch_kwargs = kwargs.pop("apply_patch_kwargs", {})
-        targeted = kwargs.pop("targeted", None)  # not explicitly used by patch attacks
-        if targeted:
-            log.warning("Patch attack generation may ignore 'targeted' set to True")
         attack_config["kwargs"] = kwargs
     else:
         if attack_config.get("type") not in SUPPORTED_TYPES:

@@ -822,12 +822,35 @@ class ClipVideoTrackingLabels:
             raise ValueError(f"max_frames {max_frames} must be > 0")
         self.max_frames = max_frames
 
+    def clip_boxes(self, boxes):
+        return boxes[:, : self.max_frames, :]
+
+    def clip_metadata(self, patch_metadata_dict):
+        return {
+            k: v[:, : self.max_frames, ::] for (k, v) in patch_metadata_dict.items()
+        }
+
     def __call__(self, x, labels):
         boxes, patch_metadata_dict = labels
-        boxes = boxes[:, : self.max_frames, :]
-        for k in patch_metadata_dict:
-            patch_metadata_dict[k] = patch_metadata_dict[k][:, : self.max_frames, ::]
-        return boxes, patch_metadata_dict
+        return self.clip_boxes(boxes), self.clip_metadata(patch_metadata_dict)
+
+
+class ClipMOTVideoTrackingLabels(ClipVideoTrackingLabels):
+    """
+    Truncate labels for CARLA multi-object video tracking, when max_frames is set
+        Assumes zero indexing for frames
+        Also assumes shape is (batch, num_detections, 9)
+            The first value in the 9-dim vector is the frame_id
+    """
+
+    def clip_boxes(self, boxes):
+        if len(boxes) == 1:
+            boxes_out = np.expand_dims(boxes[boxes[:, :, 0] < self.max_frames], 0)
+        else:
+            boxes_out = np.empty(len(boxes), dtype=object)
+            for i, b in enumerate(boxes):
+                boxes_out[i] = b[b[:, 0] < self.max_frames]
+        return boxes_out
 
 
 def carla_video_tracking_label_preprocessing(x, y):
@@ -952,6 +975,116 @@ def carla_mot_label_preprocessing(x, y):
     return (annotations, patch_metadata)
 
 
+def mot_zero_index(x, y):
+    annotations, patch_metadata = y
+    if annotations.ndim == 2:
+        annotations[:, 0] -= 1
+    else:
+        for annotation in annotations:
+            annotation[:, 0] -= 1
+    return (annotations, patch_metadata)
+
+
+def mot_array_to_coco(batch):
+    """
+    Map from 3D array (batch_size x detections x 9) to extended coco format
+        of dimension (batch_size x frames x detections_per_frame)
+
+    NOTE: 'image_id' is given as the frame of a video, so is not unique
+    """
+    if batch.ndim == 2:
+        not_batch = True
+        batch = [batch]
+    elif batch.ndim == 3:
+        not_batch = False
+    else:
+        raise ValueError(f"batch.ndim {batch.ndim} is not in (2, 3)")
+
+    output = np.empty(len(batch), dtype=object)
+    for i, array in enumerate(batch):
+        if not len(array):
+            # no object detections
+            output.append([])
+            continue
+
+        frames = []
+        for detection in array:
+            frames.append(
+                {
+                    # TODO: should image_id include video number as well?
+                    "image_id": int(np.round(detection[0])),
+                    "category_id": int(np.round(detection[7])),
+                    "bbox": [float(x) for x in detection[2:6]],
+                    "score": float(detection[6]),
+                    # The following are extended fields
+                    "object_id": int(
+                        np.round(detection[1])
+                    ),  # for a specific object across frames
+                    "visibility": float(detection[8]),
+                }
+            )
+        output[i] = frames
+
+    if not_batch:
+        output = output[0]
+
+    return output
+
+
+def mot_array_to_coco_label_preprocessing(x, y):
+    """
+    x is given in the label preprocessing pipeline
+    """
+    del x
+    annotations, patch_metadata = y
+    return (mot_array_to_coco(annotations), patch_metadata)
+
+
+def mot_coco_to_array(batch):
+    """
+    Map from extended coco format to 3D array (batch_size x detections x 9)
+
+    An additional field, 'object_id', is required.
+    If 'visibility' is not present, it defaults to 1 (visible)
+    """
+    if len(batch) == 0 or isinstance(batch[0], dict):
+        not_batch = True
+        batch = [batch]
+    else:
+        not_batch = False
+
+    try:
+        output = []
+        for video in batch:
+            rows = []
+            for coco_dict in video:
+                rows.append(
+                    [
+                        coco_dict["image_id"],
+                        coco_dict["object_id"],
+                        *coco_dict["bbox"],
+                        coco_dict["score"],
+                        coco_dict["category_id"],
+                        coco_dict.get("visibility", 1),
+                    ]
+                )
+            output.append(rows)
+    except KeyError as e:
+        raise KeyError(f"{e} is a required label key for multi-object tracking")
+
+    if len(batch) == 1:
+        output_array = np.array(output, dtype=np.float32)
+    else:
+        output_array = np.empty(len(batch), dtype=object)
+        for i, out in enumerate(output):
+            output_array[i] = np.array(out, dtype=np.float32)
+
+    if not_batch:
+        output_array = output_array[0]
+
+    return output_array
+
+
 def carla_multi_object_tracking_dev(
     split: str = "dev",
     epochs: int = 1,
@@ -963,6 +1096,7 @@ def carla_multi_object_tracking_dev(
     framework: str = "numpy",
     shuffle_files: bool = False,
     max_frames: int = None,
+    coco_format: bool = False,
     **kwargs,
 ):
     """
@@ -978,14 +1112,20 @@ def carla_multi_object_tracking_dev(
 
     if max_frames:
         clip = datasets.ClipFrames(max_frames)
-        clip_labels = ClipVideoTrackingLabels(max_frames)
+        clip_labels = ClipMOTVideoTrackingLabels(max_frames)
     else:
         clip = None
         clip_labels = None
 
+    if coco_format:
+        coco_label_preprocess = mot_array_to_coco_label_preprocessing
+    else:
+        coco_label_preprocess = None
+
     preprocessing_fn = datasets.preprocessing_chain(clip, preprocessing_fn)
+
     label_preprocessing_fn = datasets.label_preprocessing_chain(
-        clip_labels, label_preprocessing_fn
+        mot_zero_index, clip_labels, coco_label_preprocess, label_preprocessing_fn
     )
 
     return datasets._generator_from_tfds(

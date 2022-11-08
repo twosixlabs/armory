@@ -8,12 +8,21 @@ from armory.instrument.config import ResultsLogWriter
 from armory.metrics.task import GlobalHOTA
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
 
+from armory.logs import log
+
 
 class CarlaMOT(CarlaVideoTracking):
-    def __init__(self, config, **kwargs):
-        self.tracked_classes = config.get("scenario", {}).get(
-            "tracked_classes", ["pedestrian"]
-        )
+    def __init__(
+        self, config, tracked_classes=("pedestrian",), coco_format=False, **kwargs
+    ):
+        self.tracked_classes = list(tracked_classes)
+        self.coco_format = coco_format
+        if self.coco_format and not config["dataset"].get("coco_format"):
+            log.warning(
+                "Overriding dataset kwarg coco_format to True, mirroring scenario config"
+            )
+            config["dataset"]["coco_format"] = True
+
         super().__init__(config, **kwargs)
 
     def load_metrics(self):
@@ -38,6 +47,7 @@ class CarlaMOT(CarlaVideoTracking):
                     "benign_hota_metrics",
                     GlobalHOTA(
                         metrics=self.hota_tasks,
+                        coco_format=self.coco_format,
                         tracked_classes=self.tracked_classes,
                         means=means,
                         record_metric_per_sample=record_metric_per_sample,
@@ -60,6 +70,7 @@ class CarlaMOT(CarlaVideoTracking):
                     "adversarial_hota_metrics",
                     GlobalHOTA(
                         metrics=self.hota_tasks,
+                        coco_format=self.coco_format,
                         tracked_classes=self.tracked_classes,
                         means=means,
                         record_metric_per_sample=record_metric_per_sample,

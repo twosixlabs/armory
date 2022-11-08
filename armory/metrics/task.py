@@ -1551,14 +1551,17 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 class HOTA_metrics:
-    def __init__(self, tracked_classes=["pedestrian"]):
+    def __init__(self, tracked_classes=("pedestrian",), coco_format: bool = False):
         from collections import defaultdict
-        from TrackEval.trackeval.metrics.hota import (
-            HOTA,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+        from TrackEval.trackeval.metrics.hota import HOTA
+        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset
+        from armory.data.adversarial_datasets import mot_coco_to_array
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
-        self.tracked_classes = tracked_classes
+        self.tracked_classes = list(tracked_classes)
+        self.coco_format = bool(coco_format)
         self.hota_metrics_per_class_per_videos = {
             key: defaultdict(dict) for key in self.tracked_classes
         }
@@ -1566,6 +1569,31 @@ class HOTA_metrics:
             key: {} for key in self.tracked_classes
         }
         self.HOTA_calc = HOTA()
+        self._BaseDataset = _BaseDataset
+        self.mot_coco_to_array = mot_coco_to_array
+
+    def _check_and_format(self, data):
+        if self.coco_format:
+            data = self.mot_coco_to_array(data)
+
+        if data.ndim == 3:
+            if len(data) != 1:
+                raise ValueError("Batch size > 1 not currently supported")
+            data = data[0]
+        if data.ndim != 2:
+            raise ValueError(f"Input data must be 2D or 3D, not {data.ndim}")
+        return data
+
+    @staticmethod
+    def relabel(unique_ids, list_of_id_arrays):
+        """
+        Re-label int IDs to 0-indexed sequential IDs
+        """
+        unique_ids = sorted(set(unique_ids))
+        new_unique_ids = list(range(len(unique_ids)))
+        id_map = {k: v for k, v in zip(unique_ids, new_unique_ids)}
+        new_list = [np.array([id_map[x] for x in array]) for array in list_of_id_arrays]
+        return new_unique_ids, new_list
 
     def preprocess(self, gt_data, tracker_data, tracked_class):
         """
@@ -1581,23 +1609,12 @@ class HOTA_metrics:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
             - tracked_class is a string representing the class for which HOTA is calculated.
         """
-        from TrackEval.trackeval.datasets._base_dataset import (
-            _BaseDataset,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
-
-        if gt_data.ndim == 3:
-            gt_data = gt_data[0]
-        if tracker_data.ndim == 3:
-            tracker_data = tracker_data[0]
-
-        assert len(gt_data.shape) == 2
-        assert len(tracker_data.shape) == 2
+        gt_data = self._check_and_format(gt_data)
+        tracker_data = self._check_and_format(tracker_data)
 
         cls_id = self.class_name_to_class_id[tracked_class]
 
-        assert len(set(gt_data[:, 0])) == len(
-            set(tracker_data[:, 0])
-        ), "Number of timesteps in ground truth and tracker data are different."
+        # NOTE: assumes there are ground truth predictions in every frame
         num_timesteps = len(set(gt_data[:, 0]))
         data_keys = [
             "gt_ids",
@@ -1608,22 +1625,21 @@ class HOTA_metrics:
             "similarity_scores",
         ]
         data = {key: [None] * num_timesteps for key in data_keys}
-        unique_gt_ids = []
-        unique_tracker_ids = []
-        num_gt_dets = 0
-        num_tracker_dets = 0
+        unique_gt_ids, unique_tracker_ids = set(), set()
+        num_gt_dets, num_tracker_dets = 0, 0
         for t in range(num_timesteps):
-
             # Get all data
-            gt_ids = gt_data[gt_data[:, 0] == t + 1, 1]
-            gt_dets = gt_data[gt_data[:, 0] == t + 1, 2:6]
-            gt_classes = gt_data[gt_data[:, 0] == t + 1, 7]
+            t_index = gt_data[:, 0] == t
+            gt_ids, gt_dets, gt_classes = (
+                gt_data[t_index, x] for x in (1, slice(2, 6), 7)
+            )
 
-            tracker_ids = tracker_data[tracker_data[:, 0] == t + 1, 1]
-            tracker_dets = tracker_data[tracker_data[:, 0] == t + 1, 2:6]
-            tracker_confidences = tracker_data[tracker_data[:, 0] == t + 1, 6]
-            tracker_classes = tracker_data[tracker_data[:, 0] == t + 1, 7]
-            similarity_scores = _BaseDataset._calculate_box_ious(
+            t_index = tracker_data[:, 0] == t
+            tracker_ids, tracker_dets, tracker_confidences, tracker_classes = (
+                tracker_data[t_index, x] for x in (1, slice(2, 6), 6, 7)
+            )
+
+            similarity_scores = self._BaseDataset._calculate_box_ious(
                 gt_dets, tracker_dets, box_format="xywh"
             )
 
@@ -1639,38 +1655,30 @@ class HOTA_metrics:
             data["gt_dets"][t] = gt_dets[gt_to_keep_mask, :]
             data["similarity_scores"][t] = similarity_scores[gt_to_keep_mask]
 
-            unique_gt_ids += list(np.unique(data["gt_ids"][t]))
-            unique_tracker_ids += list(np.unique(data["tracker_ids"][t]))
+            unique_gt_ids.update(data["gt_ids"][t])
+            unique_tracker_ids.update(data["tracker_ids"][t])
             num_tracker_dets += len(data["tracker_ids"][t])
             num_gt_dets += len(data["gt_ids"][t])
 
-        # Re-label IDs such that there are no empty IDs
-        if len(unique_gt_ids) > 0:
-            unique_gt_ids = np.unique(unique_gt_ids)
-            gt_id_map = np.nan * np.ones((np.max(unique_gt_ids) + 1))
-            gt_id_map[unique_gt_ids] = np.arange(len(unique_gt_ids))
-            for t in range(num_timesteps):
-                if len(data["gt_ids"][t]) > 0:
-                    data["gt_ids"][t] = gt_id_map[data["gt_ids"][t]].astype(int)
-        if len(unique_tracker_ids) > 0:
-            unique_tracker_ids = np.unique(unique_tracker_ids)
-            tracker_id_map = np.nan * np.ones((np.max(unique_tracker_ids) + 1))
-            tracker_id_map[unique_tracker_ids] = np.arange(len(unique_tracker_ids))
-            for t in range(num_timesteps):
-                if len(data["tracker_ids"][t]) > 0:
-                    data["tracker_ids"][t] = tracker_id_map[
-                        data["tracker_ids"][t]
-                    ].astype(int)
+        # Re-label int IDs to 1-indexed sequential IDs
+        unique_gt_ids, data["gt_ids"] = self.relabel(unique_gt_ids, data["gt_ids"])
+        unique_tracker_ids, data["tracker_ids"] = self.relabel(
+            unique_tracker_ids, data["tracker_ids"]
+        )
 
         # Record overview statistics.
-        data["num_tracker_dets"] = num_tracker_dets
-        data["num_gt_dets"] = num_gt_dets
-        data["num_tracker_ids"] = len(unique_tracker_ids)
-        data["num_gt_ids"] = len(unique_gt_ids)
-        data["num_timesteps"] = num_timesteps
+        data.update(
+            {
+                "num_tracker_dets": num_tracker_dets,
+                "num_gt_dets": num_gt_dets,
+                "num_tracker_ids": len(unique_tracker_ids),
+                "num_gt_ids": len(unique_gt_ids),
+                "num_timesteps": num_timesteps,
+            }
+        )
 
         # Ensure ids are unique per timestep after preproc.
-        _BaseDataset._check_unique_ids(data, after_preproc=True)
+        self._BaseDataset._check_unique_ids(data, after_preproc=True)
 
         return data
 

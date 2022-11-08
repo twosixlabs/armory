@@ -12,12 +12,13 @@ import torch
 
 
 class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
-    def __init__(self, estimator, **kwargs):
+    def __init__(self, estimator, coco_format=False, **kwargs):
 
         self.batch_frame_size = kwargs.pop(
             "batch_frame_size", 1
         )  # number of frames to attack per iteration
         self.patch_base_image = kwargs.pop("patch_base_image", None)
+        self.coco_format = bool(coco_format)
 
         super().__init__(estimator=estimator, **kwargs)
 
@@ -301,32 +302,66 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             self._get_circular_patch_mask(nb_samples=1).cpu().numpy()[0],
         )
 
-    @staticmethod  # can probably move to art_experimental/attacks/carla_obj_det_utils.py
-    def create_coco_anno_from_mot_anno(y):
+    # can probably move to art_experimental/attacks/carla_obj_det_utils.py
+    @staticmethod
+    def create_art_annotations_from_mot(y):
         """
         param y: 2D NDArray of shape (M, 9), where M is the total number of detections and each detection has format:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
-        return y_coco: list of dict, where each dict represents COCO annotations of each frame in the video
+        return y_art: list of dict, where each dict represents ART-style annotations
+            of each frame in the video
+
+        NOTE: This is NOT true coco format: https://cocodataset.org/#format-results
+            The fields are ART-specific: https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/1.12.1/art/attacks/evasion/adversarial_patch/adversarial_patch_pytorch.py#L550-L552
         """
-        n_timesteps = int(np.max(y[:, 0]))
-        y_coco = []
+        y_art = []
+        n_timesteps = int(np.max(y[:, 0])) + 1
         for t in range(n_timesteps):
-            boxes = y[y[:, 0] == t + 1, 2:6]  # <timestep> is 1-based
-            boxes[:, 2] = (
-                boxes[:, 0] + boxes[:, 2]
-            )  # convert from (x,y,w,h) to (x1,y1,x2,y2)
+            # convert from (x,y,w,h) to (x1,y1,x2,y2)
+            boxes = y[y[:, 0] == t, 2:6]  # <timestep> is 0-based
+            boxes[:, 2] = boxes[:, 0] + boxes[:, 2]
             boxes[:, 3] = boxes[:, 1] + boxes[:, 3]
-            scores = y[y[:, 0] == t + 1, 6]
-            labels = y[y[:, 0] == t + 1, 7]
-            y_coco.append(
+            scores = y[y[:, 0] == t, 6]
+            labels = y[y[:, 0] == t, 7]
+            y_art.append(
                 {
-                    "boxes": np.array(boxes),
-                    "labels": np.array(labels),
-                    "scores": np.array(scores),
+                    "boxes": np.array(boxes, dtype=np.float32),
+                    "labels": np.array(labels, dtype=np.float32),
+                    "scores": np.array(scores, dtype=np.float32),
                 }
             )
+        return y_art
 
-        return y_coco
+    @staticmethod
+    def create_art_annotations_from_coco(y):
+        """
+        param y: coco format data for a single video
+            See: armory.data.adversarial_datasets.mot_array_to_coco
+        return y_art: list of dict, where each dict represents ART-style annotations
+            of each frame in the video
+
+        NOTE: This is NOT true coco format: https://cocodataset.org/#format-results
+            The fields are ART-specific: https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/1.12.1/art/attacks/evasion/adversarial_patch/adversarial_patch_pytorch.py#L550-L552
+        """
+        y_art = []
+        n_timesteps = max(y_i["image_id"] for y_i in y) + 1
+        for t in range(n_timesteps):
+            boxes, labels, scores = [], [], []
+            y_t = [y_i for y_i in y if y_i["image_id"] == t]
+            for y_i in y_t:
+                # convert from (x,y,w,h) to (x1,y1,x2,y2)
+                x1, y1, w, h = y_i["bbox"]
+                boxes.append([x1, y1, x1 + w, y1 + h])
+                scores.append(y_i["score"])
+                labels.append(y_i["category_id"])
+            y_art.append(
+                {
+                    "boxes": np.array(boxes, dtype=np.float32),
+                    "labels": np.array(labels, dtype=np.float32),
+                    "scores": np.array(scores, dtype=np.float32),
+                }
+            )
+        return y_art
 
     def generate(self, x, y, y_patch_metadata):
         """
@@ -344,7 +379,10 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         attacked_videos = []
         for i in range(num_vids):
             # Adversarial patch attack, when used for object detection, requires ground truth
-            y_gt_coco = self.create_coco_anno_from_mot_anno(y[i])
+            if self.coco_format:
+                y_gt_coco = self.create_art_annotations_from_coco(y[i])
+            else:
+                y_gt_coco = self.create_art_annotations_from_mot(y[i])
             self.gs_coords = y_patch_metadata[i]["gs_coords"]  # patch coordinates
             patch_width = np.max(self.gs_coords[:, :, 0]) - np.min(
                 self.gs_coords[:, :, 0]

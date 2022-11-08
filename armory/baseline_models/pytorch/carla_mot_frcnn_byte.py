@@ -9,6 +9,9 @@ from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 from torchvision import models
 import dataclasses
+
+from armory.data.adversarial_datasets import mot_array_to_coco
+
 from yolox.tracker.byte_tracker import (
     BYTETracker,
 )  # clone from https://github.com/ifzhang/ByteTrack
@@ -34,6 +37,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
         model,
         clip_values,
         channels_first,
+        coco_format=False,
         **wrapper_kwargs,
     ):
         BYTE_kwargs = wrapper_kwargs.pop("BYTE_kwargs", {})
@@ -52,6 +56,8 @@ class PyTorchTracker(PyTorchFasterRCNN):
 
         self.conf_thresh = wrapper_kwargs.pop("conf_thresh", 0.1)
         self.nms_thresh = wrapper_kwargs.pop("nms_thresh", 0.5)
+
+        self.coco_format = coco_format
 
         self.tracker_args = BYTETrackerArgs(
             track_thresh=track_thresh,
@@ -169,8 +175,8 @@ class PyTorchTracker(PyTorchFasterRCNN):
                         results.append(
                             (
                                 [
-                                    frame_id + 1 for _ in range(len(online_ids))
-                                ],  # MOT frame index is 1-based
+                                    frame_id for _ in range(len(online_ids))
+                                ],  # Use 0-based index for MOT frame
                                 online_ids,
                                 online_tlwhs,
                                 online_scores,
@@ -189,9 +195,12 @@ class PyTorchTracker(PyTorchFasterRCNN):
             for result in results
             for [f, i, b, s, c, v] in zip(*result)
         ]
-        output = np.asarray(output)
+        output = np.asarray(output).astype(np.float32)
+        output = np.expand_dims(output, 0)
 
-        return np.expand_dims(output, 0)
+        if self.coco_format:
+            output = mot_array_to_coco(output)
+        return output
 
 
 # NOTE: PyTorchFasterRCNN expects numpy input, not torch.Tensor input
