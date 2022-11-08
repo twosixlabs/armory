@@ -72,7 +72,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     if [ -z "$TARGET_FILES" ]; then
         echo "📄 No json files to check"
     else
-        echo "📄 Executing 'json' formatter..."
+        echo "📄 Executing 'json.tool' formatter..."
         for TARGET_FILE in ${TARGET_FILES}; do
             # Check if file is too large to be linted
             FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
