@@ -50,24 +50,23 @@ armory = "armory.__main__:main"
 [project.optional-dependencies]
 developer =[
     "hatch", # build tool
-    "wheel",
+    "wheel", # build tool
     "mkdocs",
     "black[jupyter]==22.*",
     "flake8",
-    "yamllint",
     "bandit[toml]", # code scanning
-    "tox", # testing
-    "hydra-core", # configuration
+    "tox",          # testing
+    "hydra-core",   # configuration
 ]
 
 engine = [
     "adversarial-robustness-toolbox==1.12.1",
-    "Pillow",           # Data dependencies
+    "Pillow",         # Data dependencies
     "boto3",          # Needed for armory.data.utils
     "botocore",       # Needed for armory.data.utils
-    "ffmpeg-python",    # Needed for armory.utils.export
+    "ffmpeg-python",  # Needed for armory.utils.export
     "opencv-python",  # Needed for CARLA baseline scenario
-    "pydub",           # this is in ART's extra-requires
+    "pydub",          # this is in ART's extra-requires
     "tensorboardx",
 ]
 
