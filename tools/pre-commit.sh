@@ -41,35 +41,30 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-    # Execute python pre-commit hooks in seperate processes
-    # so that json linting can still occur.
     echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
-    (   PRE_COMMIT_EXIT_STATUS=0
-        echo "📁 collecting files to lint"
-        TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
-        if [ -z "$TARGET_FILES" ]; then
-            echo "📁 $(tput bold)no python files to check$(tput sgr0)"
-            exit 0
-        fi
 
+    echo "📁 collecting files to lint"
+    TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
+    if [ -z "$TARGET_FILES" ]; then
+        echo "📁 $(tput bold)no python files to check$(tput sgr0)"
+    else
         ############
         # Black
         echo "⚫ Executing 'black' formatter..."
-        python -m black --check > /dev/null 2>&1
+        python -m black --check ${TARGET_FILES} > /dev/null
         if [ $? -ne 0 ]; then
             python -m black $TARGET_FILES
             echo "⚫ some files were formatted."
-            PRE_COMMIT_EXIT_STATUS=1
+            CHECK_EXIT_STATUS 1
         fi
 
         ############
         # Flake8
         echo "🎱 Executing 'flake8' formatter..."
         python -m flake8 --config=.flake8 ${TARGET_FILES}
-        PRE_COMMIT_EXIT_STATUS=$?
+        CHECK_EXIT_STATUS $?
+    fi
 
-        exit ${PRE_COMMIT_EXIT_STATUS}
-    ) || CHECK_EXIT_STATUS $?
 
     ############
     # JSON Linting
