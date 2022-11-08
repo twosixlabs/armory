@@ -24,8 +24,7 @@ fi
 # Fixes Github Action error, "tput: No value for $TERM and no -T specified",
 # that occurs When $TERM is empty (non-interactive shell) by expanding tput
 # with '-T xterm-256color'
-[[ ${TERM}=="" ]] && TPUTTERM='-T xterm-256color' \
-                  || TPUTTERM=''
+[[ ${TERM}=="" ]] && export TERM='xterm-256color'
 
 function CHECK_EXIT_STATUS ()
 {
