@@ -3,16 +3,17 @@ Example:
 
 from datasets import load, generator
 info, ds = load.load("digit")
-gen = generator.Generator(info, ds, element_map = lambda z: (generator.audio_to_canon(z["audio"]), z["label"]))
+gen = generator.ArmoryDataGenerator(info, ds, element_map = lambda z: (generator.audio_to_canon(z["audio"]), z["label"]))
 x, y = next(gen)
 
 info, ds = load.load("mnist")
-gen = generator.Generator(info, ds, element_map = lambda z: (generator.image_to_canon(z["image"]), z["label"]), framework="tf", batch_size=5)
+gen = generator.ArmoryDataGenerator(info, ds, element_map = lambda z: (generator.image_to_canon(z["image"]), z["label"]), framework="tf", batch_size=5)
 x, y = next(gen)
 
 """
 
 import tensorflow as tf
+
 
 # NOTE: currently does not extend art.data_generators.DataGenerator
 #     which is necessary for using ART `fit_generator` method
@@ -30,6 +31,7 @@ class ArmoryDataGenerator:
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
     """
+
     FRAMEWORKS = ("tf", "numpy", "torch")
 
     def __init__(
@@ -59,7 +61,7 @@ class ArmoryDataGenerator:
             )
         if framework not in self.FRAMEWORKS:
             raise ValueError(f"framework {framework} not in {self.FRAMEWORKS}")
-        
+
         size = info.splits[split].num_examples
         batch_size = int(batch_size)
         batches_per_epoch = size // batch_size
@@ -89,7 +91,7 @@ class ArmoryDataGenerator:
         if framework == "tf":
             iterator = iter(ds)
         elif framework == "numpy":
-        # ds = tfds.as_numpy(ds)  # TODO: this or tfds.as_numpy_iterator() ?
+            # ds = tfds.as_numpy(ds)  # TODO: this or tfds.as_numpy_iterator() ?
             iterator = ds.as_numpy_iterator()
         else:  # torch
             # SEE: tfds.as_numpy
@@ -130,6 +132,7 @@ class ArmoryDataGenerator:
 
 # TODO: Armory Generator that enables preprocessing and mapping into tuples
 
+
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
     """
     TFDS Image feature uses (height, width, channels)
@@ -141,7 +144,7 @@ def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint
     image = tf.cast(image, target_dtype)
     image = image / scale
     if resize is not None:
-        resize = tuple(size)
+        resize = tuple(resize)
         if len(resize) != 2:
             raise ValueError(f"resize must be None or a 2-tuple, not {resize}")
         image = tf.image.resize(image, resize)
@@ -160,11 +163,17 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     audio = tf.cast(audio, target_dtype)
     audio = audio / scale
     if resample is not None:
-        raise NotImplementedError(f"resampling not currently supported")
+        raise NotImplementedError("resampling not currently supported")
     return audio
 
 
-def video_to_canon(video, resize=None, target_dtype=tf.float32, input_type="uint8", max_frames: int = None):
+def video_to_canon(
+    video,
+    resize=None,
+    target_dtype=tf.float32,
+    input_type="uint8",
+    max_frames: int = None,
+):
     """
     TFDS Video feature uses (num_frames, height, width, channels)
     """
@@ -172,7 +181,7 @@ def video_to_canon(video, resize=None, target_dtype=tf.float32, input_type="uint
         scale = 255.0
     else:
         raise NotImplementedError(f"Currently only supports uint8, not {input_type}")
-    
+
     if max_frames is not None:
         if max_frames < 1:
             raise ValueError("max_frames must be at least 1")
@@ -180,5 +189,5 @@ def video_to_canon(video, resize=None, target_dtype=tf.float32, input_type="uint
     video = tf.cast(video, target_dtype)
     video = video / scale
     if resize is not None:
-        raise NotImplementedError(f"resizing video")
+        raise NotImplementedError("resizing video")
     return video
