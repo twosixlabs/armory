@@ -48,9 +48,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     if [ -z "$TARGET_FILES" ]; then
         echo "📁 $(tput bold)no python files to check$(tput sgr0)"
         exit 0
-    fi
-
-    if [ ! -z "$TARGET_FILES" ]; then
+    else
         ############
         # Black
         echo "⚫ Executing 'black' formatter..."
