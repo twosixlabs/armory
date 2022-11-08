@@ -1,0 +1,23 @@
+{
+    "carla_over_obj_det_dev": {
+        "sha256": "77761f1d5c6eca40984aa40f38fab0568b9bb4a4dca696e876fccaa2dd9be56d",
+        "size": 59760259,
+        "subdir": "carla_over_obj_det_dev/1.0.0",
+        "url": null,
+        "version": "1.0.0"
+    },
+    "digit": {
+        "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
+        "size": 8349857,
+        "subdir": "digit/1.0.8",
+        "url": null,
+        "version": "1.0.8"
+    },
+    "mnist": {
+        "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
+        "size": 16920751,
+        "subdir": "mnist/3.0.1",
+        "url": null,
+        "version": "3.0.1"
+    }
+}
