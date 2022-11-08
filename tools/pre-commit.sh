@@ -47,7 +47,6 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
     if [ -z "$TARGET_FILES" ]; then
         echo "📁 $(tput bold)no python files to check$(tput sgr0)"
-        exit 0
     else
         ############
         # Black
