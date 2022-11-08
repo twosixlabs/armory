@@ -22,8 +22,8 @@ fi
 [ -z "$TRACKED_FILES" ] && exit 0
 
 # Fixes Github Action error, "tput: No value for $TERM and no -T specified",
-# that occurs When $TERM is empty (non-interactive shell) by expanding tput
-# with '-T xterm-256color'
+# that occurs When $TERM is empty (non-interactive shell) by faking a value
+# for the terminal profile.
 [[ ${TERM}=="" ]] && export TERM='xterm-256color'
 
 function CHECK_EXIT_STATUS ()
