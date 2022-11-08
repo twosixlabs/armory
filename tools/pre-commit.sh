@@ -41,13 +41,13 @@ function CHECK_EXIT_STATUS ()
 
 
 pushd $PROJECT_ROOT > /dev/null || exit 1
-    echo "🐍 $(tput bold)executing python pre-commit hooks$(tput sgr0)"
+    echo "Executing pre-commit hooks"
 
-    echo "📁 collecting files to lint"
     TARGET_FILES=`${TRACKED_FILES} | grep -E '\.py$' | sed 's/\n/ /g'`
     if [ -z "$TARGET_FILES" ]; then
-        echo "📁 $(tput bold)no python files to check$(tput sgr0)"
+        echo "🐍 No python files to check"
     else
+        echo "🐍 Executing python hooks"
         ############
         # Black
         echo "⚫ Executing 'black' formatter..."
@@ -68,29 +68,33 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
 
     ############
     # JSON Linting
-    echo "📄 Executing 'json' formatter..."
     TARGET_FILES=`${TRACKED_FILES} | sed 's/ /\n/g' | grep -E '.*\.json$'`
-    for TARGET_FILE in ${TARGET_FILES}; do
-        # Check if file is too large to be linted
-        FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
-        if [ ${FILE_SIZE} -gt ${MAX_FILE_SIZE} ]; then
-            echo "📄 Skipping ${TARGET_FILE} (too large)"
-            continue
-        fi
-
-        python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
-
-        if [ $? -ne 0 ] ; then
-            JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
-            if [[ ! -z "${JSON_PATCH// }" ]]; then
-                echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
-                echo "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
-            else
-                echo "📄 $(tput bold)${TARGET_FILE} is not valid JSON!$(tput sgr0)"
+    if [ -z "$TARGET_FILES" ]; then
+        echo "📄 No json files to check"
+    else
+        echo "📄 Executing 'json.tool' formatter..."
+        for TARGET_FILE in ${TARGET_FILES}; do
+            # Check if file is too large to be linted
+            FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
+            if [ ${FILE_SIZE} -gt ${MAX_FILE_SIZE} ]; then
+                echo "📄 Skipping ${TARGET_FILE} (too large)"
+                continue
             fi
-            CHECK_EXIT_STATUS 1
-        fi
-    done
+
+            python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
+
+            if [ $? -ne 0 ] ; then
+                JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
+                if [[ ! -z "${JSON_PATCH// }" ]]; then
+                    echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
+                    echo "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
+                else
+                    echo "📄 $(tput bold)${TARGET_FILE} is not valid JSON!$(tput sgr0)"
+                fi
+                CHECK_EXIT_STATUS 1
+            fi
+        done
+    fi
 popd > /dev/null
 
 
