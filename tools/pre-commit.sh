@@ -21,6 +21,11 @@ if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
 fi
 [ -z "$TRACKED_FILES" ] && exit 0
 
+# Fixes Github Action error, "tput: No value for $TERM and no -T specified",
+# that occurs When $TERM is empty (non-interactive shell) by expanding tput
+# with '-T xterm-256color'
+[[ ${TERM}=="" ]] && TPUTTERM='-T xterm-256color' \
+                  || TPUTTERM=''
 
 function CHECK_EXIT_STATUS ()
 {
