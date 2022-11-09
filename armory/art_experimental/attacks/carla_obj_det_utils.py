@@ -86,8 +86,8 @@ def rgb_depth_to_linear(depth_rgb):
     """
     r, g, b = depth_rgb[:, :, 0], depth_rgb[:, :, 1], depth_rgb[:, :, 2]
     r *= 255.0
+    g *= 255.0
     b *= 255.0
-    b *= 255.0
-    depth_m = (R + G * 256 + B * 256 * 256) 
+    depth_m = r + g * 256 + b * 256 * 256
     depth_m = depth_m * 1000.0 / (256**3 - 1)
-    return depth_meters
+    return depth_m
