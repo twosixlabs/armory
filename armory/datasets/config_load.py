@@ -28,6 +28,7 @@ def actual_loader(
         batch_size=batch_size,
         framework=framework,
         epochs=epochs,
+        drop_remainder=drop_remainder,
         element_filter=None,
         element_map=preprocessor,
         shuffle_elements=shuffle_elements,

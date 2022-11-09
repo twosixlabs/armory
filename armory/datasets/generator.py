@@ -89,7 +89,13 @@ class ArmoryDataGenerator:
         if epochs > 1:
             ds = ds.repeat(epochs)
         if shuffle_elements:
-            ds = ds.shuffle(batch_size * 10, reshuffle_each_iteration=True)
+            # https://www.tensorflow.org/datasets/performances#caching_the_dataset
+            # for true random, set buffer_size to dataset size
+            # TODO: maybe set to size of data shards? How do we find this info?
+            # info.splits['train'].num_examples / info.splits['train'].num_shards
+
+            buffer_size = batch_size * 10
+            ds = ds.shuffle(buffer_size, reshuffle_each_iteration=True)
         ds = ds.batch(batch_size, drop_remainder=drop_remainder)
         ds = ds.prefetch(tf.data.AUTOTUNE)
         # ds = ds.cache()
