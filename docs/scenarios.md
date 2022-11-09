@@ -50,6 +50,7 @@ The dataset contains natural lighting metadata that allow digital, adaptive patc
 * **Baseline Defense**: [JPEG Frame Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
 * **Baseline Model Performance**: For [dev data](../armory/data/adversarial/carla_mot_dev.py), results obtained using Armory v0.16.1
 
+TODO: Add numbers
 | Data | Defended | Attack            | Attack Parameters              | Benign DetA / AssA / HOTA | Adversarial DetA / AssA / HOTA | Test Size |
 |------|---------------------------------------------------------------|---------------------------|--------------------------------|-----------|
 | Dev  | no       | Adversarial Patch | step_size=0.02, max_iter=100   | X.XX / X.XX / X.XX        |  X.XX / X.XX / X.XX            | 20        |
@@ -64,6 +65,7 @@ Find reference baseline configurations [here](../scenario_configs/eval6/carla_mo
 
 ### CARLA Overhead [Multimodal] Object Detection (Updated October 2022)
 
+TODO: Needs update
 * **Description:**
 In this scenario, the system under evaluation is an object detector trained to identify vehicles and pedestrians from an overhead camera angle.
 * **Dataset:**
