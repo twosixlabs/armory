@@ -28,8 +28,12 @@ Our repo-specific Flake8 configuration is detailed in `.flake8`.
 The above tools can be ran automatically, prior to each commit, by sourcing `tools/pre-commit.sh` in `.git/hooks/pre-commit`. See the example below:
 
 ```bash
-echo "source tools/pre-commit.sh" > .git/hooks/pre-commit
+echo "./tools/pre-commit.sh" > .git/hooks/pre-commit
 chmod 755 ".git/hooks/pre-commit"
+```
+NOTE: if there are shell errors when the pre-commit hook is launched, you may need to modify it to your shell of choice:
+```bash
+echo "<shell> tools/pre-commit.sh" > .git/hooks/pre-commit
 ```
 
 There is an `EARLY_EXIT` variable in `tools/pre-commit.sh` that can be modified that causes the script to exit on the first failure.
