@@ -5,6 +5,8 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
+from tidecv import TIDE
+import tidecv.data
 
 import numpy as np
 
@@ -812,6 +814,82 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
 
     returns: a scalar value
     """
+    ap_per_class = object_detection_AP_per_class(
+        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+    )
+    return np.fromiter(ap_per_class.values(), dtype=float).mean()
+
+
+def armory_to_tide_ground_truth(y_dict):
+    data_ground_truth = tidecv.data.Data(name="ground_truth")
+    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
+        x1, y1, x2, y2 = y["boxes"]
+        width = abs(x1 - x2)
+        height = abs(y1 - y2)
+        x_min = min(x1, x2)
+        y_min = min(y1, y2)
+
+        y_tidecv = {
+            "image_id": y["image_id"],
+            "class_id": y["labels"],
+            "box": [x_min, y_min, width, height],
+        }
+        data_ground_truth.add_ground_truth(**y_tidecv)
+
+    return data_ground_truth
+
+
+def armory_to_tide_detection(y_dict, image_id):
+    data_detection = tidecv.data.Data(name="detection")
+    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
+        x1, y1, x2, y2 = y["boxes"]
+        width = abs(x1 - x2)
+        height = abs(y1 - y2)
+        x_min = min(x1, x2)
+        y_min = min(y1, y2)
+
+        # y_tidecv = {"image_id": y["image_id"], "class_id": y["labels"], "box": [x_min, y_min, width, height], "score": y["scores"]}
+        y_tidecv = {
+            "image_id": image_id,
+            "class_id": y["labels"],
+            "box": [x_min, y_min, width, height],
+            "score": y["scores"],
+        }
+        data_detection.add_detection(**y_tidecv)
+
+    return data_detection
+
+
+@populationwise
+def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list=None):
+    """
+    Mean average precision for object detection.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+
+    returns: a scalar value
+    """
+
+    # data_ground_truth = tidecv.data.Data(name="ground_truth")
+    # data_detection = tidecv.data.Data(name="detection")
+    # print(y_list)
+    data_ground_truth = armory_to_tide_ground_truth(y_list[0])
+    image_id = y_list[0]["image_id"][0]  # assume image_id is the same per image
+    data_detection = armory_to_tide_detection(y_pred_list[0], image_id)
+
+    tide = TIDE()
+    tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
+
+    # return tide
+    # return tide.run_thresholds
+
     ap_per_class = object_detection_AP_per_class(
         y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
     )
