@@ -244,6 +244,14 @@ class MeanAP:
 
 
 @populationwise
+def my_task(y_true_list, y_actual_list):
+    return {
+        "a": len(y_true_list),
+        "b": len(y_actual_list),
+    }
+
+
+@populationwise
 def tpr_fpr(actual_conditions, predicted_conditions):
     """
     actual_conditions and predicted_conditions should be equal length boolean np arrays
