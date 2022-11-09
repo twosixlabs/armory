@@ -1,3 +1,8 @@
+import re
+
+import tensorflow as tf
+
+
 def _parse_token(token: str):
     """
     Token from parse_split index
