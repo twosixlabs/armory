@@ -1,10 +1,12 @@
 ---
+# yamllint disable
 name: 💻 Stand Alone Tests
 
-on: workflow_call
+on:
+  workflow_call:
+
 
 jobs:
-
   stand-alone-test:
     name: 📝 Stand Alone Test Suite
     runs-on: ${{ matrix.os }}-latest
@@ -20,7 +22,6 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -30,7 +31,6 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
-      # yamllint enable rule:indentation
 
       - name: 🐍 Switch Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4

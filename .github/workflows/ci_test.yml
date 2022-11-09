@@ -1,45 +1,23 @@
 ---
+# yamllint disable
 name: 🐛📦 Build & Test
 
 on:
-  # yamllint disable rule:comments-indentation
   workflow_dispatch:
-    # inputs:
-    #   test-run:
-    #     type: choice
-    #     description: CI Workflow to Execute
-    #     options:
-    #       - Q & A Test
-    #       - Stand Alone Test
-    #       - Docker Test
-    #       - All Tests
-    # TODO: Use menu for dispatching workflows
-    #  >>> if: github.event.inputs.test-run == 'All Tests' || github.event.inputs.test-run == 'Q & A Test'
-  # yamllint disable rule:comments-indentation
 
   push:
     branches:
       - master
       - develop
-      - 'v[0-9]+.[0-9]+.[0-9]+'  # release branches have the form v1.9.x
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # release branches have the form v1.9.x
       - 'rc[0-9]+.[0-9]+.[0-9]+'  # release candidate branches
 
   pull_request:
     branches:
       - master
       - develop
-    # types:
-    #   - opened
-    #   - reopened
-    #   - synchronize
-    #   - ready_for_review
-
-
-# Limit workflow concurrency to one job per branch.
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.ref }}
-#   cancel-in-progress: true
-
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'rc[0-9]+.[0-9]+.[0-9]+'
 
 env:
   DOCKER_BUILDKIT: 1

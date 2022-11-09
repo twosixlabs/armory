@@ -5,7 +5,7 @@ from PIL import Image
 
 from armory.scenarios.poison import Poison
 from armory.logs import log
-from armory.utils import config_loading
+from armory.utils import config_loading, triggers
 from armory.scenarios.utils import from_categorical
 
 
@@ -94,24 +94,34 @@ class SleeperAgentScenario(Poison):
             )
 
             # Set additional attack config kwargs
-            attack_config["kwargs"]["indices_target"] = np.asarray(
-                self.y_clean == self.target_class
-            ).nonzero()[0]
-            attack_config["kwargs"]["percent_poison"] = adhoc_config[
-                "fraction_poisoned"
-            ]
-            attack_config["kwargs"]["class_source"] = self.source_class
-            attack_config["kwargs"]["class_target"] = self.target_class
-            attack_config["kwargs"]["learning_rate_schedule"] = tuple(
-                attack_config["kwargs"]["learning_rate_schedule"]
-            )  # convert to tuple as required by ART attack
-            patch_size = attack_config["kwargs"].pop("patch_size")
-            patch = Image.open(
-                "armory/utils/triggers/" + attack_config["kwargs"]["patch"]
-            )
+            kwargs = attack_config["kwargs"]
+            patch_size = kwargs.pop("patch_size")
+            patch = Image.open(triggers.get_path(kwargs["patch"]))
             patch = np.asarray(patch.resize((patch_size, patch_size)))
-            attack_config["kwargs"]["patch"] = patch
-            K = attack_config["kwargs"].pop("k_trigger")
+            device_name = kwargs.pop("device_name", None)
+            if device_name is None:
+                try:
+                    import torch
+
+                    device_name = "cuda" if torch.cuda.is_available() else "cpu"
+                except ImportError:
+                    device_name = "cpu"
+
+            kwargs.update(
+                {
+                    "indices_target": np.asarray(
+                        self.y_clean == self.target_class
+                    ).nonzero()[0],
+                    "percent_poison": adhoc_config["fraction_poisoned"],
+                    "class_source": self.source_class,
+                    "class_target": self.target_class,
+                    # convert to tuple as required by ART attack
+                    "learning_rate_schedule": tuple(kwargs["learning_rate_schedule"]),
+                    "patch": patch,
+                    "device_name": device_name,
+                }
+            )
+            K = kwargs.pop("k_trigger")
             # K is number of train source images to use in x_trigger
 
             x_trigger = copy.deepcopy(

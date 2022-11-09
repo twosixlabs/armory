@@ -1,4 +1,5 @@
 ---
+# yamllint disable
 name: 🙈 🙉 🙊 Scan & Lint
 
 on: workflow_call
@@ -15,7 +16,6 @@ jobs:
           fetch-depth: 0
 
       # Get history and tags for SCM versioning to work
-      # yamllint disable rule:indentation
       - name: 📩 Checkout the Source
         run: |
           git fetch --prune --unshallow || true
@@ -25,12 +25,13 @@ jobs:
             echo "Expected ./.git folder to exist"
             exit 1
           fi
-      # yamllint enable rule:indentation
+
 
       - name: 🐍 Switch Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
+
 
       - name: 🌱 Setup Test Enviroment
         run: |
@@ -54,16 +55,13 @@ jobs:
 
 
       - name: 🚀 Run commit hooks
+        env:
+          ARMORY_COMMIT_HOOK_CI: 1
         run: |
           echo "💄 Running commit hooks for Armory version ${VERSION}"
-
           bash tools/pre-commit.sh
-        # if [ $? -ne 0 ]; then
-        #   echo "🚨 Pre-commit hooks failed. Please run 'pre-commit run --all-files' locally to fix the issues 🚑"
-        #   exit 1
-        # fi
 
-      # yamllint disable rule:indentation
+
       - name: 📦 Build Testing
         run: |
           python -m          \
@@ -82,6 +80,7 @@ jobs:
             exit 1
           fi
 
+
       - name: 🦹‍♂️ Scanning with Bandit
         run: |
           bandit                                    \
@@ -92,22 +91,6 @@ jobs:
             --output /tmp/artifacts/bandit_scan.txt \
           || $( exit 0 ); echo $?
 
-      - name: ❄️ Running Flake8
-        run: |
-            flake8 ${ARMORY_SRC_DIR}  \
-              --count                 \
-              --exit-zero             \
-              --max-complexity=10     \
-              --max-line-length=127   \
-              --statistics            \
-              --show-source           \
-              --color=always          \
-              --config=.flake8        \
-              --output-file /tmp/artifacts/flake8.txt
-          # TODO: C901 - Determine if `# noqa: C901` is needed
-          #   python3 -m pip install astpretty
-          #   if flake8 code == C901:
-          #     astpretty(file) => save to artifacts
 
       - name: 🖋️ mypy Type Checking
         run: |
@@ -122,7 +105,7 @@ jobs:
             --pretty                   \
             > /tmp/artifacts/mypy.txt  \
           || $( exit 0 ); echo $?
-      # yamllint enable rule:indentation
+
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3

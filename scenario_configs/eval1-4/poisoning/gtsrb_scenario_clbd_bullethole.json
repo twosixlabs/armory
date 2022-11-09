@@ -15,8 +15,7 @@
         "knowledge": "black",
         "kwargs": {
             "backdoor_kwargs": {
-                "backdoor_packaged_with_armory": true,
-                "backdoor_path": "./armory/utils/triggers/bullet_holes.png",
+                "backdoor_path": "bullet_holes.png",
                 "poison_module": "art.attacks.poisoning.perturbations",
                 "poison_type": "image",
                 "size": [
