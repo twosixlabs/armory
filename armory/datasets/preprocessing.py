@@ -21,9 +21,7 @@ def list_registered():
     return list(REGISTERED_PREPROCESSORS)
 
 
-def get(name, version=None):
-    if version is not None:
-        raise NotImplementedError("version is not None for preprocessing to_canon")
+def get(name):
     if name not in REGISTERED_PREPROCESSORS:
         raise KeyError(
             f"prepreprocessor {name} not registered. Use one of {list_registered()}"
@@ -32,8 +30,11 @@ def get(name, version=None):
 
 
 @register
-def mnist(element):
+def supervised_image_classification(element):
     return (image_to_canon(element["image"]), element["label"])
+
+
+mnist = register(supervised_image_classification, "mnist")
 
 
 @register

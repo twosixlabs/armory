@@ -16,18 +16,25 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 
-# NOTE: currently does not extend art.data_generators.DataGenerator
-#     which is necessary for using ART `fit_generator` method
 class ArmoryDataGenerator:
     """
     Returns batches of numpy data
 
     Raw = no preprocessing
 
-    ds_dict = dataset dictionary without split selected
+    ds_dict - dataset dictionary without split selected
+
+    Without a split specified, load.load will return an info and a ds_dict:
+        info, ds_dict = load.load("mnist")
+
+    If a split is specified in load.load, then a ds will be returned
+        info, ds = load.load("mnist", split="test")
+
+    We use the ds_dict here, because otherwise we can't grab split information from info
 
     num_batches - if not None, the number of batches to grab
 
+    index_filter - predicate of which indexes to keep
     element_filter - predicate of which elements to keep; occurs prior to mapping
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
@@ -46,6 +53,7 @@ class ArmoryDataGenerator:
         num_batches: int = None,
         framework: str = "numpy",
         shuffle_elements: bool = False,
+        index_filter: callable = None,
         element_filter: callable = None,
         element_map: callable = None,
     ):
@@ -71,6 +79,8 @@ class ArmoryDataGenerator:
             batches_per_epoch += bool(size % batch_size)
 
         ds = ds_dict[split]
+        if index_filter is not None:
+            ds = ds.enumerate().filter(index_filter).map(lambda i, x: x)
         if element_filter is not None:
             ds = ds.filter(element_filter)
         if element_map is not None:
@@ -91,11 +101,12 @@ class ArmoryDataGenerator:
         if shuffle_elements:
             # https://www.tensorflow.org/datasets/performances#caching_the_dataset
             # for true random, set buffer_size to dataset size
-            # TODO: maybe set to size of data shards? How do we find this info?
-            # info.splits['train'].num_examples / info.splits['train'].num_shards
-
-            buffer_size = batch_size * 10
-            ds = ds.shuffle(buffer_size, reshuffle_each_iteration=True)
+            #     for large datasets, this is too large, therefore use shard size
+            # set shuffle buffer to the number of elements in a shard
+            # shuffle_files will shuffle between shard, this will shuffle within shards
+            #     this won't be true random, but will be sufficiently close
+            examples_per_split = math.ceil(size / info.splits[split].num_shards)
+            ds = ds.shuffle(examples_per_split, reshuffle_each_iteration=True)
         ds = ds.batch(batch_size, drop_remainder=drop_remainder)
         ds = ds.prefetch(tf.data.AUTOTUNE)
         # ds = ds.cache()
