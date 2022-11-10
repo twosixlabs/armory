@@ -134,8 +134,11 @@ class Scenario:
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
         log.info(f"Loading train dataset {dataset_config['name']}...")
+        module = dataset_config.get("module")
+        name = dataset_config.get("name")
         self.train_dataset = config_loading.load_dataset(
-            dataset_config,
+            module,
+            name,
             epochs=self.fit_kwargs["nb_epochs"],
             split=dataset_config.get("train_split", train_split_default),
             check_run=self.check_run,
@@ -203,8 +206,11 @@ class Scenario:
         eval_split = dataset_config.get("eval_split", eval_split_default)
         # Evaluate the ART model on benign test examples
         log.info(f"Loading test dataset {dataset_config['name']}...")
+        module = dataset_config.get("module")
+        name = dataset_config.get("name")
         self.test_dataset = config_loading.load_dataset(
-            dataset_config,
+            module,
+            name,
             epochs=1,
             split=eval_split,
             num_batches=self.num_eval_batches,

@@ -68,17 +68,13 @@ def actual_loader(
     )
 
 
-def load_dataset(dataset_config, *args, check_run=False, **kwargs):
+def load_dataset(module, name, check_run=False, **kwargs):
     """
     Designed to be a drop-in replacement for armory.utils.config_loading.load_dataset
 
     NOTE: very ugly
     """
 
-    if args:
-        raise NotImplementedError("args not supported here")
-    kwargs.update(dataset_config)
-    module = kwargs.pop("module")
     if module == "armory.data.datasets":
         pass
     elif module == "armory.data.adversarial_datasets":
@@ -87,7 +83,6 @@ def load_dataset(dataset_config, *args, check_run=False, **kwargs):
         # NOTE: temporary until moving over to new datasets approach
         raise NotImplementedError
 
-    name = kwargs.pop("name")
     if ":" in name:
         name, version = name.split(":")
     else:
