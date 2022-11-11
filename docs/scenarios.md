@@ -14,13 +14,14 @@ This class parses an armory configuration file and calls its `evaluate` method t
 All `evaluate` methods save a dictionary of recorded metrics which are saved into the armory `output_dir` upon  completion.
 Scenarios are implemented as subclasses of `Scenario`, and typically given their own file in the [Scenario's Directory](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/).
 
-Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed from.
-More information on poisoning scenarios are documented [here](poisoning.md).
+Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed.
+More information on poisoning scenarios is documented [here](poisoning.md).
 
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
-These are presented here as a combination of scenario, dataset, baseline model, and attack, as they correspond to configuration files.
-For many scenarios, we also provide metrics of interest and results from the baseline model(s).
+Some scenarios are tied to a specific attack, while others are customized for a given dataset.  Several are more general-purpose.
+Along with each scenario description, we provide a link to a page with baseline results for applicable datasets and attacks.
+
 
 ### CARLA Overhead Multi-Object tracking (MOT) (Updated October 2022)
 
@@ -754,5 +755,4 @@ An [example of doing this](https://github.com/twosixlabs/armory-example/blob/mas
 ## Derivative metrics
 ![alt text](https://user-images.githubusercontent.com/18154355/80718651-691fb780-8ac8-11ea-8dc6-94d35164d494.png "Derivative Metrics")
 
-## Exporting Samples
-Scenarios can be configured to export benign and adversarial image, video, and audio samples.  This feature is enabled by setting the `export_samples` field under `scenario` in the configuration file to a non-zero integer.  The specified number of samples will be saved in the output directory for this evaluation, along with a pickle file which stores the ground truth and model output for each sample.  For video files, samples are saved both in a compressed video format and frame-by-frame.
+
