@@ -55,6 +55,7 @@ class Scenario:
                 "max_iter_2",
                 "max_epochs",
                 "max_trials",
+                "model_retraining_epoch",
             ]:
                 if config.get("attack", {}).get("kwargs", {}).get(attack_kwarg):
                     config["attack"]["kwargs"][attack_kwarg] = 1
