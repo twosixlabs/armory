@@ -35,6 +35,7 @@ dependencies = [
     "PyYAML",
     "requests",
     "toml",
+    "tidecv",
 ]
 
 [project.urls]

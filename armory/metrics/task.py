@@ -905,8 +905,11 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     max_dets = 0
     for y, y_pred in zip(y_list, y_pred_list):
+        print(f"y.keys(): {y.keys()}")
+        print(f"y_pred.keys(): {y_pred.keys()}")
         armory_to_tide_ground_truth(y, data_ground_truth)
         image_id = y["image_id"][0]  # assume image_id is the same per image
+        print(f"image_id: {image_id}")
         armory_to_tide_detection(y_pred, image_id, data_detection)
         print(
             f"""len(y["labels"]): {len(y["labels"])}, len(data_ground_truth.annotations): {len(data_ground_truth.annotations)}"""
@@ -921,6 +924,7 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     data_ground_truth.max_dets = max_dets
     data_detection.max_dets = max_dets
+    print(max_dets)
 
     tide = TIDE()
     tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
