@@ -888,13 +888,22 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
     returns: a scalar value
     """
 
-    data_ground_truth = tidecv.data.Data(name="ground_truth")
-    data_detection = tidecv.data.Data(name="detection")
-    # print(y_list)
-    # data_ground_truth = armory_to_tide_ground_truth(y_list[0])
-    # image_id = y_list[0]["image_id"][0]  # assume image_id is the same per image
-    # data_detection = armory_to_tide_detection(y_pred_list[0], image_id)
+    # may need to determine max_dets for data_ground_truth and data_detection
+    # default max_dets=100
+    # data_ground_truth.max_dets gets passed to tide.evaluate_range > TIDERun._run > TIDERun._eval_image > TIDEEXample._run
+    #     preds = preds[:max_dets]
+    #     self.preds = preds # Update internally so TIDERun can update itself if :max_dets takes effect
+    # for now assume we don't want max_dets to affect our metrics
+    # need to set data_ground_truth.max_dets and data_detection.max_dets to max of max(len(y["labels"]), len(y_pred["labels"])))
+    # after going through for loop
 
+    data_ground_truth_name = "ground_truth"
+    data_detection_name = "detection"
+
+    data_ground_truth = tidecv.data.Data(name=data_ground_truth_name)
+    data_detection = tidecv.data.Data(name=data_detection_name)
+
+    max_dets = 0
     for y, y_pred in zip(y_list, y_pred_list):
         armory_to_tide_ground_truth(y, data_ground_truth)
         image_id = y["image_id"][0]  # assume image_id is the same per image
@@ -906,17 +915,33 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
             f"""len(y_pred["labels"]): {len(y_pred["labels"])}, len(data_detection.annotations): {len(data_detection.annotations)}"""
         )
 
+        max_len = max(len(y["labels"]), len(y_pred["labels"]))
+        if max_len > max_dets:
+            max_dets = max_len
+
+    data_ground_truth.max_dets = max_dets
+    data_detection.max_dets = max_dets
+
     tide = TIDE()
     tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
     tide.summarize()
+    tide_error = tide.get_all_errors()
 
-    # return tide
-    # return tide.run_thresholds
+    return {
+        "mAP": {x.pos_thresh: x.ap for x in tide.run_thresholds[data_detection.name]},
+        "errors": {
+            "main": tide_error["main"][data_detection.name],
+            "special": tide_error["special"][data_detection.name],
+        },
+    }
 
-    ap_per_class = object_detection_AP_per_class(
-        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
-    )
-    return np.fromiter(ap_per_class.values(), dtype=float).mean()
+    # # return tide
+    # # return tide.run_thresholds
+
+    # ap_per_class = object_detection_AP_per_class(
+    #     y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+    # )
+    # return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
 def _object_detection_get_tpr_mr_dr_hr(
