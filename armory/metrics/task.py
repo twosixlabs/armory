@@ -829,7 +829,7 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
     return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
-def armory_to_tide_ground_truth(y_dict, data_ground_truth):
+def armory_to_tide_ground_truth(y_dict, image_id, data_ground_truth):
     # def armory_to_tide_ground_truth(y_dict):
     # data_ground_truth = tidecv.data.Data(name="ground_truth")
     for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
@@ -840,7 +840,7 @@ def armory_to_tide_ground_truth(y_dict, data_ground_truth):
         y_min = min(y1, y2)
 
         y_tidecv = {
-            "image_id": y["image_id"],
+            "image_id": image_id,
             "class_id": y["labels"],
             "box": [x_min, y_min, width, height],
         }
@@ -904,11 +904,16 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
     data_detection = tidecv.data.Data(name=data_detection_name)
 
     max_dets = 0
-    for y, y_pred in zip(y_list, y_pred_list):
+    for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         print(f"y.keys(): {y.keys()}")
         print(f"y_pred.keys(): {y_pred.keys()}")
-        armory_to_tide_ground_truth(y, data_ground_truth)
-        image_id = y["image_id"][0]  # assume image_id is the same per image
+        # image_id = y["image_id"][0]  # assume image_id is the same per image
+        if "image_id" in y:
+            image_id = y["image_id"][0]
+        else:
+            image_id = i
+
+        armory_to_tide_ground_truth(y, image_id, data_ground_truth)
         print(f"image_id: {image_id}")
         armory_to_tide_detection(y_pred, image_id, data_detection)
         print(
