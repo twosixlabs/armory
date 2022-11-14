@@ -43,13 +43,6 @@ ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:${PATH}"
 
-
-# CUDA, TensorFlow, Object Detection API ( 2, 4, 5 )
-ENV PATH="/usr/local/cuda-${CUDA}/bin${PATH:+:${PATH}}" \
-    LD_LIBRARY_PATH="/opt/conda/envs/base/lib/:/usr/local/cuda-${CUDA}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-# ENV LD_LIBRARY_PATH="/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
-
-
 WORKDIR /armory-repo
 
 COPY ./ /armory-repo
@@ -62,7 +55,11 @@ SHELL ["/bin/bash", "-c"]
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 
-# Basic Apt-get Bits
+# CUDA, TensorFlow, Object Detection API ( 2, 4, 5 )
+ENV PATH="/usr/local/cuda-${CUDA}/bin${PATH:+:${PATH}}" \
+    LD_LIBRARY_PATH="/opt/conda/envs/base/lib/:/usr/local/cuda-${CUDA}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# ENV LD_LIBRARY_PATH="/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
+
 # Basic Apt-get Bits
 RUN apt-key adv --fetch-keys \
         "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION/./}/x86_64/7fa2af80.pub" && \
@@ -145,17 +142,13 @@ RUN apt-get update && apt-get install -y  \
 # Clean Up & Configuration
 # ------------------------------------------------------------------
 RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    apt-get clean -y && \
-    conda clean -afy
-    # mamba clean --all --quiet --yes && \
-    # pip cache purge && \
-    # rm -rf /var/lib/apt/lists/* && \
-    # rm -f /var/log/*gz
+    apt-get autoremove -y  && \
+    apt-get autoclean -y   && \
+    pip cache purge        && \
+    conda clean -afy       && \
 
-RUN echo "You should think about possibly upgrading these outdated packages"
-RUN pip3 list --outdated
+RUN echo "You should think about possibly upgrading these outdated packages" && \
+    pip3 list --outdated
 
 
 ENV HOME /workspace
