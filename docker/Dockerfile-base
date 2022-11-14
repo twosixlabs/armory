@@ -70,11 +70,11 @@ RUN apt-key adv --fetch-keys \
     apt-get -y -qq update                                                        && \
     apt-get -qq -y upgrade                                                       && \
     apt-get install -y                                                              \
-        # sudo                                                                        \
-        # wget                                                                        \
-        # vim                                                                         \
-        # git                                                                         \
-        # curl                                                                        \
+        sudo                                                                        \
+        wget                                                                        \
+        vim                                                                         \
+        git                                                                         \
+        curl                                                                        \
         # TF dependencies ( 1 )
         build-essential                                                             \
         ca-certificates                                                             \
