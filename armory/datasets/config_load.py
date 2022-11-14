@@ -2,12 +2,11 @@
 Temporary file for testing loading from config without modifying armory.utils
 """
 
-import copy
 
 from armory.datasets import load, preprocessing, generator, filtering
 
 
-def actual_loader(
+def load_dataset(
     name=None,
     version=None,
     shuffle_files=False,
@@ -18,7 +17,6 @@ def actual_loader(
     drop_remainder=False,
     num_batches=None,
     batch_size=1,
-    shuffle_elements=False,
     label_key="label",  # TODO: make this smarter or more flexible
     class_ids=None,
     index=None,
@@ -49,10 +47,12 @@ def actual_loader(
 
     if preprocessor_name is None:
         preprocessor = None
+        if name in preprocessing.list_registered():
+            preprocessor = preprocessing.get(name)
     else:
         preprocessor = preprocessing.get(preprocessor_name)
 
-    return generator.ArmoryDataGenerator(
+    armory_data_generator = generator.ArmoryDataGenerator(
         info,
         ds_dict,
         split=split,
@@ -64,42 +64,8 @@ def actual_loader(
         index_filter=index_filter,
         element_filter=element_filter,
         element_map=preprocessor,
-        shuffle_elements=shuffle_elements,
+        shuffle_elements=shuffle_files,
     )
-
-
-def load_dataset(module, name, check_run=False, **kwargs):
-    """
-    Designed to be a drop-in replacement for armory.utils.config_loading.load_dataset
-
-    NOTE: very ugly
-    """
-
-    if module == "armory.data.datasets":
-        pass
-    elif module == "armory.data.adversarial_datasets":
-        pass  # TODO: check
-    else:
-        # NOTE: temporary until moving over to new datasets approach
-        raise NotImplementedError
-
-    if ":" in name:
-        name, version = name.split(":")
-    else:
-        version = None
-    kwargs["name"] = name
-    kwargs["version"] = version
-
-    for k in "eval_split", "train_split":
-        kwargs.pop(k, None)
-
-    if check_run:
-        kwargs["epochs"] = 1
-        kwargs["num_batches"] = 1
-    if kwargs.get("shuffle_files", False):
-        kwargs["shuffle_elements"] = True
-
-    armory_data_generator = actual_loader(**kwargs)
     return wrap_generator(armory_data_generator)
 
 

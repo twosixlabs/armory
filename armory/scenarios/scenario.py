@@ -43,6 +43,7 @@ class Scenario:
         if self.check_run:
             if num_eval_batches:
                 raise ValueError("check_run and num_eval_batches are incompatible")
+            num_eval_batches = 1
             # Modify dataset entries
             if config["model"]["fit"]:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
@@ -134,14 +135,11 @@ class Scenario:
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
         log.info(f"Loading train dataset {dataset_config['name']}...")
-        module = dataset_config.get("module")
         name = dataset_config.get("name")
         self.train_dataset = config_loading.load_dataset(
-            module,
             name,
             epochs=self.fit_kwargs["nb_epochs"],
             split=dataset_config.get("train_split", train_split_default),
-            check_run=self.check_run,
             shuffle_files=True,
         )
 
@@ -203,19 +201,31 @@ class Scenario:
 
     def load_dataset(self, eval_split_default="test"):
         dataset_config = self.config["dataset"]
-        eval_split = dataset_config.get("eval_split", eval_split_default)
-        # Evaluate the ART model on benign test examples
-        log.info(f"Loading test dataset {dataset_config['name']}...")
-        module = dataset_config.get("module")
         name = dataset_config.get("name")
+        log.info(f"Loading test dataset {name}...")
+        if ":" in name:
+            name, version = name.split(":")
+        else:
+            version = None
+
+        batch_size = dataset_config.get("batch_size", 1)
+        split = dataset_config.get("split", eval_split_default)
+        framework = dataset_config.get("framework", "numpy")
+
+        index = dataset_config.get("index")
+        class_ids = dataset_config.get("class_ids")
+
         self.test_dataset = config_loading.load_dataset(
-            module,
             name,
+            version=version,
             epochs=1,
-            split=eval_split,
+            split=split,
             num_batches=self.num_eval_batches,
-            check_run=self.check_run,
+            batch_size=batch_size,
+            framework=framework,
             shuffle_files=False,
+            index=index,
+            class_ids=class_ids,
         )
         self.i = -1
 
