@@ -1,24 +1,46 @@
 ---
-# yamllint disable rule:line-length
 name: armory-core
+
+# In order of priority: lowest (top) to highest (bottom)
 channels:
-  - pytorch
-  - conda-forge
   - defaults
+  - conda-forge
+  - anaconda
+  - pytorch
+
 dependencies:
-  - pytorch=1.12
-  - torchvision
-  - torchaudio
-  - cudatoolkit=11.6
-  - scikit-learn=1.0  # ART requires scikit-learn >=0.22.2,<1.1.0
-  - jupyterlab
-  - jupyterlab_widgets
-  - ipywidgets
-  - matplotlib
+  - python=3.9
+  - pip>22.0
+  - git
+  - ipykernel
+  - six
+
+  - transformers  # transformers is used for the Entailment metric only
+
+  # Should be included in NVIDIA base image
+  # - cudatoolkit=11.6
+  # - cudnn  # cudnn required for tensorflow
+
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
-  - librosa
-  - cudnn  # cudnn required for tensorflow
-  - numba  # ART requires numba >= 0.53.1
-  - pandas
-  - protobuf
+
+  # ByteTrack (see below)
+  # TODO: Should this be added to pyproject.toml; e.g. [byte-track]?
+  - pytorch=1.12   # Required by ByteTrack, therefore must be installed pre-pip
+  - Cython         # ByteTrack
+  - lap            # ByteTrack
+
+  - pip:
+    # Armory
+    - --editable '.[all]'
+
+    # Hydra Lightning Configs
+    - 'git+https://github.com/romesco/hydra-lightning.git#subdirectory=hydra-configs-pytorch-lightning'
+
+    # ByteTrack
+    - thop          # ByteTrack
+    - cython-bbox   # ByteTrack
+    - 'git+https://github.com/ifzhang/ByteTrack.git'
+    - 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+
+
 prefix: /opt/conda
