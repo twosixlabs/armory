@@ -142,15 +142,8 @@ RUN apt-get update && apt-get install -y  \
 
 
 # ------------------------------------------------------------------
-# Configuration & Clean Up
+# Clean Up & Configuration
 # ------------------------------------------------------------------
-ENV HOME /workspace
-
-WORKDIR /workspace
-
-RUN armory configure --use-default
-
-# Clean Up
 RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
     apt-get autoremove -y && \
     apt-get autoclean -y && \
@@ -160,6 +153,16 @@ RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -
     # pip cache purge && \
     # rm -rf /var/lib/apt/lists/* && \
     # rm -f /var/log/*gz
+
+RUN echo "You should think about possibly upgrading these outdated packages"
+RUN pip3 list --outdated
+
+
+ENV HOME /workspace
+
+WORKDIR /workspace
+
+RUN armory configure --use-default
 
 # Jupyter
 EXPOSE 8888
