@@ -215,6 +215,8 @@ class Scenario:
         index = dataset_config.get("index")
         class_ids = dataset_config.get("class_ids")
 
+        # TODO: handle preprocessing and preprocessing_kwargs: 'modality', 'max_frames', 'pad_data', 'coco_format'
+
         self.test_dataset = config_loading.load_dataset(
             name,
             version=version,
