@@ -10,10 +10,15 @@ channels:
 
 dependencies:
   - python=3.9
-  - pip>22.0
-  - git
   - ipykernel
+  - pip>22.0
+
+  - curl
+  - git
   - six
+  - sudo
+  - wget
+  - vim
 
   - transformers  # transformers is used for the Entailment metric only
 
