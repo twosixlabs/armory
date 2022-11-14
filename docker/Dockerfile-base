@@ -6,77 +6,165 @@
 # based images should inhereit from this image using:
 #       FROM twosixlabs/armory-baseline AS armory-baseline
 #
+#
+#            ~~! Please remove/modify the following lines as updates are made to the image. !~~
+# Notes:
+#   [1] https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/gpu.Dockerfile
+#   [2] https://bcourses.berkeley.edu/courses/1478831/pages/glibcxx-missing
+#   [3] https://docs.ycrc.yale.edu/clusters-at-yale/guides/conda/#mamba-the-conda-alternative
+#   [4] https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html
+#   [5] https://github.com/tensorflow/models/tree/master/research/object_detection
+#   [6] https://github.com/tensorflow/models/blob/master/research/object_detection/dockerfiles/tf2/Dockerfile
+#
 ##########################################################################################
 
-FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
+ARG UBUNTU_VERSION=20.04
+ARG CUDNN_VERSION=8
+ARG CUDA_VERSION=11.6.2
+ARG CUDA=11.6
+ARG LIBNVINFER_MAJOR_VERSION=8
 
-# Temporary fix for broken nvidia package checksum
-# RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
+
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS base
+
+ARG CUDA
+ARG CUDA_VERSION
+ARG LIBNVINFER_MAJOR_VERSION
+ARG UBUNTU_VERSION
+ARG PIP_CACHE_DIR="/tmp/pip-cache"
+ARG DEBIAN_FRONTEND="noninteractive"
+
+ENV ARMORY_CONTAINER="1"
+ENV PYTHONDONTWRITEBYTECODE="1"
+ENV PYTHON_VERSION="3.9"
+ENV CONDA_DIR="/opt/conda"
+ENV TZ="UTC"
+ENV LC_ALL="C.UTF-8"
+ENV LANG="C.UTF-8"
+ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:${PATH}"
+
+
+# CUDA, TensorFlow, Object Detection API ( 2, 4, 5 )
+ENV PATH="/usr/local/cuda-${CUDA}/bin${PATH:+:${PATH}}" \
+    LD_LIBRARY_PATH="/opt/conda/envs/base/lib/:/usr/local/cuda-${CUDA}/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+# ENV LD_LIBRARY_PATH="/usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH"
+
+
+WORKDIR /armory-repo
+
+COPY ./ /armory-repo
+
+USER root
+
+SHELL ["/bin/bash", "-c"]
+
+# Replace shell with bash so we can source files
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
 
 # Basic Apt-get Bits
-RUN apt-get -y -qq update && \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y \
-    wget \
-    vim \
-    build-essential \
-    git \
-    curl \
-    libgl1-mesa-glx \
-#    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-# libgl1-mesa-glx is needed for cv2 (opencv-python)
+# Basic Apt-get Bits
+RUN apt-key adv --fetch-keys \
+        "https://developer.download.nvidia.com/compute/cuda/repos/ubuntu${UBUNTU_VERSION/./}/x86_64/7fa2af80.pub" && \
+    apt-key adv --fetch-keys \
+        "https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu${UBUNTU_VERSION/./}/x86_64/7fa2af80.pub" && \
+    echo "deb https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu${UBUNTU_VERSION/./}/x86_64 /" \
+        > /etc/apt/sources.list.d/tensorRT.list && \
+    apt-get -y -qq update                                                        && \
+    apt-get -qq -y upgrade                                                       && \
+    apt-get install -y                                                              \
+        sudo                                                                        \
+        wget                                                                        \
+        vim                                                                         \
+        git                                                                         \
+        curl                                                                        \
+        # TF dependencies ( 1 )
+        build-essential                                                             \
+        ca-certificates                                                             \
+        cuda-command-line-tools-${CUDA/./-}                                         \
+        libcublas-${CUDA/./-}                                                       \
+        cuda-nvrtc-${CUDA/./-}                                                      \
+        libcufft-${CUDA/./-}                                                        \
+        libcurand-${CUDA/./-}                                                       \
+        libcusolver-${CUDA/./-}                                                     \
+        libcusparse-${CUDA/./-}                                                     \
+        libfreetype6-dev                                                            \
+        libhdf5-serial-dev                                                          \
+        libzmq3-dev                                                                 \
+        pkg-config                                                                  \
+        software-properties-common                                                  \
+        unzip                                                                       \
+        # TensorRT ( 1 )
+        libnvinfer${LIBNVINFER_MAJOR_VERSION}                                       \
+        libnvinfer-plugin${LIBNVINFER_MAJOR_VERSION}                                \
+        # libgl1-mesa-glx is needed for cv2 (opencv-python)
+        libgl1-mesa-glx                                                          && \
+    ldconfig
+
 
 # Install Conda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh && \
-    /opt/conda/bin/conda clean -tipsy && \
-    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
-#    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-#    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-#    echo "conda activate base" >> ~/.bashrc && \
-#    echo 'alias ll="ls -al"' >> ~/.bashrc
+# NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
+RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    /bin/bash miniconda.sh -b -p /opt/conda                             && \
+    rm miniconda.sh                                                     && \
+    conda install --yes --channel conda-forge --name base nomkl mamba   && \
+    conda config --set auto_activate_base true                          && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh     && \
+    # Some TF tools expect a "python" binary ( 1 )
+    ln -s $(which python3) /usr/local/bin/python                        && \
+    conda init bash
 
+# TensorFlow requirement ( 2 )
+# ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
 ENV PATH=/opt/conda/bin:$PATH
 
-# TensorFlow requirement
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
 
-# NOTE: using mamba because conda fails when trying to solve for environment
-RUN conda install -c conda-forge -n base mamba \
-    && conda clean --all
-
-WORKDIR /armory-repo/
-COPY environment.yml /armory-repo/
-
-RUN mamba env update -f environment.yml -n base --prune \
-    && mamba clean --all
-
-#RUN /opt/conda/bin/conda env update -f environment.yml --prune \
-#    && /opt/conda/bin/conda clean --all
+# Utilize mamba for faster conda installs ( 3 )
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
+RUN mamba env update --name base --file /armory-repo/environment.yml --prune && \
+    mamba clean --all --yes
 
-# NOTE: Armory requirements and ART requirements are installed here to make patch updates fast and small
-RUN echo "Installing TensorFlow and ART/Armory requirements via pip"
-RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets==4.6 \
-    tensorflow==2.10 \
-    tensorboardx \
-    boto3 \
-    opencv-python \
-    ffmpeg-python \
-    pytest \
-    loguru \
-    docker \
-    jsonschema \
-    requests \
-    pydub \
-    transformers \
-    six \
-    setuptools \
-    tqdm
-# transformers is used for the Entailment metric only
-# pydub required for ART mp3 defense
+
+# ------------------------------------------------------------------
+# TensorFlow Object Detection API ( 4, 5, 6 )
+# ------------------------------------------------------------------
+# https://github.com/tensorflow/models/blob/master/research/object_detection/dockerfiles/tf2/Dockerfile
+RUN apt-get update && apt-get install -y  \
+    git                                   \
+    gpg-agent                             \
+    python3-cairocffi                     \
+    protobuf-compiler                     \
+    python3-pil                           \
+    python3-lxml                          \
+    python3-tk                            \
+    python3-opencv                        \
+    wget
+
+
+# ------------------------------------------------------------------
+# Configuration & Clean Up
+# ------------------------------------------------------------------
+ENV HOME /workspace
 
 WORKDIR /workspace
+
+RUN armory configure --use-default
+
+# Clean Up
+RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    apt-get clean -y && \
+    conda clean -afy
+    # mamba clean --all --quiet --yes && \
+    # pip cache purge && \
+    # rm -rf /var/lib/apt/lists/* && \
+    # rm -f /var/log/*gz
+
+# Jupyter
+EXPOSE 8888
+
+STOPSIGNAL SIGQUIT
+
+CMD ["/bin/bash"]
+
