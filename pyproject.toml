@@ -71,12 +71,8 @@ engine = [
 
 datasets = [
     "tensorflow-datasets >= 4.6.0",
-    "protobuf",
-]
-
-datasets-builder = [
-    "armory-testbed[datasets,engine]",
     "apache-beam >= 2.22.0",
+    "protobuf",
 ]
 
 math = [
@@ -124,7 +120,6 @@ all = [
     "armory-testbed[math]",
     "armory-testbed[jupyter]",
     "armory-testbed[datasets]",
-    "armory-testbed[datasets-builder]",
     "armory-testbed[pytorch]",
     "armory-testbed[tensorflow]",
     "armory-testbed[deepspeech]",
