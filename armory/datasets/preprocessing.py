@@ -44,7 +44,6 @@ def digit(element):
 
 @register
 def carla_over_obj_det_dev(element):
-    tf.config.run_functions_eagerly(True)  # temporary, for debugging purposes
     return carla_over_obj_det_image(element["image"]), carla_over_obj_det_dev_label(
         element["image"], element["objects"], element["patch_metadata"]
     )
@@ -110,7 +109,6 @@ def video_to_canon(
     return video
 
 
-@tf.function
 def carla_over_obj_det_image(x, modality="rgb"):
     if modality == "rgb":
         return image_to_canon(x[0])
