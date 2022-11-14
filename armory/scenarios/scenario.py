@@ -209,7 +209,7 @@ class Scenario:
             version = None
 
         batch_size = dataset_config.get("batch_size", 1)
-        split = dataset_config.get("split", eval_split_default)
+        split = dataset_config.get("eval_split", eval_split_default)
         framework = dataset_config.get("framework", "numpy")
 
         index = dataset_config.get("index")
