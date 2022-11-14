@@ -11,7 +11,7 @@ def actual_loader(
     name=None,
     version=None,
     shuffle_files=False,
-    preprocessor_name=None,
+    preprocessor_name="DEFAULT",
     split="test",
     framework="numpy",
     epochs=1,
@@ -49,6 +49,14 @@ def actual_loader(
 
     if preprocessor_name is None:
         preprocessor = None
+    elif preprocessor_name == "DEFAULT":
+        # TODO: do something smart here
+        if preprocessing.has(name):
+            preprocessor = preprocessing.get(preprocessor_name)
+        else:
+            preprocessor = preprocessing.infer_from_dataset_info(info, split)
+
+        raise NotImplementedError
     else:
         preprocessor = preprocessing.get(preprocessor_name)
 
@@ -64,6 +72,7 @@ def actual_loader(
         index_filter=index_filter,
         element_filter=element_filter,
         element_map=preprocessor,
+        key_map=None,
         shuffle_elements=shuffle_elements,
     )
 

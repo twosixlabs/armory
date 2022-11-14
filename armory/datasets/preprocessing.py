@@ -7,6 +7,7 @@ import tensorflow as tf
 
 
 REGISTERED_PREPROCESSORS = {}
+DEFAULT = "DEFAULT"
 
 
 def register(function, name=None):
@@ -27,6 +28,10 @@ def get(name):
             f"prepreprocessor {name} not registered. Use one of {list_registered()}"
         )
     return REGISTERED_PREPROCESSORS[name]
+
+
+def has(name):
+    return name in REGISTERED_PREPROCESSORS
 
 
 @register
@@ -76,6 +81,14 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     return audio
 
 
+# config = {
+#     "preprocessor": "mnist(max_frames=1)"
+#     "preprocessor_kwargs": {
+#         "max_frames": null,
+#     }
+# }
+
+
 def video_to_canon(
     video,
     resize=None,
@@ -100,3 +113,8 @@ def video_to_canon(
     if resize is not None:
         raise NotImplementedError("resizing video")
     return video
+
+
+def infer_from_dataset_info(info, split):
+
+    raise NotImplementedError
