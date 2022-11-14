@@ -212,19 +212,22 @@ class Scenario:
         split = dataset_config.get("eval_split", eval_split_default)
         framework = dataset_config.get("framework", "numpy")
 
+        preprocessor_name = dataset_config.get("preprocessor")
+        preprocessor_kwargs = dataset_config.get("preprocessor_kwargs")
+
         index = dataset_config.get("index")
         class_ids = dataset_config.get("class_ids")
-
-        # TODO: handle preprocessing and preprocessing_kwargs: 'modality', 'max_frames', 'pad_data', 'coco_format'
 
         self.test_dataset = config_loading.load_dataset(
             name,
             version=version,
+            batch_size=batch_size,
+            num_batches=self.num_eval_batches,
             epochs=1,
             split=split,
-            num_batches=self.num_eval_batches,
-            batch_size=batch_size,
             framework=framework,
+            preprocessor_name=preprocessor_name,
+            preprocessor_kwargs=preprocessor_kwargs,
             shuffle_files=False,
             index=index,
             class_ids=class_ids,

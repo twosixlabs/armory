@@ -43,8 +43,8 @@ def digit(element):
 
 
 @register
-def carla_over_obj_det_dev(element):
-    return carla_over_obj_det_image(element["image"]), carla_over_obj_det_dev_label(
+def carla_over_obj_det_dev(element, modality="rgb"):
+    return carla_over_obj_det_image(element["image"], modality=modality), carla_over_obj_det_dev_label(
         element["image"], element["objects"], element["patch_metadata"]
     )
 

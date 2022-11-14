@@ -9,17 +9,18 @@ from armory.datasets import load, preprocessing, generator, filtering
 def load_dataset(
     name=None,
     version=None,
-    shuffle_files=False,
-    preprocessor_name=None,
+    batch_size=1,
+    num_batches=None,
+    epochs=1,
     split="test",
     framework="numpy",
-    epochs=1,
-    drop_remainder=False,
-    num_batches=None,
-    batch_size=1,
+    preprocessor_name=None,
+    preprocessor_kwargs=None,
+    shuffle_files=False,
     label_key="label",  # TODO: make this smarter or more flexible
-    class_ids=None,
     index=None,
+    class_ids=None,
+    drop_remainder=False,
 ):
     # All are keyword elements by design
     if name is None:
@@ -52,6 +53,10 @@ def load_dataset(
     else:
         preprocessor = preprocessing.get(preprocessor_name)
 
+    if preprocessor_kwargs is None:
+        preprocessor_kwargs = {}
+    preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+
     armory_data_generator = generator.ArmoryDataGenerator(
         info,
         ds_dict,
@@ -63,7 +68,7 @@ def load_dataset(
         num_batches=num_batches,
         index_filter=index_filter,
         element_filter=element_filter,
-        element_map=preprocessor,
+        element_map=preprocessing_fn,
         shuffle_elements=shuffle_files,
     )
     return wrap_generator(armory_data_generator)
