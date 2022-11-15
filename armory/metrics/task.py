@@ -803,7 +803,6 @@ def object_detection_AP_per_class(
             average_precision, decimals=2
         )
 
-    print(average_precisions_by_class)
     return average_precisions_by_class
 
 
@@ -830,8 +829,6 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
 
 
 def armory_to_tide_ground_truth(y_dict, image_id, data_ground_truth):
-    # def armory_to_tide_ground_truth(y_dict):
-    # data_ground_truth = tidecv.data.Data(name="ground_truth")
     for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
         x1, y1, x2, y2 = y["boxes"]
         width = abs(x1 - x2)
@@ -846,12 +843,8 @@ def armory_to_tide_ground_truth(y_dict, image_id, data_ground_truth):
         }
         data_ground_truth.add_ground_truth(**y_tidecv)
 
-    # return data_ground_truth
-
 
 def armory_to_tide_detection(y_dict, image_id, data_detection):
-    # def armory_to_tide_detection(y_dict, image_id):
-    # data_detection = tidecv.data.Data(name="detection")
     for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
         x1, y1, x2, y2 = y["boxes"]
         width = abs(x1 - x2)
@@ -859,7 +852,6 @@ def armory_to_tide_detection(y_dict, image_id, data_detection):
         x_min = min(x1, x2)
         y_min = min(y1, y2)
 
-        # y_tidecv = {"image_id": y["image_id"], "class_id": y["labels"], "box": [x_min, y_min, width, height], "score": y["scores"]}
         y_tidecv = {
             "image_id": image_id,
             "class_id": y["labels"],
@@ -867,8 +859,6 @@ def armory_to_tide_detection(y_dict, image_id, data_detection):
             "score": y["scores"],
         }
         data_detection.add_detection(**y_tidecv)
-
-    # return data_detection
 
 
 @populationwise
@@ -905,23 +895,13 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     max_dets = 0
     for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
-        # print(f"y.keys(): {y.keys()}")
-        # print(f"y_pred.keys(): {y_pred.keys()}")
-        # image_id = y["image_id"][0]  # assume image_id is the same per image
         if "image_id" in y:
             image_id = y["image_id"][0]
         else:
             image_id = i
 
         armory_to_tide_ground_truth(y, image_id, data_ground_truth)
-        # print(f"image_id: {image_id}")
         armory_to_tide_detection(y_pred, image_id, data_detection)
-        # print(
-        #     f"""len(y["labels"]): {len(y["labels"])}, len(data_ground_truth.annotations): {len(data_ground_truth.annotations)}"""
-        # )
-        # print(
-        #     f"""len(y_pred["labels"]): {len(y_pred["labels"])}, len(data_detection.annotations): {len(data_detection.annotations)}"""
-        # )
 
         max_len = max(len(y["labels"]), len(y_pred["labels"]))
         if max_len > max_dets:
@@ -929,11 +909,9 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     data_ground_truth.max_dets = max_dets
     data_detection.max_dets = max_dets
-    # print(max_dets)
 
     tide = TIDE()
     tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
-    # tide.summarize()
     tide_error = tide.get_all_errors()
 
     return {
@@ -947,14 +925,6 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
             "special": tide_error["special"][data_detection.name],
         },
     }
-
-    # # return tide
-    # # return tide.run_thresholds
-
-    # ap_per_class = object_detection_AP_per_class(
-    #     y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
-    # )
-    # return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
 def _object_detection_get_tpr_mr_dr_hr(
