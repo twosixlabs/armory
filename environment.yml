@@ -13,13 +13,6 @@ dependencies:
   - ipykernel
   - pip>22.0
 
-  - curl
-  - git
-  - six
-  - sudo
-  - wget
-  - vim
-
   - transformers  # transformers is used for the Entailment metric only
 
   # Should be included in NVIDIA base image
