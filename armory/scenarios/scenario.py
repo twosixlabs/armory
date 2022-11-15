@@ -200,37 +200,14 @@ class Scenario:
         self.generate_kwargs = generate_kwargs
 
     def load_dataset(self, eval_split_default="test"):
-        dataset_config = self.config["dataset"]
+        dataset_config = copy.deepcopy(self.config["dataset"])
         name = dataset_config.get("name")
-        log.info(f"Loading test dataset {name}...")
-        if ":" in name:
-            name, version = name.split(":")
-        else:
-            version = None
-
-        batch_size = dataset_config.get("batch_size", 1)
-        split = dataset_config.get("eval_split", eval_split_default)
-        framework = dataset_config.get("framework", "numpy")
-
-        preprocessor_name = dataset_config.get("preprocessor")
-        preprocessor_kwargs = dataset_config.get("preprocessor_kwargs")
-
-        index = dataset_config.get("index")
-        class_ids = dataset_config.get("class_ids")
-
+        log.info(f"Loading test dataset {name}")
+        if dataset_config.get("epochs", 1) != 1:
+            raise ValueError("epochs must be set to 1 for test dataset")
+        dataset_config["split"] = dataset_config.get("split", eval_split_default)
         self.test_dataset = config_loading.load_dataset(
-            name,
-            version=version,
-            batch_size=batch_size,
-            num_batches=self.num_eval_batches,
-            epochs=1,
-            split=split,
-            framework=framework,
-            preprocessor_name=preprocessor_name,
-            preprocessor_kwargs=preprocessor_kwargs,
-            shuffle_files=False,
-            index=index,
-            class_ids=class_ids,
+            num_batches=self.num_eval_batches, **dataset_config
         )
         self.i = -1
 
