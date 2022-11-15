@@ -1,6 +1,4 @@
 ---
-# yamllint disable
-
 name: 🚂 Scenario Runner
 
 on:
