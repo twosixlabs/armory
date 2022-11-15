@@ -1,5 +1,6 @@
 ---
-name: "Setup Docker Test Environment"
+# yamllint disable
+name: "Setup Matrix and Armory"
 
 description: "Install Armory and binary dependencies"
 
@@ -20,6 +21,10 @@ runs:
         virtualenv .venv
         source .venv/bin/activate
 
+
+    - name: ⚙️ Installing Armory
+      shell: bash
+      run: |
         pip install --no-compile --editable .
         armory configure --use-defaults
 
