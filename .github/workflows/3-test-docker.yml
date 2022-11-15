@@ -64,7 +64,6 @@ jobs:
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
 
@@ -102,7 +101,6 @@ jobs:
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
 
@@ -150,7 +148,6 @@ jobs:
       - name: ⚙️ Install Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
 
