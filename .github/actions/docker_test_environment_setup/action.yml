@@ -1,0 +1,33 @@
+---
+name: "Setup Docker Test Environment"
+
+description: "Install Armory and binary dependencies"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+
+    - name: 🌱 Setup Test Enviroment
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+
+        pip install virtualenv
+        virtualenv .venv
+        source .venv/bin/activate
+
+        pip install --no-compile --editable .
+        armory configure --use-defaults
+
+
+    - name: 🐍 Load Cached Venv
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          .venv/
+        key: ${{ runner.os }}-${{ hashFiles('pyproject.toml') }}-${{ hashFiles('armory/__about__.py') }}
