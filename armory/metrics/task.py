@@ -862,9 +862,9 @@ def armory_to_tide_detection(y_dict, image_id, data_detection):
 
 
 @populationwise
-def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list=None):
+def object_detection_mAP_tide(y_list, y_pred_list):
     """
-    Mean average precision for object detection.
+    TIDE version of mean average precision for object detection [https://dbolya.github.io/tide/].
 
     y_list (list): of length equal to the number of input examples. Each element in the list
         should be a dict with "labels" and "boxes" keys mapping to a numpy array of
@@ -875,17 +875,19 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
     class_list (list, optional): a list of classes, such that all predictions and ground-truths
         with labels NOT in class_list are to be ignored.
 
-    returns: a scalar value
-    """
+    returns: a dictionary with mean average precision (mAP) for a range of IOU thresholds in [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],
+             and error metrics that weight the significance of different types of errors to assess trade-offs between design choices for models
+             as well as potentially for attacks and defense
 
-    # may need to determine max_dets for data_ground_truth and data_detection
-    # default max_dets=100
-    # data_ground_truth.max_dets gets passed to tide.evaluate_range > TIDERun._run > TIDERun._eval_image > TIDEEXample._run
-    #     preds = preds[:max_dets]
-    #     self.preds = preds # Update internally so TIDERun can update itself if :max_dets takes effect
-    # for now assume we don't want max_dets to affect our metrics
-    # need to set data_ground_truth.max_dets and data_detection.max_dets to max of max(len(y["labels"]), len(y_pred["labels"])))
-    # after going through for loop
+    default max_dets=100 in TIDE
+    max_dets is an attribute for both data_ground_truth and data_detection
+    data_ground_truth.max_dets gets passed to tide.evaluate_range > TIDERun._run > TIDERun._eval_image > TIDEEXample._run (code snippet below)
+        preds = preds[:max_dets]
+        self.preds = preds # Update internally so TIDERun can update itself if :max_dets takes effect
+    for now assume we don't want max_dets to affect our metrics
+    set data_ground_truth.max_dets and data_detection.max_dets to max of max(len(y["labels"]), len(y_pred["labels"])))
+    after going through for loop
+    """
 
     data_ground_truth_name = "ground_truth"
     data_detection_name = "detection"

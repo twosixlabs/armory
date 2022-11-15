@@ -34,9 +34,6 @@ def _scenario_setup(config: Config) -> None:
     Also pulls external repositories ahead of running the scenario in case the scenario
     itself is found in the external repository.
     """
-    log.info(
-        "this repo is being updated"
-    )  # this log showed when run from jupyter notebook
 
     runtime_paths = paths.runtime_paths()
     if "eval_id" not in config:

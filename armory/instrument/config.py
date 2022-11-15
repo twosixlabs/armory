@@ -149,7 +149,6 @@ def construct_meters_for_perturbation_metrics(
 
 MEAN_AP_METRICS = [
     "object_detection_AP_per_class",
-    # "object_detection_mAP_tide",
     "apricot_patch_targeted_AP_per_class",
     "dapricot_patch_targeted_AP_per_class",
     "carla_od_AP_per_class",
