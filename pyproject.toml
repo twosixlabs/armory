@@ -27,6 +27,7 @@ classifiers = [
 
 # the minimal set needed to run armory.main (launcher)
 dependencies = [
+    "adversarial-robustness-toolbox==1.12.1",
     "setuptools_scm",
     "docker",
     "jsonschema",
@@ -60,7 +61,6 @@ developer =[
 ]
 
 engine = [
-    "adversarial-robustness-toolbox==1.12.1",
     "Pillow",              # Data dependencies
     "boto3==1.24.89",      # Needed for armory.data.utils
     "botocore==1.27.89" ,  # Needed for armory.data.utils
