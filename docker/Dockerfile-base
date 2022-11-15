@@ -147,10 +147,10 @@ RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -
     apt-get autoremove -y  && \
     apt-get autoclean -y   && \
     pip cache purge        && \
-    conda clean -afy       && \
+    conda clean -afy
 
 RUN echo "You should think about possibly upgrading these outdated packages" && \
-    pip3 list --outdated
+    pip list --outdated
 
 
 ENV HOME /workspace
