@@ -2,7 +2,6 @@
 Temporary file for testing loading from config without modifying armory.utils
 """
 
-
 from armory.datasets import load, preprocessing, generator, filtering
 
 
@@ -53,9 +52,10 @@ def load_dataset(
     else:
         preprocessor = preprocessing.get(preprocessor_name)
 
-    if preprocessor_kwargs is None:
-        preprocessor_kwargs = {}
-    preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+    if preprocessor_kwargs is not None:
+        preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+    else:
+        preprocessing_fn = preprocessor
 
     armory_data_generator = generator.ArmoryDataGenerator(
         info,
