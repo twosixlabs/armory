@@ -12,6 +12,9 @@ import math
 from armory.utils.external_repo import ExternalRepoImport
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     linear_depth_to_rgb,
+    log_to_linear,
+    linear_to_log,
+    get_avg_depth_value,
 )
 
 with ExternalRepoImport(
@@ -437,22 +440,34 @@ class CARLADapricotPatch(RobustDPatch):
                     * self.learning_rate_depth
                 )
 
-                # clip Depth channels so perturbation is constrained by meters
-                self._patch[:, :, 3] = np.clip(
-                    self._patch[:, :, 3],
-                    a_min=self.min_depth_r,
-                    a_max=self.max_depth_r,
-                )
-                self._patch[:, :, 4] = np.clip(
-                    self._patch[:, :, 4],
-                    a_min=self.min_depth_g,
-                    a_max=self.max_depth_g,
-                )
-                self._patch[:, :, 5] = np.clip(
-                    self._patch[:, :, 5],
-                    a_min=self.min_depth_b,
-                    a_max=self.max_depth_b,
-                )
+                if self.depth_type == "linear":
+                    # clip Depth channels so perturbation is constrained by meters
+                    self._patch[:, :, 3] = np.clip(
+                        self._patch[:, :, 3],
+                        a_min=self.min_depth_r,
+                        a_max=self.max_depth_r,
+                    )
+                    self._patch[:, :, 4] = np.clip(
+                        self._patch[:, :, 4],
+                        a_min=self.min_depth_g,
+                        a_max=self.max_depth_g,
+                    )
+                    self._patch[:, :, 5] = np.clip(
+                        self._patch[:, :, 5],
+                        a_min=self.min_depth_b,
+                        a_max=self.max_depth_b,
+                    )
+                elif self.depth_type == "log":
+                    # clip Depth channels so perturbation is constrained by meters
+                    self._patch[:, :, 3:] = np.clip(
+                        self._patch[:, :, 3:],
+                        a_min=self.min_depth,
+                        a_max=self.max_depth,
+                    )
+                else:
+                    raise ValueError(
+                        f"Expected depth_type in ('linear', 'log'), found {self.depth_type}"
+                    )
 
             if self.estimator.clip_values is not None:
                 self._patch = np.clip(
@@ -703,39 +718,52 @@ class CARLADapricotPatch(RobustDPatch):
             if (
                 self.patch_shape[-1] == 6
             ):  # initialize depth patch with average depth value of green screen
-                # Eval6 data uses linear depth, so this attack is not backward compatible
-                if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
-                    avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
 
-                    # check if depth image is log-depth
-                    if (
-                        x.shape[-1] == 6
-                        and np.all(x[i, :, :, 3] == x[i, :, :, 4])
-                        and np.all(x[i, :, :, 3] == x[i, :, :, 5])
-                    ):
-                        raise ValueError(
-                            "Dataset uses log-depth and is not compatible with this attack"
-                        )
+                # check if depth image is log-depth, which is the case for Eval 5 Carla OD dataset
+                if (
+                    x.shape[-1] == 6
+                    and np.all(x[i, :, :, 3] == x[i, :, :, 4])
+                    and np.all(x[i, :, :, 3] == x[i, :, :, 5])
+                ):
+                    self.depth_type = "log"
+                    if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
+                        avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
+                    else:
+                        avg_patch_depth = get_avg_depth_value(x[i][:, :, 3], gs_coords)
+
+                    avg_patch_depth_meters = log_to_linear(avg_patch_depth)
+                    max_depth_meters = avg_patch_depth_meters + self.depth_delta_meters
+                    min_depth_meters = avg_patch_depth_meters - self.depth_delta_meters
+                    self.max_depth = linear_to_log(max_depth_meters)
+                    self.min_depth = linear_to_log(min_depth_meters)
+                    self._patch[:, :, 3:] = avg_patch_depth
+
+                # depth in the Eval 6 Carla OD dataset is linear rather than log
                 else:
-                    raise ValueError(
-                        "Dataset does not contain patch metadata for average patch depth"
-                    )
-                max_depth = avg_patch_depth + self.depth_delta_meters
-                min_depth = avg_patch_depth - self.depth_delta_meters
-                (
-                    self.max_depth_r,
-                    self.max_depth_g,
-                    self.max_depth_b,
-                ) = linear_depth_to_rgb(max_depth)
-                (
-                    self.min_depth_r,
-                    self.min_depth_g,
-                    self.min_depth_b,
-                ) = linear_depth_to_rgb(min_depth)
-                rv, gv, bv = linear_depth_to_rgb(avg_patch_depth)
-                self._patch[:, :, 3] = rv
-                self._patch[:, :, 4] = gv
-                self._patch[:, :, 5] = bv
+                    self.depth_type = "linear"
+                    if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
+                        avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
+                    else:
+                        raise ValueError(
+                            "Dataset does not contain patch metadata for average patch depth"
+                        )
+
+                    max_depth = avg_patch_depth + self.depth_delta_meters
+                    min_depth = avg_patch_depth - self.depth_delta_meters
+                    (
+                        self.max_depth_r,
+                        self.max_depth_g,
+                        self.max_depth_b,
+                    ) = linear_depth_to_rgb(max_depth)
+                    (
+                        self.min_depth_r,
+                        self.min_depth_g,
+                        self.min_depth_b,
+                    ) = linear_depth_to_rgb(min_depth)
+                    rv, gv, bv = linear_depth_to_rgb(avg_patch_depth)
+                    self._patch[:, :, 3] = rv
+                    self._patch[:, :, 4] = gv
+                    self._patch[:, :, 5] = bv
 
             if y is None:
                 patch = self.inner_generate(

@@ -61,6 +61,7 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {
+            "cifar_stem": true,
             "data_means": [
                 0.4914,
                 0.4822,
