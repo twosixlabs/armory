@@ -8,7 +8,6 @@ env:
   DOCKER_BUILDKIT: 1
 
 
-# TODO: Add independent job that builds the images.
 jobs:
   docker-torch-unit:
     name: ☁️ Docker Pytorch Image Tests
@@ -39,14 +38,13 @@ jobs:
           python docker/build.py --framework pytorch
 
 
-      # TODO: Create/mount a volume with the tests and config files.
       - name: 🤞 Run Image tests
         run: |
           IMAGE_VERSION=`armory --show-docker-version-tag`
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/pytorch:${IMAGE_VERSION}    \
+            twosixarmory/pytorch:${IMAGE_VERSION}     \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
