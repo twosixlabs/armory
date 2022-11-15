@@ -16,12 +16,15 @@ jobs:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
 
-      - name: 🐍 Setup Environment
-        uses: ./.github/actions/docker_test_environment_setup
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
 
       - name: ⚒️ Install Prerequisites
         run: |
-          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install --no-compile --editable .
+          armory configure --use-defaults
 
       - name: 🚧 Build Base Image
         run: |
@@ -35,12 +38,15 @@ jobs:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
 
-      - name: 🐍 Setup Environment
-        uses: ./.github/actions/docker_test_environment_setup
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
 
       - name: ⚒️ Install Prerequisites
         run: |
-          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install --no-compile --editable .
+          armory configure --use-defaults
 
       - name: 🚧 Build the Container
         run: |
