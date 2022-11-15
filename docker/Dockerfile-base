@@ -44,6 +44,9 @@ ENV LANG="C.UTF-8"
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:${PATH}"
 
 
+ENV TF_CPP_MIN_LOG_LEVEL 3
+
+
 USER root
 
 SHELL ["/bin/bash", "-c"]
@@ -139,6 +142,28 @@ RUN apt-get update && apt-get install -y  \
     python3-opencv                        \
     wget
 
+# Install gcloud and gsutil commands
+# https://cloud.google.com/sdk/docs/quickstart-debian-ubuntu
+RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
+    echo "deb http://packages.cloud.google.com/apt $CLOUD_SDK_REPO main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+    apt-get update -y && apt-get install google-cloud-sdk -y
+
+# Add new user to avoid running as root
+RUN useradd -ms /bin/bash tensorflow
+USER tensorflow
+WORKDIR /home/tensorflow
+
+# Copy this version of of the model garden into the image
+COPY --chown=tensorflow . /home/tensorflow/models
+
+# Compile protobuf configs
+RUN (cd /home/tensorflow/models/research/ && protoc object_detection/protos/*.proto --python_out=.)
+WORKDIR /home/tensorflow/models/research/
+
+RUN cp object_detection/packages/tf2/setup.py ./
+ENV PATH="/home/tensorflow/.local/bin:${PATH}"
+
 
 # ------------------------------------------------------------------
 # Clean Up & Configuration
@@ -153,7 +178,10 @@ RUN echo "You should think about possibly upgrading these outdated packages" && 
     pip list --outdated
 
 
-ENV HOME /workspace
+# ------------------------------------------------------------------
+# ENV HOME /workspace
+
+USER root
 
 WORKDIR /workspace
 
