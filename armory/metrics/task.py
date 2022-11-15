@@ -905,8 +905,8 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     max_dets = 0
     for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
-        print(f"y.keys(): {y.keys()}")
-        print(f"y_pred.keys(): {y_pred.keys()}")
+        # print(f"y.keys(): {y.keys()}")
+        # print(f"y_pred.keys(): {y_pred.keys()}")
         # image_id = y["image_id"][0]  # assume image_id is the same per image
         if "image_id" in y:
             image_id = y["image_id"][0]
@@ -914,14 +914,14 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
             image_id = i
 
         armory_to_tide_ground_truth(y, image_id, data_ground_truth)
-        print(f"image_id: {image_id}")
+        # print(f"image_id: {image_id}")
         armory_to_tide_detection(y_pred, image_id, data_detection)
-        print(
-            f"""len(y["labels"]): {len(y["labels"])}, len(data_ground_truth.annotations): {len(data_ground_truth.annotations)}"""
-        )
-        print(
-            f"""len(y_pred["labels"]): {len(y_pred["labels"])}, len(data_detection.annotations): {len(data_detection.annotations)}"""
-        )
+        # print(
+        #     f"""len(y["labels"]): {len(y["labels"])}, len(data_ground_truth.annotations): {len(data_ground_truth.annotations)}"""
+        # )
+        # print(
+        #     f"""len(y_pred["labels"]): {len(y_pred["labels"])}, len(data_detection.annotations): {len(data_detection.annotations)}"""
+        # )
 
         max_len = max(len(y["labels"]), len(y_pred["labels"]))
         if max_len > max_dets:
@@ -929,15 +929,19 @@ def object_detection_mAP_tide(y_list, y_pred_list, iou_threshold=0.5, class_list
 
     data_ground_truth.max_dets = max_dets
     data_detection.max_dets = max_dets
-    print(max_dets)
+    # print(max_dets)
 
     tide = TIDE()
     tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
-    tide.summarize()
+    # tide.summarize()
     tide_error = tide.get_all_errors()
 
     return {
-        "mAP": {x.pos_thresh: x.ap for x in tide.run_thresholds[data_detection.name]},
+        "mAP": {
+            x.pos_thresh: np.around(x.ap / 100, decimals=2)
+            for x in tide.run_thresholds[data_detection.name]
+        },
+        # not changing numeric format for error yet until we understand what the numbers mean
         "errors": {
             "main": tide_error["main"][data_detection.name],
             "special": tide_error["special"][data_detection.name],
