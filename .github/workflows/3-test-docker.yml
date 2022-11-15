@@ -10,7 +10,7 @@ env:
 
 jobs:
   container-tests:
-    name: 🐳 Docker Tests
+    name: 🐳 Base Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
