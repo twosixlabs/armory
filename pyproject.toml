@@ -66,6 +66,7 @@ engine = [
     "botocore==1.27.89" ,  # Needed for armory.data.utils
     "ffmpeg-python",       # Needed for armory.utils.export
     "opencv-python==4.5.5.64",  # Needed for CARLA baseline scenario
+    "opencv-python-headless==4.5.5.64",
     "tensorboardx==2.5.1",
 ]
 
