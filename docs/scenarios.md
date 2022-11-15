@@ -91,7 +91,7 @@ In this scenario, the system under evaluation is a speaker identification system
 In this scenario specific to the CARLA multi-object tracking dataset, the system under evaluation is an object tracker 
 trained to localize multiple pedestrians in video in an urban environment.
 * **Dataset:**
-The development dataset is the [CARLA](https://carla.org) Multi-Object Tracking dataset, which includes 20 videos (TODO does it?), each of which contains a green-screen in all frames intended for adversarial patch insertion.
+The development dataset is the [CARLA](https://carla.org) Multi-Object Tracking dataset, with videos containing a green-screen in all frames intended for adversarial patch insertion.
 The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
   * Pretrained [ByteTrack](https://arxiv.org/pdf/2110.06864.pdf) model with an [Faster-RCNN](../armory/baseline_models/pytorch/carla_mot_frcnn_byte.py) base instead of Yolo.
@@ -224,7 +224,6 @@ In this scenario implements attacks against a basic image classification task.
   * Derivative metrics - see end of document
 * **Baseline Defenses:** 
   * [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-  * TODO
 * **Baseline Evaluations:**
   * [Resisc-45 results](baseline_results/resisc45_results.md)
 
@@ -246,7 +245,7 @@ networks are fused to produce a single prediction output.
     * Untargeted - an adversary wishes to evade correct classification
   * Adversary Operating Environment:
     * Non-real time, digital evasion attack
-    * Adversary perturbs a single modality (SAR or EO) TODO (is this dicated by the scenario?)
+    * Adversary perturbs a single modality (SAR or EO)
 * **Metrics of Interest:**
   * Primary metrics:
     * Accuracy (mean, per-class), Patch size
