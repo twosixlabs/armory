@@ -9,6 +9,32 @@ env:
 
 
 jobs:
+  container-tests:
+    name: 🐳 Docker Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 checkout armory full depth with tags for scm
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Use Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: ⚙️ Install Armory
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip build
+          pip install --no-compile --editable .
+          armory configure --use-defaults
+
+      - name: 🚧 Build Base Image
+        run: |
+          python docker/build.py --framework base
+
+
   docker-torch-unit:
     name: ☁️ Docker Pytorch Image Tests
     runs-on: ubuntu-latest
