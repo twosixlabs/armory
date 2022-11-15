@@ -43,16 +43,18 @@ ENV LC_ALL="C.UTF-8"
 ENV LANG="C.UTF-8"
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:${PATH}"
 
-WORKDIR /armory-repo
-
-COPY ./ /armory-repo
 
 USER root
 
 SHELL ["/bin/bash", "-c"]
-
 # Replace shell with bash so we can source files
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+WORKDIR /armory-repo
+
+# NOTE: This COPY command is filtered using the `.dockerignore` file
+#       in the root of the repo.
+COPY ./ /armory-repo
 
 
 # CUDA, TensorFlow, Object Detection API ( 2, 4, 5 )
