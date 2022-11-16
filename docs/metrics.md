@@ -70,10 +70,6 @@ The `armory.metrics` module contains functionality to measure a variety of metri
 We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
 Please see the relevant submodules in [armory/metrics](../armory/metrics/) for more detailed descriptions.
 
-### Custom Metrics
-
-TODO: describe how to add/register metrics, use them in configs, etc.
-
 ### Perturbation Metrics
 
 Perturbation metrics compare a benign and adversarially perturbed input and return a distance.
@@ -196,6 +192,133 @@ This module mostly contains code to load explanatory models, generate activation
 For more information, see [poisoning](poisoning.md).
 <br>
 
+### Custom Metrics
+
+In order to include custom metrics in configs, there are a few different steps.
+NOTE: only perturbation and task metrics are loadable directly from the config at this time.
+
+First, you will need to ensure that your custom metric code can be imported in the armory execution environment; see [external repos](external_repos.md) for more details on that.
+
+In order for your metric to get loaded, it must be retrievable via the following function:
+```
+metrics.get(name)
+```
+where `name` is the `str` name of your function.
+There are two ways of doing this.
+
+1) You can provide the full `.`-separated path to the metric function in the config, e.g., `"my_project.metrics.hot_dog_ness"`
+In this case, `metrics.get("my_project.metrics.hot_dog_ness")` will try to import `hot_dog_ness` from `my_project.metrics`.
+This case will only work as intended if `hot_dog_ness` is a batchwise function that outputs a list (or array) or results, one per element in the batch.
+
+2) An alternative is to use one of the existing decorators in `task` or `perturbation` to register your metric.
+These decorators, their associated namespaces, and the intended APIs of the metric functions they decorate, are:
+- `metrics.perturbation.elementwise` - `metrics.perturbation.element` - takes a single pair of `x_i` and `x_adv_i` and returns a single perturbation distance for that element.
+- `metrics.perturbation.batchwise` - `metrics.perturbation.batch` - takes a batch of `x` and `x_adv` and returns a list of results, one per data element.
+- `metrics.task.elementwise` - `metrics.task.element` - takes a single pair of `y_i` and `y_pred_i` and returns a single result for that element.
+- `metrics.task.batchwise` - `metrics.task.batch` - takes a batch of `y` and `y_pred` and returns a list of results, one per data element.
+- `metrics.task.populationwise` - `metrics.task.population` - takes lists of `y` and `y_pred` across the entire dataset and computes a single set of metrics, such as mAP.
+- `metrics.task.aggregator` - `metrics.task.aggregate` - takes a list of results from a batchwise metric and performs a non-trivial aggregation, such as for calculating total word error rate.
+
+For instance, if you were adding an accuracy metric for task results, you could do:
+```
+from armory import metrics
+@metrics.task.elementwise
+def my_accuracy_metric(y_i, y_pred_i):
+    return y_i == np.argmax(y_pred_i)
+``` 
+NOTE: when using decorators, this uses the local name of the metric, and so in this case `"my_accuracy_metric"` should be in the config, NOT `"my_project.metrics.my_accuracy_metric"`.
+It will generate an error if the name is already used.
+A different name can be used by calling the decorator method directly:
+```
+from armory import metrics
+def my_accuracy_metric(y_i, y_pred_i):
+    return y_i == np.argmax(y_pred_i)
+
+metrics.task.elementwise(my_accuracy_metric, "a_different_name")
+```
+
+Armory performs all built-in metric operations as batches, not as individual elements, so using the `elementwise` decorators will also produce a batchwise version of it that loops through the individual elements and provides a batchwise result.
+NOTE: when armory uses `get`, it will 
+
+Once annotated, these will also be `.`-addressable using their respective namespaces.
+In the above example, you can get at `my_accuracy_metric` via the `metrics.task.element` namespace:
+```python
+metrics.task.element.my_accuracy_metric
+assert metrics.task.element.my_accuracy_metric is my_accuracy_metric
+```
+You can also get the batchwise version of it via:
+```python
+batchwise_my_accuracy_metric = metrics.task.batch.my_accuracy_metric
+```
+
+All non-elementwise metrics are registered in the `supported` namespace, which can be looked at via `metrics.supported` or `metrics.common.supported`.
+
+If the function is decorated with a `populationwise` decorator, then all of the results will be stored in a list until the end of the scenario, then passed to the metric for processing.
+We do not support populationwise for perturbation metrics as this would require storing a potentially very large set of input and perturbed input data.
+
+Another useful decorator currently only supported in `task` is the `aggregator`, which can take intermediate results from a batchwise metric and aggregate them together non-trivially.
+
+For instance, if have a metric (like word error rate) that returns two values that form a fraction, and you want the aggregate measure to not be the mean over fractions, but the fraction of the sums of the numerator and denominator, that could look like the following:
+```python
+@metrics.task.elementwise
+def fraction(y_i, y_pred_i) -> (int, int):
+    ...
+    return numerator / denominator
+
+@metrics.task.aggregator
+# NOTE: the input will be a list (or numpy array) of each element-wise result from the underlying function
+def fraction_aggregator(list_of_fraction_tuples) -> (int, int):
+    total_numerator, total_denominator = 0, 0
+    for numerator, denominator in list_of_fraction_tuples:
+        total_numerator += numerator
+        total_denominator += denominator
+    return total_numerator, total_denominator
+```
+
+In order for the aggregator to be automatically used in armory scenarios, it needs to be registered:
+```
+metrics.task.map_to_aggregator("fraction", "fraction_aggregator")
+```
+The `map_to_aggregator` maps the `str` name of the batchwise function (`fraction` is here implictly via the elementwise decorator making a batchwise version) to the `str` name of the aggregator function.
+
+To test, you should be able to do:
+```
+aggregator_name = metrics.task.get_aggregator_name("fraction")
+assert aggregator_name is not None
+aggregator = metrics.get(aggregator_name)
+assert aggregator is fraction_aggregator
+```
+This sequence of operations is essentially what armory does to resolve the aggregator.
+
+If an aggregator is not linked to a metric, then it will default to either no aggregator (if `means` is `false` in the config) or to `np.mean` (if `means` is `true` in the config).
+If `np.mean` fails, no aggregation result will be recorded, but a warning will be logged.
+
+#### Log-Based Reporting
+
+In addition to being output to results json files, results are also logged to the screen at the `"METRIC"` log level, which is between `"PROGRESS"` and `"INFO"`; see [logging](logging.md).
+By default, metric results are formatted as follows: `f"{np.mean(result):.3}"`.
+If this results in an error (e.g., due to result not being a number or array of numbers), then it defaults to `f"{result}"`.
+
+In order to provide custom formatting for results logged to screen, you will need to implement and register a formatter for your function.
+Following the `fraction` example above, you can do the following:
+```python
+@metrics.result_formatter("fraction")
+def fraction_formatter(result) -> str:
+    numerator, denominator = result
+    return f"{numerator} / {denominator}"
+```
+The arg provided to the `result_formatter` decorator is the name of the metric you would like to associate with this formatter, which should return a `str`.
+If you would like to associate additional metrics with this formatter (e.g., to use it for the aggregation function as well), you can call it directly as follows:
+```python
+metrics.result_formatter("fraction_aggregator")(fraction_formatter)
+```
+
+#### Class-based Metrics
+
+The previous description assumes that the metric is a callable function.
+It is sometimes necessary or helpful for a metric to be contained in a class.
+When loading, if the target returned by `metrics.get` is a class, it will attempt to instantiate the class (without args or kwargs), and use the instantiated callable object as the metric function.
+Otherwise, it should operate just like a simple function metric.
 
 ## Instrumentation
 

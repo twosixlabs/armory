@@ -18,7 +18,7 @@ def batchwise(metric, name=None):
     """
     Register a batch metric and register a batchwise version of it
     """
-    return set_namespace(batch, metric, name=name)
+    return set_namespace(batch, metric, name=name, set_global=True)
 
 
 def elementwise(metric, name=None):

@@ -240,7 +240,7 @@ def task_meter(
         final = metrics.get(final_name)
     elif use_mean:
         final_name = f"mean_{name}"
-        final = np.mean
+        final = metrics.get("safe_mean")
     else:
         final_name = ""
         final = None

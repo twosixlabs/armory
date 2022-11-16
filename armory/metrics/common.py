@@ -55,12 +55,18 @@ class MetricNameSpace:
         setattr(self, name, function)
 
 
-def set_namespace(namespace, metric, name=None):
+supported = MetricNameSpace()
+
+
+def set_namespace(namespace, metric, name=None, set_global=False):
     """
     Set the namespace, getting the metric name if none given, and return the metric
     """
     if name is None:
         name = metric.__name__
+    if set_global:
+        global supported
+        setattr(supported, name, metric)
     setattr(namespace, name, metric)
     return metric
 

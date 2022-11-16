@@ -36,8 +36,15 @@ import armory.paths
 try:
     # If numpy is available, enable NumpyEncoder for json export
     from armory.utils import json_utils
+    import numpy as np
 except ImportError:
     json_utils = None
+
+    class Sentinel:
+        pass
+
+    np = Sentinel()
+    np.mean = Sentinel()
 
 import json
 

@@ -37,7 +37,7 @@ def aggregator(metric, name=None):
         These are typically used to combine intermediate results into final results
         Examples include total word error rate and mean average precision
     """
-    return set_namespace(aggregate, metric, name=name)
+    return set_namespace(aggregate, metric, name=name, set_global=True)
 
 
 def populationwise(metric, name=None):
@@ -45,14 +45,14 @@ def populationwise(metric, name=None):
     Register a population-wise (full test set) metric
         Similar to a batch metric, but requires the entire set of data points
     """
-    return set_namespace(population, metric, name=name)
+    return set_namespace(population, metric, name=name, set_global=True)
 
 
 def batchwise(metric, name=None):
     """
     Register a batch-wise metric
     """
-    return set_namespace(batch, metric, name=name)
+    return set_namespace(batch, metric, name=name, set_global=True)
 
 
 def elementwise(metric, name=None):
@@ -200,6 +200,14 @@ def total_entailment(sample_results):
         if k not in c:
             c[k] = 0
     return c
+
+
+@aggregator
+def safe_mean(results):
+    try:
+        return np.mean(results)
+    except (TypeError, ValueError):
+        return "<'np.mean' failed on given results>"
 
 
 @aggregator
