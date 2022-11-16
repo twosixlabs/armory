@@ -861,7 +861,9 @@ def armory_to_tide_detection(y_dict, image_id, data_detection):
         data_detection.add_detection(**y_tidecv)
 
 
-def armory_to_tide(y_dict, image_id, tide_data, is_detection=False):
+def armory_to_tide(y_dict, image_id, is_detection=True):
+    y_tidecv_list = []
+
     # convert dictionary with values of list type to list of dictionaries
     # y_dict = {'area': [936, 385]
     #           'boxes': [array([917., 464., 955., 527.], dtype=float32),
@@ -888,9 +890,10 @@ def armory_to_tide(y_dict, image_id, tide_data, is_detection=False):
         }
 
         if is_detection:
-            tide_data.add_detection(**y_tidecv, score=y["scores"])
-        else:
-            tide_data.add_detection(**y_tidecv)
+            y_tidecv["score"] = y["scores"]
+
+        y_tidecv_list.append(y_tidecv)
+    return y_tidecv_list
 
 
 @populationwise
@@ -934,8 +937,16 @@ def object_detection_mAP_tide(y_list, y_pred_list):
         else:
             image_id = i
 
-        armory_to_tide_ground_truth(y, image_id, data_ground_truth)
-        armory_to_tide_detection(y_pred, image_id, data_detection)
+        # armory_to_tide_ground_truth(y, image_id, data_ground_truth)
+        # armory_to_tide_detection(y_pred, image_id, data_detection)
+
+        tidecv_ground_truth_list = armory_to_tide(y, image_id, is_detection=False)
+        for y_tidecv in tidecv_ground_truth_list:
+            data_ground_truth.add_ground_truth(**y_tidecv)
+
+        tidecv_detection_list = armory_to_tide(y_pred, image_id)
+        for y_tidecv in tidecv_detection_list:
+            data_detection.add_detection(**y_tidecv)
 
         max_len = max(len(y["labels"]), len(y_pred["labels"]))
         if max_len > max_dets:
