@@ -35,6 +35,7 @@ dependencies = [
     "PyYAML",
     "requests",
     "toml",
+    "tidecv",         # Needed for TIDE metrics
 ]
 
 [project.urls]
