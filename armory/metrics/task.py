@@ -1834,7 +1834,7 @@ def word_error_rate_formatter(result):
     return total_wer_formatter(result)
 
 
-result_formatter("total_word_error_rate", total_wer_formatter)
+result_formatter("total_word_error_rate")(total_wer_formatter)
 
 
 @result_formatter("hota_metrics")

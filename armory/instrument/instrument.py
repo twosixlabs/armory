@@ -29,6 +29,7 @@ Example:
         hub.connect_writer(instrument.PrintWriter())
 """
 
+import json
 from typing import Callable
 
 import armory.paths
@@ -36,17 +37,8 @@ import armory.paths
 try:
     # If numpy is available, enable NumpyEncoder for json export
     from armory.utils import json_utils
-    import numpy as np
 except ImportError:
     json_utils = None
-
-    class Sentinel:
-        pass
-
-    np = Sentinel()
-    np.mean = Sentinel()
-
-import json
 
 from armory import log
 
@@ -756,11 +748,11 @@ class LogWriter(Writer):
         "CRITICAL",
     )
 
-    def __init__(self, log_level: str = "INFO"):
+    def __init__(self, log_level: str = "INFO", _write_kwargs=None):
         """
         log_level - one of the uppercase log levels allowed by armory.logs.log
         """
-        super().__init__()
+        super().__init__(_write_kwargs=_write_kwargs)
 
         if log_level not in self.LOG_LEVELS:
             raise ValueError(f"log_level {log_level} not in {self.LOG_LEVELS}")
@@ -801,7 +793,7 @@ class ResultsLogWriter(LogWriter):
         """
         if result_formatter is not None:
             result = result_formatter(result)
-        log.log(self.log_level, self.format_string(name=name, result=result))
+        log.log(self.log_level, self.format_string.format(name=name, result=result))
 
 
 class FileWriter(Writer):

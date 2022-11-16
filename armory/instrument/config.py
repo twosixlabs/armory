@@ -44,28 +44,26 @@ class MetricsLogger:
         include_targeted - whether to include targeted task metrics
         max_record_size - maximum number of bytes in a record (for ResultsWriter)
         """
-        self.task = task
-        self.task_kwargs = task_kwargs
-        self.perturbation = perturbation
         self.means = means
         self.include_benign = include_benign
         self.include_adversarial = include_adversarial
         self.include_targeted = include_targeted
         self.record_final_only = not bool(record_metric_per_sample)
-        if task is not None:
-            if isinstance(task, str):
-                self.task = [task]
+        self.task = self._ensure_list_of_strings(task)
+        if task:
             if isinstance(task_kwargs, dict):
                 self.task_kwargs = [task_kwargs]
+            else:
+                self.task_kwargs = task_kwargs
+
             if self.include_benign:
                 self.add_benign_tasks()
             if self.include_adversarial:
                 self.add_adversarial_tasks()
             if self.include_targeted:
                 self.add_targeted_tasks()
-        if perturbation is not None and self.include_adversarial:
-            if isinstance(perturbation, str):
-                perturbation = [perturbation]
+        self.perturbation = self._ensure_list_of_strings(perturbation)
+        if perturbation and self.include_adversarial:
             self.add_perturbations()
 
         self.results_writer = ResultsWriter(
@@ -74,6 +72,18 @@ class MetricsLogger:
         get_hub().connect_writer(self.results_writer, default=True)
 
         self.metric_results = None
+
+    @staticmethod
+    def _ensure_list_of_strings(arg):
+        if arg is None:
+            return []
+        if isinstance(arg, str):
+            return [arg]
+        arg_list = list(arg)
+        for x in arg_list:
+            if not isinstance(x, str):
+                raise ValueError(f"{x} is not a str")
+        return arg_list
 
     def connect(self, meters, writer=None):
         hub = get_hub()
@@ -85,7 +95,7 @@ class MetricsLogger:
     def add_perturbations(self):
         meters = perturbation_meters(
             self.perturbation,
-            use_means=self.means,
+            use_mean=self.means,
             record_final_only=self.record_final_only,
         )
         self.connect(meters)
@@ -234,7 +244,7 @@ def task_meter(
             final_result_formatter=final_result_formatter,
         )
 
-    aggregator = metrics.task.get_aggregator(name)
+    aggregator = metrics.task.get_aggregator_name(name)
     if aggregator is not None:
         final_name = aggregator
         final = metrics.get(final_name)
