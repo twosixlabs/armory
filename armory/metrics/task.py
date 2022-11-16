@@ -828,40 +828,14 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
     return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
-def armory_to_tide_ground_truth(y_dict, image_id, data_ground_truth):
-    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
-        x1, y1, x2, y2 = y["boxes"]
-        width = abs(x1 - x2)
-        height = abs(y1 - y2)
-        x_min = min(x1, x2)
-        y_min = min(y1, y2)
-
-        y_tidecv = {
-            "image_id": image_id,
-            "class_id": y["labels"],
-            "box": [x_min, y_min, width, height],
-        }
-        data_ground_truth.add_ground_truth(**y_tidecv)
-
-
-def armory_to_tide_detection(y_dict, image_id, data_detection):
-    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
-        x1, y1, x2, y2 = y["boxes"]
-        width = abs(x1 - x2)
-        height = abs(y1 - y2)
-        x_min = min(x1, x2)
-        y_min = min(y1, y2)
-
-        y_tidecv = {
-            "image_id": image_id,
-            "class_id": y["labels"],
-            "box": [x_min, y_min, width, height],
-            "score": y["scores"],
-        }
-        data_detection.add_detection(**y_tidecv)
-
-
 def armory_to_tide(y_dict, image_id, is_detection=True):
+    """
+    Convert y_dict in Armory format to use as input for TIDE data type
+
+    y_dict is a dictionary of lists, which needs to be converted to a list of dictionaries
+    with keys that correspond to arguments for pushing an element to a TIDE data type
+    """
+
     y_tidecv_list = []
 
     # convert dictionary with values of list type to list of dictionaries
@@ -936,9 +910,6 @@ def object_detection_mAP_tide(y_list, y_pred_list):
             image_id = y["image_id"][0]
         else:
             image_id = i
-
-        # armory_to_tide_ground_truth(y, image_id, data_ground_truth)
-        # armory_to_tide_detection(y_pred, image_id, data_detection)
 
         tidecv_ground_truth_list = armory_to_tide(y, image_id, is_detection=False)
         for y_tidecv in tidecv_ground_truth_list:
