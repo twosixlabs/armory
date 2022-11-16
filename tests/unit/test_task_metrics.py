@@ -156,9 +156,14 @@ def test_mAP():
         "scores": np.array([0.8, 0.8]),
     }
 
-    ap_per_class = task.object_detection_AP_per_class([labels], [preds])
+    ap_per_class = task.object_detection_AP_per_class([labels], [preds], mean=False)
     assert ap_per_class[9] == 0
     assert ap_per_class[2] >= 0.99
+
+    meta_result = task.object_detection_AP_per_class([labels], [preds])
+    assert "mean" in meta_result
+    assert "class" in meta_result
+    assert meta_result["mean"] >= 0.99 / 2
 
 
 def test_object_detection_metrics():
