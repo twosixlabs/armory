@@ -5,10 +5,10 @@ Set up the meters from a standard config file
 import numpy as np
 
 from armory.instrument.instrument import (
-    LogWriter,
     Meter,
     GlobalMeter,
     ResultsWriter,
+    ResultsLogWriter,
     get_hub,
 )
 from armory.logs import log
@@ -57,22 +57,16 @@ class MetricsLogger:
                 self.task = [task]
             if isinstance(task_kwargs, dict):
                 self.task_kwargs = [task_kwargs]
-
-            construct_meters_for_task_metrics(
-                self.task,
-                use_mean=means,
-                include_benign=self.include_benign,
-                include_adversarial=self.include_adversarial,
-                include_targeted=self.include_targeted,
-                task_kwargs=self.task_kwargs,
-                record_final_only=self.record_final_only,
-            )
+            if self.include_benign:
+                self.add_benign_tasks()
+            if self.include_adversarial:
+                self.add_adversarial_tasks()
+            if self.include_targeted:
+                self.add_targeted_tasks()
         if perturbation is not None and self.include_adversarial:
             if isinstance(perturbation, str):
                 perturbation = [perturbation]
-            construct_meters_for_perturbation_metrics(
-                perturbation, use_mean=means, record_final_only=self.record_final_only
-            )
+            self.add_perturbations()
 
         self.results_writer = ResultsWriter(
             sink=self._sink, max_record_size=max_record_size
@@ -81,18 +75,86 @@ class MetricsLogger:
 
         self.metric_results = None
 
+    def connect(self, meters, writer=None):
+        hub = get_hub()
+        for m in meters:
+            hub.connect_meter(m)
+        if writer is not None:
+            hub.connect_writer(writer, meters=meters)
+
+    def add_perturbations(self):
+        meters = perturbation_meters(
+            self.perturbation,
+            use_means=self.means,
+            record_final_only=self.record_final_only,
+        )
+        self.connect(meters)
+
+    def add_benign_tasks(self):
+        meters = task_meters(
+            self.task,
+            "benign_",
+            "scenario.y",
+            "scenario.y_pred",
+            use_mean=self.means,
+            record_final_only=self.record_final_only,
+            task_kwargs=self.task_kwargs,
+        )
+        writer = ResultsLogWriter(
+            format_string="{name} on benign examples w.r.t. ground truth labels: {result}"
+        )
+        self.connect(meters, writer)
+
+    def add_adversarial_tasks(self):
+        meters = task_meters(
+            self.task,
+            "adversarial_",
+            "scenario.y",
+            "scenario.y_pred_adv",
+            use_mean=self.means,
+            record_final_only=self.record_final_only,
+            task_kwargs=self.task_kwargs,
+        )
+        writer = ResultsLogWriter(
+            format_string="{name} on adversarial examples w.r.t. ground truth labels: {result}"
+        )
+        self.connect(meters, writer)
+
+    def add_targeted_tasks(self):
+        meters = task_meters(
+            self.task,
+            "targeted_",
+            "scenario.y_target",
+            "scenario.y_pred_adv",
+            use_mean=self.means,
+            record_final_only=self.record_final_only,
+            task_kwargs=self.task_kwargs,
+        )
+        writer = ResultsLogWriter(
+            format_string="{name} on adversarial examples w.r.t. target labels: {result}"
+        )
+        self.connect(meters, writer)
+
     def add_tasks_wrt_benign_predictions(self):
         """
         Measure adversarial predictions w.r.t. benign predictions
             Convenience method for CARLA object detection scenario
         """
         if self.task is not None and self.include_adversarial:
-            construct_meters_for_task_metrics_wrt_benign_predictions(
+            meters = task_meters(
                 self.task,
+                "adversarial_",
+                "scenario.y_pred",
+                "scenario.y_pred_adv",
                 use_mean=self.means,
-                task_kwargs=self.task_kwargs,
                 record_final_only=self.record_final_only,
+                task_kwargs=self.task_kwargs,
+                suffix="_wrt_benign_preds",
             )
+            writer = ResultsLogWriter(
+                format_string="{name} on adversarial examples w.r.t. benign predictions as labels: {result}"
+            )
+            self.connect(meters, writer)
 
     @classmethod
     def from_config(
@@ -123,362 +185,112 @@ class MetricsLogger:
         return self.metric_results
 
 
-def construct_meters_for_perturbation_metrics(
-    names, use_mean=True, record_final_only=True
-):
+def perturbation_meters(names, use_mean=True, record_final_only=True):
+    meters = []
     if use_mean:
         final = np.mean
     else:
         final = None
 
-    hub = get_hub()
     for name in names:
         metric = metrics.get(name)
-        hub.connect_meter(
-            Meter(
-                f"perturbation_{name}",
-                metric,
-                "scenario.x",
-                "scenario.x_adv",
-                final=final,
-                final_name=f"perturbation_mean_{name}",
-                record_final_only=record_final_only,
-            )
+        meter = Meter(
+            f"perturbation_{name}",
+            metric,
+            "scenario.x",
+            "scenario.x_adv",
+            final=final,
+            final_name=f"perturbation_mean_{name}",
+            record_final_only=record_final_only,
         )
-
-
-MEAN_AP_METRICS = [
-    "object_detection_AP_per_class",
-    "apricot_patch_targeted_AP_per_class",
-    "dapricot_patch_targeted_AP_per_class",
-    "carla_od_AP_per_class",
-]
-# quanity_metrics only impacts output printing
-QUANTITY_METRICS = [
-    "object_detection_hallucinations_per_image",
-    "carla_od_hallucinations_per_image",
-]
-
-
-class ResultsLogWriter(LogWriter):
-    """
-    Logs successful results (designed for task metrics)
-    """
-
-    def __init__(
-        self,
-        adversarial=False,
-        targeted=False,
-        used_preds_as_labels=False,
-        log_level: str = "SUCCESS",
-    ):
-        super().__init__(log_level=log_level)
-        if targeted:
-            if adversarial:
-                self.wrt = "target"
-                self.task_type = "adversarial"
-            else:
-                raise ValueError("benign task cannot be targeted")
-        elif adversarial:
-            if used_preds_as_labels:
-                self.wrt = "benign predictions as"
-            else:
-                self.wrt = "ground truth"
-            self.task_type = "adversarial"
-        else:
-            self.wrt = "ground truth"
-            self.task_type = "benign"
-
-    def _write(self, name, batch, result):
-        # TODO: once metrics have also been updated, rewrite to be less error prone
-        #    E.g., if someone renames this from "benign_word_error_rate" to "benign_wer"
-        if "word_error_rate" in name:
-            if "total_word_error_rate" not in name:
-                result = metrics.get("total_wer")(result)
-            total, (num, denom) = result
-            f_result = f"total={total:.2%}, {num}/{denom}"
-        elif "hota_metrics" in name:
-            mean_results = {k: v for k, v in result.items() if "mean" in k}
-            f_result = f"{mean_results}"
-        elif "entailment" in name:
-            if "total_entailment" not in name:
-                result = metrics.get("total_entailment")(result)
-            total = sum(result.values())
-            f_result = (
-                f"contradiction: {result['contradiction']}/{total}, "
-                f"neutral: {result['neutral']}/{total}, "
-                f"entailment: {result['entailment']}/{total}"
-            )
-        elif any(m in name for m in MEAN_AP_METRICS):
-            if "input_to" in name:
-                for m in MEAN_AP_METRICS:
-                    if m in name:
-                        metric = metrics.get(m)
-                        result = metrics.task.MeanAP(metric)(result)
-                        break
-            f_result = f"{result}"
-        elif any(m in name for m in QUANTITY_METRICS):
-            # Don't include % symbol
-            f_result = f"{np.mean(result):.2}"
-        else:
-            try:
-                f_result = f"{np.mean(result):.2%}"
-            except (TypeError, ValueError):
-                # if mean operation fails, don't modify result
-                f_result = result
-        log.success(
-            f"{name} on {self.task_type} examples w.r.t. {self.wrt} labels: {f_result}"
-        )
-
-
-def _task_metric(
-    name,
-    metric_kwargs,
-    use_mean=True,
-    include_benign=True,
-    include_adversarial=True,
-    include_targeted=True,
-    record_final_only=True,
-):
-    """
-    Return list of meters generated for this specific task
-    """
-    meters = []
-    metric = metrics.get(name)
-    final_kwargs = {}
-    if name in MEAN_AP_METRICS:
-        final_suffix = name
-        final = metrics.task.MeanAP(metric)
-        final_kwargs = metric_kwargs
-
-        name = f"input_to_{name}"
-        metric = metrics.get("identity_unzip")
-        metric_kwargs = None
-        record_final_only = True
-    elif name == "entailment":
-        final = metrics.get("total_entailment")
-        final_suffix = "total_entailment"
-    elif name == "word_error_rate":
-        final = metrics.get("total_wer")
-        final_suffix = "total_word_error_rate"
-    elif use_mean:
-        final = np.mean
-        final_suffix = f"mean_{name}"
-    else:
-        final = None
-        final_suffix = ""
-        record_final_only = False
-
-    if include_benign:
-        if name in metrics.task.population:
-            meters.append(
-                GlobalMeter(
-                    f"benign_{name}",
-                    metric,
-                    "scenario.y",
-                    "scenario.y_pred",
-                )
-            )
-        else:
-            meters.append(
-                Meter(
-                    f"benign_{name}",
-                    metric,
-                    "scenario.y",
-                    "scenario.y_pred",
-                    metric_kwargs=metric_kwargs,
-                    final=final,
-                    final_name=f"benign_{final_suffix}",
-                    final_kwargs=final_kwargs,
-                    record_final_only=record_final_only,
-                )
-            )
-    else:
-        meters.append(None)
-    if include_adversarial:
-        if name in metrics.task.population:
-            meters.append(
-                GlobalMeter(
-                    f"adversarial_{name}",
-                    metric,
-                    "scenario.y",
-                    "scenario.y_pred_adv",
-                )
-            )
-        else:
-            meters.append(
-                Meter(
-                    f"adversarial_{name}",
-                    metric,
-                    "scenario.y",
-                    "scenario.y_pred_adv",
-                    metric_kwargs=metric_kwargs,
-                    final=final,
-                    final_name=f"adversarial_{final_suffix}",
-                    final_kwargs=final_kwargs,
-                    record_final_only=record_final_only,
-                )
-            )
-    else:
-        meters.append(None)
-    if include_targeted:
-        if name in metrics.task.population:
-            meters.append(
-                GlobalMeter(
-                    f"targeted_{name}",
-                    metric,
-                    "scenario.y_target",
-                    "scenario.y_pred_adv",
-                )
-            )
-        else:
-            meters.append(
-                Meter(
-                    f"targeted_{name}",
-                    metric,
-                    "scenario.y_target",
-                    "scenario.y_pred_adv",
-                    metric_kwargs=metric_kwargs,
-                    final=final,
-                    final_name=f"targeted_{final_suffix}",
-                    final_kwargs=final_kwargs,
-                    record_final_only=record_final_only,
-                )
-            )
-    else:
-        meters.append(None)
+        meters.append(meter)
     return meters
 
 
-def construct_meters_for_task_metrics(
-    names,
+def task_meter(
+    name,
+    prefix,
+    metric_kwargs,
+    y,
+    y_pred,
     use_mean=True,
-    include_benign=True,
-    include_adversarial=True,
-    include_targeted=True,
     record_final_only=True,
-    task_kwargs=None,
-):
-    if not any([include_benign, include_adversarial, include_targeted]):
-        return
-    if task_kwargs is None:
-        task_kwargs = [None] * len(names)
-    elif len(names) != len(task_kwargs):
-        raise ValueError(f"{len(names)} tasks but {len(task_kwargs)} task_kwargs")
-    hub = get_hub()
-
-    tuples = []
-    for name, metric_kwargs in zip(names, task_kwargs):
-        task = _task_metric(
-            name,
-            metric_kwargs,
-            use_mean=use_mean,
-            include_benign=include_benign,
-            include_adversarial=include_adversarial,
-            include_targeted=include_targeted,
-            record_final_only=record_final_only,
-        )
-        tuples.append(task)
-
-    if tuples:
-        benign, adversarial, targeted = zip(*tuples)
-        meters = [
-            m for tup in tuples for m in tup if m is not None
-        ]  # unroll list of tuples
-
-        for m in meters:
-            hub.connect_meter(m)
-    else:
-        benign, adversarial, targeted = [], [], []
-
-    if include_benign:
-        hub.connect_writer(ResultsLogWriter(), meters=benign)
-    if include_adversarial:
-        hub.connect_writer(ResultsLogWriter(adversarial=True), meters=adversarial)
-    if include_targeted:
-        hub.connect_writer(
-            ResultsLogWriter(adversarial=True, targeted=True), meters=targeted
-        )
-
-
-def _task_metric_wrt_benign_predictions(
-    name, metric_kwargs, use_mean=True, record_final_only=True
+    suffix="",
 ):
     """
-    Return the meter generated for this specific task
-    Return list of meters generated for this specific task
+    Return meter generated for this specific task
     """
     metric = metrics.get(name)
+    result_formatter = metrics.get_result_formatter(name)
     final_kwargs = {}
-    if name in MEAN_AP_METRICS:
-        final_suffix = name
-        final = metrics.task.MeanAP(metric)
-        final_kwargs = metric_kwargs
-
-        name = f"input_to_{name}"
-        metric = metrics.get("identity_unzip")
-        metric_kwargs = None
-        record_final_only = True
-    elif name == "entailment":
-        final = metrics.get("total_entailment")
-        final_suffix = "total_entailment"
-    elif name == "word_error_rate":
-        final = metrics.get("total_wer")
-        final_suffix = "total_word_error_rate"
-    elif name in metrics.task.population:
+    if name in metrics.task.population:
+        final_result_formatter = metrics.get_result_formatter(name)
         return GlobalMeter(
-            f"adversarial_{name}_wrt_benign_preds",
+            f"{prefix}{name}{suffix}",
             metric,
-            "scenario.y_pred",
-            "scenario.y_pred_adv",
+            y,
+            y_pred,
+            final_kwargs=metric_kwargs,
+            final_result_formatter=final_result_formatter,
         )
+
+    aggregator = metrics.task.get_aggregator(name)
+    if aggregator is not None:
+        final_name = aggregator
+        final = metrics.get(final_name)
     elif use_mean:
+        final_name = f"mean_{name}"
         final = np.mean
-        final_suffix = f"mean_{name}"
     else:
+        final_name = ""
         final = None
-        final_suffix = ""
         record_final_only = False
+    final_result_formatter = metrics.get_result_formatter(final_name)
 
     return Meter(
-        f"adversarial_{name}_wrt_benign_preds",
+        f"{prefix}{name}{suffix}",
         metric,
-        "scenario.y_pred",
-        "scenario.y_pred_adv",
+        y,
+        y_pred,
         metric_kwargs=metric_kwargs,
+        result_formatter=result_formatter,
         final=final,
-        final_name=f"adversarial_{final_suffix}_wrt_benign_preds",
+        final_name=f"{prefix}{final_name}{suffix}",
         final_kwargs=final_kwargs,
+        final_result_formatter=final_result_formatter,
         record_final_only=record_final_only,
     )
 
 
-def construct_meters_for_task_metrics_wrt_benign_predictions(
-    names, use_mean=True, task_kwargs=None, record_final_only=True
+def task_meters(
+    names,
+    prefix,
+    y,
+    y_pred,
+    task_kwargs=None,
+    use_mean=True,
+    record_final_only=True,
+    suffix="",
 ):
+    """
+    Return list of meters for the given setup
+    """
+    meters = []
     if task_kwargs is None:
         task_kwargs = [None] * len(names)
     elif len(names) != len(task_kwargs):
         raise ValueError(f"{len(names)} tasks but {len(task_kwargs)} task_kwargs")
-    hub = get_hub()
 
-    meters = []
     for name, metric_kwargs in zip(names, task_kwargs):
-        meter = _task_metric_wrt_benign_predictions(
+        meter = task_meter(
             name,
+            prefix,
             metric_kwargs,
+            y,
+            y_pred,
             use_mean=use_mean,
             record_final_only=record_final_only,
+            suffix=suffix,
         )
         meters.append(meter)
-
-    for m in meters:
-        hub.connect_meter(m)
-
-    hub.connect_writer(
-        ResultsLogWriter(
-            adversarial=True,
-            used_preds_as_labels=True,
-        ),
-        meters=meters,
-    )
+    return meters

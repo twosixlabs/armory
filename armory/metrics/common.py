@@ -3,10 +3,14 @@ Supporting tools for metrics
 """
 
 import functools
+from typing import Callable
 
 import numpy as np
 
 from armory.logs import log
+
+
+FORMATTERS = {}
 
 
 class MetricNameSpace:
@@ -92,3 +96,52 @@ def as_batch(element_metric):
     # note: repr(wrapper) defaults to the element_metric, not __name__
     # See: https://stackoverflow.com/questions/10875442/possible-to-change-a-functions-repr-in-python
     return wrapper
+
+
+def result_formatter(name):
+    """
+    Decorator for result formatters
+
+    To connect a formatter function to a name, you can use this as an annotation:
+        @result_formatter("my_name")
+        def my_func(...)
+            ...
+
+    Then you can retrieve it with:
+        my_func = get_result_formatter("my_name")
+
+    You can directly register existing functions with:
+        result_formatter("my_name")(existing_func)
+    """
+
+    def inner_decorator(func):
+        global FORMATTERS
+        if name in FORMATTERS:
+            raise ValueError(
+                f"a result formatter is already registered for name {name}"
+            )
+        if not callable(func):
+            raise ValueError(f"{func} is not callable")
+        FORMATTERS[name] = func
+        return func
+
+    return inner_decorator
+
+
+@result_formatter("default")
+def default(result):
+    try:
+        return f"{np.mean(result):.3}"
+    except (TypeError, ValueError):
+        # if mean operation fails, don't modify result
+        return f"{result}"
+
+
+def get_result_formatter(name) -> Callable:
+    """
+    Get the result formatter for the given name
+    """
+    global FORMATTERS
+    if name not in FORMATTERS:
+        name = "default"
+    return FORMATTERS[name]

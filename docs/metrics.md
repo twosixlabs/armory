@@ -70,6 +70,10 @@ The `armory.metrics` module contains functionality to measure a variety of metri
 We have implemented the metrics in numpy, instead of using framework-specific metrics, to prevent expanding the required set of dependencies.
 Please see the relevant submodules in [armory/metrics](../armory/metrics/) for more detailed descriptions.
 
+### Custom Metrics
+
+TODO: describe how to add/register metrics, use them in configs, etc.
+
 ### Perturbation Metrics
 
 Perturbation metrics compare a benign and adversarially perturbed input and return a distance.

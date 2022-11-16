@@ -14,13 +14,21 @@ from armory.data.adversarial.apricot_metadata import (
     APRICOT_PATCHES,
 )
 from armory.logs import log
-from armory.metrics.common import MetricNameSpace, as_batch, set_namespace
+from armory.metrics.common import (
+    MetricNameSpace,
+    as_batch,
+    set_namespace,
+    result_formatter,
+)
 from armory.utils.external_repo import ExternalPipInstalledImport
 
 aggregate = MetricNameSpace()
 population = MetricNameSpace()
 batch = MetricNameSpace()
 element = MetricNameSpace()
+
+# Maps batch or element metrics to aggregation functions
+AGGREGATION_MAP = {}
 
 
 def aggregator(metric, name=None):
@@ -67,6 +75,18 @@ def _to_numpy(array):
         return np.asarray(array)
     except ValueError:
         return np.asarray(array, dtype=object)
+
+
+def map_to_aggregator(name, aggregator):
+    global AGGREGATION_MAP
+    if name in AGGREGATION_MAP:
+        raise ValueError(f"{name} already mapped to {aggregator}")
+    AGGREGATION_MAP[name] = aggregator
+
+
+def get_aggregator_name(name):
+    global AGGREGATION_MAP
+    return AGGREGATION_MAP.get(name, None)
 
 
 def numpy(function):
@@ -231,24 +251,12 @@ def identity_zip(sample_arg_tuples):
     return args
 
 
-# NOTE: Not registered as a metric due to arg in __init__
-class MeanAP:
-    def __init__(self, ap_metric):
-        self.ap_metric = ap_metric
-
-    def __call__(self, values, **kwargs):
-        args = [list(x) for x in zip(*values)]
-        ap = self.ap_metric(*args, **kwargs)
-        mean_ap = np.fromiter(ap.values(), dtype=float).mean()
-        return {"mean": mean_ap, "class": ap}
-
-
-@populationwise
-def my_task(y_true_list, y_actual_list):
-    return {
-        "a": len(y_true_list),
-        "b": len(y_actual_list),
-    }
+def mean_ap(ap_per_class):
+    """
+    Takes the mean across classes and returns a dict with mean and class AP
+    """
+    mean_ap = np.fromiter(ap_per_class.values(), dtype=float).mean()
+    return {"mean": mean_ap, "class": ap_per_class}
 
 
 @populationwise
@@ -624,7 +632,11 @@ def video_tracking_mean_success_rate(y, y_pred):
 
 @populationwise
 def object_detection_AP_per_class(
-    y_list, y_pred_list, iou_threshold=0.5, class_list=None
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    class_list=None,
+    mean=True,
 ):
     """
     Mean average precision for object detection. The mAP can be computed by taking the mean
@@ -640,7 +652,9 @@ def object_detection_AP_per_class(
     class_list (list, optional): a list of classes, such that all predictions and ground-truths
         with labels NOT in class_list are to be ignored.
 
-    returns: a dictionary mapping each class to the average precision (AP) for the class.
+    mean: if False, returns a dict mapping each class to its average precision (AP)
+        if True, calls `mean_ap` on the AP dict and returns a encapsulating dict:
+        {'class': {<class_0>: <class_0_AP>, ...}, 'mean': <mean_AP>}
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -801,6 +815,8 @@ def object_detection_AP_per_class(
             average_precision, decimals=2
         )
 
+    if mean:
+        return mean_ap(average_precisions_by_class)
     return average_precisions_by_class
 
 
@@ -821,7 +837,11 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
     returns: a scalar value
     """
     ap_per_class = object_detection_AP_per_class(
-        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        class_list=class_list,
+        mean=False,
     )
     return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
@@ -1132,19 +1152,25 @@ def carla_od_misclassification_rate(
 
 
 @populationwise
-def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5):
+def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5, mean=True):
     class_list = [1, 2, 3]
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
     the green screen/patch itself, which should not be treated as an object class.
     """
     return object_detection_AP_per_class(
-        y_list, y_pred_list, iou_threshold=iou_threshold, class_list=class_list
+        y_list,
+        y_pred_list,
+        iou_threshold=iou_threshold,
+        class_list=class_list,
+        mean=mean,
     )
 
 
 @populationwise
-def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
+def apricot_patch_targeted_AP_per_class(
+    y_list, y_pred_list, iou_threshold=0.1, mean=True
+):
     """
     Average precision indicating how successfully the APRICOT patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -1171,6 +1197,10 @@ def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
     y_pred_list (list): of length equal to the number of input examples. Each element in the
         list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
         array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+
+    mean: if False, returns a dict mapping each class to its average precision (AP)
+        if True, calls `mean_ap` on the AP dict and returns a encapsulating dict:
+        {'class': {<class_0>: <class_0_AP>, ...}, 'mean': <mean_AP>}
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -1325,11 +1355,15 @@ def apricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
             average_precision, decimals=2
         )
 
+    if mean:
+        return mean_ap(average_precisions_by_class)
     return average_precisions_by_class
 
 
 @populationwise
-def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1):
+def dapricot_patch_targeted_AP_per_class(
+    y_list, y_pred_list, iou_threshold=0.1, mean=True
+):
     """
     Average precision indicating how successfully the patch causes the detector
     to predict the targeted class of the patch at the location of the patch. A higher
@@ -1361,6 +1395,9 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
         list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
         array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
 
+    mean: if False, returns a dict mapping each class to its average precision (AP)
+        if True, calls `mean_ap` on the AP dict and returns a encapsulating dict:
+        {'class': {<class_0>: <class_0_AP>, ...}, 'mean': <mean_AP>}
     """
     _check_object_detection_input(y_list, y_pred_list)
 
@@ -1509,6 +1546,8 @@ def dapricot_patch_targeted_AP_per_class(y_list, y_pred_list, iou_threshold=0.1)
             average_precision, decimals=2
         )
 
+    if mean:
+        return mean_ap(average_precisions_by_class)
     return average_precisions_by_class
 
 
@@ -1770,3 +1809,47 @@ class GlobalHOTA:
                     results[f"mean_{k.lower()}"] = value
 
         return results
+
+
+populationwise(GlobalHOTA, name="hota_metrics")
+
+
+@result_formatter("total_wer")
+def total_wer_formatter(result):
+    total, (num, denom) = result
+    return f"total={float(total):.3}, {num}/{denom}"
+
+
+@result_formatter("word_error_rate")
+def word_error_rate_formatter(result):
+    result = total_wer(result)
+    return total_wer_formatter(result)
+
+
+result_formatter("total_word_error_rate", total_wer_formatter)
+
+
+@result_formatter("hota_metrics")
+def hota_metrics_formatter(result):
+    mean_results = {k: v for k, v in result.items() if "mean" in k}
+    return f"{mean_results}"
+
+
+@result_formatter("total_entailment")
+def total_entailment_formatter(result):
+    total = sum(result.values())
+    return (
+        f"contradiction: {result['contradiction']}/{total}, "
+        f"neutral: {result['neutral']}/{total}, "
+        f"entailment: {result['entailment']}/{total}"
+    )
+
+
+@result_formatter("entailment")
+def entailment_formatter(result):
+    result = total_entailment(result)
+    return total_entailment_formatter(result)
+
+
+map_to_aggregator("entailment", "total_entailment")
+map_to_aggregator("word_error_rate", "total_wer")

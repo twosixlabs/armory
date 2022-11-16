@@ -30,6 +30,7 @@ import functools
 log = loguru.logger
 
 log.level("PROGRESS", no=15, color="<blue>", icon="\N{downwards quadruple arrow}")
+log.level("METRIC", no=16, color="<blue>", icon="\N{downwards quadruple arrow}")
 
 default_message_filters = {
     "": "WARNING",
