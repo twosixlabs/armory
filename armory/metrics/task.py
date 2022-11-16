@@ -861,6 +861,38 @@ def armory_to_tide_detection(y_dict, image_id, data_detection):
         data_detection.add_detection(**y_tidecv)
 
 
+def armory_to_tide(y_dict, image_id, tide_data, is_detection=False):
+    # convert dictionary with values of list type to list of dictionaries
+    # y_dict = {'area': [936, 385]
+    #           'boxes': [array([917., 464., 955., 527.], dtype=float32),
+    #                     array([911., 468., 940., 517.], dtype=float32)],
+    #           'id': [97, 98]
+    #           'image_id': [84190894, 84190894],
+    #           'is_crowd': [False, True],
+    #           'labels': [1, 1]}
+    # t = (936, array([917., 464., 955., 527.], dtype=float32), 97, 84190894, False, 1)
+    #     (385, array([911., 468., 940., 517.], dtype=float32), 98, 84190894, True, 1)
+    # y = {'area': 936, 'boxes': array([917., 464., 955., 527.], dtype=float32), 'id': 97, 'image_id': 84190894, 'is_crowd': False, 'labels': 1}
+    #     {'area': 385, 'boxes': array([911., 468., 940., 517.], dtype=float32), 'id': 98, 'image_id': 84190894, 'is_crowd': True, 'labels': 1}
+    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
+        x1, y1, x2, y2 = y["boxes"]
+        width = abs(x1 - x2)
+        height = abs(y1 - y2)
+        x_min = min(x1, x2)
+        y_min = min(y1, y2)
+
+        y_tidecv = {
+            "image_id": image_id,
+            "class_id": y["labels"],
+            "box": [x_min, y_min, width, height],
+        }
+
+        if is_detection:
+            tide_data.add_detection(**y_tidecv, score=y["scores"])
+        else:
+            tide_data.add_detection(**y_tidecv)
+
+
 @populationwise
 def object_detection_mAP_tide(y_list, y_pred_list):
     """
