@@ -1,250 +1,51 @@
 # Scenarios
-Armory is intended to evaluate threat-model scenarios. Baseline evaluation scenarios
-are described below. Additionally, we've provided some academic standard scenarios.
+Armory is intended to evaluate threat-model scenarios.
+Baseline evaluation scenarios are described below.
+Additionally, we've provided some academic standard scenarios.
+
 
 ## Configuration Files
-
 Scenario configuration files are found in the `scenario_configs` directory [here](scenario_configs).
-The most recent config files are found in the `eval5` subfolder and older configs are found in the `eval1-4` subfolder.
+The most recent config files are found in the `eval6` subfolder and older configs are found in the `eval5` and `eval1-4` subfolders.
 There are also symlinks to representative configs found in the base of the `scenario_configs` directory.
 
+
 ## Base Scenario Class
-All scenarios inherit from the [Base Armory Scenario](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/base.py). The
-base class parses an armory configuration file and calls a particular scenario's
-private `_evaluate` to perform all of the computation for a given threat-models
-robustness to attack. All `_evaluate` methods return a  dictionary of recorded metrics
-which are saved into the armory `output_dir` upon  completion.
+All scenarios inherit from the [Scenario](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/scenario.py) class.
+This class parses an armory configuration file and calls its `evaluate` method to perform all of the computation for a given threat-models robustness to attack.
+All `evaluate` methods save a dictionary of recorded metrics which are saved into the armory `output_dir` upon  completion.
+Scenarios are implemented as subclasses of `Scenario`, and typically given their own file in the [Scenarios Directory](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/).
+
+Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed.
+More information on poisoning scenarios is documented [here](poisoning.md).
+
 
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
+Some scenario files are tied to a specific attack, while others are customized for a given dataset.  Several are more general-purpose.
+Along with each scenario description, we provide a link to a page with baseline results for applicable datasets and attacks.
+More information about each referenced dataset can be found in the [datasets](datasets.md) document.
 
-### RESISC image classification (Updated June 2020)
 
+### Audio ASR (Updated June 2022)
 * **Description:**
-In this scenario, the system under evaluation is assumed to be a real-time overhead imagery scene classification
-system that a human operator is either passively monitoring or not monitoring at all.
+In this scenario, the system under evaluation is an automatic speech recognition system.
 * **Dataset:**
-The dataset is the [NWPU RESISC-45 dataset](http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html).
-It comprises 45 classes and 700 images for each class.  Images 1-500 of each class are in the training split,
-500-600 are in the validation split, and 600-700 are in the test split.
-* **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model is an ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45.
-* **Threat Scenario:**
-  * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection
-    * Targeted - an adversary may wish to divert attention or resources to scenes that are otherwise uninteresting
-  * Adversary Operating Environment:
-    * Non real-time, digital evasion attack - attack is not "per-example" bur "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Black-box, white-box, and adaptive attacks will be performed on defenses - for black-box attack, a held-back
-    model or dataset will be used as surrogate.
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed - we assume in this scenario that
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation
-    budget allowed while meeting the perceptibility requirement.
-    * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted attack) and
-    universal patch (targeted attack)
-      * For universal patch attack, assume the total area of the patch is at most 25% of the total image area.  The
-      location and shape of the patch will vary.
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation
-    (Lp-norms, Wasserstein distance)
-  * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance: (results obtained using Armory < v0.10)**
-  * Baseline Clean Top-1 Accuracy: 93%
-  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 6%
-  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 23%
-* **Baseline Defense Performance: (results obtained using Armory < v0.10)**
-Baseline defense is art_experimental.defences.JpegCompressionNormalized(clip_values=(0.0, 1.0), quality=50, channel_index=3, apply_fit=False,
-apply_predict=True, means=[0.36386173189316956, 0.38118692953271804, 0.33867067558870334], stds=[0.20350874, 0.18531173, 0.18472934]) - see
-resisc45_baseline_densenet121_adversarial.json for example usage.
-Baseline defense performance is evaluated for a grey-box attack: adversarial examples generated on undefended baseline model evaluated on defended model.
-  * Baseline Clean Top-1 Accuracy: 92%
-  * Baseline Attacked (Universal Perturbation) Top-1 Accuracy: 40%
-  * Baseline Attacked (Universal Patch) Top-1 Accuracy: 21%
-
-### Librispeech speaker audio classification (Updated June 2020)
-
-* **Description:**
-In this scenario, the system under evaluation is a speaker identification system that a human operator is either
-passively monitoring or not monitoring at all.
-* **Dataset:**
-The dataset is the [LibriSpeech dataset](http://www.openslr.org/12).
-Due to the large size of the dataset, a custom subset is created.  It comprises 40 speakers (20 male/ 20 female),
-each with 4/2/2 minutes of audio in the train/validation/test splits, respectively.
-* **Baseline Model:**
-To maximize time spent on defense research, two trained baseline models will be provided - one based on spectrogram (not
-mel-cepstrum or MFCC) and one based on raw audio - but performers are not required to use them, if their defense
-requires a different architecture. The spectrogram-based model is developed and trained from scratch, and the
-raw audio-based model is [SincNet](https://arxiv.org/abs/1808.00158), trained from scratch.
-* **Threat Scenario:**
-  * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection
-    * Targeted - an adversary may wish to impersonate someone else
-  * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - attack is not "per-example" bur rather "universal," which could be created
-    offline (i.e., non real-time). The goal is to mimic conditions under which physical evasion attack could be carried out.
-    * Assuming perfect acoustic channel
-    * Black-box, white-box, and adaptive attacks will be performed on defenses - for black-box attack, spectrogram-based
-    model will be the surrogate for the raw audio-based model, and vice versa.
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under passive listening are allowed - we assume in this scenario that
-    a human may at most passively monitor the classifier system. Use own judgement on the maximum perturbation budget
-    allowed while meeting the perceptibility requirement.
-    * Type of attacks that will be implemented during evaluation: universal perturbation (untargeted and targeted attacks)
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation
-    (Lp-norms, Wasserstein distance, signal-to-noise ratio)
-  * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Model Performance:**
-To be added
-* **Baseline Defense Performance:**
-To be added
-
-
-### UCF101 video classification (Updated July 2021)
-
-* **Description:**
-In this scenario, the system under evaluation is a video action recognition system that a human operator is either
-passively monitoring or not monitoring at all.
-* **Dataset:**
-The dataset is the [UCF101 dataset](https://www.crcv.ucf.edu/data/UCF101.php).
-It comprises 101 actions and 13,320 total videos. For the training/testing split,
-we use the official Split 01.
-* **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the [MARS architecture](http://openaccess.thecvf.com/content_CVPR_2019/papers/Crasto_MARS_Motion-Augmented_RGB_Stream_for_Action_Recognition_CVPR_2019_paper.pdf),
-which is a single-stream (RGB) 3D convolution architecture that simultaneously mimics the optical flow stream.
-The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF101.
-* **Threat Scenario:**
-  * Adversary objectives:
-    * Untargeted - an adversary may simply wish to evade detection
-  * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - we assume an adversary is the author of the video, so they could create an evasion attack offline
-    before distributing the video.  Typically, a non real-time attack is "universal," but in this case, it is "per-example."
-    * Adaptive attacks will be performed on defenses
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed, as are attacks that create perceptible
-    but non-suspicious patches - we assume in this scenario that a human may at most passively monitor the classifier system.
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Accuracy (mean, per-class), attack budget
-  * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks:**
-  * [Frame Saliency](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/frame_saliency.py)
-  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
-  * [Flicker Attack](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/over_the_air_flickering/over_the_air_flickering_pytorch.py)
-  * [Custom Frame Border attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/video_frame_border.py)
-* **Baseline Defense**: [Video Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/video_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3)**
-
-|                Attack               |              Budget              | Benign Top1/Top5 Accuracy (Undefended) | Adversarial Top1/Top5 Accuracy (Undefended) | Benign Top1/Top5 Accuracy (Defended) | Adversarial Top1/Top5 Accuracy (Defended) | Test Size |
-|:-----------------------------------:|:--------------------------------:|:--------------------------------------:|:-------------------------------------------:|:------------------------------------:|:-----------------------------------------:|:---------:|
-| Flicker (low perceptibility)        | beta_0=4.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.51/1.00                                   | 0.92/1.00                            | 0.44/1.00                                 | 100       |
-| Flicker (medium perceptibility)     | beta_0=2.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.39/1.00                                   | 0.92/1.00                            | 0.40/0.97                                 | 100       |
-| Flicker (high perceptibility)       | beta_0=1.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.37/1.00                                   | 0.92/1.00                            | 0.38/0.98                                 | 100       |
-| Frame Border                        | patch ratio=0.10                 | 0.92/1.00                              | 0.00/0.25                                   | 0.93/1.00                            | 0.03/0.36                                 | 100       |
-| Frame Border                        | patch ratio=0.15                 | 0.92/1.00                              | 0.00/0.19                                   | 0.93/1.00                            | 0.01/0.29                                 | 100       |
-| Frame Border                        | patch ratio=0.20                 | 0.92/1.00                              | 0.00/0.19                                   | 0.93/1.00                            | 0.00/0.25                                 | 100       |
-| Masked PGD                          | patch ratio=0.10                 | 0.92/1.00                              | 0.02/0.61                                   | 0.93/1.00                            | 0.01/0.66                                 | 100       |
-| Masked PGD                          | patch ratio=0.15                 | 0.92/1.00                              | 0.00/0.42                                   | 0.93/1.00                            | 0.00/0.36                                 | 100       |
-| Masked PGD                          | patch_ratio=0.20                 | 0.92/1.00                              | 0.00/0.28                                   | 0.93/1.00                            | 0.00/0.31                                 | 100       |
-| Frame Saliency (iterative_saliency) | eps=0.004                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.81/1.00                                 | 100       |
-| Frame Saliency (iterative_saliency) | eps=0.008                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.47/1.00                                 | 100       |
-| Frame Saliency (iterative_saliency) | eps=0.015                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.23/0.99                                 | 100       |
-| Frame Saliency (one_shot)           | eps=0.004                        | 0.92/1.00                              | 0.00/0.26                                   | 0.93/1.00                            | 0.79/0.97                                 | 100       |
-| Frame Saliency (one_shot)           | eps=0.008                        | 0.92/1.00                              | 0.00/0.22                                   | 0.93/1.00                            | 0.46/0.89                                 | 100       |
-| Frame Saliency (one_shot)           | eps=0.015                        | 0.92/1.00                              | 0.00/0.20                                   | 0.93/1.00                            | 0.21/0.74                                 | 100       |
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-
-### German traffic sign poisoned image classification (Updated December 2020)
-
-* **Description:**
-In this scenario, the system under evaluation is a traffic sign recognition system that requires continuous
-training, and the training data is procured through less trustworthy external sources (e.g., third-party, Internet, etc.)
-and may contain backdoor triggers, where some images and labels are intentionally altered to mislead the system into
-making specific test-time decisions.
-* **Dataset:**
-The dataset is the [German Traffic Sign Recognition Benchmark](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
-It comprises 43 classes and more than 50,000 total images. The official Final_Training and Final_Test data are used
-for the train/test split. The dataset is available in canonical format, but the official scenario applies preprocessing
-consisting of contrast equalization, cropping to a square shape, and resizing.
-* **Baseline Model:**
-To maximize time spent on defense research, an untrained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the [MicronNet architecture](https://arxiv.org/abs/1804.00497). Also provided will be
-poison data (1/5/10% of the training size) that should be mixed with the training data.
-* **Threat Scenario:**
-  * Adversary objectives:
-    * Targeted
-  * Adversary Operating Environment:
-    * Non-real time, digital evasion attack - the goal is to mimic conditions under which physical evasion attack
-    could be carried out.
-    * Black-box, white-box, and adaptive attacks will be performed on defenses - for black-box attack, a held-back
-    model or dataset will be used as surrogate.
-  * Adversary Capabilities and Resources
-    * Attacks that are non-overtly perceptible under quick glance are allowed, as are attacks that create perceptible
-    but non-suspicious triggers - we assume in this scenario that a human may at most passively monitor the classifier system.
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Accuracy (mean, per-class), backdoor success rate, attack computational cost, defense computational cost
-  * Fairness metrics.  These attempt to ascertain whether the model or the filter is biased toward data that is unusual in some sense:
-    * Filter Perplexity compares the class distribution of False Positives to the class distribution of unpoisoned data.  A filter is biased if it removes, besides poison, data from only a few classes.
-    * Model Subclass Bias measures, for each class, the difference in accuracy in two sub-populations of the class
-    * Filter Subclass Bias measures, for each class, the difference in filtering rate in two sub-populations of the class
-  * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks:**
-  * [Dirty-label Backdoor Attack](https://arxiv.org/abs/1708.06733): 1 to 30% of a *source class* in the
-  training data have trigger added and are intentionally mislabeled with *target label*; during test time,
-   the same trigger is added to an input of *source class* to cause targeted misclassification.
-  * [Clean-label Backdoor Attack](https://people.csail.mit.edu/madry/lab/cleanlabel.pdf): 20 to 80% of the
-  *target class* in training data are imperceptibly perturbed (so they are still correctly labeled) and have
-  trigger added; during test time, same trigger is added to an input of a *source class* to cause
-  targeted misclassification
-    * Perturbation constraints: Linf (eps <= 16/255), L2 (eps <= 8/255 * sqrt(N)), N=# of pixels in a
-    single input
-* **Baseline Defense**: [Activation Clustering](https://arxiv.org/abs/1811.03728) and/or
-  [Spectral Signature](https://papers.nips.cc/paper/8024-spectral-signatures-in-backdoor-attacks.pdf)
-* **Baseline Model Performance:**
-To be added
-* **Baseline Defense Performance:**
-To be added
-
-### Librispeech automatic speech recognition (Updated June 2022)
-
-* **Description:**
-In this scenario, the system under evaluation is an automatic speech recognition system that a human operator is either
-passively monitoring or not monitoring at all.
-* **Dataset:**
-The dataset is the [LibriSpeech dataset](http://www.openslr.org/12) and comprises train_clean100,
-train_clean360 and test_clean.
-* **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the [DeepSpeech 2](https://arxiv.org/pdf/1512.02595v1.pdf) architecture with
-pretrained weights from either the AN4, LibriSpeech, or TEDLIUM datasets.  Custom weights
-may also be loaded by the model.
+  * Armory includes one dataset suited for ASR:
+    * [LibriSpeech dataset](http://www.openslr.org/12) (custom subset)
+* **Baseline Models:**
+Armory includes two audio models:
+  * [DeepSpeech 2](https://arxiv.org/pdf/1512.02595v1.pdf) with pretrained weights from either the AN4, LibriSpeech, or TEDLIUM datasets.  
+  Custom weights may also be loaded by the model. *Deprecated: will be removed in version 0.17.0*
+  * [HuBERT](https://arxiv.org/abs/2106.07447) Large from [torchaudio](https://pytorch.org/audio/0.10.0/pipelines.html#torchaudio.pipelines.Wav2Vec2Bundle)
 * **Threat Scenario:**
   * Adversary objectives:
     * Untargeted - an adversary may simply wish for speech to be transcribed incorrectly
     * Targeted - an adversary may wish for specific strings to be predicted
+    * Contradiction: an adversary may wish to transcribe a specific string with a meaning contrary to the original, albeit with a low word error rate.
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack. Each attack will be "universal" with respect to
-    channel conditions (under a single perfect channel, the attack will be "per-example.")
+    * Non-real time, digital evasion attack.
     * Under some threat models, the channel model consists only a single perfect acoustic channel, and under others, it may consist of one additional multipath channel.
-    * Adaptive attacks will be performed on defenses.
-  * Adversary Capabilities and Resources
-    * To place an evaluation bound on the perceptibility of perturbations, the SNR is restricted to >20 dB.
 * **Metrics of Interest:**
   * Primary metrics:
     * Word error rate, SNR, entailment rate
@@ -255,213 +56,71 @@ may also be loaded by the model.
   * [PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
   * [Kenansville attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/kenansville_dft.py)  
 * **Baseline Defense**: [MP3 Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/mp3_compression.py)
-* **Baseline Model Performance: (Table 1 results are obtained using Armory v0.13.3, Table 2 results are obtained using Armory v0.15.2)**
-
-Table 1
-| Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
-|--------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
-| Imperceptible ASR        | yes      | max_iter_1=100 | 0.10                    | 0.63                         | 0.13                  | N/A*                       | 320       |
-| Imperceptible ASR        | yes      | max_iter_1=200 | 0.10                    | 0.20                         | 0.13                  | N/A                        | 320       |
-| Imperceptible ASR        | yes      | max_iter_1=400 | 0.10                    | 0.11                         | 0.13                  | N/A                        | 320       |
-| Kenansville              | no       | snr=20dB       | 0.10                    | 0.27                         | 0.13                  | 0.36                       | 1000      |
-| Kenansville              | no       | snr=30dB       | 0.10                    | 0.11                         | 0.13                  | 0.17                       | 1000      |
-| Kenansville              | no       | snr=40dB       | 0.10                    | 0.10                         | 0.13                  | 0.13                       | 1000      |
-| PGD (single channel)     | no       | snr=20dB       | 0.10                    | 0.46                         | 0.13                  | 0.53                       | 100       |
-| PGD (single channel)     | no       | snr=30dB       | 0.10                    | 0.46                         | 0.13                  | 0.50                       | 100       |
-| PGD (single channel)     | no       | snr=40dB       | 0.10                    | 0.33                         | 0.13                  | 0.36                       | 100       |
-| PGD (single channel)*    | yes      | snr=20dB       | 0.11                    | 1.03                         | 0.15                  | 1.01                       | 100       |
-| PGD (single channel)*    | yes      | snr=30dB       | 0.11                    | 1.02                         | 0.15                  | 0.99                       | 100       |
-| PGD (single channel)*    | yes      | snr=40dB       | 0.11                    | 0.88                         | 0.15                  | 0.84                       | 100       |
-| PGD (multiple channels)  | no       | snr=20dB       | 0.13                    | 0.96                         | N/A                   | N/A                        | 100       |
-| PGD (multiple channels)  | no       | snr=30dB       | 0.13                    | 0.59                         | N/A                   | N/A                        | 100       |
-| PGD (multiple channels)  | no       | snr=40dB       | 0.13                    | 0.38                         | N/A                   | N/A                        | 100       |
-| PGD (multiple channels)* | yes      | snr=20dB       | 0.13                    | 0.99                         | N/A                   | N/A                        | 100       |
-| PGD (multiple channels)* | yes      | snr=30dB       | 0.13                    | 0.92                         | N/A                   | N/A                        | 100       |
-| PGD (multiple channels)* | yes      | snr=40dB       | 0.13                    | 0.75                         | N/A                   | N/A                        | 100       |
-* \*Targeted attack, where a random target phrase of similar length as the ground truth, was applied but WER wrt the ground truth was calculated
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-* Missing defended baseline is due to current incompatibility of the attack and defense.
-
-Table 2
-| Attack | Targeted |  Budget  |      Attack Parameters      | Entailment/Contradiction/Neutral Rates (Benign Undefended) | Number of Entailment/Contradiction/Neutral Rates (Adversarial Undefended) | Entailment/Contradiction/Neutral Rates (Benign Defended) | Entailment/Contradiction/Neutral Rates (Adversarial Defended) | Test Size |
-|:------:|:--------:|:--------:|:---------------------------:|:----------------------------------------------------------:|:-------------------------------------------------------------------------:|:--------------------------------------------------------:|:-------------------------------------------------------------:|:---------:|
-| PGD*   | yes      | snr=20dB | eps_step=0.05, max_iter=500 | 0.95/0.05/0.00                                             | 0.01/0.98/0.01                                                            | 0.93/0.07/0.00                                           | 0.02/0.96/0.02                                                | 100       |
-| PGD*   | yes      | snr=30dB | eps_step=0.03, max_iter=500 | 0.95/0.05/0.00                                             | 0.04/0.95/0.01                                                            | 0.93/0.07/0.00                                           | 0.19/0.79/0.02                                                | 100       |
-| PGD*   | yes      | snr=40dB | eps_step=0.01, max_iter=500 | 0.95/0.05/0.00                                             | 0.43/0.53/0.04                                                            | 0.93/0.07/0.00                                           | 0.66/0.34/0.00                                                | 100       |
-* \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.2/scenario_configs/eval5/asr_librispeech)
+* **Baseline Evaluations:**
+   * [LibriSpeech results](baseline_results/librispeech_asr_results.md)
 
 
-### so2sat multimodal image classification (Updated July 2021)
-
+### Audio Classification (Updated June 2020)
 * **Description:**
-In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral electro-optical (EO) images.
+In this scenario, the system under evaluation is a speaker identification system.
 * **Dataset:**
-The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690). It comprises 352k/24k images in
-train/validation datasets and 17 classes of local climate zones.
+  * Armory includes one dataset suited for Audio Classification:
+    * [LibriSpeech dataset](http://www.openslr.org/12) (custom subset):
 * **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses a custom CNN architecture with a single input that stacks SAR (first four channels only,
-representing the real and imaginary components of the reflected electromagnetic waves)
-and EO (all ten channels) data. Immediately after the input layer, the data is split into SAR and EO data
-streams and fed into their respective feature extraction networks. In the final layer, the two
-networks are fused to produce a single prediction output.
+  * Armory includes two baseline speaker classification models:
+    * [SincNet](https://arxiv.org/abs/1808.00158), a scratch-trained model based on raw audio
+    * A scratch-trained model based on spectrogram input (not mel-cepstrum or MFCC)
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary wish to evade correct classification
+    * Untargeted - an adversary may simply wish to evade detection
+    * Targeted - an adversary may wish to impersonate someone else
   * Adversary Operating Environment:
     * Non-real time, digital evasion attack
-    * Adversary perturbs a single modality (SAR or EO)
-    * Adaptive attacks will be performed on defenses.
-  * Adversary Capabilities and Resources
-    * Patch ratio < 15% of the image area
+    * Assuming perfect acoustic channel
+    * Black-box, white-box, and adaptive attacks
 * **Metrics of Interest:**
   * Primary metrics:
-    * Accuracy (mean, per-class), Patch size
+    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation
+    (Lp-norms, Wasserstein distance, signal-to-noise ratio)
   * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks:**
-  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
-* **Baseline Defense**: [JPEG Compression for Multi-Channel](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/defences/jpeg_compression_multichannel_image.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+* **Baseline Evaluations:**
+  * [LibriSpeech results](baseline_results/librispeech_audio_classification_results.md)Link to results to be added
 
-| Attacked Modality | Patch Ratio | Benign Accuracy (Undefended) | Adversarial Accuracy (Undefended) | Benign Accuracy (Defended) | Adversarial Accuracy (Defended) | Test Size |
-|-------------------|-------------|------------------------------|-----------------------------------|----------------------------|---------------------------------|-----------|
-| EO                | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
-| EO                | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
-| EO                | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
-| SAR               | 0.05        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
-| SAR               | 0.10        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
-| SAR               | 0.15        | 0.583                        | 0.00                              | 0.556                      | 0.00                            | 1000      |
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-
-### xView object detection (Updated July 2021)
-
+### CARLA Multi-Object tracking (MOT) (Updated October 2022)
 * **Description:**
-In this scenario, the system under evaluation is an object detector which localizes and identifies various classes from satellite imagery.
+In this scenario specific to the CARLA multi-object tracking dataset, the system under evaluation is an object tracker 
+trained to localize multiple pedestrians in video in an urban environment.
 * **Dataset:**
-The dataset is the [xView dataset](https://arxiv.org/pdf/1802.07856). It comprises 59k/19k train and test
-images (each with dimensions 300x300, 400x400 or 500x500) and 62 classes
+The development dataset is the [CARLA](https://carla.org) Multi-Object Tracking dataset, with videos containing a green-screen in all frames intended for adversarial patch insertion.
+The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
-To maximize time spent on defense research, a trained baseline model will be provided, but
-performers are not required to use it, if their defense requires a different architecture.
-The model uses the [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf) architecture pre-trained
-on MSCOCO objects and fine-tuned on xView.
+  * Pretrained [ByteTrack](https://arxiv.org/pdf/2110.06864.pdf) model with an [Faster-RCNN](../armory/baseline_models/pytorch/carla_mot_frcnn_byte.py) base instead of Yolo.
 * **Threat Scenario:**
   * Adversary objectives:
-    * Untargeted - an adversary wishes to disable object detection
+    * To degrade the performance of the tracker through the insertion of adversarial patches.
   * Adversary Operating Environment:
-    * Non-real time, digital and physical-like evasion attacks
-    and translation.
-    * Adaptive attacks will be performed on defenses.
+    * Non-real time, physical-like patch attacks
 * Adversary Capabilities and Resources
-    * Patch size <100x100 pixels
+    * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
 * **Metrics of Interest:**
-  * Primary metrics:
-    * Average precision (mean, per-class) of ground truth classes, Patch Size
-  * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
+  * Primary metrics are [HOTA](https://link.springer.com/article/10.1007/s11263-020-01375-2)-based (quotes taken from paper), taken from [TrackEval](https://github.com/JonathonLuiten/TrackEval) implementation.
+    * mean DetA - "detection accuracy, DetA, is simply the percentage of aligning detections"
+    * mean AssA - "association accuracy, AssA, is simply the average alignment between matched trajectories, averaged over all detections"
+    * mean HOTA - "final HOTA score is the geometric mean of these two scores averaged over different localisation thresholds"
 * **Baseline Attacks:**
-  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
-  * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
-* **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3)**
+  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](../armory/art_experimental/attacks/carla_obj_det_patch.py)
+  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](../armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
+* **Baseline Defense**: [JPEG Frame Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
+* **Baseline Evaluation**: [Carla MOT results](baseline_results/carla_mot_results.md)
 
-|     Attack    | Patch Size | Benign mAP (Undefended) | Adversarial mAP (Undefended) | Benign mAP (Defended) | Adversarial mAP (Defended) | Test Size |
-|:-------------:|:----------:|:-----------------------:|:----------------------------:|:---------------------:|:--------------------------:|:---------:|
-| Masked PGD    | 50x50      | 0.284                   | 0.142                        | 0.232                 | 0.139                      | 100       |
-| Masked PGD    | 75x75      | 0.284                   | 0.071                        | 0.232                 | 0.094                      | 100       |
-| Masked PGD    | 100x100    | 0.284                   | 0.076                        | 0.232                 | 0.092                      | 100       |
-| Robust DPatch | 50x50      | 0.284                   | 0.193                        | 0.232                 | 0.184                      | 100       |
-| Robust DPatch | 75x75      | 0.284                   | 0.184                        | 0.232                 | 0.146                      | 100       |
-| Robust DPatch | 100x100    | 0.284                   | 0.173                        | 0.232                 | 0.165                      | 100       |
 
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-
-### DAPRICOT object detection (Updated July 2021)
-
+### CARLA Multimodal Object Detection (Updated October 2022)
 * **Description:**
-In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
-* **Dataset:**
-The dataset is the [Dynamic APRICOT (DAPRICOT) dataset 1](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_dev.py) and [dataset 2](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py). It is similar to the APRICOT dataset (see below), but instead of pre-generated physical patches taken in the natural environment, the DAPRICOT dataset contains greenscreens and natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed. This dataset contains 15 scenes, where each scene contains 3 different greenscreen shapes, taken at 3 different distances, 3 different heights and using 3 different camera angles, for a total of over 1000 images.
-* **Baseline Model:**
-The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
-* **Threat Scenario:**
-  * Adversary objectives:
-    * Targeted attack - objective is to force an object detector to localize and classify the patch as an MSCOCO object.
-  * Adversary Operating Environment:
-    * Non-real time, digital and physical-like patch attacks
-    * Adaptive attacks will be performed on defenses.
-* Adversary Capabilities and Resources
-    * Patch size of different shapes as dictated by the greenscreen sizes in the images
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Average precision (mean, per-class) of patches, Average target success
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks:**
-  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
-  * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
-* **Baseline Defense**: [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-* **Baseline Model Performance: (results obtained using Armory v0.13.3 and [dev test data](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py))**
-
-| Attack        | Patch Size | Target Success (Undefended) | Target mAP (Undefended) | Target Success (Defended) | Target mAP (Defended) | Test Size |
-|---------------|------------|-----------------------------|-------------------------|---------------------------|-----------------------|-----------|
-| Masked PGD    | all        | 0.99                        | 0.91                    | 0.99                      | 0.91                  | 100       |
-| Masked PGD    | small      | 0.97                        | 0.91                    | 0.97                      | 0.91                  | 100       |
-| Masked PGD    | medium     | 1.00                        | 1.00                    | 1.00                      | 0.91                  | 100       |
-| Masked PGD    | large      | 1.00                        | 1.00                    | 1.00                      | 0.91                  | 100       |
-| Robust DPatch | all        | 0.56                        | 0.64                    | 0.61                      | 0.64                  | 100       |
-| Robust DPatch | small      | 0.51                        | 0.64                    | 0.60                      | 0.64                  | 100       |
-| Robust DPatch | medium     | 0.61                        | 0.64                    | 0.65                      | 0.73                  | 100       |
-| Robust DPatch | large      | 0.55                        | 0.64                    | 0.63                      | 0.73                  | 100       |
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)
-
-### APRICOT object detection (Updated December 2020)
-
-* **Description:**
-In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
-* **Dataset:**
-The dataset is the [APRICOT dataset](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 natural images with physically-printed adversarial patches,
-covering three object detection architectures (Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet),
-two shapes (circle and rectangular), and ten MS-COCO classes as targets.
-* **Baseline Model:**
-The model uses the pretrained [Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) models.
-Note: currently, only Tensorflow Faster-RCNN with ResNet-50 is implemented, with the other two architectures
-to be implemented in the near future. In order to perform as close to a white-box evaluation as possible,
-it is strongly recommended, but not required, that performers adopt one of the above architectures for defense
-research - the pretrained weights may not be robust, so performers can change the weights.
-* **Threat Scenario:**
-  * Adversary Operating Environment:
-    * This is a dataset of precomputed adversarial images on which trained models will be evaluated.
-    * Each patch is a targeted attack, whose objective is to force an object detector to localize and classify
-    the patch as an MSCOCO object.
-* **Metrics of Interest:**
-  * Primary metrics:
-    * Average precision (mean, per-class) of patches, Average precision of MSCOCO objects
-  * Additional metrics specific to the scenario or that are informative may be added later
-* **Baseline Attacks:**
-  * The patches were generated using variants of [ShapeShifter](https://arxiv.org/abs/1804.05810)
-* **Baseline Defense**: JPEG Compression
-* **Baseline Model Performance: (results obtained using Armory v0.13)**
-  * Baseline MSCOCO Objects mAP: 8.76% (all test examples)
-  * Baseline Targeted Patch mAP: 5.70% (all test examples)
-* **Baseline Defense Performance: (results obtained using Armory v0.13)**\
-Baseline defense is art_experimental.defences.jpeg_compression_normalized(clip_values=(0.0, 1.0), quality=10,
-channel_index=3, apply_fit=False, apply_predict=True).\
-Baseline defense performance is evaluated for a transfer attack.
-  * Baseline MSCOCO Objects mAP: 7.83% (all test examples)
-  * Baseline Targeted Patch mAP: 4.59% (all test examples)
-
-### CARLA object detection (Updated July 2022)
-* **Description:**
-In this scenario, the system under evaluation is an object detector trained to identify vehicles, pedestrians, and traffic lights.
-* **Dataset:**
-The development dataset is generated using [CARLA](https://carla.org), which includes RGB and depth channels for 31 synthetic images from both vehicle and security camera perspectives. Each image contains a green-screen intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
+In this scenario, the system under evaluation is an object detector trained to identify common objects in an urban environment.  This scenario handles multimodal data (RGB/depth).
+* **Datasets** 
+  The datasets are the [CARLA](https://carla.org) Object Detection and Overhead Object Detection datasets.
+  These datasets contain natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
   * Single-modality:
     * Pretrained [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
@@ -472,7 +131,6 @@ The development dataset is generated using [CARLA](https://carla.org), which inc
     * To degrade the performance of an object detector through the insertion of adversarial patches.
   * Adversary Operating Environment:
     * Non-real time, physical-like patch attacks
-    * Adaptive attacks will be performed on defenses.
 * Adversary Capabilities and Resources
     * Patch size of different size/shape as dictated by the green-screen in each image. In the multimodal case, both RGB and depth channels are to be perturbed.
 * **Metrics of Interest:**
@@ -486,34 +144,14 @@ The development dataset is generated using [CARLA](https://carla.org), which inc
   * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_patch.py)
   * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
 * **Baseline Defense**: [JPEG Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/jpeg_compression_normalized.py)
-* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_obj_det_dev.py), results are obtained using Armory v0.15.2; for [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_obj_det_test.py), results are obtained using Armory v0.15.4)**
-
-Single Modality (RGB) Object Detection
-| Data | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
-| Dev  | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.76/0.72   | 0.19/0.22                   | 3.97/3.48                        | 0.06/0.06                       | 0.75/0.71                   | 0.68/0.66        | 0.27/0.28                        | 4.48/3.65                            | 0.06/0.07                           | 0.67/0.65                       | 31        |
-| Dev  | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.76/0.72   | 0.19/0.22                   | 3.97/3.48                        | 0.06/0.06                       | 0.75/0.71                   | 0.54/*           | 0.32/*                           | 22.16/*                              | 0.05/*                              | 0.62/*                          | 31        |
-| Test | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.79/0.74   | 0.16/0.25                   | 4.10/3.50                        | 0.03/0.01                       | 0.82/0.75                   | 0.72/0.64        | 0.32/0.39                        | 4.80/4.0                             | 0.03/0.01                           | 0.65/0.60                       | 20        |
-| Test | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.79/0.74   | 0.16/0.25                   | 4.10/3.50                        | 0.03/0.01                       | 0.82/0.75                   | 0.38/*           | 0.40/*                           | 42.55/*                              | 0.03/*                              | 0.57/*                          | 20        |
-
-Multimodality (RGB+depth) Object Detection
-| Data | Attack            | Attack Parameters                                                                    | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|------|-------------------|--------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
-| Dev  | Robust DPatch     | depth_delta_meters=3, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.76/0.83        | 0.10/0.06                        | 5.68/4.87                            | 0.05/0.05                           | 0.84/0.89                       | 31        |
-| Dev  | Adversarial Patch | depth_delta_meters=3, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.66/0.76        | 0.11/0.10                        | 10.74/7.13                           | 0.06/0.05                           | 0.83/0.85                       | 31        |
-| Test | Robust DPatch     | depth_delta_meters=3, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.90/0.89   | 0.03/0.04                   | 1.0/1.45                         | 0.03/0.02                       | 0.94/0.94                   | 0.81/0.89        | 0.13/0.06                        | 4.75/2.05                            | 0.03/0.02                           | 0.83/0.91                       | 20        |
-| Test | Adversarial Patch | depth_delta_meters=3, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.90/0.89   | 0.03/0.04                   | 1.0/1.45                         | 0.03/0.02                       | 0.94/0.94                   | 0.50/0.57        | 0.21/0.14                        | 22.55/13.70                          | 0.04/0.03                           | 0.75/0.83                       | 20        |
-
-a/b in the tables refer to undefended/defended performance results, respectively.
-
-\* Undefended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_object_detection)
+* **Baseline Evaluations**:
+  * [Street-level dataset](baseline_results/carla_od_results.md#carla-street-level-od-dataset)
+  * [Overhead dataset](baseline_results/carla_od_results.md#carla-overhead-od-dataset)
 
 
-### CARLA video tracking (Updated July 2022)
+### CARLA Video Tracking (Updated July 2022)
 * **Description:**
-In this scenario, the system under evaluation is an object tracker trained to localize pedestrians.
+In this scenario, the system under evaluation is an object tracker trained to localize a single moving pedestrian.
 * **Dataset:**
 The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
 which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
@@ -524,7 +162,6 @@ which contains a green-screen in all frames intended for adversarial patch inser
     * To degrade the performance of the tracker through the insertion of adversarial patches.
   * Adversary Operating Environment:
     * Non-real time, physical-like patch attacks
-    * Adaptive attacks will be performed on defenses.
 * Adversary Capabilities and Resources
     * Patch size of different size/shape as dictated by the green-screen in the frames. The adversary is expected to apply a patch with constant texture across all frames in the video, but the patch relative to the sensor may change due to sensor motion.
 * **Metrics of Interest:**
@@ -534,35 +171,286 @@ which contains a green-screen in all frames intended for adversarial patch inser
 * **Baseline Attacks:**
   * [Custom Adversarial Texture with Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/attacks/carla_adversarial_texture.py)
 * **Baseline Defense**: [Video Compression](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/art_experimental/defences/video_compression_normalized.py)
-* **Baseline Model Performance: (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_video_tracking_dev.py), results obtained using Armory v0.15.2; For [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_video_tracking_test.py), results obtained using Armory v0.15.4)**
-
-| Data | Attack Parameters            | Benign Mean IoU | Benign Mean Success Rate | Adversarial Mean IoU | Adversarial Mean Success Rate | Test Size |
-|------|------------------------------|-----------------|--------------------------|----------------------|-------------------------------|-----------|
-| Dev  | step_size=0.02, max_iter=100 | 0.55/0.57       | 0.57/0.60                | 0.14/0.19            | 0.15/0.20                     | 20        |
-| Test | step_size=0.02, max_iter=100 | 0.52/0.45       | 0.54/0.47                | 0.15/0.17            | 0.16/0.18                     | 20        |
-
-a/b in the tables refer to undefended/defended performance results, respectively.
-
-Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_video_tracking)
-
-## Academic Scenarios
-
-### Cifar10 image classification
-
-* **Description:** This is a standard white-box attack scenario.
-* **Threat Scenario:** White-box attack
-* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial perturbation
-* **Baseline Model Performance:**
-* **Baseline Defense Performance:** See academic literature for the most up to date results
+* **Baseline Evaluation**: [CARLA video tracking results](baseline_results/carla_video_tracking_results.md) 
 
 
-### MNIST image classification
+### Dapricot Object Detection (Updated July 2021)
+* **Description:**
+In this scenario, the system under evaluation is an object detector trained to identify the classes in the [Microsoft COCO dataset](https://arxiv.org/pdf/1405.0312.pdf).
+* **Dataset:**
+The dataset is the [Dynamic APRICOT (DAPRICOT) dataset 1](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_dev.py) and [dataset 2](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/data/adversarial/dapricot_test.py). It is similar to the APRICOT dataset (see below), but instead of pre-generated physical patches taken in the natural environment, the DAPRICOT dataset contains greenscreens and natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed. This dataset contains 15 scenes, where each scene contains 3 different greenscreen shapes, taken at 3 different distances, 3 different heights and using 3 different camera angles, for a total of over 1000 images.
+* **Baseline Model:**
+The model uses the pretrained [Faster-RCNN with ResNet-50](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) model.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted attack - objective is to force an object detector to localize and classify the patch as an MSCOCO object.
+  * Adversary Operating Environment:
+    * Non-real time, digital and physical-like patch attacks
+* Adversary Capabilities and Resources
+    * Patch size of different shapes as dictated by the greenscreen sizes in the images
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Average precision (mean, per-class) of patches, Average target success
+* **Baseline Attacks:**
+  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
+  * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
+* **Baseline Defense:** [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
+* **Baseline Evaluation:** [Dapricot results](baseline_results/dapricot_results.md) 
+
+### Image Classification
+* **Description:**
+In this scenario implements attacks against a basic image classification task.
+* **Dataset:**
+  * Armory includes several image classification datasets.
+    * [Resisc-45](http://www.escience.cn/people/JunweiHan/NWPU-RESISC45.html).  It comprises 45 classes and 700 images for each class.  Images 1-500 of each class are in the training split,
+500-600 are in the validation split, and 600-700 are in the test split.
+    * MNIST
+    * Cifar10
+* **Baseline Models:**
+  * Armory includes the following baseline image classification models:
+    * Resisc-45: ImageNet-pretrained DenseNet-121 that is fine-tuned on RESISC-45.
+    * MNIST: basic CNN
+    * Cifar10: basic CNN
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary may simply wish to induce an arbitrary misclassification
+    * Targeted - an adversary may wish to force misclassification to a particular class
+  * Adversary Operating Environment:
+    * Non real-time, digital evasion attack
+    * Black-box, white-box, and adaptive attacks
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Accuracy (mean, per-class), attack computational cost, defense computational cost, various distance measures of perturbation
+    (Lp-norms, Wasserstein distance)
+  * Derivative metrics - see end of document
+* **Baseline Defenses:** 
+  * [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
+* **Baseline Evaluations:**
+  * [Resisc-45 results](baseline_results/resisc45_results.md)
+
+
+### Multimodal So2Sat Image Classification (Updated July 2021)
+* **Description:**
+In this scenario, the system under evaluation is an image classifier which determines local climate zone from a combination of co-registered synthetic aperture radar (SAR) and multispectral electro-optical (EO) images.  This Image Classification task gets its own scenario due to the unique features of the dataset.
+* **Dataset:**
+The dataset is the [so2sat dataset](https://mediatum.ub.tum.de/1454690). It comprises 352k/24k images in
+train/validation datasets and 17 classes of local climate zones.
+* **Baseline Model:**
+  * Armory includes a custom CNN as a baseline model.  It has a single input that stacks SAR (first four channels only,
+representing the real and imaginary components of the reflected electromagnetic waves)
+and EO (all ten channels) data. Immediately after the input layer, the data is split into SAR and EO data
+streams and fed into their respective feature extraction networks. In the final layer, the two
+networks are fused to produce a single prediction output.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary wishes to evade correct classification
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+    * Adversary perturbs a single modality (SAR or EO)
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Accuracy (mean, per-class), Patch size
+  * Derivative metrics - see end of document
+* **Baseline Attacks:**
+  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
+* **Baseline Defense:** [JPEG Compression for Multi-Channel](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/defences/jpeg_compression_multichannel_image.py)
+* **Baseline Evaluation:** [So2Sat results](baseline_results/so2sat_results.md)  
+
+
+### Object Detection
+* **Description:**
+In this scenario, the system under evaluation is an object detector.
+* **Datasets:**
+  * Armory includes two datasets for object detection:
+    * [xView](https://arxiv.org/pdf/1802.07856) comprises 59k/19k train and test
+images (each with dimensions 300x300, 400x400 or 500x500) and 62 classes
+    * [APRICOT](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 natural images with physically-printed adversarial patches, with ten MS-COCO classes as targets
+* **Baseline Models:**
+   * [Faster-RCNN ResNet-50 FPN](https://arxiv.org/pdf/1506.01497.pdf), pre-trained, can be used for xView
+   * [Faster-RCNN with ResNet-50, SSD with MobileNet, and RetinaNet](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md) models, pretrained, can be used for APRICOT.
+on MSCOCO objects and fine-tuned on xView.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary wishes to disable object detection
+  * Adversary Operating Environment:
+    * Non-real time, digital and physical-like evasion attacks
+    and translation.
+  * Note: the APRICOT dataset consists of advesarial images precomputed for a targeted attack.
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Average precision (mean, per-class) of ground truth classes, Patch Size
+  * Derivative metrics - see end of document
+* **Baseline Attacks:**
+  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
+  * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
+  * The patches for APRICOT were generated using variants of [ShapeShifter](https://arxiv.org/abs/1804.05810)
+* **Baseline Defense:** [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
+* **Baseline Evaluations:
+  * [xView results](baseline_results/xview_results.md)
+  * [APRICOT results](baseline_results/apricot_results.md)
+
+### UCF101 Video Classification
 
 * **Description:**
-* **Threat Scenario:** White-box attack
-* **Metrics of Interest:** Benign accuracy, Adversarial accuracy, Adversarial perturbation
-* **Baseline Model Performance:**
-* **Baseline Defense Performance:** See academic literature for the most up to date results
+In this scenario, the system under evaluation is a video action recognition system.
+* **Datasets:**
+Armory includes the following video classification datasets:
+  * [UCF101 dataset](https://www.crcv.ucf.edu/data/UCF101.php), which comprises 101 actions and 13,320 total videos. For the training/testing split,
+we use the official Split 01.
+* **Baseline Model:**
+Armory includes a model for UCF101 that uses the [MARS architecture](http://openaccess.thecvf.com/content_CVPR_2019/papers/Crasto_MARS_Motion-Augmented_RGB_Stream_for_Action_Recognition_CVPR_2019_paper.pdf),
+which is a single-stream (RGB) 3D convolution architecture that simultaneously mimics the optical flow stream.
+The provided model is pre-trained on the Kinetics dataset and fine-tuned on UCF101.
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Untargeted - an adversary may simply wish to evade detection
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+* **Metrics of Interest:**
+  * Primary metrics:
+    * Accuracy (mean, per-class), attack budget
+  * Derivative metrics - see end of document
+* **Baseline Attacks:**
+  * [Frame Saliency](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/frame_saliency.py)
+  * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
+  * [Flicker Attack](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/over_the_air_flickering/over_the_air_flickering_pytorch.py)
+  * [Custom Frame Border attack](https://github.com/twosixlabs/armory/blob/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/armory/art_experimental/attacks/video_frame_border.py)
+* **Baseline Defense:** [Video Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/video_compression.py)
+* **Baseline Evaluations:**
+  * [UCF101 results](baseline_results/ucf101_results.md)
+
+
+### Poisoning
+
+For a complete overview of the poisoning scenarios, threat models, attacks, and metrics, see the [poisoning doc](poisoning.md).  Here, we will briefly summarize each scenario and link to the baseline results.
+
+#### Poison base scenario (DLBD)
+
+* **Description:** The base scenario implements a Dirty-label Backdoor attack (DLBD).  In this scenario, the attacker is able to poison a percentage of the training data by adding backdoor triggers and flipping the label of data examples.  Then, the attacker adds the same trigger to test images to cue the desired misclassification.  For a complete overview, see the [poisoning doc](poisoning.md).
+* **Datasets:**
+  Datasets for DLBD include but are not limited to:
+  * GTSRB
+  * Audio Speech Commands
+  * Resisc-10
+  * Cifar10
+* **Baseline Models:**
+  Armory includes several models which may be used for this scenario:
+  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Audio resnet](../armory/baseline_models/tf_graph/audio_resnet50.py)
+  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py) can be used for Cifar10 or Resisc-10
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted misclassification
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+* **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
+  * accuracy_on_benign_test_data_all_classes
+  * accuracy_on_benign_test_data_source_class
+  * accuracy_on_poisoned_test_data_all_classes
+  * attack_success_rate
+  * Model Bias fairness metric
+  * Filter Bias fairness metric
+* **Baseline Defenses:**
+  * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
+  * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
+  * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
+* **Baseline Evaluations:**
+  * [GTSRB DLBD](baseline_results/gtsrb_dlbd_results.md)
+  * [Audio](baseline_results/speech_commands_poison_results.md) 
+  * [Cifar10](baseline_results/cifar10_dlbd.md)
+
+
+#### Poisoning CLBD
+* **Description:** This scenario implements a Clean-label Backdoor attack (DLBD).  In this scenario, the attacker adds triggers to source class training images, leaving the labels the same but also applying imperceptible perturbations that look like target class features.  At test time, adding the trigger to a source class image induces misclassification to the target class.  For a complete overview, see the [poisoning doc](poisoning.md).
+* **Datasets:**
+  Datasets for CLBD include but are not limited to:
+  * GTSRB
+* **Baseline Models:**
+  Armory includes several models which may be used for this scenario:
+  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted misclassification
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+* **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
+  * accuracy_on_benign_test_data_all_classes
+  * accuracy_on_benign_test_data_source_class
+  * accuracy_on_poisoned_test_data_all_classes
+  * attack_success_rate
+  * Model Bias fairness metric
+  * Filter Bias fairness metric
+* **Baseline Defenses:**
+  * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
+  * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
+  * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
+* **Baseline Evaluations:**
+  * [GTSRB](baseline_results/gtsrb_clbd_results.md)
+
+
+#### Poisoning: Sleeper Agent
+* **Description:** This scenario implements the Sleeper Agent attack.  In this scenario, the attacker poisons train samples through gradient matching, then applies a trigger to test images to induce misclassification.
+For a complete overview, see the [poisoning doc](poisoning.md).
+* **Datasets:**
+  Datasets for Sleeper Agent include but are not limited to:
+  * Cifar10
+* **Baseline Models:**
+  Armory includes several models which may be used for this scenario:
+* [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted misclassification
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+* **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
+  * accuracy_on_benign_test_data_all_classes
+  * accuracy_on_benign_test_data_source_class
+  * accuracy_on_poisoned_test_data_all_classes
+  * attack_success_rate
+  * Model Bias fairness metric
+  * Filter Bias fairness metric
+* **Baseline Defenses:**
+  * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
+  * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
+  * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
+* **Baseline Evaluations:**
+  * [Cifar results](baseline_results/cifar10_sleeper_agent.md)
+
+
+#### Poisoning: Witches' Brew
+* **Description:** This scenario implements the Witches' Brew attack.  In this scenario, the attacker poisons train samples through gradient matching, to induce misclassification on a few individual pre-chosen test images.  For a complete overview, see the [poisoning doc](poisoning.md).
+* **Datasets:**
+  The following datasets have been successfully used in this scenario:
+  * GTSRB
+  * Cifar10
+* **Baseline Models:**
+  Armory includes several models which may be used for this scenario:
+  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted misclassification
+  * Adversary Operating Environment:
+    * Non-real time, digital evasion attack
+* **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
+  * accuracy_on_trigger_images
+  * accuracy_on_non_trigger_images
+  * attack_success_rate
+  * Model Bias fairness metric
+  * Filter Bias fairness metric
+* **Baseline Defenses:**
+  * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
+  * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
+  * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
+* **Baseline Evaluations:**
+  * [Cifar10 results](baseline_results/cifar10_witches_brew_results.md)
+  * [GTSRB results](baseline_results/gtsrb_witches_brew_results.md)
+
 
 ## Creating a new scenario
 Users may want to create their own scenario, because the baseline scenarios do
@@ -570,10 +458,10 @@ not fit the requirements of some defense/threat-model, or because it may be easi
 to debug in code that you have access to as opposed to what is pre-installed by the
 armory package.
 
-An [example of doing this](https://github.com/twosixlabs/armory-example/blob/master/example_scenarios/audio_spectrogram_classification.py) can be found in our armory-examples repo:
+To do so, simply inherit the scenario class and override the necessary functions.
+An [example of doing this](https://github.com/twosixlabs/armory-example/blob/master/example_scenarios/audio_spectrogram_classification.py) can be found in our armory-examples repo.
 
 ## Derivative metrics
 ![alt text](https://user-images.githubusercontent.com/18154355/80718651-691fb780-8ac8-11ea-8dc6-94d35164d494.png "Derivative Metrics")
 
-## Exporting Samples
-Scenarios can be configured to export benign and adversarial image, video, and audio samples.  This feature is enabled by setting the `export_samples` field under `scenario` in the configuration file to a non-zero integer.  The specified number of samples will be saved in the output directory for this evaluation, along with a pickle file which stores the ground truth and model output for each sample.  For video files, samples are saved both in a compressed video format and frame-by-frame.
+
