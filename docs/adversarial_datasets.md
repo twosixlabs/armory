@@ -68,9 +68,9 @@ When using the dataset function imported from [armory.data.adversarial_datasets]
 }
 ```
 When `modality` is set to `"both"`, the input will be of shape `(nb=1, num_frames, 960, 1280, 6)` where `x[..., :3]` are
-the rgb channels and `x[..., 3:]` the depth channels.
+the rgb channels and `x[..., 3:]` the depth channels.  The depth information is encoded on a log scale in grayscale format (all three depth channels are the same).
 
-The carla_over_obj_det_dev dataset has the same properties as the above mentioned datasets but is collected utilizing overhead perspectives.  In addition, the depth channels in carla_obj_det_dev and carla_obj_det_test use a logorithmic grayscale format, whereas the carla_over_obj_det dataset uses an [RGB encoding](https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera).  These formats can be converted one to another (e.g. for human viewing) using the utility functions in [carla_obj_det_utils.py](../armory/art_experimental/attacks/carla_obj_det_utils.py)
+The carla_over_obj_det_dev dataset has the same properties as the above mentioned datasets but is collected utilizing overhead perspectives.  In addition, the depth channels are encoded with an [RGB encoding](https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera).  This depth format can be converted to linear grayscale or log grayscale (e.g. for human viewing) using the utility functions in [carla_obj_det_utils.py](../armory/art_experimental/attacks/carla_obj_det_utils.py)
 
 ### Usage of Preloaded Adversarial Datasets
 To use a preloaded adversarial dataset for evaluation, set `attack_config["type"]` to `"preloaded"` and specify
