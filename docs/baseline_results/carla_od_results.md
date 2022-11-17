@@ -21,21 +21,32 @@ Multimodality (RGB+depth) Object Detection
 
 a/b in the tables refer to undefended/defended performance results, respectively.
 
-\* Undefended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
+\* Defended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
 
 Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/v0.15.4/scenario_configs/eval5/carla_object_detection)
 
 
 ## CARLA Overhead OD Dataset
 
-TODO: add numbers
+Dev data results obtained using Armory 0.16.0
 
 Single Modality (RGB) Object Detection
-| Data | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
-
+| Data | Defended | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|------|----------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
+| Dev  | no       | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.64        | 0.36                        | 1.9                              | 0.02                            | 0.62                        |  0.16            | 0.64                             | 31.0                                 | 0.009                               | 0.35                            | 20        |
+| Dev  | no       | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.64        | 0.36                        | 1.9                              | 0.02                            | 0.62                        |  0.42            | 0.43                             | 12.0                                 | 0.009                               | 0.56                            | 20        |
+| Dev  | yes      | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.51        | 0.44                        | 3.1                              | 0.02                            | 0.54                        |  0.41            | 0.52                             | 9.8                                  | 0.01                                | 0.47                            | 20        |
 
 
 Multimodality (RGB+depth) Object Detection
-| Data | Attack            | Attack Parameters                                                                    | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
-|------|-------------------|--------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
+| Data | Defended | Attack            | Attack Parameters                                                                       | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
+|------|----------|-------------------|-----------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
+| Dev  | no       | Adversarial Patch | depth_delta_meters=0.03, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.63        | 0.38                        | 0.7                              | 0.02                            | 0.61                        | 0.39             | 0.53                             | 5.0                                  | 0.02                                | 0.45                            | 20        |
+| Dev  | yes      | Adversarial Patch | depth_delta_meters=0.03, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.67        | 0.34                        | 0.9                              | 0.02                            | 0.64                        | 0.56             | 0.48                             | 1.1                                  | 0.02                                | 0.50                            | 20        |
+| Dev  | no       | Robust DPatch     |
+| Dev  | yes      | Robust DPatch     |
+
+
+Defended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
+
+Find reference baseline configurations [here]
