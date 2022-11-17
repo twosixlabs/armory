@@ -1,6 +1,8 @@
 # Audio ASR Baseline Evaluation: 
 
 
+## Deep Speech 2
+
 Table 1 (Results obtained using Armory v0.13.3)
 | Attack                   | Targeted | Budget         | Benign WER (Undefended) | Adversarial WER (Undefended) | Benign WER (Defended) | Adversarial WER (Defended) | Test Size |
 |--------------------------|----------|----------------|-------------------------|------------------------------|-----------------------|----------------------------|-----------|
@@ -36,3 +38,8 @@ Table 2 (Results are obtained using Armory v0.15.2)
 * \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
 
 Find reference baseline configurations [here](../../scenario_configs/eval5/asr_librispeech/)
+
+
+## HuBERT
+
+Coming soon

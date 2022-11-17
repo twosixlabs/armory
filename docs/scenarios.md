@@ -33,10 +33,11 @@ In this scenario, the system under evaluation is an automatic speech recognition
 * **Dataset:**
   * Armory includes one dataset suited for ASR:
     * [LibriSpeech dataset](http://www.openslr.org/12) (custom subset)
-* **Baseline Model:**
-Armory includes an audio model using the [DeepSpeech 2](https://arxiv.org/pdf/1512.02595v1.pdf) architecture with
-pretrained weights from either the AN4, LibriSpeech, or TEDLIUM datasets.  Custom weights
-may also be loaded by the model.
+* **Baseline Models:**
+Armory includes two audio models:
+  * [DeepSpeech 2](https://arxiv.org/pdf/1512.02595v1.pdf) with pretrained weights from either the AN4, LibriSpeech, or TEDLIUM datasets.  
+  Custom weights may also be loaded by the model. *Deprecated: will be removed in version 0.17.0*
+  * [HuBERT](https://arxiv.org/abs/2106.07447) Large from [torchaudio](https://pytorch.org/audio/0.10.0/pipelines.html#torchaudio.pipelines.Wav2Vec2Bundle)
 * **Threat Scenario:**
   * Adversary objectives:
     * Untargeted - an adversary may simply wish for speech to be transcribed incorrectly
