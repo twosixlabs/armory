@@ -16,9 +16,9 @@ from armory.instrument.export import (
     CocoBoxFormatMeter,
 )
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    linear_depth_to_rgb, 
-    rgb_depth_to_linear, 
-    log_to_linear, 
+    linear_depth_to_rgb,
+    rgb_depth_to_linear,
+    log_to_linear,
     linear_to_log,
 )
 
@@ -321,7 +321,7 @@ def test_ffmpeg_library():
 
 
 def test_carla_depth_format_conversion_utility_functions():
-    x_lin = np.array([10,50,100,500,1000])
+    x_lin = np.array([10, 50, 100, 500, 1000])
     r, g, b = linear_depth_to_rgb(x_lin)
     x_lin_ = rgb_depth_to_linear(r, g, b)
     assert np.allclose(x_lin, x_lin_)
