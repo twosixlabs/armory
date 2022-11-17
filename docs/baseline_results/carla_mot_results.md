@@ -8,7 +8,7 @@ TODO: Add numbers
 | Data | Defended | Attack            | Attack Parameters              | Benign DetA / AssA / HOTA | Adversarial DetA / AssA / HOTA | Test Size |
 |------|---------------------------------------------------------------|---------------------------|--------------------------------|-----------|
 | Dev  | no       | Adversarial Patch | step_size=0.02, max_iter=100   | 0.49 / 0.62 / 0.55        |  0.14 / 0.57 / 0.29            | 20        |
-| Dev  | no       | Robust DPatch     | step_size=0.002, max_iter=1000 | X.XX / X.XX / X.XX        |  X.XX / X.XX / X.XX            | 20        |
+| Dev  | no       | Robust DPatch     | step_size=0.002, max_iter=1000 | 0.49 / 0.62 / 0.55        |  0.37 / 0.60 / 0.47            | 20        |
 | Dev  | yes      | Robust DPatch     | step_size=0.002, max_iter=1000 | X.XX / X.XX / X.XX        |  X.XX / X.XX / X.XX            | 20        |
 
 Defended results not available for Adversarial Patch attack because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable.
