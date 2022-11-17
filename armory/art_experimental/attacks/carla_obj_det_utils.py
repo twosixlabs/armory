@@ -46,6 +46,8 @@ def get_avg_depth_value(depth_img, patch_coords):
 def linear_to_log(depth_meters):
     """
     Convert linear depth in meters to logorithmic depth between [0,1]
+    depth_meters: scalar or array, nonnegative
+    returns: scalar or array in [0,1]
     """
     # Reference https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera
     normalized_depth = depth_meters / 1000.0
@@ -58,6 +60,8 @@ def linear_to_log(depth_meters):
 def log_to_linear(depth_log):
     """
     Convert log depth between [0,1] to linear depth in meters
+    depth_log: scalar or array in [0,1]
+    returns: scalar or array, nonnegative
     """
     normalized_depth = np.exp((depth_log - 1.0) * 5.70378)
     depth_meters = normalized_depth * 1000.0
@@ -68,6 +72,8 @@ def linear_depth_to_rgb(depth_m):
     """
     Converts linear depth in meters to RGB values between [0,1]
     Reference: https://carla.readthedocs.io/en/stable/cameras_and_sensors/#camera-depth-map
+    depth_m: scalar or array, nonnegative
+    returns: tuple of three scalars or arrays in [0,1]
     """
     depth = depth_m / 1000.0 * (256**3 - 1)
     r = depth % 256
@@ -81,11 +87,13 @@ def linear_depth_to_rgb(depth_m):
 
 def rgb_depth_to_linear(r, g, b):
     """
-    Converts rgb depth to linear depth in meters
+    Converts rgb depth values between [0,1] to linear depth in meters.
+    r, g, b: three scalars or arrays with the same shape in [0,1]
+    returns: scalar or array, nonnegative
     """
-    r *= 255.0
-    g *= 255.0
-    b *= 255.0
-    depth_m = r + g * 256 + b * 256 * 256
+    r_ = r * 255.0
+    g_ = g * 255.0
+    b_ = b * 255.0
+    depth_m = r_ + g_ * 256 + b_ * 256 * 256
     depth_m = depth_m * 1000.0 / (256**3 - 1)
     return depth_m
