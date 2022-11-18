@@ -929,6 +929,10 @@ def object_detection_mAP_tide(y_list, y_pred_list):
     tide = TIDE()
     tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
     tide_error = tide.get_all_errors()
+    tide_error_count = {
+        k.short_name: len(v)
+        for k, v in tide.runs[data_detection.name].error_dict.items()
+    }
 
     return {
         "mAP": {
@@ -937,7 +941,10 @@ def object_detection_mAP_tide(y_list, y_pred_list):
         },
         # not changing numeric format for error yet until we understand what the numbers mean
         "errors": {
-            "main": tide_error["main"][data_detection.name],
+            "main": {
+                "dAP": tide_error["main"][data_detection.name],
+                "count": tide_error_count,
+            },
             "special": tide_error["special"][data_detection.name],
         },
     }
