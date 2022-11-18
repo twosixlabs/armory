@@ -50,7 +50,6 @@ Armory includes two audio models:
   * Primary metrics:
     * Word error rate, SNR, entailment rate
   * Derivative metrics - see end of document
-  * Additional metrics specific to the scenario or that are informative may be added later
 * **Baseline Attacks:**
   * [Imperceptible ASR attack](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/imperceptible_asr/imperceptible_asr.py)
   * [PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
@@ -84,13 +83,13 @@ In this scenario, the system under evaluation is a speaker identification system
     (Lp-norms, Wasserstein distance, signal-to-noise ratio)
   * Derivative metrics - see end of document
 * **Baseline Evaluations:**
-  * [LibriSpeech results](baseline_results/librispeech_audio_classification_results.md)Link to results to be added
+  * [LibriSpeech results](baseline_results/librispeech_audio_classification_results.md)
 
 
 ### CARLA Multi-Object tracking (MOT) (Updated October 2022)
 * **Description:**
 In this scenario specific to the CARLA multi-object tracking dataset, the system under evaluation is an object tracker 
-trained to localize multiple pedestrians in video in an urban environment.
+trained to track multiple pedestrians in video in an urban environment.
 * **Dataset:**
 The development dataset is the [CARLA](https://carla.org) Multi-Object Tracking dataset, with videos containing a green-screen in all frames intended for adversarial patch insertion.
 The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
@@ -261,7 +260,7 @@ networks are fused to produce a single prediction output.
 * **Description:**
 In this scenario, the system under evaluation is an object detector.
 * **Datasets:**
-  * Armory includes two datasets for object detection:
+  * Armory includes two datasets for object detection (besides CARLA object detection which has its own [scenario](#carla-multimodal-object-detection-updated-october-2022)):
     * [xView](https://arxiv.org/pdf/1802.07856) comprises 59k/19k train and test
 images (each with dimensions 300x300, 400x400 or 500x500) and 62 classes
     * [APRICOT](https://arxiv.org/pdf/1912.08166.pdf), which includes over 1000 natural images with physically-printed adversarial patches, with ten MS-COCO classes as targets
@@ -285,7 +284,7 @@ on MSCOCO objects and fine-tuned on xView.
   * [Robust DPatch](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/dpatch_robust.py)
   * The patches for APRICOT were generated using variants of [ShapeShifter](https://arxiv.org/abs/1804.05810)
 * **Baseline Defense:** [JPEG Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
-* **Baseline Evaluations:
+* **Baseline Evaluations**:
   * [xView results](baseline_results/xview_results.md)
   * [APRICOT results](baseline_results/apricot_results.md)
 
@@ -357,12 +356,13 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
   * [GTSRB DLBD](baseline_results/gtsrb_dlbd_results.md)
+  * [Resisc DLBD](baseline_results/resisc_dlbd_results.md)
   * [Audio](baseline_results/speech_commands_poison_results.md) 
   * [Cifar10](baseline_results/cifar10_dlbd.md)
 
 
 #### Poisoning CLBD
-* **Description:** This scenario implements a Clean-label Backdoor attack (DLBD).  In this scenario, the attacker adds triggers to source class training images, leaving the labels the same but also applying imperceptible perturbations that look like target class features.  At test time, adding the trigger to a source class image induces misclassification to the target class.  For a complete overview, see the [poisoning doc](poisoning.md).
+* **Description:** This scenario implements a Clean-label Backdoor attack (CLBD).  In this scenario, the attacker adds triggers to source class training images, leaving the labels the same but also applying imperceptible perturbations that look like target class features.  At test time, adding the trigger to a source class image induces misclassification to the target class.  For a complete overview, see the [poisoning doc](poisoning.md).
 * **Datasets:**
   Datasets for CLBD include but are not limited to:
   * GTSRB
@@ -389,6 +389,7 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
   * [GTSRB](baseline_results/gtsrb_clbd_results.md)
+  * [Resisc CLBD](baseline_results/resisc_clbd_results.md)
 
 
 #### Poisoning: Sleeper Agent
