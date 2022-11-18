@@ -312,3 +312,104 @@ def test_per_class_accuracy():  # and mean
             assert math.isnan(results[k])
         else:
             assert v == results[k]
+
+
+def test_tide_metrics():
+    def generate_square(x, y, length=10):
+        return x, y, x + length, y + length
+
+    def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
+        """
+        Given a square, an iou and x3, generate another square with the same dimensions
+        with xmin == x3 and IOU == iou
+        """
+
+        x1, y1, x2, y2 = square
+        length = x2 - x1  # side of a square
+        A1 = A2 = length**2  # restrict to squares of the same size
+
+        if y3_le_y1:
+            s_y = 1
+        else:
+            s_y = -1
+
+        # in this restricted problem, delta_x needs to satisfy certain constraints
+        delta_x = abs(x1 - x3)
+        max_delta_x = length * (1 - iou) / (1 + iou)
+        print(f"delta_x <= {max_delta_x}: {delta_x <= max_delta_x}")
+        # if False, then should return None
+
+        y3 = y1 + s_y * (iou * (A1 + A2) / (1 + iou) / (length - delta_x) - length)
+
+        if (not y3_le_y1 and y3 > y1) or (y3_le_y1 and y3 <= y1):
+            return x3, y3, x3 + length, y3 + length
+        else:
+            return None
+
+    def calculate_iou(s1, s2):
+        x1, y1, x2, y2 = s1
+        x3, y3, x4, y4 = s2
+
+        A1 = abs(x2 - x1) * abs(y2 - y1)
+        A2 = abs(x4 - x3) * abs(y4 - y3)
+
+        I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
+        I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, x2), min(y3, y4)))
+        I_A = I_w * I_h
+
+        return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
+
+    x1 = y1 = 10
+
+    s1 = generate_square(x1, y1)
+    s_classification_error = generate_square_from_iou(s1, 0.8, x1 - 0.5, False)
+    # print(s_classification_error, calculate_iou(s1, s_classification_error))
+    s_localization_error = generate_square_from_iou(s1, 0.2, x1 - 4.5)
+    # print(s_localization_error, calculate_iou(s1, s_localization_error))
+    s_background_error = generate_square_from_iou(s1, 0.05, x1 + 6.8)
+    # print(s_background_error, calculate_iou(s1, s_background_error))
+
+    x2 = 35
+    s2 = generate_square(x2, y1)
+    s_detected = generate_square_from_iou(s2, 0.8, x2 - 0.5, False)
+    # print(s_detected, calculate_iou(s2, s_detected))
+    s_duplicate_error = generate_square_from_iou(s2, 0.55, x2 + 2)
+    # print(s_duplicate_error, calculate_iou(s2, s_duplicate_error))
+    s_localization_classification_error = generate_square_from_iou(s2, 0.2, x2 - 4.5)
+    # print(s_localization_classification_error, calculate_iou(s2, s_localization_classification_error))
+
+    x3 = 60
+    s3 = generate_square(x3, y1)
+
+    y = [
+        {
+            "labels": np.array([1, 2, 3]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s2,
+                    s3,
+                ]
+            ),
+        }
+    ]
+
+    y_pred = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_classification_error,
+                    s_localization_error,
+                    s_background_error,
+                    s_detected,
+                    s_duplicate_error,
+                    s_localization_classification_error,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    results = task.object_detection_mAP_tide(y, y_pred)
+    assert results is not None
