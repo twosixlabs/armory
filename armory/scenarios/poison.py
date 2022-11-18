@@ -11,6 +11,7 @@ import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
 from armory import metrics
+from armory.data.datasets import NumpyDataGenerator
 from armory.metrics.poisoning import ExplanatoryModel
 from armory.instrument.export import ImageClassificationExporter
 from armory.scenarios.scenario import Scenario
@@ -83,8 +84,13 @@ class Poison(Scenario):
         skip_attack: Optional[bool] = False,
         skip_misclassified: Optional[bool] = False,
         triggered: Optional[bool] = True,
+        fit_generator: bool = False,
         **kwargs,
     ):
+        """
+        fit_generator - whether to use fit_generator instead of fit when training
+            Useful when fit causes OOM errors, but otherwise typically slower
+        """
         if num_eval_batches:
             raise ValueError("num_eval_batches shouldn't be set for poisoning scenario")
         if skip_benign:
@@ -104,6 +110,7 @@ class Poison(Scenario):
             raise NotImplementedError("triggered=False attacks are not implemented")
         self.triggered = triggered
         self.explanatory_model = None
+        self.fit_generator = fit_generator
 
     def set_random_seed(self):
         # Set random seed due to large variance in attack and defense success
@@ -310,14 +317,26 @@ class Poison(Scenario):
         if len(self.x_train):
             self.hub.set_context(stage="fit")
             log.info("Fitting model")
-            self.model.fit(
-                self.x_train,
-                self.label_function(self.y_train),
-                batch_size=self.fit_batch_size,
-                nb_epochs=self.train_epochs,
-                verbose=False,
-                shuffle=True,
-            )
+            if self.fit_generator:
+                data_generator = NumpyDataGenerator(
+                    self.x_train,
+                    self.label_function(self.y_train),
+                    batch_size=self.fit_batch_size,
+                    drop_remainder=True,
+                    shuffle=True,
+                )
+                self.model.fit_generator(
+                    data_generator, nb_epochs=self.train_epochs, verbose=False
+                )
+            else:
+                self.model.fit(
+                    self.x_train,
+                    self.label_function(self.y_train),
+                    batch_size=self.fit_batch_size,
+                    nb_epochs=self.train_epochs,
+                    verbose=False,
+                    shuffle=True,
+                )
         else:
             log.warning("All data points filtered by defense. Skipping training")
 
