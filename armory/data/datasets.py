@@ -258,7 +258,7 @@ class NumpyDataGenerator(DataGenerator):
         try:
             return next(self.generator)
         except StopIteration:
-            self.generator = self.single_epoch_generator()
+            self.generator = self._single_epoch_generator()
             return next(self.generator)
 
 
