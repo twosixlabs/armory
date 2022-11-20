@@ -871,7 +871,7 @@ def armory_to_tide(y_dict, image_id, is_detection=True):
 
 
 @populationwise
-def object_detection_mAP_tide(y_list, y_pred_list):
+def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
     """
     TIDE version of mean average precision for object detection [https://dbolya.github.io/tide/].
 
@@ -934,7 +934,7 @@ def object_detection_mAP_tide(y_list, y_pred_list):
         for k, v in tide.runs[data_detection.name].error_dict.items()
     }
 
-    return {
+    armory_output = {
         "mAP": {
             x.pos_thresh: np.around(x.ap / 100, decimals=2)
             for x in tide.run_thresholds[data_detection.name]
@@ -948,6 +948,11 @@ def object_detection_mAP_tide(y_list, y_pred_list):
             "special": tide_error["special"][data_detection.name],
         },
     }
+
+    if return_tide:
+        return armory_output, tide
+    else:
+        return armory_output
 
 
 def _object_detection_get_tpr_mr_dr_hr(
