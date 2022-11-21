@@ -362,26 +362,26 @@ def test_tide_metrics():
     x1 = y1 = 10
 
     s1 = generate_square(x1, y1)
-    s_classification_error = generate_square_from_iou(s1, 0.8, x1 - 0.5, False)
-    # print(s_classification_error, calculate_iou(s1, s_classification_error))
-    s_localization_error = generate_square_from_iou(s1, 0.2, x1 - 4.5)
-    # print(s_localization_error, calculate_iou(s1, s_localization_error))
-    s_background_error = generate_square_from_iou(s1, 0.05, x1 + 6.8)
-    # print(s_background_error, calculate_iou(s1, s_background_error))
+    s_Cls = generate_square_from_iou(s1, 0.8, x1 - 0.5, False)
+    # print(s_Cls, calculate_iou(s1, s_Cls))
+    s_Loc = generate_square_from_iou(s1, 0.2, x1 - 4.5)
+    # print(s_Loc, calculate_iou(s1, s_Loc))
+    s_Bkg = generate_square_from_iou(s1, 0.05, x1 + 6.8)
+    # print(s_Bkg, calculate_iou(s1, s_Bkg))
 
     x2 = 35
     s2 = generate_square(x2, y1)
     s_detected = generate_square_from_iou(s2, 0.8, x2 - 0.5, False)
     # print(s_detected, calculate_iou(s2, s_detected))
-    s_duplicate_error = generate_square_from_iou(s2, 0.55, x2 + 2)
-    # print(s_duplicate_error, calculate_iou(s2, s_duplicate_error))
-    s_localization_classification_error = generate_square_from_iou(s2, 0.2, x2 - 4.5)
-    # print(s_localization_classification_error, calculate_iou(s2, s_localization_classification_error))
+    s_Dupe = generate_square_from_iou(s2, 0.55, x2 + 2)
+    # print(s_Dupe, calculate_iou(s2, s_Dupe))
+    s_Both = generate_square_from_iou(s2, 0.2, x2 - 4.5)
+    # print(s_Both, calculate_iou(s2, s_Both))
 
     x3 = 60
     s3 = generate_square(x3, y1)
 
-    y = [
+    y_list = [
         {
             "labels": np.array([1, 2, 3]),
             "boxes": np.array(
@@ -394,22 +394,177 @@ def test_tide_metrics():
         }
     ]
 
-    y_pred = [
+    y_pred_list = [
         {
             "labels": np.array([2, 1, 1, 2, 2, 1]),
             "boxes": np.array(
                 [
-                    s_classification_error,
-                    s_localization_error,
-                    s_background_error,
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
                     s_detected,
-                    s_duplicate_error,
-                    s_localization_classification_error,
+                    s_Dupe,
+                    s_Both,
                 ]
             ),
             "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
         }
     ]
 
-    results = task.object_detection_mAP_tide(y, y_pred)
-    assert results is not None
+    y_pred_list_Cls = [
+        {
+            "labels": np.array([1, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Loc = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s1,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Both = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Dupe = [
+        {
+            "labels": np.array([2, 1, 1, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Bkg = [
+        {
+            "labels": np.array([2, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_list_Miss = [
+        {
+            "labels": np.array([1, 2]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s2,
+                ]
+            ),
+        }
+    ]
+
+    y_pred_list_All = [
+        {
+            "labels": np.array([1, 2]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s_detected,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8]),
+        }
+    ]
+
+    results = task.object_detection_mAP_tide(y_list, y_pred_list)
+    results_Cls = task.object_detection_mAP_tide(y_list, y_pred_list_Cls)
+    results_Loc = task.object_detection_mAP_tide(y_list, y_pred_list_Loc)
+    results_Both = task.object_detection_mAP_tide(y_list, y_pred_list_Both)
+    results_Dupe = task.object_detection_mAP_tide(y_list, y_pred_list_Dupe)
+    results_Bkg = task.object_detection_mAP_tide(y_list, y_pred_list_Bkg)
+    results_Miss = task.object_detection_mAP_tide(y_list_Miss, y_pred_list)
+    results_All = task.object_detection_mAP_tide(y_list_Miss, y_pred_list_All)
+    # assert results is not None
+
+    error_key_list = ["Cls", "Loc", "Both", "Dupe", "Bkg", "Miss"]
+
+    def check_assertion(
+        armory_output, test_prompt, error_key_list=error_key_list, fixed_key_list=[]
+    ):
+        for key in error_key_list:
+            assert (
+                key in armory_output["errors"]["main"]["count"]
+            ), f"{test_prompt}: {key} not in results"
+            error_count = armory_output["errors"]["main"]["count"][key]
+            correct_count = 0 if key in fixed_key_list else 1
+            assert (
+                error_count == correct_count
+            ), f"{test_prompt}: Count for {key} error is not {correct_count}, but {error_count}"
+
+    test_prompt = "Checking TIDE metrics for case with one example of each error type"
+    check_assertion(results, test_prompt)
+
+    test_prompt = "Checking TIDE metrics after fixing classification error"
+    check_assertion(results_Cls, test_prompt, fixed_key_list=["Cls"])
+
+    test_prompt = "Checking TIDE metrics after fixing localization error"
+    check_assertion(results_Loc, test_prompt, fixed_key_list=["Loc"])
+
+    test_prompt = (
+        "Checking TIDE metrics after fixing classification and localization error"
+    )
+    check_assertion(results_Both, test_prompt, fixed_key_list=["Both"])
+
+    test_prompt = "Checking TIDE metrics after fixing duplicate error"
+    check_assertion(results_Dupe, test_prompt, fixed_key_list=["Dupe"])
+
+    test_prompt = "Checking TIDE metrics after fixing background error"
+    check_assertion(results_Bkg, test_prompt, fixed_key_list=["Bkg"])
+
+    test_prompt = "Checking TIDE metrics after fixing missed error"
+    check_assertion(results_Miss, test_prompt, fixed_key_list=["Miss"])
+
+    test_prompt = "Checking TIDE metrics after fixing all errors"
+    check_assertion(results_All, test_prompt, fixed_key_list=error_key_list)
