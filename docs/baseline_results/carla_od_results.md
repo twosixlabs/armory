@@ -4,6 +4,7 @@
 (For [dev data](https://github.com/twosixlabs/armory/blob/v0.15.2/armory/data/adversarial/carla_obj_det_dev.py), results are obtained using Armory v0.15.2; for [test data](https://github.com/twosixlabs/armory/blob/v0.15.4/armory/data/adversarial/carla_obj_det_test.py), results are obtained using Armory v0.15.4)**
 
 Single Modality (RGB) Object Detection
+
 | Data | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
 |------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
 | Dev  | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.76/0.72   | 0.19/0.22                   | 3.97/3.48                        | 0.06/0.06                       | 0.75/0.71                   | 0.68/0.66        | 0.27/0.28                        | 4.48/3.65                            | 0.06/0.07                           | 0.67/0.65                       | 31        |
@@ -12,6 +13,7 @@ Single Modality (RGB) Object Detection
 | Test | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.79/0.74   | 0.16/0.25                   | 4.10/3.50                        | 0.03/0.01                       | 0.82/0.75                   | 0.38/*           | 0.40/*                           | 42.55/*                              | 0.03/*                              | 0.57/*                          | 20        |
 
 Multimodality (RGB+depth) Object Detection
+
 | Data | Attack            | Attack Parameters                                                                    | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
 |------|-------------------|--------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
 | Dev  | Robust DPatch     | depth_delta_meters=3, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.87/0.86   | 0.06/0.04                   | 1.23/2.55                        | 0.05/0.05                       | 0.88/0.91                   | 0.76/0.83        | 0.10/0.06                        | 5.68/4.87                            | 0.05/0.05                           | 0.84/0.89                       | 31        |
@@ -31,6 +33,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 Dev data results obtained using Armory 0.16.0
 
 Single Modality (RGB) Object Detection
+
 | Data | Defended | Attack            | Attack Parameters                  | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
 |------|----------|-------------------|------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
 | Dev  | no       | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.64        | 0.36                        | 1.9                              | 0.02                            | 0.62                        |  0.16            | 0.64                             | 31.0                                 | 0.009                               | 0.35                            | 20        |
@@ -39,6 +42,7 @@ Single Modality (RGB) Object Detection
 
 
 Multimodality (RGB+depth) Object Detection
+
 | Data | Defended | Attack            | Attack Parameters                                                                       | Benign  mAP | Benign  Disappearance  Rate | Benign  Hallucination  per Image | Benign  Misclassification  Rate | Benign  True Positive  Rate | Adversarial  mAP | Adversarial  Disappearance  Rate | Adversarial Hallucination  per Image | Adversarial Misclassification  Rate | Adversarial True Positive  Rate | Test Size |
 |------|----------|-------------------|-----------------------------------------------------------------------------------------|-------------|-----------------------------|----------------------------------|---------------------------------|-----------------------------|------------------|----------------------------------|--------------------------------------|-------------------------------------|---------------------------------|-----------|
 | Dev  | no       | Adversarial Patch | depth_delta_meters=0.03, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.63        | 0.38                        | 0.7                              | 0.02                            | 0.61                        | 0.39             | 0.53                             | 5.0                                  | 0.02                                | 0.45                            | 20        |
