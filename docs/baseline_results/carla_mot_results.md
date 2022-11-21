@@ -2,7 +2,7 @@
 
 This is the baseline evaluation for the multi-object tracking scenario.  For single-object tracking, see [carla_video_tracking_results.md](../baseline_results/carla_video_tracking_results.md).
 
-For [dev data](../armory/data/adversarial/carla_mot_dev.py), results obtained using Armory v0.16.1.
+For [dev data](https://github.com/twosixlabs/armory/blob/master/armory/data/adversarial/carla_mot_dev.py), results obtained using Armory v0.16.1.
 
 
 | Data | Defended | Attack            | Attack Parameters              | Benign DetA / AssA / HOTA | Adversarial DetA / AssA / HOTA | Test Size |
@@ -14,4 +14,4 @@ For [dev data](../armory/data/adversarial/carla_mot_dev.py), results obtained us
 Defended results not available for Adversarial Patch attack because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable.
 Note that Robust DPatch is considerably slower than Adversarial Patch.
 
-Find reference baseline configurations [here](../scenario_configs/eval6/carla_mot)
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/master/scenario_configs/eval6/carla_mot)

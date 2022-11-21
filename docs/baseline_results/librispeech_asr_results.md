@@ -41,7 +41,7 @@ Table 2 (Results are obtained using Armory v0.15.2)
 
 * \*Targeted attack, where contradictory target phrases are generated from ground truth phrases by changing a few key words (e.g., target phrase: `he is a bad person`; ground truth phrase: `he is a good person`)
 
-Find reference baseline configurations [here](../../scenario_configs/eval5/asr_librispeech/)
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/master/scenario_configs/eval5/asr_librispeech)
 
 
 ## HuBERT

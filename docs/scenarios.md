@@ -94,7 +94,7 @@ trained to track multiple pedestrians in video in an urban environment.
 The development dataset is the [CARLA](https://carla.org) Multi-Object Tracking dataset, with videos containing a green-screen in all frames intended for adversarial patch insertion.
 The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
-  * Pretrained [ByteTrack](https://arxiv.org/pdf/2110.06864.pdf) model with an [Faster-RCNN](../armory/baseline_models/pytorch/carla_mot_frcnn_byte.py) base instead of Yolo.
+  * Pretrained [ByteTrack](https://arxiv.org/pdf/2110.06864.pdf) model with an [Faster-RCNN](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/carla_mot_frcnn_byte.py) base instead of Yolo.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of the tracker through the insertion of adversarial patches.
@@ -108,8 +108,8 @@ The dataset contains natural lighting metadata that allow digital, adaptive patc
     * mean AssA - "association accuracy, AssA, is simply the average alignment between matched trajectories, averaged over all detections"
     * mean HOTA - "final HOTA score is the geometric mean of these two scores averaged over different localisation thresholds"
 * **Baseline Attacks:**
-  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](../armory/art_experimental/attacks/carla_obj_det_patch.py)
-  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](../armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
+  * [Custom Robust DPatch with Non-differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/attacks/carla_obj_det_patch.py)
+  * [Custom Adversarial Patch with Differentiable, Input-Dependent Transformation](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py)
 * **Baseline Defense**: [JPEG Frame Compression](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/preprocessor/jpeg_compression.py)
 * **Baseline Evaluation**: [Carla MOT results](baseline_results/carla_mot_results.md)
 
@@ -122,9 +122,9 @@ In this scenario, the system under evaluation is an object detector trained to i
   These datasets contain natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
   * Single-modality:
-    * Pretrained [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
+    * Pretrained [Faster-RCNN with ResNet-50](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/carla_single_modality_object_detection_frcnn.py) model.
   * Multimodal:
-    * Pretrained multimodal [Faster-RCNN with ResNet-50](../armory/baseline_models/pytorch/carla_multimodality_object_detection_frcnn.py) model.
+    * Pretrained multimodal [Faster-RCNN with ResNet-50](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/carla_multimodality_object_detection_frcnn.py) model.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of an object detector through the insertion of adversarial patches.
@@ -155,7 +155,7 @@ In this scenario, the system under evaluation is an object tracker trained to lo
 The development dataset is the [CARLA Video Tracking dataset](https://carla.org), which includes 20 videos, each of
 which contains a green-screen in all frames intended for adversarial patch insertion. The dataset contains natural lighting metadata that allow digital, adaptive patches to be inserted and rendered into the scene similar to if they were physically printed.
 * **Baseline Model:**
-  * Pretrained [GoTurn](../armory/baseline_models/pytorch/carla_goturn.py) model.
+  * Pretrained [GoTurn](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/carla_goturn.py) model.
 * **Threat Scenario:**
   * Adversary objectives:
     * To degrade the performance of the tracker through the insertion of adversarial patches.
@@ -334,9 +334,9 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * Cifar10
 * **Baseline Models:**
   Armory includes several models which may be used for this scenario:
-  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
-  * [Audio resnet](../armory/baseline_models/tf_graph/audio_resnet50.py)
-  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py) can be used for Cifar10 or Resisc-10
+  * [GTSRB micronnet](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Audio resnet](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/tf_graph/audio_resnet50.py)
+  * [Resnet18](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/resnet18.py) can be used for Cifar10 or Resisc-10
 * **Threat Scenario:**
   * Adversary objectives:
     * Targeted misclassification
@@ -368,8 +368,8 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * GTSRB
 * **Baseline Models:**
   Armory includes several models which may be used for this scenario:
-  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
-  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+  * [GTSRB micronnet](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Resnet18](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/resnet18.py)
 * **Threat Scenario:**
   * Adversary objectives:
     * Targeted misclassification
@@ -400,7 +400,7 @@ For a complete overview, see the [poisoning doc](poisoning.md).
   * Cifar10
 * **Baseline Models:**
   Armory includes several models which may be used for this scenario:
-* [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+* [Resnet18](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/resnet18.py)
 * **Threat Scenario:**
   * Adversary objectives:
     * Targeted misclassification
@@ -430,8 +430,8 @@ For a complete overview, see the [poisoning doc](poisoning.md).
   * Cifar10
 * **Baseline Models:**
   Armory includes several models which may be used for this scenario:
-  * [GTSRB micronnet](../armory/baseline_models/pytorch/micronnet_gtsrb.py)
-  * [Resnet18](../armory/baseline_models/pytorch/resnet18.py)
+  * [GTSRB micronnet](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/micronnet_gtsrb.py)
+  * [Resnet18](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/resnet18.py)
 * **Threat Scenario:**
   * Adversary objectives:
     * Targeted misclassification
