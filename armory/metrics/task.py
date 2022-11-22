@@ -933,6 +933,9 @@ def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
         k.short_name: len(v)
         for k, v in tide.runs[data_detection.name].error_dict.items()
     }
+    tide_fn_count = sum(
+        [len(v) for k, v in tide.runs[data_detection.name].false_negatives.items()]
+    )
 
     armory_output = {
         "mAP": {
@@ -945,7 +948,10 @@ def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
                 "dAP": tide_error["main"][data_detection.name],
                 "count": tide_error_count,
             },
-            "special": tide_error["special"][data_detection.name],
+            "special": {
+                "dAP": tide_error["special"][data_detection.name],
+                "count": {"FalseNeg": tide_fn_count},
+            },
         },
     }
 

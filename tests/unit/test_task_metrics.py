@@ -354,7 +354,7 @@ def test_tide_metrics():
         A2 = abs(x4 - x3) * abs(y4 - y3)
 
         I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
-        I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, x2), min(y3, y4)))
+        I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
         I_A = I_w * I_h
 
         return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
