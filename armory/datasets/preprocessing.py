@@ -7,6 +7,7 @@ import tensorflow as tf
 
 
 REGISTERED_PREPROCESSORS = {}
+DEFAULT = "DEFAULT"
 
 
 def register(function, name=None):
@@ -27,6 +28,10 @@ def get(name):
             f"prepreprocessor {name} not registered. Use one of {list_registered()}"
         )
     return REGISTERED_PREPROCESSORS[name]
+
+
+def has(name):
+    return name in REGISTERED_PREPROCESSORS
 
 
 @register
@@ -85,6 +90,14 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     return audio
 
 
+# config = {
+#     "preprocessor": "mnist(max_frames=1)"
+#     "preprocessor_kwargs": {
+#         "max_frames": null,
+#     }
+# }
+
+
 def video_to_canon(
     video,
     resize=None,
@@ -137,3 +150,7 @@ def carla_over_obj_det_dev_label(x, y_object, y_patch_metadata):
 
     y_object["boxes"] = converted_boxes
     return y_object, y_patch_metadata
+
+
+def infer_from_dataset_info(info, split):
+    raise NotImplementedError

@@ -13,7 +13,7 @@ def load_dataset(
     epochs=1,
     split="test",
     framework="numpy",
-    preprocessor_name=None,
+    preprocessor_name="DEFAULT",
     preprocessor_kwargs=None,
     shuffle_files=False,
     label_key="label",  # TODO: make this smarter or more flexible
@@ -47,15 +47,20 @@ def load_dataset(
 
     if preprocessor_name is None:
         preprocessor = None
-        if name in preprocessing.list_registered():
+    elif preprocessor_name == "DEFAULT":
+        if preprocessing.has(name):
             preprocessor = preprocessing.get(name)
+        else:
+            preprocessor = preprocessing.infer_from_dataset_info(info, split)
     else:
         preprocessor = preprocessing.get(preprocessor_name)
 
-    if preprocessor_kwargs is not None:
+    if preprocessor is not None and preprocessor_kwargs is not None:
         preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
     else:
         preprocessing_fn = preprocessor
+
+    shuffle_elements = shuffle_files
 
     armory_data_generator = generator.ArmoryDataGenerator(
         info,
@@ -69,7 +74,8 @@ def load_dataset(
         index_filter=index_filter,
         element_filter=element_filter,
         element_map=preprocessing_fn,
-        shuffle_elements=shuffle_files,
+        shuffle_elements=shuffle_elements,
+        key_map=None,
     )
     return wrap_generator(armory_data_generator)
 

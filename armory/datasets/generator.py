@@ -57,6 +57,7 @@ class ArmoryDataGenerator:
         index_filter: callable = None,
         element_filter: callable = None,
         element_map: callable = None,
+        key_map: None,
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
