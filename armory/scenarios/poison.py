@@ -546,10 +546,14 @@ class Poison(Scenario):
         """
         if self.explanatory_model is None:
             raise ValueError("No explanatory model")
-
+        if self.fit_generator:
+            batch_size = self.fit_batch_size
+        else:
+            batch_size = None
         class_majority_mask = metrics.get("class_majority_mask")
         activations = self.explanatory_model.get_activations(
-            self.x_poison[~self.poisoned]
+            self.x_poison[~self.poisoned],
+            batch_size=batch_size,
         )
         (
             self.majority_mask_train_unpoisoned,
@@ -569,7 +573,13 @@ class Poison(Scenario):
         if not hasattr(self, "majority_ceilings"):
             raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
         class_majority_mask = metrics.get("class_majority_mask")
-        activations = self.explanatory_model.get_activations(self.test_x)
+        if self.fit_generator:
+            batch_size = self.fit_batch_size
+        else:
+            batch_size = None
+        activations = self.explanatory_model.get_activations(
+            self.test_x, batch_size=batch_size
+        )
         # use copy of majority ceilings computed from train set
         self.majority_mask_test_set, _ = class_majority_mask(
             activations,

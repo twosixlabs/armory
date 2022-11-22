@@ -199,3 +199,5 @@ If this is the case, set the scenario kwarg `fit_generator` to `true` in the con
 ```
 This will wrap the numpy array in a generator, and send batched inputs into the ART model's `fit_generator` method.
 This is less efficient and trains slower than the other method, which is why is not default, but will avoid the OOM error in this case.
+
+When `fit_generator` is set to `true`, and there is an explanatory model present, it will get activations from the dataset in a batched manner, which avoids a similar OOM error.
