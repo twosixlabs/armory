@@ -16,10 +16,16 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 64,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "mnist"
+        "test": {
+            "batch_size": 64,
+            "name": "mnist",
+            "split": "test"
+        },
+        "train": {
+            "batch_size": 128,
+            "name": "mnist",
+            "split": "train"
+        }
     },
     "defense": null,
     "metric": {

@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths, metrics
+from armory.datasets import config_load
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
 from armory.instrument.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
@@ -43,6 +44,7 @@ class Scenario:
         if self.check_run:
             if num_eval_batches:
                 raise ValueError("check_run and num_eval_batches are incompatible")
+            num_eval_batches = 1
             # Modify dataset entries
             if config["model"]["fit"]:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
@@ -132,15 +134,16 @@ class Scenario:
         self.defense_type = defense_type
 
     def load_train_dataset(self, train_split_default="train"):
-        dataset_config = self.config["dataset"]
-        log.info(f"Loading train dataset {dataset_config['name']}...")
-        self.train_dataset = config_loading.load_dataset(
-            dataset_config,
-            epochs=self.fit_kwargs["nb_epochs"],
-            split=dataset_config.get("train_split", train_split_default),
-            check_run=self.check_run,
-            shuffle_files=True,
-        )
+        kwargs = copy.deepcopy(self.config["dataset"].get(train_split_default))
+        if kwargs is None:
+            raise ValueError("No train split specified in dataset config")
+        name = kwargs.get("name")
+        if self.check_run:
+            kwargs["num_batches"] = 1
+        kwargs["shuffle_files"] = True
+
+        log.info(f"Loading train dataset {name} with kwargs {kwargs}")
+        self.train_dataset = config_load.load_dataset(**kwargs)
 
     def fit(self):
         if self.defense_type == "Trainer":
@@ -199,18 +202,19 @@ class Scenario:
         self.generate_kwargs = generate_kwargs
 
     def load_dataset(self, eval_split_default="test"):
-        dataset_config = self.config["dataset"]
-        eval_split = dataset_config.get("eval_split", eval_split_default)
-        # Evaluate the ART model on benign test examples
-        log.info(f"Loading test dataset {dataset_config['name']}...")
-        self.test_dataset = config_loading.load_dataset(
-            dataset_config,
-            epochs=1,
-            split=eval_split,
-            num_batches=self.num_eval_batches,
-            check_run=self.check_run,
-            shuffle_files=False,
-        )
+        kwargs = copy.deepcopy(self.config["dataset"].get(eval_split_default))
+        if kwargs is None:
+            raise ValueError("No test split specified in dataset config")
+
+        name = kwargs.get("name")
+        if kwargs.get("epochs", 1) != 1:
+            raise ValueError("if set, epochs must be 1 for test dataset")
+        if self.check_run:
+            kwargs["num_batches"] = 1
+
+        log.info(f"Loading test dataset {name} with kwargs {kwargs}")
+
+        self.test_dataset = config_load.load_dataset(**kwargs)
         self.i = -1
 
     def load_metrics(self):

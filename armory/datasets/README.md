@@ -129,3 +129,22 @@ or just try to load it directly
 ```
 load.load("my_dataset")
 ```
+
+# Running / Testing with current armory scenario files
+
+This will be need to be done interactively, as it requires a hotfix.
+For instance,
+```
+armory run scenario_configs/mnist_baseline.json --interactive
+```
+Once in an interactive python session in the target environment:
+```
+from armory.datasets import config_load
+config_load.hotpatch()  # <-- this will replace the old datasets with the new ones
+
+from armory.scenarios.main import get as get_scenario
+s = get_scenario("/armory/tmp/<timestamp>/interactive-config.json", check_run=True)
+s.load()
+s.evaluate()
+# MNIST is a good test case, because it does model fitting and uses TF graph mode
+```
