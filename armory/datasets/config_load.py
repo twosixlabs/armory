@@ -76,6 +76,7 @@ def load_dataset(
         element_map=preprocessing_fn,
         shuffle_elements=shuffle_elements,
         key_map=None,
+        as_tuple=None,
     )
     return wrap_generator(armory_data_generator)
 

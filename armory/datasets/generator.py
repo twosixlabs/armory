@@ -12,6 +12,8 @@ x, y = next(gen)
 
 """
 
+from typing import Tuple
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import math
@@ -39,6 +41,13 @@ class ArmoryDataGenerator:
     element_filter - predicate of which elements to keep; occurs prior to mapping
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
+
+    key_map - dict that maps element keys to scenario keys such as `x` and `y`
+        Example: {"image": "x", "label": "y"}
+        if None, no mapping is done
+
+    as_tuple - if None, iterator produces batches of dicts
+        If not None, iterator produces a tuple based on the given set of keys
     """
 
     FRAMEWORKS = ("tf", "numpy", "torch")
@@ -58,6 +67,7 @@ class ArmoryDataGenerator:
         element_filter: callable = None,
         element_map: callable = None,
         key_map=None,
+        as_tuple: Tuple[str] = None,
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -74,9 +84,19 @@ class ArmoryDataGenerator:
         if framework not in self.FRAMEWORKS:
             raise ValueError(f"framework {framework} not in {self.FRAMEWORKS}")
         if key_map is not None:
+            for k, v in key_map.items():
+                for i in (k, v):
+                    if not isinstance(i, str):
+                        raise ValueError(f"{i} in key_map is not a str")
             # TODO: key mapping from dict to tuples, etc.
             raise NotImplementedError("key_map argument")
-
+        if as_tuple is not None:
+            if isinstance(as_tuple, str):
+                raise ValueError(f"as_tuple must be None or a tuple of str, not str")
+            as_tuple = tuple(as_tuple)
+            for k in as_tuple:
+                if not isinstance(k, str):
+                    raise ValueError(f"item {k} in as_tuple is not a str")
         size = info.splits[split].num_examples
         batch_size = int(batch_size)
         batches_per_epoch = size // batch_size
@@ -141,17 +161,34 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
+            key_map=key_map,
+            as_tuple=as_tuple,
         )
 
     def _set_params(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def set_as_tuple(self, as_tuple: Tuple[str]):
+        if as_tuple is not None:
+            if isinstance(as_tuple, str):
+                raise ValueError(f"as_tuple must be None or a tuple of str, not str")
+            as_tuple = tuple(as_tuple)
+            for k in as_tuple:
+                if not isinstance(k, str):
+                    raise ValueError(f"item {k} in as_tuple is not a str")
+        self.as_tuple = as_tuple
+
     def __iter__(self):
         return self
 
     def __next__(self):
-        return next(self.iterator)
+        element = next(self.iterator)
+        if self.key_map is not None:
+            element = {new_k: element[k] for k, new_k in key_map.items()}
+        if self.as_tuple is not None:
+            element = tuple(element[k] for k in self.as_tuple)
+        return element
 
     def __len__(self):
         return self.batches_per_epoch * self.epochs
