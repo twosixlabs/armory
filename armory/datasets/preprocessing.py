@@ -42,6 +42,15 @@ def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
 
 
+@register
+def carla_over_obj_det_dev(element, modality="rgb"):
+    return carla_over_obj_det_image(
+        element["image"], modality=modality
+    ), carla_over_obj_det_dev_label(
+        element["image"], element["objects"], element["patch_metadata"]
+    )
+
+
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
     """
     TFDS Image feature uses (height, width, channels)
@@ -100,3 +109,31 @@ def video_to_canon(
     if resize is not None:
         raise NotImplementedError("resizing video")
     return video
+
+
+def carla_over_obj_det_image(x, modality="rgb"):
+    if modality == "rgb":
+        return image_to_canon(x[0])
+    elif modality == "depth":
+        return image_to_canon(x[1])
+    elif modality == "both":
+        return image_to_canon(tf.concat([x[0], x[1]], axis=-1))
+    else:
+        raise ValueError(
+            f"Found unexpected modality {modality}. Expected one of ('rgb', 'depth', 'both')."
+        )
+
+
+def carla_over_obj_det_dev_label(x, y_object, y_patch_metadata):
+    # convert from TF format of [y1/height, x1/width, y2/height, x2/width] to PyTorch format
+    # of [x1, y1, x2, y2]
+    height, width = x.shape[1:3]  # TODO: better way to extract width/height?
+
+    # reorder [y1/height, x1/width, y2/height, x2/width] to [x1/width, y1/height, x2/width, y2/height]
+    converted_boxes = tf.gather(y_object["boxes"], [1, 0, 3, 2], axis=1)
+
+    # un-normalize boxes
+    converted_boxes *= [width, height, width, height]
+
+    y_object["boxes"] = converted_boxes
+    return y_object, y_patch_metadata

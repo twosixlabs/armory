@@ -43,6 +43,7 @@ class Scenario:
         if self.check_run:
             if num_eval_batches:
                 raise ValueError("check_run and num_eval_batches are incompatible")
+            num_eval_batches = 1
             # Modify dataset entries
             if config["model"]["fit"]:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
@@ -134,11 +135,11 @@ class Scenario:
     def load_train_dataset(self, train_split_default="train"):
         dataset_config = self.config["dataset"]
         log.info(f"Loading train dataset {dataset_config['name']}...")
+        name = dataset_config.get("name")
         self.train_dataset = config_loading.load_dataset(
-            dataset_config,
+            name,
             epochs=self.fit_kwargs["nb_epochs"],
             split=dataset_config.get("train_split", train_split_default),
-            check_run=self.check_run,
             shuffle_files=True,
         )
 
@@ -199,17 +200,14 @@ class Scenario:
         self.generate_kwargs = generate_kwargs
 
     def load_dataset(self, eval_split_default="test"):
-        dataset_config = self.config["dataset"]
-        eval_split = dataset_config.get("eval_split", eval_split_default)
-        # Evaluate the ART model on benign test examples
-        log.info(f"Loading test dataset {dataset_config['name']}...")
+        dataset_config = copy.deepcopy(self.config["dataset"])
+        name = dataset_config.get("name")
+        log.info(f"Loading test dataset {name}")
+        if dataset_config.get("epochs", 1) != 1:
+            raise ValueError("epochs must be set to 1 for test dataset")
+        dataset_config["split"] = dataset_config.get("split", eval_split_default)
         self.test_dataset = config_loading.load_dataset(
-            dataset_config,
-            epochs=1,
-            split=eval_split,
-            num_batches=self.num_eval_batches,
-            check_run=self.check_run,
-            shuffle_files=False,
+            num_batches=self.num_eval_batches, **dataset_config
         )
         self.i = -1
 
