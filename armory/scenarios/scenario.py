@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths, metrics
+from armory.datasets import config_load
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
 from armory.instrument.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
@@ -133,15 +134,16 @@ class Scenario:
         self.defense_type = defense_type
 
     def load_train_dataset(self, train_split_default="train"):
-        dataset_config = self.config["dataset"]
-        log.info(f"Loading train dataset {dataset_config['name']}...")
-        name = dataset_config.get("name")
-        self.train_dataset = config_loading.load_dataset(
-            name,
-            epochs=self.fit_kwargs["nb_epochs"],
-            split=dataset_config.get("train_split", train_split_default),
-            shuffle_files=True,
-        )
+        kwargs = copy.deepcopy(self.config["dataset"].get(train_split_default))
+        if kwargs is None:
+            raise ValueError("No train split specified in dataset config")
+        name = kwargs.get("name")
+        if self.check_run:
+            kwargs["num_batches"] = 1
+        kwargs["shuffle_files"] = True
+
+        log.info(f"Loading train dataset {name} with kwargs {kwargs}")
+        self.train_dataset = config_load.load_dataset(**kwargs)
 
     def fit(self):
         if self.defense_type == "Trainer":
@@ -200,15 +202,19 @@ class Scenario:
         self.generate_kwargs = generate_kwargs
 
     def load_dataset(self, eval_split_default="test"):
-        dataset_config = copy.deepcopy(self.config["dataset"])
-        name = dataset_config.get("name")
-        log.info(f"Loading test dataset {name}")
-        if dataset_config.get("epochs", 1) != 1:
-            raise ValueError("epochs must be set to 1 for test dataset")
-        dataset_config["split"] = dataset_config.get("split", eval_split_default)
-        self.test_dataset = config_loading.load_dataset(
-            num_batches=self.num_eval_batches, **dataset_config
-        )
+        kwargs = copy.deepcopy(self.config["dataset"].get(eval_split_default))
+        if kwargs is None:
+            raise ValueError("No test split specified in dataset config")
+
+        name = kwargs.get("name")
+        if kwargs.get("epochs", 1) != 1:
+            raise ValueError("if set, epochs must be 1 for test dataset")
+        if self.check_run:
+            kwargs["num_batches"] = 1
+
+        log.info(f"Loading test dataset {name} with kwargs {kwargs}")
+
+        self.test_dataset = config_load.load_dataset(**kwargs)
         self.i = -1
 
     def load_metrics(self):

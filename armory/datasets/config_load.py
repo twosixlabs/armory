@@ -84,13 +84,3 @@ def wrap_generator(armory_data_generator):
     from armory.datasets import art_wrapper
 
     return art_wrapper.WrappedDataGenerator(armory_data_generator)
-
-
-def hotpatch():
-    """
-    Temp hot patch for armory.utils.config_loading
-    """
-
-    from armory.utils import config_loading
-
-    config_loading.load_dataset = load_dataset

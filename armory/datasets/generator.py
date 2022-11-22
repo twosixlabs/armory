@@ -57,7 +57,7 @@ class ArmoryDataGenerator:
         index_filter: callable = None,
         element_filter: callable = None,
         element_map: callable = None,
-        key_map: None,
+        key_map=None,
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -73,6 +73,9 @@ class ArmoryDataGenerator:
             )
         if framework not in self.FRAMEWORKS:
             raise ValueError(f"framework {framework} not in {self.FRAMEWORKS}")
+        if key_map is not None:
+            # TODO: key mapping from dict to tuples, etc.
+            raise NotImplementedError("key_map argument")
 
         size = info.splits[split].num_examples
         batch_size = int(batch_size)
