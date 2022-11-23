@@ -123,7 +123,7 @@
                 },
                 "task": {
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/supported_metric"
                     },
                     "type": "array"
                 }
