@@ -72,7 +72,7 @@ def load(
         if name in common.cached_datasets():
             if not download_cached:
                 raise ValueError(
-                    "cached dataset {name} not found locally. set download_cached=True to download"
+                    f"cached dataset {name} not found locally. set download_cached=True to download"
                 )
 
             ensure_download_extract(
@@ -80,10 +80,10 @@ def load(
             )
         elif name in common.armory_builders() or name in common.tfds_builders():
             raise ValueError(
-                "dataset {name} not cached. " "Please build via armory.datasets.build"
+                f"dataset {name} not cached. " "Please build via armory.datasets.build"
             )
         else:
-            raise ValueError("dataset {name} not recognized")
+            raise ValueError(f"dataset {name} not recognized")
 
     builder = tfds.builder(name, version=version, data_dir=data_dir)
     ds = builder.as_dataset(**as_dataset_kwargs)
