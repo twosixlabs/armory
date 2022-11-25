@@ -205,7 +205,7 @@ class Scenario:
         self.use_label = use_label
         self.generate_kwargs = generate_kwargs
 
-    def load_dataset(self, eval_split_default="test"):
+    def load_dataset(self, test_split_default="test"):
         kwargs = copy.deepcopy(self.config["dataset"].get("test"))
         name = kwargs.get("name")
         if kwargs.get("epochs", 1) != 1:
@@ -213,7 +213,7 @@ class Scenario:
         if self.check_run:
             kwargs["num_batches"] = 1
         if "split" not in kwargs:
-            kwargs["split"] = eval_split_default
+            kwargs["split"] = test_split_default
 
         log.info(f"Loading test dataset {name} with kwargs {kwargs}")
 

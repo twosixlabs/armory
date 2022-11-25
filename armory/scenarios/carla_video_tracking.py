@@ -22,7 +22,7 @@ class CarlaVideoTracking(Scenario):
     def load_dataset(self):
         if self.config["dataset"]["batch_size"] != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
-        super().load_dataset(eval_split_default="dev")
+        super().load_dataset(test_split_default="dev")
 
     def next(self):
         super().next()

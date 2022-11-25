@@ -351,13 +351,13 @@ class WitchesBrewScenario(Poison):
 
         self.record_poison_and_data_info()
 
-    def load_dataset(self, eval_split_default="test"):
+    def load_dataset(self, test_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
 
         dataset_config = self.config["dataset"]
         dataset_config = copy.deepcopy(dataset_config)
         dataset_config["batch_size"] = 1
-        eval_split = dataset_config.get("eval_split", eval_split_default)
+        eval_split = dataset_config.get("eval_split", test_split_default)
         log.info(f"Loading test dataset {dataset_config['name']}...")
         self.test_dataset = config_loading.load_dataset(
             dataset_config,
