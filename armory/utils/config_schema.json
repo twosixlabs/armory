@@ -36,20 +36,6 @@
             "type": "object"
         },
         "dataset": {
-            "$comment": "Must include at least one of 'test' or 'train'",
-            "additionalProperties": false,
-            "anyOf": [
-                {
-                    "required": [
-                        "test"
-                    ]
-                },
-                {
-                    "required": [
-                        "train"
-                    ]
-                }
-            ],
             "properties": {
                 "test": {
                     "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
@@ -86,6 +72,10 @@
                     "type": "object"
                 }
             },
+            "required": [
+                "test"
+            ],
+            "additionalProperties": false,
             "type": "object"
         },
         "defense": {
