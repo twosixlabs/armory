@@ -26,7 +26,7 @@ This will populate the `armory/datasets/standard/my_dataset` directory.
 
 Similarly, to create a new adversarial dataset with the same name:
 ```
-cd armory/datasets/standard
+cd armory/datasets/adversarial
 tfds new my_dataset
 ```
 
