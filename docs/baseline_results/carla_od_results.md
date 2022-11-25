@@ -53,4 +53,4 @@ Multimodality (RGB+depth) Object Detection
 
 Defended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable
 
-Find reference baseline configurations [here]
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/master/scenario_configs/eval6/carla_overhead_object_detection)
