@@ -353,21 +353,9 @@ class WitchesBrewScenario(Poison):
 
     def load_dataset(self, test_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
-
-        dataset_config = self.config["dataset"]
-        dataset_config = copy.deepcopy(dataset_config)
-        dataset_config["batch_size"] = 1
-        eval_split = dataset_config.get("eval_split", test_split_default)
-        log.info(f"Loading test dataset {dataset_config['name']}...")
-        self.test_dataset = config_loading.load_dataset(
-            dataset_config,
-            split=eval_split,
-            num_batches=self.num_eval_batches,
-            **self.dataset_kwargs,
-        )
-        self.i = -1
-        if self.explanatory_model is not None:
-            self.init_explanatory()
+        if self.config["dataset"].get("test").get("batch_size") != 1:
+            raise ValueError(f"batch_size must be set to 1 for test set")
+        super().load_dataset(test_split_default=test_split_default)
 
     def load_metrics(self):
         if self.use_filtering_defense:

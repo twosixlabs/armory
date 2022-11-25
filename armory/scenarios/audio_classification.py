@@ -9,7 +9,7 @@ from armory.instrument.export import AudioExporter
 
 class AudioClassificationTask(Scenario):
     def load_dataset(self):
-        if self.config["dataset"]["batch_size"] != 1:
+        if self.config["dataset"].get("test").get("batch_size") != 1:
             log.warning("Evaluation batch_size != 1 may not be supported.")
         super().load_dataset()
 
