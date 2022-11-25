@@ -212,6 +212,8 @@ class Scenario:
             raise ValueError("if set, epochs must be 1 for test dataset")
         if self.check_run:
             kwargs["num_batches"] = 1
+        elif self.num_eval_batches is not None:
+            kwargs["num_batches"] = self.num_eval_batches
         if "split" not in kwargs:
             kwargs["split"] = test_split_default
 
