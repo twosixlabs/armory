@@ -73,6 +73,7 @@
                 }
             },
             "required": [
+                "test"
             ],
             "additionalProperties": false,
             "type": "object"
