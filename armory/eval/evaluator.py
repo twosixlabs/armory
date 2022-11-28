@@ -156,11 +156,12 @@ class Evaluator(object):
                 "The jupyter, interactive, and commands flags are only supported when launching containers without `--check`."
             )
 
-        if self.no_docker:
-            runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars,
-            )
-            try:
+        try:
+            if self.no_docker:
+                runner = self.manager.start_armory_instance(
+                    envs=self.extra_env_vars,
+                )
+
                 exit_code = self._run_config(
                     runner,
                     check_run=check_run,
@@ -170,25 +171,12 @@ class Evaluator(object):
                     skip_misclassified=skip_misclassified,
                     validate_config=validate_config,
                 )
-            except KeyboardInterrupt:
-                log.warning("Keyboard interrupt caught")
-
-            log.info("cleaning up...")
-            self._cleanup()
-            return exit_code
-
-        # else:
-        # return exit_code
-
-
-
-        try:
-            runner = self.manager.start_armory_instance(
-                envs=self.extra_env_vars,
-                ports=ports,
-                user=self.get_id(),
-            )
-            try:
+            else:
+                runner = self.manager.start_armory_instance(
+                    envs=self.extra_env_vars,
+                    ports=ports,
+                    user=self.get_id(),
+                )
                 if jupyter:
                     self._run_jupyter(
                         runner,
@@ -221,28 +209,16 @@ class Evaluator(object):
                         skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
-            except KeyboardInterrupt:
-                log.warning("keyboard interrupt caught")
-            finally:
-                log.trace("Shutting down container {self.manager.instances.keys()}")
-                self.manager.stop_armory_instance(runner)
-        except requests.exceptions.RequestException as e:
-            log.exception("Starting instance failed.")
-            if str(e).endswith(
-                f'Bind for 0.0.0.0:{host_port} failed: port is already allocated")'
-            ):
-                log.error(
-                    f"Port {host_port} already in use. Try a different one with '--port <port>'"
-                )
-            elif (
-                str(e)
-                == '400 Client Error: Bad Request ("Unknown runtime specified nvidia")'
-            ):
-                log.error(
-                    'NVIDIA runtime failed. Either install nvidia-docker or set config "use_gpu" to false'
-                )
-            else:
-                log.error("Is Docker Daemon running?")
+            log.trace("Shutting down container {self.manager.instances.keys()}")
+            self.manager.stop_armory_instance(runner)
+        except KeyboardInterrupt:
+            log.warning("Keyboard interrupt caught")
+            exit_code = 1
+        except Exception:
+            log.exception("Error running scenario")
+            exit_code = 1
+
+        log.info("cleaning up...")
         self._cleanup()
         return exit_code
 
