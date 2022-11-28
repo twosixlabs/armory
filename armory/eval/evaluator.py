@@ -282,6 +282,9 @@ class Evaluator(object):
         else:
             user_id = os.getuid()
             group_id = os.getgid()
+        # TODO: Does not work on Windows, but Windows does not require
+        #       uid and gid. That said, the default user in the docker,
+        #       image, with uid 1000(GID 1000) does not currently exist.
         return f"{user_id}:{group_id}"
 
     def _run_interactive_bash(
