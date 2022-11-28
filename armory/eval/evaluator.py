@@ -145,7 +145,7 @@ class Evaluator(object):
         validate_config=None,
     ) -> int:
         # exit_code returns a value of:
-         #  0: successful
+        #  0: successful
         #   1: failed
         #   2: skipped
         exit_code = 0
