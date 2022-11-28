@@ -149,13 +149,14 @@ class Evaluator(object):
         #   1: successful
         #   2: skipped
         exit_code = 0
-        run_is_interactive = bool(any([jupyter, interactive, command]))
 
         # Handle docker and jupyter ports
         ports = {8888: 8888} if jupyter else None
         ports = {host_port: 8888} if host_port else ports  # noqa: B006
 
-        if run_is_interactive and any([check_run, self.no_docker]):
+        # NOTE: Check if current run is interactive, if so, raise error if
+        #       not in docker or ran with the `--check` flag.
+        if any([jupyter, interactive, command]) and any([check_run, self.no_docker]):
             raise ValueError(
                 "The jupyter, interactive, and commands flags are only supported when launching containers without `--check`."
             )
