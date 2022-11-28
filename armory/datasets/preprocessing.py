@@ -40,6 +40,7 @@ def supervised_image_classification(element):
 
 
 mnist = register(supervised_image_classification, "mnist")
+cifar10 = register(supervised_image_classification, "cifar10")
 
 
 @register
