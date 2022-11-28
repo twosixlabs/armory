@@ -375,12 +375,13 @@ class Evaluator(object):
         skip_attack=None,
         skip_misclassified=None,
     ) -> None:
+        jupyter_port = 8888
+        user_group_id = self.get_id()
+        tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
+
         if not self.root:
             log.warning("Running Jupyter Lab as root inside the container.")
 
-        user_group_id = self.get_id()
-        port = list(ports.keys())[0]
-        tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
         os.makedirs(tmp_dir)
         self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
         docker_config_path = os.path.join(
