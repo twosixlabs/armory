@@ -148,14 +148,19 @@ class Scenario:
 
         log.info(f"Loading train dataset {name} with kwargs {kwargs}")
         self.train_dataset = config_load.load_dataset(**kwargs)
+        self.num_train_epochs = kwargs.get("epochs", 1)
 
     def fit(self):
         if self.defense_type == "Trainer":
             log.info(f"Training with {type(self.trainer)} Trainer defense...")
-            self.trainer.fit_generator(self.train_dataset, **self.fit_kwargs)
+            self.trainer.fit_generator(
+                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+            )
         else:
             log.info(f"Fitting model {self.model_name}...")
-            self.model.fit_generator(self.train_dataset, **self.fit_kwargs)
+            self.model.fit_generator(
+                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+            )
 
     def load_attack(self):
         attack_config = self.config["attack"]
