@@ -19,10 +19,10 @@ class CarlaVideoTracking(Scenario):
                 "skip_misclassified shouldn't be set for carla_video_tracking scenario"
             )
 
-    def load_dataset(self):
+    def load_test_dataset(self):
         if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
-        super().load_dataset(test_split_default="dev")
+        super().load_test_dataset(test_split_default="dev")
 
     def next(self):
         super().next()

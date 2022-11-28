@@ -351,11 +351,11 @@ class WitchesBrewScenario(Poison):
 
         self.record_poison_and_data_info()
 
-    def load_dataset(self, test_split_default="test"):
+    def load_test_dataset(self, test_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
         if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError(f"batch_size must be set to 1 for test set")
-        super().load_dataset(test_split_default=test_split_default)
+        super().load_test_dataset(test_split_default=test_split_default)
 
     def load_metrics(self):
         if self.use_filtering_defense:

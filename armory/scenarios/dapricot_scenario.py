@@ -61,12 +61,12 @@ class ObjectDetectionTask(Scenario):
             )
         super().load_attack()
 
-    def load_dataset(self):
+    def load_test_dataset(self):
         if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError(
                 "dataset['batch_size'] must be set to 1 for D-APRICOT scenario."
             )
-        super().load_dataset()
+        super().load_test_dataset()
 
     def next(self):
         super().next()

@@ -326,8 +326,8 @@ class Poison(Scenario):
             "Not implemented for poisoning scenario. Use load_poisoner"
         )
 
-    def load_dataset(self, test_split_default="test"):
-        super().load_dataset(test_split_default=test_split_default)
+    def load_test_dataset(self, test_split_default="test"):
+        super().load_test_dataset(test_split_default=test_split_default)
         if self.explanatory_model is not None:
             self.init_explanatory()
 
@@ -445,7 +445,7 @@ class Poison(Scenario):
         self.poison_dataset()
         self.filter_dataset()
         self.fit()
-        self.load_dataset()
+        self.load_test_dataset()
         self.load_export_meters()
 
     def run_benign(self):

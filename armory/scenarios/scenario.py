@@ -210,7 +210,7 @@ class Scenario:
         self.use_label = use_label
         self.generate_kwargs = generate_kwargs
 
-    def load_dataset(self, test_split_default="test"):
+    def load_test_dataset(self, test_split_default="test"):
         kwargs = copy.deepcopy(self.config["dataset"].get("test"))
         name = kwargs.get("name")
         if kwargs.get("epochs", 1) != 1:
@@ -287,7 +287,7 @@ class Scenario:
             self.load_train_dataset()
             self.fit()
         self.load_attack()
-        self.load_dataset()
+        self.load_test_dataset()
         self.load_metrics()
         self.load_export_meters()
         return self
