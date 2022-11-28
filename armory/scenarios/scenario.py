@@ -47,7 +47,7 @@ class Scenario:
             num_eval_batches = 1
             # Modify dataset entries
             if config["model"]["fit"]:
-                config["model"]["fit_kwargs"]["nb_epochs"] = 1
+                config["dataset"]["train"]["epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
             # For poisoning scenario

@@ -23,6 +23,7 @@
         },
         "train": {
             "batch_size": 128,
+            "epochs": 20,
             "name": "mnist",
             "split": "train"
         }
@@ -38,9 +39,7 @@
     },
     "model": {
         "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 20
-        },
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.keras.mnist",
         "name": "get_art_model",
