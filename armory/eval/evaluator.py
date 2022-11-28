@@ -151,7 +151,7 @@ class Evaluator(object):
 
         if run_is_interactive and any([check_run, self.no_docker]):
             raise ValueError(
-                "jupyter, interactive, or bash commands only supported when launching Docker without `--check`."
+                "The jupyter, interactive, and commands flags are only supported when launching containers without `--check`."
             )
 
         if self.no_docker:
