@@ -24,6 +24,7 @@
         },
         "train": {
             "batch_size": 64,
+            "epochs": 20,
             "name": "cifar10"
         }
     },
@@ -38,9 +39,7 @@
     },
     "model": {
         "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 20
-        },
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",
