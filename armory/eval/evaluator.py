@@ -204,11 +204,9 @@ class Evaluator(object):
 
         except KeyboardInterrupt:
             log.warning("Keyboard interrupt caught")
-            exit_code = 0
 
         except Exception:
             log.exception("Error running scenario")
-            exit_code = 0
 
         finally:
             if self.no_docker:
