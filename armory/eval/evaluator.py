@@ -149,14 +149,12 @@ class Evaluator(object):
         exit_code = 0
         run_is_interactive = bool(any([jupyter, interactive, command]))
 
-        if run_is_interactive:
-            ...
+        if run_is_interactive and any([check_run, self.no_docker]):
+            raise ValueError(
+                "jupyter, interactive, or bash commands only supported when launching Docker without `--check`."
+            )
 
         if self.no_docker:
-            if jupyter or interactive or command:
-                raise ValueError(
-                    "jupyter, interactive, or bash commands only supported when running Docker containers."
-                )
             runner = self.manager.start_armory_instance(
                 envs=self.extra_env_vars,
             )
@@ -176,11 +174,6 @@ class Evaluator(object):
                 log.info("cleaning up...")
             self._cleanup()
             return exit_code
-
-        if check_run and (jupyter or interactive or command):
-            raise ValueError(
-                "check_run incompatible with interactive, jupyter, or command"
-            )
 
         # Handle docker and jupyter ports
         if jupyter or host_port:
