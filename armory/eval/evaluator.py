@@ -147,6 +147,8 @@ class Evaluator(object):
         validate_config=None,
     ) -> int:
         exit_code = 0
+        # Handle docker and jupyter ports
+        ports = {8888: 8888} if jupyter or host_ports else None
         run_is_interactive = bool(any([jupyter, interactive, command]))
 
         if run_is_interactive and any([check_run, self.no_docker]):
@@ -175,14 +177,10 @@ class Evaluator(object):
             self._cleanup()
             return exit_code
 
-        # Handle docker and jupyter ports
-        if jupyter or host_port:
-            if host_port:
-                ports = {host_port: host_port}
-            else:
-                ports = {8888: 8888}
-        else:
-            ports = None
+        # else:
+        # return exit_code
+
+
 
         try:
             runner = self.manager.start_armory_instance(
