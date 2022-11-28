@@ -432,7 +432,7 @@ class Evaluator(object):
         )
         log.info("\n".join(lines))
         runner.exec_cmd(
-            f"jupyter lab --ip=0.0.0.0 --port {port} --no-browser",
+            f"jupyter lab --ip=0.0.0.0 --port {jupyter_port} --no-browser",
             user=user_group_id,
             expect_sentinel=False,
         )
