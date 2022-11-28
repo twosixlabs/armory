@@ -70,6 +70,7 @@ class Evaluator(object):
         else:
             self.manager = ManagementInstance(**kwargs)
 
+
     def _gather_env_variables(self):
         """
         Update the extra env variable dictionary to pass into container or run on host
@@ -109,6 +110,7 @@ class Evaluator(object):
         self.extra_env_vars["TORCH_HOME"] = torch_home
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
+
     def _cleanup(self):
         log.info(f"deleting tmp_dir {self.tmp_dir}")
         try:
@@ -131,6 +133,7 @@ class Evaluator(object):
             output_path = os.path.join(self.output_dir, json)
             log.info(f"results output written to:\n{output_path}")
 
+
     def run(
         self,
         interactive=False,
@@ -149,9 +152,10 @@ class Evaluator(object):
         #   1: successful
         #   2: skipped
         exit_code = 0
+        run_is_interactive = bool(any([jupyter, interactive, command]))
+
         # Handle docker and jupyter ports
         ports = {8888: 8888} if jupyter or host_port else None
-        run_is_interactive = bool(any([jupyter, interactive, command]))
 
         if run_is_interactive and any([check_run, self.no_docker]):
             raise ValueError(
@@ -211,23 +215,30 @@ class Evaluator(object):
                         skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
-                log.trace("Shutting down container {self.manager.instances.keys()}")
-                self.manager.stop_armory_instance(runner)
+
         except KeyboardInterrupt:
             log.warning("Keyboard interrupt caught")
             exit_code = 1
+
         except Exception:
             log.exception("Error running scenario")
             exit_code = 1
+
+        finally:
+            if self.no_docker:
+                log.trace("Shutting down container {self.manager.instances.keys()}")
+                self.manager.stop_armory_instance(runner)
 
         log.info("cleaning up...")
         self._cleanup()
         return exit_code
 
+
     def _b64_encode_config(self):
         bytes_config = json.dumps(self.config).encode("utf-8")
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
+
 
     def _run_config(
         self,
@@ -260,9 +271,11 @@ class Evaluator(object):
         cmd = f"{python} -m armory.scenarios.main {b64_config}{options} --base64"
         return runner.exec_cmd(cmd, **kwargs)
 
+
     def _run_command(self, runner: ArmoryInstance, command: str) -> int:
         log.info(bold(red(f"Running bash command: {command}")))
         return runner.exec_cmd(command, user=self.get_id(), expect_sentinel=False)
+
 
     def get_id(self):
         """
@@ -277,6 +290,7 @@ class Evaluator(object):
             user_id = os.getuid()
             group_id = os.getgid()
         return f"{user_id}:{group_id}"
+
 
     def _run_interactive_bash(
         self,
@@ -354,6 +368,7 @@ class Evaluator(object):
         while True:
             time.sleep(1)
 
+
     def _run_jupyter(
         self,
         runner: ArmoryInstance,
@@ -425,6 +440,7 @@ class Evaluator(object):
             expect_sentinel=False,
         )
 
+
     def _build_options(
         self,
         check_run,
@@ -454,6 +470,7 @@ class Evaluator(object):
         for module, level in added_filters.items():
             options += f" --log-level {module}:{level}"
         return options
+
 
     def _constructor_options(
         self,
