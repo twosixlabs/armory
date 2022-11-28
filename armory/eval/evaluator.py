@@ -153,7 +153,7 @@ class Evaluator(object):
 
         # Handle docker and jupyter ports
         ports = {8888: 8888} if jupyter else None
-        ports = {host_port: 8888} if host_port else ports # noqa: B006
+        ports = {host_port: 8888} if host_port else ports  # noqa: B006
 
         if run_is_interactive and any([check_run, self.no_docker]):
             raise ValueError(
