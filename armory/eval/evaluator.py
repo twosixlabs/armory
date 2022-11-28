@@ -431,8 +431,10 @@ class Evaluator(object):
             ]
         )
         log.info("\n".join(lines))
+        # TODO: Extract jupyter config options from code; possible implement using a
+        #       `docker-compose.yml` file?
         runner.exec_cmd(
-            f"jupyter lab --ip=0.0.0.0 --port {jupyter_port} --no-browser",
+            f"jupyter lab --ip=0.0.0.0 --port {jupyter_port} --no-browser --allow-root",
             user=user_group_id,
             expect_sentinel=False,
         )
