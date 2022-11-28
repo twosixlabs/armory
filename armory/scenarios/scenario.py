@@ -134,24 +134,33 @@ class Scenario:
         self.defense_type = defense_type
 
     def load_train_dataset(self, train_split_default="train"):
-        kwargs = copy.deepcopy(self.config["dataset"].get(train_split_default))
+        kwargs = copy.deepcopy(self.config["dataset"].get("train"))
         if kwargs is None:
-            raise ValueError("No train split specified in dataset config")
+            raise ValueError(
+                "dataset config must contain 'train' field if model is set to fit"
+            )
         name = kwargs.get("name")
         if self.check_run:
             kwargs["num_batches"] = 1
         kwargs["shuffle_files"] = True
+        if "split" not in kwargs:
+            kwargs["split"] = train_split_default
 
         log.info(f"Loading train dataset {name} with kwargs {kwargs}")
         self.train_dataset = config_load.load_dataset(**kwargs)
+        self.num_train_epochs = kwargs.get("epochs", 1)
 
     def fit(self):
         if self.defense_type == "Trainer":
             log.info(f"Training with {type(self.trainer)} Trainer defense...")
-            self.trainer.fit_generator(self.train_dataset, **self.fit_kwargs)
+            self.trainer.fit_generator(
+                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+            )
         else:
             log.info(f"Fitting model {self.model_name}...")
-            self.model.fit_generator(self.train_dataset, **self.fit_kwargs)
+            self.model.fit_generator(
+                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+            )
 
     def load_attack(self):
         attack_config = self.config["attack"]
@@ -201,16 +210,17 @@ class Scenario:
         self.use_label = use_label
         self.generate_kwargs = generate_kwargs
 
-    def load_dataset(self, eval_split_default="test"):
-        kwargs = copy.deepcopy(self.config["dataset"].get(eval_split_default))
-        if kwargs is None:
-            raise ValueError("No test split specified in dataset config")
-
+    def load_test_dataset(self, test_split_default="test"):
+        kwargs = copy.deepcopy(self.config["dataset"].get("test"))
         name = kwargs.get("name")
         if kwargs.get("epochs", 1) != 1:
             raise ValueError("if set, epochs must be 1 for test dataset")
         if self.check_run:
             kwargs["num_batches"] = 1
+        elif self.num_eval_batches is not None:
+            kwargs["num_batches"] = self.num_eval_batches
+        if "split" not in kwargs:
+            kwargs["split"] = test_split_default
 
         log.info(f"Loading test dataset {name} with kwargs {kwargs}")
 
@@ -277,7 +287,7 @@ class Scenario:
             self.load_train_dataset()
             self.fit()
         self.load_attack()
-        self.load_dataset()
+        self.load_test_dataset()
         self.load_metrics()
         self.load_export_meters()
         return self

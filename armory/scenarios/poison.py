@@ -326,18 +326,8 @@ class Poison(Scenario):
             "Not implemented for poisoning scenario. Use load_poisoner"
         )
 
-    def load_dataset(self, eval_split_default="test"):
-        dataset_config = self.config["dataset"]
-        eval_split = dataset_config.get("eval_split", eval_split_default)
-        # Evaluate the ART model on benign test examples
-        log.info(f"Loading test dataset {dataset_config['name']}...")
-        self.test_dataset = config_loading.load_dataset(
-            dataset_config,
-            split=eval_split,
-            num_batches=self.num_eval_batches,
-            **self.dataset_kwargs,
-        )
-        self.i = -1
+    def load_test_dataset(self, test_split_default="test"):
+        super().load_test_dataset(test_split_default=test_split_default)
         if self.explanatory_model is not None:
             self.init_explanatory()
 
@@ -455,7 +445,7 @@ class Poison(Scenario):
         self.poison_dataset()
         self.filter_dataset()
         self.fit()
-        self.load_dataset()
+        self.load_test_dataset()
         self.load_export_meters()
 
     def run_benign(self):

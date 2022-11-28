@@ -86,6 +86,7 @@ class SleeperAgentScenario(Poison):
 
             # load copy of test dataset for attack
             dataset_config = self.config["dataset"]
+            # TODO: update to use new armory.datasets.config_load.load_dataset
             test_dataset = config_loading.load_dataset(
                 dataset_config, split="test", num_batches=None, **self.dataset_kwargs
             )
