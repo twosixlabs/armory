@@ -18,10 +18,15 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 64,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "cifar10"
+        "test": {
+            "batch_size": 1,
+            "name": "cifar10"
+        },
+        "train": {
+            "batch_size": 64,
+            "epochs": 20,
+            "name": "cifar10"
+        }
     },
     "defense": null,
     "metric": {
@@ -34,9 +39,7 @@
     },
     "model": {
         "fit": true,
-        "fit_kwargs": {
-            "nb_epochs": 20
-        },
+        "fit_kwargs": {},
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.cifar",
         "name": "get_art_model",

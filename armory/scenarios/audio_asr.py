@@ -102,10 +102,10 @@ class AutomaticSpeechRecognition(Scenario):
     def load_train_dataset(self, train_split_default="train_clean100"):
         return super().load_train_dataset(train_split_default=train_split_default)
 
-    def load_dataset(self, eval_split_default="test_clean"):
-        if self.config["dataset"]["batch_size"] != 1:
+    def load_test_dataset(self, test_split_default="test_clean"):
+        if self.config["dataset"].get("test").get("batch_size") != 1:
             log.warning("Evaluation batch_size != 1 may not be supported.")
-        super().load_dataset(eval_split_default=eval_split_default)
+        super().load_test_dataset(test_split_default=test_split_default)
 
     def _load_sample_exporter(self):
         return AudioExporter(

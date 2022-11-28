@@ -8,6 +8,7 @@ import tensorflow_datasets as tfds
 from armory import paths
 from armory.logs import log
 
+# TODO: modify SUBDIR?
 SUBDIR = "new_builds"
 CACHE_JSON = "cached_datasets.json"
 CACHE_SUBDIR = "cache"

@@ -9,13 +9,13 @@ from armory.instrument.export import VideoClassificationExporter
 
 
 class Ucf101(Scenario):
-    def load_dataset(self):
-        if self.config["dataset"]["batch_size"] != 1:
+    def load_test_dataset(self):
+        if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError(
                 "batch_size must be 1 for evaluation, due to variable length inputs.\n"
                 "    If training, set config['model']['fit_kwargs']['fit_batch_size']"
             )
-        super().load_dataset()
+        super().load_test_dataset()
 
     def _load_sample_exporter(self):
         return VideoClassificationExporter(
