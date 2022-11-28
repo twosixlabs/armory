@@ -171,8 +171,8 @@ class Evaluator(object):
             except KeyboardInterrupt:
                 log.warning("Keyboard interrupt caught")
             finally:
+                self._cleanup()
                 log.info("cleaning up...")
-            self._cleanup()
             return exit_code
 
         # Handle docker and jupyter ports
