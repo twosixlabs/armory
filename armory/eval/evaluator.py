@@ -147,6 +147,8 @@ class Evaluator(object):
         validate_config=None,
     ) -> int:
         exit_code = 0
+        run_interactively = bool(any(jupyter, interactive, command))
+
         if self.no_docker:
             if jupyter or interactive or command:
                 raise ValueError(
