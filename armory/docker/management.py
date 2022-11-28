@@ -73,26 +73,32 @@ class ArmoryInstance(object):
             stream=True,
             tty=True,
             user=user,
+            # TODO: Add environment variable to control this; example
+            #   >>>> environment={"PYTHONUNBUFFERED": "1"},
+            # TODO: Return stdout and stderr separately
+            #   >>>> demux=True,
         )
 
         # the sentinel should be the last output from the container
         # but threading may cause certain warning messages to be printed during container shutdown
         #  ie after the sentinel
         sentinel_found = False
-        for out in result.output:
-            output = out.decode(encoding="utf-8", errors="replace").strip()
-            if not output:  # skip empty lines
-                continue
-            # this looks absurd, but in some circumstances result.output will combine
-            #  outputs from the container into a single string
-            # eg, print(a); print(b) is delivered as 'a\r\nb'
-            for inner_line in output.splitlines():
-                inner_output = inner_line.strip()
-                if not inner_output:
+
+        if len(result.output) > 0:
+            for out in result.output:
+                output = out.decode(encoding="utf-8", errors="replace").strip()
+                if not output:  # skip empty lines
                     continue
-                print(inner_output)
-                if inner_output == armory.END_SENTINEL:
-                    sentinel_found = True
+                # this looks absurd, but in some circumstances result.output will combine
+                #  outputs from the container into a single string
+                # eg, print(a); print(b) is delivered as 'a\r\nb'
+                for inner_line in output.splitlines():
+                    inner_output = inner_line.strip()
+                    if not inner_output:
+                        continue
+                    print(inner_output)
+                    if inner_output == armory.END_SENTINEL:
+                        sentinel_found = True
 
         # if we're not running a config (eg armory exec or launch)
         #  we don't expect the sentinel to be printed and we have no way of
