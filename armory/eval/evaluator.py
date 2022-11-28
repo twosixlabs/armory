@@ -145,8 +145,8 @@ class Evaluator(object):
         validate_config=None,
     ) -> int:
         # exit_code returns a value of:
-        #   0: failed
-        #   1: successful
+         #  0: successful
+        #   1: failed
         #   2: skipped
         exit_code = 0
 
@@ -169,24 +169,30 @@ class Evaluator(object):
 
         try:
             if jupyter:
-                self._run_jupyter(
-                    runner,
-                    ports,
-                    check_run=check_run,
-                    num_eval_batches=num_eval_batches,
-                    skip_benign=skip_benign,
-                    skip_attack=skip_attack,
-                    skip_misclassified=skip_misclassified,
+                exit_code = (
+                    self._run_jupyter(
+                        runner,
+                        ports,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
+                    )
+                    or 1
                 )
             elif interactive:
-                self._run_interactive_bash(
-                    runner,
-                    check_run=check_run,
-                    num_eval_batches=num_eval_batches,
-                    skip_benign=skip_benign,
-                    skip_attack=skip_attack,
-                    skip_misclassified=skip_misclassified,
-                    validate_config=validate_config,
+                exit_code = (
+                    self._run_interactive_bash(
+                        runner,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
+                        validate_config=validate_config,
+                    )
+                    or 1
                 )
             elif command:
                 exit_code = self._run_command(runner, command)
