@@ -144,6 +144,10 @@ class Evaluator(object):
         skip_misclassified=None,
         validate_config=None,
     ) -> int:
+        # exit_code returns a value of:
+        #   0: failed
+        #   1: successful
+        #   2: skipped
         exit_code = 0
         # Handle docker and jupyter ports
         ports = {8888: 8888} if jupyter or host_port else None
