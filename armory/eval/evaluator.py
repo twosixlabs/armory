@@ -207,8 +207,8 @@ class Evaluator(object):
                         skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
-            log.trace("Shutting down container {self.manager.instances.keys()}")
-            self.manager.stop_armory_instance(runner)
+                log.trace("Shutting down container {self.manager.instances.keys()}")
+                self.manager.stop_armory_instance(runner)
         except KeyboardInterrupt:
             log.warning("Keyboard interrupt caught")
             exit_code = 1
