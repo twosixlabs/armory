@@ -12,6 +12,7 @@ import datetime
 import requests
 
 import armory
+from armory import environment
 from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
@@ -106,10 +107,9 @@ class Evaluator(object):
         if self.no_docker:
             torch_home = armory.paths.HostPaths().pytorch_dir
         else:
-            torch_home = armory.DockerPaths().pytorch_dir
+            torch_home = armory.paths.DockerPaths().pytorch_dir
         self.extra_env_vars["TORCH_HOME"] = torch_home
-
-        self.extra_env_vars[armory.environment.ARMORY_VERSION] = armory.__version__
+        self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
     def _cleanup(self):
         log.info(f"deleting tmp_dir {self.tmp_dir}")
@@ -147,7 +147,10 @@ class Evaluator(object):
         validate_config=None,
     ) -> int:
         exit_code = 0
-        run_interactively = bool(any(jupyter, interactive, command))
+        run_is_interactive = bool(any([jupyter, interactive, command]))
+
+        if run_is_interactive:
+            ...
 
         if self.no_docker:
             if jupyter or interactive or command:
