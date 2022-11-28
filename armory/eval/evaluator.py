@@ -1,13 +1,13 @@
 """
 Evaluators control launching of ARMORY evaluations.
 """
-import base64
 import os
-import json
-import shutil
-import time
-import datetime
 import sys
+import json
+import time
+import shutil
+import base64
+import datetime
 
 import requests
 
@@ -16,8 +16,6 @@ from armory.configuration import load_global_config
 from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
-from armory import paths
-from armory import environment
 from armory.logs import log, is_debug, added_filters
 
 
@@ -33,7 +31,7 @@ class Evaluator(object):
             raise ValueError(f"config {config} must be a dict")
         self.config = config
 
-        self.host_paths = paths.HostPaths()
+        self.host_paths = armory.paths.HostPaths()
         if os.path.exists(self.host_paths.armory_config):
             self.armory_global_config = load_global_config(
                 self.host_paths.armory_config
@@ -106,12 +104,12 @@ class Evaluator(object):
         # Because we may want to allow specification of ARMORY_TORCH_HOME
         # this constant path is placed here among the other imports
         if self.no_docker:
-            torch_home = paths.HostPaths().pytorch_dir
+            torch_home = armory.paths.HostPaths().pytorch_dir
         else:
-            torch_home = paths.DockerPaths().pytorch_dir
+            torch_home = armory.DockerPaths().pytorch_dir
         self.extra_env_vars["TORCH_HOME"] = torch_home
 
-        self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
+        self.extra_env_vars[armory.environment.ARMORY_VERSION] = armory.__version__
 
     def _cleanup(self):
         log.info(f"deleting tmp_dir {self.tmp_dir}")
@@ -348,7 +346,7 @@ class Evaluator(object):
             os.makedirs(tmp_dir)
             self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
             docker_config_path = os.path.join(
-                paths.runtime_paths().tmp_dir,
+                armory.paths.runtime_paths().tmp_dir,
                 self.config["eval_id"],
                 "interactive-config.json",
             )
@@ -401,7 +399,7 @@ class Evaluator(object):
         os.makedirs(tmp_dir)
         self.tmp_config = os.path.join(tmp_dir, "interactive-config.json")
         docker_config_path = os.path.join(
-            paths.runtime_paths().tmp_dir,
+            armory.paths.runtime_paths().tmp_dir,
             self.config["eval_id"],
             "interactive-config.json",
         )
