@@ -20,6 +20,7 @@ def load_dataset(
     index=None,
     class_ids=None,
     drop_remainder=False,
+    art_wrapper=True,
 ):
     # All are keyword elements by design
     if name is None:
@@ -56,7 +57,9 @@ def load_dataset(
         preprocessor = preprocessing.get(preprocessor_name)
 
     if preprocessor is not None and preprocessor_kwargs is not None:
-        preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+        preprocessing_fn = lambda x: preprocessor(
+            x, **preprocessor_kwargs
+        )  # noqa: E731
     else:
         preprocessing_fn = preprocessor
 
@@ -67,18 +70,22 @@ def load_dataset(
         ds_dict,
         split=split,
         batch_size=batch_size,
-        framework=framework,
+        num_batches=num_batches,
         epochs=epochs,
         drop_remainder=drop_remainder,
-        num_batches=num_batches,
         index_filter=index_filter,
         element_filter=element_filter,
         element_map=preprocessing_fn,
         shuffle_elements=shuffle_elements,
-        key_map=None,
-        as_tuple=None,
+        framework=framework,
     )
-    return wrap_generator(armory_data_generator)
+    armory_data_generator.set_key_map(use_supervised_keys=True)
+    armory_data_generator.as_tuple()  # NOTE: This will currently fail for adversarial datasets
+
+    if art_wrapper:
+        # TODO: maybe do this INSIDE a scenario? (e.g., when calling fit_generator)
+        return wrap_generator(armory_data_generator)
+    return armory_data_generator
 
 
 def wrap_generator(armory_data_generator):

@@ -12,11 +12,11 @@ x, y = next(gen)
 
 """
 
+import math
 from typing import Tuple
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import math
 
 
 class ArmoryDataGenerator:
@@ -41,13 +41,6 @@ class ArmoryDataGenerator:
     element_filter - predicate of which elements to keep; occurs prior to mapping
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
-
-    key_map - dict that maps element keys to scenario keys such as `x` and `y`
-        Example: {"image": "x", "label": "y"}
-        if None, no mapping is done
-
-    as_tuple - if None, iterator produces batches of dicts
-        If not None, iterator produces a tuple based on the given set of keys
     """
 
     FRAMEWORKS = ("tf", "numpy", "torch")
@@ -58,16 +51,14 @@ class ArmoryDataGenerator:
         ds_dict: dict,
         split: str = "test",
         batch_size: int = 1,
-        drop_remainder: bool = False,
-        epochs: int = 1,
         num_batches: int = None,
-        framework: str = "numpy",
-        shuffle_elements: bool = False,
+        epochs: int = 1,
+        drop_remainder: bool = False,
         index_filter: callable = None,
         element_filter: callable = None,
         element_map: callable = None,
-        key_map=None,
-        as_tuple: Tuple[str] = None,
+        shuffle_elements: bool = False,
+        framework: str = "numpy",
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -83,20 +74,7 @@ class ArmoryDataGenerator:
             )
         if framework not in self.FRAMEWORKS:
             raise ValueError(f"framework {framework} not in {self.FRAMEWORKS}")
-        if key_map is not None:
-            for k, v in key_map.items():
-                for i in (k, v):
-                    if not isinstance(i, str):
-                        raise ValueError(f"{i} in key_map is not a str")
-            # TODO: key mapping from dict to tuples, etc.
-            raise NotImplementedError("key_map argument")
-        if as_tuple is not None:
-            if isinstance(as_tuple, str):
-                raise ValueError(f"as_tuple must be None or a tuple of str, not str")
-            as_tuple = tuple(as_tuple)
-            for k in as_tuple:
-                if not isinstance(k, str):
-                    raise ValueError(f"item {k} in as_tuple is not a str")
+
         size = info.splits[split].num_examples
         batch_size = int(batch_size)
         batches_per_epoch = size // batch_size
@@ -149,6 +127,7 @@ class ArmoryDataGenerator:
             raise NotImplementedError(f"framework {framework}")
 
         self._set_params(
+            info=info,
             iterator=iterator,
             split=split,
             size=size,
@@ -161,23 +140,101 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
-            key_map=key_map,
-            as_tuple=as_tuple,
+            key_map=None,
+            output_as_dict=True,
+            output_tuple=("x", "y"),
         )
 
     def _set_params(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def set_as_tuple(self, as_tuple: Tuple[str]):
-        if as_tuple is not None:
-            if isinstance(as_tuple, str):
-                raise ValueError(f"as_tuple must be None or a tuple of str, not str")
-            as_tuple = tuple(as_tuple)
-            for k in as_tuple:
-                if not isinstance(k, str):
-                    raise ValueError(f"item {k} in as_tuple is not a str")
-        self.as_tuple = as_tuple
+    def set_key_map(self, key_map: dict = None, use_supervised_keys: bool = False):
+        """
+        key_map that maps the keys of the elements dict to other keys
+            E.g., {"image": "x", "label": "y"}
+
+        if use_supervised_keys, it pulls this from info.supervised_keys
+
+        If any key is not present in the map, those values are omitted
+        """
+        if key_map is not None and use_supervised_keys:
+            raise ValueError("Cannot set both key_map and use_supervised_keys")
+        elif key_map is not None:
+            if not isinstance(key_map, dict):
+                raise ValueError(f"key_map {key_map} must be None or a dict")
+            for k, v in key_map.items():
+                for i in (k, v):
+                    if not isinstance(i, str):
+                        raise ValueError(f"{i} in key_map is not a str")
+            if len(key_map.values()) != len(set(key_map.values())):
+                raise ValueError("key_map values must be unique")
+        elif use_supervised_keys:
+            supervised_keys = self.info.supervised_keys
+            if supervised_keys is None:
+                raise ValueError("supervised_keys are None for current dataset info")
+            elif len(supervised_keys) != 2 or not all(
+                isinstance(k, str) for k in supervised_keys
+            ):
+                # NOTE: supervised_keys can be more exotic, though it is rare
+                # See the SupervisedKeysType in tfds.core.DatasetInfo
+                # 3-tuples and nested structures are allowed
+                raise NotImplementedError(
+                    f"supervised_keys {supervised_keys} is not a 2-tuple of str"
+                )
+            x, y = supervised_keys
+            key_map = {x: "x", y: "y"}
+        # else key_map is None
+
+        self.key_map = key_map
+
+    def set_output_tuple(self, output_tuple: Tuple[str]):
+        """
+        key_map - dict that maps element keys to scenario keys such as `x` and `y`
+            Example: {"image": "x", "label": "y"}
+            if None, no mapping is done
+            if "DEFAULT", will use info.supervised_keys if present
+        output_as_dict - whether to output batches of dicts
+            if False, output_tuple must be set, as it will output tuples
+        output_tuple - output batches are tuples based on the given set of keys
+            if None, will use ("x", "y") as default
+        """
+        if isinstance(output_tuple, str):  # prevent "word" -> ("w", "o", "r", "d")
+            raise ValueError("output_tuple must not be a str")
+        output_tuple = tuple(output_tuple)
+        for k in output_tuple:
+            if not isinstance(k, str):
+                if isinstance(k, tuple):
+                    # NOTE: nested tuples would enable things like:
+                    #    (("x", "x_adv"), ("y", "y_patch_metadata"))
+                    raise NotImplementedError("nested tuples not currently supported")
+                raise ValueError(f"item {k} in output_tuple is not a str")
+        self.output_tuple = output_tuple
+
+    def as_dict(self):
+        """
+        Sets the return type to dict
+        """
+        self.output_as_dict = True
+
+    def as_tuple(self, output_tuple: Tuple[str] = None):
+        """
+        Sets the return type to tuple, according to given output_tuple
+
+        If output_tuple is None, it defaults to the existing output_tuple
+            The default output_tuple at initialization is ("x", "y")
+        """
+        if output_tuple is not None:
+            self.set_output_tuple(output_tuple)
+        self.output_as_dict = False
+
+    def as_supervised(self):
+        """
+        Convenience function similar to 'as_supervised' in tfds.core.DatasetBuilder
+            sets key_map and as_tuple to output supervised tuples
+        """
+        self.set_key_map(use_supervised_keys=True)
+        self.as_tuple(output_tuple=("x", "y"))
 
     def __iter__(self):
         return self
@@ -185,9 +242,9 @@ class ArmoryDataGenerator:
     def __next__(self):
         element = next(self.iterator)
         if self.key_map is not None:
-            element = {new_k: element[k] for k, new_k in key_map.items()}
-        if self.as_tuple is not None:
-            element = tuple(element[k] for k in self.as_tuple)
+            element = {new_k: element[k] for k, new_k in self.key_map.items()}
+        if not self.output_as_dict:
+            element = tuple(element[k] for k in self.output_tuple)
         return element
 
     def __len__(self):
