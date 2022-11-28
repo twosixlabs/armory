@@ -152,7 +152,8 @@ class Evaluator(object):
         run_is_interactive = bool(any([jupyter, interactive, command]))
 
         # Handle docker and jupyter ports
-        ports = {8888: 8888} if jupyter or host_port else None
+        ports = {8888: 8888} if jupyter else None
+        ports = {host_port: 8888} if host_port else ports # noqa: B006
 
         if run_is_interactive and any([check_run, self.no_docker]):
             raise ValueError(
@@ -282,9 +283,7 @@ class Evaluator(object):
         else:
             user_id = os.getuid()
             group_id = os.getgid()
-        # TODO: Does not work on Windows, but Windows does not require
-        #       uid and gid. That said, the user in the docker container,
-        #       with uid 1000(GID 1000), does not currently exist.
+        # TODO: The user in the docker container, with UID/GUID 1000 does not currently exist.
         return f"{user_id}:{group_id}"
 
     def _run_interactive_bash(
