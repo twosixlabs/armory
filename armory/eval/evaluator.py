@@ -365,8 +365,13 @@ class Evaluator(object):
                 ]
             )
         log.info("\n".join(lines))
+
         while True:
-            time.sleep(1)
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                log.warning("Keyboard interrupt caught")
+                break
 
 
     def _run_jupyter(
