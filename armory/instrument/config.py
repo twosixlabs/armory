@@ -7,6 +7,7 @@ import numpy as np
 from armory.instrument.instrument import (
     LogWriter,
     Meter,
+    GlobalMeter,
     ResultsWriter,
     get_hub,
 )
@@ -219,6 +220,8 @@ class ResultsLogWriter(LogWriter):
         elif any(m in name for m in QUANTITY_METRICS):
             # Don't include % symbol
             f_result = f"{np.mean(result):.2}"
+        elif "object_detection_mAP_tide" in name:
+            f_result = result
         else:
             f_result = f"{np.mean(result):.2%}"
         log.success(
@@ -256,6 +259,16 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    # elif name == "object_detection_mAP_tide":
+    #     # identity_unzip = metrics.get("identity_unzip")
+    #     # metric = identity_unzip
+    #     identity_zip = metrics.get("identity_zip")
+    #     final=lambda x: metric(*identity_zip(x), **final_kwargs)
+    #     # final = metric
+    #     # final = None
+    #     final_suffix = ""
+    #     # final_suffix = name
+    #     record_final_only = True
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
@@ -265,51 +278,81 @@ def _task_metric(
         record_final_only = False
 
     if include_benign:
-        meters.append(
-            Meter(
-                f"benign_{name}",
-                metric,
-                "scenario.y",
-                "scenario.y_pred",
-                metric_kwargs=metric_kwargs,
-                final=final,
-                final_name=f"benign_{final_suffix}",
-                final_kwargs=final_kwargs,
-                record_final_only=record_final_only,
+        if name == "object_detection_mAP_tide":
+            meters.append(
+                GlobalMeter(
+                    f"benign_{name}",
+                    metric,
+                    "scenario.y_target",
+                    "scenario.y_pred_adv",
+                )
             )
-        )
+        else:
+            meters.append(
+                Meter(
+                    f"benign_{name}",
+                    metric,
+                    "scenario.y",
+                    "scenario.y_pred",
+                    metric_kwargs=metric_kwargs,
+                    final=final,
+                    final_name=f"benign_{final_suffix}",
+                    final_kwargs=final_kwargs,
+                    record_final_only=record_final_only,
+                )
+            )
     else:
         meters.append(None)
     if include_adversarial:
-        meters.append(
-            Meter(
-                f"adversarial_{name}",
-                metric,
-                "scenario.y",
-                "scenario.y_pred_adv",
-                metric_kwargs=metric_kwargs,
-                final=final,
-                final_name=f"adversarial_{final_suffix}",
-                final_kwargs=final_kwargs,
-                record_final_only=record_final_only,
+        if name == "object_detection_mAP_tide":
+            meters.append(
+                GlobalMeter(
+                    f"adversarial_{name}",
+                    metric,
+                    "scenario.y_target",
+                    "scenario.y_pred_adv",
+                )
             )
-        )
+        else:
+            meters.append(
+                Meter(
+                    f"adversarial_{name}",
+                    metric,
+                    "scenario.y",
+                    "scenario.y_pred_adv",
+                    metric_kwargs=metric_kwargs,
+                    final=final,
+                    final_name=f"adversarial_{final_suffix}",
+                    final_kwargs=final_kwargs,
+                    record_final_only=record_final_only,
+                )
+            )
     else:
         meters.append(None)
     if include_targeted:
-        meters.append(
-            Meter(
-                f"targeted_{name}",
-                metric,
-                "scenario.y_target",
-                "scenario.y_pred_adv",
-                metric_kwargs=metric_kwargs,
-                final=final,
-                final_name=f"targeted_{final_suffix}",
-                final_kwargs=final_kwargs,
-                record_final_only=record_final_only,
+        if name == "object_detection_mAP_tide":
+            meters.append(
+                GlobalMeter(
+                    f"targeted_{name}",
+                    metric,
+                    "scenario.y_target",
+                    "scenario.y_pred_adv",
+                )
             )
-        )
+        else:
+            meters.append(
+                Meter(
+                    f"targeted_{name}",
+                    metric,
+                    "scenario.y_target",
+                    "scenario.y_pred_adv",
+                    metric_kwargs=metric_kwargs,
+                    final=final,
+                    final_name=f"targeted_{final_suffix}",
+                    final_kwargs=final_kwargs,
+                    record_final_only=record_final_only,
+                )
+            )
     else:
         meters.append(None)
     return meters
@@ -390,6 +433,13 @@ def _task_metric_wrt_benign_predictions(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    elif name == "object_detection_mAP_tide":
+        return GlobalMeter(
+            f"adversarial_{name}_wrt_benign_preds",
+            metric,
+            "scenario.y_pred",
+            "scenario.y_pred_adv",
+        )
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
