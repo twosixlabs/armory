@@ -62,11 +62,18 @@ class ArmoryInstance(object):
 
         log.info(f"ARMORY Instance {self.docker_container.short_id} created.")
 
+    def _exec_run(self, cmd, **kwargs):
+        return self.docker_container.exec_run(cmd, **kwargs)
+
     def exec_cmd(self, cmd: str, user="", expect_sentinel=True) -> int:
+        # the sentinel should be the last output from the container but threading may cause
+        # certain warning messages to be printed during container shutdown; ie after the sentinel
+        sentinel_found = False
+
         # We would like to check the return code to see if the command ran cleanly,
         #  but `exec_run()` cannot both return the code and stream logs
         # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.Container.exec_run
-        result = self.docker_container.exec_run(
+        response = self.docker_container.exec_run(
             cmd,
             stdout=True,
             stderr=True,
@@ -79,26 +86,12 @@ class ArmoryInstance(object):
             #   >>>> demux=True,
         )
 
-        # the sentinel should be the last output from the container
-        # but threading may cause certain warning messages to be printed during container shutdown
-        #  ie after the sentinel
-        sentinel_found = False
-
-        if len(result.output) > 0:
-            for out in result.output:
-                output = out.decode(encoding="utf-8", errors="replace").strip()
-                if not output:  # skip empty lines
-                    continue
-                # this looks absurd, but in some circumstances result.output will combine
-                #  outputs from the container into a single string
-                # eg, print(a); print(b) is delivered as 'a\r\nb'
-                for inner_line in output.splitlines():
-                    inner_output = inner_line.strip()
-                    if not inner_output:
-                        continue
-                    print(inner_output)
-                    if inner_output == armory.END_SENTINEL:
-                        sentinel_found = True
+        for chunk in response.output:
+            output = chunk.decode(encoding="utf-8", errors="replace").strip() or False
+            print(output)
+            if output and armory.END_SENTINEL in output:
+                sentinel_found = True
+                break
 
         # if we're not running a config (eg armory exec or launch)
         #  we don't expect the sentinel to be printed and we have no way of
@@ -111,6 +104,8 @@ class ArmoryInstance(object):
         else:
             log.error(f"command {cmd} did not finish cleanly")
             return 1
+
+        return response.exit_code
 
     def __del__(self):
         # Needed if there is an error in __init__
