@@ -377,7 +377,7 @@ class Evaluator(object):
         skip_attack=None,
         skip_misclassified=None,
     ) -> None:
-        jupyter_port = 8888
+        jupyter_port = list(ports.values())[0]
         user_group_id = self.get_id()
         tmp_dir = os.path.join(self.host_paths.tmp_dir, self.config["eval_id"])
 
