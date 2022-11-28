@@ -70,7 +70,7 @@ class Evaluator(object):
         else:
             self.manager = ManagementInstance(**kwargs)
 
-    def _gather_env_variables(self):
+    def _gather_env_variables(self) -> None:
         """
         Update the extra env variable dictionary to pass into container or run on host
         """
@@ -109,7 +109,7 @@ class Evaluator(object):
         self.extra_env_vars["TORCH_HOME"] = torch_home
         self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         log.info(f"deleting tmp_dir {self.tmp_dir}")
         try:
             shutil.rmtree(self.tmp_dir)
@@ -231,7 +231,7 @@ class Evaluator(object):
         self._cleanup()
         return exit_code
 
-    def _b64_encode_config(self):
+    def _b64_encode_config(self) -> str:
         bytes_config = json.dumps(self.config).encode("utf-8")
         base64_bytes = base64.b64encode(bytes_config)
         return base64_bytes.decode("utf-8")
@@ -449,7 +449,7 @@ class Evaluator(object):
         skip_attack,
         skip_misclassified,
         validate_config,
-    ):
+    ) -> str:
         options = ""
         if self.no_docker:
             options += " --no-docker"
@@ -478,7 +478,7 @@ class Evaluator(object):
         skip_benign=None,
         skip_attack=None,
         skip_misclassified=None,
-    ):
+    ) -> str:
         kwargs = dict(
             check_run=check_run,
             num_eval_batches=num_eval_batches,
