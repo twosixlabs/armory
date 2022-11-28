@@ -146,7 +146,7 @@ class Evaluator(object):
     ) -> int:
         exit_code = 0
         # Handle docker and jupyter ports
-        ports = {8888: 8888} if jupyter or host_ports else None
+        ports = {8888: 8888} if jupyter or host_port else None
         run_is_interactive = bool(any([jupyter, interactive, command]))
 
         if run_is_interactive and any([check_run, self.no_docker]):
