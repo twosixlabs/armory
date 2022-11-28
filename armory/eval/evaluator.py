@@ -9,8 +9,6 @@ import shutil
 import base64
 import datetime
 
-import requests
-
 import armory
 from armory import environment
 from armory.configuration import load_global_config
