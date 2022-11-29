@@ -19,6 +19,10 @@ Scenarios are implemented as subclasses of `Scenario`, and typically given their
 Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed.
 More information on poisoning scenarios is documented [here](poisoning.md).
 
+When adding custom models, attacks, metrics, datasets, etc. to a scenario, it may be necessary to initialize or perform user-specific operations before loading.
+For this purpose, there is a `user_init` method that is called at the beginning of `load` (but after scenario initialization).
+This uses the underlying scenario config field of the same name, `user_init`.
+See [configuration](configuration_files.md) for the json specification.
 
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
