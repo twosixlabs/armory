@@ -863,7 +863,7 @@ def armory_to_tide(y_dict, image_id, is_detection=True):
 
 
 @populationwise
-def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
+def object_detection_mAP_tide(y_list, y_pred_list):
     """
     TIDE version of mean average precision for object detection [https://dbolya.github.io/tide/].
 
@@ -873,8 +873,6 @@ def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
     y_pred_list (list): of length equal to the number of input examples. Each element in the
         list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
         array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
-    class_list (list, optional): a list of classes, such that all predictions and ground-truths
-        with labels NOT in class_list are to be ignored.
 
     returns: a dictionary with mean average precision (mAP) for a range of IOU thresholds in [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],
              and error metrics that weight the significance of different types of errors to assess trade-offs between design choices for models
@@ -947,10 +945,7 @@ def object_detection_mAP_tide(y_list, y_pred_list, return_tide=False):
         },
     }
 
-    if return_tide:
-        return armory_output, tide
-    else:
-        return armory_output
+    return armory_output
 
 
 def _object_detection_get_tpr_mr_dr_hr(
