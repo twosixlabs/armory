@@ -27,7 +27,13 @@ pytestmark = pytest.mark.end_to_end  # noqa: F821
 #       on resource constraints. This list should be updated as new scenarios are
 #       added to the repo.
 block_list = [
-    "./scenario_configs/eval6/carla_mot/carla_mot_dpatch_defended.json",  # waiting on #1655
+    # Evaluation 1-4
+    "so2sat_eo_masked_pgd_undefended.json",
+    "so2sat_sar_masked_pgd_defended.json",
+    "so2sat_sar_masked_pgd_undefended.json",
+    "so2sat_eo_masked_pgd_defended.json",
+    # Evaluation 6
+    "carla_mot_dpatch_defended.json",  # waiting on #1655
 ]
 
 
@@ -54,7 +60,7 @@ class TestScenarios(unittest.TestCase):
             scenario_path = [Path(f) for f in list(scenario_configs.glob("**/*.json"))]
 
         for scenario in scenario_path:
-            if trapped_in_ci and scenario in block_list:
+            if trapped_in_ci and scenario.name in block_list:
                 continue
 
             try:
