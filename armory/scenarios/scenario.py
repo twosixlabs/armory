@@ -48,6 +48,18 @@ class Scenario:
                 config["model"]["fit_kwargs"]["nb_epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
+
+            for attack_kwarg in [
+                "max_iter",
+                "max_iter_1",
+                "max_iter_2",
+                "max_epochs",
+                "max_trials",
+                "model_retraining_epoch",
+            ]:
+                if config.get("attack", {}).get("kwargs", {}).get(attack_kwarg):
+                    config["attack"]["kwargs"][attack_kwarg] = 1
+
             # For poisoning scenario
             if config.get("adhoc") and config.get("adhoc").get("train_epochs"):
                 config["adhoc"]["train_epochs"] = 1
@@ -180,7 +192,7 @@ class Scenario:
         else:
             attack = config_loading.load_attack(attack_config, self.model)
             self.attack = attack
-            targeted = getattr(attack, "targeted", False)
+            targeted = attack_config.get("kwargs", {}).get("targeted", False)
             if targeted:
                 label_targeter = config_loading.load_label_targeter(
                     attack_config["targeted_labels"]

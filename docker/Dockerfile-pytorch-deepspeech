@@ -10,14 +10,14 @@ COPY ./ /armory-repo
 
 RUN pip install git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
 
-RUN echo "Building Armory from local source"                                     && \
-    echo "Updating Base Image..."                                                && \
-      python -m pip install --upgrade pip                                        && \
-    echo "Installing Armory..."                                                  && \
-      pip install --no-compile --no-cache-dir --editable '.[deepspeech,jupyter]' && \
-    echo "Configuring Armory..."                                                 && \
-      armory configure --use-default                                             && \
-    echo "Cleaning up..."                                                        && \
+RUN echo "Building Armory from local source"                                            && \
+    echo "Updating Base Image..."                                                       && \
+      python -m pip install --upgrade pip                                               && \
+    echo "Installing Armory..."                                                         && \
+      pip install --no-compile --no-cache-dir --editable '.[engine,deepspeech,jupyter]' && \
+    echo "Configuring Armory..."                                                        && \
+      armory configure --use-default                                                    && \
+    echo "Cleaning up..."                                                               && \
       rm -rf /armory-repo/.git
 
 WORKDIR /workspace

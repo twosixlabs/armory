@@ -5,6 +5,8 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
+from tidecv import TIDE
+import tidecv.data
 
 import numpy as np
 
@@ -818,6 +820,140 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
     return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
+def armory_to_tide(y_dict, image_id, is_detection=True):
+    """
+    Convert y_dict in Armory format to use as input for TIDE data type
+
+    y_dict is a dictionary of lists, which needs to be converted to a list of dictionaries
+    with keys that correspond to arguments for pushing an element to a TIDE data type
+    """
+
+    y_tidecv_list = []
+
+    # convert dictionary with values of list type to list of dictionaries
+    # y_dict = {'area': [936, 385]
+    #           'boxes': [array([917., 464., 955., 527.], dtype=float32),
+    #                     array([911., 468., 940., 517.], dtype=float32)],
+    #           'id': [97, 98]
+    #           'image_id': [84190894, 84190894],
+    #           'is_crowd': [False, True],
+    #           'labels': [1, 1]}
+    # t = (936, array([917., 464., 955., 527.], dtype=float32), 97, 84190894, False, 1)
+    #     (385, array([911., 468., 940., 517.], dtype=float32), 98, 84190894, True, 1)
+    # y = {'area': 936, 'boxes': array([917., 464., 955., 527.], dtype=float32), 'id': 97, 'image_id': 84190894, 'is_crowd': False, 'labels': 1}
+    #     {'area': 385, 'boxes': array([911., 468., 940., 517.], dtype=float32), 'id': 98, 'image_id': 84190894, 'is_crowd': True, 'labels': 1}
+    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
+        x1, y1, x2, y2 = y["boxes"]
+        width = abs(x1 - x2)
+        height = abs(y1 - y2)
+        x_min = min(x1, x2)
+        y_min = min(y1, y2)
+
+        y_tidecv = {
+            "image_id": image_id,
+            "class_id": y["labels"],
+            "box": [x_min, y_min, width, height],
+        }
+
+        if is_detection:
+            y_tidecv["score"] = y["scores"]
+
+        y_tidecv_list.append(y_tidecv)
+    return y_tidecv_list
+
+
+@populationwise
+def object_detection_mAP_tide(y_list, y_pred_list):
+    """
+    TIDE version of mean average precision for object detection [https://dbolya.github.io/tide/].
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+
+    returns: a dictionary with mean average precision (mAP) for a range of IOU thresholds in [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],
+             and error metrics that weight the significance of different types of errors to assess trade-offs between design choices for models
+             as well as potentially for attacks and defense
+
+    default max_dets=100 in TIDE
+    max_dets is an attribute for both data_ground_truth and data_detection
+    data_ground_truth.max_dets gets passed to tide.evaluate_range > TIDERun._run > TIDERun._eval_image > TIDEEXample._run (code snippet below)
+        preds = preds[:max_dets]
+        self.preds = preds # Update internally so TIDERun can update itself if :max_dets takes effect
+    for now assume we don't want max_dets to affect our metrics
+    set data_ground_truth.max_dets and data_detection.max_dets to max of max(len(y["labels"]), len(y_pred["labels"])))
+    after going through for loop
+    """
+
+    data_ground_truth_name = "ground_truth"
+    data_detection_name = "detection"
+
+    data_ground_truth = tidecv.data.Data(name=data_ground_truth_name)
+    data_detection = tidecv.data.Data(name=data_detection_name)
+
+    max_dets = 0
+    for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+        if "image_id" in y:
+            image_id = y["image_id"][0]
+        else:
+            image_id = i
+
+        tidecv_ground_truth_list = armory_to_tide(y, image_id, is_detection=False)
+        for y_tidecv in tidecv_ground_truth_list:
+            data_ground_truth.add_ground_truth(**y_tidecv)
+
+        tidecv_detection_list = armory_to_tide(y_pred, image_id)
+        for y_tidecv in tidecv_detection_list:
+            data_detection.add_detection(**y_tidecv)
+
+        max_len = max(len(y["labels"]), len(y_pred["labels"]))
+        if max_len > max_dets:
+            max_dets = max_len
+
+    data_ground_truth.max_dets = max_dets
+    data_detection.max_dets = max_dets
+
+    tide = TIDE()
+    tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
+    tide_error = tide.get_all_errors()
+    tide_error_count = {
+        k.short_name: len(v)
+        for k, v in tide.runs[data_detection.name].error_dict.items()
+    }
+    tide_fn_count = sum(
+        [len(v) for k, v in tide.runs[data_detection.name].false_negatives.items()]
+    )
+
+    armory_output = {
+        "mAP": {
+            x.pos_thresh: np.around(x.ap / 100, decimals=2)
+            for x in tide.run_thresholds[data_detection.name]
+        },
+        # not changing numeric format for error yet until we understand what the numbers mean
+        "errors": {
+            "main": {
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["main"][data_detection.name].items()
+                },
+                "count": tide_error_count,
+            },
+            "special": {
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["special"][data_detection.name].items()
+                },
+                "count": {"FalseNeg": tide_fn_count},
+            },
+        },
+    }
+
+    return armory_output
+
+
 def _object_detection_get_tpr_mr_dr_hr(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1551,14 +1687,17 @@ def _dapricot_patch_target_success(y, y_pred, iou_threshold=0.1, conf_threshold=
 
 
 class HOTA_metrics:
-    def __init__(self, tracked_classes=["pedestrian"]):
+    def __init__(self, tracked_classes=("pedestrian",), coco_format: bool = False):
         from collections import defaultdict
-        from TrackEval.trackeval.metrics.hota import (
-            HOTA,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+
+        # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
+        from TrackEval.trackeval.metrics.hota import HOTA
+        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset
+        from armory.data.adversarial_datasets import mot_coco_to_array
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}
-        self.tracked_classes = tracked_classes
+        self.tracked_classes = list(tracked_classes)
+        self.coco_format = bool(coco_format)
         self.hota_metrics_per_class_per_videos = {
             key: defaultdict(dict) for key in self.tracked_classes
         }
@@ -1566,6 +1705,34 @@ class HOTA_metrics:
             key: {} for key in self.tracked_classes
         }
         self.HOTA_calc = HOTA()
+        self._BaseDataset = _BaseDataset
+        self.mot_coco_to_array = mot_coco_to_array
+
+    def _check_and_format(self, data):
+        if self.coco_format:
+            data = self.mot_coco_to_array(data)
+
+        if data.ndim == 3:
+            if len(data) != 1:
+                raise ValueError("Batch size > 1 not currently supported")
+            data = data[0]
+        if data.ndim != 2:
+            raise ValueError(f"Input data must be 2D or 3D, not {data.ndim}")
+        return data
+
+    @staticmethod
+    def relabel(unique_ids, list_of_id_arrays):
+        """
+        Re-label int IDs to 0-indexed sequential IDs
+        """
+        unique_ids = sorted(set(unique_ids))
+        new_unique_ids = list(range(len(unique_ids)))
+        id_map = {k: v for k, v in zip(unique_ids, new_unique_ids)}
+        new_list = [
+            np.array([id_map[x] for x in array], dtype=array.dtype)
+            for array in list_of_id_arrays
+        ]
+        return new_unique_ids, new_list
 
     def preprocess(self, gt_data, tracker_data, tracked_class):
         """
@@ -1581,23 +1748,12 @@ class HOTA_metrics:
                 <timestep> <object_id> <bbox top-left x> <bbox top-left y> <bbox width> <bbox height> <confidence_score=1> <class_id> <visibility=1>
             - tracked_class is a string representing the class for which HOTA is calculated.
         """
-        from TrackEval.trackeval.datasets._base_dataset import (
-            _BaseDataset,
-        )  # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
-
-        if gt_data.ndim == 3:
-            gt_data = gt_data[0]
-        if tracker_data.ndim == 3:
-            tracker_data = tracker_data[0]
-
-        assert len(gt_data.shape) == 2
-        assert len(tracker_data.shape) == 2
+        gt_data = self._check_and_format(gt_data)
+        tracker_data = self._check_and_format(tracker_data)
 
         cls_id = self.class_name_to_class_id[tracked_class]
 
-        assert len(set(gt_data[:, 0])) == len(
-            set(tracker_data[:, 0])
-        ), "Number of timesteps in ground truth and tracker data are different."
+        # NOTE: assumes there are ground truth predictions in every frame
         num_timesteps = len(set(gt_data[:, 0]))
         data_keys = [
             "gt_ids",
@@ -1608,22 +1764,21 @@ class HOTA_metrics:
             "similarity_scores",
         ]
         data = {key: [None] * num_timesteps for key in data_keys}
-        unique_gt_ids = []
-        unique_tracker_ids = []
-        num_gt_dets = 0
-        num_tracker_dets = 0
+        unique_gt_ids, unique_tracker_ids = set(), set()
+        num_gt_dets, num_tracker_dets = 0, 0
         for t in range(num_timesteps):
-
             # Get all data
-            gt_ids = gt_data[gt_data[:, 0] == t + 1, 1]
-            gt_dets = gt_data[gt_data[:, 0] == t + 1, 2:6]
-            gt_classes = gt_data[gt_data[:, 0] == t + 1, 7]
+            t_index = gt_data[:, 0] == t
+            gt_ids, gt_dets, gt_classes = (
+                gt_data[t_index, x] for x in (1, slice(2, 6), 7)
+            )
 
-            tracker_ids = tracker_data[tracker_data[:, 0] == t + 1, 1]
-            tracker_dets = tracker_data[tracker_data[:, 0] == t + 1, 2:6]
-            tracker_confidences = tracker_data[tracker_data[:, 0] == t + 1, 6]
-            tracker_classes = tracker_data[tracker_data[:, 0] == t + 1, 7]
-            similarity_scores = _BaseDataset._calculate_box_ious(
+            t_index = tracker_data[:, 0] == t
+            tracker_ids, tracker_dets, tracker_confidences, tracker_classes = (
+                tracker_data[t_index, x] for x in (1, slice(2, 6), 6, 7)
+            )
+
+            similarity_scores = self._BaseDataset._calculate_box_ious(
                 gt_dets, tracker_dets, box_format="xywh"
             )
 
@@ -1639,38 +1794,30 @@ class HOTA_metrics:
             data["gt_dets"][t] = gt_dets[gt_to_keep_mask, :]
             data["similarity_scores"][t] = similarity_scores[gt_to_keep_mask]
 
-            unique_gt_ids += list(np.unique(data["gt_ids"][t]))
-            unique_tracker_ids += list(np.unique(data["tracker_ids"][t]))
+            unique_gt_ids.update(data["gt_ids"][t])
+            unique_tracker_ids.update(data["tracker_ids"][t])
             num_tracker_dets += len(data["tracker_ids"][t])
             num_gt_dets += len(data["gt_ids"][t])
 
-        # Re-label IDs such that there are no empty IDs
-        if len(unique_gt_ids) > 0:
-            unique_gt_ids = np.unique(unique_gt_ids)
-            gt_id_map = np.nan * np.ones((np.max(unique_gt_ids) + 1))
-            gt_id_map[unique_gt_ids] = np.arange(len(unique_gt_ids))
-            for t in range(num_timesteps):
-                if len(data["gt_ids"][t]) > 0:
-                    data["gt_ids"][t] = gt_id_map[data["gt_ids"][t]].astype(int)
-        if len(unique_tracker_ids) > 0:
-            unique_tracker_ids = np.unique(unique_tracker_ids)
-            tracker_id_map = np.nan * np.ones((np.max(unique_tracker_ids) + 1))
-            tracker_id_map[unique_tracker_ids] = np.arange(len(unique_tracker_ids))
-            for t in range(num_timesteps):
-                if len(data["tracker_ids"][t]) > 0:
-                    data["tracker_ids"][t] = tracker_id_map[
-                        data["tracker_ids"][t]
-                    ].astype(int)
+        # Re-label int IDs to 1-indexed sequential IDs
+        unique_gt_ids, data["gt_ids"] = self.relabel(unique_gt_ids, data["gt_ids"])
+        unique_tracker_ids, data["tracker_ids"] = self.relabel(
+            unique_tracker_ids, data["tracker_ids"]
+        )
 
         # Record overview statistics.
-        data["num_tracker_dets"] = num_tracker_dets
-        data["num_gt_dets"] = num_gt_dets
-        data["num_tracker_ids"] = len(unique_tracker_ids)
-        data["num_gt_ids"] = len(unique_gt_ids)
-        data["num_timesteps"] = num_timesteps
+        data.update(
+            {
+                "num_tracker_dets": num_tracker_dets,
+                "num_gt_dets": num_gt_dets,
+                "num_tracker_ids": len(unique_tracker_ids),
+                "num_gt_ids": len(unique_gt_ids),
+                "num_timesteps": num_timesteps,
+            }
+        )
 
         # Ensure ids are unique per timestep after preproc.
-        _BaseDataset._check_unique_ids(data, after_preproc=True)
+        self._BaseDataset._check_unique_ids(data, after_preproc=True)
 
         return data
 

@@ -90,15 +90,27 @@ class ExplanatoryModel:
 
         return cls(explanatory_model, **model_config)
 
-    def get_activations(self, x):
+    def get_activations(self, x, batch_size: int = None):
         """
         Return array of activations from input batch x
+
+        if batch_size, batch inputs and then concatenate
         """
         activations = []
         with torch.no_grad():
-            x = self.preprocess(x)
-            activation, _ = self.explanatory_model(x)
-            activations.append(activation.detach().cpu().numpy())
+            if batch_size:
+                batch_size = int(batch_size)
+                if batch_size < 1:
+                    raise ValueError("batch_size must be false or a positive int")
+            else:
+                batch_size = len(x)
+
+            for i in range(0, len(x), batch_size):
+                x_batch = x[i : i + batch_size]
+                x_batch = self.preprocess(x_batch)
+                activation, _ = self.explanatory_model(x_batch)
+                activations.append(activation.detach().cpu().numpy())
+
         return np.concatenate(activations)
 
     @staticmethod
