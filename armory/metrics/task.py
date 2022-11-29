@@ -935,11 +935,17 @@ def object_detection_mAP_tide(y_list, y_pred_list):
         # not changing numeric format for error yet until we understand what the numbers mean
         "errors": {
             "main": {
-                "dAP": tide_error["main"][data_detection.name],
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["main"][data_detection.name].items()
+                },
                 "count": tide_error_count,
             },
             "special": {
-                "dAP": tide_error["special"][data_detection.name],
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["special"][data_detection.name].items()
+                },
                 "count": {"FalseNeg": tide_fn_count},
             },
         },
