@@ -74,4 +74,3 @@ class TestScenarios(unittest.TestCase):
                 out, err = capsys.readouterr()
             except Exception as e:
                 assert False, f"Failed to run scenario: {scenario} - {e}"
-
