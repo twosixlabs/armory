@@ -58,21 +58,18 @@ class TestScenarios(unittest.TestCase):
             ]
 
         for scenario in scenario_path:
+            if trapped_in_ci and scenario in block_list:
+                continue
 
-            if scenario not in block_list:
-                try:
-                    armory_flags = [
-                        scenario.as_posix(),
-                        "--no-docker",
-                        "--check",
-                        "--no-gpu",
-                    ]
-                    run(armory_flags, "armory", None)
-                    out, err = capsys.readouterr()
-                except Exception as e:
-                    assert False, f"Failed to run scenario: {scenario} - {e}"
+            try:
+                armory_flags = [
+                    scenario.as_posix(),
+                    "--no-docker",
+                    "--check",
+                    "--no-gpu",
+                ]
+                run(armory_flags, "armory", None)
+                out, err = capsys.readouterr()
+            except Exception as e:
+                assert False, f"Failed to run scenario: {scenario} - {e}"
 
-                if trapped_in_ci:
-                    Path(f"/tmp/.armory/{scenario.name}.log").write_text(
-                        "\n\n".join([out, err])
-                    )
