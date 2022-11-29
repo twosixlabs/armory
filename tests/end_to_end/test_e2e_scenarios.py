@@ -5,9 +5,9 @@
 
 Example:
     $ pip install -e .[developer,engine,math,datasets,pytorch]
-    $ pytest --verbose --show-capture=no tests/end_to_end/test_scenario_runner.py
-    $ pytest --verbose --show-capture=no tests/end_to_end/test_scenario_runner.py --scenario-path scenario_configs/cifar10_baseline.json
-    $ clear; pytest --verbose tests/end_to_end/test_scenario_runner.py --scenario-path scenario_configs/cifar10_baseline.json --github-ci
+    $ pytest --verbose --show-capture=no tests/end_to_end/test_e2e_scenarios.py
+    $ pytest --verbose --show-capture=no tests/end_to_end/test_e2e_scenarios.py --scenario-path scenario_configs/cifar10_baseline.json
+    $ clear; pytest --verbose tests/end_to_end/test_e2e_scenarios.py --scenario-path scenario_configs/cifar10_baseline.json --github-ci
 """
 
 import pytest
