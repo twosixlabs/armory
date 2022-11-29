@@ -315,13 +315,21 @@ def test_per_class_accuracy():  # and mean
 
 
 def generate_square(x, y, length=10):
+    """
+    Helper function for testing TIDE metrics
+
+    returns: x_min, y_min, x_max, y_max of a square
+    """
     return x, y, x + length, y + length
 
 
 def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
     """
-    Given a square, an iou and x3, generate another square with the same dimensions
-    with xmin == x3 and IOU == iou
+    Helper function for testing TIDE metrics. Given a square (x1, y1, x2, y2), an iou and x3,
+    determine y3 to generate another square with the same dimensions.
+    Assume x_min, y_min, x_max, y_max format for square
+
+    returns: x3, y3, x4, y4 if new square is possible - returns None otherwise
     """
 
     x1, y1, x2, y2 = square
@@ -350,6 +358,12 @@ def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
 
 
 def calculate_iou(s1, s2):
+    """
+    Helper function for testing TIDE metrics. Calculate IoU of two rectangles
+
+    returns: IoU, area of first rectangle, area of second rectangle, width of intersection, height of intersection, area of intersection
+    """
+
     x1, y1, x2, y2 = s1
     x3, y3, x4, y4 = s2
 
@@ -359,8 +373,9 @@ def calculate_iou(s1, s2):
     I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
     I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
     I_A = I_w * I_h
+    IoU = I_A / (A1 + A2 - I_A)
 
-    return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
+    return IoU, A1, A2, I_w, I_h, I_A
 
 
 def test_tide_metrics():
