@@ -44,19 +44,19 @@ class TestScenarios(unittest.TestCase):
         self.capsys = capsys
 
     def test_scenarios(self):
-        capsys = self.capsys
-
-        trapped_in_ci = getattr(self, "github_ci", False)
-        scenario_path = (
-            [Path(self.scenario_path)] if hasattr(self, "scenario_path") else []
-        )
-        scenario_configs = Path("scenario_configs")
-        host_paths = paths.runtime_paths()  # noqa: F841
-
         # Setup Armory paths
         paths.set_mode("host")
 
-        if not len(scenario_path):
+        capsys = self.capsys
+        trapped_in_ci = getattr(self, "github_ci", False)
+
+        host_paths = paths.runtime_paths()  # noqa: F841
+        scenario_path = getattr(self, "scenario_path", False)
+        scenario_configs = Path("scenario_configs")
+
+        if hasattr(self, "scenario_path"):
+            scenario_path = Path(scenario_path)
+        else:
             scenario_path = [Path(f) for f in list(scenario_configs.glob("**/*.json"))]
 
         for scenario in scenario_path:
