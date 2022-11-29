@@ -68,6 +68,7 @@ engine = [
     "opencv-python",  # Needed for CARLA baseline scenario
     "pydub",          # this is in ART's extra-requires
     "tensorboardx",
+    "tidecv",         # Needed for TIDE metrics
 ]
 
 datasets = [
