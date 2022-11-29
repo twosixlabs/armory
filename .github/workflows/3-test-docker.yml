@@ -1,5 +1,4 @@
 ---
-# yamllint disable
 name: 🤖 Docker Tests
 
 on: workflow_call
@@ -9,7 +8,6 @@ env:
   DOCKER_BUILDKIT: 1
 
 
-# TODO: Add independent job that builds the images.
 jobs:
   docker-torch-unit:
     name: ☁️ Docker Pytorch Image Tests
@@ -20,27 +18,22 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-
       - name: ⚙️ Install Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
-
 
       - name: 🚧 Build the Container
         run: |
           python docker/build.py --framework pytorch
 
 
-      # TODO: Create/mount a volume with the tests and config files.
       - name: 🤞 Run Image tests
         run: |
           IMAGE_VERSION=`armory --show-docker-version-tag`
@@ -63,25 +56,20 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
-
 
       - name: 🚧 Build the Container
         run: |
           python docker/build.py --framework tf2
-
 
       - name: 🤞 Run Image tests
         run: |
@@ -113,14 +101,12 @@ jobs:
       - name: ⚙️ Installing Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
 
       - name: 🚧 Build the Container
         run: |
           python docker/build.py --framework pytorch-deepspeech
-
 
       - name: 🤞 Run Image tests
         run: |
@@ -154,17 +140,14 @@ jobs:
         with:
           fetch-depth: 0
 
-
       - name: 🐍 Use Python 3.9
         uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
-
       - name: ⚙️ Install Armory
         shell: bash
         run: |
-          python -m pip install --upgrade pip build
           pip install .
           armory configure --use-defaults
 
@@ -172,8 +155,6 @@ jobs:
         run: |
           python docker/build.py --framework carla-mot
 
-
-      # TODO: Create/mount a volume with the tests and config files.
       - name: 🤞 Run Image tests
         run: |
           IMAGE_VERSION=`armory --show-docker-version-tag`

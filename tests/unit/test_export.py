@@ -15,6 +15,12 @@ from armory.instrument.export import (
     PredictionMeter,
     CocoBoxFormatMeter,
 )
+from armory.art_experimental.attacks.carla_obj_det_utils import (
+    linear_depth_to_rgb,
+    rgb_depth_to_linear,
+    log_to_linear,
+    linear_to_log,
+)
 
 from armory.instrument import get_probe, get_hub
 
@@ -312,3 +318,22 @@ def test_coco_box_format_meter(tmp_path):
 def test_ffmpeg_library():
     completed = subprocess.run(["ffmpeg", "-encoders"], capture_output=True)
     assert "libx264" in completed.stdout.decode("utf-8")
+
+
+def test_carla_depth_format_conversion_utility_functions():
+    x_lin = np.array([10, 50, 100, 500, 1000])
+    r, g, b = linear_depth_to_rgb(x_lin)
+    x_lin_ = rgb_depth_to_linear(r, g, b)
+    assert np.allclose(x_lin, x_lin_)
+
+    r_, g_, b_ = linear_depth_to_rgb(x_lin_)
+    assert np.allclose(r, r_)
+    assert np.allclose(g, g_)
+    assert np.allclose(b, b_)
+
+    x_log = linear_to_log(x_lin)
+    x_lin_ = log_to_linear(x_log)
+    assert np.allclose(x_lin, x_lin_)
+
+    x_log_ = linear_to_log(x_lin_)
+    assert np.allclose(x_log, x_log_)

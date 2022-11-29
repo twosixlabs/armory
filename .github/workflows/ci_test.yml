@@ -1,5 +1,4 @@
 ---
-# yamllint disable
 name: 🐛📦 Build & Test
 
 on:
@@ -16,8 +15,9 @@ on:
     branches:
       - master
       - develop
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      - 'rc[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # release branches have the form v1.9.x
+      - 'rc[0-9]+.[0-9]+.[0-9]+'  # release candidate branches
+
 
 env:
   DOCKER_BUILDKIT: 1

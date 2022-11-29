@@ -30,3 +30,20 @@ Then run the one you want (for example):
 ```bash
  pytest -s tests/test_models.py::test_model_creation[armory.baseline_models.pytorch.cifar-get_art_model-None-cifar10-500-1-1-100-1-numpy-0.25]
 ```
+
+## Running pytest in Docker
+
+When running pytest with docker, you have two choices.
+
+First, you can rebuild the docker container and then run pytest with the container:
+```bash
+python docker/build.py -f pytorch --no-pull
+armory exec pytorch -- pytest -s ./tests/
+```
+The `armory exec pytorch` is equivalent to launching an interactive container with `armory launch pytorch`, bashing into the container, and running `pytest -s ./tests/`.
+
+Or, if rebuilding the container is onerous, you can just do the `armory exec` command, but you need to make sure that pytest is invoked with `python -m`.
+Otherwise, tests will import armory installed in the container, not your locally modified dev version.
+```bash
+armory exec pytorch -- python -m pytest -s ./tests/
+```
