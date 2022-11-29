@@ -314,52 +314,56 @@ def test_per_class_accuracy():  # and mean
             assert v == results[k]
 
 
+def generate_square(x, y, length=10):
+    return x, y, x + length, y + length
+
+
+def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
+    """
+    Given a square, an iou and x3, generate another square with the same dimensions
+    with xmin == x3 and IOU == iou
+    """
+
+    x1, y1, x2, y2 = square
+    length = x2 - x1  # side of a square
+    A1 = A2 = length**2  # restrict to squares of the same size
+
+    if y3_le_y1:
+        s_y = 1
+    else:
+        s_y = -1
+
+    # in this restricted problem, delta_x needs to satisfy certain constraints
+    delta_x = abs(x1 - x3)
+    # max_delta_x = length * (1 - iou) / (1 + iou)
+    # print(
+    #     f"delta_x <= {np.round(max_delta_x, decimals=2)}: {delta_x <= max_delta_x}"
+    # )
+    # # if False, then should return None
+
+    y3 = y1 + s_y * (iou * (A1 + A2) / (1 + iou) / (length - delta_x) - length)
+
+    if (not y3_le_y1 and y3 > y1) or (y3_le_y1 and y3 <= y1):
+        return x3, y3, x3 + length, y3 + length
+    else:
+        return None
+
+
+def calculate_iou(s1, s2):
+    x1, y1, x2, y2 = s1
+    x3, y3, x4, y4 = s2
+
+    A1 = abs(x2 - x1) * abs(y2 - y1)
+    A2 = abs(x4 - x3) * abs(y4 - y3)
+
+    I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
+    I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
+    I_A = I_w * I_h
+
+    return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
+
+
 def test_tide_metrics():
-    def generate_square(x, y, length=10):
-        return x, y, x + length, y + length
-
-    def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
-        """
-        Given a square, an iou and x3, generate another square with the same dimensions
-        with xmin == x3 and IOU == iou
-        """
-
-        x1, y1, x2, y2 = square
-        length = x2 - x1  # side of a square
-        A1 = A2 = length**2  # restrict to squares of the same size
-
-        if y3_le_y1:
-            s_y = 1
-        else:
-            s_y = -1
-
-        # in this restricted problem, delta_x needs to satisfy certain constraints
-        delta_x = abs(x1 - x3)
-        max_delta_x = length * (1 - iou) / (1 + iou)
-        print(
-            f"delta_x <= {np.round(max_delta_x, decimals=2)}: {delta_x <= max_delta_x}"
-        )
-        # if False, then should return None
-
-        y3 = y1 + s_y * (iou * (A1 + A2) / (1 + iou) / (length - delta_x) - length)
-
-        if (not y3_le_y1 and y3 > y1) or (y3_le_y1 and y3 <= y1):
-            return x3, y3, x3 + length, y3 + length
-        else:
-            return None
-
-    def calculate_iou(s1, s2):
-        x1, y1, x2, y2 = s1
-        x3, y3, x4, y4 = s2
-
-        A1 = abs(x2 - x1) * abs(y2 - y1)
-        A2 = abs(x4 - x3) * abs(y4 - y3)
-
-        I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
-        I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
-        I_A = I_w * I_h
-
-        return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
 
     x1 = y1 = 10
 
@@ -528,7 +532,6 @@ def test_tide_metrics():
     results_Bkg = task.object_detection_mAP_tide(y_list, y_pred_list_Bkg)
     results_Miss = task.object_detection_mAP_tide(y_list_Miss, y_pred_list)
     results_All = task.object_detection_mAP_tide(y_list_Miss, y_pred_list_All)
-    # assert results is not None
 
     error_key_list = ["Cls", "Loc", "Both", "Dupe", "Bkg", "Miss"]
 
@@ -573,51 +576,6 @@ def test_tide_metrics():
 
 
 def test_tide_metrics_no_overlap():
-    def generate_square(x, y, length=10):
-        return x, y, x + length, y + length
-
-    def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
-        """
-        Given a square, an iou and x3, generate another square with the same dimensions
-        with xmin == x3 and IOU == iou
-        """
-
-        x1, y1, x2, y2 = square
-        length = x2 - x1  # side of a square
-        A1 = A2 = length**2  # restrict to squares of the same size
-
-        if y3_le_y1:
-            s_y = 1
-        else:
-            s_y = -1
-
-        # in this restricted problem, delta_x needs to satisfy certain constraints
-        delta_x = abs(x1 - x3)
-        max_delta_x = length * (1 - iou) / (1 + iou)
-        print(
-            f"delta_x <= {np.round(max_delta_x, decimals=2)}: {delta_x <= max_delta_x}"
-        )
-        # if False, then should return None
-
-        y3 = y1 + s_y * (iou * (A1 + A2) / (1 + iou) / (length - delta_x) - length)
-
-        if (not y3_le_y1 and y3 > y1) or (y3_le_y1 and y3 <= y1):
-            return x3, y3, x3 + length, y3 + length
-        else:
-            return None
-
-    def calculate_iou(s1, s2):
-        x1, y1, x2, y2 = s1
-        x3, y3, x4, y4 = s2
-
-        A1 = abs(x2 - x1) * abs(y2 - y1)
-        A2 = abs(x4 - x3) * abs(y4 - y3)
-
-        I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
-        I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
-        I_A = I_w * I_h
-
-        return I_A / (A1 + A2 - I_A), A1, A2, I_w, I_h, I_A
 
     x1 = 10
     y1 = 35
