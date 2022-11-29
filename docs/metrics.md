@@ -20,12 +20,15 @@ Desired metrics and flags are placed under the key `"metric"` dictionary in the 
     "profiler_type": null or "basic" or "deterministic",
     "record_metric_per_sample": [Bool],
     "task": List[String] or String or null,
+    "task_kwargs": List[dict] (Optional)
 }
 ```
 The `perturbation` and `task` fields can be null, a single string, or a list of strings.
 Strings must be a valid armory metric from `armory.utils.metrics`, which are also described in the Metrics section below.
 The perturbation metrics measure the difference between the benign and adversarial inputs `x`.
 The task metrics measure the task performance on the predicted value w.r.t the true value `y`, for both benign and adversarial inputs.
+If task metrics take keyword arguments, such as `"iou_threshold"`, these can be (optionally) added a list of kwarg dicts.
+The `task_kwargs` list must be the same length as `task`, and metrics without kwargs should have `{}` as a placeholder.
 These metrics are called on batches of inputs, but are sample-wise metrics, and so their results are concatenated to form a list over samples.
 
 When `means` is true, the average value for the given metric is also recorded.
