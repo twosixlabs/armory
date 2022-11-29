@@ -96,16 +96,9 @@ class ArmoryInstance(object):
         # if we're not running a config (eg armory exec or launch)
         #  we don't expect the sentinel to be printed and we have no way of
         #  knowing if the command ran cleanly so we return unconditionally
-        if not expect_sentinel:
-            return 0
-        if sentinel_found:
-            log.success("command exited cleanly")
-            return 0
-        else:
-            log.error(f"command {cmd} did not finish cleanly")
+        if not expect_sentinel or sentinel_found:
             return 1
-
-        return response.exit_code
+        return 0
 
     def __del__(self):
         # Needed if there is an error in __init__
