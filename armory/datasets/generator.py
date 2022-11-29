@@ -18,6 +18,8 @@ from typing import Tuple
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from armory.datasets import key_mapping
+
 
 class ArmoryDataGenerator:
     """
@@ -161,14 +163,7 @@ class ArmoryDataGenerator:
         if key_map is not None and use_supervised_keys:
             raise ValueError("Cannot set both key_map and use_supervised_keys")
         elif key_map is not None:
-            if not isinstance(key_map, dict):
-                raise ValueError(f"key_map {key_map} must be None or a dict")
-            for k, v in key_map.items():
-                for i in (k, v):
-                    if not isinstance(i, str):
-                        raise ValueError(f"{i} in key_map is not a str")
-            if len(key_map.values()) != len(set(key_map.values())):
-                raise ValueError("key_map values must be unique")
+            key_mapping.check_key_map(key_map)
         elif use_supervised_keys:
             supervised_keys = self.info.supervised_keys
             if supervised_keys is None:
@@ -184,7 +179,8 @@ class ArmoryDataGenerator:
                 )
             x, y = supervised_keys
             key_map = {x: "x", y: "y"}
-        # else key_map is None
+        else:  # key_map is None
+            pass
 
         self.key_map = key_map
 
@@ -249,3 +245,12 @@ class ArmoryDataGenerator:
 
     def __len__(self):
         return self.batches_per_epoch * self.epochs
+
+
+def wrap_generator(armory_data_generator):
+    """
+    Wrap an ArmoryDataGenerator as an art DataGenerator
+    """
+    from armory.datasets import art_wrapper
+
+    return art_wrapper.WrappedDataGenerator(armory_data_generator)

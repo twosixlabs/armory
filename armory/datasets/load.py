@@ -76,7 +76,11 @@ def load(
                 )
 
             ensure_download_extract(
-                name, version=version, verify=verify, overwrite=overwrite
+                name,
+                version=version,
+                verify=verify,
+                overwrite=overwrite,
+                public=public,
             )
         elif name in common.armory_builders() or name in common.tfds_builders():
             raise ValueError(
