@@ -82,6 +82,8 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
     # Note: The replace is used to convert the version to a valid docker tag.
     version = version.replace("+", ".")
     dockerfile = script_dir / f"Dockerfile-{framework}"
+    if framework == "carla-mot":
+        base_tag = version
     build_command = [
         f"{platform}",
         "build",
