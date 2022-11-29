@@ -51,11 +51,7 @@ class TestScenarios(unittest.TestCase):
         paths.set_mode("host")
 
         if not len(scenario_path):
-            scenario_path = [
-                Path(f)
-                for f in list(scenario_configs.glob("**/*.json"))
-                if f.name not in block_list
-            ]
+            scenario_path = [Path(f) for f in list(scenario_configs.glob("**/*.json"))]
 
         for scenario in scenario_path:
             if trapped_in_ci and scenario in block_list:
