@@ -89,7 +89,4 @@ jobs:
           name: evaluation-artifacts
           retention-days: 1
           path: |
-            /tmp/logs/
-            /tmp/results/
-            /tmp/armory/outputs/
             /tmp/.armory/outputs/
