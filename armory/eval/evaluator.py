@@ -161,16 +161,28 @@ class Evaluator(object):
                 "The jupyter, interactive, and commands flags are only supported when launching containers without `--check`."
             )
 
-        runner = self.manager.start_armory_instance(
-            envs=self.extra_env_vars,
-            ports=ports,
-            user=self.get_id(),
-        )
-
         try:
-            if jupyter:
-                exit_code = (
-                    self._run_jupyter(
+            if self.no_docker:
+                runner = self.manager.start_armory_instance(
+                    envs=self.extra_env_vars,
+                )
+                exit_code = self._run_config(
+                    runner,
+                    check_run=check_run,
+                    num_eval_batches=num_eval_batches,
+                    skip_benign=skip_benign,
+                    skip_attack=skip_attack,
+                    skip_misclassified=skip_misclassified,
+                    validate_config=validate_config,
+                )
+            else:
+                runner = self.manager.start_armory_instance(
+                    envs=self.extra_env_vars,
+                    ports=ports,
+                    user=self.get_id(),
+                )
+                if jupyter:
+                    exit_code = self._run_jupyter(
                         runner,
                         ports,
                         check_run=check_run,
@@ -179,11 +191,8 @@ class Evaluator(object):
                         skip_attack=skip_attack,
                         skip_misclassified=skip_misclassified,
                     )
-                    or 1
-                )
-            elif interactive:
-                exit_code = (
-                    self._run_interactive_bash(
+                elif interactive:
+                    exit_code = self._run_interactive_bash(
                         runner,
                         check_run=check_run,
                         num_eval_batches=num_eval_batches,
@@ -192,21 +201,18 @@ class Evaluator(object):
                         skip_misclassified=skip_misclassified,
                         validate_config=validate_config,
                     )
-                    or 1
-                )
-            elif command:
-                exit_code = self._run_command(runner, command)
-            else:
-                exit_code = self._run_config(
-                    runner,
-                    # ports,
-                    check_run=check_run,
-                    num_eval_batches=num_eval_batches,
-                    skip_benign=skip_benign,
-                    skip_attack=skip_attack,
-                    skip_misclassified=skip_misclassified,
-                    validate_config=validate_config,
-                )
+                elif command:
+                    exit_code = self._run_command(runner, command)
+                else:
+                    exit_code = self._run_config(
+                        runner,
+                        check_run=check_run,
+                        num_eval_batches=num_eval_batches,
+                        skip_benign=skip_benign,
+                        skip_attack=skip_attack,
+                        skip_misclassified=skip_misclassified,
+                        validate_config=validate_config,
+                    )
 
         except KeyboardInterrupt:
             log.warning("Keyboard interrupt caught")
