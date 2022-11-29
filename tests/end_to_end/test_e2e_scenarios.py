@@ -55,7 +55,7 @@ class TestScenarios(unittest.TestCase):
         scenario_configs = Path("scenario_configs")
 
         if hasattr(self, "scenario_path"):
-            scenario_path = Path(scenario_path)
+            scenario_path = [Path(scenario_path)]
         else:
             scenario_path = [Path(f) for f in list(scenario_configs.glob("**/*.json"))]
 
