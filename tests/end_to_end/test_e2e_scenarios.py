@@ -11,6 +11,7 @@ Example:
 """
 
 import pytest
+import unittest
 
 from pathlib import Path
 
@@ -37,7 +38,7 @@ block_list = [
 
 
 @pytest.mark.usefixtures("pass_parameters")  # noqa: F821
-class TestScenarios:
+class TestScenarios(unittest.TestCase):
     @pytest.fixture(autouse=True)  # noqa: F821
     def capsys(self, capsys):
         self.capsys = capsys
