@@ -105,7 +105,7 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
         )
     print(f"EXEC\tPreparing to run:\n" f"\t\t{' '.join(build_command)}")
     if not kwargs.get("dry_run"):
-        return subprocess.run(build_command)
+        return subprocess.run(build_command).returncode
 
 
 def init(*args, **kwargs):
@@ -122,8 +122,7 @@ def init(*args, **kwargs):
         del kwargs[key]
     for framework in frameworks:
         print(f"EXEC:\tBuilding {framework} container.")
-        build_process = build_worker(framework, armory_version, **kwargs)
-        exit_code = build_process.returncode
+        exit_code = build_worker(framework, armory_version, **kwargs)
     return exit_code
 
 
