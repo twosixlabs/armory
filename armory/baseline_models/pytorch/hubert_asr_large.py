@@ -13,7 +13,6 @@ import torchaudio
 # from torchaudio.models.decoder import ctc_decoder
 
 
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
