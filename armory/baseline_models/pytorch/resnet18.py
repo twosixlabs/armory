@@ -11,18 +11,42 @@ from torchvision import models
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
+IMAGENET_MEANS = [0.485, 0.456, 0.406]
+IMAGENET_STDS = [0.229, 0.224, 0.225]
+CIFAR10_MEANS = [0.4914, 0.4822, 0.4465]
+CIFAR10_STDS = [0.2470, 0.2435, 0.2616]
+
+
+def modify_for_cifar(model):
+    model.conv1 = torch.nn.Conv2d(
+        3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False
+    )
+    model.maxpool = torch.nn.Identity()
+
+
 class OuterModel(torch.nn.Module):
     def __init__(
         self,
         weights_path: Optional[str],
+        cifar_stem: bool = False,
         **model_kwargs,
     ):
-        # default to imagenet mean and std
-        data_means = model_kwargs.pop("data_means", [0.485, 0.456, 0.406])
-        data_stds = model_kwargs.pop("data_stds", [0.229, 0.224, 0.225])
+        """
+        If cifar_stem is True, resnet stem is modified in the following manner:
+            The 7x7 convolution with stride 2 and 3x3 maxpool is replaced with 3x3 conv
+        """
+        if cifar_stem:
+            data_means = model_kwargs.pop("data_means", CIFAR10_MEANS)
+            data_stds = model_kwargs.pop("data_stds", CIFAR10_STDS)
+        else:
+            # default to imagenet mean and std
+            data_means = model_kwargs.pop("data_means", IMAGENET_MEANS)
+            data_stds = model_kwargs.pop("data_stds", IMAGENET_STDS)
 
         super().__init__()
         self.inner_model = models.resnet18(**model_kwargs)
+        if cifar_stem:
+            modify_for_cifar(self.inner_model)
         self.inner_model.to(DEVICE)
 
         if weights_path:

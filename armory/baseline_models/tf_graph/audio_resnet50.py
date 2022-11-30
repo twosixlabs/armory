@@ -33,6 +33,8 @@ def make_audio_resnet(**kwargs) -> tf.keras.Model:
     )
 
     model = keras.Model(resnet.inputs, resnet.outputs)
+    # ART's TensorFlowV2Classifier get_activations() requires a Sequential model
+    model = keras.Sequential([model])
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
