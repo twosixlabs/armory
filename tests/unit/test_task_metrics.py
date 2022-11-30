@@ -4,8 +4,8 @@ Test cases for Armory metrics.
 
 import math
 
-import pytest
 import numpy as np
+import pytest
 
 from armory.metrics import task
 
@@ -24,8 +24,8 @@ def test_entailment():
     assert metric.model is metric_repeat.model
 
     from armory.attacks.librispeech_target_labels import (
-        ground_truth_100,
         entailment_100,
+        ground_truth_100,
     )
 
     num_samples = 100

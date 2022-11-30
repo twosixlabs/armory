@@ -5,10 +5,10 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
-from tidecv import TIDE
-import tidecv.data
 
 import numpy as np
+from tidecv import TIDE
+import tidecv.data
 
 from armory import paths
 from armory.data.adversarial.apricot_metadata import (
@@ -123,7 +123,7 @@ class Entailment:
             package="transformers",
             dockerimage="twosixarmory/pytorch-deepspeech",
         ):
-            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+            from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
         self.model = AutoModelForSequenceClassification.from_pretrained(
@@ -1690,9 +1690,11 @@ class HOTA_metrics:
     def __init__(self, tracked_classes=("pedestrian",), coco_format: bool = False):
         from collections import defaultdict
 
+        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset
+
         # TrackEval repo: https://github.com/JonathonLuiten/TrackEval
         from TrackEval.trackeval.metrics.hota import HOTA
-        from TrackEval.trackeval.datasets._base_dataset import _BaseDataset
+
         from armory.data.adversarial_datasets import mot_coco_to_array
 
         self.class_name_to_class_id = {"pedestrian": 1, "vehicle": 2}

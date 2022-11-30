@@ -3,10 +3,10 @@ Pytorch Faster-RCNN for xView object detection
 """
 from typing import Optional
 
+from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from art.estimators.object_detection import PyTorchFasterRCNN
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

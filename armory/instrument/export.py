@@ -1,15 +1,16 @@
-import os
 import abc
-import numpy as np
-import ffmpeg
-import pickle
-from PIL import Image, ImageDraw
-from scipy.io import wavfile
-import json
 from copy import deepcopy
+import json
+import os
+import pickle
 
-from armory.logs import log
+from PIL import Image, ImageDraw
+import ffmpeg
+import numpy as np
+from scipy.io import wavfile
+
 from armory.instrument import Meter
+from armory.logs import log
 
 
 class SampleExporter:

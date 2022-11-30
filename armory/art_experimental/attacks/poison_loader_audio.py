@@ -1,7 +1,6 @@
+from art.attacks.poisoning import PoisoningAttackBackdoor
 import librosa
 import numpy as np
-
-from art.attacks.poisoning import PoisoningAttackBackdoor
 
 from armory.utils import triggers
 

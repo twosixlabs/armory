@@ -7,7 +7,6 @@ from art.estimators.classification import PyTorchClassifier
 import torch
 from torchvision import models
 
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 

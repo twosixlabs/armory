@@ -7,7 +7,6 @@ import os
 
 import tensorflow_datasets.public_api as tfds
 
-
 _SAMPLE_RATE = 8000
 _MIN_LENGTH = 1148
 _MAX_LENGTH = 18262

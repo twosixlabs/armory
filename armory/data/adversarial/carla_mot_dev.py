@@ -1,12 +1,12 @@
 """carla_mot_dev dataset."""
 
-import os
 import glob
+import os
 import re
+
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
-
 
 _DESCRIPTION = """
 Synthetic single modality dataset generated using CARLA (https://carla.org).

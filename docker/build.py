@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 
-
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
 

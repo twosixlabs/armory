@@ -1,8 +1,7 @@
 from pathlib import Path
 
-from armory.logs import log
 from armory.data.utils import maybe_download_weights_from_s3
-
+from armory.logs import log
 
 TRIGGERS_DIR = Path(__file__).parent
 

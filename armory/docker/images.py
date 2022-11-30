@@ -2,13 +2,13 @@
 Enables programmatic accessing of most recent docker images
 """
 
-import docker
-import docker.errors
 import requests
 
 import armory
+from armory.logs import is_progress, log
 from armory.utils import version
-from armory.logs import log, is_progress
+import docker
+import docker.errors
 
 TAG = version.to_docker_tag(armory.__version__)
 log.trace(f"armory.__version__: {armory.__version__}")

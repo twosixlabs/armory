@@ -1,28 +1,27 @@
 import os
 import subprocess
 
-import pytest
-import numpy as np
 import PIL
+import numpy as np
+import pytest
 
-from armory.instrument.export import (
-    ImageClassificationExporter,
-    ObjectDetectionExporter,
-    VideoClassificationExporter,
-    VideoTrackingExporter,
-    So2SatExporter,
-    ExportMeter,
-    PredictionMeter,
-    CocoBoxFormatMeter,
-)
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     linear_depth_to_rgb,
-    rgb_depth_to_linear,
-    log_to_linear,
     linear_to_log,
+    log_to_linear,
+    rgb_depth_to_linear,
 )
-
-from armory.instrument import get_probe, get_hub
+from armory.instrument import get_hub, get_probe
+from armory.instrument.export import (
+    CocoBoxFormatMeter,
+    ExportMeter,
+    ImageClassificationExporter,
+    ObjectDetectionExporter,
+    PredictionMeter,
+    So2SatExporter,
+    VideoClassificationExporter,
+    VideoTrackingExporter,
+)
 
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit

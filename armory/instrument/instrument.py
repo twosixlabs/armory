@@ -40,7 +40,6 @@ import json
 
 from armory import log
 
-
 _PROBES = {}
 _HUB = None
 

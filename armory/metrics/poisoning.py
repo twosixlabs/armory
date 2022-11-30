@@ -1,12 +1,11 @@
-from importlib import import_module
 import copy
+from importlib import import_module
 
-import numpy as np
 from PIL import Image
+import numpy as np
 import torch
 
 from armory.data.utils import maybe_download_weights_from_s3
-
 
 # An armory user may request one of these models under 'adhoc'/'explanatory_model'
 EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {

@@ -4,8 +4,8 @@ Updated version of art.attacks.fast_gradient.py
 Uses binary search to quickly find optimal epsilon values per test point
 """
 
-import numpy as np
 from art.attacks.evasion import FastGradientMethod
+import numpy as np
 
 
 class FGMBinarySearch(FastGradientMethod):

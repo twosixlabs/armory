@@ -1,14 +1,13 @@
 """
 PyTorch Faster-RCNN Resnet50-FPN object detection model
 """
+from collections import OrderedDict
 from typing import Optional
 
 from art.estimators.object_detection import PyTorchFasterRCNN
 import torch
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.faster_rcnn import FasterRCNN
-
-from collections import OrderedDict
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

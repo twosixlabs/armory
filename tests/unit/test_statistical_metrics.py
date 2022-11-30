@@ -3,8 +3,8 @@ Test cases for statistical metrics
 """
 
 
-import pytest
 import numpy as np
+import pytest
 
 from armory.metrics import statistical
 
