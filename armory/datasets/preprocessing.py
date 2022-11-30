@@ -39,22 +39,23 @@ def supervised_image_classification(element):
     return (image_to_canon(element["image"]), element["label"])
 
 
-mnist = register(supervised_image_classification, "mnist")
-cifar10 = register(supervised_image_classification, "cifar10")
-
-
 @register
 def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
 
 
 @register
-def carla_over_obj_det_dev(element, modality="rgb"):
+def carla_obj_det_dev(element, modality="rgb"):
     return carla_over_obj_det_image(
         element["image"], modality=modality
     ), carla_over_obj_det_dev_label(
         element["image"], element["objects"], element["patch_metadata"]
     )
+
+
+mnist = register(supervised_image_classification, "mnist")
+cifar10 = register(supervised_image_classification, "cifar10")
+carla_over_obj_det_dev = register(carla_obj_det_dev, "carla_over_obj_det_dev")
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
