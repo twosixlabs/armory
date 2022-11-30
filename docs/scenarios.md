@@ -21,9 +21,10 @@ More information on poisoning scenarios is documented [here](poisoning.md).
 
 ### User Initialization
 
-When adding custom models, attacks, metrics, datasets, etc. to a scenario, it may be necessary to initialize or perform user-specific operations before loading.
+When adding custom metrics or instrumentation meters to a scenario, it may be necessary to initialize or perform user-specific operations before loading.
+This can also be helpful for other goals, such as fine-grained control over random initializations, instantiating external integrations (e.g., TensorBoard), or setting things like environment variables.
 For this purpose, there is a `user_init` method that is called at the beginning of `load` (but after scenario initialization).
-In poisoning, this occurs right after random seed setting in `load`.
+In poisoning, this occurs right after random seed setting in `load` (to enable the user to easily override random initialization).
 
 This uses the underlying scenario config field of the same name, `user_init`.
 See [configuration](configuration_files.md) for the json specification.
