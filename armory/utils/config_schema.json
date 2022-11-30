@@ -253,6 +253,7 @@
                 "word_error_rate",
                 "object_detection_AP_per_class",
                 "object_detection_mAP",
+                "object_detection_mAP_tide",
                 "object_detection_disappearance_rate",
                 "object_detection_hallucinations_per_image",
                 "object_detection_misclassification_rate",

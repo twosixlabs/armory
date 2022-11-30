@@ -26,6 +26,7 @@ import loguru
 import logging
 from typing import List
 import functools
+import os
 
 log = loguru.logger
 
@@ -40,6 +41,7 @@ default_message_filters = {
     "matplotlib": "INFO",
     "s3transfer": "WARNING",
     "tensorflow": "WARNING",
+    "tensorflow_cpp": "CRITICAL",
     "urllib3": "INFO",
     "absl": False,
     "h5py": False,
@@ -131,6 +133,11 @@ def update_filters(specs: List[str], armory_debug=None):
             level = spec
         level = level.upper()
 
+        if key == "tensorflow_cpp":
+            set_tensorflow_cpp_loglevel(level)
+            added_filters[key] = level
+            continue
+
         try:
             log.level(level)
             filters[key] = level
@@ -221,7 +228,23 @@ def log_method(entry=True, exit=True, level="DEBUG"):
     return wrapper
 
 
+def set_tensorflow_cpp_loglevel(level: str):
+    # SEE: https://stackoverflow.com/questions/40426502/is-there-a-way-to-suppress-the-messages-tensorflow-prints
+    level_map = {
+        "CRITICAL": "3",
+        "ERROR": "2",
+        "WARNING": "1",
+        "INFO": "0",
+        "PROGRESS": "0",
+        "DEBUG": "0",
+        "TRACE": "0",
+    }
+    if level:
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = level_map.get(level.upper())
+
+
 logging.basicConfig(handlers=[InterceptHandler()], level=0)
+set_tensorflow_cpp_loglevel(filters.get("tensorflow_cpp"))
 
 if __name__ == "__main__":
     update_filters(["armory:INFO", "art:INFO"])

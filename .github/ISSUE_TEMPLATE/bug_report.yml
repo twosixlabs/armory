@@ -1,14 +1,11 @@
 ---
-# yamllint disable rule:line-length
-
 name: 🐛Bug Report
-description: File a bug report here
-title: "[BUG]: "
-labels: ["bug"]
 
-assignees:
-  - mwartell
-  - christopherwoodall
+description: File a bug report here
+
+title: "[BUG]: "
+
+labels: ["bug"]
 
 body:
   - type: markdown
@@ -44,5 +41,3 @@ body:
       label: Additional Information
       description: |
         Include any additional information such as logs, screenshots, or scenarios in which the bug occurs in order to facilitates resolving the issue.
-
-# yamllint enable rule:line-length

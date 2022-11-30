@@ -1,13 +1,13 @@
 # Poisoning
 
-Updated May 2022
+Updated October 2022
 
-Amory supports a handful of specific poisoning threat models and attacks.  This document will first describe these, providing enough background for newcomers to get up to speed on what these attacks do.  Then, the peculiarities of the poisoning configs will be addressed, including lots of helpful information about Witches' Brew.  Finally, we will describe the poisoning-specific metrics.
+Armory supports a handful of specific poisoning threat models and attacks.  This document will first describe these, providing enough background for newcomers to get up to speed on what these attacks do.  Then, the peculiarities of the poisoning configs will be addressed, including lots of helpful information about Witches' Brew.  Finally, we will describe the poisoning-specific metrics.
 
 
 ## Threat Models
 
-There are currently three threat models handled by Armory: dirty-label backdoor, clean-label backdoor, and Witches' Brew (clean-label gradient matching).  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
+There are currently four threat models handled by Armory: dirty-label backdoor, clean-label backdoor, Witches' Brew (clean-label gradient matching), and Sleeper Agent.  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
 The trigger is usually a small (but not imperceptible) image superposed on the data, and the adversary's goal is to force the model to misclassify test images that have the trigger applied.  Armory includes several trigger images under `utils/triggers/`.
 
 
@@ -18,7 +18,10 @@ In poisoning attacks, the term _source class_ refers to the label of the image(s
 
 In a [Dirty-label Backdoor (DLBD) Attack](https://arxiv.org/abs/1708.06733), training images are chosen from the source class, have a trigger applied to them, and then have their labels flipped to the target class.  The model is then trained on this modified data.  The adversary's goal is that test images from the source class will be classified as `target` when the trigger is applied at test time.
 
+#### Audio
 
+The DLBD attack for audio is similar to that of video. The difference is that instead of the trigger being an image that is placed over the existing image, the trigger is a short audio clip that is mixed with the existing audio. Example configs for speech are [here](../scenario_configs/eval6/poisoning)
+Current triggers include a whistle and clapping.
 
 ### Clean-label backdoor
 
@@ -34,6 +37,11 @@ At test time, the adversary applies the trigger to source-class images in order 
 Because witches' brew is so different a threat model from the backdoor attacks that `poison.py` was initially built for, it has its own scenario.
 
 
+### Sleeper Agent
+
+[Sleeper Agent](https://arxiv.org/abs/2106.08970) is a clean-label attack that applies $l_\infty$ bounded perturbations to a set of training images to embed a hidden trigger into the model that can be applied at inference time.
+This threat model does not assume access to the target architecture, but instead trains a surrogate model to produce the perturbations.
+This approach uses gradient alignment to optimize the perturbations for the trigger.
 
 
 ## Configuration files
@@ -49,6 +57,13 @@ The `adhoc` section of the config is where most of the configuration action happ
 The `adhoc` section is where `source_class`, `target_class`, and `train_epochs` are set.  The fields `compute_fairness_metrics` and `explanatory_model` go together, because the explanatory model is used to compute the fairness metrics, as described in the next section.  If the defense is a filtering defense and is separate from the model, it can be turned off with `use_poison_filtering_defense:false`.  Dataset poisoning can be turned off by setting `poison_dataset:false`; this has been the de facto approach to testing 0% poison, because ART throws an error in some cases when fraction poisoned is set to 0.  A final flag to note is `fit_defense_classifier_outside_defense`; this pertains to filters or other defenses that are external to the model and defaults to `true`.  If the defense does not require a trained model to operate, you can save time by setting this to `false`, because even if no defense classifier is provided, it will automatically train a copy of the model under evaluation .
 
 The remaining sections are fairly straightforward.  The `attack` section carries the parameters for the attack (those not specified under `adhoc`, that is), including the size, position, and blend of backdoor triggers if applicable.  The `defense` section for the _perfect filter_ baseline defense merits some explanation.  Because a perfect filter requires knowledge of which data were poisoned, and this information is not available to defenses, the perfect filter is implemented directly in scenario code.  However, Armory config validation currently requires a value for `module` and `name` under the `defense` section: the baseline configs set these to `"null"` (the string) although any string will work because the scenario ignores those values if `perfect_filter:true` is present in `defense/kwargs`.
+
+### Sleeper Agent parameters
+
+The configuration parameters for sleeper agent largely follows from the [ART implementation](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/poisoning/sleeper_agent_attack.py).
+A couple of key differences include the `patch` kwarg being a path to a file instead of an array, with `patch_size` being used to resize the image to the desired size, and `k_trigger` being the number of train images to select for generating the trigger.
+Other differences are minor word changes, and can be found [here](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poisoning_sleeper_agent.py#L101-L113).
+
 
 ### Witches' Brew trigger specification
 
@@ -165,3 +180,24 @@ Because test-time data is not poisoned for the witches' brew attack, it doesn't 
 `attack_success_rate` is the percentage of trigger images which were classified as their respective target classes, while `accuracy_on_trigger_images` is the percentage of trigger images that were classified as their natural labels (source classes).  Similarly, `accuracy_on_non_trigger_images` is the classification accuracy on non-trigger images.
 
 The fairness and filter metrics remain the same.
+
+## Avoiding Out-Of-Memory (OOM) Errors
+
+The poisoning scenarios typically work with very large in-memory numpy arrays.
+This can result in OOM errors in certain cases.
+
+One place where this can happen is when calling `fit` on the model.
+If the model is a TensorFlowV2Classifier (ART), then the `fit` method will try to convert the entire numpy array to a tf tensor (not batched), which can exceed GPU memory for smaller cards, especially for the audio poisoning scenario.
+If this is the case, set the scenario kwarg `fit_generator` to `true` in the config:
+```
+    ...
+    "scenario": {
+        "kwargs": {
+            "fit_generator": true
+        },
+        ...
+```
+This will wrap the numpy array in a generator, and send batched inputs into the ART model's `fit_generator` method.
+This is less efficient and trains slower than the other method, which is why is not default, but will avoid the OOM error in this case.
+
+When `fit_generator` is set to `true`, and there is an explanatory model present, it will get activations from the dataset in a batched manner, which avoids a similar OOM error.

@@ -11,6 +11,50 @@ from armory.data import datasets
 pytestmark = pytest.mark.unit
 
 
+def test_numpy_data_generator():
+    NumpyDataGenerator = datasets.NumpyDataGenerator
+    m = 100
+    n = 10
+    x = np.random.random((m, n))
+    y = np.arange(m)
+    batch_size = 30
+    data_generator = NumpyDataGenerator(
+        x, y, batch_size=batch_size, drop_remainder=True, shuffle=False
+    )
+    for i in range(3):
+        data_generator.get_batch()
+    x_i, y_i = data_generator.get_batch()
+    assert (y_i == y[:batch_size]).all()
+    assert data_generator.batches_per_epoch == 3
+
+    data_generator = NumpyDataGenerator(
+        x, y, batch_size=batch_size, drop_remainder=False, shuffle=False
+    )
+    for i in range(3):
+        data_generator.get_batch()
+    x_i, y_i = data_generator.get_batch()
+    assert len(x_i) == m % batch_size
+    assert data_generator.batches_per_epoch == 4
+
+    data_generator = NumpyDataGenerator(
+        x, y, batch_size=batch_size, drop_remainder=True, shuffle=True
+    )
+    x_i, y_i = data_generator.get_batch()
+    assert not (y_i == y[:batch_size]).all()
+
+    for i in range(2):
+        data_generator.get_batch()
+    x_i_epoch2, y_i_epoch2 = data_generator.get_batch()
+    assert not (y_i == y_i_epoch2).all()
+
+    for x, y in [
+        (1, [2, 3, 4]),
+        ([1, 2], [3, 4, 5]),
+    ]:
+        with pytest.raises(ValueError):
+            NumpyDataGenerator(x, y)
+
+
 @pytest.mark.parametrize("name", ["cifar10", "mnist", "resisc10"])
 @pytest.mark.parametrize("split", ["test", "train", "validation"])
 @pytest.mark.parametrize("framework", ["numpy", "tf", "pytorch"])
