@@ -1973,9 +1973,6 @@ def word_error_rate_formatter(result):
     return total_wer_formatter(result)
 
 
-result_formatter("total_word_error_rate")(total_wer_formatter)
-
-
 @result_formatter("hota_metrics")
 def hota_metrics_formatter(result):
     mean_results = {k: v for k, v in result.items() if "mean" in k}
