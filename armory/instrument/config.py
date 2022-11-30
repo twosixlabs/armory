@@ -234,14 +234,13 @@ def task_meter(
     result_formatter = metrics.get_result_formatter(name)
     final_kwargs = {}
     if name in metrics.task.population:
-        final_result_formatter = metrics.get_result_formatter(name)
         return GlobalMeter(
             f"{prefix}{name}{suffix}",
             metric,
             y,
             y_pred,
             final_kwargs=metric_kwargs,
-            final_result_formatter=final_result_formatter,
+            final_result_formatter=result_formatter,
         )
 
     aggregator = metrics.task.get_aggregator_name(name)
