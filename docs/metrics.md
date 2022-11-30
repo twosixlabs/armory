@@ -241,7 +241,7 @@ metrics.task.elementwise(my_accuracy_metric, "a_different_name")
 ```
 
 Armory performs all built-in metric operations as batches, not as individual elements, so using the `elementwise` decorators will also produce a batchwise version of it that loops through the individual elements and provides a batchwise result.
-NOTE: when armory uses `get`, it will 
+NOTE: when armory uses `get`, it will get the batchwise version of a metric.
 
 Once annotated, these will also be `.`-addressable using their respective namespaces.
 In the above example, you can get at `my_accuracy_metric` via the `metrics.task.element` namespace:
