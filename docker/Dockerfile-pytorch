@@ -21,7 +21,9 @@ RUN pip install --no-cache-dir \
         git+https://github.com/ifzhang/ByteTrack.git \
         thop \
         lap \
-        Cython && \
+        Cython \
+        # BURST dependency
+        tabulate && \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install --no-cache-dir \
         cython-bbox
