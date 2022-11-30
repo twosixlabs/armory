@@ -66,7 +66,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
 
         ############
         # isort
-        echo "🎱 Executing 'isort' import sorter..."
+        echo "⏬ Executing 'isort' import sorter..."
         isort $TARGET_FILES
         CHECK_EXIT_STATUS $?
     fi
