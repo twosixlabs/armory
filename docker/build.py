@@ -123,7 +123,7 @@ def init(*args, **kwargs):
     for framework in frameworks:
         print(f"EXEC:\tBuilding {framework} container.")
         exit_code = build_worker(framework, armory_version, **kwargs)
-    return exit_code
+    exit(exit_code)
 
 
 if __name__ == "__main__":
