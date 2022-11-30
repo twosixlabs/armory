@@ -14,19 +14,17 @@ TAG = version.to_docker_tag(armory.__version__)
 log.trace(f"armory.__version__: {armory.__version__}")
 
 DOCKER_REPOSITORY = "twosixarmory"
-
 ARMORY_IMAGE_NAME = f"{DOCKER_REPOSITORY}/armory:{TAG}"
-PYTORCH = ARMORY_IMAGE_NAME
-TF2 = ARMORY_IMAGE_NAME
-PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
+
+# Armory Image Map
+PYTORCH = PYTORCH_DEEPSPEECH = TF2 = ARMORY_IMAGE_NAME
 ALL = (
     ARMORY_IMAGE_NAME,
-    PYTORCH_DEEPSPEECH,
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
     "pytorch": ARMORY_IMAGE_NAME,
-    "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
+    "pytorch-deepspeech": ARMORY_IMAGE_NAME,
     "tf2": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
 }

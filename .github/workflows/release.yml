@@ -74,7 +74,6 @@ jobs:
       matrix:
         include:
           - image: armory
-          - image: pytorch-deepspeech
     steps:
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
