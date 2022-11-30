@@ -8,19 +8,15 @@ WORKDIR /armory-repo
 #       in the root of the repo.
 COPY ./ /armory-repo
 
-# DeepSpeech Dependencies
-RUN pip install git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
-
 RUN echo "Updating pip" && \
     pip install --upgrade pip && \
     echo "Building Armory from local source" && \
-    pip install --no-compile --no-cache-dir --editable '.[engine,pytorch,deepspeech,tensorflow,jupyter]' && \
+    pip install --no-compile --no-cache-dir --editable '.[engine,pytorch,tensorflow,jupyter]' && \
     echo "Configuring Armory..." && \
     armory configure --use-default && \
     echo "Cleaning up..." && \
     rm -rf /armory-repo/.git
 
-# CARLA Dependencies
 RUN pip install --no-cache-dir \
         git+https://github.com/ifzhang/ByteTrack.git \
         thop \
@@ -33,24 +29,3 @@ RUN pip install --no-cache-dir \
         cython-bbox
 
 WORKDIR /workspace
-
-# ------------------------------------------------------------------
-# DEVELOPER NOTES:
-# ------------------------------------------------------------------
-# TODO: determine if this environment setup is needed
-#  $ ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
-
-# NOTE:
-#  - pytorch-lightning >= 1.5.0 will break Deep Speech 2
-#  - torchmetrics >= 0.8.0 will break pytorch-lightning 1.4
-#  - hydra-lightning installs omegaconf
-#  - google-cloud-storage needed for checkpoint.py import
-#  - only sox python bindings are installed; underlying sox binaries not needed
-
-# NOTE: Listed dependencies of PyTorch Deep Speech 2, but do not appear
-#       to be used for inference (only for training), they are not installed:
-#         - torchelastic
-#         - wget
-#         - flask
-#         - fairscale
-# ------------------------------------------------------------------
