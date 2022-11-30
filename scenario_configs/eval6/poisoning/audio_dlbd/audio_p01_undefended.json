@@ -46,7 +46,9 @@
         "wrapper_kwargs": {}
     },
     "scenario": {
-        "kwargs": {},
+        "kwargs": {
+            "fit_generator": false
+        },
         "module": "armory.scenarios.poison",
         "name": "Poison"
     },

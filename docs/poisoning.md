@@ -180,3 +180,24 @@ Because test-time data is not poisoned for the witches' brew attack, it doesn't 
 `attack_success_rate` is the percentage of trigger images which were classified as their respective target classes, while `accuracy_on_trigger_images` is the percentage of trigger images that were classified as their natural labels (source classes).  Similarly, `accuracy_on_non_trigger_images` is the classification accuracy on non-trigger images.
 
 The fairness and filter metrics remain the same.
+
+## Avoiding Out-Of-Memory (OOM) Errors
+
+The poisoning scenarios typically work with very large in-memory numpy arrays.
+This can result in OOM errors in certain cases.
+
+One place where this can happen is when calling `fit` on the model.
+If the model is a TensorFlowV2Classifier (ART), then the `fit` method will try to convert the entire numpy array to a tf tensor (not batched), which can exceed GPU memory for smaller cards, especially for the audio poisoning scenario.
+If this is the case, set the scenario kwarg `fit_generator` to `true` in the config:
+```
+    ...
+    "scenario": {
+        "kwargs": {
+            "fit_generator": true
+        },
+        ...
+```
+This will wrap the numpy array in a generator, and send batched inputs into the ART model's `fit_generator` method.
+This is less efficient and trains slower than the other method, which is why is not default, but will avoid the OOM error in this case.
+
+When `fit_generator` is set to `true`, and there is an explanatory model present, it will get activations from the dataset in a batched manner, which avoids a similar OOM error.

@@ -312,3 +312,538 @@ def test_per_class_accuracy():  # and mean
             assert math.isnan(results[k])
         else:
             assert v == results[k]
+
+
+def generate_square(x, y, length=10):
+    """
+    Helper function for testing TIDE metrics
+
+    returns: x_min, y_min, x_max, y_max of a square
+    """
+    return x, y, x + length, y + length
+
+
+def generate_square_from_iou(square, iou, x3, y3_le_y1=True):
+    """
+    Helper function for testing TIDE metrics. Given a square (x1, y1, x2, y2), an iou and x3,
+    determine y3 to generate another square with the same dimensions.
+    Assume x_min, y_min, x_max, y_max format for square
+
+    returns: x3, y3, x4, y4 if new square is possible - returns None otherwise
+    """
+
+    x1, y1, x2, y2 = square
+    length = x2 - x1  # side of a square
+    A1 = A2 = length**2  # restrict to squares of the same size
+
+    if y3_le_y1:
+        s_y = 1
+    else:
+        s_y = -1
+
+    # in this restricted problem, delta_x needs to satisfy certain constraints
+    delta_x = abs(x1 - x3)
+    # max_delta_x = length * (1 - iou) / (1 + iou)
+    # print(
+    #     f"delta_x <= {np.round(max_delta_x, decimals=2)}: {delta_x <= max_delta_x}"
+    # )
+    # # if False, then should return None
+
+    y3 = y1 + s_y * (iou * (A1 + A2) / (1 + iou) / (length - delta_x) - length)
+
+    if (not y3_le_y1 and y3 > y1) or (y3_le_y1 and y3 <= y1):
+        return x3, y3, x3 + length, y3 + length
+    else:
+        return None
+
+
+def calculate_iou(s1, s2):
+    """
+    Helper function for testing TIDE metrics. Calculate IoU of two rectangles
+
+    returns: IoU, area of first rectangle, area of second rectangle, width of intersection, height of intersection, area of intersection
+    """
+
+    x1, y1, x2, y2 = s1
+    x3, y3, x4, y4 = s2
+
+    A1 = abs(x2 - x1) * abs(y2 - y1)
+    A2 = abs(x4 - x3) * abs(y4 - y3)
+
+    I_w = max(0, min(max(x1, x2), max(x3, x4)) - max(min(x1, x2), min(x3, x4)))
+    I_h = max(0, min(max(y1, y2), max(y3, y4)) - max(min(y1, y2), min(y3, y4)))
+    I_A = I_w * I_h
+    IoU = I_A / (A1 + A2 - I_A)
+
+    return IoU, A1, A2, I_w, I_h, I_A
+
+
+def test_tide_metrics():
+
+    x1 = y1 = 10
+
+    s1 = generate_square(x1, y1)
+    s_Cls = generate_square_from_iou(s1, 0.8, x1 - 0.5, False)
+    # print(s_Cls, calculate_iou(s1, s_Cls))
+    s_Loc = generate_square_from_iou(s1, 0.2, x1 - 4.5)
+    # print(s_Loc, calculate_iou(s1, s_Loc))
+    s_Bkg = generate_square_from_iou(s1, 0.05, x1 + 6.8)
+    # print(s_Bkg, calculate_iou(s1, s_Bkg))
+
+    x2 = 35
+    s2 = generate_square(x2, y1)
+    s_detected = generate_square_from_iou(s2, 0.8, x2 - 0.5, False)
+    # print(s_detected, calculate_iou(s2, s_detected))
+    s_Dupe = generate_square_from_iou(s2, 0.55, x2 + 2)
+    # print(s_Dupe, calculate_iou(s2, s_Dupe))
+    s_Both = generate_square_from_iou(s2, 0.2, x2 - 4.5)
+    # print(s_Both, calculate_iou(s2, s_Both))
+
+    x3 = 60
+    s3 = generate_square(x3, y1)
+
+    y_list = [
+        {
+            "labels": np.array([1, 2, 3]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s2,
+                    s3,
+                ]
+            ),
+        }
+    ]
+
+    y_pred_list = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Cls = [
+        {
+            "labels": np.array([1, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Loc = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s1,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Both = [
+        {
+            "labels": np.array([2, 1, 1, 2, 2]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Dupe = [
+        {
+            "labels": np.array([2, 1, 1, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Bkg = [
+        {
+            "labels": np.array([2, 1, 2, 2, 1]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_detected,
+                    s_Dupe,
+                    s_Both,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_list_Miss = [
+        {
+            "labels": np.array([1, 2]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s2,
+                ]
+            ),
+        }
+    ]
+
+    y_pred_list_All = [
+        {
+            "labels": np.array([1, 2]),
+            "boxes": np.array(
+                [
+                    s1,
+                    s_detected,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8]),
+        }
+    ]
+
+    results = task.object_detection_mAP_tide(y_list, y_pred_list)
+    results_Cls = task.object_detection_mAP_tide(y_list, y_pred_list_Cls)
+    results_Loc = task.object_detection_mAP_tide(y_list, y_pred_list_Loc)
+    results_Both = task.object_detection_mAP_tide(y_list, y_pred_list_Both)
+    results_Dupe = task.object_detection_mAP_tide(y_list, y_pred_list_Dupe)
+    results_Bkg = task.object_detection_mAP_tide(y_list, y_pred_list_Bkg)
+    results_Miss = task.object_detection_mAP_tide(y_list_Miss, y_pred_list)
+    results_All = task.object_detection_mAP_tide(y_list_Miss, y_pred_list_All)
+
+    error_key_list = ["Cls", "Loc", "Both", "Dupe", "Bkg", "Miss"]
+
+    def check_assertion(
+        armory_output, test_prompt, error_key_list=error_key_list, fixed_key_list=[]
+    ):
+        for key in error_key_list:
+            assert (
+                key in armory_output["errors"]["main"]["count"]
+            ), f"{test_prompt}: {key} not in results"
+            error_count = armory_output["errors"]["main"]["count"][key]
+            correct_count = 0 if key in fixed_key_list else 1
+            assert (
+                error_count == correct_count
+            ), f"{test_prompt}: Count for {key} error is not {correct_count}, but {error_count}"
+
+    test_prompt = "Checking TIDE metrics for case with one example of each error type"
+    check_assertion(results, test_prompt)
+
+    test_prompt = "Checking TIDE metrics after fixing classification error"
+    check_assertion(results_Cls, test_prompt, fixed_key_list=["Cls"])
+
+    test_prompt = "Checking TIDE metrics after fixing localization error"
+    check_assertion(results_Loc, test_prompt, fixed_key_list=["Loc"])
+
+    test_prompt = (
+        "Checking TIDE metrics after fixing classification and localization error"
+    )
+    check_assertion(results_Both, test_prompt, fixed_key_list=["Both"])
+
+    test_prompt = "Checking TIDE metrics after fixing duplicate error"
+    check_assertion(results_Dupe, test_prompt, fixed_key_list=["Dupe"])
+
+    test_prompt = "Checking TIDE metrics after fixing background error"
+    check_assertion(results_Bkg, test_prompt, fixed_key_list=["Bkg"])
+
+    test_prompt = "Checking TIDE metrics after fixing missed error"
+    check_assertion(results_Miss, test_prompt, fixed_key_list=["Miss"])
+
+    test_prompt = "Checking TIDE metrics after fixing all errors"
+    check_assertion(results_All, test_prompt, fixed_key_list=error_key_list)
+
+
+def test_tide_metrics_no_overlap():
+
+    x1 = 10
+    y1 = 35
+
+    s0 = generate_square(x1, y1)
+    s_Cls = generate_square_from_iou(s0, 0.8, x1 - 0.5)
+    # print(s_Cls, calculate_iou(s0, s_Cls))
+
+    y2 = y1 - 25
+    s1 = generate_square(x1, y2)
+    s_Loc = generate_square_from_iou(s1, 0.2, x1 - 4.5)
+    # print(s_Loc, calculate_iou(s1, s_Loc))
+
+    x2 = x1 + 25
+    s2 = generate_square(x2, y1)
+    s_Both = generate_square_from_iou(s2, 0.2, x2 - 4.5)
+    # print(s_Both, calculate_iou(s2, s_Both))
+
+    s3 = generate_square(x2, y2)
+    s_Bkg = generate_square_from_iou(s3, 0.05, x2 - 6.8)
+    # print(s_Bkg, calculate_iou(s3, s_Bkg))
+
+    x3 = x2 + 25
+    s4 = generate_square(x3, y1)
+    s_detected = generate_square_from_iou(s4, 0.8, x3 + 0.5, False)
+    # print(s_detected, calculate_iou(s4, s_detected))
+    s_Dupe = generate_square_from_iou(s4, 0.55, x3 - 2)
+    # print(s_Dupe, calculate_iou(s4, s_Dupe))
+
+    s5 = generate_square(x3, y2)
+
+    y_list = [
+        {
+            "labels": np.arange(6),
+            "boxes": np.array(
+                [
+                    s0,
+                    s1,
+                    s2,
+                    s3,
+                    s4,
+                    s5,
+                ]
+            ),
+        }
+    ]
+
+    y_pred_list = [
+        {
+            "labels": np.array([1, 1, 3, 3, 4, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Both,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Cls = [
+        {
+            "labels": np.array([0, 1, 3, 3, 4, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Both,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Loc = [
+        {
+            "labels": np.array([1, 1, 3, 3, 4, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s1,
+                    s_Both,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Both = [
+        {
+            "labels": np.array([1, 1, 3, 4, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Bkg,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Dupe = [
+        {
+            "labels": np.array([1, 1, 3, 3, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Both,
+                    s_Bkg,
+                    s_detected,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_pred_list_Bkg = [
+        {
+            "labels": np.array([1, 1, 3, 4, 4]),
+            "boxes": np.array(
+                [
+                    s_Cls,
+                    s_Loc,
+                    s_Both,
+                    s_detected,
+                    s_Dupe,
+                ]
+            ),
+            "scores": np.array([0.8, 0.8, 0.8, 0.8, 0.8]),
+        }
+    ]
+
+    y_list_Miss = [
+        {
+            "labels": np.array([0, 1, 4]),
+            "boxes": np.array(
+                [
+                    s0,
+                    s1,
+                    s4,
+                ]
+            ),
+        }
+    ]
+
+    results = task.object_detection_mAP_tide(y_list, y_pred_list)
+    results_Cls = task.object_detection_mAP_tide(y_list, y_pred_list_Cls)
+    results_Loc = task.object_detection_mAP_tide(y_list, y_pred_list_Loc)
+    results_Both = task.object_detection_mAP_tide(y_list, y_pred_list_Both)
+    results_Dupe = task.object_detection_mAP_tide(y_list, y_pred_list_Dupe)
+    results_Bkg = task.object_detection_mAP_tide(y_list, y_pred_list_Bkg)
+    results_Miss = task.object_detection_mAP_tide(y_list_Miss, y_pred_list)
+
+    base_case_error_count = {
+        "Cls": 1,
+        "Loc": 1,
+        "Both": 1,
+        "Dupe": 1,
+        "Bkg": 1,
+        "Miss": 3,
+    }
+    fix_Cls_error_count = {
+        "Cls": 0,
+        "Loc": 1,
+        "Both": 1,
+        "Dupe": 1,
+        "Bkg": 1,
+        "Miss": 3,
+    }
+    fix_Loc_error_count = {
+        "Cls": 1,
+        "Loc": 0,
+        "Both": 1,
+        "Dupe": 1,
+        "Bkg": 1,
+        "Miss": 3,
+    }
+    fix_Both_error_count = {
+        "Cls": 1,
+        "Loc": 1,
+        "Both": 0,
+        "Dupe": 1,
+        "Bkg": 1,
+        "Miss": 3,
+    }
+    fix_Dupe_error_count = {
+        "Cls": 1,
+        "Loc": 1,
+        "Both": 1,
+        "Dupe": 0,
+        "Bkg": 1,
+        "Miss": 3,
+    }
+    fix_Bkg_error_count = {
+        "Cls": 1,
+        "Loc": 1,
+        "Both": 1,
+        "Dupe": 1,
+        "Bkg": 0,
+        "Miss": 3,
+    }
+    fix_Miss_error_count = {
+        "Cls": 1,
+        "Loc": 1,
+        "Both": 0,
+        "Dupe": 1,
+        "Bkg": 2,
+        "Miss": 0,
+    }
+
+    def check_assertion(armory_output, test_prompt, error_count):
+        for key, value in error_count.items():
+            assert (
+                key in armory_output["errors"]["main"]["count"]
+            ), f"{test_prompt}: {key} not in results"
+            armory_error_count = armory_output["errors"]["main"]["count"][key]
+            assert (
+                armory_error_count == value
+            ), f"{test_prompt}: Count for {key} error is not {value}, but {armory_error_count}"
+
+    test_prompt = "Checking TIDE metrics for case with one example of each error type"
+    check_assertion(results, test_prompt, base_case_error_count)
+
+    test_prompt = "Checking TIDE metrics after fixing classification error"
+    check_assertion(results_Cls, test_prompt, fix_Cls_error_count)
+
+    test_prompt = "Checking TIDE metrics after fixing localization error"
+    check_assertion(results_Loc, test_prompt, fix_Loc_error_count)
+
+    test_prompt = (
+        "Checking TIDE metrics after fixing classification and localization error"
+    )
+    check_assertion(results_Both, test_prompt, fix_Both_error_count)
+
+    test_prompt = "Checking TIDE metrics after fixing duplicate error"
+    check_assertion(results_Dupe, test_prompt, fix_Dupe_error_count)
+
+    test_prompt = "Checking TIDE metrics after fixing background error"
+    check_assertion(results_Bkg, test_prompt, fix_Bkg_error_count)
+
+    test_prompt = "Checking TIDE metrics after fixing missed error"
+    check_assertion(results_Miss, test_prompt, fix_Miss_error_count)
