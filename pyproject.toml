@@ -60,7 +60,7 @@ developer =[
 ]
 
 engine = [
-    "adversarial-robustness-toolbox==1.12.1",
+    "adversarial-robustness-toolbox==1.12.2",
     "Pillow",         # Data dependencies
     "boto3",          # Needed for armory.data.utils
     "botocore",       # Needed for armory.data.utils
@@ -68,6 +68,7 @@ engine = [
     "opencv-python",  # Needed for CARLA baseline scenario
     "pydub",          # this is in ART's extra-requires
     "tensorboardx",
+    "tidecv",         # Needed for TIDE metrics
 ]
 
 datasets = [

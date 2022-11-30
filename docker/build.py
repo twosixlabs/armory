@@ -105,7 +105,8 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
         )
     print(f"EXEC\tPreparing to run:\n" f"\t\t{' '.join(build_command)}")
     if not kwargs.get("dry_run"):
-        subprocess.run(build_command)
+        build_process = subprocess.run(build_command)
+        exit(build_process.returncode)
 
 
 def init(*args, **kwargs):

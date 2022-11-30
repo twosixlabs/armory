@@ -5,6 +5,8 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
+from tidecv import TIDE
+import tidecv.data
 
 import numpy as np
 
@@ -854,6 +856,140 @@ def object_detection_mAP(y_list, y_pred_list, iou_threshold=0.5, class_list=None
     return np.fromiter(ap_per_class.values(), dtype=float).mean()
 
 
+def armory_to_tide(y_dict, image_id, is_detection=True):
+    """
+    Convert y_dict in Armory format to use as input for TIDE data type
+
+    y_dict is a dictionary of lists, which needs to be converted to a list of dictionaries
+    with keys that correspond to arguments for pushing an element to a TIDE data type
+    """
+
+    y_tidecv_list = []
+
+    # convert dictionary with values of list type to list of dictionaries
+    # y_dict = {'area': [936, 385]
+    #           'boxes': [array([917., 464., 955., 527.], dtype=float32),
+    #                     array([911., 468., 940., 517.], dtype=float32)],
+    #           'id': [97, 98]
+    #           'image_id': [84190894, 84190894],
+    #           'is_crowd': [False, True],
+    #           'labels': [1, 1]}
+    # t = (936, array([917., 464., 955., 527.], dtype=float32), 97, 84190894, False, 1)
+    #     (385, array([911., 468., 940., 517.], dtype=float32), 98, 84190894, True, 1)
+    # y = {'area': 936, 'boxes': array([917., 464., 955., 527.], dtype=float32), 'id': 97, 'image_id': 84190894, 'is_crowd': False, 'labels': 1}
+    #     {'area': 385, 'boxes': array([911., 468., 940., 517.], dtype=float32), 'id': 98, 'image_id': 84190894, 'is_crowd': True, 'labels': 1}
+    for y in [dict(zip(y_dict, t)) for t in zip(*y_dict.values())]:
+        x1, y1, x2, y2 = y["boxes"]
+        width = abs(x1 - x2)
+        height = abs(y1 - y2)
+        x_min = min(x1, x2)
+        y_min = min(y1, y2)
+
+        y_tidecv = {
+            "image_id": image_id,
+            "class_id": y["labels"],
+            "box": [x_min, y_min, width, height],
+        }
+
+        if is_detection:
+            y_tidecv["score"] = y["scores"]
+
+        y_tidecv_list.append(y_tidecv)
+    return y_tidecv_list
+
+
+@populationwise
+def object_detection_mAP_tide(y_list, y_pred_list):
+    """
+    TIDE version of mean average precision for object detection [https://dbolya.github.io/tide/].
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+
+    returns: a dictionary with mean average precision (mAP) for a range of IOU thresholds in [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],
+             and error metrics that weight the significance of different types of errors to assess trade-offs between design choices for models
+             as well as potentially for attacks and defense
+
+    default max_dets=100 in TIDE
+    max_dets is an attribute for both data_ground_truth and data_detection
+    data_ground_truth.max_dets gets passed to tide.evaluate_range > TIDERun._run > TIDERun._eval_image > TIDEEXample._run (code snippet below)
+        preds = preds[:max_dets]
+        self.preds = preds # Update internally so TIDERun can update itself if :max_dets takes effect
+    for now assume we don't want max_dets to affect our metrics
+    set data_ground_truth.max_dets and data_detection.max_dets to max of max(len(y["labels"]), len(y_pred["labels"])))
+    after going through for loop
+    """
+
+    data_ground_truth_name = "ground_truth"
+    data_detection_name = "detection"
+
+    data_ground_truth = tidecv.data.Data(name=data_ground_truth_name)
+    data_detection = tidecv.data.Data(name=data_detection_name)
+
+    max_dets = 0
+    for i, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
+        if "image_id" in y:
+            image_id = y["image_id"][0]
+        else:
+            image_id = i
+
+        tidecv_ground_truth_list = armory_to_tide(y, image_id, is_detection=False)
+        for y_tidecv in tidecv_ground_truth_list:
+            data_ground_truth.add_ground_truth(**y_tidecv)
+
+        tidecv_detection_list = armory_to_tide(y_pred, image_id)
+        for y_tidecv in tidecv_detection_list:
+            data_detection.add_detection(**y_tidecv)
+
+        max_len = max(len(y["labels"]), len(y_pred["labels"]))
+        if max_len > max_dets:
+            max_dets = max_len
+
+    data_ground_truth.max_dets = max_dets
+    data_detection.max_dets = max_dets
+
+    tide = TIDE()
+    tide.evaluate_range(data_ground_truth, data_detection, mode=TIDE.BOX)
+    tide_error = tide.get_all_errors()
+    tide_error_count = {
+        k.short_name: len(v)
+        for k, v in tide.runs[data_detection.name].error_dict.items()
+    }
+    tide_fn_count = sum(
+        [len(v) for k, v in tide.runs[data_detection.name].false_negatives.items()]
+    )
+
+    armory_output = {
+        "mAP": {
+            x.pos_thresh: np.around(x.ap / 100, decimals=2)
+            for x in tide.run_thresholds[data_detection.name]
+        },
+        # not changing numeric format for error yet until we understand what the numbers mean
+        "errors": {
+            "main": {
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["main"][data_detection.name].items()
+                },
+                "count": tide_error_count,
+            },
+            "special": {
+                "dAP": {
+                    k: np.around(v / 100, decimals=4)
+                    for k, v in tide_error["special"][data_detection.name].items()
+                },
+                "count": {"FalseNeg": tide_fn_count},
+            },
+        },
+    }
+
+    return armory_output
+
+
 def _object_detection_get_tpr_mr_dr_hr(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1647,7 +1783,10 @@ class HOTA_metrics:
         unique_ids = sorted(set(unique_ids))
         new_unique_ids = list(range(len(unique_ids)))
         id_map = {k: v for k, v in zip(unique_ids, new_unique_ids)}
-        new_list = [np.array([id_map[x] for x in array]) for array in list_of_id_arrays]
+        new_list = [
+            np.array([id_map[x] for x in array], dtype=array.dtype)
+            for array in list_of_id_arrays
+        ]
         return new_unique_ids, new_list
 
     def preprocess(self, gt_data, tracker_data, tracked_class):

@@ -63,7 +63,7 @@ Applies to `run` command.
 
 The `--check` flag will make every dataset return a single batch,
 which is useful to quickly check whether the entire scenario correctly runs.
-It will also ensure that the number of training epochs is set to 1.
+It will also ensure that the number of training epochs and certain attack parameters are set to 1.
 
 The `--num-eval-batches` argument will truncate the number of batches used in
 both benign and adversarial test sets.
