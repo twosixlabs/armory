@@ -115,7 +115,7 @@ class Resisc45(tfds.core.GeneratorBasedBuilder):
 
     def _generate_examples(self, path, split):
         """Yields examples."""
-        for label in tf.io.gfile.listdir(f"{path}/NWPU-RESISC45"):
+        for label in _LABELS:
             for idx, filename in enumerate(sorted(
                 tf.io.gfile.glob(f"{path}/NWPU-RESISC45/{label}/*.jpg")
             )):
