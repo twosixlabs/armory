@@ -60,14 +60,14 @@ developer =[
 
 engine = [
     "adversarial-robustness-toolbox==1.12.2",
-    "Pillow",         # Data dependencies
-    "boto3",          # Needed for armory.data.utils
-    "botocore",       # Needed for armory.data.utils
-    "ffmpeg-python",  # Needed for armory.utils.export
-    "opencv-python",  # Needed for CARLA baseline scenario
-    "pydub",          # this is in ART's extra-requires
-    "tensorboardx",
-    "tidecv",         # Needed for TIDE metrics
+    "Pillow",              # Data dependencies
+    "boto3==1.24.89",      # Needed for armory.data.utils
+    "botocore==1.27.89" ,  # Needed for armory.data.utils
+    "ffmpeg-python",       # Needed for armory.utils.export
+    "opencv-python",       # Needed for CARLA baseline scenario
+    "pydub",               # this is in ART's extra-requires
+    "tidecv",              # Needed for TIDE metrics
+    "tensorboardx==2.5.1",
 ]
 
 datasets = [
@@ -83,21 +83,25 @@ datasets-builder = [
 
 math = [
     "numpy",
-    "scipy",
-    "scikit-learn < 1.1.0",
+    "pandas",
+    "scipy >= 1.4.1",
+    "scikit-learn < 1.1.0",   # ART requires scikit-learn >=0.22.2,<1.1.0
     "matplotlib",
 ]
 
 pytorch = [
     "armory-testbed[engine,datasets,math]",
     "torch",
-    "torchvision",
-    "torchaudio",
+    "torchaudio==0.12.1",
+    "torchvision==0.13.1",
 ]
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
     "tf-models-official",
+    # See `datasets` extras
+    # "tensorflow >= 2.10.0",
+    # "tensorflow-gpu >= 2.10.0",
 ]
 
 deepspeech = [
@@ -114,7 +118,22 @@ deepspeech = [
 
 jupyter = [
     "jupyterlab",
+    "jupyterlab_widgets",
+    "ipywidgets",
 ]
+
+all = [
+    "armory-testbed[developer]",
+    "armory-testbed[engine]",
+    # "armory-testbed[math]",
+    "armory-testbed[jupyter]",
+    # "armory-testbed[datasets]",
+    # "armory-testbed[datasets-builder]",
+    "armory-testbed[pytorch]",
+    "armory-testbed[tensorflow]",
+    # "armory-testbed[deepspeech]",
+]
+
 
 [build-system]
 build-backend = "hatchling.build"
