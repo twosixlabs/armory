@@ -70,17 +70,6 @@ engine = [
     "tensorboardx==2.5.1",
 ]
 
-datasets = [
-    "tensorflow-datasets >= 4.6.0",
-    "tensorflow >= 2.10.0",
-    "protobuf",
-]
-
-datasets-builder = [
-    "armory-testbed[datasets,engine]",
-    "apache-beam >= 2.22.0",
-]
-
 math = [
     "numpy",
     "pandas",
@@ -99,8 +88,7 @@ pytorch = [
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
     "tf-models-official",
-    # See `datasets` extras
-    # "tensorflow >= 2.10.0",
+    "tensorflow >= 2.10.0",
     # "tensorflow-gpu >= 2.10.0",
 ]
 
@@ -122,16 +110,27 @@ jupyter = [
     "ipywidgets",
 ]
 
+datasets = [
+    "armory-testbed[tensorflow]",
+    "tensorflow-datasets >= 4.6.0",
+    "protobuf",
+]
+
+datasets-builder = [
+    "armory-testbed[datasets,engine]",
+    "apache-beam >= 2.22.0",
+]
+
 all = [
     "armory-testbed[developer]",
     "armory-testbed[engine]",
-    # "armory-testbed[math]",
+    "armory-testbed[math]",
     "armory-testbed[jupyter]",
-    # "armory-testbed[datasets]",
-    # "armory-testbed[datasets-builder]",
+    "armory-testbed[datasets]",
+    "armory-testbed[datasets-builder]",
     "armory-testbed[pytorch]",
-    "armory-testbed[tensorflow]",
     # "armory-testbed[deepspeech]",
+    "armory-testbed[tensorflow]",
 ]
 
 
