@@ -16,8 +16,6 @@ log.trace(f"armory.__version__: {armory.__version__}")
 DOCKER_REPOSITORY = "twosixarmory"
 
 ARMORY_IMAGE_NAME = f"{DOCKER_REPOSITORY}/armory:{TAG}"
-PYTORCH = ARMORY_IMAGE_NAME
-TF2 = ARMORY_IMAGE_NAME
 PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
 ALL = (
     ARMORY_IMAGE_NAME,

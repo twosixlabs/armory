@@ -129,7 +129,6 @@ all = [
     "armory-testbed[datasets]",
     "armory-testbed[datasets-builder]",
     "armory-testbed[pytorch]",
-    # "armory-testbed[deepspeech]",
     "armory-testbed[tensorflow]",
 ]
 
