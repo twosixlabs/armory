@@ -1,10 +1,13 @@
 #! /usr/bin/env python3
 
 import argparse
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+
+from pathlib import Path
+
+from armory import __version__ as armory_version
 
 
 script_dir = Path(__file__).parent
@@ -116,7 +119,6 @@ def init(*args, **kwargs):
     frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    from armory import __version__ as armory_version
 
     print(f"EXEC:\tRetrieved version {armory_version}.")
     print("EXEC:\tCleaning up...")
