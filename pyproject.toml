@@ -63,6 +63,8 @@ engine = [
     "boto3 == 1.24.89",      # Needed for armory.data.utils
     "botocore == 1.27.89" ,  # Needed for armory.data.utils
     "ffmpeg-python",         # Needed for armory.utils.export
+    # Both `opencv-python` and `opencv-python-headless` must specify
+    # the same version.
     "opencv-python == 4.5.5.62", # Needed for CARLA baseline scenario
     "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
     "pydub",               # this is in ART's extra-requires
