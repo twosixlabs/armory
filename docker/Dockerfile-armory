@@ -2,11 +2,16 @@ ARG base_image_tag
 
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
+# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+ARG PIP_NO_CACHE_DIR=1
+
 WORKDIR /armory-repo
 
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
 COPY ./ /armory-repo
+
 
 RUN echo "Updating pip" && \
     pip install --upgrade pip && \
@@ -27,5 +32,6 @@ RUN pip install --no-cache-dir \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install --no-cache-dir \
         cython-bbox
+
 
 WORKDIR /workspace
