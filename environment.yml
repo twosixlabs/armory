@@ -29,4 +29,14 @@ dependencies:
   - Cython         # ByteTrack
   - lap            # ByteTrack
 
+  - pip:
+    # Hydra Lightning Configs
+    - 'git+https://github.com/romesco/hydra-lightning.git#subdirectory=hydra-configs-pytorch-lightning'
+
+    # ByteTrack
+    - thop          # ByteTrack
+    - cython-bbox   # ByteTrack
+    - 'git+https://github.com/ifzhang/ByteTrack.git'
+    - 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
+
 prefix: /opt/conda
