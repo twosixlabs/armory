@@ -116,17 +116,20 @@ class Resisc45(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, path, split):
         """Yields examples."""
         for label in tf.io.gfile.listdir(f"{path}/NWPU-RESISC45"):
-            for idx, filename in enumerate(
+            for idx, filename in enumerate(sorted(
                 tf.io.gfile.glob(f"{path}/NWPU-RESISC45/{label}/*.jpg")
-            ):
+            )):
+                basename = os.path.basename(filename)
+                if basename != f"{label}_{idx+1:03}.jpg":
+                    raise ValueError(f"Found unexpected file {basename}")
                 example = {
                     "image": filename,
                     "label": label,
-                    "filename": os.path.basename(filename),
+                    "filename": basename,
                 }
-                if idx <= 500:
+                if idx < 500:
                     split_idx = "train"
-                elif idx <= 600:
+                elif idx < 600:
                     split_idx = "validation"
                 else:
                     split_idx = "test"
