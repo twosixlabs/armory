@@ -1,10 +1,12 @@
 ---
-# yamllint disable rule:line-length
 name: armory-core
+
 channels:
-  - pytorch
-  - conda-forge
   - defaults
+  - conda-forge
+  - anaconda
+  - pytorch
+
 dependencies:
   - python=3.9
   - pip>22.0
@@ -26,19 +28,5 @@ dependencies:
   - pytorch=1.12   # Required by ByteTrack, therefore must be installed pre-pip
   - Cython         # ByteTrack
   - lap            # ByteTrack
-
-  - pip:
-    # Armory
-    # - --editable '.[all]'
-
-    # Hydra Lightning Configs
-    - 'git+https://github.com/romesco/hydra-lightning.git#subdirectory=hydra-configs-pytorch-lightning'
-
-    # ByteTrack
-    - thop          # ByteTrack
-    - cython-bbox   # ByteTrack
-    - 'git+https://github.com/ifzhang/ByteTrack.git'
-    - 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
-
 
 prefix: /opt/conda
