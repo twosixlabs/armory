@@ -1,5 +1,5 @@
 [project]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 
 name        = "armory-testbed"
 description = "Adversarial Robustness Test Bed"
@@ -54,17 +54,16 @@ developer =[
     "black[jupyter]==22.*",
     "flake8",
     "bandit[toml]", # code scanning
-    "tox",          # testing
     "hydra-core",   # configuration
 ]
 
 engine = [
     "adversarial-robustness-toolbox == 1.12.2",
-    "Pillow",              # Data dependencies
+    "Pillow",                # Data dependencies
     "boto3 == 1.24.89",      # Needed for armory.data.utils
     "botocore == 1.27.89" ,  # Needed for armory.data.utils
-    "ffmpeg-python",       # Needed for armory.utils.export
-    "opencv-python == 4.5.5.62",       # Needed for CARLA baseline scenario
+    "ffmpeg-python",         # Needed for armory.utils.export
+    "opencv-python == 4.5.5.62", # Needed for CARLA baseline scenario
     "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
     "pydub",               # this is in ART's extra-requires
     "tidecv",              # Needed for TIDE metrics
