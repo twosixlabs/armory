@@ -63,21 +63,13 @@ engine = [
     "boto3 == 1.24.89",      # Needed for armory.data.utils
     "botocore == 1.27.89" ,  # Needed for armory.data.utils
     "ffmpeg-python",         # Needed for armory.utils.export
-    # Both `opencv-python` and `opencv-python-headless` must specify
-    # the same version.
-    "opencv-python == 4.5.5.62", # Needed for CARLA baseline scenario
-    "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
     "pydub",               # this is in ART's extra-requires
     "tidecv",              # Needed for TIDE metrics
+    # Both `opencv-python` and `opencv-python-headless` must specify
+    # the same version.
+    "opencv-python == 4.5.5.62",          # Needed for CARLA baseline scenario
+    "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
     "tensorboardx == 2.5.1",
-]
-
-math = [
-    "numpy",
-    "pandas",
-    "scipy >= 1.4.1",
-    "scikit-learn < 1.1.0",   # ART requires scikit-learn >=0.22.2,<1.1.0
-    "matplotlib",
 ]
 
 pytorch = [
@@ -106,10 +98,12 @@ deepspeech = [
     "hydra-core",
 ]
 
-jupyter = [
-    "jupyterlab",
-    "jupyterlab_widgets",
-    "ipywidgets",
+math = [
+    "numpy",
+    "pandas",
+    "scipy >= 1.4.1",
+    "scikit-learn < 1.1.0",   # ART requires scikit-learn >=0.22.2,<1.1.0
+    "matplotlib",
 ]
 
 datasets = [
@@ -121,6 +115,12 @@ datasets = [
 datasets-builder = [
     "armory-testbed[datasets,engine]",
     "apache-beam >= 2.22.0",
+]
+
+jupyter = [
+    "jupyterlab",
+    "jupyterlab_widgets",
+    "ipywidgets",
 ]
 
 all = [
