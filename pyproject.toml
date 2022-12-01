@@ -210,13 +210,3 @@ markers = [
 #     ignore::UserWarning:tensorflow*
 #     ignore::UserWarning:torch*
 #     ignore::Warning:art*
-
-
-# ------------ pre-commit hooks ------------
-[tool.vulture]
-paths             = ["src"]
-ignore_decorators = ["#~vulture.ignore~#"]
-min_confidence    = 80
-make_whitelist    = true
-sort_by_size      = true
-verbose           = true

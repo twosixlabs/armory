@@ -115,7 +115,7 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
 
 def init(*args, **kwargs):
     """Kicks off the build process."""
-    exit_code = 0 # 0 = success, 1 = failure
+    exit_code = 0  # 0 = success, 1 = failure
     frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
@@ -126,7 +126,7 @@ def init(*args, **kwargs):
         del kwargs[key]
     for framework in frameworks:
         print(f"EXEC:\tBuilding {framework} container.")
-        if (status := build_worker(framework, armory_version, **kwargs)):
+        if status := build_worker(framework, armory_version, **kwargs):
             exit_code = status
     exit(exit_code)
 
