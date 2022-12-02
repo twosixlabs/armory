@@ -122,10 +122,7 @@
                     "type": "boolean"
                 },
                 "task": {
-                    "items": {
-                        "$ref": "#/definitions/supported_metric"
-                    },
-                    "type": "array"
+                    "$ref": "#/definitions/supported_metric"
                 }
             },
             "required": [
@@ -203,69 +200,16 @@
             ]
         },
         "supported_metric": {
-            "$comment": "see armory/metrics.py::SUPPORTED_METRICS",
             "anyOf": [
                 {
-                    "$ref": "#/definitions/supported_metric_enum",
                     "type": "string"
                 },
                 {
                     "items": {
-                        "$ref": "#/definitions/supported_metric_enum",
                         "type": "string"
                     },
                     "type": "array"
                 }
-            ]
-        },
-        "supported_metric_enum": {
-            "enum": [
-                "entailment",
-                "dapricot_patch_target_success",
-                "dapricot_patch_targeted_AP_per_class",
-                "apricot_patch_targeted_AP_per_class",
-                "categorical_accuracy",
-                "top_n_categorical_accuracy",
-                "top_5_categorical_accuracy",
-                "norm",
-                "l0",
-                "l1",
-                "l2",
-                "lp",
-                "linf",
-                "snr",
-                "snr_db",
-                "snr_spectrogram",
-                "snr_spectrogram_db",
-                "image_circle_patch_diameter",
-                "mean_l0",
-                "max_l0",
-                "mean_l1",
-                "max_l1",
-                "mean_l2",
-                "max_l2",
-                "mean_linf",
-                "max_linf",
-                "video_tracking_mean_iou",
-                "video_tracking_mean_success_rate",
-                "mean_image_circle_patch_diameter",
-                "max_image_circle_patch_diameter",
-                "word_error_rate",
-                "object_detection_AP_per_class",
-                "object_detection_mAP",
-                "object_detection_mAP_tide",
-                "object_detection_disappearance_rate",
-                "object_detection_hallucinations_per_image",
-                "object_detection_misclassification_rate",
-                "object_detection_true_positive_rate",
-                "carla_od_AP_per_class",
-                "carla_od_disappearance_rate",
-                "carla_od_hallucinations_per_image",
-                "carla_od_misclassification_rate",
-                "carla_od_true_positive_rate",
-                "hota",
-                "deta",
-                "assa"
             ]
         },
         "sysconfig": {
@@ -380,6 +324,24 @@
         },
         "sysconfig": {
             "$ref": "#/definitions/sysconfig"
+        },
+        "user_init": {
+            "anyOf": [
+                {
+                    "kwargs": {
+                        "type": "object"
+                    },
+                    "module": {
+                        "$ref": "#/definitions/python_module"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "type": "null"
+                }
+            ]
         }
     },
     "required": [

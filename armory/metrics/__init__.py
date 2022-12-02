@@ -1,17 +1,8 @@
 import importlib
+from typing import Callable
 
 from armory.metrics import compute, perturbation, statistical, task
-
-SUPPORTED_METRICS = {}
-for namespace in (
-    perturbation.batch,
-    task.batch,
-    task.aggregate,
-    task.population,
-    statistical.registered,
-):
-    assert not any(k in namespace for k in SUPPORTED_METRICS)
-    SUPPORTED_METRICS.update(namespace)
+from armory.metrics.common import supported, result_formatter, get_result_formatter
 
 
 def _instantiate_validate(function, name, instantiate_if_class=True):
@@ -23,16 +14,16 @@ def _instantiate_validate(function, name, instantiate_if_class=True):
     return function
 
 
-def supported(name):
+def is_supported(name):
     """
     Return whether given name is a supported metric
     """
-    return name in SUPPORTED_METRICS
+    return name in supported
 
 
 def get_supported_metric(name, instantiate_if_class=True):
     try:
-        function = SUPPORTED_METRICS[name]
+        function = supported[name]
     except KeyError:
         raise KeyError(f"{name} is not part of armory.metrics")
     return _instantiate_validate(
