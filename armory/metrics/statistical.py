@@ -14,11 +14,11 @@ from armory.metrics.perturbation import MetricNameSpace, set_namespace
 registered = MetricNameSpace()
 
 
-def register(metric):
+def register(metric, name=None):
     """
     Register a statistical metric
     """
-    return set_namespace(registered, metric)
+    return set_namespace(registered, metric, name=name, set_global=True)
 
 
 @register
