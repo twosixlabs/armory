@@ -17,9 +17,9 @@ ARMORY_IMAGE_NAME = f"twosixarmory/armory:{version.to_docker_tag(armory.__versio
 
 IMAGE_MAP = {
     "armory": ARMORY_IMAGE_NAME,
+    "tf2": ARMORY_IMAGE_NAME,
     "pytorch": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
-    "tf2": ARMORY_IMAGE_NAME,
     "pytorch-deepspeech": "twosixarmory/pytorch-deepspeech:0.16.1",
 }
 
