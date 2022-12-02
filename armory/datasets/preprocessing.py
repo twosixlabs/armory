@@ -50,10 +50,9 @@ def digit(element):
 
 @register
 def carla_over_obj_det_dev(element, modality="rgb"):
-    return carla_over_obj_det_image(
-        element["image"], modality=modality
-    ), carla_over_obj_det_dev_label(
-        element["image"], element["objects"], element["patch_metadata"]
+    return carla_over_obj_det_image(element["image"], modality=modality), (
+        carla_over_obj_det_dev_label(element["image"], element["objects"]),
+        element["patch_metadata"],
     )
 
 
@@ -138,19 +137,30 @@ def carla_over_obj_det_image(x, modality="rgb"):
         )
 
 
-def carla_over_obj_det_dev_label(x, y_object, y_patch_metadata):
-    # convert from TF format of [y1/height, x1/width, y2/height, x2/width] to PyTorch format
-    # of [x1, y1, x2, y2]
-    height, width = x.shape[1:3]  # TODO: better way to extract width/height?
+def convert_tf_boxes_to_pytorch(x, box_array):
+    """
+    Converts object detection boxes from TF format of [y1/height, x1/width, y2/height, x2/width]
+    to PyTorch format of [x1, y1, x2, y2]
 
+    :param x: array of shape (nb, H, W, C)
+    :param y: array or tensor of shape (num_boxes, 4)
+    :return: dict of same format as y
+    """
+    height, width = x.shape[1:3]
     # reorder [y1/height, x1/width, y2/height, x2/width] to [x1/width, y1/height, x2/width, y2/height]
-    converted_boxes = tf.gather(y_object["boxes"], [1, 0, 3, 2], axis=1)
+    converted_boxes = tf.gather(box_array, [1, 0, 3, 2], axis=1)
 
     # un-normalize boxes
     converted_boxes *= [width, height, width, height]
+    return converted_boxes
 
-    y_object["boxes"] = converted_boxes
-    return y_object, y_patch_metadata
+
+def carla_over_obj_det_dev_label(x, y_object):
+    # raw dataset has boxes in TF format of [y1/height, x1/width, y2/height, x2/width]
+    box_array_tf_format = y_object["boxes"]
+    # tf.config.experimental_run_functions_eagerly(True)
+    y_object["boxes"] = convert_tf_boxes_to_pytorch(x, box_array_tf_format)
+    return y_object
 
 
 def infer_from_dataset_info(info, split):
