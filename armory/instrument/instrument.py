@@ -740,6 +740,7 @@ class LogWriter(Writer):
     LOG_LEVELS = (
         "TRACE",
         "DEBUG",
+        "PROGRESS",
         "INFO",
         "SUCCESS",
         "METRIC",
