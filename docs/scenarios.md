@@ -461,8 +461,3 @@ armory package.
 
 To do so, simply inherit the scenario class and override the necessary functions.
 An [example of doing this](https://github.com/twosixlabs/armory-example/blob/master/example_scenarios/audio_spectrogram_classification.py) can be found in our armory-examples repo.
-
-## Derivative metrics
-![alt text](https://user-images.githubusercontent.com/18154355/80718651-691fb780-8ac8-11ea-8dc6-94d35164d494.png "Derivative Metrics")
-
-
