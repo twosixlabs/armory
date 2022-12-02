@@ -405,7 +405,7 @@ def run(command_args, prog, description) -> int:
 def _pull_docker_images(docker_client=None):
     if docker_client is None:
         docker_client = docker.from_env(version="auto")
-    for image in IMAGE_MAP.values():
+    for image in images.IMAGE_MAP.values():
         try:
             docker_client.images.get(image)
         except docker.errors.ImageNotFound:
