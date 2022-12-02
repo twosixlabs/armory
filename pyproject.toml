@@ -95,7 +95,6 @@ deepspeech = [
     "google-cloud-storage",
     "transformers",
     "pytorch-lightning < 1.5.0",
-    "hydra-core",
 ]
 
 math = [
@@ -129,7 +128,6 @@ all = [
     "armory-testbed[math]",
     "armory-testbed[jupyter]",
     "armory-testbed[datasets]",
-    "armory-testbed[datasets-builder]",
     "armory-testbed[pytorch]",
     "armory-testbed[tensorflow]",
 ]
