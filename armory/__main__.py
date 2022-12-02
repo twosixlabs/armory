@@ -81,9 +81,9 @@ class Command(argparse.Action):
 
 class DockerImage(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values in images.IMAGE_MAP.values:
+        if values in images.IMAGE_MAP.values():
             setattr(namespace, self.dest, values)
-        elif values.lower() in images.IMAGE_MAP:
+        elif values.lower() in images.IMAGE_MAP.keys():
             setattr(namespace, self.dest, images.IMAGE_MAP[values])
         else:
             log.info(
@@ -433,6 +433,7 @@ def download(command_args, prog, description):
         metavar="<download data config file>",
         dest="download_config",
         type=str,
+        default="armory/configs/download_data.json",
         action=DownloadConfig,
         help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
