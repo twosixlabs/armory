@@ -13,13 +13,9 @@ from armory.logs import log, is_progress
 
 log.trace(f"armory.__version__: {armory.__version__}")
 
-
 TAG = version.to_docker_tag(armory.__version__)
-
-DOCKER_REPOSITORY = "twosixarmory"
-
-ARMORY_IMAGE_NAME = f"{DOCKER_REPOSITORY}/armory:{TAG}"
-PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
+ARMORY_IMAGE_NAME = f"twosixarmory/armory:{TAG}"
+PYTORCH_DEEPSPEECH = f"twosixarmory/pytorch-deepspeech:{TAG}"
 
 REPOSITORIES = tuple(x.split(":")[0] for x in (ARMORY_IMAGE_NAME, PYTORCH_DEEPSPEECH))
 
@@ -69,7 +65,7 @@ def is_armory(image_name: str):
     Return whether image_name refers to an armory docker image
     """
     user, repo, _ = split_name(image_name)
-    if user and user != DOCKER_REPOSITORY:
+    if user and user != "twosixarmory":
         return False
     if repo == "tf1":
         raise ValueError("tf1 docker image is deprecated. Use Armory version < 0.15.0")
