@@ -1,3 +1,11 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = [
+  "hatchling>=1.10.0",
+  "hatch-vcs",
+]
+
+
 [project]
 requires-python = ">=3.8"
 
@@ -132,13 +140,6 @@ all = [
 ]
 
 
-[build-system]
-build-backend = "hatchling.build"
-requires = [
-  "hatchling>=1.10.0",
-  "hatch-vcs",
-]
-
 [tool.setuptools_scm]
 # the presence of this empty block stops setuptools_scm from complaining
 
@@ -204,11 +205,3 @@ markers = [
   "unit",                       # These are Unit Tests (fast and lightweight)
   "pytorch_deepspeech",         # This test requires pytorch-deepspeech docker container (or equivalent dependencies) to run
 ]
-# TODO: Add these to the pytest options. From armory/validation/test_config
-# addopts = -p no:cacheprovider
-# filterwarnings =
-#     ignore::DeprecationWarning
-#     ignore::RuntimeWarning
-#     ignore::UserWarning:tensorflow*
-#     ignore::UserWarning:torch*
-#     ignore::Warning:art*
