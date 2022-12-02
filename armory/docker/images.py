@@ -17,17 +17,15 @@ DOCKER_REPOSITORY = "twosixarmory"
 
 ARMORY_IMAGE_NAME = f"{DOCKER_REPOSITORY}/armory:{TAG}"
 PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
-ALL = (
-    ARMORY_IMAGE_NAME,
-    PYTORCH_DEEPSPEECH,
-)
-REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
+
+REPOSITORIES = tuple(x.split(":")[0] for x in (ARMORY_IMAGE_NAME, PYTORCH_DEEPSPEECH))
+
 IMAGE_MAP = {
     "armory": ARMORY_IMAGE_NAME,
     "pytorch": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
-    "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
     "tf2": ARMORY_IMAGE_NAME,
+    "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
 }
 
 
