@@ -81,7 +81,7 @@ class Command(argparse.Action):
 
 class DockerImage(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values in images.ALL:
+        if values in images.IMAGE_MAP.values:
             setattr(namespace, self.dest, values)
         elif values.lower() in images.IMAGE_MAP:
             setattr(namespace, self.dest, images.IMAGE_MAP[values])
@@ -191,7 +191,7 @@ def _docker_image(parser):
         "docker_image",
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -199,10 +199,10 @@ def _docker_image(parser):
 def _docker_image_optional(parser):
     parser.add_argument(
         "--docker-image",
-        default=images.PYTORCH,
+        default=images.ARMORY_IMAGE_NAME,
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -405,7 +405,7 @@ def run(command_args, prog, description) -> int:
 def _pull_docker_images(docker_client=None):
     if docker_client is None:
         docker_client = docker.from_env(version="auto")
-    for image in images.ALL:
+    for image in IMAGE_MAP.values():
         try:
             docker_client.images.get(image)
         except docker.errors.ImageNotFound:
