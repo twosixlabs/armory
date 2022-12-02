@@ -466,6 +466,7 @@ class Poison(Scenario):
 
     def load(self):
         self.set_random_seed()
+        self.user_init()
         self.set_dataset_kwargs()
         self.load_model()
         self.load_train_dataset()
