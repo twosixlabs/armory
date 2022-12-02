@@ -114,6 +114,8 @@ class Scenario:
                     kwargs_str = ""
                 log.info(f"Calling user_init function {module}.{name}({kwargs_str})")
                 target = getattr(mod, name, None)
+                if target is None:
+                    raise ValueError(f"user_init name {name} cannot be found")
                 if not callable(target):
                     raise ValueError(f"{module}.{name} is not callable")
                 target(**kwargs)

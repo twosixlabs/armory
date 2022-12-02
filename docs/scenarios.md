@@ -75,7 +75,7 @@ class MyModel(torch.nn.Module):
     def forward(x):
         ...
         table = np.array([[2, 3], [4, 6]])
-        probe.update(contingency_table=z)
+        probe.update(contingency_table=table)
         ...
 ```
 
