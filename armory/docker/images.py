@@ -20,7 +20,7 @@ IMAGE_MAP = {
     "pytorch": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
     "tf2": ARMORY_IMAGE_NAME,
-    "pytorch-deepspeech": "twosixarmory/pytorch-deepspeech:latest",
+    "pytorch-deepspeech": "twosixarmory/pytorch-deepspeech:0.16.1",
 }
 
 
