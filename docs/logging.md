@@ -38,8 +38,8 @@ The explicit ordering of these log levels are:
 TRACE = 5
 DEBUG = 10
 PROGRESS = 15
-METRIC = 16
 INFO = 20
+METRIC = 24
 SUCCESS = 25
 WARNING = 30
 ERROR = 40
