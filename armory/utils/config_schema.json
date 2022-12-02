@@ -36,6 +36,7 @@
             "type": "object"
         },
         "dataset": {
+            "additionalProperties": false,
             "properties": {
                 "test": {
                     "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
@@ -75,7 +76,6 @@
             "required": [
                 "test"
             ],
-            "additionalProperties": false,
             "type": "object"
         },
         "defense": {

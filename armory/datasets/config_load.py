@@ -16,10 +16,12 @@ def load_dataset(
     preprocessor_name="DEFAULT",
     preprocessor_kwargs=None,
     shuffle_files=False,
-    label_key="label",  # TODO: make this smarter or more flexible
+    label_key=None,
     index=None,
     class_ids=None,
     drop_remainder=False,
+    key_map: dict = None,
+    use_supervised_keys: bool = True,
 ):
     # All are keyword elements by design
     if name is None:
@@ -35,6 +37,21 @@ def load_dataset(
             raise ValueError(
                 f"class_ids must be a list, int, or None, not {type(class_ids)}"
             )
+        if label_key is None:
+            if info.supervised_keys is None:
+                raise ValueError(
+                    "label_key is None and info.supervised_keys is None."
+                    " What label is being filtered on?"
+                )
+            elif len(info.supervised_keys) != 2 or not all(
+                isinstance(k, str) for k in info.supervised_keys
+            ):
+                raise NotImplementedError(
+                    f"supervised_keys {info.supervised_keys} is not a 2-tuple of str."
+                    " Please specify label_key for filtering."
+                )
+            _, label_key = info.supervised_keys
+
         element_filter = filtering.get_filter_by_class(class_ids, label_key=label_key)
     if index is None:
         index_filter = None
@@ -56,7 +73,9 @@ def load_dataset(
         preprocessor = preprocessing.get(preprocessor_name)
 
     if preprocessor is not None and preprocessor_kwargs is not None:
-        preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+        preprocessing_fn = lambda x: preprocessor(  # noqa: E731
+            x, **preprocessor_kwargs
+        )
     else:
         preprocessing_fn = preprocessor
 
@@ -67,20 +86,24 @@ def load_dataset(
         ds_dict,
         split=split,
         batch_size=batch_size,
-        framework=framework,
+        num_batches=num_batches,
         epochs=epochs,
         drop_remainder=drop_remainder,
-        num_batches=num_batches,
         index_filter=index_filter,
         element_filter=element_filter,
         element_map=preprocessing_fn,
         shuffle_elements=shuffle_elements,
-        key_map=None,
+        framework=framework,
     )
-    return wrap_generator(armory_data_generator)
+    # If key_map is not None, use_supervised_keys is ignored
+    if key_map is not None:
+        # ignore use_supervised_keys in this case
+        armory_data_generator.set_key_map(key_map)
+    else:
+        # error if use_supervised_keys and supervised_keys do not exist in info
+        armory_data_generator.set_key_map(use_supervised_keys=use_supervised_keys)
 
+    # Let the scenario set the desired tuple directly
+    # armory_data_generator.as_tuple()  # NOTE: This will currently fail for adversarial datasets
 
-def wrap_generator(armory_data_generator):
-    from armory.datasets import art_wrapper
-
-    return art_wrapper.WrappedDataGenerator(armory_data_generator)
+    return armory_data_generator

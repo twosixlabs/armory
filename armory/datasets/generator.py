@@ -12,9 +12,13 @@ x, y = next(gen)
 
 """
 
+import math
+from typing import Tuple
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
-import math
+
+from armory.datasets import key_mapping
 
 
 class ArmoryDataGenerator:
@@ -49,15 +53,14 @@ class ArmoryDataGenerator:
         ds_dict: dict,
         split: str = "test",
         batch_size: int = 1,
-        drop_remainder: bool = False,
-        epochs: int = 1,
         num_batches: int = None,
-        framework: str = "numpy",
-        shuffle_elements: bool = False,
+        epochs: int = 1,
+        drop_remainder: bool = False,
         index_filter: callable = None,
         element_filter: callable = None,
         element_map: callable = None,
-        key_map=None,
+        shuffle_elements: bool = False,
+        framework: str = "numpy",
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -73,9 +76,6 @@ class ArmoryDataGenerator:
             )
         if framework not in self.FRAMEWORKS:
             raise ValueError(f"framework {framework} not in {self.FRAMEWORKS}")
-        if key_map is not None:
-            # TODO: key mapping from dict to tuples, etc.
-            raise NotImplementedError("key_map argument")
 
         size = info.splits[split].num_examples
         batch_size = int(batch_size)
@@ -129,6 +129,7 @@ class ArmoryDataGenerator:
             raise NotImplementedError(f"framework {framework}")
 
         self._set_params(
+            info=info,
             iterator=iterator,
             split=split,
             size=size,
@@ -141,17 +142,115 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
+            key_map=None,
+            output_as_dict=True,
+            output_tuple=("x", "y"),
         )
 
     def _set_params(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+    def set_key_map(self, key_map: dict = None, use_supervised_keys: bool = False):
+        """
+        key_map that maps the keys of the elements dict to other keys
+            E.g., {"image": "x", "label": "y"}
+
+        if use_supervised_keys, it pulls this from info.supervised_keys
+
+        If any key is not present in the map, those values are omitted
+        """
+        if key_map is not None and use_supervised_keys:
+            raise ValueError("Cannot set both key_map and use_supervised_keys")
+        elif key_map is not None:
+            key_mapping.check_key_map(key_map)
+        elif use_supervised_keys:
+            supervised_keys = self.info.supervised_keys
+            if supervised_keys is None:
+                raise ValueError("supervised_keys are None for current dataset info")
+            elif len(supervised_keys) != 2 or not all(
+                isinstance(k, str) for k in supervised_keys
+            ):
+                # NOTE: supervised_keys can be more exotic, though it is rare
+                # See the SupervisedKeysType in tfds.core.DatasetInfo
+                # 3-tuples and nested structures are allowed
+                raise NotImplementedError(
+                    f"supervised_keys {supervised_keys} is not a 2-tuple of str"
+                )
+            x, y = supervised_keys
+            key_map = {x: "x", y: "y"}
+        else:  # key_map is None
+            pass
+
+        self.key_map = key_map
+
+    def set_output_tuple(self, output_tuple: Tuple[str]):
+        """
+        key_map - dict that maps element keys to scenario keys such as `x` and `y`
+            Example: {"image": "x", "label": "y"}
+            if None, no mapping is done
+            if "DEFAULT", will use info.supervised_keys if present
+        output_as_dict - whether to output batches of dicts
+            if False, output_tuple must be set, as it will output tuples
+        output_tuple - output batches are tuples based on the given set of keys
+            if None, will use ("x", "y") as default
+        """
+        if isinstance(output_tuple, str):  # prevent "word" -> ("w", "o", "r", "d")
+            raise ValueError("output_tuple must not be a str")
+        output_tuple = tuple(output_tuple)
+        for k in output_tuple:
+            if not isinstance(k, str):
+                if isinstance(k, tuple):
+                    # NOTE: nested tuples would enable things like:
+                    #    (("x", "x_adv"), ("y", "y_patch_metadata"))
+                    raise NotImplementedError("nested tuples not currently supported")
+                raise ValueError(f"item {k} in output_tuple is not a str")
+        self.output_tuple = output_tuple
+
+    def as_dict(self):
+        """
+        Sets the return type to dict
+        """
+        self.output_as_dict = True
+
+    def as_tuple(self, output_tuple: Tuple[str] = None):
+        """
+        Sets the return type to tuple, according to given output_tuple
+
+        If output_tuple is None, it defaults to the existing output_tuple
+            The default output_tuple at initialization is ("x", "y")
+        """
+        if output_tuple is not None:
+            self.set_output_tuple(output_tuple)
+        self.output_as_dict = False
+
+    def as_supervised(self):
+        """
+        Convenience function similar to 'as_supervised' in tfds.core.DatasetBuilder
+            sets key_map and as_tuple to output supervised tuples
+        """
+        self.set_key_map(use_supervised_keys=True)
+        self.as_tuple(output_tuple=("x", "y"))
+
     def __iter__(self):
         return self
 
     def __next__(self):
-        return next(self.iterator)
+        element = next(self.iterator)
+        if self.key_map is not None:
+            element = {new_k: element[k] for k, new_k in self.key_map.items()}
+        if not self.output_as_dict:
+            element = tuple(element[k] for k in self.output_tuple)
+        return element
 
     def __len__(self):
         return self.batches_per_epoch * self.epochs
+
+
+def wrap_generator(armory_data_generator):
+    """
+    Wrap an ArmoryDataGenerator as an art DataGenerator
+    """
+    from armory.datasets import art_wrapper
+
+    return art_wrapper.WrappedDataGenerator(armory_data_generator)

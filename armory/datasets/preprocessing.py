@@ -1,5 +1,8 @@
 """
 Standard preprocessing for different datasets
+
+These modify, in tensorflow, element dicts and should output updated dicts
+    Ideally, element keys should not be modified here
 """
 
 
@@ -34,27 +37,40 @@ def has(name):
     return name in REGISTERED_PREPROCESSORS
 
 
-@register
-def supervised_image_classification(element):
-    return (image_to_canon(element["image"]), element["label"])
+def audio(element, **kwargs):
+    return {
+        k: audio_to_canon(v, **kwargs) if k == "audio" else v
+        for k, v in element.items()
+    }
 
 
-mnist = register(supervised_image_classification, "mnist")
-cifar10 = register(supervised_image_classification, "cifar10")
+def image(element, **kwargs):
+    return {
+        k: image_to_canon(v, **kwargs) if k == "image" else v
+        for k, v in element.items()
+    }
 
 
-@register
-def digit(element):
-    return (audio_to_canon(element["audio"]), element["label"])
+def video(element, **kwargs):
+    return {
+        k: video_to_canon(v, **kwargs) if k == "video" else v
+        for k, v in element.items()
+    }
+
+
+digit = register(audio, "digit")
+mnist = register(image, "mnist")
+cifar10 = register(image, "cifar10")
 
 
 @register
 def carla_over_obj_det_dev(element, modality="rgb"):
-    return carla_over_obj_det_image(
-        element["image"], modality=modality
-    ), carla_over_obj_det_dev_label(
+    out = {}
+    out["image"] = carla_over_obj_det_image(element["image"], modality=modality)
+    out["objects"], out["patch_metadata"] = carla_over_obj_det_dev_label(
         element["image"], element["objects"], element["patch_metadata"]
     )
+    return out
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
@@ -89,14 +105,6 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     if resample is not None:
         raise NotImplementedError("resampling not currently supported")
     return audio
-
-
-# config = {
-#     "preprocessor": "mnist(max_frames=1)"
-#     "preprocessor_kwargs": {
-#         "max_frames": null,
-#     }
-# }
 
 
 def video_to_canon(
