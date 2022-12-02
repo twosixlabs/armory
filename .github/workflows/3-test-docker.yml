@@ -9,7 +9,7 @@ env:
 
 
 jobs:
-  docker-torch-unit:
+  docker-armory-unit:
     name: ☁️ Docker Armory Image Tests
     runs-on: ubuntu-latest
     steps:
