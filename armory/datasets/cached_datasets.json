@@ -1,4 +1,11 @@
 {
+    "carla_obj_det_dev": {
+        "sha256": "a7adc2400d1fafb03f6d49d10b61ac6405382bc19df446ee25e3d4afce2775a4",
+        "size": 64152715,
+        "subdir": "carla_obj_det_dev/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "carla_over_obj_det_dev": {
         "sha256": "77761f1d5c6eca40984aa40f38fab0568b9bb4a4dca696e876fccaa2dd9be56d",
         "size": 59760259,
