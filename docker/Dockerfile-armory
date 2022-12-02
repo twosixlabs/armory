@@ -15,13 +15,13 @@ WORKDIR /armory-repo
 RUN echo "Updating pip" && \
     pip install --upgrade pip && \
     echo "Building Armory from local source" && \
-    pip install --no-compile --no-cache-dir --editable '.[all]' && \
+    pip install --no-compile --editable '.[all]' && \
     echo "Configuring Armory..." && \
     armory configure --use-default && \
     echo "Cleaning up..." && \
     rm -rf /armory-repo/.git
 
-RUN pip install --no-cache-dir \
+RUN pip install\
         git+https://github.com/ifzhang/ByteTrack.git \
         thop \
         lap \
