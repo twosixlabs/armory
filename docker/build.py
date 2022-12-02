@@ -128,7 +128,7 @@ def init(*args, **kwargs):
         print(f"EXEC:\tBuilding {framework} container.")
         if status := build_worker(framework, armory_version, **kwargs):
             exit_code = status
-    exit(exit_code)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
