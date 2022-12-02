@@ -2,10 +2,9 @@
 name: armory-core
 
 channels:
-  - defaults
-  - conda-forge
-  - anaconda
   - pytorch
+  - conda-forge
+  - defaults
 
 dependencies:
   - python=3.9
