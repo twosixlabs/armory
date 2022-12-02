@@ -13,18 +13,14 @@ from armory.logs import log, is_progress
 
 log.trace(f"armory.__version__: {armory.__version__}")
 
-TAG = version.to_docker_tag(armory.__version__)
-ARMORY_IMAGE_NAME = f"twosixarmory/armory:{TAG}"
-PYTORCH_DEEPSPEECH = f"twosixarmory/pytorch-deepspeech:{TAG}"
-
-REPOSITORIES = tuple(x.split(":")[0] for x in (ARMORY_IMAGE_NAME, PYTORCH_DEEPSPEECH))
+ARMORY_IMAGE_NAME = f"twosixarmory/armory:{version.to_docker_tag(armory.__version__)}"
 
 IMAGE_MAP = {
     "armory": ARMORY_IMAGE_NAME,
     "pytorch": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
     "tf2": ARMORY_IMAGE_NAME,
-    "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
+    "pytorch-deepspeech": f"twosixarmory/pytorch-deepspeech:latest",
 }
 
 
