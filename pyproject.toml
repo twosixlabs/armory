@@ -66,17 +66,17 @@ developer =[
 
 engine = [
     "adversarial-robustness-toolbox == 1.12.2",
-    "Pillow",                # Data dependencies
-    "boto3 == 1.24.89",      # Needed for armory.data.utils
-    "botocore == 1.27.89" ,  # Needed for armory.data.utils
-    "ffmpeg-python",         # Needed for armory.utils.export
+    "Pillow",              # Data dependencies
+    "boto3",               # Needed for armory.data.utils
+    "botocore" ,           # Needed for armory.data.utils
+    "ffmpeg-python",       # Needed for armory.utils.export
     "pydub",               # this is in ART's extra-requires
     "tidecv",              # Needed for TIDE metrics
     # Both `opencv-python` and `opencv-python-headless` must specify
     # the same version.
     "opencv-python == 4.5.5.62",          # Needed for CARLA baseline scenario
     "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
-    "tensorboardx == 2.5.1",
+    "tensorboardx",
 ]
 
 pytorch = [
