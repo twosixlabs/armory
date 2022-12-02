@@ -16,10 +16,7 @@ dependencies:
   - torchvision
   - torchaudio
 
-  - scikit-learn=1.0  # ART requires scikit-learn >=0.22.2,<1.1.0
   - matplotlib
-  - numba  # ART requires numba >= 0.53.1
-  - pandas
 
   - librosa
   - protobuf

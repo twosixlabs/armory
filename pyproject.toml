@@ -75,15 +75,14 @@ engine = [
 pytorch = [
     "armory-testbed[engine,datasets,math]",
     "torch",
-    "torchaudio == 0.12.1",
-    "torchvision == 0.13.1",
+    "torchaudio",
+    "torchvision",
 ]
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
     "tf-models-official",
     "tensorflow >= 2.10.0",
-    # "tensorflow-gpu >= 2.10.0",
 ]
 
 deepspeech = [
