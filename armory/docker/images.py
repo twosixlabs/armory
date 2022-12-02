@@ -10,8 +10,11 @@ import armory
 from armory.utils import version
 from armory.logs import log, is_progress
 
-TAG = version.to_docker_tag(armory.__version__)
+
 log.trace(f"armory.__version__: {armory.__version__}")
+
+
+TAG = version.to_docker_tag(armory.__version__)
 
 DOCKER_REPOSITORY = "twosixarmory"
 
