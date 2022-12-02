@@ -19,5 +19,12 @@
         "subdir": "mnist/3.0.1",
         "url": null,
         "version": "3.0.1"
+    },
+    "xview": {
+        "sha256": "8e5d67c2b6419bf7ff7cb9851a590903078f608501b65735a14e65717f1bc9a1",
+        "size": 1327668423,
+        "subdir": "xview/1.0.1",
+        "url": null,
+        "version": "1.0.1"
     }
 }
