@@ -10,6 +10,10 @@ NOTE: In order to build, this requires apache beam installed.
 NOTE: when building, armory does not provide beam options by default
     This makes building VERY slow unless overrides are provided
     It is recommended that this is built directly using tfds on the command line
+
+Using DirectRunner with apache beam, can build with this:
+    tfds build /workspace/armory/datasets/standard/librispeech_dev_test --data_dir /armory/datasets/new_builds --force_checksums_validation --beam_pipeline_options="runner=DirectRunner,direct_num_workers=16,direct_running_mode=multi_processing"
+    See: https://beam.apache.org/releases/pydoc/2.43.0/_modules/apache_beam/options/pipeline_options.html#DirectOptions
 """
 
 import tensorflow_datasets as tfds
