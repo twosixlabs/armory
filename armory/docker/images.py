@@ -23,10 +23,11 @@ ALL = (
 )
 REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
+    "armory": ARMORY_IMAGE_NAME,
     "pytorch": ARMORY_IMAGE_NAME,
+    "carla-mot": ARMORY_IMAGE_NAME,
     "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
     "tf2": ARMORY_IMAGE_NAME,
-    "carla-mot": ARMORY_IMAGE_NAME,
 }
 
 
