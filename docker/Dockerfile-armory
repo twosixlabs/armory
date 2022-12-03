@@ -27,7 +27,12 @@ RUN pip install\
         lap \
         Cython && \
     # Requires cython for install, so will fail if run in the same pip install as cython
-    pip install --no-cache-dir \
-        cython-bbox
+    pip install cython-bbox
+
+# Create armory user to avoid running as root
+RUN useradd -u 1000 -m armory_user && \
+    chown -R armory_user:armory_user /workspace
+
+USER armory_user
 
 WORKDIR /workspace
