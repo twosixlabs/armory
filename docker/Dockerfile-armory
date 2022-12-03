@@ -37,27 +37,32 @@ RUN pip install \
     pip install cython-bbox
 
 
-# Some TF tools expect a "python" binary
-RUN ln -s $(which python3) /usr/local/bin/python && \
-    # TODO: Move misc. patches into base image.
-    conda config --set auto_activate_base true && \
-    conda init bash
-
+# TODO: Move misc. patches into base image.
 # Setup environmental variables
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
 # TensorFlow requirement
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
 
-# Create armory user to avoid running as root
-RUN useradd --uid 1000 --user-group --create-home --no-log-init --shell /bin/bash user && \
-    chown -R --from=root user /workspace && \
-    chown -R --from=root user /armory-repo
+# Some TF tools expect a "python" binary
+RUN ln -s $(which python3) /usr/local/bin/python && \
+    conda config --set auto_activate_base true
 
-USER user
+# Create armory user to avoid running as root
+RUN useradd \
+        --user-group \
+        --create-home \
+        --no-log-init \
+        --home-dir /tmp \
+        --shell /bin/bash \
+        --uid 1000 \
+        user2 && \
+    chown -R --from=root user /workspace && \
+    chown -R --from=root user /armory-repo && \
+    conda init bash
 
 WORKDIR /workspace
 
-VOLUME ["/workspace", "/armory-repo", "/home/user"]
+VOLUME ["/workspace", "/armory-repo"]
 
 # Jupyter
 EXPOSE 8888
