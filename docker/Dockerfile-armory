@@ -1,4 +1,6 @@
+# TODO: Move misc. patches into base image.
 ARG base_image_tag
+
 
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
@@ -6,12 +8,23 @@ FROM twosixarmory/base:${base_image_tag} AS armory-local
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
 
+# Setup environmental variables
+ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
+# TensorFlow requirement
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
+
 USER root
 
 SHELL ["/bin/bash", "-c"]
 
 # Replace shell with bash so we can source files
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+# Some TF tools expect a "python" binary
+RUN ln -s $(which python3) /usr/local/bin/python && \
+    conda config --set auto_activate_base true && \
+    conda init bash
+
 
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
@@ -36,17 +49,6 @@ RUN pip install \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install cython-bbox
 
-
-# TODO: Move misc. patches into base image.
-# Setup environmental variables
-ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
-# TensorFlow requirement
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
-
-# Some TF tools expect a "python" binary
-RUN ln -s $(which python3) /usr/local/bin/python && \
-    conda config --set auto_activate_base true && \
-    conda init bash
 
 # Create armory user to avoid running as root
 RUN useradd \
