@@ -55,7 +55,7 @@ RUN useradd \
         --home-dir /tmp \
         --shell /bin/bash \
         --uid 1000 \
-        user2 && \
+        user && \
     chown -R --from=root user /workspace && \
     chown -R --from=root user /armory-repo && \
     conda init bash
