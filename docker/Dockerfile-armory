@@ -30,9 +30,10 @@ RUN pip install\
     pip install cython-bbox
 
 # Create armory user to avoid running as root
-RUN useradd -u 1000 -m armory_user && \
-    chown -R armory_user:armory_user /workspace
+RUN groupadd --gid 1000 user && \
+    useradd --uid 1000 --user-group --create-home --no-log-init --shell /bin/bash user && \
+    chown -R user:user /workspace
 
-USER armory_user
+USER user
 
 WORKDIR /workspace
