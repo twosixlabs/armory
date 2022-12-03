@@ -32,7 +32,8 @@ RUN pip install\
 # Create armory user to avoid running as root
 RUN groupadd --gid 1000 user && \
     useradd --uid 1000 --user-group --create-home --no-log-init --shell /bin/bash user && \
-    chown -R user:user /workspace
+    chown -R user:user /workspace && \
+    chown -R user:user /armory-repo
 
 USER user
 
