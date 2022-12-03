@@ -20,15 +20,14 @@ from jsonschema import ValidationError
 
 import armory
 
-from armory.logs import log
-
-from armory import paths
-from armory import arguments
+from armory import arguments, paths
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 from armory.utils.configuration import load_config, load_config_stdin
 from armory.utils.version import to_docker_tag
+
 import armory.logs
+from armory.logs import log
 
 
 class PortNumber(argparse.Action):
