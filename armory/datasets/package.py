@@ -23,9 +23,8 @@ def package(
     )
 
     data_dir = Path(data_dir)
-    expected_dir = data_dir / name / version
-    if not expected_dir.is_dir():
-        raise FileNotFoundError(f"Dataset {name} not found at {expected_dir}")
+    if not Path(built_data_dir).is_dir():
+        raise FileNotFoundError(f"Dataset {name} not found at {built_data_dir}")
     tar_full_filepath = common.get_cache_dataset_path(name, version)
 
     if tar_full_filepath.is_file():
@@ -37,7 +36,7 @@ def package(
             )
 
     log.info("Creating tarball (may take some time)...")
-    cmd = ["tar", "cvzf", str(tar_full_filepath), str(Path(name) / version)]
+    cmd = ["tar", "cvzf", str(tar_full_filepath), str(subdir)]
     log.info(f"Running {' '.join(cmd)}")
     completed_process = subprocess.run(cmd, cwd=data_dir)
     completed_process.check_returncode()
