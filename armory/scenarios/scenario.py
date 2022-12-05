@@ -18,6 +18,9 @@ from armory.metrics import compute
 from armory.utils import config_loading, json_utils
 from armory.logs import log
 
+from armory.metrics.task import population
+from armory.metrics.common import supported
+
 
 class Scenario:
     """
@@ -391,6 +394,8 @@ class Scenario:
         self.load()
         self.evaluate_all()
         self.finalize_results()
+        log.info(supported.__dict__)
+        log.info(population)
         log.debug("Clearing global instrumentation variables")
         del_globals()
 

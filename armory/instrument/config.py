@@ -230,7 +230,13 @@ def task_meter(
     """
     Return meter generated for this specific task
     """
-    metric = metrics.get(name)
+    log.info(name)
+    metric = metrics.get(
+        name
+    )  # this needs to happen first for a custom function to actually load
+    # no need to escape period with in operator
+    if "." in name:  # now follow through with an if statement to change the name...
+        name = name.split(".")[-1]
     result_formatter = metrics.get_result_formatter(name)
     final_kwargs = {}
     if name in metrics.task.population:
