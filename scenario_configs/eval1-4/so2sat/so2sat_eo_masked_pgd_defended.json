@@ -21,11 +21,11 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 8,
-        "eval_split": "validation",
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "so2sat"
+        "test": {
+            "batch_size": 8,
+            "name": "so2sat",
+            "split": "validation"
+        }
     },
     "defense": {
         "kwargs": {
