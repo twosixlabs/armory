@@ -12,7 +12,7 @@ dependencies:
   - cudatoolkit=11.6
   - cudnn  # cudnn required for tensorflow
 
-  - pytorch=1.12
+  - pytorch
   - torchvision
   - torchaudio
 
