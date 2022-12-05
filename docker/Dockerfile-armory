@@ -17,9 +17,6 @@ USER root
 
 SHELL ["/bin/bash", "-c"]
 
-# Replace shell with bash so we can source files
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-
 # Some TF tools expect a "python" binary
 RUN ln -s $(which python3) /usr/local/bin/python && \
     conda config --set auto_activate_base true && \
