@@ -6,7 +6,7 @@
         "kwargs": {
             "batch_size": 1,
             "learning_rate": 0.003,
-            "max_iter": 1000,
+            "max_iter": 5,
             "optimizer": "pgd",
             "targeted": false,
             "verbose": true
@@ -34,7 +34,8 @@
             "carla_od_hallucinations_per_image",
             "carla_od_misclassification_rate",
             "carla_od_true_positive_rate",
-            "object_detection_mAP_tide"
+            "object_detection_mAP_tide",
+            "custom_metrics.custom_tide"
         ]
     },
     "model": {
@@ -54,7 +55,7 @@
         "name": "CarlaObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch",
+        "docker_image": "twosixarmory/pytorch:0.16.0.post250.gf7b783d3",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
