@@ -154,6 +154,12 @@ class SweepAttack(EvasionAttack):
                     f"Expected metric function to return one value, not {len(metric_result)}."
                 )
             metric_result = metric_result[0]
+        elif isinstance(metric_result, np.ndarray):
+            if metric_result.size > 1:
+                raise ValueError(
+                    f"Expected metric function to return one value, not {metric_result.size}."
+                )
+            metric_result = metric_result[0]
         if not isinstance(metric_result, (float, int)):
             raise TypeError(
                 f"Expected metric function to return float or int, not type {type(metric_result)}."

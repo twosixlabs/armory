@@ -219,6 +219,8 @@ class ResultsLogWriter(LogWriter):
         elif any(m in name for m in QUANTITY_METRICS):
             # Don't include % symbol
             f_result = f"{np.mean(result):.2}"
+        elif "object_detection_mAP_tide" in name:
+            f_result = result
         else:
             f_result = f"{np.mean(result):.2%}"
         log.success(
@@ -256,6 +258,17 @@ def _task_metric(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    elif name == "object_detection_mAP_tide":
+        identity_unzip = metrics.get("identity_unzip")
+        metric = identity_unzip
+        identity_zip = metrics.get("identity_zip")
+        final_metric = metrics.get(name)
+
+        def final(x):
+            return final_metric(*identity_zip(x), **final_kwargs)
+
+        final_suffix = name
+        record_final_only = True
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"
@@ -390,6 +403,17 @@ def _task_metric_wrt_benign_predictions(
     elif name == "word_error_rate":
         final = metrics.get("total_wer")
         final_suffix = "total_word_error_rate"
+    elif name == "object_detection_mAP_tide":
+        identity_unzip = metrics.get("identity_unzip")
+        metric = identity_unzip
+        identity_zip = metrics.get("identity_zip")
+        final_metric = metrics.get(name)
+
+        def final(x):
+            return final_metric(*identity_zip(x), **final_kwargs)
+
+        final_suffix = name
+        record_final_only = True
     elif use_mean:
         final = np.mean
         final_suffix = f"mean_{name}"

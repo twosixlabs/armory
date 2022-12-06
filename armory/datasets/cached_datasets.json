@@ -26,5 +26,12 @@
         "subdir": "mnist/3.0.1",
         "url": null,
         "version": "3.0.1"
+    },
+    "resisc45": {
+        "sha256": "93db2fd71eaa8d83c0b963e97fde91abf8949d7c3e6060af2a066810b958dacc",
+        "size": 408525721,
+        "subdir": "resisc45/3.0.0",
+        "url": null,
+        "version": "3.0.0"
     }
 }

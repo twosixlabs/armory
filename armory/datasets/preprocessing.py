@@ -55,6 +55,7 @@ def carla_obj_det_dev(element, modality="rgb"):
 
 mnist = register(supervised_image_classification, "mnist")
 cifar10 = register(supervised_image_classification, "cifar10")
+resisc45 = register(supervised_image_classification, "resisc45")
 carla_over_obj_det_dev = register(carla_obj_det_dev, "carla_over_obj_det_dev")
 
 
