@@ -13,6 +13,13 @@
         "url": null,
         "version": "1.0.8"
     },
+    "german_traffic_sign": {
+        "sha256": "6ad4634c094d7eba393530df5a10c515e715d4c5d535dac6e5f2f0c32eb3edb1",
+        "size": 377035152,
+        "subdir": "german_traffic_sign/3.0.0",
+        "url": null,
+        "version": "3.0.0"
+    },
     "mnist": {
         "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
         "size": 16920751,
