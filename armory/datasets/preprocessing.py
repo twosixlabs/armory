@@ -51,10 +51,9 @@ def digit(element):
 
 @register
 def carla_obj_det_dev(element, modality="rgb"):
-    return carla_over_obj_det_image(
-        element["image"], modality=modality
-    ), convert_tf_obj_det_label_to_pytorch(
-        element["image"], element["objects"], element["patch_metadata"]
+    return carla_over_obj_det_image(element["image"], modality=modality), (
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
+        element["patch_metadata"],
     )
 
 
