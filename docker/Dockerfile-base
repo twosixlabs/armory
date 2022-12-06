@@ -15,6 +15,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
 
+ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
+
 USER root
 
 SHELL ["/bin/bash", "-c"]
@@ -35,6 +38,7 @@ RUN apt-get -y -qq update && \
         vim \
         build-essential \
         git \
+        wget \
         curl \
         # Needed for cv2 (opencv-python) and ffmpeg-python
         libgl1-mesa-glx \
@@ -44,31 +48,18 @@ RUN apt-get -y -qq update && \
 
 # Install Conda
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
-RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-    /bin/bash miniconda.sh -b -p /opt/conda                             && \
-    rm miniconda.sh                                                     && \
-    conda install --yes --channel conda-forge --name base nomkl mamba   && \
-    conda config --set auto_activate_base true                          && \
-    ln -s $(which python3) /usr/local/bin/python                        && \
-    conda init bash
-
-ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda                             && \
+    rm ~/miniconda.sh                                                     && \
+    conda install --yes --channel conda-forge --name base nomkl mamba
+    # conda config --set auto_activate_base true                          && \
+    # ln -s $(which python3) /usr/local/bin/python                        && \
+    # conda init bash
 
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN mamba env update -f environment.yml -n base --prune && \
     armory configure --use-default && \
     mamba clean --all
-
-
-# Install ByteTrack dependencies
-RUN pip install \
-        git+https://github.com/ifzhang/ByteTrack.git \
-        thop \
-        lap \
-        Cython && \
-    # Requires cython for install, so will fail if run in the same pip install as cython
-    pip install cython-bbox
 
 
 # Clean Up
