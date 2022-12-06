@@ -57,7 +57,6 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     dataset_config = copy.deepcopy(
         dataset_config
     )  # Avoid modifying original dictionary
-    module = dataset_config.pop("module")
     dataset_fn_name = dataset_config.pop("name")
     batch_size = dataset_config.pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
