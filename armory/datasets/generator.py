@@ -155,3 +155,12 @@ class ArmoryDataGenerator:
 
     def __len__(self):
         return self.batches_per_epoch * self.epochs
+
+
+def wrap_generator(armory_data_generator):
+    """
+    Wrap an ArmoryDataGenerator as an ART DataGenerator
+    """
+    from armory.datasets import art_wrapper
+
+    return art_wrapper.WrappedDataGenerator(armory_data_generator)
