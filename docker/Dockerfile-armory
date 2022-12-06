@@ -1,4 +1,3 @@
-# TODO: Move misc. patches into base image.
 ARG base_image_tag
 
 
@@ -7,15 +6,6 @@ FROM twosixarmory/base:${base_image_tag} AS armory-local
 # pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
-
-# Setup environmental variables
-ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
-# TensorFlow requirement
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
-
-USER root
-
-SHELL ["/bin/bash", "-c"]
 
 # Some TF tools expect a "python" binary
 RUN ln -s $(which python3) /usr/local/bin/python && \
@@ -46,25 +36,4 @@ RUN pip install \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install cython-bbox
 
-
-# Create armory user to avoid running as root
-RUN useradd \
-        --user-group \
-        --create-home \
-        --no-log-init \
-        --home-dir /tmp \
-        --shell /bin/bash \
-        --uid 1000 \
-        user && \
-    chown -R --from=root user /workspace && \
-    chown -R --from=root user /armory-repo
-
 WORKDIR /workspace
-
-VOLUME ["/workspace", "/armory-repo"]
-
-# Jupyter
-EXPOSE 8888
-
-STOPSIGNAL SIGQUIT
-
