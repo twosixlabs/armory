@@ -230,7 +230,13 @@ def task_meter(
     """
     Return meter generated for this specific task
     """
-    # this needs to happen first for a custom function to actually load
+    # this needs to happen before a name change since metrics.get(name) triggers the load for a custom function
+    # the custom function is part of a module, so name must include the entire .-separated path of the function,
+    # while the custom function that is registered within armory is only referenced by its actual name rather than the entire path
+    # there is no immediate issue with this unless the user wishes to modify the behavior of the meter created with the custom function wrapped in a decorator
+    # should the user use a decorator (e.g. @populationwise), this leads to a disconnect if the name is not processed after metrics.get to drop the path before creating a meter;
+    # the custom function is registered to the namespace (which also happens during metrics.get) of the decorator (e.g. metrics.task.population) simply by its actual name,
+    # which means that "if name in metrics.task.population:" will always be false because name will include the entire path, and thus, not be in metrics.task.population
     metric = metrics.get(name)
     # now follow through with an if statement to change the name...
     if "." in name:  # no need to escape period with in operator
