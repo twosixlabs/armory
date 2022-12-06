@@ -1,5 +1,5 @@
 {
-    "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
+    "_description": "Baseline HuBERT ASR on LibriSpeech",
     "adhoc": {
         "skip_adversarial": false
     },
@@ -8,41 +8,41 @@
         "kwargs": {
             "batch_size": 1,
             "eps": 20,
-            "eps_step": 0.05,
+            "eps_step": 0.5,
             "max_iter": 500,
             "norm": "snr",
             "num_random_init": 0,
-            "targeted": true
+            "targeted": false
         },
         "module": "armory.art_experimental.attacks.snr_pgd",
         "name": "SNR_PGD_Numpy",
-        "targeted": true,
-        "targeted_labels": {
-            "kwargs": {
-                "dtype": "str",
-                "import_from": "armory.attacks.librispeech_target_labels",
-                "values": "entailment_100"
-            },
-            "module": "armory.utils.labels",
-            "name": "ManualTargeter"
-        },
+        "targeted": false,
         "use_label": false
     },
     "dataset": {
-        "batch_size": 1,
-        "eval_split": "test_clean",
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "librispeech",
-        "train_split": "train_clean100"
+        "test": {
+            "batch_size": 1,
+            "name": "librispeech_dev_test",
+            "split": "test_clean"
+        }
     },
-    "defense": null,
+    "defense": {
+        "kwargs": {
+            "apply_fit": false,
+            "apply_predict": true,
+            "channels_first": false,
+            "sample_rate": 16000,
+            "verbose": false
+        },
+        "module": "art.defences.preprocessor",
+        "name": "Mp3Compression",
+        "type": "Preprocessor"
+    },
     "metric": {
         "means": false,
         "perturbation": "snr_db",
         "record_metric_per_sample": true,
         "task": [
-            "entailment",
             "word_error_rate"
         ]
     },
@@ -52,19 +52,13 @@
             "nb_epochs": 20000
         },
         "model_kwargs": {},
-        "module": "armory.baseline_models.pytorch.deep_speech",
+        "module": "armory.baseline_models.pytorch.hubert_asr_large",
         "name": "get_art_model",
         "predict_kwargs": {
             "transcription_output": true
         },
         "weights_file": null,
-        "wrapper_kwargs": {
-            "clip_values": [
-                -1,
-                1
-            ],
-            "pretrained_model": "librispeech"
-        }
+        "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
@@ -72,13 +66,10 @@
         "name": "AutomaticSpeechRecognition"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch-deepspeech",
-        "external_github_repo": [
-            "SeanNaren/deepspeech.pytorch@V3.0"
-        ],
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": null,
         "gpus": "all",
         "local_repo_path": null,
-        "num_eval_batches": 100,
         "output_dir": null,
         "output_filename": null,
         "use_gpu": false

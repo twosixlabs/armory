@@ -16,5 +16,6 @@ class AudioClassificationTask(Scenario):
     def _load_sample_exporter(self):
         return AudioExporter(
             self.export_dir,
-            self.test_dataset.context.sample_rate,
+            self.test_dataset.info.metadata["sample_rate"],  # TODO: smarter way?
+            # self.test_dataset.info['speech'].sample_rate,
         )
