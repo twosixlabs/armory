@@ -109,14 +109,6 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     return audio
 
 
-# config = {
-#     "preprocessor": "mnist(max_frames=1)"
-#     "preprocessor_kwargs": {
-#         "max_frames": null,
-#     }
-# }
-
-
 def video_to_canon(
     video,
     resize=None,
