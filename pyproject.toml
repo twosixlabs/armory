@@ -153,17 +153,6 @@ exclude = [
   "tools/",
 ]
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
-
-[tool.hatch.version]
-source = "vcs"
-path   = "armory/__about__.py"
-
-[tool.hatch.version.raw-options]
-version_scheme = "post-release"
-
 [tool.hatch.build.hooks.vcs]
 version-file = "armory/__about__.py"
 template = """
@@ -173,6 +162,16 @@ template = """
 __version__ = {version!r}
 version_tuple = {version_tuple!r}
 """
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.version]
+source = "vcs"
+path   = "armory/__about__.py"
+
+[tool.hatch.version.raw-options]
+version_scheme = "post-release"
 
 
 # Tools
