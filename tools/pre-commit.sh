@@ -74,7 +74,7 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     else
         echo "📄 Executing 'json.tool' formatter..."
         for TARGET_FILE in ${TARGET_FILES}; do
-            # Check if 
+            # Check if file has been deleted
             if [ ! -f "${TARGET_FILE}" ]; then
                 echo "📄 Skipping ${TARGET_FILE} (deleted)"
                 continue  
