@@ -15,7 +15,7 @@ PROJECT_ROOT=`git rev-parse --show-toplevel`
 #   $ ARMORY_CI_TEST=1 ./tools/pre-commit.sh
 ARMORY_CI_TEST="${ARMORY_COMMIT_HOOK_CI:-0}"
 
-TRACKED_FILES="git --no-pager diff HEAD --name-only"
+TRACKED_FILES="git --no-pager diff --diff-filter=d --name-only HEAD"
 if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
     TRACKED_FILES="git --no-pager ls-files"
 fi
@@ -74,11 +74,6 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
     else
         echo "📄 Executing 'json.tool' formatter..."
         for TARGET_FILE in ${TARGET_FILES}; do
-            # Check if file has been deleted
-            if [ ! -f "${TARGET_FILE}" ]; then
-                echo "📄 Skipping ${TARGET_FILE} (deleted)"
-                continue  
-            fi
             # Check if file is too large to be linted
             FILE_SIZE=`du -m ${TARGET_FILE} | cut -f1`
             if [ ${FILE_SIZE} -gt ${MAX_FILE_SIZE} ]; then
