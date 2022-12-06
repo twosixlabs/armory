@@ -51,7 +51,6 @@ class GermanTrafficSign(tfds.core.GeneratorBasedBuilder):
 
     def _generate_examples(self, path, split):
         """Yields examples. Converts PPM files to BMP before yielding."""
-
         def _read_images(prefix, gtFile):
             with open(gtFile, newline="") as csvFile:
                 gtReader = csv.reader(csvFile, delimiter=";")
