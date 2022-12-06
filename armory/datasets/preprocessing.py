@@ -46,7 +46,7 @@ def digit(element):
 
 @register
 def carla_obj_det_dev(element, modality="rgb"):
-    return carla_over_obj_det_image(element["image"], modality=modality), (
+    return carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
     )
@@ -54,7 +54,7 @@ def carla_obj_det_dev(element, modality="rgb"):
 
 @register
 def carla_over_obj_det_dev(element, modality="rgb"):
-    return carla_over_obj_det_image(element["image"], modality=modality), (
+    return carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
     )
@@ -107,14 +107,6 @@ def audio_to_canon(audio, resample=None, target_dtype=tf.float32, input_type="in
     return audio
 
 
-# config = {
-#     "preprocessor": "mnist(max_frames=1)"
-#     "preprocessor_kwargs": {
-#         "max_frames": null,
-#     }
-# }
-
-
 def video_to_canon(
     video,
     resize=None,
@@ -141,7 +133,7 @@ def video_to_canon(
     return video
 
 
-def carla_over_obj_det_image(x, modality="rgb"):
+def carla_multimodal_obj_det(x, modality="rgb"):
     if modality == "rgb":
         return image_to_canon(x[0])
     elif modality == "depth":
@@ -159,8 +151,8 @@ def convert_tf_boxes_to_pytorch(x, box_array):
     Converts object detection boxes from TF format of [y1/height, x1/width, y2/height, x2/width]
     to PyTorch format of [x1, y1, x2, y2]
 
-    :param x: TF tensor of shape (nb, H, W, C)
-    :param y: TF tensor of shape (num_boxes, 4)
+    :param x: TF tensor of shape (nb, H, W, C) or (H, W, C)
+    :param box_array: TF tensor of shape (num_boxes, 4)
     :return: TF tensor of shape (num_boxes, 4)
     """
     x_shape = tf.shape(x)
