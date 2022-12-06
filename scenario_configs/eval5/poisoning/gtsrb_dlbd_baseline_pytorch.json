@@ -23,8 +23,8 @@
     },
     "dataset": {
         "test": {
-            "name": "german_traffic_sign",
-            "batch_size": 512
+            "batch_size": 512,
+            "name": "german_traffic_sign"
         }
     },
     "defense": {
