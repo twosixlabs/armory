@@ -15,13 +15,11 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
 
-ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
-
 USER root
 
 SHELL ["/bin/bash", "-c"]
 
+WORKDIR /armory-repo
 
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
@@ -54,6 +52,9 @@ RUN curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-L
     conda config --set auto_activate_base true                          && \
     ln -s $(which python3) /usr/local/bin/python                        && \
     conda init bash
+
+ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
 
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN mamba env update -f environment.yml -n base --prune && \
