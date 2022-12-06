@@ -1,21 +1,7 @@
 ARG base_image_tag
 
-
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
-# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
-ARG PIP_DISABLE_PIP_VERSION_CHECK=1
-ARG PIP_NO_CACHE_DIR=1
-
-# Some TF tools expect a "python" binary
-RUN ln -s $(which python3) /usr/local/bin/python && \
-    conda config --set auto_activate_base true && \
-    conda init bash
-
-
-# NOTE: This COPY command is filtered using the `.dockerignore` file
-#       in the root of the repo.
-COPY ./ /armory-repo
 
 WORKDIR /armory-repo
 
