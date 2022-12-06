@@ -28,17 +28,3 @@ if [[ -z "$push" ]]; then
     echo "    python docker/build.py all --no-pull"
     exit 0
 fi
-
-tag=$(python -m armory --version)
-echo tagging twosixarmory/base:latest as $tag for dockerhub tracking
-$dryrun docker tag twosixarmory/base:latest twosixarmory/base:$tag
-
-echo ""
-echo "If you have not run 'docker login', with the proper credentials, these pushes will fail"
-echo "see docs/docker.md for instructions"
-echo ""
-
-# the second push should result in no new upload, it just tag the new image as
-# latest
-$dryrun docker push twosixarmory/base:$tag
-$dryrun docker push twosixarmory/base:latest
