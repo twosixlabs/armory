@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 set -e
 
-usage() { echo "usage: $0 [--dry-run] [--push]" 1>&2; exit 1; }
+usage() { echo "usage: $0 [--dry-run]" 1>&2; exit 1; }
 
 dryrun=
-push=
 
 while [ "${1:-}" != "" ]; do
     case "$1" in
         -n|--dry-run)
             echo "dry-run requested. not building or pushing to docker hub"
             dryrun="echo" ;;
-        --push)
-            push=true ;;
         *)
             usage ;;
     esac
