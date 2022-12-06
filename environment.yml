@@ -16,14 +16,14 @@ dependencies:
   - ipykernel
   - six
 
-  - tensorflow-gpu
-  - transformers  # transformers is used for the Entailment metric only
+  - cudatoolkit=11.6
+  - cudnn  # cudnn required for tensorflow
 
-  # Should be included in NVIDIA base image
-  # - cudatoolkit=11.6
-  # - cudnn  # cudnn required for tensorflow
 
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
+
+  - tensorflow-gpu
+  - transformers  # transformers is used for the Entailment metric only
 
   # ByteTrack (see below)
   # TODO: Should this be added to pyproject.toml; e.g. [byte-track]?
