@@ -155,7 +155,7 @@ class Poison(Scenario):
         adhoc_config = self.config.get("adhoc") or {}
         self.train_epochs = adhoc_config["train_epochs"]
         self.fit_batch_size = adhoc_config.get(
-            "fit_batch_size", self.config["dataset"]["batch_size"]
+            "fit_batch_size", self.config["dataset"]["test"]["batch_size"]
         )
 
         # Flag to determine whether training uses categorical or sparse labels
