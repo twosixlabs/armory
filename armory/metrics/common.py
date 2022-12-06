@@ -64,12 +64,10 @@ def set_namespace(namespace, metric, name=None, set_global=False):
     """
     if name is None:
         name = metric.__name__
-        # log.info(name)
     if set_global:
         global supported
         setattr(supported, name, metric)
     setattr(namespace, name, metric)
-    # log.info(supported.__dict__) # useful but don't want to print every time
     return metric
 
 
