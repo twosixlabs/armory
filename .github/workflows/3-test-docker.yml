@@ -9,8 +9,8 @@ env:
 
 
 jobs:
-  docker-armory-unit:
-    name: ☁️ Docker Armory Image Tests
+  docker-unit:
+    name: ☁️ Docker Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
@@ -31,7 +31,7 @@ jobs:
 
       - name: 🚧 Build the Container
         run: |
-          python docker/build.py --framework armory
+          bash docker/build.sh
 
       - name: 🤞 Run Image tests
         run: |
@@ -46,48 +46,48 @@ jobs:
                 ./tests/
 
 
-  docker-deepspeech-unit:
-    name: ☁️ Docker Deepspeech Image Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🐄 checkout armory full depth with tags for scm
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  # docker-deepspeech-unit:
+  #   name: ☁️ Docker Deepspeech Image Tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: 🐄 checkout armory full depth with tags for scm
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: 0
 
-      - name: 🐍 Use Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
+  #     - name: 🐍 Use Python 3.9
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: 3.9
 
-      - name: ⚙️ Installing Armory
-        shell: bash
-        run: |
-          pip install .
-          armory configure --use-defaults
+  #     - name: ⚙️ Installing Armory
+  #       shell: bash
+  #       run: |
+  #         pip install .
+  #         armory configure --use-defaults
 
-      - name: 🚧 Build the Container
-        run: |
-          python docker/build.py --framework pytorch-deepspeech
+  #     - name: 🚧 Build the Container
+  #       run: |
+  #         python docker/build.py --framework pytorch-deepspeech
 
-      - name: 🤞 Run Image tests
-        run: |
-          IMAGE_VERSION=`armory --show-docker-version-tag`
+  #     - name: 🤞 Run Image tests
+  #       run: |
+  #         IMAGE_VERSION=`armory --show-docker-version-tag`
 
-          docker run                                           \
-            --rm                                               \
-            --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
-              pytest                                           \
-                -c /armory-repo/pyproject.toml                 \
-                -m "not docker_required and unit"              \
-                ./tests/
+  #         docker run                                           \
+  #           --rm                                               \
+  #           --workdir /armory-repo                             \
+  #           twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
+  #             pytest                                           \
+  #               -c /armory-repo/pyproject.toml                 \
+  #               -m "not docker_required and unit"              \
+  #               ./tests/
 
-            docker run                                         \
-            --rm                                               \
-            --workdir /armory-repo                             \
-            twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
-              pytest                                           \
-                -c /armory-repo/pyproject.toml                 \
-                -m "pytorch_deepspeech"                        \
-                ./tests/
+  #           docker run                                         \
+  #           --rm                                               \
+  #           --workdir /armory-repo                             \
+  #           twosixarmory/pytorch-deepspeech:${IMAGE_VERSION}  \
+  #             pytest                                           \
+  #               -c /armory-repo/pyproject.toml                 \
+  #               -m "pytorch_deepspeech"                        \
+  #               ./tests/
