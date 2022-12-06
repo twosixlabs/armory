@@ -1,0 +1,23 @@
+# UCF101 Video Classification Baseline Evaluation
+
+Results obtained using Armory v0.13.3.
+
+|                Attack               |              Budget              | Benign Top1/Top5 Accuracy (Undefended) | Adversarial Top1/Top5 Accuracy (Undefended) | Benign Top1/Top5 Accuracy (Defended) | Adversarial Top1/Top5 Accuracy (Defended) | Test Size |
+|:-----------------------------------:|:--------------------------------:|:--------------------------------------:|:-------------------------------------------:|:------------------------------------:|:-----------------------------------------:|:---------:|
+| Flicker (low perceptibility)        | beta_0=4.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.51/1.00                                   | 0.92/1.00                            | 0.44/1.00                                 | 100       |
+| Flicker (medium perceptibility)     | beta_0=2.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.39/1.00                                   | 0.92/1.00                            | 0.40/0.97                                 | 100       |
+| Flicker (high perceptibility)       | beta_0=1.0 beta_1=0.1 beta_2=0.9 | 0.92/1.00                              | 0.37/1.00                                   | 0.92/1.00                            | 0.38/0.98                                 | 100       |
+| Frame Border                        | patch ratio=0.10                 | 0.92/1.00                              | 0.00/0.25                                   | 0.93/1.00                            | 0.03/0.36                                 | 100       |
+| Frame Border                        | patch ratio=0.15                 | 0.92/1.00                              | 0.00/0.19                                   | 0.93/1.00                            | 0.01/0.29                                 | 100       |
+| Frame Border                        | patch ratio=0.20                 | 0.92/1.00                              | 0.00/0.19                                   | 0.93/1.00                            | 0.00/0.25                                 | 100       |
+| Masked PGD                          | patch ratio=0.10                 | 0.92/1.00                              | 0.02/0.61                                   | 0.93/1.00                            | 0.01/0.66                                 | 100       |
+| Masked PGD                          | patch ratio=0.15                 | 0.92/1.00                              | 0.00/0.42                                   | 0.93/1.00                            | 0.00/0.36                                 | 100       |
+| Masked PGD                          | patch_ratio=0.20                 | 0.92/1.00                              | 0.00/0.28                                   | 0.93/1.00                            | 0.00/0.31                                 | 100       |
+| Frame Saliency (iterative_saliency) | eps=0.004                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.81/1.00                                 | 100       |
+| Frame Saliency (iterative_saliency) | eps=0.008                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.47/1.00                                 | 100       |
+| Frame Saliency (iterative_saliency) | eps=0.015                        | 0.92/1.00                              | 0.00/0.96                                   | 0.92/1.00                            | 0.23/0.99                                 | 100       |
+| Frame Saliency (one_shot)           | eps=0.004                        | 0.92/1.00                              | 0.00/0.26                                   | 0.93/1.00                            | 0.79/0.97                                 | 100       |
+| Frame Saliency (one_shot)           | eps=0.008                        | 0.92/1.00                              | 0.00/0.22                                   | 0.93/1.00                            | 0.46/0.89                                 | 100       |
+| Frame Saliency (one_shot)           | eps=0.015                        | 0.92/1.00                              | 0.00/0.20                                   | 0.93/1.00                            | 0.21/0.74                                 | 100       |
+
+Find reference baseline configurations [here](https://github.com/twosixlabs/armory/tree/8eb10ac43bf4382d69625d8cef8a3e8cb23d0318/scenario_configs)

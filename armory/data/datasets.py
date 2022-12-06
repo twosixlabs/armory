@@ -207,6 +207,61 @@ class EvalGenerator(DataGenerator):
         return self.num_eval_batches
 
 
+class NumpyDataGenerator(DataGenerator):
+    """
+    Simple data generator backed by numpy arrays
+    """
+
+    def __init__(
+        self,
+        x: "np.ndarray",
+        y: "np.ndarray",
+        batch_size: int = 1,
+        drop_remainder: bool = True,
+        shuffle: bool = False,
+    ):
+        x = np.asanyarray(x)
+        y = np.asanyarray(y)
+        try:
+            if len(x) != len(y):
+                raise ValueError("inputs must be of equal length")
+        except TypeError:
+            raise ValueError(f"inputs x {x} and y {y} must be sized objects")
+        size = len(x)
+        self.x = x
+        self.y = y
+        super().__init__(size, int(batch_size))
+        self.shuffle = bool(shuffle)
+
+        self.drop_remainder = bool(drop_remainder)
+        batches_per_epoch = self.size / self.batch_size
+        if not self.drop_remainder:
+            batches_per_epoch = np.ceil(batches_per_epoch)
+        self.batches_per_epoch = int(batches_per_epoch)
+        self.generator = self._single_epoch_generator()
+
+    def _single_epoch_generator(self):
+        if self.shuffle:
+            index = np.arange(self.size)
+            np.random.shuffle(index)
+            for i in range(self.batches_per_epoch):
+                batch_index = index[i * self.batch_size : (i + 1) * self.batch_size]
+                yield (self.x[batch_index], self.y[batch_index])
+        else:
+            for i in range(self.batches_per_epoch):
+                yield (
+                    self.x[i * self.batch_size : (i + 1) * self.batch_size],
+                    self.y[i * self.batch_size : (i + 1) * self.batch_size],
+                )
+
+    def get_batch(self) -> tuple:
+        try:
+            return next(self.generator)
+        except StopIteration:
+            self.generator = self._single_epoch_generator()
+            return next(self.generator)
+
+
 def _parse_token(token: str):
     """
     Token from parse_split index

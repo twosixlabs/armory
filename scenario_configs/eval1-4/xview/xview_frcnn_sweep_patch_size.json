@@ -50,7 +50,7 @@
             },
             "kwargs": {},
             "metric": {
-                "module": "armory.utils.metrics",
+                "module": "armory.metrics.task",
                 "name": "object_detection_mAP",
                 "threshold": 0.1
             }
