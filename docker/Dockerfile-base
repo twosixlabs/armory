@@ -32,7 +32,6 @@ COPY ./ /armory-repo
 RUN apt-get -y -qq update && \
     apt-get install -y \
         sudo \
-        wget \
         vim \
         build-essential \
         git \
@@ -60,6 +59,16 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
 RUN mamba env update -f environment.yml -n base --prune && \
     armory configure --use-default && \
     mamba clean --all
+
+
+# Install ByteTrack dependencies
+RUN pip install \
+        git+https://github.com/ifzhang/ByteTrack.git \
+        thop \
+        lap \
+        Cython && \
+    # Requires cython for install, so will fail if run in the same pip install as cython
+    pip install cython-bbox
 
 
 # Clean Up
