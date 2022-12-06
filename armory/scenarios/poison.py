@@ -166,7 +166,7 @@ class Poison(Scenario):
             self.label_function = lambda y: y
 
         dataset_config = self.config["dataset"]
-        log.info(f"Loading dataset {dataset_config['name']}...")
+        log.info(f"Loading dataset {dataset_config['test']['name']}...")
         ds = config_loading.load_dataset(
             dataset_config,
             split=dataset_config.get("train_split", "train"),
