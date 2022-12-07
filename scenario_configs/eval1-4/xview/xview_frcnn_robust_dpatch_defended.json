@@ -24,10 +24,10 @@
         "use_label": false
     },
     "dataset": {
-        "batch_size": 1,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "xview"
+        "test": {
+            "batch_size": 1,
+            "name": "xview"
+        }
     },
     "defense": {
         "kwargs": {
