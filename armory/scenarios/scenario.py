@@ -45,8 +45,11 @@ class Scenario:
             if num_eval_batches:
                 raise ValueError("check_run and num_eval_batches are incompatible")
             num_eval_batches = 1
+
             # Modify dataset entries
             if config["model"]["fit"]:
+                if not hasattr(config["dataset"], "train"):
+                    config["dataset"]["train"] = {}
                 config["dataset"]["train"]["epochs"] = 1
             if config.get("attack", {}).get("type") == "preloaded":
                 config["attack"]["check_run"] = True
