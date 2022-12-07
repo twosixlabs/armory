@@ -44,7 +44,7 @@ cifar10 = register(supervised_image_classification, "cifar10")
 resisc45 = register(supervised_image_classification, "resisc45")
 
 german_traffic_sign = register(
-    lambda element: (image_to_canon(element["image"], resize=(32, 32)), element["label"]),
+    lambda element: (image_to_canon(element["image"], resize=(224, 224)), element["label"]),
     "german_traffic_sign"
 )
 

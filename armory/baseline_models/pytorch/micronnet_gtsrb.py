@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from art.estimators.classification import PyTorchClassifier
 
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 nclasses = 43  # GTSRB has 43 classes
 
 
@@ -54,9 +56,6 @@ def Net():
         fc2,
         nn.LogSoftmax(),
     )
-
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def get_art_model_wrapper(model, model_kwargs, wrapper_kwargs, weights_path=None):

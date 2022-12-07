@@ -474,6 +474,7 @@ class Poison(Scenario):
 
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
+        # AttributeError: 'numpy.ndarray' object has no attribute 'to_device'
 
         self.probe.update(y_pred=y_pred)
         source = y == self.source_class
@@ -490,7 +491,7 @@ class Poison(Scenario):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
         source = self.source
-
+        breakpoint()
         x_adv, _ = self.test_poisoner.poison_dataset(x, y, fraction=1.0)
 
         self.hub.set_context(stage="adversarial")
