@@ -43,6 +43,10 @@ mnist = register(supervised_image_classification, "mnist")
 cifar10 = register(supervised_image_classification, "cifar10")
 resisc45 = register(supervised_image_classification, "resisc45")
 
+german_traffic_sign = register(
+    lambda element: (image_to_canon(element["image"], resize=(32, 32)), element["label"]),
+    "german_traffic_sign"
+)
 
 @register
 def digit(element):
@@ -62,11 +66,6 @@ def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
     )
-
-
-@register
-def german_traffic_sign(element):
-    return image_to_canon(element["image"], resize=(32, 32)), element["label"]
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
