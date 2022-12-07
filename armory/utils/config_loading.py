@@ -60,12 +60,12 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     dataset_fn_name = dataset_config["test"].pop("name")
     batch_size = dataset_config["test"].pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
-    dataset_module = import_module(module)
+    dataset_module = import_module("armory.data.datasets")
     dataset_fn = getattr(dataset_module, dataset_fn_name)
 
     # Add remaining dataset_config items to kwargs
     for remaining_kwarg in dataset_config:
-        if remaining_kwarg in ["eval_split", "train_split"]:
+        if remaining_kwarg in ["eval_split", "train_split", "test"]:
             continue
         kwargs[remaining_kwarg] = dataset_config[remaining_kwarg]
 
