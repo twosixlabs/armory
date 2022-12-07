@@ -33,10 +33,10 @@
         "use_adversarial_trainer": false
     },
     "dataset": {
-        "batch_size": 512,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "german_traffic_sign"
+        "test": {
+            "batch_size": 512,
+            "name": "german_traffic_sign"
+        }
     },
     "defense": null,
     "metric": null,

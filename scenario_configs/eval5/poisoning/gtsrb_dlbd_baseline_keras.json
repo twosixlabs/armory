@@ -22,10 +22,10 @@
         "name": "poison_loader_dlbd"
     },
     "dataset": {
-        "batch_size": 512,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "german_traffic_sign"
+        "test": {
+            "batch_size": 512,
+            "name": "german_traffic_sign"
+        }
     },
     "defense": {
         "kwargs": {
