@@ -64,6 +64,11 @@ def xview(element):
     )
 
 
+@register
+def german_traffic_sign(element):
+    return image_to_canon(element["image"], resize=(32, 32)), element["label"]
+
+
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
     """
     TFDS Image feature uses (height, width, channels)
