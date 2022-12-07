@@ -57,10 +57,11 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     dataset_config = copy.deepcopy(
         dataset_config
     )  # Avoid modifying original dictionary
+    module = dataset_config.pop("module", "armory.data.datasets")
     dataset_fn_name = dataset_config["test"].pop("name")
     batch_size = dataset_config["test"].pop("batch_size", 1)
     framework = dataset_config.pop("framework", "numpy")
-    dataset_module = import_module("armory.data.datasets")
+    dataset_module = import_module(module)
     dataset_fn = getattr(dataset_module, dataset_fn_name)
 
     # Add remaining dataset_config items to kwargs
