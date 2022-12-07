@@ -236,8 +236,6 @@ class Scenario:
             kwargs["num_batches"] = self.num_eval_batches
         if "split" not in kwargs:
             kwargs["split"] = test_split_default
-        if "preprocessor" not in kwargs:
-            kwargs["preprocessor_name"] = None
 
         log.info(f"Loading test dataset {name} with kwargs {kwargs}")
 
