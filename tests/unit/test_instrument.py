@@ -280,7 +280,7 @@ class LastRecordWriter(instrument.Writer):
         self.num_writes = 0
         self.num_closes = 0
 
-    def write(self, record):
+    def write(self, record, **kwargs):
         self.record = record
         self.num_writes += 1
 
