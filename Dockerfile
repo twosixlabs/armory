@@ -29,11 +29,10 @@ ARG CUDA
 ARG CUDA_VERSION
 ARG LIBNVINFER_MAJOR_VERSION
 ARG UBUNTU_VERSION
+
 ARG DEBIAN_FRONTEND=noninteractive
-# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
-# User configuration
 ARG USER="user"
 ARG PASSWORD="armory"
 ARG UID=1000
@@ -41,6 +40,7 @@ ARG GID=$UID
 
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
+
 
 USER root
 
@@ -64,7 +64,6 @@ RUN apt-get -y -qq update && \
         # Needed for cv2 (opencv-python) and ffmpeg-python
         libgl1-mesa-glx
 
-
 # Install Conda
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
@@ -73,6 +72,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     conda install --yes --channel conda-forge --name base nomkl mamba     && \
     ln -s $(which python3) /usr/local/bin/python                          && \
     conda init bash
+
 
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN mamba env update -f environment.yml -n base --prune && \
