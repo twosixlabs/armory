@@ -57,7 +57,7 @@ COPY ./ /armory-repo
 
 # Basic Apt-get Bits
 RUN apt-get -y -qq update && \
-    apt-get install -y    && \
+    apt-get install -y       \
         build-essential      \
         curl                 \
         git                  \
@@ -65,8 +65,7 @@ RUN apt-get -y -qq update && \
         vim                  \
         wget                 \
         # Needed for cv2 (opencv-python) and ffmpeg-python
-        libgl1-mesa-glx      \
-    rm -rf /var/lib/apt/lists/*
+        libgl1-mesa-glx
 
 
 # Install Conda
