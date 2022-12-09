@@ -40,7 +40,6 @@ jobs:
       - name: 🔨 Build wheel
         run: |
           pip install pip==22.2.2
-          # Ensure `hatch` is installed
           pip install hatch
           hatch build --clean --target wheel
 
@@ -49,7 +48,6 @@ jobs:
         if: ${{ env.RELEASE_DRY_RUN == 'false' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # user: __token__
           password: ${{ secrets.pypi_token }}
           packages_dir: dist
           verbose: true
@@ -69,12 +67,7 @@ jobs:
     name: Build and Release Docker Images
     needs: [release-wheel]
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: armory
-          - image: pytorch-deepspeech
+
     steps:
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
@@ -103,15 +96,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-        # run: |
-        #   docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
-      # TODO: Build Base Image
       - name: 🔨 Build Release Image
         run: |
           echo "Armory Version: ${{ env.ARMORY_VERSION }}"
-          echo "Building Armory ${{ matrix.image }} Image"
-          python docker/build.py --framework ${{ matrix.image }} >> /tmp/build.log
+          bash docker/build.sh
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3
@@ -128,14 +117,14 @@ jobs:
         run: |
           ARMORY_VERSION="${{ env.ARMORY_VERSION }}"
 
-          echo "Pushing ${{ matrix.image }}:${ARMORY_VERSION}"
-          docker push twosixarmory/${{ matrix.image }}:${ARMORY_VERSION}
+          echo "Pushing twosixarmory/armory:${ARMORY_VERSION}"
+          docker push twosixarmory/armory:${ARMORY_VERSION}
 
-          echo "Tagging ${{ matrix.image }}:${ARMORY_VERSION} as ${{ matrix.image }}:latest"
-          docker tag twosixarmory/${{ matrix.image }}:${ARMORY_VERSION} twosixarmory/${{ matrix.image }}:latest
+          echo "Tagging twosixarmory/armory:${ARMORY_VERSION} as twosixarmory/armory:latest"
+          docker tag twosixarmory/armory:${ARMORY_VERSION} twosixarmory/armory:latest
 
           echo "Pushing ${{ matrix.image }}:latest"
-          docker push twosixarmory/${{ matrix.image }}:latest
+          docker push twosixarmory/armory:latest
 
 
 # Workflow Test:
