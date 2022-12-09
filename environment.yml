@@ -14,7 +14,6 @@ dependencies:
   - six
   - cudatoolkit=11.6
   - cudnn  # cudnn required for tensorflow
-  - opencv-python-headless
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
   - tensorflow
   - transformers  # transformers is used for the Entailment metric only
