@@ -2,12 +2,11 @@
 set -e
 
 DRYRUN=
-PUSH_IMAGES=
 ARMORY_VERSION=`armory --show-docker-version-tag`
 
 
 usage() {
-    echo "usage: $0 [--dry-run|--push|--tag]" 1>&2
+    echo "usage: $0 [--dry-run]" 1>&2
     exit 1
 }
 
@@ -28,15 +27,8 @@ done
 # TODO: Install from cache_dir
 # python -m pip install --no-index --find-links=cache_dir -r pyproject.toml
 
-echo "Building the base image locally"
+# echo "Building the base image locally"
 $DRYRUN docker build --force-rm --file Dockerfile -t twosixarmory/armory:${ARMORY_VERSION} --progress=auto .
 
-echo "Retagging image as 'twosixarmory/armory:latest'"
+# echo "Retagging image as 'twosixarmory/armory:latest'"
 $DRYRUN docker tag twosixarmory/armory:${ARMORY_VERSION} twosixarmory/armory:latest
-
-
-if [[ -z "${PUSH_IMAGES}" ]]; then
-    echo "Pushing image to Docker Hub"
-    $DRYRUN docker push twosixarmory/armory:${ARMORY_VERSION}
-    $DRYRUN docker push twosixarmory/armory:latest
-fi
