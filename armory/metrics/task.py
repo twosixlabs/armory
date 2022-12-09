@@ -141,7 +141,7 @@ class Entailment:
 
         with ExternalPipInstalledImport(
             package="transformers",
-            dockerimage="twosixarmory/pytorch-deepspeech",
+            dockerimage="twosixarmory/armory",
         ):
             from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
