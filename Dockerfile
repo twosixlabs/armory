@@ -52,9 +52,6 @@ WORKDIR /armory-repo
 #       in the root of the repo.
 COPY ./ /armory-repo
 
-# Temporary fix for broken nvidia package checksum
-# RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
-
 # Basic Apt-get Bits
 RUN apt-get -y -qq update && \
     apt-get install -y       \
