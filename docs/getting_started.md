@@ -6,7 +6,7 @@ Armory can be installed from PyPi:
 pip install armory-testbed[framework-flavor]
 ```
 
-Where `framework-flavor` is one of `tensorflow`, `pytorch` or `deepspeech`
+Where `framework-flavor` is one of `tensorflow` or `pytorch`
 as described below in [the armory flavors](#the-armory-flavors).
 
 When a user runs a given configuration file, the necessary docker image, datasets and
@@ -61,7 +61,6 @@ Armory supports multiple frameworks:
 
   - tensorflow
   - pytorch
-  - deepspeech
 
 In releases prior to 0.16, there was a complex set of `*-requirements.txt` files
 that were needed to provision the python environment for the various frameworks.
@@ -82,17 +81,13 @@ which installs the libraries needed for tensorflow evaluations. Similarly,
 
     pip install armory-testbed[pytorch]
 
-or
-
-    pip install armory-testbed[deepspeech]
-
 depending on the framework you want to use. We don't recommend trying to
 install multiple frameworks at the same time as this may lead to dependency
-conflicts. So
+conflicts. So,
 
     pip install armory-testbed[tensorflow,pytorch]
 
-is unsupported and may not even install.
+may not install.
 
 ## additional flavors
 
@@ -103,7 +98,7 @@ You can freely add `jupyterlab` to the flavor list to as needed, for example
 People developing armory will likely want to add the `developer` flavor to their
 set:
 
-    pip install armory-testbed[deepspeech,developer,jupyterlab]
+    pip install armory-testbed[developer,jupyterlab]
 
 Developers who are creating new Armory datasets will need
 

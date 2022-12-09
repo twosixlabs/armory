@@ -61,21 +61,21 @@ from the evaluation can be found in the output directory. To later close the
 interactive container simply run CTRL+C from the terminal where this command was ran.
 
 ## armory launch
-* `armory launch <armory|pytorch-deepspeech>`
+* `armory launch <armory>`
 This will launch a framework specific container, with appropriate mounted volumes, for
 the user to attach to for debugging purposes. A command to attach to the container will
 be returned from this call, and it can be ran in a separate terminal. To later close
 the interactive container simply run CTRL+C from the terminal where this command was
 ran.
 
-* `armory launch <armory|pytorch-deepspeech> --jupyter`.
+* `armory launch <armory> --jupyter`.
 Similar to the interactive launch, this will spin up a container for a specific
 framework, but will instead return the web address of a jupyter lab server where
 debugging can be performed. To close the jupyter server simply run CTRL+C from the
 terminal where this command was ran.
 
 ## armory exec
-* `armory exec <armory|pytorch-deepspeech> -- <cmd>`
+* `armory exec <armory> -- <cmd>`
 This will run a specific command within a framework specific container. A notable use
 case for this would be to run test cases using pytest. After completion of the command
 the container will be removed.

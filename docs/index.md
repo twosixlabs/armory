@@ -35,14 +35,14 @@ terminal where this command was ran. Please see [running_armory_scenarios_intera
 
 2) `armory launch`
 
-* `armory launch <tf2|pytorch|pytorch-deepspeech> --interactive`. 
+* `armory launch <armory> --interactive`. 
 This will launch a framework specific container, with appropriate mounted volumes, for 
 the user to attach to for debugging purposes. A command to attach to the container will
 be returned from this call, and it can be ran in a separate terminal. To later close 
 the interactive container simply run CTRL+C from the terminal where this command was 
 ran.
 
-* `armory launch <tf2|pytorch|pytorch-deepspeech> --jupyter`. 
+* `armory launch <armory> --jupyter`. 
 Similar to the interactive launch, this will spin up a container for a specific 
 framework, but will instead return the web address of a jupyter lab server where 
 debugging can be performed. To close the jupyter server simply run CTRL+C from the 
@@ -50,12 +50,12 @@ terminal where this command was ran.
 
 3) `armory exec` 
 
-* `armory exec <tf2|pytorch|pytorch-deepspeech> -- <cmd>`. 
+* `armory exec <armory> -- <cmd>`. 
 This will run a specific command within a framework specific container. A notable use
 case for this would be to run test cases using pytest. After completion of the command 
 the container will be removed.
 
-To use custom docker images with `launch` or `exec`, replace `<tf2|pytorch|pytorch-deepspeech>` with its
+To use custom docker images with `launch` or `exec`, replace `<armory>` with its
 full name: `<your_image/name:your_tag>`. For use with `run`, you will need to modify the
 [configuration file](configuration_files.md).
 

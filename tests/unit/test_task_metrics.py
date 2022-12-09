@@ -13,7 +13,6 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.mark.docker_required
-@pytest.mark.pytorch_deepspeech
 @pytest.mark.slow
 def test_entailment():
     """
