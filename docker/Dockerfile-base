@@ -70,10 +70,9 @@ RUN mamba env update -f environment.yml -n base --prune && \
 #     conda clean -afy
 
 
-# Create armory user to avoid running as root
+# Create armory user  to avoid running as root
 RUN useradd \
         --user-group \
-        --create-home \
         --no-log-init \
         --home-dir /tmp \
         --shell /bin/bash \
