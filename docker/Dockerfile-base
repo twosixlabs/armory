@@ -63,11 +63,11 @@ RUN mamba env update -f environment.yml -n base --prune && \
 
 
 # Clean Up
-RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
-    apt-get autoremove -y && \
-    apt-get autoclean -y && \
-    apt-get clean -y && \
-    conda clean -afy
+# RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
+#     apt-get autoremove -y && \
+#     apt-get autoclean -y && \
+#     apt-get clean -y && \
+#     conda clean -afy
 
 
 # Create armory user to avoid running as root
