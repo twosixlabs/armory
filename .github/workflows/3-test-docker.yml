@@ -31,7 +31,7 @@ jobs:
 
       - name: 🚧 Build the Container
         run: |
-          bash docker/build.sh
+          bash tools/build.sh
 
       - name: 🤞 Run Image tests
         run: |

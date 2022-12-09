@@ -100,7 +100,7 @@ jobs:
       - name: 🔨 Build Release Image
         run: |
           echo "Armory Version: ${{ env.ARMORY_VERSION }}"
-          bash docker/build.sh
+          bash tools/build.sh
 
       - name: 📁 Archiving Artifacts
         uses: actions/upload-artifact@v3
