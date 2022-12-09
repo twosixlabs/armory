@@ -206,14 +206,15 @@ In order for your metric to get loaded, it must be retrievable via the following
 ```
 metrics.get(name)
 ```
-where `name` is the `str` name of your function.
-There are two ways of doing this.
+where `name` is the `str` name of your function. Suppose your metric is defined in `my_project/metrics.py` as `hot_dog_ness`.
 
-1) You can provide the full `.`-separated path to the metric function in the config, e.g., `"my_project.metrics.hot_dog_ness"`
-In this case, `metrics.get("my_project.metrics.hot_dog_ness")` will try to import `hot_dog_ness` from `my_project.metrics`.
-This case will only work as intended if `hot_dog_ness` is a batchwise function that outputs a list (or array) or results, one per element in the batch.
+Using the custom metric requires providing the full `.`-separated path to the metric function in the config, e.g., `"my_project.metrics.hot_dog_ness"`.
+In this case, `metrics.get("my_project.metrics.hot_dog_ness")` will try to import `hot_dog_ness` from `my_project.metrics`. Note the following caveats:
+- This case will only work as intended if `hot_dog_ness` is a batchwise function that outputs a list (or array) of results, one per element in the batch
+- By default, armory will try to calculate a mean from the output of the custom metric
+- Should the name of the custom metric collide with any existing functions supported by armory, armory will throw an error notifying the user of the collision as well as request a name change for the custom metric
 
-2) An alternative is to use one of the existing decorators in `task` or `perturbation` to register your metric.
+*Optional* An alternative is to use one of the existing decorators in `task` or `perturbation` to register your metric. This is useful for applying a custom metric as a non-batchwise operation and suppressing the mean calculation for outputs with specific formats.
 These decorators, their associated namespaces, and the intended APIs of the metric functions they decorate, are:
 - `metrics.perturbation.elementwise` - `metrics.perturbation.element` - takes a single pair of `x_i` and `x_adv_i` and returns a single perturbation distance for that element.
 - `metrics.perturbation.batchwise` - `metrics.perturbation.batch` - takes a batch of `x` and `x_adv` and returns a list of results, one per data element.
@@ -229,16 +230,6 @@ from armory import metrics
 def my_accuracy_metric(y_i, y_pred_i):
     return y_i == np.argmax(y_pred_i)
 ``` 
-NOTE: when using decorators, this uses the local name of the metric, and so in this case `"my_accuracy_metric"` should be in the config, NOT `"my_project.metrics.my_accuracy_metric"`.
-It will generate an error if the name is already used.
-A different name can be used by calling the decorator method directly:
-```
-from armory import metrics
-def my_accuracy_metric(y_i, y_pred_i):
-    return y_i == np.argmax(y_pred_i)
-
-metrics.task.elementwise(my_accuracy_metric, "a_different_name")
-```
 
 Armory performs all built-in metric operations as batches, not as individual elements, so using the `elementwise` decorators will also produce a batchwise version of it that loops through the individual elements and provides a batchwise result.
 NOTE: when armory uses `get`, it will get the batchwise version of a metric.
