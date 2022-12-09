@@ -43,7 +43,7 @@ jobs:
               pytest                              \
                 -c /armory-repo/pyproject.toml    \
                 -m "not docker_required and unit" \
-                ./tests/
+                /armory-repo/tests/
 
             docker run                            \
             --rm                                  \
@@ -52,4 +52,4 @@ jobs:
               pytest                              \
                 -c /armory-repo/pyproject.toml    \
                 -m "pytorch_deepspeech"           \
-                ./tests/
+                /armory-repo/tests/
