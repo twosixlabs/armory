@@ -1,5 +1,5 @@
 <div align="center">
-<img src="//github.com/twosixlabs/armory/raw/master/docs/assets/logo.png" width="50%" title="Armory Logo">
+<img src="/docs/assets/logo.png" width="50%" title="Armory Logo">
 </div>
 
 [![CI][ci-badge]][ci-url]
