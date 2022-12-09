@@ -30,5 +30,5 @@ done
 # echo "Building the base image locally"
 $DRYRUN docker build --force-rm --file Dockerfile -t twosixarmory/armory:${ARMORY_VERSION} --progress=auto .
 
-# echo "Retagging image as 'twosixarmory/armory:latest'"
+echo "Retagging image as 'twosixarmory/armory:latest'"
 $DRYRUN docker tag twosixarmory/armory:${ARMORY_VERSION} twosixarmory/armory:latest
