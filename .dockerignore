@@ -35,5 +35,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# mypy
 .mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
