@@ -27,7 +27,7 @@ they can be built from the release branch of the repo:
 ```
 git checkout -b r0.16.0
 bash docker/build-base.sh
-python docker/build.py <tf2|pytorch|pytorch-deepspeech|all> [--no-pull]
+python docker/build.py <armory|pytorch-deepspeech|all> [--no-pull]
 ```
 
 If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.
