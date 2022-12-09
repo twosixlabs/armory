@@ -3,7 +3,6 @@ set -e
 
 DRYRUN=
 PUSH_IMAGES=
-TAGGED_VERSION=
 ARMORY_VERSION=`armory --show-docker-version-tag`
 
 
@@ -17,7 +16,6 @@ while [ "${1:-}" != "" ]; do
     case "$1" in
         -n|--dry-run) DRYRUN="echo" ;;
         -p|--push)    PUSH_IMAGES=1 ;;
-        -t|--tag)     TAGGED_VERSION=$2; shift ;;
         *)            usage ;;
     esac
     shift
@@ -35,12 +33,6 @@ $DRYRUN docker build --force-rm --file Dockerfile -t twosixarmory/armory:${ARMOR
 
 echo "Retagging image as 'twosixarmory/armory:latest'"
 $DRYRUN docker tag twosixarmory/armory:${ARMORY_VERSION} twosixarmory/armory:latest
-
-
-if [[ -z "${TAGGED_VERSION}" ]]; then
-    echo "Tagging image as 'twosixarmory/armory:${TAGGED_VERSION}'"
-    $DRYRUN docker tag twosixarmory/armory:${ARMORY_VERSION} twosixarmory/armory:${TAGGED_VERSION}
-fi
 
 
 if [[ -z "${PUSH_IMAGES}" ]]; then
