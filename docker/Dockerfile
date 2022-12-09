@@ -6,18 +6,38 @@
 # based images should inhereit from this image using:
 #       FROM twosixlabs/armory AS armory-baseline
 #
+#
+#            ~~! Please remove/modify the following lines as updates are made to the image. !~~
+# Notes:
+#   [1] https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/gpu.Dockerfile
+#   [2] https://bcourses.berkeley.edu/courses/1478831/pages/glibcxx-missing
+#   [3] https://docs.ycrc.yale.edu/clusters-at-yale/guides/conda/#mamba-the-conda-alternative
+#   [4] https://github.com/tensorflow/models/tree/master/research/object_detection
+#   [5]
+#
 ##########################################################################################
+ARG UBUNTU_VERSION=20.04
+ARG CUDNN_VERSION=8
+ARG CUDA_VERSION=11.6.2
+ARG CUDA=11.6
+ARG LIBNVINFER_MAJOR_VERSION=8
 
-FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
 
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS base
+
+ARG CUDA
+ARG CUDA_VERSION
+ARG LIBNVINFER_MAJOR_VERSION
+ARG UBUNTU_VERSION
 ARG DEBIAN_FRONTEND=noninteractive
+# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+ARG PIP_NO_CACHE_DIR=1
+# User configuration
 ARG USER="user"
 ARG PASSWORD="armory"
 ARG UID=1000
 ARG GID=$UID
-# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
-ARG PIP_DISABLE_PIP_VERSION_CHECK=1
-ARG PIP_NO_CACHE_DIR=1
 
 ENV PATH="/opt/conda/envs/base/bin:/opt/conda/bin:/usr/local/cuda/lib64:${PATH}"
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/envs/base/lib/
@@ -37,7 +57,7 @@ COPY ./ /armory-repo
 
 # Basic Apt-get Bits
 RUN apt-get -y -qq update && \
-    apt-get install -y       \
+    apt-get install -y    && \
         build-essential      \
         curl                 \
         git                  \
@@ -45,7 +65,7 @@ RUN apt-get -y -qq update && \
         vim                  \
         wget                 \
         # Needed for cv2 (opencv-python) and ffmpeg-python
-        libgl1-mesa-glx && \
+        libgl1-mesa-glx      \
     rm -rf /var/lib/apt/lists/*
 
 
