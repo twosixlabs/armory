@@ -4,17 +4,7 @@ inside a docker container.
 
 
 ## Images
-There are two docker images that are currently published to dockerhub for every release of
-the armory framework:
-
-1. `twosixarmory/armory:<version>`
-2. `twosixarmory/pytorch-deepspeech:<version>`
-
-NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
-If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.
-
-We additionally publish a base image, `twosixarmory/base:latest`, from which the three main images are derived.
-This is updated less frequently, and each release does not necessarily have a corresponding new base.
+As of Armory version 0.17.0, all images have been merged into `twosixarmory/armory:latest`. Support for the `tf1`, `tf2`, `pytorch`, `pytorch-deepspeech`, and `carla-mot` image has been dropped.
 
 When using `armory launch` or `armory exec` the framework specific arguments will
 utilize one of these three primary images.
@@ -63,9 +53,9 @@ the container.
 
 Once inside the container, you should be able to run or import armory as required:
 ```
-I have no name!@c10db6c70a81:/workspace$ armory version
-0.13.0
-I have no name!@c10db6c70a81:/workspace$ python
+user@c10db6c70a81:/workspace$ armory version
+0.16.1
+user@c10db6c70a81:/workspace$ python
 Python 3.7.6 (default, Jan  8 2020, 19:59:22)
 [GCC 7.3.0] :: Anaconda, Inc. on linux
 Type "help", "copyright", "credits" or "license" for more information.
@@ -86,11 +76,8 @@ evaluations are ran. However if there are issues downloading the images (e.g. pr
 they can be built from the release branch of the repo:
 ```
 git checkout -b r0.16.0
-bash docker/build-base.sh
-python docker/build.py <armory|pytorch-deepspeech|all> [--no-pull]
+bash tools/build.sh
 ```
-
-If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.
 
 
 ## Docker Volume Mounts
@@ -256,15 +243,6 @@ x, y = next(ds)
 NOTE: The listing of libraries needed for Armory when run on host is available at
 `pyproject.toml`. You will need to manually install the requirements in
 that file that match your framework (TF2, PyTorch).
-
-# publishing a new base
-
-As of armory v0.15, there is a base docker image which is pushed to dockerhub
-occasionally.  The container description is in [Dockerfile-base](docker/Dockerfile-base)
-and there is a tiny [build-base.sh](docker/build-base.sh) helper script.
-
-We do not currently have any verification tests for this build.
-**TODO**: add validation tests and make this a CI deployment job, perhaps.
 
 
 ## docker credentials
