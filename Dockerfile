@@ -112,21 +112,3 @@ VOLUME ["/workspace", "/armory-repo"]
 EXPOSE 8888
 
 STOPSIGNAL SIGQUIT
-
-
-# ------------------------------------------------------------------
-# DEVELOPER NOTES:
-# ------------------------------------------------------------------
-# NOTE:
-#  - pytorch-lightning >= 1.5.0 will break Deep Speech 2
-#  - torchmetrics >= 0.8.0 will break pytorch-lightning 1.4
-#  - hydra-lightning installs omegaconf
-#  - google-cloud-storage needed for checkpoint.py import
-#  - only sox python bindings are installed; underlying sox binaries not needed
-# NOTE: Listed dependencies of PyTorch Deep Speech 2, but do not appear
-#       to be used for inference (only for training), they are not installed:
-#         - torchelastic
-#         - wget
-#         - flask
-#         - fairscale
-# ------------------------------------------------------------------

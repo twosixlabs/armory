@@ -75,7 +75,7 @@ When using a released version of armory, docker images will be pulled as needed 
 evaluations are ran. However if there are issues downloading the images (e.g. proxy)
 they can be built from the release branch of the repo:
 ```
-git checkout -b r0.16.0
+git checkout -b r0.17.0
 bash tools/build.sh
 ```
 
