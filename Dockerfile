@@ -24,11 +24,6 @@ ARG LIBNVINFER_MAJOR_VERSION=8
 
 FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-runtime-ubuntu${UBUNTU_VERSION} AS base
 
-ARG CUDA
-ARG CUDA_VERSION
-ARG LIBNVINFER_MAJOR_VERSION
-ARG UBUNTU_VERSION
-
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
@@ -61,7 +56,8 @@ RUN apt-get -y -qq update && \
         vim                  \
         wget                 \
         # Needed for cv2 (opencv-python) and ffmpeg-python
-        libgl1-mesa-glx
+        libgl1-mesa-glx \
+        libglib2.0-0
 
 # Install Conda
 # NOTE: with conda version 5, will need to set channel priority to flexible (as strict will become default)
