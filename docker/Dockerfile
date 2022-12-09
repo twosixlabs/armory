@@ -1,10 +1,10 @@
 ##########################################################################################
 #
-#                           ARMORY Baseline Docker Image
+#                           ARMORY Docker Image
 #
 # This File contains the baseline image for Armory docker images.  All framework
 # based images should inhereit from this image using:
-#       FROM twosixlabs/armory-baseline AS armory-baseline
+#       FROM twosixlabs/armory AS armory-baseline
 #
 ##########################################################################################
 
