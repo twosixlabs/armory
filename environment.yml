@@ -1,5 +1,4 @@
 ---
-# yamllint disable rule:line-length
 name: armory-core
 
 # In order of priority: lowest (top) to highest (bottom)
