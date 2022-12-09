@@ -97,7 +97,8 @@ RUN useradd                                      \
     cp /etc/skel/{.bashrc,.profile} /tmp/     && \
     chmod 0440 /etc/sudoers.d/${USER}         && \
     chown -R --from=root ${USER} /workspace   && \
-    chown -R --from=root ${USER} /armory-repo
+    chown -R --from=root ${USER} /armory-repo && \
+    conda init bash
 
 
 USER ${USER}
