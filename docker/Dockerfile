@@ -56,6 +56,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     # ln -s $(which python3) /usr/local/bin/python                        && \
     # conda init bash
 
+
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN mamba env update -f environment.yml -n base --prune && \
     armory configure --use-default && \
@@ -89,3 +90,21 @@ EXPOSE 8888
 STOPSIGNAL SIGQUIT
 
 WORKDIR /workspace
+
+
+# ------------------------------------------------------------------
+# DEVELOPER NOTES:
+# ------------------------------------------------------------------
+# NOTE:
+#  - pytorch-lightning >= 1.5.0 will break Deep Speech 2
+#  - torchmetrics >= 0.8.0 will break pytorch-lightning 1.4
+#  - hydra-lightning installs omegaconf
+#  - google-cloud-storage needed for checkpoint.py import
+#  - only sox python bindings are installed; underlying sox binaries not needed
+# NOTE: Listed dependencies of PyTorch Deep Speech 2, but do not appear
+#       to be used for inference (only for training), they are not installed:
+#         - torchelastic
+#         - wget
+#         - flask
+#         - fairscale
+# ------------------------------------------------------------------

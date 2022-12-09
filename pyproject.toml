@@ -136,6 +136,7 @@ all = [
     "armory-testbed[datasets]",
     "armory-testbed[pytorch]",
     "armory-testbed[tensorflow]",
+    "armory-testbed[deepspeech]",
 ]
 
 
