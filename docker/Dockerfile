@@ -11,6 +11,10 @@
 FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG USER="user"
+ARG PASSWORD="armory"
+ARG UID=1000
+ARG GID=$UID
 # pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
 ARG PIP_DISABLE_PIP_VERSION_CHECK=1
 ARG PIP_NO_CACHE_DIR=1
@@ -33,17 +37,16 @@ COPY ./ /armory-repo
 
 # Basic Apt-get Bits
 RUN apt-get -y -qq update && \
-    apt-get install -y \
-        sudo \
-        vim \
-        build-essential \
-        git \
-        wget \
-        curl \
+    apt-get install -y       \
+        build-essential      \
+        curl                 \
+        git                  \
+        sudo                 \
+        vim                  \
+        wget                 \
         # Needed for cv2 (opencv-python) and ffmpeg-python
-        libgl1-mesa-glx \
-        # libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+        libgl1-mesa-glx && \
+    rm -rf /var/lib/apt/lists/*
 
 
 # Install Conda
@@ -51,36 +54,40 @@ RUN apt-get -y -qq update && \
 RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda                             && \
     rm ~/miniconda.sh                                                     && \
-    conda install --yes --channel conda-forge --name base nomkl mamba
-    # conda config --set auto_activate_base true                          && \
-    # ln -s $(which python3) /usr/local/bin/python                        && \
-    # conda init bash
-
+    conda install --yes --channel conda-forge --name base nomkl mamba     && \
+    ln -s $(which python3) /usr/local/bin/python                          && \
+    conda init bash
 
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN mamba env update -f environment.yml -n base --prune && \
-    armory configure --use-default && \
-    mamba clean --all
-
+    armory configure --use-default
 
 # Clean Up
-# RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
-#     apt-get autoremove -y && \
-#     apt-get autoclean -y && \
-#     apt-get clean -y && \
-#     conda clean -afy
+RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -y && \
+    apt-get autoremove -y && \
+    apt-get autoclean -y && \
+    apt-get clean -y && \
+    conda clean -afy
 
 
-# Create armory user  to avoid running as root
-RUN useradd \
-        --user-group \
-        --no-log-init \
-        --home-dir /tmp \
-        --shell /bin/bash \
-        --uid 1000 \
-        user && \
-    chown -R --from=root user /workspace && \
-    chown -R --from=root user /armory-repo
+# Create armory user, set $HOME to /tmp, and add to sudoers
+RUN useradd                                      \
+        --user-group                             \
+        --no-log-init                            \
+        --home-dir /tmp                          \
+        --shell /bin/bash                        \
+        --uid ${UID}                             \
+        ${USER}                               && \
+    usermod -aG sudo ${USER}                  && \
+    echo "${USER} ALL=(ALL) NOPASSWD:ALL" >      \
+        /etc/sudoers.d/${USER}                && \
+    cp /etc/skel/{.bashrc,.profile} /tmp/     && \
+    chmod 0440 /etc/sudoers.d/${USER}         && \
+    chown -R --from=root ${USER} /workspace   && \
+    chown -R --from=root ${USER} /armory-repo
+
+
+USER ${USER}
 
 VOLUME ["/workspace", "/armory-repo"]
 

@@ -10,20 +10,13 @@ channels:
 
 dependencies:
   - python=3.9
-  - pip
-  - git
-  - ipykernel
+  - pip>=22.2.0
   - six
-
   - cudatoolkit=11.6
   - cudnn  # cudnn required for tensorflow
-
-
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
-
-  - tensorflow-gpu
+  - tensorflow
   - transformers  # transformers is used for the Entailment metric only
-
   # ByteTrack (see below)
   # TODO: Should this be added to pyproject.toml; e.g. [byte-track]?
   - pytorch        # Required by ByteTrack, therefore must be installed pre-pip
@@ -33,15 +26,12 @@ dependencies:
   - pip:
     # Armory
     - --editable '.[all]'
-
     # Hydra Lightning Configs
     - 'git+https://github.com/romesco/hydra-lightning.git#subdirectory=hydra-configs-pytorch-lightning'
-
     # ByteTrack
     - thop          # ByteTrack
     - cython-bbox   # ByteTrack
     - 'git+https://github.com/ifzhang/ByteTrack.git'
     - 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'
-
 
 prefix: /opt/conda
