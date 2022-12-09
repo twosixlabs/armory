@@ -28,7 +28,7 @@ done
 # python -m pip install --no-index --find-links=cache_dir -r pyproject.toml
 
 echo "Building the base image locally"
-$DRYRUN docker build --force-rm --file Dockerfile -t twosixarmory/armory:latest --progress=auto .
+$DRYRUN docker build --force-rm --file Dockerfile -t twosixarmory/armory:${$ARMORY_VERSION} --progress=auto .
 
 
 if [[ -z "${PUSH_IMAGES}" ]]; then
