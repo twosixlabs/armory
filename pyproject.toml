@@ -75,8 +75,8 @@ engine = [
     # Both `opencv-python` and `opencv-python-headless` must specify
     # the same version. Note, `tf-models-official 2.11.0` requires
     # `opencv-python-headless == 4.5.2.52.
-    "opencv-python == 4.5.2.52",          # Needed for CARLA baseline scenario
-    "opencv-python-headless == 4.5.2.52", # Needed for CARLA baseline scenario
+    "opencv-python",          # Needed for CARLA baseline scenario
+    "opencv-python-headless", # Needed for CARLA baseline scenario
     "tensorboardx",
 ]
 
@@ -89,8 +89,8 @@ pytorch = [
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
-    "tf-models-official",
-    "tensorflow >= 2.10.0",
+    "tf-models-official >= 2.11.0",
+    "tensorflow >= 2.11.0",
 ]
 
 deepspeech = [
