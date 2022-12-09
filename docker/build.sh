@@ -17,7 +17,7 @@ while [ "${1:-}" != "" ]; do
 done
 
 echo "Building the base image locally"
-$dryrun docker build --force-rm --file ./docker/Dockerfile-base -t twosixarmory/base:latest --progress=auto .
+$dryrun docker build --force-rm --file ./docker/Dockerfile -t twosixarmory/armory:latest --progress=auto .
 
 if [[ -z "$push" ]]; then
     echo ""
