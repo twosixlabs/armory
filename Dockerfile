@@ -89,6 +89,8 @@ RUN apt-get purge $( dpkg --list | grep -P -o "linux-image-\d\S+"| head -n-1 ) -
     conda clean -afy
 
 
+WORKDIR /workspace
+
 # Create armory user, set $HOME to /tmp, and add to sudoers
 RUN useradd                                      \
         --user-group                             \
@@ -114,8 +116,6 @@ VOLUME ["/workspace", "/armory-repo"]
 EXPOSE 8888
 
 STOPSIGNAL SIGQUIT
-
-WORKDIR /workspace
 
 
 # ------------------------------------------------------------------
