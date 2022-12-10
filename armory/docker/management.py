@@ -20,7 +20,7 @@ class ArmoryInstance(object):
         self,
         image_name,
         runtime: str = "runc",
-        envs: dict = None,
+        envs: dict = {},
         ports: dict = None,
         command: str = "tail -f /dev/null",
         user: str = "",
@@ -29,6 +29,8 @@ class ArmoryInstance(object):
 
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
+
+        envs["ARMORY_VERSION"] = armory.__version__
 
         mounts = [
             docker.types.Mount(

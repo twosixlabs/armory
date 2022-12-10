@@ -17,7 +17,6 @@ from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
 from armory.utils.printing import bold, red
 from armory import paths
-from armory import environment
 from armory.logs import log, is_debug, added_filters
 
 
@@ -111,7 +110,7 @@ class Evaluator(object):
             torch_home = paths.DockerPaths().pytorch_dir
         self.extra_env_vars["TORCH_HOME"] = torch_home
 
-        self.extra_env_vars[environment.ARMORY_VERSION] = armory.__version__
+        self.extra_env_vars["ARMORY_VERSION"] = armory.__version__
 
     def _cleanup(self):
         log.info(f"deleting tmp_dir {self.tmp_dir}")

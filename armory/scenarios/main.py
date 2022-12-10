@@ -21,7 +21,7 @@ import pytest
 import time
 
 import armory
-from armory import environment, paths, validation, Config
+from armory import paths, validation, Config
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
 from armory.logs import log, update_filters, make_logfiles
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     update_filters(args.log_level, args.debug)
     log.trace(f"main.py called update_filters({args.log_level} debug: {args.debug})")
-    calling_version = os.getenv(environment.ARMORY_VERSION, "UNKNOWN")
+    calling_version = os.environ.get("ARMORY_VERSION", "UNKNOWN")
     if calling_version != armory.__version__:
         log.warning(
             f"armory calling version {calling_version} != "
