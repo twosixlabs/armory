@@ -4,6 +4,7 @@ Helper utilies to load things from armory configuration files.
 
 from importlib import import_module
 from armory.logs import log
+from armory.scenarios.scenario import Scenario
 
 # import torch before tensorflow to ensure torch.utils.data.DataLoader can utilize
 #     all CPU resources when num_workers > 1
@@ -45,6 +46,15 @@ def load(sub_config):
 def load_fn(sub_config):
     module = import_module(sub_config["module"])
     return getattr(module, sub_config["name"])
+
+
+def load_user_init(sub_config, scenario: Scenario):
+    module = import_module(sub_config["module"])
+    fn = getattr(module, sub_config["name"])
+    # args = sub_config.get("args", [])
+    # kwargs = sub_config.get("kwargs", {})
+    # return fn(*args, **kwargs)
+    return fn(scenario)
 
 
 # TODO THIS is a TERRIBLE Pattern....can we refactor?

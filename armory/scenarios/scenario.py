@@ -210,6 +210,10 @@ class Scenario:
         self.use_label = use_label
         self.generate_kwargs = generate_kwargs
 
+    def load_user_init(self):
+        user_init_config = self.config["user-init"]
+        config_loading.load_user_init(user_init_config, self)
+
     def load_dataset(self, eval_split_default="test"):
         dataset_config = self.config["dataset"]
         eval_split = dataset_config.get("eval_split", eval_split_default)
@@ -288,6 +292,7 @@ class Scenario:
         self.load_dataset()
         self.load_metrics()
         self.load_export_meters()
+        self.load_user_init()
         return self
 
     def evaluate_all(self):
