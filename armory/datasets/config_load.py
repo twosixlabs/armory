@@ -56,13 +56,15 @@ def load_dataset(
         preprocessor = preprocessing.get(preprocessor_name)
 
     if preprocessor is not None and preprocessor_kwargs is not None:
-        preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+        preprocessing_fn = lambda x: preprocessor(  # noqa: E731
+            x, **preprocessor_kwargs
+        )
     else:
         preprocessing_fn = preprocessor
 
     shuffle_elements = shuffle_files
 
-    armory_data_generator = generator.ArmoryDataGenerator(
+    return generator.ArmoryDataGenerator(
         info,
         ds_dict,
         split=split,
@@ -77,10 +79,3 @@ def load_dataset(
         shuffle_elements=shuffle_elements,
         key_map=None,
     )
-    return wrap_generator(armory_data_generator)
-
-
-def wrap_generator(armory_data_generator):
-    from armory.datasets import art_wrapper
-
-    return art_wrapper.WrappedDataGenerator(armory_data_generator)
