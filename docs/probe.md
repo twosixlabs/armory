@@ -102,13 +102,13 @@ In this particular example, the `Meter` accepts 3 inputs: a meter name, a metric
 For the scope of this document, we don't dwell on what `armory` is doing with `get_hub().connect_meter(meter)` other than to mention this step is necessary for establishing the connection between `meter` created in `armory/user_init.py` and `probe` created in the modified version of `armory/baseline_models/pytorch/cifar.py`.
 
 ### Config Setup
-Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"model"` block has been changed appropriately, the other block that needs to be added is `"user-init"`:
+Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"model"` block has been changed appropriately, the other block that needs to be added is `"user_init"`:
 ```json
 ...
     "model": {
         ...
     },
-    "user-init": {
+    "user_init": {
         "module": "user_init",
         "name": "user_init_function"
     },
@@ -162,13 +162,13 @@ As before, the `Meter` accepts 3 inputs: a meter name, a metric/function for pro
 Again, `get_hub().connect_meter(meter)` is necessary for establishing the connection between `meter` created in `armory/user_init.py` and `probe` created in `armory/custom_attack.py`.
 
 ### Config Setup
-Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"attack"` block has been changed appropriately, the other block that needs to be added is `"user-init"`:
+Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"attack"` block has been changed appropriately, the other block that needs to be added is `"user_init"`:
 ```json
 ...
     "attack": {
         ...
     },
-    "user-init": {
+    "user_init": {
         "module": "user_init",
         "name": "user_init_function"
     },
