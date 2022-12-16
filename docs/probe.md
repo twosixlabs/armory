@@ -134,7 +134,7 @@ def post_method_hook(x_patch, patch_target, transformations):
 
 # load Scenario
 s = get_scenario(
-    "/armory/tmp/2022-11-03T180812.020999/carla_obj_det_dpatch_undefended.json",
+    "/armory/tmp/2022-11-03T180812.020999/carla_obj_det_adversarialpatch_undefended.json",
     num_eval_batches=1,
 ).load()
 
