@@ -123,14 +123,14 @@ def method_hook(obj, method_name, pre_method_hook=None, post_method_hook=None):
 
 def hook_wrapper(method, pre_method_hook = None, post_method_hook = None):
     def wrapped(*args, **kwargs):
-        return_value = method(*args[1:], **kwargs) # skip self with *args[1:]
-        post_method_hook(*return_value) # unpack return_value with *
+        return_value = method(*args[1:], **kwargs)
+        post_method_hook(*return_value)
         return return_value
 
     return wrapped
 
 def post_method_hook(x_patch, patch_target, transformations):
-    probe.update(x_patch=x_patch)
+    probe.update(x_patch=x_patch)  # adding batch dim
 
 # load Scenario
 s = get_scenario(
@@ -234,9 +234,9 @@ def method_hook(obj, method_name, pre_method_hook=None, post_method_hook=None):
 
 def hook_wrapper(method, pre_method_hook=None, post_method_hook=None):
     def wrapped(*args, **kwargs):
-        return_value = method(*args[1:], **kwargs) # skip self with *args[1:]
+        return_value = method(*args[1:], **kwargs)
         if post_method_hook is not None:
-            post_method_hook(*args[0]) # *args[0] corresponds to self with _patch attribute
+            post_method_hook(*args[0])
         return return_value
 
     return wrapped
@@ -260,7 +260,7 @@ method_hook(
 
 # create Meter for Probe with "hooked_method" namespace
 hook_meter = Meter(
-    "hook_patch", lambda x: x.detach().cpu().numpy(), "hooked_method.patch"
+    "hook_x_patch", lambda x: x, "hooked_method.x_patch"
 )
 
 # connect Meter to Hub
@@ -278,39 +278,29 @@ Consider the functions introduced in [Example 2](#example-2-attack-artifact---av
 
 ### Probe and Meter Details - Step 3
 Recall the general approach for hooking a `Probe`:
-1. Define the function for the `Probe` action (e.g. `post_method_hook`) <ins>***[CHANGED]***</ins>
+1. Define the function for the `Probe` action (e.g. `post_method_hook`)
 2. Wrap the method of interest (e.g. `_train_step`) and `post_method_hook`
-    1. Define function (e.g. `hook_wrapper`) that returns another function (e.g. `wrapped`) that calls `_train_step` and `post_method_hook` in the desired order <ins>***[CHANGED]***</ins>
+    1. Define function (e.g. `hook_wrapper`) that returns another function (e.g. `wrapped`) that calls `_train_step` and `post_method_hook` in the desired order
     2. Assign the result of `hook_wrapper` to the original method of interest (`_train_step`) via `method_hook`, thus changing the behavior of the method without modifying it directly <ins>***[UNCHANGED]***</ins>
 
 #### Step 3-1: `post_method_hook`<a name="step3-1"></a>
-The signature of `post_method_hook` now specifies a single argument `obj`, which we assume has a `_patch` attribute. Again note that this has nothing to do with the expected output of `_train_step` - we know from inspecting the `_train_step` method that a `_patch` attribute exists, which we refer to within `post_method_hook` via `obj._patch`. We are choosing to measure the value assigned to an attribute of `obj`, an input of `post_method_hook`, and also choosing to refer to the variable to be updated as `patch` by the `Probe`, which leads to `probe.update(patch=obj._patch)`. The `Meter` is then able to reference this as `"hooked_method.patch"` later on.
+The role of the defined `post_method_hook` function is the same as that of `hook_fn` defined in [Example 1](#example1) - we are specifying the variable to update being monitored by the `Probe`. In this particular example, despite its name, it is not the name that is specifying whether the `Probe` action occurs after a method, but which input this function is assigned to when calling `method_hook`, which we will show later.
 
-This example is another possible template for the user, where the definition of `post_method_hook` changes depending on what the user is interested in monitoring.
+Note the signature of `post_method_hook` with 3 arguments - this was based on the expected output of `_augment_images_with_patch` i.e. `return_value = method(*args[1:], **kwargs)`, and the anticipation that the output of `_augment_images_with_patch` would be passed to `post_method_hook` as input in `hook_wrapper` i.e. `post_method_hook(*return_value)`.
+
+Of those expected outputs, we are choosing to update the value assigned to argument `x_patch` of `post_method_hook` and choosing to also refer to the updated value as `x_patch` by the `Probe`, which leads to `probe.update(x_patch=x_patch)`. The `Meter` is then able to reference this as `"hooked_method.x_patch"` later on.
+
+For now, consider the example shown as a possible template for the user - we leave it as a template rather than add a defined function in armory such that the user can adjust as needed.
 
 #### Step 3-2.1: `hook_wrapper`
-As in [Example 2](#example-2-attack-artifact---available-as-output), `method` is called before `post_method_hook` in `wrapped` of `hook_wrapper`. `return_value` is not used in any way other than being returned at the end of `wrapped` to maintain `method`'s functionality. `*arg[0]` of `*arg` however, is passed to `post_method_hook` as an input, because it refers to `self`, the instance making the `method` call. As mentioned earlier, `self` contains the `_patch` attribute, which is what `probe` is monitoring in `post_method_hook`.
+`hook_wrapper` determines when the `Probe` action takes place with respect to a `method` call as well as how inputs should be specified for either a `pre_method_hook` or a `post_method_hook`. Its signature as defined suggests the possibility of either, but in this example, we only specify `post_method_hook`.
 
-Again, this example's `hook_wrapper` is another possible template for the user, which has been defined in such as way as to accomplish the objective described in the [User Story](#user-story-2).
+Within `hook_wrapper`, we define `wrapped`, which is where the actual order of calls for `method` and `post_method_hook` are specified, which in this case is `method` then `post_method_hook`. Again, despite the argument name, there is no reason the user cannot specify `post_method_hook` to be called before `method`, but we discourage such practices for clarity.
 
-#### Step 4
-A brief note on the `Meter` creation in this example: The `_patch` variable of interest is a tensor, which is why a preprocessing function is applied for the identity metric, `lambda x:  x.detach().cpu().numpy()`. The chaining functions could have occurred else where in the process as well.
+Now consider the arguments involved within `hook_wrapper`. `hook_wrapper` once called, will return a function `wrapped`, which expects arguments `*args` and `**kwargs`. Because `hook_wrapper` is meant to wrap `method`, `*args` and `**kwargs` will be passed to `method` such that it performs its original function. Recall that `method` is not just any ordinary function but a method for an instance, which means that even though the first argument of `*args` will be `self` <ins>***[why was `self` even passed to begin with???]***</ins>, the actual method call needs to exclude it, leading to `method(*args[1:], **kwargs)`.
 
-## Flexible Arrangements
-We have emphasized through out this section that the example functions shown (with the exception of `method_hook`) are templates, and how those functions are defined depends on the user story. Before we discuss what the user needs to consider when defining those functions, it is important that the user remembers the 5-step process for custom probes as a general framework, which may aid in any debugging efforts that may occur later.
+Also note what `wrapped` returns. Since `method` needs to maintain its original functionality, the return value for `wrapped` should also match that of `method`, thus `return return_value`.
 
-That said, here are the questions the user needs to consider for creating custom probes:
-- What is the `method` of interest? What is the variable of interest?
-    - Some knowledge of the package being used is necessary
-- Is there an existing hooking mechanism for the `method` of interest?
-    - Relying on hooks from the package provider reduces code and maintenance
-- Does the `Probe` action occur before or after a `method` call?
-    - Define `pre_method_hook` or `post_method_hook` and arrange calls as necessary with respect to `method` call
-- What should `pre_method_hook`/`post_method_hook` expect as input?
-    - It may be natural for a `pre_method_hook` to take the same arguments as `method` i.e. `*args` and `**kwargs`
-    - It may be natural for a `post_method_hook` to take the output of a `method` call i.e. `*return_value`
-    - If the user is interested in the state of an instance or the attributes within it pre or post `method` call, passing the instance to `pre_method_hook`/`post_method_hook` is also possible i.e. `*args[0]`
-- Is `wrapped` returning `return_value`?
-    - `method`'s original functionality has to be maintained
+Last but not least, consider the `post_method_hook` call. For this example, the objective was to update a variable that is an output of `method` after each `method` call, and as mentioned in [Step 3-1](#step-3-1-post_method_hook), we pass `return_value` as-is but with a `*` to unpack the iterable, thus `post_method_hook(*return_value)`.
 
-Once these questions have been answered, the user can define functions as needed to meet specific monitoring objectives.
+We present `hook_wrapper` as another template for the user rather than a defined armory function, because, as we have alluded to before, the arrangement of a `Probe` action and instance method is heavily dependent on the user's objective and not obviously generalizable as we will see in the next example.
