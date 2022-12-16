@@ -19,6 +19,66 @@ Scenarios are implemented as subclasses of `Scenario`, and typically given their
 Of particular note is the [Poison](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poison.py) class, from which all poisoning scenarios are subclassed.
 More information on poisoning scenarios is documented [here](poisoning.md).
 
+### User Initialization
+
+When adding custom metrics or instrumentation meters to a scenario, it may be necessary to initialize or perform user-specific operations before loading.
+This can also be helpful for other goals, such as fine-grained control over random initializations, instantiating external integrations (e.g., TensorBoard), or setting things like environment variables.
+For this purpose, there is a `user_init` method that is called at the beginning of `load` (but after scenario initialization).
+In poisoning, this occurs right after random seed setting in `load` (to enable the user to easily override random initialization).
+
+This uses the underlying scenario config field of the same name, `user_init`.
+See [configuration](configuration_files.md) for the json specification.
+An example config would be as follows:
+```json
+    ...
+    "user_init": {
+        "module": "import.path.to.my_module",
+        "name": "my_init_function",
+        "kwargs": {
+             "case": 1,
+             "print_stuff": false
+        }
+    }
+}
+```
+Which would essentially do the following before loading anything else in the scenario:
+```python
+import import.path.to.my_module as my_module
+my_module.my_init_function(case=1, print_stuff=False)
+```
+If `name` were `""` or `None`, then it would only do the import:
+```python
+import import.path.to.my_module
+```
+
+This could be helpful for a variety of things, such as registering `metrics` prior to loading or setting up custom meters.
+For instance:
+```python
+def my_init_function():
+    from armory.instrument import Meter, get_hub
+    from armory import metrics
+    m = Meter(
+        "chi_squared_test",
+        metrics.get("chi2_p_value"),
+        "my_model.contingency_table",
+    )
+    get_hub().connect_meter(m)
+```
+Would enable measurement of a contingency table produced by your model.
+This would require adding probe points in your model code to connect it (which doesn't need to be in the init block), e.g.:
+```python
+from armory.instrument import get_probe
+probe = get_probe("my_model")
+
+class MyModel(torch.nn.Module):
+    ...
+    def forward(x):
+        ...
+        table = np.array([[2, 3], [4, 6]])
+        probe.update(contingency_table=table)
+        ...
+```
+
 
 ## Baseline Scenarios
 Currently the following Scenarios are available within the armory package.
@@ -461,8 +521,3 @@ armory package.
 
 To do so, simply inherit the scenario class and override the necessary functions.
 An [example of doing this](https://github.com/twosixlabs/armory-example/blob/master/example_scenarios/audio_spectrogram_classification.py) can be found in our armory-examples repo.
-
-## Derivative metrics
-![alt text](https://user-images.githubusercontent.com/18154355/80718651-691fb780-8ac8-11ea-8dc6-94d35164d494.png "Derivative Metrics")
-
-

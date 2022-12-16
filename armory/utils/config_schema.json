@@ -324,6 +324,24 @@
         },
         "sysconfig": {
             "$ref": "#/definitions/sysconfig"
+        },
+        "user_init": {
+            "anyOf": [
+                {
+                    "kwargs": {
+                        "type": "object"
+                    },
+                    "module": {
+                        "$ref": "#/definitions/python_module"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "type": "null"
+                }
+            ]
         }
     },
     "required": [

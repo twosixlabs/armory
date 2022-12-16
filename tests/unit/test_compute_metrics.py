@@ -37,7 +37,6 @@ def test_basic():
 
     assert fast_key in results
     assert slow_key in results
-    assert results[slow_key] > results[fast_key]
 
 
 def test_deterministic(caplog):
