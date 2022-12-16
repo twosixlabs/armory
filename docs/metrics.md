@@ -427,22 +427,6 @@ probe.update(func1, func2, func3, my_var=y)
 ```
 will publish the value `func3(func2(func1(y)))`. 
 
-#### Hooking
-
-Probes can also hook models to enable capturing values without modifying the target code.
-Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roadmap.
-
-To hook a model module, you can use the `hook` function.
-For instance, 
-```python
-# probe.hook(module, *preprocessing, input=None, output=None)
-probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
-```
-This essentially wraps the `probe.update` call with a hooking function.
-This is intended for usage that cannot or does not modify the target codebase.
-
-More general hooking (e.g., for python methods) is TBD.
-
 #### Interactive Testing
 
 An easy way to test probe outputs is to set the probe to a `MockSink` interface.
