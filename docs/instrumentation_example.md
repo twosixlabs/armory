@@ -175,3 +175,59 @@ Last but not least, the config file passed to `armory run` needs to updated for 
 ...
 ```
 This will prompt armory to run `set_up_meter` in `user_init.py` before anything else is loaded for the scenario.
+
+## Saving Results
+By default, outputs from `Meter`s will be saved to the output `json` file after `armory run`. Whether this suffices for the user depends on what the user is trying to measure.
+
+Users who have tried the examples in this document, however, may run into some of the following warning logs:
+> 2022-12-16 19:34:36 30s WARNING  armory.instrument.instrument:_write:856 record (name=my_arbitrary_meter_name, batch=0, result=...) size > max_record_size 1048576. Dropping.
+
+This is because of `Meter`'s default settings, which has a size limit for each record. That the outputs exceed a size limit also suggests that a `json` file may not be the best file type to save to. To override these behaviors, we need a new `Meter` subclass to work with our examples that does not have a size limit and will save to another filetype such as a `pkl` file. Below is an updated `user_init.py` for Example 2 with a new `PickleMeter` class:
+```python
+from armory.instrument import get_hub, Meter
+import pickle
+
+class PickleMeter(Meter):
+    def __init__(
+        self,
+        name,
+        output_dir,
+        x,
+        max_batches=None,
+    ):
+        """
+        :param name (string): name given to PickleMeter
+        :param output_dir (string): 
+        :param x (string): .-separated string of probe name and variable name e.g. "scenario.x"
+        :param max_batches (int or None): maximum number of batches to export
+        """
+        metric_args = [x]
+        super().__init__(name, lambda x: x, *metric_args)
+
+        self.max_batches = max_batches
+        self.metric_args = metric_args
+        self.output_dir = output_dir
+        self.iter = 0
+
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+
+    def measure(self, clear_values=True):
+        self.is_ready(raise_error=True)
+        batch_num, batch_data = self.arg_batch_indices[0], self.values[0]
+        if self.max_batches is not None and batch_num >= self.max_batches:
+            return
+
+        with open(os.path.join(self.output_dir, f"{self.name}_batch_{batch_num}_iter_{self.iter}.pkl"), "wb") as f:
+            pickle.dump(batch_data, f)
+        self.iter += 1
+        if clear_values:
+            self.clear()
+        self.never_measured = False
+
+def set_up_meter():
+    meter = PickleMeter(
+        "my_arbitrary_meter_name", get_hub().export_dir, "my_attack.attack_output"
+    )
+    get_hub().connect_meter(meter, use_default_writers=False)
+```
