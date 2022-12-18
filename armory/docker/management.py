@@ -30,7 +30,7 @@ class ArmoryInstance(object):
         host_paths = paths.HostPaths()
         docker_paths = paths.DockerPaths()
 
-        envs = envs if envs not None else {}
+        envs = envs if envs else {}
         envs["ARMORY_VERSION"] = armory.__version__
 
         mounts = [
