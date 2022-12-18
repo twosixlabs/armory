@@ -27,11 +27,11 @@ class ArmoryInstance(object):
     ):
         self.docker_client = docker.from_env(version="auto")
 
-        host_paths = paths.HostPaths()
-        docker_paths = paths.DockerPaths()
-
         envs = envs if envs else {}
         envs["ARMORY_VERSION"] = armory.__version__
+
+        host_paths = paths.HostPaths()
+        docker_paths = paths.DockerPaths()
 
         mounts = [
             docker.types.Mount(
@@ -40,7 +40,7 @@ class ArmoryInstance(object):
                 type="bind",
                 read_only=False,
             )
-            for dir in "cwd dataset_dir local_git_dir output_dir saved_model_dir tmp_dir".split()
+            for dir in ("cwd", "dataset_dir", "local_git_dir", "output_dir", "saved_model_dir", "tmp_dir")
         ]
 
         container_args = {
