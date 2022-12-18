@@ -53,8 +53,11 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         echo "⚫ Executing 'black' formatter..."
         python -m black --check ${TARGET_FILES} > /dev/null 2>&1
         if [ $? -ne 0 ]; then
-            python -m black $TARGET_FILES
             echo "⚫ some files were formatted."
+            if [ "${ARMORY_CI_TEST}" -ne 0 ]; then
+                python -m black --diff $TARGET_FILES
+            fi
+            python -m black $TARGET_FILES
             CHECK_EXIT_STATUS 1
         fi
 
