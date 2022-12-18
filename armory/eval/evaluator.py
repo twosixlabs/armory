@@ -110,8 +110,6 @@ class Evaluator(object):
             torch_home = paths.DockerPaths().pytorch_dir
         self.extra_env_vars["TORCH_HOME"] = torch_home
 
-        self.extra_env_vars["ARMORY_VERSION"] = armory.__version__
-
     def _cleanup(self):
         log.info(f"deleting tmp_dir {self.tmp_dir}")
         try:

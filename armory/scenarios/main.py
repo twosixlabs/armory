@@ -27,6 +27,9 @@ from armory.utils.configuration import load_config
 from armory.logs import log, update_filters, make_logfiles
 
 
+CLIENT_ARMORY_VERSION = "ARMORY_VERSION"
+
+
 def _scenario_setup(config: Config) -> None:
     """
     Creates scenario specific tmp and output directiories.
@@ -208,7 +211,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     update_filters(args.log_level, args.debug)
     log.trace(f"main.py called update_filters({args.log_level} debug: {args.debug})")
-    calling_version = os.environ.get("ARMORY_VERSION", "UNKNOWN")
+    calling_version = os.environ.get(CLIENT_ARMORY_VERSION, "UNKNOWN")
     if calling_version != armory.__version__:
         log.warning(
             f"armory calling version {calling_version} != "
