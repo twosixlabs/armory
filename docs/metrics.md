@@ -350,7 +350,7 @@ assert results == [7, 11]
 
 Since these all use a global Hub object, it doesn't matter which python files they are instantatied in.
 Probe should be instantiated in the file or class you are trying to measure.
-Meters and writers can be instantiated in your initial setup, and can be connected before probes are constructed.
+Meters and writers can be instantiated in your initial setup (please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block), and can be connected before probes are constructed.
 
 #### Direct Recording
 

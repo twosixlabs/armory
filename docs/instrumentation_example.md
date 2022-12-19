@@ -80,7 +80,7 @@ After importing `get_probe`, `probe = get_probe("my_model")` creates a `Probe` o
 `x_out = x.detach().cpu().numpy()` is taking the layer output of interest (second `relu` activation output) and converting the tensor to `numpy` array on the CPU, which will be passed to `probe`. An updated value of `x_out` is stored in `layer_output` via `probe.update(layer_output=x_out)`. Like the `Probe` name `"my_model"`, `layer_output` can be referenced by the user later to apply additional processing functions through a `Meter` object.
 
 ### `Meter` Example Code
-Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py`:
+Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py` (Please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
 ```python
 from armory.instrument import get_hub, Meter
 
@@ -102,7 +102,7 @@ In this particular example, the `Meter` accepts 3 inputs: a meter name, a metric
 For the scope of this document, we don't dwell on what `armory` is doing with `get_hub().connect_meter(meter)` other than to mention this step is necessary for establishing the connection between `meter` created in `armory/user_init.py` and `probe` created in the modified version of `armory/baseline_models/pytorch/cifar.py`.
 
 ### Config Setup
-Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"model"` block has been changed appropriately, the other block that needs to be added is `"user_init"`:
+Last but not least, the config file passed to `armory run` needs to be updated for these changes to take effect. Assuming the `"model"` block has been changed appropriately, the other block that needs to be added is `"user_init"` (please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
 ```json
 ...
     "model": {
@@ -140,7 +140,7 @@ This step is the same as before, except `Probe` name is set to`"my_attack"`, whi
 The only difference between `CustomAttack` and `CARLADapricotPatch` is that `_augment_images_with_patch` has been redefined to call on `CARLADapricotPatch._augment_images_with_patch` and then have `probe` update the value for `x_patch` that results from that call. An updated value of `x_patch` is stored in `attack_output` via `probe.update(attack_output=x_patch)`. Like the `Probe` name `"my_attack"`, `attack_output` can be referenced by the user later to apply additional processing functions through a `Meter` object.
 
 ### `Meter` Example Code
-Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py`:
+Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py` (Please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
 ```python
 from armory.instrument import get_hub, Meter
 
@@ -162,7 +162,7 @@ As before, the `Meter` accepts 3 inputs: a meter name, a metric/function for pro
 Again, `get_hub().connect_meter(meter)` is necessary for establishing the connection between `meter` created in `armory/user_init.py` and `probe` created in `armory/custom_attack.py`.
 
 ### Config Setup
-Last but not least, the config file passed to `armory run` needs to updated for these changes to take effect. Assuming the `"attack"` block has been changed appropriately, the other block that needs to be added is `"user_init"`:
+Last but not least, the config file passed to `armory run` needs to be updated for these changes to take effect. Assuming the `"attack"` block has been changed appropriately, the other block that needs to be added is `"user_init"` (please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
 ```json
 ...
     "attack": {
