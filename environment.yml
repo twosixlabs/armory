@@ -1,5 +1,4 @@
 ---
-# yamllint disable rule:line-length
 name: armory-core
 channels:
   - pytorch

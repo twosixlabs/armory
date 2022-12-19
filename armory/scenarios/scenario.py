@@ -13,7 +13,7 @@ from tqdm import tqdm
 
 import armory
 from armory import Config, paths, metrics
-from armory.datasets import config_load
+from armory.datasets import config_load, generator
 from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
 from armory.instrument.export import ExportMeter, PredictionMeter
 from armory.metrics import compute
@@ -200,15 +200,18 @@ class Scenario:
         self.num_train_epochs = kwargs.get("epochs", 1)
 
     def fit(self):
+        log.info("Wrapping ArmoryDataGenerator with ART DataGenerator class")
+        art_generator = generator.wrap_generator(self.train_dataset)
+
         if self.defense_type == "Trainer":
             log.info(f"Training with {type(self.trainer)} Trainer defense...")
             self.trainer.fit_generator(
-                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+                art_generator, nb_epochs=self.num_train_epochs, **self.fit_kwargs
             )
         else:
             log.info(f"Fitting model {self.model_name}...")
             self.model.fit_generator(
-                self.train_dataset, nb_epochs=self.num_train_epochs, **self.fit_kwargs
+                art_generator, nb_epochs=self.num_train_epochs, **self.fit_kwargs
             )
 
     def load_attack(self):
