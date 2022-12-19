@@ -1,4 +1,4 @@
-# Armory Instrumentation Examples: Capture Artifacts from Existing Code
+# Armory Instrumentation Examples: Measuring Experiment Artifacts Using Probes and Meters
 For an introduction to `Probe`s and `Meter`s, please refer to [Measurement Overview](./metrics.md).
 
 ## Context
