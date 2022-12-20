@@ -4,6 +4,7 @@ Standard preprocessing for different datasets
 
 
 import tensorflow as tf
+from armory.datasets.context import contexts
 
 
 REGISTERED_PREPROCESSORS = {}
@@ -54,9 +55,27 @@ def carla_obj_det_dev(element, modality="rgb"):
 
 @register
 def carla_over_obj_det_dev(element, modality="rgb"):
-    return carla_multimodal_obj_det(element["image"], modality=modality), (
+    x = carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
+    )
+    print(x)
+    return x
+
+
+# @register
+# look at the dataset builder file
+# @tf.function; then put a breakpoint in the preprocessing function
+# tf.set_eagerly true (in slack channel)
+# proper integration will be shown with good benign performance
+@register
+def carla_video_tracking_dev(element, max_frames=None):
+    return carla_video_tracking(
+        element["video"], max_frames=max_frames
+    ), carla_video_tracking_labels(
+        element["video"],
+        (element["bboxes"], element["patch_metadata"]),
+        max_frames=max_frames,
     )
 
 
@@ -143,6 +162,175 @@ def carla_multimodal_obj_det(x, modality="rgb"):
         raise ValueError(
             f"Found unexpected modality {modality}. Expected one of ('rgb', 'depth', 'both')."
         )
+
+
+def preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of preprocessing functions
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x):
+        for function in functions:
+            x = function(x)
+        return x
+
+    return wrapped
+
+
+def label_preprocessing_chain(*args):
+    """
+    Wraps and returns a sequence of label preprocessing functions.
+    Note that this function differs from preprocessing_chain() in that
+    it chains across (x, y) instead of just x
+    """
+    functions = [x for x in args if x is not None]
+    if not functions:
+        return None
+
+    def wrapped(x, y):
+        for function in functions:
+            y = function(x, y)
+        return y
+
+    return wrapped
+
+
+def check_shapes(actual, target):
+    """
+    Ensure that shapes match, ignoring None values
+
+    actual and target should be tuples
+    """
+    if type(actual) != tuple:
+        raise ValueError(f"actual shape {actual} is not a tuple")
+    if type(target) != tuple:
+        raise ValueError(f"target shape {target} is not a tuple")
+    if len(actual) != len(target):
+        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
+    for a, t in zip(actual, target):
+        if a != t and t is not None:
+            raise ValueError(f"shape {actual} does not match shape {target}")
+
+
+def canonical_variable_image_preprocess(context, batch):
+    """
+    Preprocessing when images are of variable size
+    """
+    # if batch.dtype == np.object:
+    #     for x in batch:
+    #         check_shapes(x.shape, context.x_shape)
+    #         assert x.dtype == context.input_type
+    #         assert x.min() >= context.input_min
+    #         assert x.max() <= context.input_max
+
+    #     quantized_batch = np.zeros_like(batch, dtype=np.object)
+    #     for i in range(len(batch)):
+    #         quantized_batch[i] = (
+    #             batch[i].astype(context.output_type) / context.quantization
+    #         )
+    #     batch = quantized_batch
+
+    if batch.dtype != context.input_type:
+        if batch.dtype == object:
+            raise NotImplementedError(
+                "<object> dtype not yet supported for variable image processing."
+            )
+        raise ValueError(
+            f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
+        )
+    check_shapes(tuple(batch.shape), context.x_shape)
+    assert batch.dtype == context.input_type
+    # assert tf.math.reduce_min(batch) >= context.input_min
+    # assert tf.math.reduce_max(batch) <= context.input_max
+
+    # for x in batch:
+    #     assert x.dtype == context.output_type
+    #     assert tf.math.reduce_min(x) >= context.output_min
+    #     assert tf.math.reduce_max(x) <= context.output_max
+
+    return batch
+
+
+class ClipFrames:
+    """
+    Clip Video Frames
+        Assumes first two dims are (batch, frames, ...)
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def __call__(self, batch):
+        # if batch.dtype == np.object:
+        #     clipped_batch = np.empty_like(batch, dtype=np.object)
+        #     clipped_batch[:] = [x[: self.max_frames] for x in batch]
+        #     return clipped_batch
+        return batch[:, : self.max_frames]
+
+
+class ClipVideoTrackingLabels:
+    """
+    Truncate labels for CARLA video tracking, when max_frames is set
+    """
+
+    def __init__(self, max_frames):
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        self.max_frames = max_frames
+
+    def clip_boxes(self, boxes):
+        return boxes[:, : self.max_frames, :]
+
+    def clip_metadata(self, patch_metadata_dict):
+        return {
+            k: v[:, : self.max_frames, ::] for (k, v) in patch_metadata_dict.items()
+        }
+
+    def __call__(self, x, labels):
+        boxes, patch_metadata_dict = labels
+        return self.clip_boxes(boxes), self.clip_metadata(patch_metadata_dict)
+
+
+def carla_video_tracking_dev_canonical_preprocessing(batch):
+    return canonical_variable_image_preprocess(
+        contexts["carla_video_tracking_dev"], batch
+    )
+
+
+def carla_video_tracking(x, max_frames):
+    clip = ClipFrames(max_frames) if max_frames else None
+    preprocessing_fn = preprocessing_chain(
+        clip, carla_video_tracking_dev_canonical_preprocessing
+    )
+    return preprocessing_fn(x)
+
+
+def carla_video_tracking_label_preprocessing(x, y):
+    box_labels, patch_metadata = y
+    box_array = (
+        tf.squeeze(box_labels, axis=0) if box_labels.shape[0] == 1 else box_labels
+    )
+    box_labels = {"boxes": box_array}
+    patch_metadata = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
+        for k, v in patch_metadata.items()
+    }
+    return (box_labels, patch_metadata)
+
+
+def carla_video_tracking_labels(x, y, max_frames):
+    clip_labels = ClipVideoTrackingLabels(max_frames) if max_frames else None
+    label_preprocessing_fn = label_preprocessing_chain(
+        clip_labels, carla_video_tracking_label_preprocessing
+    )
+    return label_preprocessing_fn(x, y)
 
 
 def convert_tf_boxes_to_pytorch(x, box_array):

@@ -39,6 +39,7 @@ class ArmoryDataGenerator:
     element_filter - predicate of which elements to keep; occurs prior to mapping
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
+    context - context object
     """
 
     FRAMEWORKS = ("tf", "numpy", "torch")
@@ -58,6 +59,7 @@ class ArmoryDataGenerator:
         element_filter: callable = None,
         element_map: callable = None,
         key_map=None,
+        context=None,
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -141,6 +143,7 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
+            context=context,
         )
 
     def _set_params(self, **kwargs):
@@ -164,3 +167,13 @@ def wrap_generator(armory_data_generator):
     from armory.datasets import art_wrapper
 
     return art_wrapper.WrappedDataGenerator(armory_data_generator)
+
+
+class EvalGenerator:
+    """
+    Wraps a specified number of batches in a DataGenerator to allow for evaluating on
+    part of a dataset when running through a scenario
+    """
+
+    def __init__(self, armory_generator, num_eval_batches):
+        raise NotImplementedError("EvalGenerator not implemented")

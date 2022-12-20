@@ -13,6 +13,13 @@
         "url": null,
         "version": "1.0.0"
     },
+    "carla_video_tracking_dev": {
+        "sha256": "958d470dcd394928050f4123a7af05b0e389ceeec6fa0a3261df55a65e553b69",
+        "size": 1281628036,
+        "subdir": "carla_video_tracking_dev/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
         "size": 8349857,
