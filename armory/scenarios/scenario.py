@@ -355,6 +355,11 @@ class Scenario:
     def next(self):
         self.hub.set_context(stage="next")
         x, y = next(self.test_dataset)
+        # Fix for carla_video, separate batches into list
+        if isinstance(y, tuple) and isinstance(y[0], dict) and 'boxes' in y[0]:
+            if len(y) != 2:
+                raise ValueError(f"Expected (y, y_metadata), got {y}")
+            y = ([{'boxes': batch} for batch in y[0]['boxes']], y[1])
         i = self.i + 1
         self.hub.set_context(batch=i)
         self.i, self.x, self.y = i, x, y
