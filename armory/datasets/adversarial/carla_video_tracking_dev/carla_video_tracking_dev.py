@@ -4,7 +4,7 @@ import os
 import glob
 import numpy as np
 from PIL import Image
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 import tensorflow_datasets as tfds
 
 _DESCRIPTION = """
@@ -21,7 +21,7 @@ _CITATION = """
 }
 """
 
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_dev_2.0.0.tar.gz"
+_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_video_tracking_dev_2.0.0.tar.gz"
 
 
 class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
@@ -70,14 +70,9 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        path = dl_manager.download_and_extract(_URLS)
+        path = dl_manager.download_and_extract(_URL)
 
-        return [
-            tfds.core.SplitGenerator(
-                name="dev",
-                gen_kwargs={"path": os.path.join(path, "dev")},
-            )
-        ]
+        return {"dev": self._generate_examples(path / "dev")}
 
     def _generate_examples(self, path):
         """Yields examples."""
