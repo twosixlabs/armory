@@ -33,7 +33,7 @@ class CarlaVideoTracking(Scenario):
         self._check_x("run_benign")
         self.hub.set_context(stage="benign")
         x, y = self.x, self.y
-        y_init = np.expand_dims(y["boxes"][0][0], axis=0)
+        y_init = np.expand_dims(y[0]["boxes"][0], axis=0)
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, y_init=y_init, **self.predict_kwargs)
