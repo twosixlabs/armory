@@ -20,6 +20,13 @@
         "url": null,
         "version": "2.0.0"
     },
+    "carla_video_tracking_test": {
+        "sha256": "8c52281611807243cba425ad3a588f4abca40dfb2b3ab828b9ad8a5191a7df10",
+        "size": 388218968,
+        "subdir": "carla_video_tracking_test/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
         "size": 8349857,
