@@ -71,7 +71,18 @@ def carla_over_obj_det_dev(element, modality="rgb"):
 @register
 def carla_video_tracking_dev(element, max_frames=None):
     return carla_video_tracking(
-        element["video"], max_frames=max_frames
+        element["video"], max_frames=max_frames, split="dev"
+    ), carla_video_tracking_labels(
+        element["video"],
+        (element["bboxes"], element["patch_metadata"]),
+        max_frames=max_frames,
+    )
+
+
+@register
+def carla_video_tracking_test(element, max_frames=None):
+    return carla_video_tracking(
+        element["video"], max_frames=max_frames, split="test"
     ), carla_video_tracking_labels(
         element["video"],
         (element["bboxes"], element["patch_metadata"]),
@@ -298,16 +309,12 @@ class ClipVideoTrackingLabels:
         return self.clip_boxes(boxes), self.clip_metadata(patch_metadata_dict)
 
 
-def carla_video_tracking_dev_canonical_preprocessing(batch):
-    return canonical_variable_image_preprocess(
-        contexts["carla_video_tracking_dev"], batch
-    )
-
-
-def carla_video_tracking(x, max_frames):
+def carla_video_tracking(x, split, max_frames=None):
     clip = ClipFrames(max_frames) if max_frames else None
     preprocessing_fn = preprocessing_chain(
-        clip, carla_video_tracking_dev_canonical_preprocessing
+        clip, lambda batch: canonical_variable_image_preprocess(
+            contexts[f"carla_video_tracking_{split}"], batch
+        )
     )
     return preprocessing_fn(x)
 
@@ -322,7 +329,7 @@ def carla_video_tracking_label_preprocessing(x, y):
         k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
         for k, v in patch_metadata.items()
     }
-    return (box_labels, patch_metadata)
+    return box_labels, patch_metadata
 
 
 def carla_video_tracking_labels(x, y, max_frames):
