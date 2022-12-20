@@ -3,6 +3,7 @@ Temporary file for testing loading from config without modifying armory.utils
 """
 
 from armory.datasets import load, preprocessing, generator, filtering
+from armory.datasets.context import contexts
 
 
 def load_dataset(
@@ -20,6 +21,7 @@ def load_dataset(
     index=None,
     class_ids=None,
     drop_remainder=False,
+    context=None,
 ):
     # All are keyword elements by design
     if name is None:
@@ -64,6 +66,9 @@ def load_dataset(
 
     shuffle_elements = shuffle_files
 
+    if context is None and name in contexts:
+        context = contexts[name]
+
     return generator.ArmoryDataGenerator(
         info,
         ds_dict,
@@ -78,4 +83,5 @@ def load_dataset(
         element_map=preprocessing_fn,
         shuffle_elements=shuffle_elements,
         key_map=None,
+        context=context,
     )

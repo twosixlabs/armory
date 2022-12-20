@@ -9,6 +9,7 @@ class WrappedDataGenerator(DataGenerator):
     def __init__(self, gen):
         super().__init__(gen.size, gen.batch_size)
         self._iterator = gen
+        self.context = gen.context
 
     def __iter__(self):
         return iter(self._iterator)
