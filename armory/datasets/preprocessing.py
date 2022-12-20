@@ -52,11 +52,7 @@ def digit(element):
 
 @register
 def carla_over_obj_det_dev(element, modality="rgb"):
-<<<<<<< HEAD
     return carla_over_obj_det_image(element["image"], modality=modality), (
-=======
-    x = carla_multimodal_obj_det(element["image"], modality=modality), (
->>>>>>> Adding context for Generators. Input shapes causing issue with metric calculation.
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
     )
