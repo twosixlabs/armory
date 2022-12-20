@@ -64,11 +64,6 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     return x
 
 
-# @register
-# look at the dataset builder file
-# @tf.function; then put a breakpoint in the preprocessing function
-# tf.set_eagerly true (in slack channel)
-# proper integration will be shown with good benign performance
 @register
 def carla_video_tracking_dev(element, max_frames=None):
     return carla_video_tracking(
@@ -234,20 +229,6 @@ def canonical_variable_image_preprocess(context, batch):
     """
     Preprocessing when images are of variable size
     """
-    # if batch.dtype == np.object:
-    #     for x in batch:
-    #         check_shapes(x.shape, context.x_shape)
-    #         assert x.dtype == context.input_type
-    #         assert x.min() >= context.input_min
-    #         assert x.max() <= context.input_max
-
-    #     quantized_batch = np.zeros_like(batch, dtype=np.object)
-    #     for i in range(len(batch)):
-    #         quantized_batch[i] = (
-    #             batch[i].astype(context.output_type) / context.quantization
-    #         )
-    #     batch = quantized_batch
-
     if batch.dtype != context.input_type:
         if batch.dtype == object:
             raise NotImplementedError(
@@ -258,14 +239,6 @@ def canonical_variable_image_preprocess(context, batch):
         )
     check_shapes(tuple(batch.shape), context.x_shape)
     assert batch.dtype == context.input_type
-    # assert tf.math.reduce_min(batch) >= context.input_min
-    # assert tf.math.reduce_max(batch) <= context.input_max
-
-    # for x in batch:
-    #     assert x.dtype == context.output_type
-    #     assert tf.math.reduce_min(x) >= context.output_min
-    #     assert tf.math.reduce_max(x) <= context.output_max
-
     return batch
 
 
@@ -282,10 +255,6 @@ class ClipFrames:
         self.max_frames = max_frames
 
     def __call__(self, batch):
-        # if batch.dtype == np.object:
-        #     clipped_batch = np.empty_like(batch, dtype=np.object)
-        #     clipped_batch[:] = [x[: self.max_frames] for x in batch]
-        #     return clipped_batch
         return batch[:, : self.max_frames]
 
 
