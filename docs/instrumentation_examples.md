@@ -182,33 +182,33 @@ By default, outputs from `Meter`s will be saved to the output `json` file after 
 Users who have tried the examples in this document, however, may run into some of the following warning logs:
 > 2022-12-16 19:34:36 30s WARNING  armory.instrument.instrument:_write:856 record (name=my_arbitrary_meter_name, batch=0, result=...) size > max_record_size 1048576. Dropping.
 
-Outputs are saved to a `json` file because of a default `ResultWriter` class tied to the `Meter` class, which has a `max_record_size` limit for each record. Any record that exceeds `max_record_size` will not save to the `json` file. That the outputs exceed a size limit also suggests that a `json` file may not be the best file type to save to. To work around these behaviors, we can define a new `Writer` subclass (`ResultWriter` is also a `Writer` subclass) to work with our examples that does not have a size limit and will save to another filetype such as a `pkl` file. Below is an updated `user_init.py` for Example 2 with a new `PickleWriter` class and `set_up_meter_writer` function that will be executed with the `user_init` block:
+Outputs are saved to a `json` file because of a default `ResultWriter` class tied to the `Meter` class, which has a `max_record_size` limit for each record. Any record that exceeds `max_record_size` will not save to the `json` file. That the outputs exceed a size limit also suggests that a `json` file may not be the best file type to save to. To work around these behaviors, we can define a new `Writer` subclass (`ResultWriter` is also a `Writer` subclass) to work with our examples that does not have a size limit and will save to another filetype, such as a `png` file, since we are saving data for an image. Below is an updated `user_init.py` for Example 2 with a new `ImageWriter` class, which uses the `export` method of `ImageClassificationExporter` to save an image, and a `set_up_meter_writer` function that will be executed with the `user_init` block:
 ```python
 from armory.instrument import get_hub, Meter, Writer
-import pickle
+from armory.instrument.export import ImageClassificationExporter
 
-class PickleWriter(Writer):
+class ImageWriter(Writer):
     def __init__(self, output_dir):
         super().__init__()
         self.output_dir = output_dir
-        self.iter = 0
+        self.iter_step = 0
         self.batch = 0
-        if not os.path.exists(self.output_dir):
-            os.mkdir(self.output_dir)
+        self.exporter = ImageClassificationExporter(self.output_dir)
 
     def _write(self, name, batch, result):
         if batch != self.batch:
             self.batch = batch
-            self.iter = 0
-        with open(os.path.join(self.output_dir, f"{name}_batch_{batch}_iter_{self.iter}.pkl"), "wb") as f:
-            pickle.dump(result, f)
-        self.iter += 1
+            self.iter_step = 0
+        basename = f"{name}_batch_{batch}_iter_{self.iter_step}"
+        # assume single image per batch: result[0]
+        self.exporter.export(x_i = result[0], basename = basename)
+        self.iter_step += 1
 
 def set_up_meter_writer():
     meter = Meter(
         "my_attack_identity", lambda x: x, "my_attack.attack_output"
     )
-    writer = PickleWriter(output_dir = get_hub().export_dir)
+    writer = ImageWriter(output_dir = get_hub().export_dir)
     meter.add_writer(writer)
     get_hub().connect_meter(meter, use_default_writers=False)
 ```
