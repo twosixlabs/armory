@@ -24,7 +24,11 @@ class VideoContext(ImageContext):
 carla_video_tracking_dev_context = VideoContext(
     x_shape=(None, 960, 1280, 3), frame_rate=10
 )
+carla_video_tracking_test_context = VideoContext(
+    x_shape=(None, 960, 1280, 3), frame_rate=10
+)
 
 contexts = {
     "carla_video_tracking_dev": carla_video_tracking_dev_context,
+    "carla_video_tracking_test": carla_video_tracking_test_context,
 }
