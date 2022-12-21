@@ -5,8 +5,8 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
-from tidecv import TIDE
-import tidecv.data
+#from tidecv import TIDE
+#import tidecv.data
 
 import numpy as np
 
@@ -277,7 +277,7 @@ def tpr_fpr(actual_conditions, predicted_conditions):
     Returns a dict containing TP, FP, TN, FN, TPR, FPR, TNR, FNR, F1 Score
     """
     actual_conditions, predicted_conditions = [
-        np.asarray(x, dtype=np.bool) for x in (actual_conditions, predicted_conditions)
+        np.asarray(x, dtype=bool) for x in (actual_conditions, predicted_conditions)
     ]
     if actual_conditions.shape != predicted_conditions.shape:
         raise ValueError(
