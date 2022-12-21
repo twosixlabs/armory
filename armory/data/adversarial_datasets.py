@@ -39,14 +39,11 @@ apricot_adversarial_context = datasets.ImageContext(x_shape=(None, None, 3))
 dapricot_adversarial_context = datasets.ImageContext(x_shape=(3, None, None, 3))
 carla_obj_det_dev_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
 carla_obj_det_dev_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
-carla_video_tracking_dev_context = datasets.VideoContext(
+carla_video_tracking_context = datasets.VideoContext(
     x_shape=(None, 960, 1280, 3), frame_rate=10
 )
 carla_obj_det_test_single_modal_context = datasets.ImageContext(x_shape=(960, 1280, 3))
 carla_obj_det_test_multimodal_context = datasets.ImageContext(x_shape=(960, 1280, 6))
-carla_video_tracking_test_context = datasets.VideoContext(
-    x_shape=(None, 960, 1280, 3), frame_rate=10
-)
 
 
 def imagenet_adversarial_canonical_preprocessing(batch):
@@ -80,15 +77,9 @@ def dapricot_canonical_preprocessing(batch):
     )
 
 
-def carla_video_tracking_dev_canonical_preprocessing(batch):
+def carla_video_tracking_canonical_preprocessing(batch):
     return datasets.canonical_variable_image_preprocess(
-        carla_video_tracking_dev_context, batch
-    )
-
-
-def carla_video_tracking_test_canonical_preprocessing(batch):
-    return datasets.canonical_variable_image_preprocess(
-        carla_video_tracking_test_context, batch
+        carla_video_tracking_context, batch
     )
 
 
@@ -867,7 +858,7 @@ def carla_video_tracking_dev(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
     label_preprocessing_fn=carla_video_tracking_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -909,7 +900,7 @@ def carla_video_tracking_dev(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_video_tracking_dev_context,
+        context=carla_video_tracking_context,
         as_supervised=False,
         supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
         **kwargs,
@@ -921,7 +912,7 @@ def carla_video_tracking_test(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_video_tracking_test_canonical_preprocessing,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
     label_preprocessing_fn=carla_video_tracking_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -963,7 +954,7 @@ def carla_video_tracking_test(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_video_tracking_test_context,
+        context=carla_video_tracking_context,
         as_supervised=False,
         supervised_xy_keys=("video", ("bboxes", "patch_metadata")),
         **kwargs,
@@ -1091,7 +1082,7 @@ def carla_multi_object_tracking_dev(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
     label_preprocessing_fn=carla_mot_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -1140,7 +1131,7 @@ def carla_multi_object_tracking_dev(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_video_tracking_dev_context,
+        context=carla_video_tracking_context,
         as_supervised=False,
         supervised_xy_keys=("video", ("annotations", "patch_metadata")),
         **kwargs,
@@ -1152,7 +1143,7 @@ def carla_multi_object_tracking_test(
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
-    preprocessing_fn: Callable = carla_video_tracking_dev_canonical_preprocessing,
+    preprocessing_fn: Callable = carla_video_tracking_canonical_preprocessing,
     label_preprocessing_fn=carla_mot_label_preprocessing,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -1201,7 +1192,7 @@ def carla_multi_object_tracking_test(
         cache_dataset=cache_dataset,
         framework=framework,
         shuffle_files=shuffle_files,
-        context=carla_video_tracking_dev_context,
+        context=carla_video_tracking_context,
         as_supervised=False,
         supervised_xy_keys=("video", ("annotations", "patch_metadata")),
         **kwargs,
