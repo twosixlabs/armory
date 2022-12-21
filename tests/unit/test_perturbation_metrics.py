@@ -82,7 +82,8 @@ def test_snr_spectrogram():
         [
             np.array([0, 1, 0, -1]),
             np.array([0, 1, 2, 3, 4]),
-        ]
+        ],
+        dtype=object,
     )
 
     for multiplier, snr_value in [
