@@ -5,8 +5,8 @@ Task metrics (comparing y to y_pred)
 from collections import Counter
 import functools
 import os
-#from tidecv import TIDE
-#import tidecv.data
+from tidecv import TIDE
+import tidecv.data
 
 import numpy as np
 
