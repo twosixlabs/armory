@@ -56,8 +56,6 @@ def carla_over_obj_det_dev(element, modality="rgb"):
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
     )
-    print(x)
-    return x
 
 
 @register
