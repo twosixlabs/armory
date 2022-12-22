@@ -18,30 +18,13 @@ The code below is an example of how to accomplish steps 1 and 2 (note the lines 
 """
 CNN model for 32x32x3 image classification
 """
-from typing import Optional
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from art.estimators.classification import PyTorchClassifier
+...
 
 from armory.instrument import get_probe # added
 probe = get_probe("my_model") # added
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
 class Net(nn.Module):
-    """
-    This is a simple CNN for CIFAR-10 and does not achieve SotA performance
-    """
-
-    def __init__(self) -> None:
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 4, 5, 1)
-        self.conv2 = nn.Conv2d(4, 10, 5, 1)
-        self.fc1 = nn.Linear(250, 100)
-        self.fc2 = nn.Linear(100, 10)
+    ...
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.permute(0, 3, 1, 2)  # from NHWC to NCHW
@@ -62,8 +45,6 @@ class Net(nn.Module):
 
 ...
 ```
-
-
 
 #### Step 1
 After importing `get_probe` in line 11, `probe = get_probe("my_model")` in line 12 creates a `Probe` object with the name `"my_model"`, which is what the user can refer to later to apply processing functions through a `Meter` object.
