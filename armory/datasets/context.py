@@ -8,9 +8,7 @@ class VideoContext:
         self.frame_rate = frame_rate
 
 
-carla_video_tracking_context = VideoContext(
-    x_shape=(None, 960, 1280, 3), frame_rate=10
-)
+carla_video_tracking_context = VideoContext(x_shape=(None, 960, 1280, 3), frame_rate=10)
 
 contexts = {
     "carla_video_tracking_dev": carla_video_tracking_context,

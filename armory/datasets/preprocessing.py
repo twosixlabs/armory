@@ -58,26 +58,52 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
+def carla_video_tracking_preprocess(element, max_frames, split):
+    x = element["video"]  # tf.Tensor [B, H, W, C]
+    y = element["bboxes"]  # tf.Tensor [B, 4]
+    y_meta = element["patch_metadata"]  # Dict
+    context = contexts[f"carla_video_tracking_{split}"]
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        x = x[:, :max_frames]
+        y = y[:, :max_frames, :]
+        y_meta = {k: v[:, :max_frames, ::] for (k, v) in y_meta.items()}
+    # Validate input
+    if x.dtype != context.input_type:
+        if x.dtype == object:
+            raise NotImplementedError(
+                "<object> dtype not yet supported for variable image processing."
+            )
+        raise ValueError(f"input dtype {x.dtype} not in ({context.input_type}, 'O')")
+    assert isinstance(
+        context.x_shape, tuple
+    ), f"target shape {context.x_shape} is not a tuple"
+    assert len(x.shape) == len(context.x_shape)
+    for a, t in zip(x.shape, context.x_shape):
+        assert (
+            t is None or a == t
+        ), f"shape {x.shape} does not match shape {context.x_shape}"
+    assert x.dtype == context.input_type
+    # Update labels
+    box_array = tf.squeeze(y, axis=0) if y.shape[0] == 1 else y
+    y = {"boxes": box_array}
+    y_meta = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v) for k, v in y_meta.items()
+    }
+    return x, (y, y_meta)
+
+
 @register
 def carla_video_tracking_dev(element, max_frames=None):
-    return carla_video_tracking(
-        element["video"], max_frames=max_frames, split="dev"
-    ), carla_video_tracking_labels(
-        element["video"],
-        (element["bboxes"], element["patch_metadata"]),
-        max_frames=max_frames,
-    )
+    return carla_video_tracking_preprocess(element, max_frames, "dev")
 
 
 @register
 def carla_video_tracking_test(element, max_frames=None):
-    return carla_video_tracking(
-        element["video"], max_frames=max_frames, split="test"
-    ), carla_video_tracking_labels(
-        element["video"],
-        (element["bboxes"], element["patch_metadata"]),
-        max_frames=max_frames,
-    )
+    return carla_video_tracking_preprocess(element, max_frames, "test")
 
 
 @register
@@ -166,145 +192,6 @@ def carla_over_obj_det_image(x, modality="rgb"):
         raise ValueError(
             f"Found unexpected modality {modality}. Expected one of ('rgb', 'depth', 'both')."
         )
-
-
-def preprocessing_chain(*args):
-    """
-    Wraps and returns a sequence of preprocessing functions
-    """
-    functions = [x for x in args if x is not None]
-    if not functions:
-        return None
-
-    def wrapped(x):
-        for function in functions:
-            x = function(x)
-        return x
-
-    return wrapped
-
-
-def label_preprocessing_chain(*args):
-    """
-    Wraps and returns a sequence of label preprocessing functions.
-    Note that this function differs from preprocessing_chain() in that
-    it chains across (x, y) instead of just x
-    """
-    functions = [x for x in args if x is not None]
-    if not functions:
-        return None
-
-    def wrapped(x, y):
-        for function in functions:
-            y = function(x, y)
-        return y
-
-    return wrapped
-
-
-def check_shapes(actual, target):
-    """
-    Ensure that shapes match, ignoring None values
-
-    actual and target should be tuples
-    """
-    if type(actual) != tuple:
-        raise ValueError(f"actual shape {actual} is not a tuple")
-    if type(target) != tuple:
-        raise ValueError(f"target shape {target} is not a tuple")
-    if len(actual) != len(target):
-        raise ValueError(f"len(actual) {len(actual)} != len(target) {len(target)}")
-    for a, t in zip(actual, target):
-        if a != t and t is not None:
-            raise ValueError(f"shape {actual} does not match shape {target}")
-
-
-def canonical_variable_image_preprocess(context, batch):
-    """
-    Preprocessing when images are of variable size
-    """
-    if batch.dtype != context.input_type:
-        if batch.dtype == object:
-            raise NotImplementedError(
-                "<object> dtype not yet supported for variable image processing."
-            )
-        raise ValueError(
-            f"input dtype {batch.dtype} not in ({context.input_type}, 'O')"
-        )
-    check_shapes(tuple(batch.shape), context.x_shape)
-    assert batch.dtype == context.input_type
-    return batch
-
-
-class ClipFrames:
-    """
-    Clip Video Frames
-        Assumes first two dims are (batch, frames, ...)
-    """
-
-    def __init__(self, max_frames):
-        max_frames = int(max_frames)
-        if max_frames <= 0:
-            raise ValueError(f"max_frames {max_frames} must be > 0")
-        self.max_frames = max_frames
-
-    def __call__(self, batch):
-        return batch[:, : self.max_frames]
-
-
-class ClipVideoTrackingLabels:
-    """
-    Truncate labels for CARLA video tracking, when max_frames is set
-    """
-
-    def __init__(self, max_frames):
-        max_frames = int(max_frames)
-        if max_frames <= 0:
-            raise ValueError(f"max_frames {max_frames} must be > 0")
-        self.max_frames = max_frames
-
-    def clip_boxes(self, boxes):
-        return boxes[:, : self.max_frames, :]
-
-    def clip_metadata(self, patch_metadata_dict):
-        return {
-            k: v[:, : self.max_frames, ::] for (k, v) in patch_metadata_dict.items()
-        }
-
-    def __call__(self, x, labels):
-        boxes, patch_metadata_dict = labels
-        return self.clip_boxes(boxes), self.clip_metadata(patch_metadata_dict)
-
-
-def carla_video_tracking(x, split, max_frames=None):
-    clip = ClipFrames(max_frames) if max_frames else None
-    preprocessing_fn = preprocessing_chain(
-        clip, lambda batch: canonical_variable_image_preprocess(
-            contexts[f"carla_video_tracking_{split}"], batch
-        )
-    )
-    return preprocessing_fn(x)
-
-
-def carla_video_tracking_label_preprocessing(x, y):
-    box_labels, patch_metadata = y
-    box_array = (
-        tf.squeeze(box_labels, axis=0) if box_labels.shape[0] == 1 else box_labels
-    )
-    box_labels = {"boxes": box_array}
-    patch_metadata = {
-        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
-        for k, v in patch_metadata.items()
-    }
-    return box_labels, patch_metadata
-
-
-def carla_video_tracking_labels(x, y, max_frames):
-    clip_labels = ClipVideoTrackingLabels(max_frames) if max_frames else None
-    label_preprocessing_fn = label_preprocessing_chain(
-        clip_labels, carla_video_tracking_label_preprocessing
-    )
-    return label_preprocessing_fn(x, y)
 
 
 def convert_tf_boxes_to_pytorch(x, box_array):
