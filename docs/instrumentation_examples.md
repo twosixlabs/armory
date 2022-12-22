@@ -113,7 +113,7 @@ This step is the same as before, except `Probe` name is set to`"my_attack"`, whi
 The only difference between `CustomAttack` and `CARLADapricotPatch` is that `_augment_images_with_patch` has been redefined to call on `CARLADapricotPatch._augment_images_with_patch` and then have `probe` update the value for `x_patch` that results from that call. An updated value of `x_patch` is stored in `attack_output` via `probe.update(attack_output=x_patch)`. Like the `Probe` name `"my_attack"`, `attack_output` can be referenced by the user later to apply additional processing functions through a `Meter` object.
 
 ### `Meter` Example Code
-Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py` (Please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
+As in [Example 1](#meter-example-code), we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. We can create the `Meter` in a function added to a local Python script `user_init.py`. In [Config Setup](#config-setup-1) shortly below, we'll show how to ensure this code is run during scenario initialization.
 ```python
 from armory.instrument import get_hub, Meter
 
