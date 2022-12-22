@@ -118,59 +118,6 @@ class Probe:
                 # Push to sink
                 self.sink.update(name, value)
 
-    def hook(self, module, *preprocessing, input=None, output=None, mode="pytorch"):
-        if mode == "pytorch":
-            return self.hook_torch(module, *preprocessing, input=input, output=output)
-        elif mode == "tf":
-            return self.hook_tf(module, *preprocessing, input=input, output=output)
-        raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
-
-    def hook_tf(self, module, *preprocessing, input=None, output=None):
-        raise NotImplementedError("hooking not ready for tensorflow")
-        # NOTE:
-        # https://discuss.pytorch.org/t/get-the-activations-of-the-second-to-last-layer/55629/6
-        # TensorFlow hooks
-        # https://www.tensorflow.org/api_docs/python/tf/estimator/SessionRunHook
-        # https://github.com/tensorflow/tensorflow/issues/33478
-        # https://github.com/tensorflow/tensorflow/issues/33129
-        # https://stackoverflow.com/questions/48966281/get-intermediate-output-from-keras-tensorflow-during-prediction
-        # https://stackoverflow.com/questions/59493222/access-output-of-intermediate-layers-in-tensor-flow-2-0-in-eager-mode/60945216#60945216
-
-    def hook_torch(self, module, *preprocessing, input=None, output=None):
-        if not hasattr(module, "register_forward_hook"):
-            raise ValueError(
-                f"module {module} does not have method 'register_forward_hook'. Is it a torch.nn.Module?"
-            )
-        if input == "" or (input is not None and not isinstance(input, str)):
-            raise ValueError(f"input {input} must be None or a non-empty string")
-        if output == "" or (output is not None and not isinstance(output, str)):
-            raise ValueError(f"output {output} must be None or a non-empty string")
-        if input is None and output is None:
-            raise ValueError("input and output cannot both be None")
-        if module in self._hooks:
-            raise ValueError(f"module {module} is already hooked")
-
-        def hook_fn(hook_module, hook_input, hook_output):
-            del hook_module
-            key_values = {}
-            if input is not None:
-                key_values[input] = hook_input
-            if output is not None:
-                key_values[output] = hook_output
-            self.update(*preprocessing, **key_values)
-
-        hook = module.register_forward_hook(hook_fn)
-        self._hooks[module] = (hook, "pytorch")
-
-    def unhook(self, module):
-        hook, mode = self._hooks.pop(module)
-        if mode == "pytorch":
-            hook.remove()
-        elif mode == "tf":
-            raise NotImplementedError()
-        else:
-            raise ValueError(f"mode {mode} not in ('pytorch', 'tf')")
-
 
 class MockSink:
     """
