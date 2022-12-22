@@ -61,13 +61,11 @@ jobs:
           pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
 
       - name: standalone tests
-        env:
         shell: bash
         run: |
           pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
 
       - name: 🤞 Run Stand Alone End-to-End Tests
-        env:
         shell: bash
         run: |
           pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py
