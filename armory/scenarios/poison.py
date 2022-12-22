@@ -128,13 +128,22 @@ class Poison(Scenario):
 
         if defended:
             defense_config = self.config.get("defense") or {}
+            defense_type = defense_config.get("type", None)
             if "data_augmentation" in defense_config:
                 for data_aug_config in defense_config["data_augmentation"].values():
                     model = config_loading.load_defense_internal(data_aug_config, model)
                 log.info(
                     f"model.preprocessing_defences: {model.preprocessing_defences}"
                 )
+            if defense_type == "Trainer":
+                self.trainer = config_loading.load_defense_wrapper(
+                    defense_config, model
+                )
+        else:
+            log.info("Not loading any defenses for model")
+            defense_type = None
         self.model = model
+        self.defense_type = defense_type
         self.predict_kwargs = model_config.get("predict_kwargs", {})
         self.use_filtering_defense = self.config["adhoc"].get(
             "use_poison_filtering_defense", False
@@ -317,6 +326,7 @@ class Poison(Scenario):
         if len(self.x_train):
             self.hub.set_context(stage="fit")
             log.info("Fitting model")
+
             if self.fit_generator:
                 data_generator = NumpyDataGenerator(
                     self.x_train,
@@ -325,18 +335,36 @@ class Poison(Scenario):
                     drop_remainder=True,
                     shuffle=True,
                 )
-                self.model.fit_generator(
-                    data_generator, nb_epochs=self.train_epochs, verbose=False
-                )
+
+            # There are 2x2 training options: whether using a Trainer and whether using fit_generator
+            if self.defense_type == "Trainer":
+                log.info(f"Training with {type(self.trainer)} Trainer defense...")
+                if self.fit_generator:
+                    self.trainer.fit_generator(
+                        self.data_generator, np_epochs=self.train_epochs
+                    )
+                else:
+                    self.trainer.fit(
+                        self.x_train,
+                        self.label_function(self.y_train),
+                        batch_size=self.fit_batch_size,
+                        nb_epochs=self.train_epochs,
+                        shuffle=True,
+                    )
             else:
-                self.model.fit(
-                    self.x_train,
-                    self.label_function(self.y_train),
-                    batch_size=self.fit_batch_size,
-                    nb_epochs=self.train_epochs,
-                    verbose=False,
-                    shuffle=True,
-                )
+                if self.fit_generator:
+                    self.model.fit_generator(
+                        data_generator, nb_epochs=self.train_epochs, verbose=False
+                    )
+                else:
+                    self.model.fit(
+                        self.x_train,
+                        self.label_function(self.y_train),
+                        batch_size=self.fit_batch_size,
+                        nb_epochs=self.train_epochs,
+                        verbose=False,
+                        shuffle=True,
+                    )
         else:
             log.warning("All data points filtered by defense. Skipping training")
 
