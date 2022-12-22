@@ -26,7 +26,7 @@ from art.defences.trainer import Trainer
 
 from armory.art_experimental.attacks import patch
 from armory.art_experimental.attacks.sweep import SweepAttack
-from armory.datasets.generator import ArmoryDataGenerator, EvalGenerator
+from armory.datasets.generator import ArmoryDataGenerator
 from armory.data.utils import maybe_download_weights_from_s3
 from armory.utils import labels
 import copy

@@ -167,13 +167,3 @@ def wrap_generator(armory_data_generator):
     from armory.datasets import art_wrapper
 
     return art_wrapper.WrappedDataGenerator(armory_data_generator)
-
-
-class EvalGenerator:
-    """
-    Wraps a specified number of batches in a DataGenerator to allow for evaluating on
-    part of a dataset when running through a scenario
-    """
-
-    def __init__(self, armory_generator, num_eval_batches):
-        raise NotImplementedError("EvalGenerator not implemented")
