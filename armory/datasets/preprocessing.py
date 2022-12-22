@@ -59,8 +59,8 @@ def carla_over_obj_det_dev(element, modality="rgb"):
 
 
 def carla_video_tracking_preprocess(element, max_frames, split):
-    x = element["video"]  # tf.Tensor [B, H, W, C]
-    y = element["bboxes"]  # tf.Tensor [B, 4]
+    x = element["video"]  # tf.Tensor [F, H, W, C]
+    y = element["bboxes"]  # tf.Tensor [F, 4]
     y_meta = element["patch_metadata"]  # Dict
     context = contexts[f"carla_video_tracking_{split}"]
     # Clip
@@ -68,9 +68,9 @@ def carla_video_tracking_preprocess(element, max_frames, split):
         max_frames = int(max_frames)
         if max_frames <= 0:
             raise ValueError(f"max_frames {max_frames} must be > 0")
-        x = x[:, :max_frames]
-        y = y[:, :max_frames, :]
-        y_meta = {k: v[:, :max_frames, ::] for (k, v) in y_meta.items()}
+        x = x[:max_frames, :]
+        y = y[:max_frames, :]
+        y_meta = {k: v[:max_frames, :] for (k, v) in y_meta.items()}
     # Validate input
     if x.dtype != context.input_type:
         if x.dtype == object:
