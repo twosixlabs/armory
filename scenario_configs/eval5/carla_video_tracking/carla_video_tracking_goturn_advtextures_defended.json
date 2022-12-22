@@ -16,8 +16,8 @@
     "dataset": {
         "test": {
             "batch_size": 1,
-            "split": "test",
-            "name": "carla_video_tracking_test"
+            "split": "dev",
+            "name": "carla_video_tracking_dev"
         }
     },
     "defense": {
