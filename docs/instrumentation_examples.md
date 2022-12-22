@@ -152,7 +152,7 @@ Users who have tried the examples in this document, however, may run into some o
 Outputs are saved to a `json` file because of a default `ResultWriter` class tied to the `Meter` class, which has a `max_record_size` limit for each record. Any record that exceeds `max_record_size` will not save to the `json` file. That the outputs exceed a size limit also suggests that a `json` file may not be the best file type to save to. To work around these behaviors, we can define a new `Writer` subclass (`ResultWriter` is also a `Writer` subclass) to work with our examples that does not have a size limit and will save to another filetype, such as a `png` file, since we are saving data for an image. Below is an updated `user_init_script.py` for Example 2 with a new `ImageWriter` class, which uses the `export` method of `ImageClassificationExporter` to save an image, and a `set_up_meter_writer` function that will be executed with the `user_init` block:
 ```python
 from armory.instrument import get_hub, Meter, Writer
-from armory.instrument.export import ImageClassificationExporter
+from armory.instrument.export import ObjectDetectionExporter
 
 class ImageWriter(Writer):
     def __init__(self, output_dir):
@@ -160,7 +160,7 @@ class ImageWriter(Writer):
         self.output_dir = output_dir
         self.iter_step = 0
         self.batch = 0
-        self.exporter = ImageClassificationExporter(self.output_dir)
+        self.exporter = ObjectDetectionExporter(self.output_dir)
 
     def _write(self, name, batch, result):
         if batch != self.batch:
@@ -168,7 +168,7 @@ class ImageWriter(Writer):
             self.iter_step = 0
         basename = f"{name}_batch_{batch}_iter_{self.iter_step}"
         # assume single image per batch: result[0]
-        self.exporter.export(x_i = result[0], basename = basename)
+        self.exporter.export(x = result[0], basename = basename)
         self.iter_step += 1
 
 def set_up_meter_writer():
