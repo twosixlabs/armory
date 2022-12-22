@@ -1,0 +1,49 @@
+{
+    "_description": "Test schema with an invalid `attack.module`",
+    "adhoc": {
+        "batch_size": 64,
+        "epochs": 3
+    },
+    "attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "eps": 0.2,
+            "eps_step": 0.1,
+            "minimal": false,
+            "num_random_init": 0,
+            "targeted": false
+        },
+        "module": "art::attacks",
+        "name": "FastGradientMethod"
+    },
+    "dataset": {
+        "batch_size": 64,
+        "module": "armory.data.datasets",
+        "name": "mnist"
+    },
+    "defense": null,
+    "metric": null,
+    "model": {
+        "fit": true,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.keras.keras_mnist",
+        "name": "get_art_model",
+        "weights_file": "",
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "tests.evals.fgm_attack",
+        "name": "fgm_attack"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/tf1",
+        "external_github_repo": null,
+        "gpus": "",
+        "output_dir": null,
+        "output_filename": null,
+        "use_gpu": false
+    }
+}
