@@ -27,7 +27,7 @@ on:
 jobs:
   matrix_generator:
     name: Matrix Generator
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
     steps:
