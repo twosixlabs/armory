@@ -1,13 +1,5 @@
 # Armory Instrumentation Examples: Measuring Experiment Artifacts Using Probes and Meters
-For an introduction to `Probe`s and `Meter`s, please refer to [Measurement Overview](./metrics.md).
-
-## Context
-To monitor particular aspects of an `armory run` session, the user needs to know the following factors:
-- What am I measuring?
-- When should I measure it?
-- Where should my custom monitoring script go?
-
-We assume the user is capturing artifacts from the model or attack and wishes to use `Probe`s and `Meter`s to monitor certain variables within the code.
+For an introduction to `Probe`s and `Meter`s, please refer to [Measurement Overview](./metrics.md#instrumentation). We assume the user is capturing artifacts from the model or attack and wishes to use `Probe`s and `Meter`s to monitor certain variables within the code.
 
 Recall the steps for a minimal working example (in [Measurement Overview](./metrics.md#instrumentation)):
 1. Create `Probe` via `get_probe(name)`
@@ -19,7 +11,7 @@ The examples will show how each of these steps are accomplished.
 
 ## Example 1: Measuring a Model Layer's Output
 ### User Story
-I am interested in layer output from the second `relu` activation of a `forward` method located in `armory/baseline_models/pytorch/cifar.py`.
+I am interested in the layer output from the second `relu` activation of a `forward` method located in `armory/baseline_models/pytorch/cifar.py`.
 ### `Probe` Example Code
 The code below is an example of how to accomplish steps 1 and 2 (note the lines of code with `# added` comments at the end) for a model code that the user is modifying.
 ```python
@@ -80,7 +72,7 @@ After importing `get_probe` in line 11, `probe = get_probe("my_model")` in line 
 `x_out = x.detach().cpu().numpy()` in line 36 is taking the layer output of interest (second `relu` activation output) and converting the tensor to `numpy` array on the CPU, which will be passed to `probe`. An updated value of `x_out` is stored in `layer_output` via `probe.update(layer_output=x_out)` in line 37. Like the `Probe` name `"my_model"`, `layer_output` can be referenced by the user later to apply additional processing functions through a `Meter` object.
 
 ### `Meter` Example Code
-Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. Suppose the user created a script located at `armory/user_init.py` (Please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block):
+Now that a `Probe` instance has been created, we need to create a `Meter` object to accept any updated values from `Probe` and apply further processing that the user desires. We can create the `Meter` in a function added to a local Python script we'll name `user_init.py`. In [Config Setup](#config-setup) shortly below, we'll show how to ensure this code is run during scenario initialization.
 ```python
 from armory.instrument import get_hub, Meter
 
