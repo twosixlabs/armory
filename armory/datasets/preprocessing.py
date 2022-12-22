@@ -61,7 +61,7 @@ def carla_over_obj_det_dev(element, modality="rgb"):
 def carla_video_tracking_preprocess(element, max_frames, split):
     x = element["video"]  # tf.Tensor [F, H, W, C]
     y = element["bboxes"]  # tf.Tensor [F, 4]
-    y_meta = element["patch_metadata"]  # Dict
+    y_patch_metadata = element["patch_metadata"]  # Dict
     context = contexts[f"carla_video_tracking_{split}"]
     # Clip
     if max_frames:
@@ -70,7 +70,7 @@ def carla_video_tracking_preprocess(element, max_frames, split):
             raise ValueError(f"max_frames {max_frames} must be > 0")
         x = x[:max_frames, :]
         y = y[:max_frames, :]
-        y_meta = {k: v[:max_frames, :] for (k, v) in y_meta.items()}
+        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
     # Validate input
     if x.dtype != context.input_type:
         if x.dtype == object:
@@ -90,10 +90,11 @@ def carla_video_tracking_preprocess(element, max_frames, split):
     # Update labels
     box_array = tf.squeeze(y, axis=0) if y.shape[0] == 1 else y
     y = {"boxes": box_array}
-    y_meta = {
-        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v) for k, v in y_meta.items()
+    y_patch_metadata = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
+        for k, v in y_patch_metadata.items()
     }
-    return x, (y, y_meta)
+    return x, (y, y_patch_metadata)
 
 
 @register
