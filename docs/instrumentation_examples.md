@@ -159,17 +159,17 @@ class ImageWriter(Writer):
         super().__init__()
         self.output_dir = output_dir
         self.iter_step = 0
-        self.batch = 0
+        self.current_batch_index = 0
         self.exporter = ObjectDetectionExporter(self.output_dir)
 
     def _write(self, name, batch, result):
-        if batch != self.batch:
-            self.batch = batch
-            self.iter_step = 0
+        if batch != self.current_batch_index:
+            self.current_batch_index = batch # we are on a new batch
+            self.iter_step = 0               # restart iter_step count
         basename = f"{name}_batch_{batch}_iter_{self.iter_step}"
         # assume single image per batch: result[0]
         self.exporter.export(x = result[0], basename = basename)
-        self.iter_step += 1
+        self.iter_step += 1 # increment iter_step
 
 def set_up_meter_writer():
     meter = Meter(
