@@ -14,10 +14,8 @@ from armory import paths, __version__
 logger = logging.getLogger(__name__)
 
 REQUIRED_DOCKER_IMAGES = [
-    f"twosixarmory/pytorch:{__version__}",
-    f"twosixarmory/tf2:{__version__}",
+    f"twosixarmory/armory:{__version__}",
     f"twosixarmory/pytorch-deepspeech:{__version__}",
-    f"twosixarmory/carla-mot:{__version__}",
 ]
 
 
