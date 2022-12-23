@@ -24,7 +24,7 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev_2.0.0.tar.gz"
+_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_od_dev_2.0.0.tar.gz"
 # fmt: on
 
 
@@ -101,7 +101,7 @@ class CarlaObjDetDev(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        path = dl_manager.download_and_extract(_URLS)
+        path = dl_manager.download_and_extract(_URL)
         return {"dev": self._generate_examples(os.path.join(path, "dev"))}
 
     def _generate_examples(self, path):
