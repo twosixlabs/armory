@@ -67,7 +67,7 @@
         "name": "CarlaMOT"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/carla-mot",
+        "docker_image": "twosixarmory/armory",
         "external_github_repo": [
             "JonathonLuiten/TrackEval",
             "colour-science/colour@v0.3.16"

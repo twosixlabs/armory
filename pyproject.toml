@@ -65,7 +65,7 @@ developer =[
 ]
 
 engine = [
-    "adversarial-robustness-toolbox == 1.12.2",
+    "adversarial-robustness-toolbox == 1.13.0",
     "Pillow",              # Data dependencies
     "boto3",               # Needed for armory.data.utils
     "botocore" ,           # Needed for armory.data.utils
