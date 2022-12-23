@@ -58,19 +58,13 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
-def carla_video_tracking_preprocess(element, max_frames, split):
-    x = element["video"]  # tf.Tensor [F, H, W, C]
-    y = element["bboxes"]  # tf.Tensor [F, 4]
-    y_patch_metadata = element["patch_metadata"]  # Dict
-    context = contexts[f"carla_video_tracking_{split}"]
+def carla_video_tracking_preprocess(x, max_frames, context):
     # Clip
     if max_frames:
         max_frames = int(max_frames)
         if max_frames <= 0:
             raise ValueError(f"max_frames {max_frames} must be > 0")
         x = x[:max_frames, :]
-        y = y[:max_frames, :]
-        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
     # Validate input
     if x.dtype != context.input_type:
         if x.dtype == object:
@@ -87,6 +81,17 @@ def carla_video_tracking_preprocess(element, max_frames, split):
             t is None or a == t
         ), f"shape {x.shape} does not match shape {context.x_shape}"
     assert x.dtype == context.input_type
+    return x
+
+
+def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        y = y[:max_frames, :]
+        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
     # Update labels
     box_array = tf.squeeze(y, axis=0) if y.shape[0] == 1 else y
     y = {"boxes": box_array}
@@ -94,17 +99,29 @@ def carla_video_tracking_preprocess(element, max_frames, split):
         k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
         for k, v in y_patch_metadata.items()
     }
-    return x, (y, y_patch_metadata)
+    return y, y_patch_metadata
 
 
 @register
 def carla_video_tracking_dev(element, max_frames=None):
-    return carla_video_tracking_preprocess(element, max_frames, "dev")
+    return carla_video_tracking_preprocess(
+        element["video"],
+        max_frames=max_frames,
+        context=contexts["carla_video_tracking_dev"],
+    ), carla_video_tracking_preprocess_labels(
+        element["bboxes"], element["patch_metadata"], max_frames=max_frames
+    )
 
 
 @register
 def carla_video_tracking_test(element, max_frames=None):
-    return carla_video_tracking_preprocess(element, max_frames, "test")
+    return carla_video_tracking_preprocess(
+        element["video"],
+        max_frames=max_frames,
+        context=contexts["carla_video_tracking_test"],
+    ), carla_video_tracking_preprocess_labels(
+        element["bboxes"], element["patch_metadata"], max_frames=max_frames
+    )
 
 
 @register
