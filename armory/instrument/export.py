@@ -396,8 +396,12 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         :param x: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
         :param with_boxes: boolean indicating whether to display bounding boxes
-        :param y: ground-truth label dict
-        :param y_pred: predicted label dict
+        :param y: either (1) a dict with "boxes" key mapping to dict with keys for each frame index,
+                  each frame index key mapping to a numpy array of shape (num_boxes_in_frame, 4) or
+                  (2) coco-formatted List[dict] of length # total boxes across all frames, where
+                  each dict has an "image_id" key and a "bbox" key mapping to a sequence of
+                  [x1, y1, width, height]
+        :param y_pred: " "
         :return: List[PIL.Image.Image] of length equal to num_frames
         """
         if not with_boxes:
@@ -414,20 +418,33 @@ class VideoTrackingExporter(VideoClassificationExporter):
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
 
-            if y is not None:
-                bboxes_true = y["boxes"][n_frame].astype("float32")
-                if bboxes_true.ndim == 1:
-                    box_layer.rectangle(bboxes_true, outline="red", width=2)
-                else:
-                    for bbox_true in bboxes_true:
-                        box_layer.rectangle(bbox_true, outline="red", width=2)
-            if y_pred is not None:
-                bboxes_pred = y_pred["boxes"][n_frame]
-                if bboxes_pred.ndim == 1:
-                    box_layer.rectangle(bboxes_pred, outline="white", width=2)
-                else:
-                    for bbox_pred in bboxes_pred:
-                        box_layer.rectangle(bbox_pred, outline="white", width=2)
+            for annotation, box_color in zip([y, y_pred], ["red", "white"]):
+                if annotation is not None:
+                    if isinstance(annotation, dict):
+                        bboxes_true = annotation["boxes"][n_frame].astype("float32")
+                        if bboxes_true.ndim == 1:
+                            box_layer.rectangle(bboxes_true, outline=box_color, width=2)
+                        else:
+                            for bbox_true in bboxes_true:
+                                box_layer.rectangle(
+                                    bbox_true, outline=box_color, width=2
+                                )
+                    elif isinstance(annotation, list):
+                        frame_id = annotation[n_frame]["image_id"]
+                        bboxes_true = [
+                            box_anno["bbox"]
+                            for box_anno in annotation
+                            if box_anno["image_id"] == frame_id
+                        ]
+                        for bbox_true in bboxes_true:
+                            box_x, box_y, box_width, box_height = bbox_true
+                            box_layer.rectangle(
+                                (box_x, box_y, box_x + box_width, box_y + box_height),
+                                outline=box_color,
+                                width=2,
+                            )
+                    else:
+                        raise TypeError(f"Found unexpected type {type(annotation)}")
             pil_frames.append(image)
 
         return pil_frames
