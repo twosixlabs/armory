@@ -4,7 +4,6 @@ Standard preprocessing for different datasets
 
 
 import tensorflow as tf
-from armory.datasets.context import contexts
 
 
 REGISTERED_PREPROCESSORS = {}
@@ -58,29 +57,13 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
-def carla_video_tracking_preprocess(x, max_frames, context):
+def carla_video_tracking_preprocess(x, max_frames):
     # Clip
     if max_frames:
         max_frames = int(max_frames)
         if max_frames <= 0:
             raise ValueError(f"max_frames {max_frames} must be > 0")
         x = x[:max_frames, :]
-    # Validate input
-    if x.dtype != context.input_type:
-        if x.dtype == object:
-            raise NotImplementedError(
-                "<object> dtype not yet supported for variable image processing."
-            )
-        raise ValueError(f"input dtype {x.dtype} not in ({context.input_type}, 'O')")
-    assert isinstance(
-        context.x_shape, tuple
-    ), f"target shape {context.x_shape} is not a tuple"
-    assert len(x.shape) == len(context.x_shape)
-    for a, t in zip(x.shape, context.x_shape):
-        assert (
-            t is None or a == t
-        ), f"shape {x.shape} does not match shape {context.x_shape}"
-    assert x.dtype == context.input_type
     return x
 
 
@@ -107,7 +90,6 @@ def carla_video_tracking_dev(element, max_frames=None):
     return carla_video_tracking_preprocess(
         element["video"],
         max_frames=max_frames,
-        context=contexts["carla_video_tracking_dev"],
     ), carla_video_tracking_preprocess_labels(
         element["bboxes"], element["patch_metadata"], max_frames=max_frames
     )
@@ -118,7 +100,6 @@ def carla_video_tracking_test(element, max_frames=None):
     return carla_video_tracking_preprocess(
         element["video"],
         max_frames=max_frames,
-        context=contexts["carla_video_tracking_test"],
     ), carla_video_tracking_preprocess_labels(
         element["bboxes"], element["patch_metadata"], max_frames=max_frames
     )
