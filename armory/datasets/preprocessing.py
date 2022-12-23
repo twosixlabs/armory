@@ -57,7 +57,7 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
-def carla_video_tracking_preprocess(x, max_frames):
+def carla_video_tracking_preprocess(x, max_frames=None):
     # Clip
     if max_frames:
         max_frames = int(max_frames)
@@ -67,7 +67,7 @@ def carla_video_tracking_preprocess(x, max_frames):
     return x
 
 
-def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames):
+def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None):
     # Clip
     if max_frames:
         max_frames = int(max_frames)
