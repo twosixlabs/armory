@@ -19,6 +19,19 @@
         "subdir": "carla_video_tracking_test/2.0.0",
         "url": null,
         "version": "2.0.0"
+    "cifar10": {
+        "sha256": "05bf2d90665560e08ca6cf6e896b503ed4b83cd0e332d3a2e5970c9329acbaee",
+        "size": 134877477,
+        "subdir": "cifar10/3.0.2",
+        "url": null,
+        "version": "3.0.2"
+    },
+    "cifar100": {
+        "sha256": "e0b5fc54b463b33e9929c1558368a9df87beabef68f341ce935ade7e6f3bd6c3",
+        "size": 133385956,
+        "subdir": "cifar100/3.0.2",
+        "url": null,
+        "version": "3.0.2"
     },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",

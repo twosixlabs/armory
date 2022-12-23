@@ -151,7 +151,7 @@ def parse_cache_filename(filename, delim=DELIM, ext=EXT):
 
 def get_cache_dir(data_dir):
     cache_dir = Path(data_dir) / CACHE_SUBDIR
-    cache_dir.mkdir(exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir
 
 
