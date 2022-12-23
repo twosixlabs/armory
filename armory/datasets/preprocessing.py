@@ -86,8 +86,7 @@ def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None)
     return y, y_patch_metadata
 
 
-@register
-def carla_video_tracking_dev(element, max_frames=None):
+def carla_video_tracking(element, max_frames=None):
     return carla_video_tracking_preprocess(
         element["video"],
         max_frames=max_frames,
@@ -96,14 +95,8 @@ def carla_video_tracking_dev(element, max_frames=None):
     )
 
 
-@register
-def carla_video_tracking_test(element, max_frames=None):
-    return carla_video_tracking_preprocess(
-        element["video"],
-        max_frames=max_frames,
-    ), carla_video_tracking_preprocess_labels(
-        element["bboxes"], element["patch_metadata"], max_frames=max_frames
-    )
+carla_video_tracking_dev = register(carla_video_tracking, "carla_video_tracking_dev")
+carla_video_tracking_test = register(carla_video_tracking, "carla_video_tracking_test")
 
 
 @register
