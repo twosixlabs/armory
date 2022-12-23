@@ -18,16 +18,28 @@ def package(
     """
     Package a built dataset as .tar.gz, return path
     """
-    version, data_dir, built_data_dir, subdir = build.build_info(
+    version, data_dir, built_data_dir, subdir, builder_configs = build.build_info(
         name, version=version, data_dir=data_dir
     )
 
+    # print(builder_configs)
     data_dir = Path(data_dir)
-    expected_dir = data_dir / name / version
-    if not expected_dir.is_dir():
-        raise FileNotFoundError(f"Dataset {name} not found at {expected_dir}")
-    tar_full_filepath = common.get_cache_dataset_path(name, version)
 
+    if not builder_configs:
+        tar_list = [str(Path(name) / version)]
+    else:
+        # metadata.json contains default_config_name for the given dataset
+        tar_list = [
+            str(Path(name) / config.name / version) for config in builder_configs
+        ] + [str(Path(name) / ".config")]
+
+    for tar_path in tar_list:
+        expected_dir = data_dir / tar_path
+        if not expected_dir.is_dir():
+            # raise FileNotFoundError(f"Dataset {name} not found at {expected_dir}")
+            raise FileNotFoundError(f"Dataset {tar_path} not found at {expected_dir}")
+
+    tar_full_filepath = common.get_cache_dataset_path(name, version)
     if tar_full_filepath.is_file():
         if overwrite:
             tar_full_filepath.unlink(missing_ok=True)
@@ -36,8 +48,9 @@ def package(
                 f"Dataset {name} cache file {tar_full_filepath} exists. Use overwrite=True"
             )
 
+    cmd = ["tar", "cvzf", str(tar_full_filepath)] + tar_list
+
     log.info("Creating tarball (may take some time)...")
-    cmd = ["tar", "cvzf", str(tar_full_filepath), str(Path(name) / version)]
     log.info(f"Running {' '.join(cmd)}")
     completed_process = subprocess.run(cmd, cwd=data_dir)
     completed_process.check_returncode()
@@ -48,14 +61,18 @@ def update(name, version: str = None, data_dir: str = None, url=None):
     """
     Hash file and update cached datasets file
     """
-    version, data_dir, built_data_dir, subdir = build.build_info(
+    version, data_dir, built_data_dir, subdir, builder_configs = build.build_info(
         name, version=version, data_dir=data_dir
     )
     filepath = common.get_cache_dataset_path(name, version)
     if not filepath.is_file():
         raise FileNotFoundError(f"filepath '{filepath}' not found.")
     assert (name, version) == common.parse_cache_filename(filepath.name)
-    subdir = str(Path(name) / version)
+
+    if not builder_configs:
+        subdir = str(Path(name) / version)
+    else:
+        subdir = [str(Path(name) / config.name / version) for config in builder_configs]
     file_size, file_sha256 = common.hash_file(filepath)
 
     common.update_cached_datasets(name, version, subdir, file_size, file_sha256, url)

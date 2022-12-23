@@ -42,6 +42,7 @@ def supervised_image_classification(element):
 mnist = register(supervised_image_classification, "mnist")
 cifar10 = register(supervised_image_classification, "cifar10")
 cifar100 = register(supervised_image_classification, "cifar100")
+imagenette = register(supervised_image_classification, "imagenette")
 resisc45 = register(supervised_image_classification, "resisc45")
 
 
