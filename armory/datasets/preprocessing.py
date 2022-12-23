@@ -39,6 +39,12 @@ def supervised_image_classification(element):
     return (image_to_canon(element["image"]), element["label"])
 
 
+mnist = register(supervised_image_classification, "mnist")
+cifar10 = register(supervised_image_classification, "cifar10")
+cifar100 = register(supervised_image_classification, "cifar100")
+resisc45 = register(supervised_image_classification, "resisc45")
+
+
 @register
 def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
@@ -65,11 +71,6 @@ def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
     )
-
-
-mnist = register(supervised_image_classification, "mnist")
-cifar10 = register(supervised_image_classification, "cifar10")
-resisc45 = register(supervised_image_classification, "resisc45")
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):

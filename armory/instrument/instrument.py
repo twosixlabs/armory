@@ -28,6 +28,10 @@ Example:
         hub.connect_meter(meter)
         hub.connect_writer(instrument.PrintWriter())
 """
+
+import json
+from typing import Callable
+
 import armory.paths
 
 try:
@@ -35,8 +39,6 @@ try:
     from armory.utils import json_utils
 except ImportError:
     json_utils = None
-
-import json
 
 from armory import log
 
@@ -407,7 +409,9 @@ class Hub:
         if writer not in self.writers:
             self.writers.append(writer)
 
-    def record(self, name, result, writers=None, use_default_writers=True):
+    def record(
+        self, name, result, writers=None, use_default_writers=True, **write_kwargs
+    ):
         """
         Push a record to the default writers
         writers - None, a Writer, or an iterable of Writer
@@ -433,8 +437,9 @@ class Hub:
             writers.extend(self.default_writers)
         if not writers:
             log.warning(f"No writers to record {name}:{result} to")
+        record = (name, self.context["batch"], result)
         for writer in writers:
-            writer.write((name, self.context["batch"], result))
+            writer.write(record, **write_kwargs)
 
     def close(self):
         if self.closed:
@@ -456,10 +461,12 @@ class Meter:
         metric,
         *metric_arg_names,
         metric_kwargs=None,
+        result_formatter=None,
         auto_measure=True,
         final=None,
         final_name=None,
         final_kwargs=None,
+        final_result_formatter=None,
         record_final_only=False,
     ):
         """
@@ -473,6 +480,7 @@ class Meter:
             Meter(..., "model.x_post[benign]", "model.x_adv_post", ...)
             Follows the pattern of `probe_name.probe_variable[stage]` (stage is optional)
         metric_kwargs - kwargs for the metric function that are constant across measurements
+        result_formatter - a function (or None) that takes a result and formats it for logging
 
         auto_measure - whether to measure when all of the variables have ben set
             if False, 'measure()' must be called externally
@@ -481,6 +489,7 @@ class Meter:
         final_name - if final is not None, this is the name associated with the record
             if not specified, it defaults to f'{final}_{name}'
         final_kwargs - kwargs for the final function that are constant across measurements
+        final_result_formatter - like result_formatter, but for the final result
         record_final_only - if True, do not record the standard metric, only final
             if record_final_only is True and final is None, no records are emitted
         """
@@ -502,6 +511,8 @@ class Meter:
         self.writers = []
         self.auto_measure = bool(auto_measure)
 
+        self.result_formatter = result_formatter
+
         if final is not None:
             if not callable(final):
                 raise ValueError(f"final {final} must be callable")
@@ -512,6 +523,7 @@ class Meter:
         self.final = final
         self.final_name = final_name
         self.final_kwargs = final_kwargs or {}
+        self.final_result_formatter = final_result_formatter
         if not isinstance(self.final_kwargs, dict):
             raise ValueError(f"final_kwargs must be None or a dict, not {final_kwargs}")
         self.record_final_only = bool(record_final_only)
@@ -576,7 +588,7 @@ class Meter:
             self._results.append(result)
         if not self.record_final_only:
             for writer in self.writers:
-                writer.write(record)
+                writer.write(record, result_formatter=self.result_formatter)
         if clear_values:
             self.clear()
         self.never_measured = False
@@ -600,7 +612,7 @@ class Meter:
         record = (self.final_name, None, result)
         self._final_result = result
         for writer in self.writers:
-            writer.write(record)
+            writer.write(record, result_formatter=self.final_result_formatter)
 
     def results(self):
         return self._results
@@ -639,6 +651,7 @@ class GlobalMeter(Meter):
         final_metric,
         *final_metric_arg_names,
         final_kwargs=None,
+        final_result_formatter=None,
     ):
         final_name = str(final_name)
         if not callable(final_metric):
@@ -662,6 +675,7 @@ class GlobalMeter(Meter):
             final_name=final_name,
             final_kwargs=None,
             record_final_only=True,
+            final_result_formatter=final_result_formatter,
         )
 
 
@@ -674,16 +688,30 @@ class Writer:
     Subclasses implement the writing functionality and should override `_write`
         If subclasses manage resources like files that need to be closed,
             `_close` should be overridden to implement that functionality
+
+    If subclasses can take kwargs in their `_write` method,
+        these should be provided in the init here as a tuple of allowed kwargs
+        Only these kwargs will be passed to the `_write` method
     """
 
-    def __init__(self):
+    def __init__(self, _write_kwargs=None):
         self.closed = False
+        if _write_kwargs is None:
+            _write_kwargs = ()
+        elif isinstance(_write_kwargs, str):
+            raise ValueError("_write_kwargs must be an iterable of str, not a str")
+        _write_kwargs = tuple(_write_kwargs)
+        for kwarg in _write_kwargs:
+            if not isinstance(kwarg, str):
+                raise ValueError(f"kwarg {kwarg} is not of type str")
+        self._write_kwargs = _write_kwargs
 
-    def write(self, record):
+    def write(self, record, **kwargs):
         if self.closed:
             raise ValueError("Cannot write to closed Writer")
         name, batch, result = record
-        return self._write(name, batch, result)
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in self._write_kwargs}
+        return self._write(name, batch, result, **filtered_kwargs)
 
     def _write(self, name, batch, result):
         raise NotImplementedError("Implement _write or override write in subclass")
@@ -709,13 +737,23 @@ class PrintWriter(Writer):
 
 
 class LogWriter(Writer):
-    LOG_LEVELS = ("TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL")
+    LOG_LEVELS = (
+        "TRACE",
+        "DEBUG",
+        "PROGRESS",
+        "INFO",
+        "SUCCESS",
+        "METRIC",
+        "WARNING",
+        "ERROR",
+        "CRITICAL",
+    )
 
-    def __init__(self, log_level: str = "INFO"):
+    def __init__(self, log_level: str = "INFO", _write_kwargs=None):
         """
         log_level - one of the uppercase log levels allowed by armory.logs.log
         """
-        super().__init__()
+        super().__init__(_write_kwargs=_write_kwargs)
 
         if log_level not in self.LOG_LEVELS:
             raise ValueError(f"log_level {log_level} not in {self.LOG_LEVELS}")
@@ -725,6 +763,38 @@ class LogWriter(Writer):
         log.log(
             self.log_level, f"Meter Record: name={name}, batch={batch}, result={result}"
         )
+
+
+class ResultsLogWriter(LogWriter):
+    """
+    Logs successful results (designed for task metrics)
+    """
+
+    def __init__(
+        self,
+        format_string: str = "{name} on benign examples w.r.t. ground truth labels: {result}",
+        log_level: str = "METRIC",
+    ):
+        """
+        format_string - string to format results for output to logging
+            Can contain 'name' and 'result' as keys for formatting
+            Other keys will cause an error
+        """
+        super().__init__(log_level=log_level, _write_kwargs=("result_formatter",))
+        try:
+            format_string.format(name="name", result=1)
+        except KeyError as e:
+            raise KeyError(f"format_string key {e} is not in ('name', 'result')")
+        self.format_string = format_string
+
+    def _write(self, name, batch, result, result_formatter: Callable = None):
+        """
+        result_formatter - function that maps a result into a smaller formatted string
+            for less verbose logging to stout
+        """
+        if result_formatter is not None:
+            result = result_formatter(result)
+        log.log(self.log_level, self.format_string.format(name=name, result=result))
 
 
 class FileWriter(Writer):
