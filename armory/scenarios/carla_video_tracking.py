@@ -27,6 +27,9 @@ class CarlaVideoTracking(Scenario):
     def next(self):
         super().next()
         self.y, self.y_patch_metadata = self.y
+        # Fix for tfdsv4 upgrade - separate batches into list
+        if isinstance(self.y, dict) and "boxes" in self.y:
+            self.y = [{"boxes": batch} for batch in self.y["boxes"]]
         self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_benign(self):
