@@ -4,7 +4,7 @@ import os
 import glob
 import re
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
 
@@ -22,7 +22,7 @@ _CITATION = """
 }
 """
 
-_URL = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.0.tar.gz"
 
 
 class CarlaMOTDev(tfds.core.GeneratorBasedBuilder):
@@ -70,9 +70,14 @@ class CarlaMOTDev(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        path = dl_manager.download_and_extract(_URL)
+        path = dl_manager.download_and_extract(_URLS)
 
-        return {"dev": self._generate_examples(path / "dev")}
+        return [
+            tfds.core.SplitGenerator(
+                name="dev",
+                gen_kwargs={"path": os.path.join(path, "dev")},
+            )
+        ]
 
     def _generate_examples(self, path):
         """Yields examples."""
