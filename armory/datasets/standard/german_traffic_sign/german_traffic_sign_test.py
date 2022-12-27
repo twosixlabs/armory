@@ -1,14 +1,14 @@
-"""german_traffic_signal dataset."""
+"""german_traffic_sign dataset."""
 
 import tensorflow_datasets as tfds
-from . import german_traffic_signal
+from . import german_traffic_sign
 
 
-class GermanTrafficSignalTest(tfds.testing.DatasetBuilderTestCase):
-    """Tests for german_traffic_signal dataset."""
+class GermanTrafficSignTest(tfds.testing.DatasetBuilderTestCase):
+    """Tests for german_traffic_sign dataset."""
 
-    # TODO(german_traffic_signal):
-    DATASET_CLASS = german_traffic_signal.GermanTrafficSignal
+    # TODO(german_traffic_sign):
+    DATASET_CLASS = german_traffic_sign.GermanTrafficSign
     SPLITS = {
         "train": 3,  # Number of fake train example
         "test": 1,  # Number of fake test example
