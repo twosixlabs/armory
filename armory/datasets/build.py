@@ -131,13 +131,11 @@ def build_info(name: str, version: str = None, data_dir: str = None):
     # which will return a tensorflow_datasets.core.read_only_builder.ReadOnlyBuilder object with an empty BUILDER_CONFIGS
     # builder = tfds.builder(name, version=version, data_dir=data_dir)
     builder = tfds.builder(name, data_dir=data_dir)
-    # print(builder)
     version = str(builder.info.version)
     built_data_dir = builder.info.data_dir
     subdir = Path(built_data_dir).relative_to(data_dir)
     builder_configs = builder.BUILDER_CONFIGS
-    # print(builder.BUILDER_CONFIGS)
-    # print(builder_configs)
+
     return version, data_dir, built_data_dir, subdir, builder_configs
 
 
