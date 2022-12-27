@@ -41,6 +41,11 @@ jobs:
         run: |
           echo "::set-output name=matrix::$(find ./scenario_configs/${{ github.event.inputs.experiments_dir }} -type f -name "*.json" | jq -cnR '[inputs | select(length>0)]')"
 
+# @christopherwoodall In getting this running on the self-hosted runner,
+# I have noticed a large efficiency gain by loading the system only once
+# and then running the tests without the initializations. I've pull the contents
+# actions/evaluations_environment_setup into this workflow.
+
 
   matrix_job:
     runs-on: ubuntu-latest
@@ -53,20 +58,26 @@ jobs:
       - name: 🐄 Got git?
         uses: actions/checkout@v3
 
-      - name: 🐍 Setup Environment
-        uses: ./.github/actions/evaluations_environment_setup
+      - name: 🐍 setup python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
 
-      - name: ⚒️ Install Prerequisites
+
+      - name: ⚙️ Installing Armory
+        shell: bash
         run: |
-          source .venv/bin/activate
+          pip install '.[developer,pytorch]'
+          armory configure --use-defaults
+
 
       - name: 🚀 Run Scenario Evaluation
-        timeout-minutes: 30
-        env:
-          ARMORY_INSTALL: "/tmp"
-          HOME: "/tmp"
+        # timeout-minutes: 30
+        # env:
+        #   ARMORY_INSTALL: "/tmp"
+        #   HOME: "/tmp"
         run: |
-          mkdir -p "/tmp/logs"
+          # mkdir -p "/tmp/logs"
 
           mkdir -p "${HOME}/armory/outputs/"
           mkdir -p "${HOME}/.armory/"

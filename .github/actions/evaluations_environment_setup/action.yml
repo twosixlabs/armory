@@ -1,5 +1,6 @@
 ---
-# yamllint disable
+# this was used by scenario-runner.yml which has now directly implemented
+# these directives
 name: "Setup Matrix and Armory"
 
 description: "Install Armory and binary dependencies"
