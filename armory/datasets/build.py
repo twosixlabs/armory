@@ -127,9 +127,6 @@ def build_info(name: str, version: str = None, data_dir: str = None):
     """
     if data_dir is None:
         data_dir = common.get_root()
-    # including version as an argument will return True for tfds.core.load._try_load_from_files_first,
-    # which will return a tensorflow_datasets.core.read_only_builder.ReadOnlyBuilder object with an empty BUILDER_CONFIGS
-    # builder = tfds.builder(name, version=version, data_dir=data_dir)
     builder = tfds.builder(name, data_dir=data_dir)
     version = str(builder.info.version)
     built_data_dir = builder.info.data_dir

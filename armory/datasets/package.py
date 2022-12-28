@@ -22,13 +22,16 @@ def package(
         name, version=version, data_dir=data_dir
     )
 
-    # print(builder_configs)
     data_dir = Path(data_dir)
 
     if not builder_configs:
         tar_list = [str(Path(name) / version)]
     else:
-        # metadata.json contains default_config_name for the given dataset
+        # including .config, which contains metadata.json that tfds refers to for default_config_name of a given dataset
+        # .config and metadata.json are hardcoded values for tfds v4.6.0
+        # should subdirectories exist in a dataset, user has the option to choose a subdirectory
+        # if the user does not make a selection via a scenario json file, armory will pick one via
+        # tfds, which will get default_config_name from .config/metadata.json to make a subdirectory selection
         tar_list = [
             str(Path(name) / config.name / version) for config in builder_configs
         ] + [str(Path(name) / ".config")]
@@ -36,7 +39,6 @@ def package(
     for tar_path in tar_list:
         expected_dir = data_dir / tar_path
         if not expected_dir.is_dir():
-            # raise FileNotFoundError(f"Dataset {name} not found at {expected_dir}")
             raise FileNotFoundError(f"Dataset {tar_path} not found at {expected_dir}")
 
     tar_full_filepath = common.get_cache_dataset_path(name, version)
