@@ -36,7 +36,8 @@
             "imagenette/160px-v2/1.0.0",
             "imagenette/full-size/1.0.0",
             "imagenette/320px/1.0.0",
-            "imagenette/160px/1.0.0"
+            "imagenette/160px/1.0.0",
+            "imagenette/.config"
         ],
         "url": null,
         "version": "1.0.0"
