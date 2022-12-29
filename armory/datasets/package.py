@@ -166,10 +166,11 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
         if any(child.is_dir() for child in source_data_dir.iterdir()):
             raise ValueError("Data directory should not have subdirectories")
 
-    if target_data_dir.exists() and overwrite:
-        shutil.rmtree(target_data_dir)
-    os.makedirs(target_data_dir.parent, exist_ok=True)
-    shutil.move(source_data_dir, target_data_dir)
+        target_data_dir = data_dir / subdir
+        if target_data_dir.exists() and overwrite:
+            shutil.rmtree(target_data_dir)
+        os.makedirs(target_data_dir.parent, exist_ok=True)
+        shutil.move(source_data_dir, target_data_dir)
     shutil.rmtree(tmp_dir)
 
 
