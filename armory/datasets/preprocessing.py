@@ -78,8 +78,7 @@ def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None)
         y = y[:max_frames, :]
         y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
     # Update labels
-    box_array = tf.squeeze(y, axis=0) if y.shape[0] == 1 else y
-    y = {"boxes": box_array}
+    y = {"boxes": y}
     y_patch_metadata = {
         k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
         for k, v in y_patch_metadata.items()
