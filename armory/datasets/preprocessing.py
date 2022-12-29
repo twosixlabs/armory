@@ -65,6 +65,7 @@ def carla_video_tracking_preprocess(x, max_frames=None):
         if max_frames <= 0:
             raise ValueError(f"max_frames {max_frames} must be > 0")
         x = x[:max_frames, :]
+    x = tf.cast(x, tf.float32) / 255.0
     return x
 
 
