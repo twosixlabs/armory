@@ -107,12 +107,16 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
     filepath = common.get_cache_dataset_path(name, version)
     if not filepath.is_file():
         raise FileNotFoundError(f"filepath '{filepath}' for dataset {name} not found.")
-    subdir_list = common.cached_datasets()[name]["subdir"]
-    if isinstance(subdir_list, str):
-        subdir_list = [subdir_list]
+    expected_subdir_list = common.cached_datasets()[name]["subdir"]
+    if isinstance(expected_subdir_list, str):
+        expected_subdir_list = [expected_subdir_list]
 
-    for subdir in subdir_list:
-        target_data_dir = data_dir / subdir
+    # expected_subdir format is one of three formats:
+    # <name>/<version>
+    # <name>/<config>/<version>
+    # <name>/.config
+    for expected_subdir in expected_subdir_list:
+        target_data_dir = data_dir / expected_subdir
         if target_data_dir.exists() and not overwrite:
             raise ValueError(
                 f"Target directory {target_data_dir} exists. Set overwrite=True to overwrite"
@@ -136,12 +140,21 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
         raise ValueError(f"{name} does not match directory in {tmp_dir}")
     tmp_dir_name = tmp_dir / name
 
+    # elements in tmp_dir_name_listdir should be one of three values: <version>, <config>, .config
     tmp_dir_name_listdir = os.listdir(tmp_dir_name)
-    subdir_parsed_list = [subdir.split("/")[1] for subdir in subdir_list]
-    if set(tmp_dir_name_listdir) != set(subdir_parsed_list):
+    # elements in expected_subdir_parsed_list is one of three values: <version>, <config>, .config
+    expected_subdir_parsed_list = [
+        expected_subdir.split("/")[1] for expected_subdir in expected_subdir_list
+    ]
+    # check to see that set of expected subdirectories match set of extracted subdirectories
+    if set(tmp_dir_name_listdir) != set(expected_subdir_parsed_list):
         raise ValueError(
-            f"Directories in {tmp_dir_name_listdir} do not match {subdir_parsed_list}"
+            f"Directories in {tmp_dir_name_listdir} do not match {expected_subdir_parsed_list}"
         )
+
+    # len(tmp_dir_name_listdir) > 1 means that subdirectories exist in a dataset
+    # and tmp_subdir should be <config> or .config
+    # else, tmp_subdir should be <version>
     if len(tmp_dir_name_listdir) > 1:
         for tmp_subdir in tmp_dir_name_listdir:
             if tmp_subdir == ".config":
@@ -161,15 +174,16 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
         if version not in tmp_dir_name_listdir:
             raise ValueError(f"{version} does not match directory in {tmp_dir_name}")
 
-    for subdir in subdir_list:
-        source_data_dir = tmp_dir / subdir
+    for expected_subdir in expected_subdir_list:
+        source_data_dir = tmp_dir / expected_subdir
         if any(child.is_dir() for child in source_data_dir.iterdir()):
             raise ValueError("Data directory should not have subdirectories")
 
-    if target_data_dir.exists() and overwrite:
-        shutil.rmtree(target_data_dir)
-    os.makedirs(target_data_dir.parent, exist_ok=True)
-    shutil.move(source_data_dir, target_data_dir)
+        target_data_dir = data_dir / expected_subdir
+        if target_data_dir.exists() and overwrite:
+            shutil.rmtree(target_data_dir)
+        os.makedirs(target_data_dir.parent, exist_ok=True)
+        shutil.move(source_data_dir, target_data_dir)
     shutil.rmtree(tmp_dir)
 
 
