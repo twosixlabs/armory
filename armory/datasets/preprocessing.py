@@ -67,6 +67,12 @@ def carla_over_obj_det_dev(element, modality="rgb"):
 
 
 @register
+def carla_multi_object_tracking_dev(element, coco_format=True):
+    breakpoint()
+    return carla_multi_object_tracking(element["video"], )
+
+
+@register
 def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
