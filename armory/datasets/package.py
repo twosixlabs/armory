@@ -29,9 +29,6 @@ def package(
     else:
         # including .config, which contains metadata.json that tfds refers to for default_config_name of a given dataset
         # .config and metadata.json are hardcoded values for tfds v4.6.0
-        # should subdirectories exist in a dataset, user has the option to choose a subdirectory
-        # if the user does not make a selection via a scenario json file, armory will pick one via
-        # tfds, which will get default_config_name from .config/metadata.json to make a subdirectory selection
         tar_list = [
             str(Path(name) / config.name / version) for config in builder_configs
         ] + [str(Path(name) / ".config")]
@@ -177,7 +174,9 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
     for expected_subdir in expected_subdir_list:
         source_data_dir = tmp_dir / expected_subdir
         if any(child.is_dir() for child in source_data_dir.iterdir()):
-            raise ValueError("Data directory should not have subdirectories")
+            raise ValueError(
+                f"{source_data_dir} directory should not have subdirectories"
+            )
 
         target_data_dir = data_dir / expected_subdir
         if target_data_dir.exists() and overwrite:
