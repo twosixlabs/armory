@@ -18,7 +18,9 @@ class Ucf101(Scenario):
         super().load_test_dataset()
 
     def _load_sample_exporter(self):
+        # breakpoint()
         return VideoClassificationExporter(
             self.export_dir,
-            frame_rate=self.test_dataset.context.frame_rate,
+            # frame_rate=self.test_dataset.context.frame_rate,
+            frame_rate=10,
         )

@@ -47,6 +47,15 @@ resisc45 = register(supervised_image_classification, "resisc45")
 
 
 @register
+def supervised_video_classification(element, max_frames=None):
+    return (video_to_canon(element["video"], max_frames=max_frames), element["label"])
+    # return (video_to_canon(element["video"]), element["label"], max_frames)
+
+
+ucf101 = register(supervised_video_classification, "ucf101")
+
+
+@register
 def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
 
