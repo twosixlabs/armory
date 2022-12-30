@@ -11,7 +11,6 @@ def load_dataset(
     config=None,
     batch_size=1,
     num_batches=None,
-    max_frames=None,  # added
     epochs=1,
     split="test",
     framework="numpy",

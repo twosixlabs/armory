@@ -127,7 +127,7 @@ class ArmoryDataGenerator:
             # SEE: tfds.as_numpy
             # https://github.com/tensorflow/datasets/blob/v4.7.0/tensorflow_datasets/core/dataset_utils.py#L141-L176
             raise NotImplementedError(f"framework {framework}")
-        breakpoint()
+
         self._set_params(
             iterator=iterator,
             split=split,
