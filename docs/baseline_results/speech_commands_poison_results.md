@@ -207,8 +207,6 @@ we evaluate with lower poison percentages compared to other poison evaluations o
 
 ### Spectral Signatures
 
-Mean of 3 runs
-
 | Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
 | ------- | ------- | ------- | ------- | ------- |
 | 00 |  0.923 | 0.980 | - | - |
@@ -217,3 +215,66 @@ Mean of 3 runs
 | 01 |  0.934 | 0.976 | 0.884 | 0.623 |
 | 05 |  0.901 | 0.980 | 0.901 | 0.004 |
 | 10 |  0.927 | 0.976 | 0.897 | 0.372 |
+
+
+
+## Car Horn Trigger
+
+### Undefended
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.910 | 0.916 | - | - |
+| 001 |  0.932 | 0.988 | 0.870 | 0.749 |
+| 005 |  0.937 | 0.987 | 0.859 | 0.947 |
+| 01 |  0.935 | 0.984 | 0.857 | 0.953 |
+| 05 |  0.940 | 0.985 | 0.860 | 0.975 |
+| 10 |  0.933 | 0.989 | 0.851 | 0.985 |
+
+
+### Random Filter
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.922 | 0.984 | - | - |
+| 001 |  0.928 | 0.981 | 0.878 | 0.618 |
+| 005 |  0.922 | 0.960 | 0.847 | 0.932 |
+| 01 |  0.945 | 0.973 | 0.867 | 0.958 |
+| 05 |  0.929 | 0.987 | 0.849 | 0.967 |
+| 10 |  0.933 | 0.984 | 0.854 | 0.973 |
+
+
+### Perfect Filter
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.948 | 0.987 | - | - |
+| 001 |  0.940 | 0.985 | 0.939 | 0.008 |
+| 005 |  0.940 | 0.971 | 0.940 | 0.001 |
+| 01 |  0.936 | 0.981 | 0.936 | 0.005 |
+| 05 |  0.913 | 0.986 | 0.913 | 0.001 |
+| 10 |  0.940 | 0.970 | 0.940 | 0.003 |
+
+
+### Activation Clustering
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.929 | 0.984 | - | - |
+| 001 |  0.928 | 0.986 | 0.865 | 0.765 |
+| 005 |  0.921 | 0.984 | 0.846 | 0.914 |
+| 01 |  0.942 | 0.984 | 0.865 | 0.948 |
+| 05 |  0.925 | 0.970 | 0.846 | 0.988 |
+| 10 |  0.932 | 0.982 | 0.851 | 0.985 |
+
+
+### Spectral Signatures
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.935 | 0.988 | - | - |
+| 001 |  0.930 | 0.971 | 0.903 | 0.322 |
+| 005 |  0.928 | 0.981 | 0.913 | 0.181 |
+| 01 |  0.928 | 0.980 | 0.917 | 0.141 |
+| 05 |  0.933 | 0.983 | 0.893 | 0.484 |
+| 10 |  0.935 | 0.976 | 0.933 | 0.026 |
