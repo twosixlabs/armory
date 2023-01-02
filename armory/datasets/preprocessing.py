@@ -4,6 +4,7 @@ Standard preprocessing for different datasets
 
 
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 
 REGISTERED_PREPROCESSORS = {}
@@ -39,10 +40,16 @@ def supervised_image_classification(element):
     return (image_to_canon(element["image"]), element["label"])
 
 
+@register
+def supervised_gtsrb_classification(element):
+    return (gtsrb_to_canon(element["image"]), element["label"])
+
+
 mnist = register(supervised_image_classification, "mnist")
 cifar10 = register(supervised_image_classification, "cifar10")
 cifar100 = register(supervised_image_classification, "cifar100")
 resisc45 = register(supervised_image_classification, "resisc45")
+gtsrb = register(supervised_gtsrb_classification, "german_traffic_sign")
 
 
 @register
@@ -88,6 +95,35 @@ def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint
         if len(resize) != 2:
             raise ValueError(f"resize must be None or a 2-tuple, not {resize}")
         image = tf.image.resize(image, resize)
+    return image
+
+
+def gtsrb_to_canon(image, target_dtype=tf.float32, input_type="uint8"):
+    """
+    TFDS Image feature uses (height, width, channels)
+    """
+    if input_type == "uint8":
+        scale = 255.0
+    else:
+        raise NotImplementedError(f"Currently only supports uint8, not {input_type}")
+    image = tf.cast(image, target_dtype)
+    image = tfa.image.equalize(image)
+    image = image / scale
+
+    width, height = image.size
+    min_side = min(image.size)
+    center = width // 2, height // 2
+
+    left = center[0] - min_side // 2
+    top = center[1] - min_side // 2
+    right = center[0] + min_side // 2
+    bottom = center[1] + min_side // 2
+
+    img_size = 48
+    image = tf.image.crop_and_resize(
+        image, [[bottom, left, top, right]], [img_size, img_size]
+    )
+
     return image
 
 
