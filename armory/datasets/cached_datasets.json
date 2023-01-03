@@ -34,6 +34,21 @@
         "url": null,
         "version": "1.0.8"
     },
+    "imagenette": {
+        "sha256": "ca79a0f077d95dcd8510ec0755b8c80b3c169095bc1cedcb32e7022513f68124",
+        "size": 3990756717,
+        "subdir": [
+            "imagenette/full-size-v2/1.0.0",
+            "imagenette/320px-v2/1.0.0",
+            "imagenette/160px-v2/1.0.0",
+            "imagenette/full-size/1.0.0",
+            "imagenette/320px/1.0.0",
+            "imagenette/160px/1.0.0",
+            "imagenette/.config"
+        ],
+        "url": null,
+        "version": "1.0.0"
+    },
     "mnist": {
         "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
         "size": 16920751,

@@ -127,11 +127,13 @@ def build_info(name: str, version: str = None, data_dir: str = None):
     """
     if data_dir is None:
         data_dir = common.get_root()
-    builder = tfds.builder(name, version=version, data_dir=data_dir)
+    builder = tfds.builder(name, data_dir=data_dir)
     version = str(builder.info.version)
     built_data_dir = builder.info.data_dir
     subdir = Path(built_data_dir).relative_to(data_dir)
-    return version, data_dir, built_data_dir, subdir
+    builder_configs = builder.BUILDER_CONFIGS
+
+    return version, data_dir, built_data_dir, subdir, builder_configs
 
 
 if __name__ == "__main__":
