@@ -34,6 +34,13 @@
         "url": null,
         "version": "1.0.8"
     },
+    "librispeech_dev_test": {
+        "sha256": "5c5c6cb53e458e2415bc4f242122155d51f32d7e78770176afe01acb584c4caa",
+        "size": 2332265306,
+        "subdir": "librispeech_dev_test/2.1.0",
+        "url": null,
+        "version": "2.1.0"
+    },
     "mnist": {
         "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
         "size": 16920751,

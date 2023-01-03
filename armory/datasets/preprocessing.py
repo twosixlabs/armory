@@ -73,6 +73,24 @@ def xview(element):
     )
 
 
+@register
+def librispeech(element, audio_kwargs=None):
+    # TODO: determine how to fix np.array([<byte>], dtype=object) output for text
+    #    https://github.com/tensorflow/tensorflow/issues/34871
+    #    Our traditional behavior to decode to str once in numpy
+    #    This can be done via: y.astype("U")
+    #    Currently, this is handled by scenarios or metrics after dataset output
+    # NOTE: 16000 sampling rate
+    if audio_kwargs is None:
+        audio_kwargs = {}
+    text = element["text"]
+    speech = audio_to_canon(element["speech"], **audio_kwargs)
+    return (speech, text)
+
+
+librispeech_dev_test = register(librispeech, "librispeech_dev_test")
+
+
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
     """
     TFDS Image feature uses (height, width, channels)

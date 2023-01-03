@@ -190,7 +190,7 @@ def _docker_image(parser):
         "docker_image",
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory'",
         action=DockerImage,
     )
 
@@ -201,7 +201,7 @@ def _docker_image_optional(parser):
         default=armory.docker.images.ARMORY_IMAGE_NAME,
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory'",
         action=DockerImage,
     )
 

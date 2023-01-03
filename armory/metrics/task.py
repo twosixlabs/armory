@@ -22,7 +22,6 @@ from armory.metrics.common import (
     set_namespace,
     result_formatter,
 )
-from armory.utils.external_repo import ExternalPipInstalledImport
 
 aggregate = MetricNameSpace()
 population = MetricNameSpace()
@@ -139,11 +138,7 @@ class Entailment:
                 paths.runtime_paths().saved_model_dir, "huggingface"
             )
 
-        with ExternalPipInstalledImport(
-            package="transformers",
-            dockerimage="twosixarmory/pytorch-deepspeech",
-        ):
-            from transformers import AutoTokenizer, AutoModelForSequenceClassification
+        from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
         self.model = AutoModelForSequenceClassification.from_pretrained(

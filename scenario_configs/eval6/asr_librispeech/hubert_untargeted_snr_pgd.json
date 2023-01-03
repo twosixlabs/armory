@@ -1,5 +1,5 @@
 {
-    "_description": "Baseline DeepSpeech ASR on LibriSpeech, contributed by MITRE Corporation",
+    "_description": "Baseline HuBERT ASR on LibriSpeech",
     "adhoc": {
         "skip_adversarial": false
     },
@@ -20,17 +20,16 @@
         "use_label": false
     },
     "dataset": {
-        "batch_size": 1,
-        "eval_split": "test_clean",
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "librispeech",
-        "train_split": "train_clean100"
+        "test": {
+            "batch_size": 1,
+            "name": "librispeech_dev_test",
+            "split": "test_clean"
+        }
     },
     "defense": null,
     "metric": {
         "means": false,
-        "perturbation": "linf",
+        "perturbation": "snr_db",
         "record_metric_per_sample": true,
         "task": [
             "word_error_rate"

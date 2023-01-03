@@ -56,14 +56,10 @@ The carla_over_obj_det_train dataset has the same properties as the above mentio
 | Dataset    | Description | x_shape | x_dtype  | y_shape  | y_dtype | sampling_rate | splits |
 |:----------: |:-----------: |:-------: |:--------: |:--------: |:-------: |:-------: |:------: |
 | [digit](https://github.com/Jakobovski/free-spoken-digit-dataset) | Audio dataset of spoken digits | (N, variable_length) | int64 | (N,) | int64 | 8 kHz | train, test |
-| [librispeech](http://www.openslr.org/12/) | Librispeech dataset for automatic speech recognition  | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, train_clean100 |
-| [librispeech-full](http://www.openslr.org/12/) | Full Librispeech dataset for automatic speech recognition | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, train_clean100, train_clean360, train_other500 |
-| [librispeech_dev_clean](http://www.openslr.org/12/) | Librispeech dev dataset for speaker identification  | (N, variable_length)  | float32 | (N,)  | int64 | 16 kHz | train, validation, test |
-| [librispeech_dev_clean_asr](http://www.openslr.org/12) | Librispeech dev dataset for automatic speech recognition | (N, variable_length) | float32 | (N,) | bytes | 16 kHz | train, validation, test |
+| [librispeech](http://www.openslr.org/12/) | Librispeech dataset for automatic speech recognition (NOTE: not currently cached. Use TFDS builder.) | (N, variable_length)  | float32 | (N,)  | bytes | 16 kHz | dev_clean, dev_other, test_clean, test_other, train_clean100, train_clean360, train_other500 |
+| [librispeech_dev_test](http://www.openslr.org/12/) | Librispeech with ontly dev and test splits | (N, variable_length)  | float32 | (N,)  | int64 | 16 kHz | dev_clean, dev_other, test_clean, test_other |
 | [speech_commands](https://www.tensorflow.org/datasets/catalog/speech_commands) | Speech commands dataset for audio poisoning | (N, variable_length) | float32 | (N,) | int64 | 16 kHz | train, validation, test |
 
-NOTE: because the Librispeech dataset is over 300 GB with all splits, the ```librispeech_full``` dataset has
-all splits, whereas the ```librispeech``` dataset does not have the train_clean360 or train_other500 splits.
 <br>
 
 ### Video Datasets
@@ -101,9 +97,6 @@ Tensorflow Datasets [library](https://www.tensorflow.org/datasets/catalog/overvi
 |       resisc_45       |    train   |         First 5/7 of dataset           | See armory/data/resisc45/resisc45_dataset_partition.py |
 |                       | validation |          Next 1/7 of dataset           |                                                        |
 |                       |    test    |         Final 1/7 of dataset           |                                                        |
-| librispeech_dev_clean |    train   | 1371 recordings from dev_clean dataset |   Assign discrete clips so at least 50% of audio time  |
-|                       | validation |  692 recordings from dev_clean dataset |       is in train, at least 25% is in validation,      |
-|                       |    test    |  640 recordings from dev_clean dataset |              and the remainder are in test             |
 
 
 <br>

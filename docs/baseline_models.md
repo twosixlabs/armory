@@ -37,8 +37,6 @@ The model files can be found in [armory/baseline_models/pytorch](../armory/basel
 | Model   |                S3 weight_files                | 
 |:----------: |:---------------------------------------------:| 
 | Cifar10 CNN |                                               |  
-| DeepSpeech 2 |                                               |
-| Sincnet CNN |         `sincnet_librispeech_v1.pth`          |
 | MARS | `mars_ucf101_v1.pth` , `mars_kinetics_v1.pth` |
 | ResNet50 CNN |          `resnet50_imagenet_v1.pth`           |
 | MNIST CNN |        `undefended_mnist_5epochs.pth`         |

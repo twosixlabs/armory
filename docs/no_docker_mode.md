@@ -31,17 +31,8 @@ Once this is complete, and you have ensured you are in the `[armory-repo]` direc
 you can setup the environment with the following:
 ```bash
 pip install --upgrade pip==22.0.3
-pip install -e .[engine,datasets,math,pytorch,deepspeech,tensorflow]
+pip install -e .[engine,datasets,math,pytorch,tensorflow]
 ```
-
-If you are using the `deepspeech` scenarios, you will also need to
-install the `hydra-lightning` configs with:
-
-    pip install git+https://github.com/romesco/hydra-lightning/#subdirectory=hydra-configs-pytorch-lightning
-
-as described [in that package's README](https://github.com/romesco/hydra-lightning#readme).
-This is necessary because there is no proper release of that package (nor does one
-appear likely).
 
 Once this completes, you should run `armory configure` (If you haven't already done this
 previously) to setup the armory configuration

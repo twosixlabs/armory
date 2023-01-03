@@ -15,14 +15,16 @@ log.trace(f"armory.__version__: {armory.__version__}")
 
 TAG = version.to_docker_tag(armory.__version__)
 ARMORY_IMAGE_NAME = f"twosixarmory/armory:{TAG}"
-DEEPSPEECH_IMAGE_NAME = f"twosixarmory/pytorch-deepspeech:{TAG}"
 
 IMAGE_MAP = {
     "armory": ARMORY_IMAGE_NAME,
     "tf2": ARMORY_IMAGE_NAME,
     "pytorch": ARMORY_IMAGE_NAME,
     "carla-mot": ARMORY_IMAGE_NAME,
-    "pytorch-deepspeech": DEEPSPEECH_IMAGE_NAME,
+}
+DEPRECATED_IMAGES_VERSION = {
+    "tf1": "< 0.15.0",
+    "pytorch-deepspeech": "<= 0.16.1",
 }
 
 
@@ -65,8 +67,11 @@ def is_armory(image_name: str):
     user, repo, _ = split_name(image_name)
     if user and user != "twosixarmory":
         return False
-    if repo == "tf1":
-        raise ValueError("tf1 docker image is deprecated. Use Armory version < 0.15.0")
+    if repo in DEPRECATED_IMAGES_VERSION:
+        old_version = DEPRECATED_IMAGES_VERSION[repo]
+        raise ValueError(
+            f"{repo} docker image is deprecated. Use Armory version {old_version}"
+        )
     return repo in IMAGE_MAP
 
 

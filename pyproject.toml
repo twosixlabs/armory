@@ -71,6 +71,8 @@ engine = [
     "botocore" ,           # Needed for armory.data.utils
     "ffmpeg-python",       # Needed for armory.utils.export
     "pydub",               # this is in ART's extra-requires
+    "librosa", # audio poisoning
+    "transformers", # audio metrics
     "tidecv",              # Needed for TIDE metrics
     # Both `opencv-python` and `opencv-python-headless` must specify
     # the same version.
@@ -90,17 +92,6 @@ tensorflow = [
     "armory-testbed[engine,datasets,math]",
     "tf-models-official",
     "tensorflow >= 2.10.0",
-]
-
-deepspeech = [
-    "armory-testbed[pytorch,engine,datasets,math]",
-    "python-levenshtein",
-    "torchmetrics < 0.8.0",
-    "sox",
-    "librosa",
-    "google-cloud-storage",
-    "transformers",
-    "pytorch-lightning < 1.5.0",
 ]
 
 math = [
@@ -202,5 +193,4 @@ markers = [
   "docker_required",     # This Test Requires Docker to run
   "end_to_end",          # Full End to End Test (typically slow)
   "unit",                # These are Unit Tests (fast and lightweight)
-  "pytorch_deepspeech",  # This test requires pytorch-deepspeech container (or equivalent dependencies) to run
 ]

@@ -13,7 +13,7 @@ from armory import __version__ as armory_version
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
 
-armory_frameworks = ["armory", "pytorch-deepspeech"]
+armory_frameworks = ["armory"]
 
 # NOTE: Podman is not officially supported, but this enables
 #       use as a drop-in replacement for building.

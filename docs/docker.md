@@ -4,16 +4,16 @@ inside a docker container.
 
 
 ## Images
-There are two docker images that are currently published to dockerhub for every release of
+There is a single docker image that is currently published to dockerhub for every release of
 the armory framework:
 
 1. `twosixarmory/armory:<version>`
-2. `twosixarmory/pytorch-deepspeech:<version>`
 
 NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
-If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.
+If `tf1` functionality is needed, please use the `armory` image and use `tf1` compatibility mode.
+NOTE: as of Armory version > 0.16.1, we no longer support the `pytorch-deepspeech` image.
 
-We additionally publish a base image, `twosixarmory/base:latest`, from which the three main images are derived.
+We additionally publish a base image, `twosixarmory/base:latest`, from which the main image is derived.
 This is updated less frequently, and each release does not necessarily have a corresponding new base.
 
 When using `armory launch` or `armory exec` the framework specific arguments will
@@ -87,7 +87,7 @@ they can be built from the release branch of the repo:
 ```
 git checkout -b r0.16.0
 bash docker/build-base.sh
-python docker/build.py <armory|pytorch-deepspeech|all> [--no-pull]
+python docker/build.py <armory|all> [--no-pull]
 ```
 
 If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.

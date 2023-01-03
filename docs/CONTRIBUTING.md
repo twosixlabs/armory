@@ -56,7 +56,7 @@ Note: only release versions of armory will be published to [Dockerhub](https://h
 development branch images much be built locally using:
 ```bash
 cd YOUR_ARMORY_REPO
-bash docker/build.sh <tf2|pytorch|pytorch-deepspeech|all> dev
+bash docker/build.sh <armory|all> dev
 ```
 
 ## Style Guide
