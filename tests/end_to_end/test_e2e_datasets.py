@@ -703,6 +703,37 @@ def test_carla_overhead_obj_det_dev():
         )
 
 
+def test_carla_overhead_obj_det_test():
+
+    ds_rgb = adversarial_datasets.carla_over_obj_det_test(split="test", modality="rgb")
+    ds_depth = adversarial_datasets.carla_over_obj_det_test(
+        split="test", modality="depth"
+    )
+    ds_multimodal = adversarial_datasets.carla_over_obj_det_test(
+        split="test", modality="both"
+    )
+
+    for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
+        assert ds.size == 15
+        for x, y in ds:
+            if i == 0:
+                assert x.shape == (1, 960, 1280, 6)
+            else:
+                assert x.shape == (1, 960, 1280, 3)
+
+            y_object, y_patch_metadata = y
+            assert isinstance(y_object, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in y_object
+            assert isinstance(y_patch_metadata, dict)
+            for patch_key in [
+                "avg_patch_depth",
+                "gs_coords",
+                "mask",
+            ]:
+                assert patch_key in y_patch_metadata
+
+
 def test_carla_video_tracking_dev():
 
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
