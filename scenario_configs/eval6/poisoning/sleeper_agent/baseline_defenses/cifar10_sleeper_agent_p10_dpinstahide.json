@@ -4,14 +4,14 @@
         "compute_fairness_metrics": false,
         "experiment_id": 0,
         "explanatory_model": "cifar10_silhouette_model",
+        "fit_defense_classifier_outside_defense": false,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 0,
         "split_id": 0,
         "target_class": 1,
         "train_epochs": 80,
-        "use_poison_filtering_defense": false,
-        "fit_defense_classifier_outside_defense": false
+        "use_poison_filtering_defense": false
     },
     "attack": {
         "knowledge": "black",
@@ -60,8 +60,8 @@
         "kwargs": {
             "augmentations": {
                 "kwargs": {
-                    "apply_fit":true,
-                    "apply_predict":false,
+                    "apply_fit": true,
+                    "apply_predict": false,
                     "num_classes": 10,
                     "num_mix": 2
                 },
