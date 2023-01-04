@@ -10,7 +10,8 @@
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 20,
-        "use_poison_filtering_defense": false
+        "use_poison_filtering_defense": false,
+        "fit_defense_classifier_outside_defense": false
     },
     "attack": {
         "knowledge": "black",
@@ -38,7 +39,9 @@
         "kwargs": {
             "augmentations": {
                 "kwargs": {
-                    "num_classes": 10,
+                    "apply_fit":true,
+                    "apply_predict":false,
+                    "num_classes": 12,
                     "num_mix": 2
                 },
                 "name": "Mixup"
@@ -48,7 +51,7 @@
                 1
             ],
             "noise": "laplacian",
-            "scale": 0.3
+            "scale": 0.1
         },
         "module": "art.defences.trainer",
         "name": "DPInstaHideTrainer",

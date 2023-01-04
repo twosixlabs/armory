@@ -212,7 +212,7 @@ def load_defense_wrapper(defense_config, classifier):
     defense_module = import_module(defense_config["module"])
     defense_fn = getattr(defense_module, defense_config["name"])
     kwargs = copy.deepcopy(defense_config["kwargs"])
-    if "augmentations" in kwargs:
+    if "augmentations" in kwargs and kwargs["augmentations"] is not None:
         # create Preprocess object and add it to kwargs
         aug_config = kwargs.pop("augmentations")
         aug_module = import_module("art.defences.preprocessor")
