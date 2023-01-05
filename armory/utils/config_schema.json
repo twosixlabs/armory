@@ -36,6 +36,7 @@
             "type": "object"
         },
         "dataset": {
+            "additionalProperties": false,
             "properties": {
                 "test": {
                     "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
@@ -70,12 +71,28 @@
                         "batch_size"
                     ],
                     "type": "object"
+                },
+                "validation": {
+                    "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
+                    "properties": {
+                        "batch_size": {
+                            "minimum": 1,
+                            "type": "integer"
+                        },
+                        "name": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "name",
+                        "batch_size"
+                    ],
+                    "type": "object"
                 }
             },
             "required": [
                 "test"
             ],
-            "additionalProperties": false,
             "type": "object"
         },
         "defense": {
