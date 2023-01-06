@@ -30,7 +30,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 
 ## CARLA Overhead OD Dataset
 
-Dev data results obtained using Armory 0.16.0
+Dev data results obtained using Armory 0.16.0, Test data results obtained using Armory 0.16.1
 
 Single Modality (RGB) Object Detection
 
