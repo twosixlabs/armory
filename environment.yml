@@ -1,5 +1,4 @@
 ---
-# yamllint disable rule:line-length
 name: armory-core
 channels:
   - pytorch
@@ -18,7 +17,6 @@ dependencies:
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
   - librosa
   - cudnn  # cudnn required for tensorflow
-  - numba  # ART requires numba >= 0.53.1
   - pandas
   - protobuf
 prefix: /opt/conda

@@ -75,34 +75,47 @@ All configuration files are verified against the jsonschema definition at run ti
     output_filename: [Optional String]: Optionally change the output filename prefix (from default of scenario name)  
     use_gpu: [Boolean]: Boolean to run container as nvidia-docker with GPU access
   }
+`user_init`: [Object or null]
+  {
+    module: [String] Python module to import before scenario loading but after scenario initialization
+    name: [String or null] Name of the function to call after module import (optional)
+    kwargs: [Object or null] Keyword arguments to provide for function call (optional)
+  }
 ```
 
 
 ### Example Configuration File:
 ```
 {
-    "_description": "Example configuration",
+    "_description": "Baseline cifar10 image classification",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
-            "eps": 0.2
+            "batch_size": 1,
+            "eps": 0.031,
+            "eps_step": 0.007,
+            "max_iter": 20,
+            "num_random_init": 1,
+            "random_eps": false,
+            "targeted": false,
+            "verbose": false
         },
-        "module": "art.attacks",
-        "name": "FastGradientMethod",
-        "use_label": false
+        "module": "art.attacks.evasion",
+        "name": "ProjectedGradientDescent",
+        "use_label": true
     },
     "dataset": {
         "batch_size": 64,
+        "framework": "numpy",
         "module": "armory.data.datasets",
-        "name": "cifar10",
-        "framework": "numpy"
+        "name": "cifar10"
     },
     "defense": null,
     "metric": {
         "means": true,
         "perturbation": "linf",
-        "record_metric_per_sample": true,
+        "record_metric_per_sample": false,
         "task": [
             "categorical_accuracy"
         ]
@@ -121,12 +134,14 @@ All configuration files are verified against the jsonschema definition at run ti
     "scenario": {
         "kwargs": {},
         "module": "armory.scenarios.image_classification",
-        "name": "ImageClassification"
+        "name": "ImageClassificationTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/pytorch:0.6.0",
-        "external_github_repo": "twosixlabs/armory-example@master",
+        "docker_image": "twosixarmory/armory",
+        "external_github_repo": null,
         "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
         "use_gpu": false
     }
 }

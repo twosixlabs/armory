@@ -76,13 +76,6 @@ def test_scenario_configs(file):
     load_config(str(file))
 
 
-@pytest.mark.parametrize(
-    "file",
-    (
-        glob("tests/scenarios/tf1/*.json")
-        + glob("tests/scenarios/tf2/*.json")
-        + glob("tests/scenarios/pytorch/*.json")
-    ),
-)
+@pytest.mark.parametrize("file", glob("tests/scenarios/pytorch/*.json"))
 def test_all_examples(file):
     load_config(str(file))

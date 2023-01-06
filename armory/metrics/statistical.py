@@ -14,11 +14,11 @@ from armory.metrics.perturbation import MetricNameSpace, set_namespace
 registered = MetricNameSpace()
 
 
-def register(metric):
+def register(metric, name=None):
     """
     Register a statistical metric
     """
-    return set_namespace(registered, metric)
+    return set_namespace(registered, metric, name=name, set_global=True)
 
 
 @register
@@ -117,7 +117,7 @@ def make_contingency_tables(
         A map (Dict[int, np.ndarray]) of the per-class contingency tables.
     """
 
-    y = np.array(y).astype(np.int).flatten()
+    y = np.array(y).astype(np.int64).flatten()
     flagged_A = np.array(flagged_A).astype(np.bool_).flatten()
     flagged_B = np.array(flagged_B).astype(np.bool_).flatten()
 
