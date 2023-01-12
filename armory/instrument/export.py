@@ -97,7 +97,9 @@ class ImageClassificationExporter(SampleExporter):
             x_i_mode = x[..., :3]
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x.shape[-1]}")
-        image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
+        image = Image.fromarray(
+            np.round(np.clip(x_i_mode, 0.0, 1.0) * 255.0).astype(int), mode
+        )
         return image
 
 
@@ -309,7 +311,7 @@ class VideoClassificationExporter(SampleExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.round(np.clip(x_frame, 0.0, 1.0) * 255.0).astype(int)
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
         return pil_frames
@@ -414,7 +416,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.round(np.clip(x_frame, 0.0, 1.0) * 255.0).astype(int)
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
 
@@ -550,7 +552,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vh.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+            return Image.fromarray(
+                np.round(sar_scale * (x_vh - sar_min)).astype(int), "L"
+            )
 
         elif modality == "vv":
             x_vv = np.log10(
@@ -566,7 +570,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vv.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
+            return Image.fromarray(
+                np.round(sar_scale * (x_vv - sar_min)).astype(int), "L"
+            )
 
         elif modality == "eo":
             eo_images = []
@@ -576,7 +582,10 @@ class So2SatExporter(SampleExporter):
             eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)), "L"
+                    np.round(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)).astype(
+                        int
+                    ),
+                    "L",
                 )
                 eo_images.append(eo)
 
