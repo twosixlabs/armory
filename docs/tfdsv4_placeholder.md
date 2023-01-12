@@ -9,5 +9,39 @@ This file will act as a placeholder for any documentation related to the changes
  More to come...
 
 ## COCO
+### Example
+![coco example](images/coco_example.png)
+
+### Original Format
+```
+[{'bbox': [303.54, 36.62, 193.68, 382.83],
+  'image_id': 133418,
+  'category_id': 1,
+  'id': 444415},
+ {'bbox': [386.64, 267.68, 253.36, 159.32],
+  'image_id': 133418,
+  'category_id': 43,
+  'id': 657440}]
+```
+- `bbox` format: `[xmin, ymin, width, height]`
+
+### TFDS Format
+```
+{'area': array([[49565, 13487]]),
+ 'bbox': array([[[0.08576112, 0.47428125, 0.9823185 , 0.77690625],
+         [0.62688524, 0.604125  , 1.        , 1.        ]]], dtype=float32),
+ 'id': array([[444415, 657440]]),
+ 'is_crowd': array([[False, False]]),
+ 'label': array([[ 0, 38]])}
+```
+- `bbox` format: `[ymin, xmin, ymax, xmax]` normalized
+
+### Armory Expected Input Format
+
+#### Model
+
+#### Attack
+
+### Armory Output Format
 
 ## Video
