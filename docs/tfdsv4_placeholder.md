@@ -14,15 +14,20 @@ This file will act as a placeholder for any documentation related to the changes
 
 ### Original Format
 ```
-[{'bbox': [303.54, 36.62, 193.68, 382.83],
+[{'area': 49565.45300000001,
+  'iscrowd': 0,
   'image_id': 133418,
+  'bbox': [303.54, 36.62, 193.68, 382.83],
   'category_id': 1,
   'id': 444415},
- {'bbox': [386.64, 267.68, 253.36, 159.32],
+ {'area': 13487.548600000002,
+  'iscrowd': 0,
   'image_id': 133418,
+  'bbox': [386.64, 267.68, 253.36, 159.32],
   'category_id': 43,
   'id': 657440}]
 ```
+- excluding `segmentation` key
 - `bbox` format: `[xmin, ymin, width, height]`
 
 ### TFDS Format: No Preprocessing
