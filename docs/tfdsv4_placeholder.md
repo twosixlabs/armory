@@ -16,7 +16,23 @@ This file will act as a placeholder for any documentation related to the changes
 ```
 {'label': 9}
 ```
+- config: 
+- split keys: `["train", "validation"]`
 - excluding `image` key
+- example shape: `[422, 500, 3]`
+
+## `ucf101`
+### Example
+![ucf101 example](images/ucf101_example.png)
+
+### TFDS Format: No Preprocessing
+```
+{'label': 12}
+```
+- config:
+- split keys: `["train", "test"]`
+- excluding `video` key
+- example shape: `[118, 240, 320, 3]`
 
 ## `coco`
 ### Example
@@ -51,7 +67,10 @@ This file will act as a placeholder for any documentation related to the changes
   'is_crowd': array([False, False]),
   'label': array([ 0, 38])}}
 ```
+- split keys: `["train", "test", "validation"]`
+- `"test"` does not contain `"label"`
 - excluding `image` key
+- example shape: `[427, 640, 3]`
 - `bbox` format: `[ymin, xmin, ymax, xmax]` normalized
 
 ### Armory Expected Input Format
