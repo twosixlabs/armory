@@ -8,7 +8,17 @@ This file will act as a placeholder for any documentation related to the changes
 
  More to come...
 
-## COCO
+## `imagenette`
+### Example
+![imagenette example](images/imagenette_example.png)
+
+### TFDS Format: No Preprocessing
+```
+{'label': 9}
+```
+- excluding `image` key
+
+## `coco`
 ### Example
 ![coco example](images/coco_example.png)
 
@@ -41,6 +51,7 @@ This file will act as a placeholder for any documentation related to the changes
   'is_crowd': array([False, False]),
   'label': array([ 0, 38])}}
 ```
+- excluding `image` key
 - `bbox` format: `[ymin, xmin, ymax, xmax]` normalized
 
 ### Armory Expected Input Format
