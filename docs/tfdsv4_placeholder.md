@@ -8,6 +8,32 @@ This file will act as a placeholder for any documentation related to the changes
 
  More to come...
 
+## Script
+The script below is intended to get information about the `tfds` format of a dataset prior to any calling any preprocessing functions defined in Armory to pass to a task/scenario. This script should work as long as the dataset has been built with `tfds` and uploaded to S3.
+```python
+from armory.datasets.load import load
+import tensorflow_datasets as tfds
+
+def get_ds_iterator(ds_dict, split):
+    ds = ds_dict[split]
+    iterator = iter(ds)
+    return iterator
+
+name = "imagenette"
+config = None
+
+info, ds_dict = load(name = name, config = config)
+print(ds_dict.keys()) # dict_keys(['train', 'validation'])
+
+iterator = get_ds_iterator(ds_dict, "validation")
+x = iterator.__next__()
+print(type(x), x.keys()) # dict, dict_keys(['image', 'label'])
+
+print(x["image"].shape) # [422, 500, 3]
+
+print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
+```
+
 ## `imagenette`
 - config: 
 - split keys: `["train", "validation"]`
@@ -55,6 +81,7 @@ This file will act as a placeholder for any documentation related to the changes
 - `"test"` does not contain `"label"`
 ### Example
 ![coco example](images/coco_example.png)
+- boxes were drawn
 
 ### Original Format
 ```
