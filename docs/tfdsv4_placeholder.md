@@ -7,3 +7,5 @@ This file will act as a placeholder for any documentation related to the changes
  Introduction of a `Task` which represents a group of datasets & their related scenarios. For example, the `Video` task would represent `carla_video_tracking` along with `carla_mot` and their respective dataloaders with the expectation both data loaders will produce output of the same shape.
 
  More to come...
+
+## COCO
