@@ -2,9 +2,9 @@
 Utilities for handling the global armory configuration file
 """
 
+from collections import defaultdict
 import json
 import os
-from collections import defaultdict
 import warnings  # armory.logs initialization depends on this module, use warnings instead
 
 

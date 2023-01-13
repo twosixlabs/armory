@@ -2,9 +2,9 @@
 General audio classification scenario
 """
 
-from armory.scenarios.scenario import Scenario
-from armory.logs import log
 from armory.instrument.export import AudioExporter
+from armory.logs import log
+from armory.scenarios.scenario import Scenario
 
 
 class AudioClassificationTask(Scenario):

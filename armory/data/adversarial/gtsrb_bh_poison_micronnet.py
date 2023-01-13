@@ -2,9 +2,9 @@
 TensorFlow poison dataset for GTSRB
 """
 
+import numpy as np
 import tensorflow.compat.v2 as tf
 import tensorflow_datasets.public_api as tfds
-import numpy as np
 
 _DESCRIPTION = """\
 GTSRB poison sample dataset for micronNet, poisoning class 1 with custom bullet-hole pattern

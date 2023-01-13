@@ -1,7 +1,6 @@
 """UCF101 with video compression artifacts removed"""
 
 import tensorflow_datasets.public_api as tfds
-
 from tensorflow_datasets.video import ucf101
 
 

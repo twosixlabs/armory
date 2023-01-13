@@ -3,23 +3,22 @@ Base scenario for poisoning, dirty label backdoor
 """
 
 import copy
-from typing import Optional
 import os
 import random
+from typing import Optional
 
 import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
 from armory import metrics
 from armory.data.datasets import NumpyDataGenerator
-from armory.metrics.poisoning import ExplanatoryModel
+from armory.instrument import GlobalMeter, LogWriter, Meter, ResultsWriter
 from armory.instrument.export import ImageClassificationExporter
+from armory.logs import log
+from armory.metrics.poisoning import ExplanatoryModel
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading
-from armory.logs import log
-
-from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
 
 
 class DatasetPoisoner:

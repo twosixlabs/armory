@@ -1,10 +1,11 @@
-import torch
+import os
+
 import numpy as np
 import pytest
 import tensorflow as tf
-import os
-from armory.data import datasets
-from armory.data import adversarial_datasets
+import torch
+
+from armory.data import adversarial_datasets, datasets
 
 # Marks all tests in this file as `end_to_end`
 pytestmark = pytest.mark.end_to_end

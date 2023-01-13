@@ -1,5 +1,5 @@
-import torch
 import pytest
+import torch
 
 # Mark all tests in this file as `unit`
 pytestmark = pytest.mark.unit

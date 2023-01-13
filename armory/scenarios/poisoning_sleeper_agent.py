@@ -1,12 +1,12 @@
 import copy
 
-import numpy as np
 from PIL import Image
+import numpy as np
 
-from armory.scenarios.poison import Poison
 from armory.logs import log
-from armory.utils import config_loading, triggers
+from armory.scenarios.poison import Poison
 from armory.scenarios.utils import from_categorical
+from armory.utils import config_loading, triggers
 
 
 class DatasetPoisonerSleeperAgent:

@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from armory.instrument import instrument
 from armory import metrics
+from armory.instrument import instrument
 
 pytestmark = pytest.mark.unit
 
