@@ -582,8 +582,8 @@ class So2SatExporter(SampleExporter):
             eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 eo = Image.fromarray(
-                    np.round(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)).astype(
-                        int
+                    np.uint8(
+                        np.round(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min))
                     ),
                     "L",
                 )
