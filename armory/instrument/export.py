@@ -432,11 +432,10 @@ class VideoTrackingExporter(VideoClassificationExporter):
                                     bbox_true, outline=box_color, width=2
                                 )
                     elif isinstance(annotation, list):
-                        frame_id = annotation[n_frame]["image_id"]
                         bboxes_true = [
                             box_anno["bbox"]
                             for box_anno in annotation
-                            if box_anno["image_id"] == frame_id
+                            if box_anno["image_id"] == n_frame
                         ]
                         for bbox_true in bboxes_true:
                             box_x, box_y, box_width, box_height = bbox_true
