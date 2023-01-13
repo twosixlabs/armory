@@ -1,15 +1,16 @@
-import os
 import abc
-import numpy as np
-import ffmpeg
-import pickle
-from PIL import Image, ImageDraw
-from scipy.io import wavfile
-import json
 from copy import deepcopy
+import json
+import os
+import pickle
 
-from armory.logs import log
+from PIL import Image, ImageDraw
+import ffmpeg
+import numpy as np
+from scipy.io import wavfile
+
 from armory.instrument import Meter
+from armory.logs import log
 
 
 class SampleExporter:
@@ -97,7 +98,9 @@ class ImageClassificationExporter(SampleExporter):
             x_i_mode = x[..., :3]
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x.shape[-1]}")
-        image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
+        image = Image.fromarray(
+            np.uint8(np.round(np.clip(x_i_mode, 0.0, 1.0) * 255.0)), mode
+        )
         return image
 
 
@@ -309,7 +312,7 @@ class VideoClassificationExporter(SampleExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
         return pil_frames
@@ -414,7 +417,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
 
@@ -430,11 +433,10 @@ class VideoTrackingExporter(VideoClassificationExporter):
                                     bbox_true, outline=box_color, width=2
                                 )
                     elif isinstance(annotation, list):
-                        frame_id = annotation[n_frame]["image_id"]
                         bboxes_true = [
                             box_anno["bbox"]
                             for box_anno in annotation
-                            if box_anno["image_id"] == frame_id
+                            if box_anno["image_id"] == n_frame
                         ]
                         for bbox_true in bboxes_true:
                             box_x, box_y, box_width, box_height = bbox_true
@@ -550,7 +552,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vh.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+            return Image.fromarray(
+                np.uint8(np.round(sar_scale * (x_vh - sar_min))), "L"
+            )
 
         elif modality == "vv":
             x_vv = np.log10(
@@ -566,7 +570,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vv.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
+            return Image.fromarray(
+                np.uint8(np.round(sar_scale * (x_vv - sar_min))), "L"
+            )
 
         elif modality == "eo":
             eo_images = []
@@ -576,7 +582,10 @@ class So2SatExporter(SampleExporter):
             eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)), "L"
+                    np.uint8(
+                        np.round(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min))
+                    ),
+                    "L",
                 )
                 eo_images.append(eo)
 

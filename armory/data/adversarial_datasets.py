@@ -4,31 +4,11 @@ Adversarial datasets
 
 from typing import Callable
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
 from armory.data import datasets
-from armory.data.adversarial import (  # noqa: F401
-    imagenet_adversarial as IA,
-    librispeech_adversarial as LA,
-    resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
-    ucf101_mars_perturbation_and_patch_adversarial_112x112,
-    gtsrb_bh_poison_micronnet,
-    apricot_dev,
-    apricot_test,
-    dapricot_dev,
-    dapricot_test,
-    carla_obj_det_dev as codd,
-    carla_obj_det_test as codt,
-    carla_over_obj_det_dev as coodd,
-    carla_over_obj_det_test as coodt,
-    carla_video_tracking_dev as cvtd,
-    carla_video_tracking_test as cvtt,
-    carla_mot_dev as cmotd,
-    carla_mot_test as cmott,
-)
 from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-
 
 imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 librispeech_adversarial_context = datasets.AudioContext(

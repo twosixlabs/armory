@@ -2,14 +2,14 @@
 Test cases for poisoning metrics
 """
 
-from importlib import import_module
 import copy
-import pytest
+from importlib import import_module
 
 import numpy as np
+import pytest
 
-from armory.metrics import poisoning
 from armory.data.utils import maybe_download_weights_from_s3
+from armory.metrics import poisoning
 
 pytestmark = pytest.mark.unit
 

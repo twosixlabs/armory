@@ -2,13 +2,12 @@
 Automatic speech recognition scenario
 """
 
-import numpy as np
 from art.preprocessing.audio import LFilter, LFilterPyTorch
+import numpy as np
 
-from armory.scenarios.scenario import Scenario
 from armory.instrument.export import AudioExporter
-
 from armory.logs import log
+from armory.scenarios.scenario import Scenario
 
 
 def load_audio_channel(delay, attenuation, pytorch=True):

@@ -3,8 +3,8 @@ ResNet50 CNN model for 244x244x3 image classification
 """
 from typing import Optional
 
-import tensorflow as tf
 from art.estimators.classification import KerasClassifier
+import tensorflow as tf
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.models import Model

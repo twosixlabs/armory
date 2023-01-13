@@ -1,17 +1,17 @@
 from armory.instrument.config import MetricsLogger
 from armory.instrument.instrument import (
     FileWriter,
-    LogWriter,
-    Hub,
-    Meter,
     GlobalMeter,
+    Hub,
+    LogWriter,
+    Meter,
     MockSink,
     NullWriter,
-    Probe,
     PrintWriter,
+    Probe,
     ResultsWriter,
     Writer,
+    del_globals,
     get_hub,
     get_probe,
-    del_globals,
 )

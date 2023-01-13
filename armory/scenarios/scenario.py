@@ -12,12 +12,12 @@ from typing import Optional
 from tqdm import tqdm
 
 import armory
-from armory import Config, paths, metrics
-from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
+from armory import Config, metrics, paths
+from armory.instrument import MetricsLogger, del_globals, get_hub, get_probe
 from armory.instrument.export import ExportMeter, PredictionMeter
+from armory.logs import log
 from armory.metrics import compute
 from armory.utils import config_loading, json_utils
-from armory.logs import log
 
 
 class Scenario:

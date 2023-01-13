@@ -2,8 +2,7 @@
 This module enables loading of different perturbation functions in poisoning
 """
 
-from art.attacks.poisoning import PoisoningAttackBackdoor
-from art.attacks.poisoning import perturbations
+from art.attacks.poisoning import PoisoningAttackBackdoor, perturbations
 
 from armory.utils import triggers
 

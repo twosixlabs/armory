@@ -42,7 +42,6 @@ except ImportError:
 
 from armory import log
 
-
 _PROBES = {}
 _HUB = None
 

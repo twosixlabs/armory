@@ -1,8 +1,8 @@
-import numpy as np
-import torch
 from typing import Optional
 
 from art.attacks.evasion import AdversarialTexturePyTorch
+import numpy as np
+import torch
 
 
 class AdversarialPhysicalTexture(AdversarialTexturePyTorch):

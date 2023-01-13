@@ -9,7 +9,6 @@ import numpy as np
 from armory.logs import log
 from armory.metrics.common import MetricNameSpace, as_batch, set_namespace
 
-
 element = MetricNameSpace()
 batch = MetricNameSpace()
 
