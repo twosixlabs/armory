@@ -97,7 +97,13 @@ class SleeperAgentScenario(Poison):
             kwargs = attack_config["kwargs"]
             patch_size = kwargs.pop("patch_size")
             patch = Image.open(triggers.get_path(kwargs["patch"]))
-            patch = np.asarray(patch.resize((patch_size, patch_size)))
+            patch = np.asarray(patch.resize((patch_size, patch_size))).astype(
+                np.float64
+            )
+            if np.max(patch) > 1:
+                # scale patch if needed
+                patch /= 255.0
+
             device_name = kwargs.pop("device_name", None)
             if device_name is None:
                 try:
