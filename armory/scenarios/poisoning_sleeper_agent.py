@@ -151,15 +151,27 @@ class SleeperAgentScenario(Poison):
     def poison_dataset(self):
         self.hub.set_context(stage="poison")
         if self.use_poison:
-            (
-                self.x_poison,
-                self.y_poison,
-                poison_index,
-            ) = self.poisoner.poison_dataset(
+            self.x_poison, self.y_poison = self.poisoner.poison_dataset(
                 self.x_clean,
                 self.label_function(self.y_clean),
-                return_index=True,
+                return_index=False,
             )
+
+            # Manually find the poison indices.  Although the attack can return them, they
+            # will be the index within the target class, not the whole dataset.
+            # In addition, they may include images that aren't actually perturbed.
+            poison_index = np.array(
+                [
+                    i
+                    for i in range(len(self.x_clean))
+                    if (self.x_clean[i] != self.x_poison[i]).all()
+                ]
+            )
+            n_target = (self.y_clean == self.target_class).sum()
+            log.info(
+                f"Actual amount of poison returned by attack: {len(poison_index)} samples or {len(poison_index)/n_target} percent"
+            )
+
         else:
             self.x_poison, self.y_poison, poison_index = (
                 self.x_clean,
@@ -167,19 +179,5 @@ class SleeperAgentScenario(Poison):
                 np.array([]),
             )
 
-        # poison_index returned by attack is the index within the target class, not the whole dataset.
-        # In addition, it may contain images that aren't actually perturbed.
-        # Find the true poison indices
-        poison_index = np.array(
-            [
-                i
-                for i in range(len(self.x_clean))
-                if (self.x_clean[i] != self.x_poison[i]).all()
-            ]
-        )
-        n_target = (self.y_clean == self.target_class).sum()
-        log.info(
-            f"Actual amount of poison returned by attack: {len(poison_index)} samples or {len(poison_index)/n_target} percent"
-        )
         self.poison_index = poison_index
         self.record_poison_and_data_info()
