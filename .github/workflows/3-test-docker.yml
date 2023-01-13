@@ -9,8 +9,8 @@ env:
 
 
 jobs:
-  docker-torch-unit:
-    name: ☁️ Docker Pytorch Image Tests
+  docker-armory-unit:
+    name: ☁️ Docker Armory Image Tests
     runs-on: ubuntu-latest
     steps:
       - name: 🐄 checkout armory full depth with tags for scm
@@ -31,45 +31,7 @@ jobs:
 
       - name: 🚧 Build the Container
         run: |
-          python docker/build.py --framework pytorch
-
-
-      - name: 🤞 Run Image tests
-        run: |
-          IMAGE_VERSION=`armory --show-docker-version-tag`
-          docker run                                  \
-            --rm                                      \
-            --workdir /armory-repo                    \
-            twosixarmory/pytorch:${IMAGE_VERSION}    \
-              pytest                                  \
-                -c /armory-repo/pyproject.toml        \
-                -m "not docker_required and unit"     \
-                ./tests/
-
-
-  docker-tf2-unit:
-    name: ☁️ Docker TF2 Image Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🐄 checkout armory full depth with tags for scm
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: 🐍 Use Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-
-      - name: ⚙️ Installing Armory
-        shell: bash
-        run: |
-          pip install .
-          armory configure --use-defaults
-
-      - name: 🚧 Build the Container
-        run: |
-          python docker/build.py --framework tf2
+          python docker/build.py --framework armory
 
       - name: 🤞 Run Image tests
         run: |
@@ -77,7 +39,7 @@ jobs:
           docker run                                  \
             --rm                                      \
             --workdir /armory-repo                    \
-            twosixarmory/tf2:${IMAGE_VERSION}        \
+            twosixarmory/armory:${IMAGE_VERSION}    \
               pytest                                  \
                 -c /armory-repo/pyproject.toml        \
                 -m "not docker_required and unit"     \
@@ -128,41 +90,4 @@ jobs:
               pytest                                           \
                 -c /armory-repo/pyproject.toml                 \
                 -m "pytorch_deepspeech"                        \
-                ./tests/
-
-
-  docker-mot-unit:
-    name: ☁️ Docker CARLA MOT Image Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🐄 checkout armory full depth with tags for scm
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: 🐍 Use Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-
-      - name: ⚙️ Install Armory
-        shell: bash
-        run: |
-          pip install .
-          armory configure --use-defaults
-
-      - name: 🚧 Build the Container
-        run: |
-          python docker/build.py --framework carla-mot
-
-      - name: 🤞 Run Image tests
-        run: |
-          IMAGE_VERSION=`armory --show-docker-version-tag`
-          docker run                                  \
-            --rm                                      \
-            --workdir /armory-repo                    \
-            twosixarmory/carla-mot:${IMAGE_VERSION}    \
-              pytest                                  \
-                -c /armory-repo/pyproject.toml        \
-                -m "not docker_required and unit"     \
                 ./tests/

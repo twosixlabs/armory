@@ -112,10 +112,6 @@ def test_probe(caplog):
     probe.update(not_implemented, x=1)
     sink._is_measuring = True
 
-    jax_model = None
-    with pytest.raises(ValueError):
-        probe.hook(jax_model, mode="jax")
-
 
 def get_pytorch_model():
     # Taken from https://pytorch.org/docs/stable/generated/torch.nn.Module.html
@@ -133,45 +129,6 @@ def get_pytorch_model():
             return F.relu(self.conv2(x))
 
     return Model()
-
-
-@pytest.mark.docker_required
-def test_probe_pytorch_hook():
-    import torch
-
-    instrument.del_globals()
-    sink = HelperSink()
-    probe = instrument.Probe("model", sink=sink)
-    model = get_pytorch_model()
-    probe.hook(model.conv1, lambda x: x.detach().cpu().numpy(), output="b")
-
-    key = "model.b"
-    assert key not in sink.probe_variables
-
-    x1 = torch.rand((1, 1, 28, 28))
-    model(x1)
-    b1 = sink.probe_variables["model.b"]
-    assert b1.shape == (1, 20, 24, 24)
-    x2 = torch.rand((1, 1, 28, 28))
-    model(x2)
-    b2 = sink.probe_variables["model.b"]
-    assert b2.shape == (1, 20, 24, 24)
-    assert not (b1 == b2).all()
-    probe.unhook(model.conv1)
-    # probe is unhooked, no update should occur
-    model(x1)
-    b3 = sink.probe_variables["model.b"]
-    assert b3 is b2
-
-
-@pytest.mark.docker_required
-def test_probe_tensorflow_hook():
-    # Once implemented, update test
-    instrument.del_globals()
-    probe = instrument.get_probe()
-    with pytest.raises(NotImplementedError):
-        tf_model = None
-        probe.hook(tf_model, mode="tf")
 
 
 def test_process_meter_arg():
@@ -280,7 +237,7 @@ class LastRecordWriter(instrument.Writer):
         self.num_writes = 0
         self.num_closes = 0
 
-    def write(self, record):
+    def write(self, record, **kwargs):
         self.record = record
         self.num_writes += 1
 

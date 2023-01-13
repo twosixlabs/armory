@@ -3,6 +3,7 @@ Primary class for scenario
 """
 
 import copy
+import importlib
 import os
 import sys
 import time
@@ -84,6 +85,42 @@ class Scenario:
             )
             self._set_export_dir(f"{self.export_subdir}_{self.time_stamp}")
         self.results = None
+
+    def user_init(self) -> None:
+        """
+        Import the user-specified initialization module
+            and (optionally) call the specified function name with kwargs
+        """
+        user_init = self.config.get("user_init")
+        if user_init is not None:
+            module = user_init.get("module")
+            log.info(f"Importing user_init module {module}")
+            if not isinstance(module, str):
+                raise ValueError("config: 'user_init' field 'module' must be a str")
+            try:
+                mod = importlib.import_module(module)
+            except ModuleNotFoundError as err:
+                raise ValueError(
+                    f"config: 'user_init' field 'module' '{module}' cannot be imported."
+                    " If using docker, does it need to be added to"
+                    " config['sysconfig']['external_github_repo']?"
+                ) from err
+            name = user_init.get("name")
+            kwargs = user_init.get("kwargs") or {}
+            if name:
+                if kwargs:
+                    kwargs_str = f"**{kwargs}"
+                else:
+                    kwargs_str = ""
+                log.info(f"Calling user_init function {module}.{name}({kwargs_str})")
+                target = getattr(mod, name, None)
+                if target is None:
+                    raise ValueError(f"user_init name {name} cannot be found")
+                if not callable(target):
+                    raise ValueError(f"{module}.{name} is not callable")
+                target(**kwargs)
+            elif kwargs:
+                log.warning("Ignoring user_init kwargs because name is False")
 
     def _set_output_dir(self, eval_id) -> None:
         runtime_paths = paths.runtime_paths()
@@ -280,6 +317,7 @@ class Scenario:
         )
 
     def load(self):
+        self.user_init()
         self.load_model()
         if self.use_fit:
             self.load_train_dataset()
