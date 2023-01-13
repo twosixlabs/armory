@@ -170,7 +170,7 @@ class SleeperAgentScenario(Poison):
         # poison_index returned by attack is the index within the target class, not the whole dataset.
         # In addition, it may contain images that aren't actually perturbed.
         # Find the true poison indices
-        true_poison_inds = np.array(
+        poison_index = np.array(
             [
                 i
                 for i in range(len(self.x_clean))
@@ -179,7 +179,7 @@ class SleeperAgentScenario(Poison):
         )
         n_target = (self.y_clean == self.target_class).sum()
         log.info(
-            f"Actual amount of poison returned by attack: {len(true_poison_inds)} samples or {len(true_poison_inds)/n_target} percent"
+            f"Actual amount of poison returned by attack: {len(poison_index)} samples or {len(poison_index)/n_target} percent"
         )
-        self.poison_index = true_poison_inds
+        self.poison_index = poison_index
         self.record_poison_and_data_info()
