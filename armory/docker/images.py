@@ -10,7 +10,6 @@ from armory.utils import version
 import docker
 import docker.errors
 
-
 log.trace(f"armory.__version__: {armory.__version__}")
 
 TAG = version.to_docker_tag(armory.__version__)

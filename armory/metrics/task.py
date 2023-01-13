@@ -19,8 +19,8 @@ from armory.logs import log
 from armory.metrics.common import (
     MetricNameSpace,
     as_batch,
-    set_namespace,
     result_formatter,
+    set_namespace,
 )
 from armory.utils.external_repo import ExternalPipInstalledImport
 

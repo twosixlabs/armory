@@ -1,16 +1,12 @@
 #! /usr/bin/env python3
 
 import argparse
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 
-
-from pathlib import Path
-
 from armory import __version__ as armory_version
-
-
 
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
