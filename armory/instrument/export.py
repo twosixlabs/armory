@@ -98,7 +98,7 @@ class ImageClassificationExporter(SampleExporter):
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x.shape[-1]}")
         image = Image.fromarray(
-            np.round(np.clip(x_i_mode, 0.0, 1.0) * 255.0).astype(int), mode
+            np.uint8(np.round(np.clip(x_i_mode, 0.0, 1.0) * 255.0)), mode
         )
         return image
 
@@ -311,7 +311,7 @@ class VideoClassificationExporter(SampleExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.round(np.clip(x_frame, 0.0, 1.0) * 255.0).astype(int)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
         return pil_frames
@@ -416,7 +416,7 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.round(np.clip(x_frame, 0.0, 1.0) * 255.0).astype(int)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
 
@@ -553,7 +553,7 @@ class So2SatExporter(SampleExporter):
             sar_scale = 255.0 / (sar_max - sar_min)
 
             return Image.fromarray(
-                np.round(sar_scale * (x_vh - sar_min)).astype(int), "L"
+                np.uint8(np.round(sar_scale * (x_vh - sar_min))), "L"
             )
 
         elif modality == "vv":
@@ -571,7 +571,7 @@ class So2SatExporter(SampleExporter):
             sar_scale = 255.0 / (sar_max - sar_min)
 
             return Image.fromarray(
-                np.round(sar_scale * (x_vv - sar_min)).astype(int), "L"
+                np.uint8(np.round(sar_scale * (x_vv - sar_min))), "L"
             )
 
         elif modality == "eo":
