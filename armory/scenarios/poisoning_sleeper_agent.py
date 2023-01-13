@@ -154,14 +154,14 @@ class SleeperAgentScenario(Poison):
             (
                 self.x_poison,
                 self.y_poison,
-                self.poison_index,
+                poison_index,
             ) = self.poisoner.poison_dataset(
                 self.x_clean,
                 self.label_function(self.y_clean),
                 return_index=True,
             )
         else:
-            self.x_poison, self.y_poison, self.poison_index = (
+            self.x_poison, self.y_poison, poison_index = (
                 self.x_clean,
                 self.y_clean,
                 np.array([]),
