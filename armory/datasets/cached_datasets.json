@@ -63,6 +63,17 @@
         "url": null,
         "version": "3.0.0"
     },
+    "so2sat": {
+        "sha256": "9c9b415eeff4a5df34a5f4bc91953b2febeaf95364e53a65e0796079d43b6884",
+        "size": 16609760583,
+        "subdir": [
+            "so2sat/rgb/2.1.0",
+            "so2sat/all/2.1.0",
+            "so2sat/.config"
+        ],
+        "url": null,
+        "version": "2.1.0"
+    },
     "xview": {
         "sha256": "8e5d67c2b6419bf7ff7cb9851a590903078f608501b65735a14e65717f1bc9a1",
         "size": 1327668423,
