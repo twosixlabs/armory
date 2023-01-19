@@ -18,6 +18,13 @@ class ObjectDetectionTask(ImageClassificationTask):
                 "skip_misclassified shouldn't be set for object detection scenario"
             )
 
+    def next(self):
+        super().next()
+        # Object detection labels should be in format List[dict]
+        if isinstance(self.y, dict):
+            self.y = [self.y]
+            self.probe.update(y=self.y)
+
     def fit(self, train_split_default="train"):
         raise NotImplementedError(
             "Training has not yet been implemented for object detectors"

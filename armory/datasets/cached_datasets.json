@@ -1,10 +1,31 @@
 {
+    "carla_obj_det_dev": {
+        "sha256": "a7adc2400d1fafb03f6d49d10b61ac6405382bc19df446ee25e3d4afce2775a4",
+        "size": 64152715,
+        "subdir": "carla_obj_det_dev/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "carla_over_obj_det_dev": {
         "sha256": "77761f1d5c6eca40984aa40f38fab0568b9bb4a4dca696e876fccaa2dd9be56d",
         "size": 59760259,
         "subdir": "carla_over_obj_det_dev/1.0.0",
         "url": null,
         "version": "1.0.0"
+    },
+    "cifar10": {
+        "sha256": "05bf2d90665560e08ca6cf6e896b503ed4b83cd0e332d3a2e5970c9329acbaee",
+        "size": 134877477,
+        "subdir": "cifar10/3.0.2",
+        "url": null,
+        "version": "3.0.2"
+    },
+    "cifar100": {
+        "sha256": "e0b5fc54b463b33e9929c1558368a9df87beabef68f341ce935ade7e6f3bd6c3",
+        "size": 133385956,
+        "subdir": "cifar100/3.0.2",
+        "url": null,
+        "version": "3.0.2"
     },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
@@ -13,11 +34,40 @@
         "url": null,
         "version": "1.0.8"
     },
+    "imagenette": {
+        "sha256": "ca79a0f077d95dcd8510ec0755b8c80b3c169095bc1cedcb32e7022513f68124",
+        "size": 3990756717,
+        "subdir": [
+            "imagenette/full-size-v2/1.0.0",
+            "imagenette/320px-v2/1.0.0",
+            "imagenette/160px-v2/1.0.0",
+            "imagenette/full-size/1.0.0",
+            "imagenette/320px/1.0.0",
+            "imagenette/160px/1.0.0",
+            "imagenette/.config"
+        ],
+        "url": null,
+        "version": "1.0.0"
+    },
     "mnist": {
         "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
         "size": 16920751,
         "subdir": "mnist/3.0.1",
         "url": null,
         "version": "3.0.1"
+    },
+    "resisc45": {
+        "sha256": "93db2fd71eaa8d83c0b963e97fde91abf8949d7c3e6060af2a066810b958dacc",
+        "size": 408525721,
+        "subdir": "resisc45/3.0.0",
+        "url": null,
+        "version": "3.0.0"
+    },
+    "xview": {
+        "sha256": "8e5d67c2b6419bf7ff7cb9851a590903078f608501b65735a14e65717f1bc9a1",
+        "size": 1327668423,
+        "subdir": "xview/1.0.1",
+        "url": null,
+        "version": "1.0.1"
     }
 }

@@ -4,12 +4,11 @@ inside a docker container.
 
 
 ## Images
-There are three docker images that are currently published to dockerhub for every release of
+There are two docker images that are currently published to dockerhub for every release of
 the armory framework:
 
-1. `twosixarmory/tf2:<version>`
-1. `twosixarmory/pytorch:<version>`
-1. `twosixarmory/pytorch-deepspeech:<version>`
+1. `twosixarmory/armory:<version>`
+2. `twosixarmory/pytorch-deepspeech:<version>`
 
 NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
 If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.
@@ -88,7 +87,7 @@ they can be built from the release branch of the repo:
 ```
 git checkout -b r0.16.0
 bash docker/build-base.sh
-python docker/build.py <tf2|pytorch|pytorch-deepspeech|all> [--no-pull]
+python docker/build.py <armory|pytorch-deepspeech|all> [--no-pull]
 ```
 
 If possible, we recommend downloading the base image instead of building, which can be done by removing the `--no-pull` argument from `build.py`.
@@ -256,7 +255,7 @@ x, y = next(ds)
 ### Environment setup
 NOTE: The listing of libraries needed for Armory when run on host is available at
 `pyproject.toml`. You will need to manually install the requirements in
-that file that match your framework (TF1, TF2, PyTorch).
+that file that match your framework (TF2, PyTorch).
 
 # publishing a new base
 

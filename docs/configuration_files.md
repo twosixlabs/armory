@@ -75,6 +75,12 @@ All configuration files are verified against the jsonschema definition at run ti
     output_filename: [Optional String]: Optionally change the output filename prefix (from default of scenario name)  
     use_gpu: [Boolean]: Boolean to run container as nvidia-docker with GPU access
   }
+`user_init`: [Object or null]
+  {
+    module: [String] Python module to import before scenario loading but after scenario initialization
+    name: [String or null] Name of the function to call after module import (optional)
+    kwargs: [Object or null] Keyword arguments to provide for function call (optional)
+  }
 ```
 
 

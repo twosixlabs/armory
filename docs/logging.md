@@ -28,6 +28,24 @@ All these functions take one string argument
 
     log.success(f'uploaded {file} to {server}')
 
+There are two additional log levels without a standard function:
+
+    `"PROGRESS"` - for determining whether to log progress for downloads/uploads
+    `"METRIC"` - for logging metric results
+
+The explicit ordering of these log levels are:
+```
+TRACE = 5
+DEBUG = 10
+PROGRESS = 15
+INFO = 20
+METRIC = 24
+SUCCESS = 25
+WARNING = 30
+ERROR = 40
+CRITICAL = 50
+```
+
 The armory logger upon import is pre-initialized and requires no configuration. So as a
 user of the library, that's all you need to know.
 

@@ -39,10 +39,10 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 1,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "resisc45"
+        "test": {
+            "batch_size": 1,
+            "name": "resisc45"
+        }
     },
     "defense": null,
     "metric": {

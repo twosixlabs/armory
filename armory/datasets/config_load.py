@@ -8,6 +8,7 @@ from armory.datasets import load, preprocessing, generator, filtering
 def load_dataset(
     name=None,
     version=None,
+    config=None,
     batch_size=1,
     num_batches=None,
     epochs=1,
@@ -24,7 +25,9 @@ def load_dataset(
     # All are keyword elements by design
     if name is None:
         raise ValueError("name must be specified, not None")
-    info, ds_dict = load.load(name, version=version, shuffle_files=shuffle_files)
+    info, ds_dict = load.load(
+        name, version=version, config=config, shuffle_files=shuffle_files
+    )
 
     if class_ids is None:
         element_filter = None
@@ -56,13 +59,15 @@ def load_dataset(
         preprocessor = preprocessing.get(preprocessor_name)
 
     if preprocessor is not None and preprocessor_kwargs is not None:
-        preprocessing_fn = lambda x: preprocessor(x, **preprocessor_kwargs)
+        preprocessing_fn = lambda x: preprocessor(  # noqa: E731
+            x, **preprocessor_kwargs
+        )
     else:
         preprocessing_fn = preprocessor
 
     shuffle_elements = shuffle_files
 
-    armory_data_generator = generator.ArmoryDataGenerator(
+    return generator.ArmoryDataGenerator(
         info,
         ds_dict,
         split=split,
@@ -77,10 +82,3 @@ def load_dataset(
         shuffle_elements=shuffle_elements,
         key_map=None,
     )
-    return wrap_generator(armory_data_generator)
-
-
-def wrap_generator(armory_data_generator):
-    from armory.datasets import art_wrapper
-
-    return art_wrapper.WrappedDataGenerator(armory_data_generator)

@@ -40,6 +40,7 @@ def ensure_download_extract(
 def load(
     name: str,
     version: str = None,
+    config: str = None,
     data_dir: str = None,
     download_cached: bool = True,
     verify: bool = True,
@@ -64,7 +65,7 @@ def load(
         data_dir = common.get_root()
 
     try:
-        builder = tfds.builder(name, version=version, data_dir=data_dir)
+        builder = tfds.builder(name, version=version, data_dir=data_dir, config=config)
         ds = builder.as_dataset(**as_dataset_kwargs)
         return builder.info, ds
     except (tfds.core.registered.DatasetNotFoundError, AssertionError):
@@ -85,7 +86,7 @@ def load(
         else:
             raise ValueError(f"dataset {name} not recognized")
 
-    builder = tfds.builder(name, version=version, data_dir=data_dir)
+    builder = tfds.builder(name, version=version, data_dir=data_dir, config=config)
     ds = builder.as_dataset(**as_dataset_kwargs)
     return builder.info, ds
 
