@@ -687,7 +687,7 @@ class CARLADapricotPatch(RobustDPatch):
                 if x.shape[-1] == 3:
                     self._patch = self.patch_base
                 else:
-                    self._patch = np.vstack(
+                    self._patch = np.dstack(
                         (
                             self.patch_base,
                             np.random.randint(0, 255, size=self.patch_base.shape)
