@@ -24,7 +24,7 @@ abstract: >-
   scripts can be pulled from external repositories or from
   the baselines within this project.
 keywords:
-  - adversarial ml
+  - adversarial machine learning
 license: MIT
 commit: 029b811eef05167f33d393720ad193f307b1161a
 version: 0.16.4
