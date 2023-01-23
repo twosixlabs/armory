@@ -24,12 +24,18 @@ class CarlaVideoTracking(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_test_dataset(test_split_default="dev")
 
+    def _split_batches_into_list(self, x: dict) -> list:
+        """Fix for tfdsv4 upgrade - separate batches into list"""
+        if not isinstance(x, dict):
+            return x
+        expected_batches = list(x.values())[0].shape[0]
+        if not all(isinstance(x[k], np.ndarray) and x[k].shape[0] == expected_batches for k in x):
+            raise ValueError(f"Expected all batches to have the same length, but got {x}")
+        return [dict((k, v[i]) for k, v in x.items()) for i in range(expected_batches)]
+
     def next(self):
         super().next()
-        self.y, self.y_patch_metadata = self.y
-        # Fix for tfdsv4 upgrade - separate batches into list
-        if isinstance(self.y, dict) and "boxes" in self.y:
-            self.y = [{"boxes": batch} for batch in self.y["boxes"]]
+        self.y, self.y_patch_metadata = map(self._split_batches_into_list, self.y)
         self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_benign(self):
@@ -60,7 +66,7 @@ class CarlaVideoTracking(Scenario):
             x_adv = self.attack.generate(
                 x=x,
                 y=y_target,
-                y_patch_metadata=[self.y_patch_metadata],
+                y_patch_metadata=self.y_patch_metadata,
                 **self.generate_kwargs,
             )
 
