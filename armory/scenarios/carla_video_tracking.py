@@ -30,7 +30,7 @@ class CarlaVideoTracking(Scenario):
             return x
         expected_batches = list(x.values())[0].shape[0]
         if not all(isinstance(x[k], np.ndarray) and x[k].shape[0] == expected_batches for k in x):
-            raise ValueError(f"Expected all batches to have the same length, but got {x}")
+            raise ValueError(f"Expected all values to have the same length (batches), but got {x}")
         return [dict((k, v[i]) for k, v in x.items()) for i in range(expected_batches)]
 
     def next(self):
