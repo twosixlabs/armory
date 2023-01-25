@@ -4,11 +4,20 @@ from importlib import import_module
 from PIL import Image
 import numpy as np
 import torch
+import tensorflow as tf
 
 from armory.data.utils import maybe_download_weights_from_s3
 
 # An armory user may request one of these models under 'adhoc'/'explanatory_model'
 EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
+    "speech_commands_explanatory_model": {
+        "module": "armory.baseline_models.tf_graph.audio_resnet50",
+        "name": "get_unwrapped_model",
+        "data_modality": "audio",
+        "activation_layer": "avg_pool",
+        "model_framework": "tensorflow",
+        "weights_file": "speech_commands_explanatory_model_resnet50_bean.h5",
+    },
     "cifar10_silhouette_model": {
         "model_kwargs": {
             "data_means": [0.4914, 0.4822, 0.4465],
@@ -46,6 +55,9 @@ class ExplanatoryModel:
     def __init__(
         self,
         explanatory_model,
+        data_modality="image",
+        framework="pytorch",
+        activation_layer=None,
         resize_image=True,
         size=(224, 224),
         resample=Image.BILINEAR,
@@ -54,6 +66,9 @@ class ExplanatoryModel:
         if not callable(explanatory_model):
             raise ValueError(f"explanatory_model {explanatory_model} is not callable")
         self.explanatory_model = explanatory_model
+        self.data_modality = data_modality
+        self.framework = framework
+        self.activation_layer = activation_layer
         self.resize_image = bool(resize_image)
         self.size = size
         self.resample = resample
@@ -79,6 +94,9 @@ class ExplanatoryModel:
                 raise ValueError(f"config key {k} is required")
         module, name, weights_file = (model_config.pop(k) for k in keys)
         model_kwargs = model_config.pop("model_kwargs", {})
+        data_modality = model_config.pop("data_modality", "image")
+        framework = model_config.pop("model_framework", "pytorch")
+        activation_layer = model_config.pop("activation_layer", None)
 
         weights_path = maybe_download_weights_from_s3(
             weights_file, auto_expand_tars=True
@@ -86,8 +104,19 @@ class ExplanatoryModel:
         model_module = import_module(module)
         model_fn = getattr(model_module, name)
         explanatory_model = model_fn(weights_path, **model_kwargs)
+        if framework == "tensorflow" and activation_layer is not None:
+            explanatory_model = tf.keras.Model(
+                explanatory_model.layers[0].input,
+                explanatory_model.get_layer(activation_layer).output,
+            )
 
-        return cls(explanatory_model, **model_config)
+        return cls(
+            explanatory_model,
+            data_modality,
+            framework,
+            activation_layer,
+            **model_config,
+        )
 
     def get_activations(self, x, batch_size: int = None):
         """
@@ -96,24 +125,31 @@ class ExplanatoryModel:
         if batch_size, batch inputs and then concatenate
         """
         activations = []
-        with torch.no_grad():
-            if batch_size:
-                batch_size = int(batch_size)
-                if batch_size < 1:
-                    raise ValueError("batch_size must be false or a positive int")
-            else:
-                batch_size = len(x)
+        if batch_size:
+            batch_size = int(batch_size)
+            if batch_size < 1:
+                raise ValueError("batch_size must be false or a positive int")
+        else:
+            batch_size = len(x)
 
-            for i in range(0, len(x), batch_size):
-                x_batch = x[i : i + batch_size]
+        for i in range(0, len(x), batch_size):
+            x_batch = x[i : i + batch_size]
+
+            if self.framework == "pytorch":
+                with torch.no_grad():
+                    x_batch = self.preprocess(x_batch)
+                    activation, _ = self.explanatory_model(x_batch)
+                    activations.append(activation.detach().cpu().numpy())
+
+            elif self.framework == "tensorflow":
                 x_batch = self.preprocess(x_batch)
-                activation, _ = self.explanatory_model(x_batch)
-                activations.append(activation.detach().cpu().numpy())
+                activation = self.explanatory_model(x_batch, training=False)
+                activations.append(activation.numpy())
 
         return np.concatenate(activations)
 
     @staticmethod
-    def _preprocess(
+    def _preprocess_image(
         x, resize_image=True, size=(224, 224), resample=Image.BILINEAR, device=DEVICE
     ):
         if np.issubdtype(x.dtype, np.floating):
@@ -145,10 +181,13 @@ class ExplanatoryModel:
         """
         Preprocess a batch of images
         """
-        return type(self)._preprocess(
-            x,
-            self.resize_image,
-            self.size,
-            resample=self.resample,
-            device=self.device,
-        )
+        if self.data_modality == "image":
+            return type(self)._preprocess_image(
+                x,
+                self.resize_image,
+                self.size,
+                resample=self.resample,
+                device=self.device,
+            )
+        elif self.data_modality == "audio":
+            return x
