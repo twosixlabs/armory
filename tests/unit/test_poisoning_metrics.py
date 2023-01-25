@@ -68,7 +68,7 @@ def test_explanatory_model():
 def test_preprocess():
 
     x = np.random.rand(10, 32, 32, 3).astype(np.float32)
-    x_ = poisoning.ExplanatoryModel._preprocess(x)
+    x_ = poisoning.ExplanatoryModel._preprocess_image(x)
     assert x_.shape == (10, 224, 224, 3)
     assert x_.max() <= 1
     assert x_.min() >= 0
