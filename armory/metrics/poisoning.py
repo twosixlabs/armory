@@ -56,7 +56,7 @@ class ExplanatoryModel:
         self,
         explanatory_model,
         data_modality="image",
-        framework="pytorch",
+        model_framework="pytorch",
         activation_layer=None,
         resize_image=True,
         size=(224, 224),
@@ -67,12 +67,18 @@ class ExplanatoryModel:
             raise ValueError(f"explanatory_model {explanatory_model} is not callable")
         self.explanatory_model = explanatory_model
         self.data_modality = data_modality
-        self.framework = framework
+        self.model_framework = model_framework
         self.activation_layer = activation_layer
         self.resize_image = bool(resize_image)
         self.size = size
         self.resample = resample
         self.device = device
+
+        if self.model_framework == "tensorflow" and self.activation_layer is not None:
+            self.explanatory_model = tf.keras.Model(
+                explanatory_model.layers[0].input,
+                explanatory_model.get_layer(self.activation_layer).output,
+            )
 
     @classmethod
     def from_config(cls, model_config, **kwargs):
@@ -95,7 +101,7 @@ class ExplanatoryModel:
         module, name, weights_file = (model_config.pop(k) for k in keys)
         model_kwargs = model_config.pop("model_kwargs", {})
         data_modality = model_config.pop("data_modality", "image")
-        framework = model_config.pop("model_framework", "pytorch")
+        model_framework = model_config.pop("model_framework", "pytorch")
         activation_layer = model_config.pop("activation_layer", None)
 
         weights_path = maybe_download_weights_from_s3(
@@ -104,16 +110,11 @@ class ExplanatoryModel:
         model_module = import_module(module)
         model_fn = getattr(model_module, name)
         explanatory_model = model_fn(weights_path, **model_kwargs)
-        if framework == "tensorflow" and activation_layer is not None:
-            explanatory_model = tf.keras.Model(
-                explanatory_model.layers[0].input,
-                explanatory_model.get_layer(activation_layer).output,
-            )
 
         return cls(
             explanatory_model,
             data_modality,
-            framework,
+            model_framework,
             activation_layer,
             **model_config,
         )
@@ -135,13 +136,13 @@ class ExplanatoryModel:
         for i in range(0, len(x), batch_size):
             x_batch = x[i : i + batch_size]
 
-            if self.framework == "pytorch":
+            if self.model_framework == "pytorch":
                 with torch.no_grad():
                     x_batch = self.preprocess(x_batch)
                     activation, _ = self.explanatory_model(x_batch)
                     activations.append(activation.detach().cpu().numpy())
 
-            elif self.framework == "tensorflow":
+            elif self.model_framework == "tensorflow":
                 x_batch = self.preprocess(x_batch)
                 activation = self.explanatory_model(x_batch, training=False)
                 activations.append(activation.numpy())
