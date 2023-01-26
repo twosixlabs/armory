@@ -21,16 +21,19 @@ def test_explanatory_model():
         "cifar10_silhouette_model",
         "gtsrb_silhouette_model",
         "resisc10_silhouette_model",
+        "speech_commands_explanatory_model",
     ]
     data_sizes = [
         (10, 32, 32, 3),
         (10, 48, 48, 3),
         (10, 256, 256, 3),
+        (10, 16000),
     ]
     activation_shapes = [
         (10, 512),
         (10, 1184),
         (10, 512),
+        (10, 2048),
     ]
 
     for config_key, data_size, activation_shape in zip(
