@@ -8,6 +8,13 @@ import subprocess
 from armory.logs import log
 from armory.datasets import build, common, upload
 
+# .config and metadata.json are hardcoded values for tfds v4.6.0
+# https://github.com/tensorflow/datasets/blob/v4.6.0/tensorflow_datasets/core/dataset_builder.py#L1257-L1286
+# TFDS_CONFIG_DIR and TFDS_CONFIG_FILE are only relevant for tfds datasets where
+# build.build_info(name, version=version, data_dir=data_dir) returns builder_configs that is NOT None
+TFDS_CONFIG_DIR = ".config"
+TFDS_CONFIG_FILE = "metadata.json"
+
 
 def package(
     name,
@@ -27,11 +34,10 @@ def package(
     if not builder_configs:
         tar_list = [str(Path(name) / version)]
     else:
-        # including .config, which contains metadata.json that tfds refers to for default_config_name of a given dataset
-        # .config and metadata.json are hardcoded values for tfds v4.6.0
+        # including TFDS_CONFIG_DIR, which contains TFDS_CONFIG_FILE that tfds refers to for default_config_name of a given dataset
         tar_list = [
             str(Path(name) / config.name / version) for config in builder_configs
-        ] + [str(Path(name) / ".config")]
+        ] + [str(Path(name) / TFDS_CONFIG_DIR)]
 
     for tar_path in tar_list:
         expected_dir = data_dir / tar_path
@@ -74,7 +80,7 @@ def update(name, version: str = None, data_dir: str = None, url=None):
     else:
         subdir = [
             str(Path(name) / config.name / version) for config in builder_configs
-        ] + [str(Path(name) / ".config")]
+        ] + [str(Path(name) / TFDS_CONFIG_DIR)]
     file_size, file_sha256 = common.hash_file(filepath)
 
     common.update_cached_datasets(name, version, subdir, file_size, file_sha256, url)
@@ -111,7 +117,7 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
     # expected_subdir format is one of three formats:
     # <name>/<version>
     # <name>/<config>/<version>
-    # <name>/.config
+    # <name>/TFDS_CONFIG_DIR
     for expected_subdir in expected_subdir_list:
         target_data_dir = data_dir / expected_subdir
         if target_data_dir.exists() and not overwrite:
@@ -137,9 +143,9 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
         raise ValueError(f"{name} does not match directory in {tmp_dir}")
     tmp_dir_name = tmp_dir / name
 
-    # elements in tmp_dir_name_listdir should be one of three values: <version>, <config>, .config
+    # elements in tmp_dir_name_listdir should be one of three values: <version>, <config>, TFDS_CONFIG_DIR
     tmp_dir_name_listdir = os.listdir(tmp_dir_name)
-    # elements in expected_subdir_parsed_list is one of three values: <version>, <config>, .config
+    # elements in expected_subdir_parsed_list is one of three values: <version>, <config>, TFDS_CONFIG_DIR
     expected_subdir_parsed_list = [
         expected_subdir.split("/")[1] for expected_subdir in expected_subdir_list
     ]
@@ -150,15 +156,15 @@ def extract(name, data_dir: str = None, overwrite: bool = False):
         )
 
     # len(tmp_dir_name_listdir) > 1 means that subdirectories exist in a dataset
-    # and tmp_subdir should be <config> or .config
+    # and tmp_subdir should be <config> or TFDS_CONFIG_DIR
     # else, tmp_subdir should be <version>
     if len(tmp_dir_name_listdir) > 1:
         for tmp_subdir in tmp_dir_name_listdir:
-            if tmp_subdir == ".config":
-                # should have directory structure <tmp_dir>/<name>/.config/metadata.json
-                if "metadata.json" not in os.listdir(tmp_dir_name / tmp_subdir):
+            if tmp_subdir == TFDS_CONFIG_DIR:
+                # should have directory structure <tmp_dir>/<name>/TFDS_CONFIG_DIR/TFDS_CONFIG_FILE
+                if TFDS_CONFIG_FILE not in os.listdir(tmp_dir_name / tmp_subdir):
                     raise ValueError(
-                        f"metadata.json not in directory {tmp_dir_name / tmp_subdir}"
+                        f"{TFDS_CONFIG_FILE} not in directory {tmp_dir_name / tmp_subdir}"
                     )
             else:
                 # should have directory structure <tmp_dir>/<name>/<tmp_subdir>/<version>
