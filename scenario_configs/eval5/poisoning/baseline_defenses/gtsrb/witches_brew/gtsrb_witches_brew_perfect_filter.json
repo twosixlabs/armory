@@ -3,7 +3,7 @@
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
-        "explanatory_model": "gtsrb_silhouette_model",
+        "explanatory_model": "gtsrb_explanatory_model",
         "fraction_poisoned": 0.01,
         "poison_dataset": true,
         "source_class": 1,

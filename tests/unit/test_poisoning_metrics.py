@@ -18,9 +18,9 @@ pytestmark = pytest.mark.unit
 def test_explanatory_model():
 
     config_keys = [
-        "cifar10_silhouette_model",
-        "gtsrb_silhouette_model",
-        "resisc10_silhouette_model",
+        "cifar10_explanatory_model",
+        "gtsrb_explanatory_model",
+        "resisc10_explanatory_model",
         "speech_commands_explanatory_model",
     ]
     data_sizes = [

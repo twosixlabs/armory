@@ -18,7 +18,7 @@ EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
         "model_framework": "tensorflow",
         "weights_file": "speech_commands_explanatory_model_resnet50_bean.h5",
     },
-    "cifar10_silhouette_model": {
+    "cifar10_explanatory_model": {
         "model_kwargs": {
             "data_means": [0.4914, 0.4822, 0.4465],
             "data_stds": [0.2471, 0.2435, 0.2616],
@@ -29,14 +29,14 @@ EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
         "resize_image": False,
         "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
     },
-    "gtsrb_silhouette_model": {
+    "gtsrb_explanatory_model": {
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
         "name": "get_model",
         "resize_image": False,
         "weights_file": "gtsrb_explanatory_model_micronnet_bean.pt",
     },
-    "resisc10_silhouette_model": {
+    "resisc10_explanatory_model": {
         "model_kwargs": {
             "data_means": [0.39382024, 0.4159701, 0.40887499],
             "data_stds": [0.18931773, 0.18901625, 0.19651154],
