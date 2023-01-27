@@ -27,6 +27,13 @@
         "url": null,
         "version": "3.0.2"
     },
+    "dapricot_dev": {
+        "sha256": "5051af98235e50c4c2cc6050479c4a153b8dab0b6a782e773f18c4ce95742f97",
+        "size": 76512992,
+        "subdir": "dapricot_dev/1.0.1",
+        "url": null,
+        "version": "1.0.1"
+    },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
         "size": 8349857,
