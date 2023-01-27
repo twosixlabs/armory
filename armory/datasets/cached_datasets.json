@@ -6,6 +6,13 @@
         "url": null,
         "version": "2.0.0"
     },
+    "carla_obj_det_test": {
+        "sha256": "d82cb29d42ccf904943da804a83c9394e92370a2c789cf1e6bbdbe56d9e1b786",
+        "size": 43171777,
+        "subdir": "carla_obj_det_test/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "carla_over_obj_det_dev": {
         "sha256": "77761f1d5c6eca40984aa40f38fab0568b9bb4a4dca696e876fccaa2dd9be56d",
         "size": 59760259,
