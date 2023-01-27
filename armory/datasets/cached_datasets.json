@@ -13,6 +13,13 @@
         "url": null,
         "version": "1.0.0"
     },
+    "carla_over_obj_det_train": {
+        "sha256": "db70b9632f2fef2c2eb4f78e73542cf6f264cc97b3cd9b70fc0530f7008a243b",
+        "size": 9748454032,
+        "subdir": "carla_over_obj_det_train/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "cifar10": {
         "sha256": "05bf2d90665560e08ca6cf6e896b503ed4b83cd0e332d3a2e5970c9329acbaee",
         "size": 134877477,
