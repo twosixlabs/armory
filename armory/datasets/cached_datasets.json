@@ -1,4 +1,11 @@
 {
+    "apricot_dev": {
+        "sha256": "d2cef5cb804e0a8ce14937182e98671b47c524eb4c3ef62b907b867b6d91b993",
+        "size": 591001884,
+        "subdir": "apricot_dev/1.0.2",
+        "url": null,
+        "version": "1.0.2"
+    },
     "carla_obj_det_dev": {
         "sha256": "a7adc2400d1fafb03f6d49d10b61ac6405382bc19df446ee25e3d4afce2775a4",
         "size": 64152715,
