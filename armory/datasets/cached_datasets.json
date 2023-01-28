@@ -1,4 +1,11 @@
 {
+    "apricot_test": {
+        "sha256": "6fc520320a471c81d391158c754327a2dbd3cdcc5d13716cc058af151a6833f3",
+        "size": 3636765071,
+        "subdir": "apricot_test/1.0.0",
+        "url": null,
+        "version": "1.0.0"
+    },
     "carla_obj_det_dev": {
         "sha256": "a7adc2400d1fafb03f6d49d10b61ac6405382bc19df446ee25e3d4afce2775a4",
         "size": 64152715,
