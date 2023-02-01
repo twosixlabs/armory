@@ -75,6 +75,40 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - excluding `image` key
 - example shape: `[40, 40, 3]`
 
+## `carla_obj_det_dev`
+- config: `None`
+- split keys: `["dev"]`
+
+## `carla_obj_det_train`
+- config: `None`
+- split keys: `["train", "val"]`
+
+## `carla_obj_det_test`
+- config: `None`
+- split keys: `["test"]`
+
+## `carla_over_obj_det_dev`
+- config: `None`
+- split keys: `["dev"]`
+
+## `carla_over_obj_det_train`
+- config: `None`
+- split keys: `["train", "val"]`
+
+## `apricot_dev`
+- config: `None`
+- split keys: `["retinanet", "frcnn", "ssd"]`
+
+## `apricot_test`
+- config: `None`
+- split keys: `["retinanet", "frcnn", "ssd"]`
+
+## `dapricot_dev`
+Resolving with `load` errors
+
+## `dapricot_test`
+Resolving with `load` errors
+
 ## `coco`
 - config: `["2014", "2017", "2017_panoptic"]`
 - split keys: `["train", "test", "validation"]`
