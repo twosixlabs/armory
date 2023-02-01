@@ -52,9 +52,12 @@ def so2sat(element):
     sentinel_2 = element["sentinel2"]
 
     sar = sentinel_1[..., :4]
+    sar /= 128.0
+
     eo = sentinel_2
+    eo /= 4.0
     sar_eo_combined = tf.concat([sar, eo], axis=-1)
-    return image_to_canon(sar_eo_combined), element["label"]
+    return sar_eo_combined, element["label"]
 
 
 @register
