@@ -75,6 +75,10 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - excluding `image` key
 - example shape: `[40, 40, 3]`
 
+## `so2sat`
+- config: `None`
+- split keys: `["train", "validation"]`
+
 ## `carla_obj_det_dev`
 - config: `None`
 - split keys: `["dev"]`
