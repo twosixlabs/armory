@@ -38,7 +38,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - config: 
 - split keys: `["train", "validation"]`
 ### Example
-![imagenette example](images/imagenette_example.png)
+<!-- ![imagenette example](images/imagenette_example.png) -->
+<img src="images/imagenette_example.png" alt="imagenette example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -56,6 +57,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 <!-- ![ucf101 example](images/ucf101_example.png) -->
 <img src="images/ucf101_example.png" alt="ucf101 example" width="400"/>
 
+- first frame
+
 ### TFDS Format: No Preprocessing
 ```
 {'label': 12}
@@ -70,7 +73,7 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 
 ### Example
 <!-- ![german_traffic_sign example](images/german_traffic_sign_example.png) -->
-<img src="images/german_traffic_sign_example.png" alt="german_traffic_sign example" width="400"/>
+<img src="images/german_traffic_sign_example.png" alt="german_traffic_sign example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -86,7 +89,7 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 
 ### Example
 <!-- ![so2sat example](images/so2sat_example.png) -->
-<img src="images/so2sat_example.png" alt="so2sat example" width="400"/>
+<img src="images/so2sat_example.png" alt="so2sat example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -99,6 +102,56 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 ## `carla_obj_det_dev`
 - config: `None`
 - split keys: `["dev"]`
+
+### Example
+<!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
+<img src="images/carla_obj_det_dev_rgb_example.png" alt="carla_obj_det_dev_rgb example" width="250"/>
+<img src="images/carla_obj_det_dev_depth_example.png" alt="carla_obj_det_depth_rgb example" width="250"/>
+<img src="images/carla_obj_det_dev_mask_example.png" alt="carla_obj_det_mask_rgb example" width="250"/>
+
+- RGB, depth, and `mask`
+- boxes were drawn
+
+### TFDS Format: No Preprocessing
+```
+{'categories': {'id': array([1, 2, 3, 4]),
+  'name': array([b'Pedestrian', b'Vehicle', b'TrafficLight', b'Patch'], dtype=object),
+  'supercategory': array([b'Pedestrian', b'Vehicle', b'TrafficLight', b'Patch'], dtype=object)},
+ 'images': {'file_name': array([b'_out/sensor.camera.rgb.1/config_obj_det_security_camera_perspective_1_00000612.png', b'_out/sensor.camera.depth.2/config_obj_det_security_camera_perspective_1_00000612.png'], dtype=object),
+  'height': array([960, 960]),
+  'id': array([84190894, 84190894]),
+  'width': array([1280, 1280])},
+ 'objects': {'area': array([  936,   385,   433,   602,   313,  1930,   558,  1074, 54479, 11805]),
+  'boxes': array([[0.48333332, 0.7164062 , 0.54895836, 0.74609375],
+         [0.4875    , 0.71171874, 0.5385417 , 0.734375  ],
+         [0.48645833, 0.60234374, 0.5395833 , 0.615625  ],
+         [0.48541668, 0.640625  , 0.54270834, 0.66328126],
+         [0.484375  , 0.62109375, 0.5385417 , 0.6328125 ],
+         [0.48333332, 0.93671876, 0.575     , 0.9664062 ],
+         [0.484375  , 0.6148437 , 0.54375   , 0.6304687 ],
+         [0.47916666, 0.8101562 , 0.5552083 , 0.83515626],
+         [0.44479167, 0.        , 0.66770834, 0.28828126],
+         [0.49791667, 0.2703125 , 0.60625   , 0.40859374]], dtype=float32),
+  'id': array([ 97,  98,  99, 100, 101, 102, 103, 105, 106, 109]),
+  'image_id': array([84190894, 84190894, 84190894, 84190894, 84190894, 84190894, 84190894, 84190894, 84190894, 84190894]),
+  'is_crowd': array([False,  True, False, False,  True, False, False, False, False, False]),
+  'labels': array([1, 1, 1, 1, 1, 1, 1, 1, 2, 2])},
+ 'patch_metadata': {'avg_patch_depth': 0.47842735052108765,
+  'gs_coords': array([[792, 445],
+         [890, 442],
+         [890, 507],
+         [792, 493]], dtype=int32)}
+}
+```
+- excluding `image` key
+- excluding `mask` key from `patch_metadata` key in `objects`
+- example `shape`:
+  - `image`: `[2, 960, 1280, 3]`
+  - `mask`: `[960, 1280, 3]`
+- example `(min`, `max)`:
+  - `image`: `(0, 255)`
+  - `mask`: `(0, 255)`
+- `boxes` format: `[ymin, xmin, ymax, xmax]` normalized
 
 ## `carla_obj_det_train`
 - config: `None`
@@ -136,7 +189,7 @@ Resolving with `load` errors
 
 ### Example
 <!-- ![cifar10 example](images/cifar10_example.png) -->
-<img src="images/cifar10_example.png" alt="cifar10 example" width="400"/>
+<img src="images/cifar10_example.png" alt="cifar10 example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -152,7 +205,7 @@ Resolving with `load` errors
 
 ### Example
 <!-- ![cifar100 example](images/cifar100_example.png) -->
-<img src="images/cifar100_example.png" alt="cifar100 example" width="400"/>
+<img src="images/cifar100_example.png" alt="cifar100 example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -183,7 +236,7 @@ Resolving with `load` errors
 
 ### Example
 <!-- ![xview example](images/xview_example.png) -->
-<img src="images/xview_example.png" alt="xview example" width="400"/>
+<img src="images/xview_example.png" alt="xview example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -222,7 +275,7 @@ Resolving with `load` errors
 
 ### Example
 <!-- ![resisc45 example](images/resisc45_example.png) -->
-<img src="images/resisc45_example.png" alt="resisc45 example" width="400"/>
+<img src="images/resisc45_example.png" alt="resisc45 example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -238,7 +291,7 @@ Resolving with `load` errors
 
 ### Example
 <!-- ![mnist example](images/mnist_example.png) -->
-<img src="images/mnist_example.png" alt="mnist example" width="400"/>
+<img src="images/mnist_example.png" alt="mnist example" width="200"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -254,7 +307,9 @@ Resolving with `load` errors
 - `"test"` does not contain `"label"`
 
 ### Example
-![coco example](images/coco_example.png)
+<!-- ![coco example](images/coco_example.png) -->
+<img src="images/coco_example.png" alt="coco example" width="400"/>
+
 - boxes were drawn
 
 ### Original Format
