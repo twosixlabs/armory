@@ -144,14 +144,14 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 }
 ```
 - excluding `image` key
-- excluding `mask` key from `patch_metadata` key in `objects`
+- excluding `mask` key from `patch_metadata`
 - example `shape`:
   - `image`: `[2, 960, 1280, 3]`
   - `mask`: `[960, 1280, 3]`
 - example `(min`, `max)`:
   - `image`: `(0, 255)`
   - `mask`: `(0, 255)`
-- `boxes` format: `[ymin, xmin, ymax, xmax]` normalized
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
 
 ## `carla_obj_det_train`
 - config: `None`
@@ -265,7 +265,7 @@ Resolving with `load` errors
          49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49, 49])}}
 ```
 - excluding `image` key
-- value for `boxes` key is truncated
+- value for `boxes` key is truncated in `objects`
 - example `shape`: `[200, 200, 3]`
 - example `(min`, `max)`: `(0, 255)`
 
