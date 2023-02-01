@@ -76,6 +76,17 @@ class So2SatClassification(Scenario):
         super().load_attack()
         self.generate_kwargs["mask"] = attack_channels_mask
 
+    def load_test_dataset(self, test_split_default="test"):
+        # multimodal_so2sat_scenario requires so2sat/all, as opposed to so2sat/rgb
+        tfds_config_name = self.config["dataset"].get("test").get("config", "all")
+        if tfds_config_name != "all":
+            raise ValueError(
+                "TFDS so2sat config options are ('all', 'rgb'), but multimodal_so2sat_scenario "
+                "requires 'all'."
+            )
+        self.config["dataset"]["test"]["config"] = tfds_config_name
+        super().load_test_dataset(test_split_default=test_split_default)
+
     def load_metrics(self):
         super().load_metrics()
         if not self.perturbation_metrics:
