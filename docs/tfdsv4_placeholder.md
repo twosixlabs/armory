@@ -53,7 +53,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - split keys: `["train", "test"]`
 
 ### Example
-![ucf101 example](images/ucf101_example.png)
+<!-- ![ucf101 example](images/ucf101_example.png) -->
+<img src="images/ucf101_example.png" alt="ucf101 example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -68,7 +69,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - split keys: `["train", "test"]`
 
 ### Example
-![german_traffic_sign example](images/german_traffic_sign_example.png)
+<!-- ![german_traffic_sign example](images/german_traffic_sign_example.png) -->
+<img src="images/german_traffic_sign_example.png" alt="german_traffic_sign example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -83,7 +85,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - split keys: `["train", "validation"]`
 
 ### Example
-![so2sat example](images/so2sat_example.png)
+<!-- ![so2sat example](images/so2sat_example.png) -->
+<img src="images/so2sat_example.png" alt="so2sat example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -132,7 +135,8 @@ Resolving with `load` errors
 - split keys: `["train", "test"]`
 
 ### Example
-![cifar10 example](images/cifar10_example.png)
+<!-- ![cifar10 example](images/cifar10_example.png) -->
+<img src="images/cifar10_example.png" alt="cifar10 example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -147,7 +151,8 @@ Resolving with `load` errors
 - split keys: `["train", "test"]`
 
 ### Example
-![cifar100 example](images/cifar100_example.png)
+<!-- ![cifar100 example](images/cifar100_example.png) -->
+<img src="images/cifar100_example.png" alt="cifar100 example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -177,7 +182,8 @@ Resolving with `load` errors
 - split keys: `["train", "test"]`
 
 ### Example
-![xview example](images/xview_example.png)
+<!-- ![xview example](images/xview_example.png) -->
+<img src="images/xview_example.png" alt="xview example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -215,7 +221,8 @@ Resolving with `load` errors
 - split keys: `["train", "validation", "test"]`
 
 ### Example
-![resisc45 example](images/resisc45_example.png)
+<!-- ![resisc45 example](images/resisc45_example.png) -->
+<img src="images/resisc45_example.png" alt="resisc45 example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
@@ -230,7 +237,8 @@ Resolving with `load` errors
 - split keys: `["test", "train"]`
 
 ### Example
-![mnist example](images/mnist_example.png)
+<!-- ![mnist example](images/mnist_example.png) -->
+<img src="images/mnist_example.png" alt="mnist example" width="400"/>
 
 ### TFDS Format: No Preprocessing
 ```
