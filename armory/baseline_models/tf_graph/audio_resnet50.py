@@ -19,7 +19,7 @@ def get_spectrogram(audio):
     return spectrogram  # shape (124, 129, 1)
 
 
-def make_audio_resnet(**kwargs) -> tf.keras.Model:
+def make_audio_resnet(sequential=True, **kwargs) -> tf.keras.Model:
 
     inputs = keras.Input(shape=(16000,))
     spectrogram = Lambda(lambda audio: get_spectrogram(audio))(inputs)
@@ -32,8 +32,10 @@ def make_audio_resnet(**kwargs) -> tf.keras.Model:
     )
 
     model = keras.Model(resnet.inputs, resnet.outputs)
-    # ART's TensorFlowV2Classifier get_activations() requires a Sequential model
-    model = keras.Sequential([model])
+    if sequential:
+        # ART's TensorFlowV2Classifier get_activations() requires a Sequential model
+        model = keras.Sequential([model])
+
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
@@ -47,12 +49,7 @@ def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ):
 
-    if weights_path:
-        raise ValueError(
-            "This model is implemented for poisoning and does not (yet) load saved weights."
-        )
-
-    model = make_audio_resnet(**model_kwargs)
+    model = make_audio_resnet(sequential=True, **model_kwargs)
 
     loss_object = losses.SparseCategoricalCrossentropy()
 
@@ -73,3 +70,14 @@ def get_art_model(
     )
 
     return art_classifier
+
+
+def get_unwrapped_model(
+    weights_path: str,
+    **model_kwargs,
+):
+    # This is used for the explanatory model for the poisoning fairness metrics
+    model = make_audio_resnet(sequential=False, **model_kwargs)
+    model.load_weights(weights_path)
+
+    return model

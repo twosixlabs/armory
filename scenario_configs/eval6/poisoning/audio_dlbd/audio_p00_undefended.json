@@ -3,7 +3,7 @@
     "adhoc": {
         "compute_fairness_metrics": false,
         "experiment_id": 0,
-        "explanatory_model": null,
+        "explanatory_model": "speech_commands_explanatory_model",
         "fraction_poisoned": 0,
         "poison_dataset": false,
         "source_class": 11,

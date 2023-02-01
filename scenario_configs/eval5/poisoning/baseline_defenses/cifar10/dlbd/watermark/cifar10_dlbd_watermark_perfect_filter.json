@@ -3,7 +3,7 @@
     "adhoc": {
         "compute_fairness_metrics": true,
         "experiment_id": 0,
-        "explanatory_model": "cifar10_silhouette_model",
+        "explanatory_model": "cifar10_explanatory_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 0,
