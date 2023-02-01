@@ -16,7 +16,6 @@ EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
         "model_framework": "tensorflow",
         "module": "armory.baseline_models.tf_graph.audio_resnet50",
         "name": "get_unwrapped_model",
-        "preprocess_kwargs": {},
         "weights_file": "speech_commands_explanatory_model_resnet50_bean.h5",
     },
     "cifar10_explanatory_model": {
@@ -27,14 +26,11 @@ EXPLANATORY_MODEL_CONFIGS = explanatory_model_configs = {
         },
         "module": "armory.baseline_models.pytorch.resnet18_bean_regularization",
         "name": "get_model",
-        "preprocess_kwargs": {},
         "weights_file": "cifar10_explanatory_model_resnet18_bean.pt",
     },
     "gtsrb_explanatory_model": {
-        "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.micronnet_gtsrb_bean_regularization",
         "name": "get_model",
-        "preprocess_kwargs": {},
         "weights_file": "gtsrb_explanatory_model_micronnet_bean.pt",
     },
     "resisc10_explanatory_model": {
@@ -62,7 +58,7 @@ class ExplanatoryModel:
         data_modality="image",
         model_framework="pytorch",
         activation_layer=None,
-        preprocess_kwargs={},
+        preprocess_kwargs=None,
     ):
         """
         explanatory_model: A callable pytorch or tensorflow model used to produce
@@ -84,7 +80,7 @@ class ExplanatoryModel:
         self.data_modality = data_modality
         self.model_framework = model_framework
         self.activation_layer = activation_layer
-        self.preprocess_kwargs = preprocess_kwargs
+        self.preprocess_kwargs = preprocess_kwargs if preprocess_kwargs else {}
 
         if self.activation_layer is not None:
             if self.model_framework == "tensorflow":
