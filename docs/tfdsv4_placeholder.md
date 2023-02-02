@@ -106,8 +106,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 ### Example
 <!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
 <img src="images/carla_obj_det_dev_rgb_example.png" alt="carla_obj_det_dev_rgb example" width="250"/>
-<img src="images/carla_obj_det_dev_depth_example.png" alt="carla_obj_det_depth_rgb example" width="250"/>
-<img src="images/carla_obj_det_dev_mask_example.png" alt="carla_obj_det_mask_rgb example" width="250"/>
+<img src="images/carla_obj_det_dev_depth_example.png" alt="carla_obj_det_dev_depth example" width="250"/>
+<img src="images/carla_obj_det_dev_mask_example.png" alt="carla_obj_det_dev_mask example" width="250"/>
 
 - RGB, depth, and `mask`
 - boxes were drawn
@@ -157,6 +157,43 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - config: `None`
 - split keys: `["train", "val"]`
 
+### Example
+<!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
+<img src="images/carla_obj_det_train_rgb_example.png" alt="carla_obj_det_train_rgb example" width="250"/>
+<img src="images/carla_obj_det_train_depth_example.png" alt="carla_obj_det_train_depth example" width="250"/>
+
+- RGB, depth
+- boxes were drawn
+
+### TFDS Format: No Preprocessing
+```
+{'categories': {'id': array([1, 2, 3]),
+  'name': array([b'Pedestrian', b'Vehicle', b'TrafficLight'], dtype=object),
+  'supercategory': array([b'Pedestrian', b'Vehicle', b'TrafficLight'], dtype=object)},
+ 'images': {'file_name': array([b'config4.00002910.png', b'config4.00002910.png'], dtype=object),
+  'height': array([960, 960]),
+  'id': array([3478, 3478]),
+  'width': array([1280, 1280])},
+ 'objects': {'area': array([ 3474,   694,   114,   206,   122, 11360,   127,   219]),
+  'boxes': array([[0.49791667, 0.15390626, 0.5385417 , 0.26875   ],
+         [0.50208336, 0.621875  , 0.52916664, 0.6484375 ],
+         [0.49583334, 0.5210937 , 0.5072917 , 0.5445312 ],
+         [0.496875  , 0.5992187 , 0.5104167 , 0.61640626],
+         [0.5052083 , 0.71953124, 0.51979166, 0.74296874],
+         [0.45833334, 0.        , 0.56666666, 0.12734374],
+         [0.484375  , 0.2484375 , 0.5104167 , 0.25546876],
+         [0.496875  , 0.75625   , 0.53020835, 0.765625  ]], dtype=float32),
+  'id': array([40379, 40380, 40381, 40382, 40383, 40384, 40385, 40386]),
+  'image_id': array([3478, 3478, 3478, 3478, 3478, 3478, 3478, 3478]),
+  'is_crowd': array([False, False, False, False, False, False, False, False]),
+  'labels': array([2, 2, 2, 2, 2, 2, 1, 1])}}
+```
+- excluding `image` key
+- ***NO*** `patch_metadata` key
+- example `shape`: `[2, 960, 1280, 3]`
+- example `(min`, `max)`: `(0, 255)`
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
+
 ## `carla_obj_det_test`
 - config: `None`
 - split keys: `["test"]`
@@ -164,6 +201,66 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 ## `carla_over_obj_det_dev`
 - config: `None`
 - split keys: `["dev"]`
+
+### Example
+<!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
+<img src="images/carla_over_obj_det_dev_rgb_example.png" alt="carla_over_obj_det_dev_rgb example" width="250"/>
+<img src="images/carla_over_obj_det_dev_depth_example.png" alt="carla_over_obj_det_dev_depth example" width="250"/>
+<img src="images/carla_over_obj_det_dev_mask_example.png" alt="carla_over_obj_det_dev_mask example" width="250"/>
+
+- RGB, depth, and `mask`
+- boxes were drawn
+
+### TFDS Format: No Preprocessing
+```
+{'categories': {'id': array([1, 2]),
+  'name': array([b'Pedestrian', b'Vehicle'], dtype=object),
+  'supercategory': array([b'Pedestrian', b'Vehicle'], dtype=object)},
+ 'images': {'file_name': array([b'00002040.png', b'depth/00002040.png'], dtype=object),
+  'height': array([960, 960]),
+  'id': array([69734696, 69734696]),
+  'width': array([1280, 1280])},
+ 'objects': {'area': array([1869, 3543,  120,  107,  145,  102,  116,  130,  139,  149,  122,
+          154, 3893, 7951,  172]),
+  'boxes': array([[0.69375   , 0.52734375, 0.775     , 0.553125  ],
+         [0.65833336, 0.48359376, 0.7583333 , 0.51640624],
+         [0.44791666, 0.13359375, 0.45625   , 0.15234375],
+         [0.28541666, 0.21640626, 0.30208334, 0.23359375],
+         [0.16979167, 0.21640626, 0.19270833, 0.23046875],
+         [0.31875   , 0.228125  , 0.33645833, 0.2421875 ],
+         [0.7916667 , 0.228125  , 0.81145835, 0.24375   ],
+         [0.33229166, 0.1390625 , 0.34479168, 0.15859374],
+         [0.9447917 , 0.62890625, 0.97083336, 0.640625  ],
+         [0.946875  , 0.6921875 , 0.97291666, 0.7046875 ],
+         [0.43645832, 0.125     , 0.44583333, 0.14765625],
+         [0.44583333, 0.4046875 , 0.48020834, 0.41484374],
+         [0.47604167, 0.4375    , 0.5833333 , 0.471875  ],
+         [0.59791666, 0.38359374, 0.75208336, 0.4296875 ],
+         [0.953125  , 0.45      , 0.9947917 , 0.46015626]], dtype=float32),
+  'id': array([468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480,
+         481, 482]),
+  'image_id': array([69734696, 69734696, 69734696, 69734696, 69734696, 69734696,
+         69734696, 69734696, 69734696, 69734696, 69734696, 69734696,
+         69734696, 69734696, 69734696]),
+  'is_crowd': array([False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False]),
+  'labels': array([2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2])},
+ 'patch_metadata': {'avg_patch_depth': 40.0118408203125,
+  'gs_coords': array([[438, 593],
+         [669, 591],
+         [672, 861],
+         [442, 863]], dtype=int32)}
+}
+```
+- excluding `image` key
+- excluding `mask` key from `patch_metadata`
+- example `shape`:
+  - `image`: `[2, 960, 1280, 3]`
+  - `mask`: `[960, 1280, 3]`
+- example `(min`, `max)`:
+  - `image`: `(0, 255)`
+  - `mask`: `(0, 255)`
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
 
 ## `carla_over_obj_det_train`
 - config: `None`
@@ -178,10 +275,10 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - split keys: `["retinanet", "frcnn", "ssd"]`
 
 ## `dapricot_dev`
-Resolving with `load` errors
+Need to resolve `load` errors
 
 ## `dapricot_test`
-Resolving with `load` errors
+Need to resolve `load` errors
 
 ## `cifar10`
 - config: `None`
@@ -238,6 +335,8 @@ Resolving with `load` errors
 <!-- ![xview example](images/xview_example.png) -->
 <img src="images/xview_example.png" alt="xview example" width="200"/>
 
+- boxes were drawn
+
 ### TFDS Format: No Preprocessing
 ```
 {'objects': {'area': array([  99,  271,  124,  475, 4523, 1440,  623,  753,  775,  701,  252,
@@ -268,6 +367,7 @@ Resolving with `load` errors
 - value for `boxes` key is truncated in `objects`
 - example `shape`: `[200, 200, 3]`
 - example `(min`, `max)`: `(0, 255)`
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
 
 ## `resisc45`
 - config: `None`
@@ -344,7 +444,7 @@ Resolving with `load` errors
 - excluding `image` key
 - example `shape`: `[427, 640, 3]`
 - example `(min`, `max)`: `(0, 255)`
-- `bbox` format: `[ymin, xmin, ymax, xmax]` normalized
+- `bbox` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
 
 ### Armory Expected Input Format
 
