@@ -121,7 +121,8 @@ class SleeperAgentVersion(torch.nn.Module):
         """This version of the Resnet imitates that found in the ART example notebook for the Sleeper Agent attack:
         https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/notebooks/poisoning_attack_sleeper_agent_pytorch.ipynb
 
-        This attack is somewhat brittle and is not successful against the above torchvision.models.resnet18 with the current attack parameters.
+        Sleeper Agent is somewhat brittle and is not successful against the above torchvision.models.resnet18 
+        with the current attack parameters; hence the inclusion of this version.
         """
 
         data_means = model_kwargs.pop("data_means", CIFAR10_MEANS)
@@ -145,7 +146,7 @@ class SleeperAgentVersion(torch.nn.Module):
 def get_art_model_cifar_sleeper_agent(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchClassifier:
-    """Return model specific for sleeper agent poisoning on Cifar10"""
+    """Return Resnet version specific for sleeper agent poisoning on Cifar10"""
 
     model = SleeperAgentVersion(weights_path=weights_path, **model_kwargs)
     lr = wrapper_kwargs.pop("learning_rate", 0.1)
