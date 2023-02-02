@@ -113,7 +113,7 @@ def get_art_model_sgd(
     return wrapped_model
 
 
-class SleeperAgentVersion(torch.nn.Module):
+class ResnetForCifarSleeperAgent(torch.nn.Module):
     def __init__(
         self,
         **model_kwargs,
@@ -146,9 +146,9 @@ class SleeperAgentVersion(torch.nn.Module):
 def get_art_model_cifar_sleeper_agent(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchClassifier:
-    """Return Resnet version specific for sleeper agent poisoning on Cifar10"""
+    """Return ART-wrapped Resnet version specific for sleeper agent poisoning on Cifar10"""
 
-    model = SleeperAgentVersion(weights_path=weights_path, **model_kwargs)
+    model = ResnetForCifarSleeperAgent(weights_path=weights_path, **model_kwargs)
     lr = wrapper_kwargs.pop("learning_rate", 0.1)
     optimizer = torch.optim.SGD(
         model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4, nesterov=True
