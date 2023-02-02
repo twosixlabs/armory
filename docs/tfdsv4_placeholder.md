@@ -315,6 +315,37 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 - config: `None`
 - split keys: `["retinanet", "frcnn", "ssd"]`
 
+### Example
+<img src="images/apricot_test_frcnn_example.png" alt="apricot_test_frcnn example" width="400"/>
+
+- boxes were drawn
+
+### TFDS Format: No Preprocessing
+```
+{'objects': {'angle': array([[-1, -1, -1],
+         [-1, -1, -1],
+         [-1, -1, -1],
+         [-1, -1, -1],
+         [ 0,  1,  0]]),
+  'area': array([ 124740,  293600,  736291, 3161754,  206435]),
+  'boxes': array([[0.4017857 , 0.        , 0.4799107 , 0.13095239],
+         [0.8177083 , 0.8673942 , 0.999752  , 0.9996693 ],
+         [0.8492063 , 0.12466931, 0.999752  , 0.5257937 ],
+         [0.6113591 , 0.2602513 , 0.999752  , 0.92791003],
+         [0.5990501 , 0.6170437 , 0.71292907, 0.76571757]], dtype=float32),
+  'id': array([         854,          855,          856,          857,
+         910000000039]),
+  'image_id': array([600039, 600039, 600039, 600039, 600039]),
+  'is_crowd': array([False, False, False, False, False]),
+  'is_warped': array([False, False, False, False, False]),
+  'labels': array([ 2, 62, 62, 67, 12]),
+  'patch_id': array([-1, -1, -1, -1,  4])}}
+```
+- ***ONLY*** included `objects` key
+- example `shape`: `[4032, 3024, 3]`
+- example `(min`, `max)`: `(0, 255)`
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
+
 ## `dapricot_dev`
 Need to resolve `load` errors
 
