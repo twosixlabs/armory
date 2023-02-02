@@ -105,9 +105,9 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 
 ### Example
 <!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
-<img src="images/carla_obj_det_dev_rgb_example.png" alt="carla_obj_det_dev_rgb example" width="250"/>
-<img src="images/carla_obj_det_dev_depth_example.png" alt="carla_obj_det_dev_depth example" width="250"/>
-<img src="images/carla_obj_det_dev_mask_example.png" alt="carla_obj_det_dev_mask example" width="250"/>
+<img src="images/carla_obj_det_dev_rgb_example.png" alt="carla_obj_det_dev_rgb example" width="400"/>
+<img src="images/carla_obj_det_dev_depth_example.png" alt="carla_obj_det_dev_depth example" width="400"/>
+<img src="images/carla_obj_det_dev_mask_example.png" alt="carla_obj_det_dev_mask example" width="400"/>
 
 - RGB, depth, and `mask`
 - boxes were drawn
@@ -159,8 +159,8 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 
 ### Example
 <!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
-<img src="images/carla_obj_det_train_rgb_example.png" alt="carla_obj_det_train_rgb example" width="250"/>
-<img src="images/carla_obj_det_train_depth_example.png" alt="carla_obj_det_train_depth example" width="250"/>
+<img src="images/carla_obj_det_train_rgb_example.png" alt="carla_obj_det_train_rgb example" width="400"/>
+<img src="images/carla_obj_det_train_depth_example.png" alt="carla_obj_det_train_depth example" width="400"/>
 
 - RGB, depth
 - boxes were drawn
@@ -204,9 +204,9 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 
 ### Example
 <!-- ![carla_obj_det_dev_rgb example](images/carla_obj_det_dev_rgb_example.png) -->
-<img src="images/carla_over_obj_det_dev_rgb_example.png" alt="carla_over_obj_det_dev_rgb example" width="250"/>
-<img src="images/carla_over_obj_det_dev_depth_example.png" alt="carla_over_obj_det_dev_depth example" width="250"/>
-<img src="images/carla_over_obj_det_dev_mask_example.png" alt="carla_over_obj_det_dev_mask example" width="250"/>
+<img src="images/carla_over_obj_det_dev_rgb_example.png" alt="carla_over_obj_det_dev_rgb example" width="400"/>
+<img src="images/carla_over_obj_det_dev_depth_example.png" alt="carla_over_obj_det_dev_depth example" width="400"/>
+<img src="images/carla_over_obj_det_dev_mask_example.png" alt="carla_over_obj_det_dev_mask example" width="400"/>
 
 - RGB, depth, and `mask`
 - boxes were drawn
@@ -333,7 +333,7 @@ Need to resolve `load` errors
 
 ### Example
 <!-- ![xview example](images/xview_example.png) -->
-<img src="images/xview_example.png" alt="xview example" width="200"/>
+<img src="images/xview_example.png" alt="xview example" width="400"/>
 
 - boxes were drawn
 
