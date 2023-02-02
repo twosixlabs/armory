@@ -121,7 +121,7 @@ class SleeperAgentVersion(torch.nn.Module):
         """This version of the Resnet imitates that found in the ART example notebook for the Sleeper Agent attack:
         https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/notebooks/poisoning_attack_sleeper_agent_pytorch.ipynb
 
-        Sleeper Agent is somewhat brittle and is not successful against the above torchvision.models.resnet18 
+        Sleeper Agent is somewhat brittle and is not successful against the above torchvision.models.resnet18
         with the current attack parameters; hence the inclusion of this version.
         """
 
