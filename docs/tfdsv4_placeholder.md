@@ -57,7 +57,7 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 <!-- ![ucf101 example](images/ucf101_example.png) -->
 <img src="images/ucf101_example.png" alt="ucf101 example" width="400"/>
 
-- first frame
+- single frame
 
 ### TFDS Format: No Preprocessing
 ```
@@ -265,6 +265,58 @@ print(tfds.as_numpy({k:v for k,v in x.items() if k != "image"})) # {'label': 9}
 ## `carla_over_obj_det_train`
 - config: `None`
 - split keys: `["train", "val"]`
+
+### Example
+<!-- ![carla_over_obj_det_train_rgb example](images/carla_over_obj_det_train_rgb_example.png) -->
+<img src="images/carla_over_obj_det_train_rgb_example.png" alt="carla_over_obj_det_train_rgb example" width="400"/>
+<img src="images/carla_over_obj_det_train_depth_example.png" alt="carla_over_obj_det_train_depth example" width="400"/>
+
+- RGB, depth
+- boxes were drawn
+
+### TFDS Format: No Preprocessing
+```
+{'categories': {'id': array([1, 2]),
+  'name': array([b'Pedestrian', b'Vehicle'], dtype=object),
+  'supercategory': array([b'Pedestrian', b'Vehicle'], dtype=object)},
+ 'images': {'file_name': array([b'route1_20z_310deg.00000801.png',
+         b'route1_20z_310deg.00000801.png'], dtype=object),
+  'height': array([960, 960]),
+  'id': array([1080, 1080]),
+  'width': array([1280, 1280])},
+ 'objects': {'area': array([ 312,  169,  203,  431,  914,  165,  132,  285,  146,  180,  154,
+          195,  203,  149,  171,  149,  875,  178,  332,  257,  129,  199,
+          336,  270,  222, 6810, 2756, 3518, 2798, 4235,  154,  194, 2831,
+          740, 4291,  256,  151]),
+  'boxes': array([[0.5864583 , 0.603125  , 0.61875   , 0.6226562 ],
+         [0.17916666, 0.9828125 , 0.20625   , 1.        ],
+         [0.28020832, 0.6890625 , 0.31666666, 0.703125  ],
+         ...
+         [0.28333333, 0.92265624, 0.31145832, 0.9476563 ],
+         [0.29375   , 0.9140625 , 0.31458333, 0.9453125 ]], dtype=float32),
+  'id': array([23278, 23279, 23280, 23281, 23282, 23283, 23284, 23285, 23286,
+         23287, 23288, 23289, 23290, 23291, 23292, 23293, 23294, 23295,
+         23296, 23297, 23298, 23299, 23300, 23301, 23302, 23303, 23304,
+         23305, 23306, 23307, 23308, 23309, 23310, 23311, 23312, 23313,
+         23314]),
+  'image_id': array([1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080,
+         1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080,
+         1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080, 1080,
+         1080, 1080, 1080, 1080]),
+  'is_crowd': array([False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False,
+         False, False, False, False, False, False, False, False, False,
+         False]),
+  'labels': array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+         1, 1, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2])}}
+```
+- excluding `image` key
+- ***NO*** `patch_metadata` key
+- value for `boxes` key is truncated in `objects`
+- example `shape`: `[2, 960, 1280, 3]`
+- example `(min`, `max)`: `(0, 255)`
+- `boxes` format in `objects`: `[ymin, xmin, ymax, xmax]` normalized
 
 ## `apricot_dev`
 - config: `None`
