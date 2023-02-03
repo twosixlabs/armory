@@ -1225,74 +1225,98 @@ def object_detection_hallucinations_per_image(
 
 @populationwise
 def carla_od_hallucinations_per_image(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    return object_detection_hallucinations_per_image(
+    result = object_detection_hallucinations_per_image(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
     )
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {"mean":np.mean(np.array(result)), "per_image":result}
+
+    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_disappearance_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    return object_detection_disappearance_rate(
+    result = object_detection_disappearance_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
     )
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {"mean":np.mean(np.array(result)), "per_image":result}
+
+    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_true_positive_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    return object_detection_true_positive_rate(
+    result = object_detection_true_positive_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
     )
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {"mean":np.mean(np.array(result)), "per_image":result}
+
+    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_misclassification_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    return object_detection_misclassification_rate(
+    result = object_detection_misclassification_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
     )
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {"mean":np.mean(np.array(result)), "per_image":result}
+
+    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
