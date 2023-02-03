@@ -1225,7 +1225,12 @@ def object_detection_hallucinations_per_image(
 
 @populationwise
 def carla_od_hallucinations_per_image(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    mean=True,
+    per_image=True,
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1242,14 +1247,19 @@ def carla_od_hallucinations_per_image(
     if not mean and not per_image:
         raise ValueError("At least one of 'mean' and 'per_image' must be true")
     if mean and per_image:
-        return {"mean":np.mean(np.array(result)), "per_image":result}
+        return {"mean": np.mean(np.array(result)), "per_image": result}
 
     return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_disappearance_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    mean=True,
+    per_image=True,
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1266,14 +1276,19 @@ def carla_od_disappearance_rate(
     if not mean and not per_image:
         raise ValueError("At least one of 'mean' and 'per_image' must be true")
     if mean and per_image:
-        return {"mean":np.mean(np.array(result)), "per_image":result}
+        return {"mean": np.mean(np.array(result)), "per_image": result}
 
     return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_true_positive_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    mean=True,
+    per_image=True,
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1290,14 +1305,19 @@ def carla_od_true_positive_rate(
     if not mean and not per_image:
         raise ValueError("At least one of 'mean' and 'per_image' must be true")
     if mean and per_image:
-        return {"mean":np.mean(np.array(result)), "per_image":result}
+        return {"mean": np.mean(np.array(result)), "per_image": result}
 
     return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
 def carla_od_misclassification_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, mean=True, per_image=True
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    mean=True,
+    per_image=True,
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1314,7 +1334,7 @@ def carla_od_misclassification_rate(
     if not mean and not per_image:
         raise ValueError("At least one of 'mean' and 'per_image' must be true")
     if mean and per_image:
-        return {"mean":np.mean(np.array(result)), "per_image":result}
+        return {"mean": np.mean(np.array(result)), "per_image": result}
 
     return np.mean(np.array(result)) if mean else result
 
