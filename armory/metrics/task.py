@@ -1100,7 +1100,13 @@ def _object_detection_get_tpr_mr_dr_hr(
 
 @populationwise
 def object_detection_true_positive_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    class_list=None,
+    mean=True,
+    per_image=True,
 ):
     """
     Computes object detection true positive rate: the percent of ground-truth boxes which
@@ -1126,12 +1132,30 @@ def object_detection_true_positive_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    return true_positive_rate_per_img
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {
+            "mean": np.mean(np.array(true_positive_rate_per_img)),
+            "per_image": true_positive_rate_per_img,
+        }
+
+    return (
+        np.mean(np.array(true_positive_rate_per_img))
+        if mean
+        else true_positive_rate_per_img
+    )
 
 
 @populationwise
 def object_detection_misclassification_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    class_list=None,
+    mean=True,
+    per_image=True,
 ):
     """
     Computes object detection misclassification rate: the percent of ground-truth boxes which
@@ -1157,12 +1181,30 @@ def object_detection_misclassification_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    return misclassification_rate_per_image
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {
+            "mean": np.mean(np.array(misclassification_rate_per_image)),
+            "per_image": misclassification_rate_per_image,
+        }
+
+    return (
+        np.mean(np.array(misclassification_rate_per_image))
+        if mean
+        else misclassification_rate_per_image
+    )
 
 
 @populationwise
 def object_detection_disappearance_rate(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    class_list=None,
+    mean=True,
+    per_image=True,
 ):
     """
     Computes object detection disappearance rate: the percent of ground-truth boxes for which
@@ -1189,12 +1231,30 @@ def object_detection_disappearance_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    return disappearance_rate_per_img
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {
+            "mean": np.mean(np.array(disappearance_rate_per_img)),
+            "per_image": disappearance_rate_per_img,
+        }
+
+    return (
+        np.mean(np.array(disappearance_rate_per_img))
+        if mean
+        else disappearance_rate_per_img
+    )
 
 
 @populationwise
 def object_detection_hallucinations_per_image(
-    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
+    y_list,
+    y_pred_list,
+    iou_threshold=0.5,
+    score_threshold=0.5,
+    class_list=None,
+    mean=True,
+    per_image=True,
 ):
     """
     Computes object detection hallucinations per image: the number of predicted boxes per image
@@ -1220,7 +1280,19 @@ def object_detection_hallucinations_per_image(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    return hallucinations_per_image
+    if not mean and not per_image:
+        raise ValueError("At least one of 'mean' and 'per_image' must be true")
+    if mean and per_image:
+        return {
+            "mean": np.mean(np.array(hallucinations_per_image)),
+            "per_image": hallucinations_per_image,
+        }
+
+    return (
+        np.mean(np.array(hallucinations_per_image))
+        if mean
+        else hallucinations_per_image
+    )
 
 
 @populationwise
@@ -1237,19 +1309,15 @@ def carla_od_hallucinations_per_image(
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    result = object_detection_hallucinations_per_image(
+    return object_detection_hallucinations_per_image(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
+        mean=mean,
+        per_image=per_image,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {"mean": np.mean(np.array(result)), "per_image": result}
-
-    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
@@ -1266,19 +1334,15 @@ def carla_od_disappearance_rate(
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    result = object_detection_disappearance_rate(
+    return object_detection_disappearance_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
+        mean=mean,
+        per_image=per_image,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {"mean": np.mean(np.array(result)), "per_image": result}
-
-    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
@@ -1295,19 +1359,15 @@ def carla_od_true_positive_rate(
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    result = object_detection_true_positive_rate(
+    return object_detection_true_positive_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
+        mean=mean,
+        per_image=per_image,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {"mean": np.mean(np.array(result)), "per_image": result}
-
-    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
@@ -1324,19 +1384,15 @@ def carla_od_misclassification_rate(
     the green screen/patch itself, which should not be treated as an object class.
     """
     class_list = [1, 2, 3]
-    result = object_detection_misclassification_rate(
+    return object_detection_misclassification_rate(
         y_list,
         y_pred_list,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
+        mean=mean,
+        per_image=per_image,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {"mean": np.mean(np.array(result)), "per_image": result}
-
-    return np.mean(np.array(result)) if mean else result
 
 
 @populationwise
