@@ -3,11 +3,10 @@ CNN model for 32x32x3 image classification
 """
 from typing import Optional
 
+from art.estimators.classification import PyTorchClassifier
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from art.estimators.classification import PyTorchClassifier
-
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

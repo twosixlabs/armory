@@ -1,5 +1,5 @@
-from typing import Tuple
 from collections import defaultdict
+from typing import Tuple
 
 import numpy as np
 

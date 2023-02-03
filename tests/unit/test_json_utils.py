@@ -1,7 +1,7 @@
 import io
 
-import pytest
 import numpy as np
+import pytest
 
 from armory.utils import json_utils
 

@@ -5,11 +5,18 @@ Model contributed by: MITRE Corporation
 """
 from typing import Optional
 
-import tensorflow as tf
-from tensorflow.keras import Model, Input
-from tensorflow.keras.layers import Dense, Conv2D, Activation, Lambda
-from tensorflow.keras.layers import Flatten, BatchNormalization, MaxPooling2D
 from art.estimators.classification import KerasClassifier
+import tensorflow as tf
+from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import (
+    Activation,
+    BatchNormalization,
+    Conv2D,
+    Dense,
+    Flatten,
+    Lambda,
+    MaxPooling2D,
+)
 
 tf.compat.v1.disable_eager_execution()
 

@@ -11,13 +11,13 @@ which also have a commit count and date in them like 1.0.1.dev2+g0c5ffd9.d202203
 which is a bit ungainly.
 """
 
+import functools
 import os
+from pathlib import Path
 import re
 import site
-import functools
-import setuptools_scm
 
-from pathlib import Path
+import setuptools_scm
 
 try:
     from importlib import metadata
@@ -26,7 +26,6 @@ except ImportError:
     import importlib_metadata as metadata  # noqa
 
 from armory.logs import log
-
 
 PYPI_PACKAGE_NAME = "armory-testbed"
 

@@ -1,11 +1,11 @@
-import torch
-import torch.nn as nn
 from typing import Optional
 
 from art.attacks.evasion import ProjectedGradientDescent
-from armory.baseline_models.pytorch.cifar import Net
 from art.estimators.classification import PyTorchClassifier
+import torch
+import torch.nn as nn
 
+from armory.baseline_models.pytorch.cifar import Net
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

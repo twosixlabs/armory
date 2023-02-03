@@ -1,5 +1,5 @@
-import subprocess
 import os
+import subprocess
 
 from armory.logs import log
 

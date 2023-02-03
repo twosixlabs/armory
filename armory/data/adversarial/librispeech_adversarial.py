@@ -2,10 +2,10 @@
 TensorFlow Dataset for adversarial librispeech
 """
 
-import tensorflow.compat.v2 as tf
-import tensorflow_datasets.public_api as tfds
 import os
 
+import tensorflow.compat.v2 as tf
+import tensorflow_datasets.public_api as tfds
 
 _DESCRIPTION = """\
 LibriSpeech-dev-clean adversarial audio dataset for SincNet

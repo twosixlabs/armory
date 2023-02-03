@@ -17,14 +17,15 @@ import base64
 import importlib.resources
 import json
 import os
-import pytest
 import time
 
+import pytest
+
 import armory
-from armory import environment, paths, validation, Config
+from armory import Config, environment, paths, validation
+from armory.logs import log, make_logfiles, update_filters
 from armory.utils import config_loading, external_repo
 from armory.utils.configuration import load_config
-from armory.logs import log, update_filters, make_logfiles
 
 
 def _scenario_setup(config: Config) -> None:

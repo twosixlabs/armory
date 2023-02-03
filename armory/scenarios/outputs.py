@@ -14,7 +14,6 @@ results.plot("results_figure.png")  # save results as png
 """
 
 import collections
-
 import json
 
 import numpy as np
