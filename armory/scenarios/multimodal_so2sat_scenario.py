@@ -29,6 +29,21 @@ class So2SatClassification(Scenario):
             if isinstance(self.perturbation_metrics, str):
                 self.perturbation_metrics = [self.perturbation_metrics]
 
+        # TFDS allows for two options for so2sat dset builder_config param: 'all' and 'rgb', but
+        # So2SatClassification scenario requires 'all'
+        for t in ["train", "test"]:
+            dset_subconfig = self.config["dataset"].get(t)
+            if dset_subconfig is not None:
+                dset_tfds_builder_config = (
+                    self.config["dataset"].get(t).get("config", "all")
+                )
+                if dset_tfds_builder_config != "all":
+                    raise ValueError(
+                        "TFDS so2sat config options are ('all', 'rgb'), but So2SatClassification "
+                        "requires 'all'."
+                    )
+                self.config["dataset"][t]["config"] = dset_tfds_builder_config
+
     def load_attack(self):
         attack_config = self.config["attack"]
         attack_channels_mask = attack_config.get("generate_kwargs", {}).get("mask")
@@ -75,17 +90,6 @@ class So2SatClassification(Scenario):
         ), "Expected binary attack channel mask, but found values outside {0,1}"
         super().load_attack()
         self.generate_kwargs["mask"] = attack_channels_mask
-
-    def load_test_dataset(self, test_split_default="test"):
-        # multimodal_so2sat_scenario requires so2sat/all, as opposed to so2sat/rgb
-        tfds_config_name = self.config["dataset"].get("test").get("config", "all")
-        if tfds_config_name != "all":
-            raise ValueError(
-                "TFDS so2sat config options are ('all', 'rgb'), but multimodal_so2sat_scenario "
-                "requires 'all'."
-            )
-        self.config["dataset"]["test"]["config"] = tfds_config_name
-        super().load_test_dataset(test_split_default=test_split_default)
 
     def load_metrics(self):
         super().load_metrics()
