@@ -1223,7 +1223,7 @@ def object_detection_hallucinations_per_image(
     return hallucinations_per_image
 
 
-@populationwise
+@batchwise
 def carla_od_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1241,7 +1241,7 @@ def carla_od_hallucinations_per_image(
     )
 
 
-@populationwise
+@batchwise
 def carla_od_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1259,7 +1259,7 @@ def carla_od_disappearance_rate(
     )
 
 
-@populationwise
+@batchwise
 def carla_od_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
@@ -1277,7 +1277,7 @@ def carla_od_true_positive_rate(
     )
 
 
-@populationwise
+@batchwise
 def carla_od_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
