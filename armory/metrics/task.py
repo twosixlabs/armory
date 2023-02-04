@@ -1100,13 +1100,7 @@ def _object_detection_get_tpr_mr_dr_hr(
 
 @populationwise
 def object_detection_true_positive_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    class_list=None,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
     """
     Computes object detection true positive rate: the percent of ground-truth boxes which
@@ -1132,30 +1126,12 @@ def object_detection_true_positive_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {
-            "mean": np.mean(np.array(true_positive_rate_per_img)),
-            "per_image": true_positive_rate_per_img,
-        }
-
-    return (
-        np.mean(np.array(true_positive_rate_per_img))
-        if mean
-        else true_positive_rate_per_img
-    )
+    return true_positive_rate_per_img
 
 
 @populationwise
 def object_detection_misclassification_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    class_list=None,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
     """
     Computes object detection misclassification rate: the percent of ground-truth boxes which
@@ -1181,30 +1157,12 @@ def object_detection_misclassification_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {
-            "mean": np.mean(np.array(misclassification_rate_per_image)),
-            "per_image": misclassification_rate_per_image,
-        }
-
-    return (
-        np.mean(np.array(misclassification_rate_per_image))
-        if mean
-        else misclassification_rate_per_image
-    )
+    return misclassification_rate_per_image
 
 
 @populationwise
 def object_detection_disappearance_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    class_list=None,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
     """
     Computes object detection disappearance rate: the percent of ground-truth boxes for which
@@ -1231,30 +1189,12 @@ def object_detection_disappearance_rate(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {
-            "mean": np.mean(np.array(disappearance_rate_per_img)),
-            "per_image": disappearance_rate_per_img,
-        }
-
-    return (
-        np.mean(np.array(disappearance_rate_per_img))
-        if mean
-        else disappearance_rate_per_img
-    )
+    return disappearance_rate_per_img
 
 
 @populationwise
 def object_detection_hallucinations_per_image(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    class_list=None,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
     """
     Computes object detection hallucinations per image: the number of predicted boxes per image
@@ -1280,29 +1220,12 @@ def object_detection_hallucinations_per_image(
         score_threshold=score_threshold,
         class_list=class_list,
     )
-    if not mean and not per_image:
-        raise ValueError("At least one of 'mean' and 'per_image' must be true")
-    if mean and per_image:
-        return {
-            "mean": np.mean(np.array(hallucinations_per_image)),
-            "per_image": hallucinations_per_image,
-        }
-
-    return (
-        np.mean(np.array(hallucinations_per_image))
-        if mean
-        else hallucinations_per_image
-    )
+    return hallucinations_per_image
 
 
 @populationwise
 def carla_od_hallucinations_per_image(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1315,19 +1238,12 @@ def carla_od_hallucinations_per_image(
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
-        mean=mean,
-        per_image=per_image,
     )
 
 
 @populationwise
 def carla_od_disappearance_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1340,19 +1256,12 @@ def carla_od_disappearance_rate(
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
-        mean=mean,
-        per_image=per_image,
     )
 
 
 @populationwise
 def carla_od_true_positive_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1365,19 +1274,12 @@ def carla_od_true_positive_rate(
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
-        mean=mean,
-        per_image=per_image,
     )
 
 
 @populationwise
 def carla_od_misclassification_rate(
-    y_list,
-    y_pred_list,
-    iou_threshold=0.5,
-    score_threshold=0.5,
-    mean=True,
-    per_image=True,
+    y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
     """
     CARLA object detection datasets contains class labels 1-4, with class 4 representing
@@ -1390,8 +1292,6 @@ def carla_od_misclassification_rate(
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
         class_list=class_list,
-        mean=mean,
-        per_image=per_image,
     )
 
 
