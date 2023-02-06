@@ -128,6 +128,13 @@ These metrics typically take a list or array of results as their single argument
 
 The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detection` metrics with parameters adapted to those respective scenarios.
 
+As mentioned, these functions generally compare `y_pred` against `y`, that is, the metric compares a benign or adversarial prediction to the ground truth.  It is also possible to use these metrics to compare adversarial predictions against benign predictions.  This is not enabled in off-the-shelf Armory code, but can be easily implemented through one small code modification, by simply adding ```self.metrics_logger.add_tasks_wrt_benign_predictions()``` to the ```load_metrics()``` function of the scenario.  For example, if you create a new scenario inheriting ```scenario.py```, you can implement ```load_metrics()``` this way:
+```
+def load_metrics(self):
+    super().load_metrics()
+    self.metrics_logger.add_tasks_wrt_benign_predictions()
+```
+
 | Name | Namespace | Description |
 |-------|-------|-------|
 | `categorical_accuracy` | `task.batch.categorical_accuracy` | Categorical Accuracy |
