@@ -18,19 +18,22 @@ pytestmark = pytest.mark.unit
 def test_explanatory_model():
 
     config_keys = [
-        "cifar10_silhouette_model",
-        "gtsrb_silhouette_model",
-        "resisc10_silhouette_model",
+        "cifar10_explanatory_model",
+        "gtsrb_explanatory_model",
+        "resisc10_explanatory_model",
+        "speech_commands_explanatory_model",
     ]
     data_sizes = [
         (10, 32, 32, 3),
         (10, 48, 48, 3),
         (10, 256, 256, 3),
+        (10, 16000),
     ]
     activation_shapes = [
         (10, 512),
         (10, 1184),
         (10, 512),
+        (10, 2048),
     ]
 
     for config_key, data_size, activation_shape in zip(
@@ -68,7 +71,7 @@ def test_explanatory_model():
 def test_preprocess():
 
     x = np.random.rand(10, 32, 32, 3).astype(np.float32)
-    x_ = poisoning.ExplanatoryModel._preprocess(x)
+    x_ = poisoning.ExplanatoryModel._preprocess_image(x, resize_image=True)
     assert x_.shape == (10, 224, 224, 3)
     assert x_.max() <= 1
     assert x_.min() >= 0

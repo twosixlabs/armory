@@ -89,6 +89,10 @@ def get_art_model_sgd(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchClassifier:
 
+    """Returns the same model as get_art_model, but with the SGD optimizer.
+    Some poisoning attacks were found to be brittle with regard to optimizer.
+    """
+
     model = OuterModel(weights_path=weights_path, **model_kwargs)
 
     lr = wrapper_kwargs.pop("learning_rate", 0.1)
@@ -99,6 +103,61 @@ def get_art_model_sgd(
         optimizer=torch.optim.SGD(
             model.parameters(), lr=lr, weight_decay=1e-6, momentum=0.9, nesterov=True
         ),
+        input_shape=wrapper_kwargs.pop(
+            "input_shape", (224, 224, 3)
+        ),  # default to imagenet shape
+        channels_first=False,
+        **wrapper_kwargs,
+        clip_values=(0.0, 1.0),
+    )
+    return wrapped_model
+
+
+class ResnetForCifarSleeperAgent(torch.nn.Module):
+    def __init__(
+        self,
+        **model_kwargs,
+    ):
+        """This version of the Resnet imitates that found in the ART example notebook for the Sleeper Agent attack:
+        https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/notebooks/poisoning_attack_sleeper_agent_pytorch.ipynb
+
+        Sleeper Agent is somewhat brittle and is not successful against the above torchvision.models.resnet18
+        with the current attack parameters; hence the inclusion of this version.
+        """
+
+        data_means = model_kwargs.pop("data_means", CIFAR10_MEANS)
+        data_stds = model_kwargs.pop("data_stds", CIFAR10_STDS)
+
+        super().__init__()
+        self.inner_model = models.ResNet(
+            models.resnet.BasicBlock, [2, 2, 2, 2], num_classes=10
+        )
+
+        self.data_means = torch.tensor(data_means, dtype=torch.float32, device=DEVICE)
+        self.data_stdev = torch.tensor(data_stds, dtype=torch.float32, device=DEVICE)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_norm = ((x - self.data_means) / self.data_stdev).permute(0, 3, 1, 2)
+        output = self.inner_model(x_norm)
+
+        return output
+
+
+def get_art_model_cifar_sleeper_agent(
+    model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
+) -> PyTorchClassifier:
+    """Return ART-wrapped Resnet version specific for sleeper agent poisoning on Cifar10"""
+
+    model = ResnetForCifarSleeperAgent(weights_path=weights_path, **model_kwargs)
+    lr = wrapper_kwargs.pop("learning_rate", 0.1)
+    optimizer = torch.optim.SGD(
+        model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4, nesterov=True
+    )
+
+    wrapped_model = PyTorchClassifier(
+        model,
+        loss=torch.nn.CrossEntropyLoss(),
+        optimizer=optimizer,
         input_shape=wrapper_kwargs.pop(
             "input_shape", (224, 224, 3)
         ),  # default to imagenet shape

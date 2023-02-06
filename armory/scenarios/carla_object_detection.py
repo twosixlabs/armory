@@ -72,11 +72,6 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
 
         self.x_adv, self.y_target, self.y_pred_adv = x_adv, y_target, y_pred_adv
 
-    def load_metrics(self):
-        super().load_metrics()
-        # measure adversarial results using benign predictions as labels
-        self.metrics_logger.add_tasks_wrt_benign_predictions()
-
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
             self.export_dir,

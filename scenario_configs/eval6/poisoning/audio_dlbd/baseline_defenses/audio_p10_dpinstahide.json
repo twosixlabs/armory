@@ -1,5 +1,5 @@
 {
-    "_description": "Speech Commands DLBD poison audio classification",
+    "_description": "Speech Commands DLBD poison audio classification, DP Instahide defense",
     "adhoc": {
         "compute_fairness_metrics": false,
         "experiment_id": 0,
