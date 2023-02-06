@@ -1098,7 +1098,7 @@ def _object_detection_get_tpr_mr_dr_hr(
     )
 
 
-@populationwise
+@batchwise
 def object_detection_true_positive_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1129,7 +1129,7 @@ def object_detection_true_positive_rate(
     return true_positive_rate_per_img
 
 
-@populationwise
+@batchwise
 def object_detection_misclassification_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1160,7 +1160,7 @@ def object_detection_misclassification_rate(
     return misclassification_rate_per_image
 
 
-@populationwise
+@batchwise
 def object_detection_disappearance_rate(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
@@ -1192,7 +1192,7 @@ def object_detection_disappearance_rate(
     return disappearance_rate_per_img
 
 
-@populationwise
+@batchwise
 def object_detection_hallucinations_per_image(
     y_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, class_list=None
 ):
