@@ -128,6 +128,13 @@ These metrics typically take a list or array of results as their single argument
 
 The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detection` metrics with parameters adapted to those respective scenarios.
 
+As mentioned, these functions generally compare `y_pred` against `y`, that is, the metric compares a benign or adversarial prediction to the ground truth.  It is also possible to use these metrics to compare adversarial predictions against benign predictions.  This is not enabled in off-the-shelf Armory code, but can be easily implemented through one small code modification, by simply adding ```self.metrics_logger.add_tasks_wrt_benign_predictions()``` to the ```load_metrics()``` function of the scenario.  For example, if you create a new scenario inheriting ```scenario.py```, you can implement ```load_metrics()``` this way:
+```
+def load_metrics(self):
+    super().load_metrics()
+    self.metrics_logger.add_tasks_wrt_benign_predictions()
+```
+
 | Name | Namespace | Description |
 |-------|-------|-------|
 | `categorical_accuracy` | `task.batch.categorical_accuracy` | Categorical Accuracy |
@@ -142,17 +149,17 @@ The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detec
 | `video_tracking_mean_iou` | `task.batch.video_tracking_mean_iou` | Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video |
 | `video_tracking_mean_success_rate` | `task.batch.video_tracking_mean_success_rate` | Mean success rate averaged over all multiple IOU thresholds and all frames |
 | `object_detection_AP_per_class` | `task.population.object_detection_AP_per_class` | Object Detection average precision per class |
-| `object_detection_disappearance_rate` | `task.population.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
-| `object_detection_hallucinations_per_image` | `task.population.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
+| `object_detection_disappearance_rate` | `task.batch.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
+| `object_detection_hallucinations_per_image` | `task.batch.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
 | `object_detection_mAP` | `task.population.object_detection_mAP` | Object Detection mean average precision |
-| `object_detection_misclassification_rate` | `task.population.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
-| `object_detection_true_positive_rate` | `task.population.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+| `object_detection_misclassification_rate` | `task.batch.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
+| `object_detection_true_positive_rate` | `task.batch.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
 | `apricot_patch_targeted_AP_per_class` | `task.population.apricot_patch_targeted_AP_per_class` | OD metric applied to apricot scenario |
 | `carla_od_AP_per_class` | `task.population.carla_od_AP_per_class` | OD metric applied to carla scenario |
-| `carla_od_disappearance_rate`  | `task.population.carla_od_disappearance_rate` | OD metric applied to carla scenario |
-| `carla_od_hallucinations_per_image` | `task.population.carla_od_hallucinations_per_image` | OD metric applied to carla scenario |
-| `carla_od_misclassification_rate` | `task.population.carla_od_misclassification_rate` | OD metric applied to carla scenario |
-| `carla_od_true_positive_rate` | `task.population.carla_od_true_positive_rate` | OD metric applied to carla scenario |
+| `carla_od_disappearance_rate`  | `task.batch.carla_od_disappearance_rate` | OD metric applied to carla scenario |
+| `carla_od_hallucinations_per_image` | `task.batch.carla_od_hallucinations_per_image` | OD metric applied to carla scenario |
+| `carla_od_misclassification_rate` | `task.batch.carla_od_misclassification_rate` | OD metric applied to carla scenario |
+| `carla_od_true_positive_rate` | `task.batch.carla_od_true_positive_rate` | OD metric applied to carla scenario |
 | `dapricot_patch_target_success` | `task.population.dapricot_patch_target_success` | OD metric applied to dapricot scenario |
 | `dapricot_patch_targeted_AP_per_class` | `task.population.dapricot_patch_targeted_AP_per_class` | OD metric applied to dapricot scenario |
 | `abstains` | `task.batch.abstains` | Takes a batch matrix of inputs and returns 1 for each row that are all 0 (abstention) |
