@@ -29,6 +29,21 @@ class So2SatClassification(Scenario):
             if isinstance(self.perturbation_metrics, str):
                 self.perturbation_metrics = [self.perturbation_metrics]
 
+        # TFDS allows for two options for so2sat dset builder_config param: 'all' and 'rgb', but
+        # So2SatClassification scenario requires 'all'
+        for t in ["train", "test"]:
+            dset_subconfig = self.config["dataset"].get(t)
+            if dset_subconfig is not None:
+                dset_tfds_builder_config = (
+                    self.config["dataset"].get(t).get("config", "all")
+                )
+                if dset_tfds_builder_config != "all":
+                    raise ValueError(
+                        "TFDS so2sat config options are ('all', 'rgb'), but So2SatClassification "
+                        "requires 'all'."
+                    )
+                self.config["dataset"][t]["config"] = dset_tfds_builder_config
+
     def load_attack(self):
         attack_config = self.config["attack"]
         attack_channels_mask = attack_config.get("generate_kwargs", {}).get("mask")

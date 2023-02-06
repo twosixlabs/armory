@@ -47,6 +47,22 @@ resisc45 = register(supervised_image_classification, "resisc45")
 
 
 @register
+def so2sat(element):
+    # This preprocessing function assumes a so2sat builder_config of 'all' (i.e. multimodal)
+    # as opposed to 'rgb'
+    sentinel_1 = element["sentinel1"]
+    sentinel_2 = element["sentinel2"]
+
+    sar = sentinel_1[..., :4]
+    sar /= 128.0
+
+    eo = sentinel_2
+    eo /= 4.0
+    sar_eo_combined = tf.concat([sar, eo], axis=-1)
+    return sar_eo_combined, element["label"]
+
+
+@register
 def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
 
