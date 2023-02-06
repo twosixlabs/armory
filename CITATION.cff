@@ -1,0 +1,32 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: armory
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: David
+    family-names: Slater
+    email: armory@twosixtech.com
+  - given-names: Lucas
+    family-names: Cadalzo
+    email: armory@twosixtech.com
+repository-code: 'https://github.com/twosixlabs/armory'
+url: 'https://www.gardproject.org/'
+abstract: >-
+  Armory is a testbed for running scalable evaluations of
+  adversarial defenses for ML systems. Configuration files
+  are used to launch local or cloud instances of the Armory
+  docker containers. Models, datasets, and evaluation
+  scripts can be pulled from external repositories or from
+  the baselines within this project.
+keywords:
+  - adversarial machine learning
+license: MIT
+commit: 029b811eef05167f33d393720ad193f307b1161a
+version: 0.16.4
+doi: 10.5281/zenodo.7561755
+date-released: '2023-01-20'
