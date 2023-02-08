@@ -127,7 +127,7 @@ class ArmoryDataGenerator:
             # SEE: tfds.as_numpy
             # https://github.com/tensorflow/datasets/blob/v4.7.0/tensorflow_datasets/core/dataset_utils.py#L141-L176
             raise NotImplementedError(f"framework {framework}")
-        
+
         if info.metadata is None:
             info.metadata = tfds.core.MetadataDict()
 

@@ -6,7 +6,9 @@ Scenario Contributor: MITRE Corporation
 
 from armory.scenarios.scenario import Scenario
 from armory.instrument.export import VideoClassificationExporter
+
 DEFAULT_FRAME_RATE = 10
+
 
 class Ucf101(Scenario):
     def load_test_dataset(self):

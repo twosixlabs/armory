@@ -9,7 +9,9 @@ import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.instrument.export import VideoTrackingExporter, ExportMeter
+
 DEFAULT_FRAME_RATE = 10
+
 
 class CarlaVideoTracking(Scenario):
     def __init__(self, *args, **kwargs):
@@ -29,8 +31,13 @@ class CarlaVideoTracking(Scenario):
         if not isinstance(x, dict):
             return x
         expected_batches = list(x.values())[0].shape[0]
-        if not all(isinstance(x[k], np.ndarray) and x[k].shape[0] == expected_batches for k in x):
-            raise ValueError(f"Expected all values to have the same length (batches), but got {x}")
+        if not all(
+            isinstance(x[k], np.ndarray) and x[k].shape[0] == expected_batches
+            for k in x
+        ):
+            raise ValueError(
+                f"Expected all values to have the same length (batches), but got {x}"
+            )
         return [dict((k, v[i]) for k, v in x.items()) for i in range(expected_batches)]
 
     def next(self):
