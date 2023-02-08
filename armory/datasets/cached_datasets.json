@@ -1,4 +1,11 @@
 {
+    "carla_obj_det_dev": {
+        "sha256": "a7adc2400d1fafb03f6d49d10b61ac6405382bc19df446ee25e3d4afce2775a4",
+        "size": 64152715,
+        "subdir": "carla_obj_det_dev/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
     "carla_over_obj_det_dev": {
         "sha256": "77761f1d5c6eca40984aa40f38fab0568b9bb4a4dca696e876fccaa2dd9be56d",
         "size": 59760259,
@@ -40,6 +47,21 @@
         "url": null,
         "version": "1.0.8"
     },
+    "imagenette": {
+        "sha256": "ca79a0f077d95dcd8510ec0755b8c80b3c169095bc1cedcb32e7022513f68124",
+        "size": 3990756717,
+        "subdir": [
+            "imagenette/full-size-v2/1.0.0",
+            "imagenette/320px-v2/1.0.0",
+            "imagenette/160px-v2/1.0.0",
+            "imagenette/full-size/1.0.0",
+            "imagenette/320px/1.0.0",
+            "imagenette/160px/1.0.0",
+            "imagenette/.config"
+        ],
+        "url": null,
+        "version": "1.0.0"
+    },
     "mnist": {
         "sha256": "fdc3408e29580367145e95ac7cb1d51e807105b174314cd52c16d27a13b98979",
         "size": 16920751,
@@ -53,6 +75,17 @@
         "subdir": "resisc45/3.0.0",
         "url": null,
         "version": "3.0.0"
+    },
+    "so2sat": {
+        "sha256": "9c9b415eeff4a5df34a5f4bc91953b2febeaf95364e53a65e0796079d43b6884",
+        "size": 16609760583,
+        "subdir": [
+            "so2sat/rgb/2.1.0",
+            "so2sat/all/2.1.0",
+            "so2sat/.config"
+        ],
+        "url": null,
+        "version": "2.1.0"
     },
     "xview": {
         "sha256": "8e5d67c2b6419bf7ff7cb9851a590903078f608501b65735a14e65717f1bc9a1",

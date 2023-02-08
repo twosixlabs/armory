@@ -1,10 +1,11 @@
-import torch
+import os
+
 import numpy as np
 import pytest
 import tensorflow as tf
-import os
-from armory.data import datasets
-from armory.data import adversarial_datasets
+import torch
+
+from armory.data import adversarial_datasets, datasets
 
 # Marks all tests in this file as `end_to_end`
 pytestmark = pytest.mark.end_to_end
@@ -703,6 +704,37 @@ def test_carla_overhead_obj_det_dev():
         )
 
 
+def test_carla_overhead_obj_det_test():
+
+    ds_rgb = adversarial_datasets.carla_over_obj_det_test(split="test", modality="rgb")
+    ds_depth = adversarial_datasets.carla_over_obj_det_test(
+        split="test", modality="depth"
+    )
+    ds_multimodal = adversarial_datasets.carla_over_obj_det_test(
+        split="test", modality="both"
+    )
+
+    for i, ds in enumerate([ds_multimodal, ds_rgb, ds_depth]):
+        assert ds.size == 15
+        for x, y in ds:
+            if i == 0:
+                assert x.shape == (1, 960, 1280, 6)
+            else:
+                assert x.shape == (1, 960, 1280, 3)
+
+            y_object, y_patch_metadata = y
+            assert isinstance(y_object, dict)
+            for obj_key in ["labels", "boxes", "area"]:
+                assert obj_key in y_object
+            assert isinstance(y_patch_metadata, dict)
+            for patch_key in [
+                "avg_patch_depth",
+                "gs_coords",
+                "mask",
+            ]:
+                assert patch_key in y_patch_metadata
+
+
 def test_carla_video_tracking_dev():
 
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
@@ -809,6 +841,24 @@ def test_carla_multi_object_tracking_dev():
 
     dataset = adversarial_datasets.carla_multi_object_tracking_dev(split="dev")
     assert dataset.size == 20
+    for x, y in dataset:
+        assert x.shape[0] == 1
+        assert x.shape[2:] == (960, 1280, 3)
+        assert isinstance(y, tuple)
+        assert len(y) == 2
+        annotations, y_patch_metadata = y
+        assert isinstance(annotations, np.ndarray)
+        assert annotations.shape[0] == 1
+        assert annotations.shape[2] == 9
+        assert isinstance(y_patch_metadata, dict)
+        for key in ["gs_coords", "masks"]:
+            assert key in y_patch_metadata
+
+
+def test_carla_multi_object_tracking_test():
+
+    dataset = adversarial_datasets.carla_multi_object_tracking_test(split="test")
+    assert dataset.size == 10
     for x, y in dataset:
         assert x.shape[0] == 1
         assert x.shape[2:] == (960, 1280, 3)

@@ -1,11 +1,10 @@
-import torch
-from torchvision.transforms import RandomErasing
-from torch.autograd import Variable
-
 from art.attacks.evasion import ProjectedGradientDescent
-from armory.utils.evaluation import patch_method
 from patch_loss_gradient_model import get_art_model
+import torch
+from torch.autograd import Variable
+from torchvision.transforms import RandomErasing
 
+from armory.utils.evaluation import patch_method
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

@@ -64,7 +64,9 @@ def download(
         if overwrite:
             filepath.unlink()
         else:
-            raise ValueError("set overwrite=True to overwrite existing file")
+            raise ValueError(
+                f"set overwrite=True to overwrite cached dataset tarfile at {filepath}"
+            )
 
     key = common.get_cache_key(name, version)
     download_file_from_s3(str(key), str(filepath), public=public)

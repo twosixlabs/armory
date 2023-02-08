@@ -3,12 +3,11 @@ Docker orchestration managers for ARMORY.
 """
 
 
-import docker
-
 import armory
 from armory import paths
 from armory.docker import images
 from armory.logs import log
+import docker
 
 
 class ArmoryInstance(object):

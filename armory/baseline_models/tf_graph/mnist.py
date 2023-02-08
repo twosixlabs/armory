@@ -3,8 +3,8 @@ CNN model for 28x28x1 image classification
 """
 import tarfile
 
-import tensorflow.compat.v1 as tf
 from art.estimators.classification import TFClassifier
+import tensorflow.compat.v1 as tf
 
 from armory import paths
 

@@ -4,8 +4,8 @@ General image recognition scenario for image classification and object detection
 
 import numpy as np
 
-from armory.scenarios.scenario import Scenario
 from armory.instrument.export import ImageClassificationExporter
+from armory.scenarios.scenario import Scenario
 
 
 class ImageClassificationTask(Scenario):

@@ -1,13 +1,13 @@
-import os
 import copy
+import os
 
 import numpy as np
 
-from armory.scenarios.poison import Poison
-from armory.logs import log
-from armory.utils import config_loading
 from armory import metrics, paths
-from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
+from armory.instrument import GlobalMeter, LogWriter, Meter, ResultsWriter
+from armory.logs import log
+from armory.scenarios.poison import Poison
+from armory.utils import config_loading
 
 
 class DatasetPoisonerWitchesBrew:

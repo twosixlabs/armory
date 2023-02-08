@@ -1,6 +1,6 @@
+from art.estimators.classification import PyTorchClassifier
 import torch
 import torch.nn as nn
-from art.estimators.classification import PyTorchClassifier
 
 nclasses = 43  # GTSRB has 43 classes
 
