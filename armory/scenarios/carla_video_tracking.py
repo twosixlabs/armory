@@ -9,7 +9,7 @@ import numpy as np
 
 from armory.scenarios.scenario import Scenario
 from armory.instrument.export import VideoTrackingExporter, ExportMeter
-
+DEFAULT_FRAME_RATE = 10
 
 class CarlaVideoTracking(Scenario):
     def __init__(self, *args, **kwargs):
@@ -85,7 +85,7 @@ class CarlaVideoTracking(Scenario):
     def _load_sample_exporter(self):
         return VideoTrackingExporter(
             self.export_dir,
-            frame_rate=self.test_dataset.context.frame_rate,
+            frame_rate=self.test_dataset.metadata.get("frame_rate", DEFAULT_FRAME_RATE),
         )
 
     def load_export_meters(self):
@@ -95,7 +95,7 @@ class CarlaVideoTracking(Scenario):
         # Add export meters that export examples with boxes overlaid
         self.sample_exporter_with_boxes = VideoTrackingExporter(
             self.export_dir,
-            frame_rate=self.test_dataset.context.frame_rate,
+            frame_rate=self.test_dataset.metadata.get("frame_rate", DEFAULT_FRAME_RATE),
             default_export_kwargs={"with_boxes": True},
         )
         for probe_data, probe_pred in [("x", "y_pred"), ("x_adv", "y_pred_adv")]:

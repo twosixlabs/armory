@@ -66,6 +66,9 @@ class CarlaVideoTrackingDev(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             features=features,
             citation=_CITATION,
+            metadata=tfds.core.MetadataDict({
+                "frame_rate": 10,
+            }),
         )
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):

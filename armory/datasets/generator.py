@@ -39,7 +39,6 @@ class ArmoryDataGenerator:
     element_filter - predicate of which elements to keep; occurs prior to mapping
         Note: size computations will be wrong when filtering is applied
     element_map - function that takes a dataset element (dict) and maps to new element
-    context - context object
     """
 
     FRAMEWORKS = ("tf", "numpy", "torch")
@@ -59,7 +58,6 @@ class ArmoryDataGenerator:
         element_filter: callable = None,
         element_map: callable = None,
         key_map=None,
-        context=None,
     ):
         if split not in info.splits:
             raise ValueError(f"split {split} not in info.splits {list(info.splits)}")
@@ -129,6 +127,9 @@ class ArmoryDataGenerator:
             # SEE: tfds.as_numpy
             # https://github.com/tensorflow/datasets/blob/v4.7.0/tensorflow_datasets/core/dataset_utils.py#L141-L176
             raise NotImplementedError(f"framework {framework}")
+        
+        if info.metadata is None:
+            info.metadata = tfds.core.MetadataDict()
 
         self._set_params(
             iterator=iterator,
@@ -143,7 +144,7 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
-            context=context,
+            metadata=info.metadata,
         )
 
     def _set_params(self, **kwargs):
