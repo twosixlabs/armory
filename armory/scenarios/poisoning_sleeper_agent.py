@@ -166,7 +166,6 @@ class SleeperAgentScenario(Poison):
                     if (self.x_clean[i] != self.x_poison[i]).any()
                 ]
             )
-            n_target = (self.y_clean == self.target_class).sum()
 
         else:
             self.x_poison, self.y_poison, poison_index = (
