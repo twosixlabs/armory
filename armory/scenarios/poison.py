@@ -340,7 +340,7 @@ class Poison(Scenario):
                 log.info(f"Training with {type(self.trainer)} Trainer defense...")
                 if self.fit_generator:
                     self.trainer.fit_generator(
-                        self.data_generator, np_epochs=self.train_epochs
+                        data_generator, np_epochs=self.train_epochs
                     )
                 else:
                     self.trainer.fit(
@@ -392,7 +392,8 @@ class Poison(Scenario):
         if explanatory_config:
             self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
         else:
-            log.warning(
+            # compute_fairness_metrics was true, but there is no explanatory config
+            raise ValueError(
                 "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
             )
 
