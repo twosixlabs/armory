@@ -72,7 +72,7 @@
                 1
             ],
             "noise": "laplacian",
-            "scale": 0.1
+            "scale": 0.03
         },
         "module": "art.defences.trainer",
         "name": "DPInstaHideTrainer",
