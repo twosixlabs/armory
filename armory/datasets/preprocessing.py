@@ -68,6 +68,13 @@ def carla_over_obj_det_dev(element, modality="rgb"):
 
 
 @register
+def carla_over_obj_det_train(element, modality="rgb"):
+    return carla_multimodal_obj_det(
+        element["image"], modality=modality
+    ), convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
+
+
+@register
 def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
