@@ -327,13 +327,11 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         if y.ndim == 1:
             y = np.expand_dims(y, 0)
-        y_dict = {
-            int(timestep - 1): [] for timestep in set(y[:, 0])
-        }  # 0-index timesteps
+        y_dict = {int(timestep): [] for timestep in set(y[:, 0])}
 
         for pred in y:
             # TODO filter out boxes with low confidence?
-            timestep = int(pred[0] - 1)
+            timestep = int(pred[0])
             x0, y0 = pred[2], pred[3]
             x1, y1 = pred[2] + pred[4], pred[3] + pred[5]
             y_dict[timestep].append([x0, y0, x1, y1])
