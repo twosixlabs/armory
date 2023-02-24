@@ -25,40 +25,6 @@ except ImportError:
         "Pillow is required to convert depth images.\n"
         "Please install with `pip install pillow`."
     )
-try:
-    from armory.art_experimental.attacks.carla_obj_det_utils import rgb_depth_to_linear
-    from armory.art_experimental.attacks.carla_obj_det_utils import linear_to_log
-except ImportError:
-    print(
-        "WARNING: armory.art_experimental.attacks.carla_obj_det_utils cannot be imported. Using stubbed functions."
-    )
-
-    def rgb_depth_to_linear(r, g, b):
-        """
-        Converts rgb depth values between [0,1] to linear depth in meters.
-        r, g, b: three scalars or arrays with the same shape in [0,1]
-        returns: scalar or array, nonnegative
-        """
-        r_ = r * 255.0
-        g_ = g * 255.0
-        b_ = b * 255.0
-        depth_m = r_ + g_ * 256 + b_ * 256 * 256
-        depth_m = depth_m * 1000.0 / (256**3 - 1)
-        return depth_m
-
-    # Reference: https://github.com/carla-simulator/data-collector/blob/master/carla/image_converter.py
-    def linear_to_log(depth_meters):
-        """
-        Convert linear depth in meters to logorithmic depth between [0,1]
-        depth_meters: scalar or array, nonnegative
-        returns: scalar or array in [0,1]
-        """
-        # Reference https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera
-        normalized_depth = depth_meters / 1000.0
-        # Convert to logarithmic depth.
-        depth_log = 1.0 + np.log(normalized_depth) / 5.70378
-        depth_log = np.clip(depth_log, 0.0, 1.0)
-        return depth_log
 
 
 def load_image(path: Union[str, Path]) -> Image:
@@ -73,14 +39,6 @@ def load_images(path: Union[str, Path, list]) -> list:
     if isinstance(path, list):
         return [load_image(p) for p in path]
     return [load_image(path)]
-
-
-def convert_image(image: Image):  # -> Tuple[Image, Image]:
-    r, g, b = [np.array(x) for x in image.split()]
-    depth_m = rgb_depth_to_linear(r / 255.0, g / 255.0, b / 255.0)
-    img_linear = Image.fromarray(depth_m)
-    img_log = Image.fromarray(linear_to_log(depth_m) * 255)
-    return img_linear, img_log
 
 
 def rgb_depth_convert(command_args, prog, description):
@@ -121,7 +79,50 @@ def rgb_depth_convert(command_args, prog, description):
     )
 
     args = parser.parse_args(command_args)
-    # armory.logs.update_filters(args.log_level, args.debug)
+
+    try:
+        from armory.art_experimental.attacks.carla_obj_det_utils import (
+            rgb_depth_to_linear,
+        )
+        from armory.art_experimental.attacks.carla_obj_det_utils import linear_to_log
+    except ImportError:
+        print(
+            "WARNING: armory.art_experimental.attacks.carla_obj_det_utils cannot be imported. Using stubbed functions."
+        )
+
+        def rgb_depth_to_linear(r, g, b):
+            """
+            Converts rgb depth values between [0,1] to linear depth in meters.
+            r, g, b: three scalars or arrays with the same shape in [0,1]
+            returns: scalar or array, nonnegative
+            """
+            r_ = r * 255.0
+            g_ = g * 255.0
+            b_ = b * 255.0
+            depth_m = r_ + g_ * 256 + b_ * 256 * 256
+            depth_m = depth_m * 1000.0 / (256**3 - 1)
+            return depth_m
+
+        # Reference: https://github.com/carla-simulator/data-collector/blob/master/carla/image_converter.py
+        def linear_to_log(depth_meters):
+            """
+            Convert linear depth in meters to logorithmic depth between [0,1]
+            depth_meters: scalar or array, nonnegative
+            returns: scalar or array in [0,1]
+            """
+            # Reference https://carla.readthedocs.io/en/latest/ref_sensors/#depth-camera
+            normalized_depth = depth_meters / 1000.0
+            # Convert to logarithmic depth.
+            depth_log = 1.0 + np.log(normalized_depth) / 5.70378
+            depth_log = np.clip(depth_log, 0.0, 1.0)
+            return depth_log
+
+    def convert_image(image: Image):  # -> Tuple[Image, Image]:
+        r, g, b = [np.array(x) for x in image.split()]
+        depth_m = rgb_depth_to_linear(r / 255.0, g / 255.0, b / 255.0)
+        img_linear = Image.fromarray(depth_m)
+        img_log = Image.fromarray(linear_to_log(depth_m) * 255)
+        return img_linear, img_log
 
     if args.input is None:
         parser.error("input path is required")
@@ -225,6 +226,8 @@ def main() -> int:
         print(armory_main.usage())
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version", "version"):
+        import armory
+
         print(f"{armory.__version__}")
         sys.exit(0)
     elif sys.argv[1] == "--show-docker-version-tag":
