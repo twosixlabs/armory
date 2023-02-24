@@ -2,6 +2,8 @@ import sys
 import argparse
 from typing import Union
 from pathlib import Path
+import armory
+import armory.__main__ as armory_main
 
 try:
     import numpy as np
@@ -217,8 +219,6 @@ COMMANDS = {
 
 
 def main() -> int:
-    import armory.__main__ as armory_main
-
     armory_main.COMMANDS = COMMANDS
     # TODO the run method now returns a status code instead of sys.exit directly
     # the rest of the COMMANDS should conform
@@ -226,8 +226,6 @@ def main() -> int:
         print(armory_main.usage())
         sys.exit(1)
     elif sys.argv[1] in ("-v", "--version", "version"):
-        import armory
-
         print(f"{armory.__version__}")
         sys.exit(0)
     elif sys.argv[1] == "--show-docker-version-tag":
