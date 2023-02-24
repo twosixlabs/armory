@@ -4,7 +4,6 @@ import armory
 import argparse
 from armory.__main__ import _debug, Command
 from typing import Union, Tuple
-import os
 from pathlib import Path
 
 try:
