@@ -68,6 +68,14 @@ def digit(element):
 
 
 @register
+def carla_obj_det_test(element, modality="rgb"):
+    return carla_multimodal_obj_det(element["image"], modality=modality), (
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
+        element["patch_metadata"],
+    )
+
+
+@register
 def carla_obj_det_dev(element, modality="rgb"):
     return carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
