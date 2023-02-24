@@ -24,7 +24,6 @@ Desired metrics and flags are placed under the key `"metric"` dictionary in the 
 }
 ```
 The `perturbation` and `task` fields can be null, a single string, or a list of strings.
-Strings must be a valid armory metric from `armory.utils.metrics`, which are also described in the Metrics section below.
 The perturbation metrics measure the difference between the benign and adversarial inputs `x`.
 The task metrics measure the task performance on the predicted value w.r.t the true value `y`, for both benign and adversarial inputs.
 If task metrics take keyword arguments, such as `"iou_threshold"`, these can be (optionally) added a list of kwarg dicts.
@@ -350,7 +349,7 @@ assert results == [7, 11]
 
 Since these all use a global Hub object, it doesn't matter which python files they are instantatied in.
 Probe should be instantiated in the file or class you are trying to measure.
-Meters and writers can be instantiated in your initial setup, and can be connected before probes are constructed.
+Meters and writers can be instantiated in your initial setup (please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block), and can be connected before probes are constructed.
 
 #### Direct Recording
 
@@ -426,22 +425,6 @@ More generally,
 probe.update(func1, func2, func3, my_var=y)
 ```
 will publish the value `func3(func2(func1(y)))`. 
-
-#### Hooking
-
-Probes can also hook models to enable capturing values without modifying the target code.
-Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roadmap.
-
-To hook a model module, you can use the `hook` function.
-For instance, 
-```python
-# probe.hook(module, *preprocessing, input=None, output=None)
-probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
-```
-This essentially wraps the `probe.update` call with a hooking function.
-This is intended for usage that cannot or does not modify the target codebase.
-
-More general hooking (e.g., for python methods) is TBD.
 
 #### Interactive Testing
 

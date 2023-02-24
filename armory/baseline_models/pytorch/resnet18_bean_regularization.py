@@ -4,9 +4,8 @@ ResNet18 model to be used for data interpretations
 from typing import Optional
 
 import torch
-from torchvision.models.resnet import ResNet as resnet
 from torchvision.models.resnet import BasicBlock
-
+from torchvision.models.resnet import ResNet as resnet
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

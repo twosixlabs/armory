@@ -1,20 +1,20 @@
-import numpy as np
-from armory.logs import log
 import os
-import cv2
+from typing import Optional
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
-from typing import Optional
+import cv2
+import numpy as np
 import torch
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    linear_depth_to_rgb,
-    log_to_linear,
-    linear_to_log,
     get_avg_depth_value,
+    linear_depth_to_rgb,
+    linear_to_log,
+    log_to_linear,
 )
+from armory.logs import log
 
 
 class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):

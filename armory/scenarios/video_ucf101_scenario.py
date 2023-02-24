@@ -4,8 +4,8 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.scenario import Scenario
 from armory.instrument.export import VideoClassificationExporter
+from armory.scenarios.scenario import Scenario
 
 
 class Ucf101(Scenario):

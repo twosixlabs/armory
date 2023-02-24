@@ -1,6 +1,6 @@
 from art.attacks.evasion import (
-    ProjectedGradientDescentPyTorch,
     ProjectedGradientDescentNumpy,
+    ProjectedGradientDescentPyTorch,
 )
 import numpy as np
 
@@ -308,10 +308,9 @@ class SNR_PGD(ProjectedGradientDescentPyTorch):
                      perturbed.
         :return: Perturbations.
         """
-        import torch  # lgtm [py/repeated-import]
-
         # Get gradient wrt loss; invert it if attack is targeted
         import art
+        import torch  # lgtm [py/repeated-import]
 
         if art.__version__.startswith("1.4"):
             grad = self.estimator.loss_gradient_framework(x, y) * (

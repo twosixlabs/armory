@@ -9,7 +9,6 @@ import numpy as np
 
 from armory.logs import log
 
-
 FORMATTERS = {}
 
 

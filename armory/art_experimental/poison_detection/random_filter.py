@@ -1,6 +1,5 @@
-import numpy as np
-
 from art.defences.detector.poison import PoisonFilteringDefence
+import numpy as np
 
 from armory.logs import log
 

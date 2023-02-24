@@ -1,9 +1,9 @@
 """resisc10_poison dataset."""
 
 import os
-import tensorflow_datasets as tfds
-import tensorflow as tf
 
+import tensorflow as tf
+import tensorflow_datasets as tfds
 
 _DESCRIPTION = """
 Subset of NWPU-RESISC45 image dataset with 10 classes, each class containing 700 images,

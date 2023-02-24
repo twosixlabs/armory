@@ -8,7 +8,6 @@ import sys
 
 import jsonschema
 
-
 DEFAULT_SCHEMA = os.path.join(os.path.dirname(__file__), "config_schema.json")
 
 
