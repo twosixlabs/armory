@@ -98,9 +98,9 @@ def rgb_depth_convert(command_args, prog, description):
     parser.add_argument(
         "-i", "--input", type=Path, nargs="+", help="Path to depth image to convert"
     )
-    parser.add_argument(
-        "-o", "--output", type=str, help="Path to save converted depth image"
-    )
+    # parser.add_argument(
+    #     "-o", "--output", type=str, help="Path to save converted depth image"
+    # )
     parser.add_argument(
         "-s",
         "--show",
@@ -124,8 +124,8 @@ def rgb_depth_convert(command_args, prog, description):
     if args.input is None:
         parser.error("input path is required")
 
-    if args.output is None and not args.show:
-        parser.error("output path or show flag is required")
+    if not args.show:
+        parser.error("outputting to a file is not yet supported, must use --show")
 
     images = load_images(args.input)
     print(f"Loaded {len(images)} images from {args.input}")
