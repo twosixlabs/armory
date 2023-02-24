@@ -3,7 +3,7 @@ import sys
 import armory
 import argparse
 from armory.__main__ import _debug, Command
-from typing import Union, Tuple
+from typing import Union
 from pathlib import Path
 
 try:
@@ -22,7 +22,6 @@ except ImportError:
         "Please install with `pip install matplotlib`."
     )
 try:
-    import PIL.Image
     from PIL import Image
 except ImportError:
     raise ImportError(
@@ -65,12 +64,12 @@ except ImportError:
         return depth_log
 
 
-def load_image(path: Union[str, Path]) -> PIL.Image:
+def load_image(path: Union[str, Path]) -> Image:
     if isinstance(path, str):
         path = Path(path)
     if not path.is_file():
         raise ValueError(f"{path} does not exist")
-    return PIL.Image.open(path)
+    return Image.open(path)
 
 
 def load_images(path: Union[str, Path, list]) -> list:
@@ -79,11 +78,11 @@ def load_images(path: Union[str, Path, list]) -> list:
     return [load_image(path)]
 
 
-def convert_image(image: PIL.Image):  # -> Tuple[PIL.Image, PIL.Image]:
+def convert_image(image: Image):  # -> Tuple[Image, Image]:
     r, g, b = [np.array(x) for x in image.split()]
     depth_m = rgb_depth_to_linear(r / 255.0, g / 255.0, b / 255.0)
-    img_linear = PIL.Image.fromarray(depth_m)
-    img_log = PIL.Image.fromarray(linear_to_log(depth_m) * 255)
+    img_linear = Image.fromarray(depth_m)
+    img_log = Image.fromarray(linear_to_log(depth_m) * 255)
     return img_linear, img_log
 
 
@@ -199,7 +198,7 @@ def main() -> int:
         print(f"{armory.__version__}")
         sys.exit(0)
     elif sys.argv[1] == "--show-docker-version-tag":
-        print(to_docker_tag(armory.__version__))
+        print(armory_main.to_docker_tag(armory.__version__))
         sys.exit(0)
 
     parser = argparse.ArgumentParser(prog="armory", usage=armory_main.usage())
