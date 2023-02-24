@@ -1,8 +1,5 @@
-import armory.__main__ as armory_main
 import sys
-import armory
 import argparse
-from armory.__main__ import _debug, Command
 from typing import Union
 from pathlib import Path
 
@@ -94,40 +91,74 @@ def rgb_depth_convert(command_args, prog, description):
     )
 
     parser.add_argument(
-        "-i", "--input", type=Path, nargs="+", help="Path to depth image to convert"
+        "-i", "--input", type=Path, nargs="+", help="Path to depth image(s) to convert"
     )
-    # parser.add_argument(
-    #     "-o", "--output", type=str, help="Path to save converted depth image"
-    # )
     parser.add_argument(
-        "-s",
-        "--show",
+        "--headless",
         action="store_true",
-        default=True,
-        help="Show converted depth image using matplotlib"
-        + "\n  Note:\trequires X11 forwarding & GUI backend"
-        + "\n\tinstalled (ex. PyQt5) to work over ssh."
+        help="Don't show converted depth image using matplotlib"
+        + "\n  Note:\tif using over ssh, must use --headless flag or must"
+        + "\n\thave a GUI backend installed (ex. PyQt5) with X11 forwarding."
         + "\n  See:\thttps://matplotlib.org/faq/usage_faq.html#what-is-a-backend",
     )
-    # parser.add_argument(
-    #     "--format",
-    #     type=str,
-    #     default="original",
-    #     choices=["log", "linear", "original"],
-    # )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Path to save converted depth image to"
+        + "\n  Note:\tCannot be used with multiple input images.",
+    )
+    parser.add_argument(
+        "--save",
+        action="store_true",
+        default=False,
+        help="Save converted depth image to <input_path>_<format>.png",
+    )
+    parser.add_argument(
+        "--format",
+        choices=["linear", "log"],
+        default="linear",
+        help="Format used with --save or --output flag.",
+    )
 
-    _debug(parser)
     args = parser.parse_args(command_args)
-    armory.logs.update_filters(args.log_level, args.debug)
+    # armory.logs.update_filters(args.log_level, args.debug)
 
     if args.input is None:
         parser.error("input path is required")
-
-    if not args.show:
-        parser.error("outputting to a file is not yet supported, must use --show")
+    
+    if args.headless and (args.output is None or args.save is None):
+        parser.error("Must use --output or --save flag with --headless flag")
+    
+    if args.output is not None and args.save:
+        parser.error("Cannot use --output and --save flags together")
+    
+    if args.output is not None and len(args.input) > 1:
+        parser.error("Cannot use --output with multiple input paths, please use --save.")
+    
+    # sort input paths
+    args.input = sorted(args.input, key=lambda p: int(p.stem.split("_")[1]))
 
     images = load_images(args.input)
-    print(f"Loaded {len(images)} images from {args.input}")
+    print(f"Loaded {len(images)} images from:")
+    for i, path in enumerate(args.input):
+        print(f"{i:2d}: {path.name}")
+    
+    # save images if --save or --output flag is used
+    if args.save or args.output is not None:
+        if args.save:
+            output_paths = [p.parent / f"{p.stem}_{args.format}.png" for p in args.input]
+        else:
+            output_paths = [args.output]
+        for i, path in enumerate(output_paths):
+            print(f"Saving {path}")
+            linear, log = convert_image(images[i])
+            if args.format == "linear":
+                linear.convert("RGB").save(path)
+            else:
+                log.convert("RGB").save(path)
+    
+    if args.headless:
+        return
     # Create a figure and plot the initial image
     fig, ax = plt.subplots()
     im = ax.imshow(images[0])
@@ -143,15 +174,8 @@ def rgb_depth_convert(command_args, prog, description):
             fig.canvas.draw_idle()
 
         slider.on_changed(update_image)
-
-    # if args.format == "original":
-    #     im = ax.imshow(image)
-    # elif args.format == "log":
-    #     im = ax.imshow(img_log)
-    # elif args.format == "linear":
-    #     im = ax.imshow(img_linear)
-    # else:
-    #     raise ValueError(f"Invalid format {args.format}")
+    else:
+        slider = type("", (), {"val": 0})()
 
     def show_linear(event):
         im.set_array(convert_image(images[int(slider.val)])[0])
@@ -188,6 +212,7 @@ COMMANDS = {
 
 
 def main() -> int:
+    import armory.__main__ as armory_main
     armory_main.COMMANDS = COMMANDS
     # TODO the run method now returns a status code instead of sys.exit directly
     # the rest of the COMMANDS should conform
@@ -207,7 +232,7 @@ def main() -> int:
         metavar="<command>",
         type=str,
         help="armory command",
-        action=Command,
+        action=armory_main.Command,
     )
     args = parser.parse_args(sys.argv[1:2])
 
