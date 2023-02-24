@@ -125,16 +125,18 @@ def rgb_depth_convert(command_args, prog, description):
 
     if args.input is None:
         parser.error("input path is required")
-    
+
     if args.headless and (args.output is None or args.save is None):
         parser.error("Must use --output or --save flag with --headless flag")
-    
+
     if args.output is not None and args.save:
         parser.error("Cannot use --output and --save flags together")
-    
+
     if args.output is not None and len(args.input) > 1:
-        parser.error("Cannot use --output with multiple input paths, please use --save.")
-    
+        parser.error(
+            "Cannot use --output with multiple input paths, please use --save."
+        )
+
     # sort input paths
     args.input = sorted(args.input, key=lambda p: int(p.stem.split("_")[1]))
 
@@ -142,11 +144,13 @@ def rgb_depth_convert(command_args, prog, description):
     print(f"Loaded {len(images)} images from:")
     for i, path in enumerate(args.input):
         print(f"{i:2d}: {path.name}")
-    
+
     # save images if --save or --output flag is used
     if args.save or args.output is not None:
         if args.save:
-            output_paths = [p.parent / f"{p.stem}_{args.format}.png" for p in args.input]
+            output_paths = [
+                p.parent / f"{p.stem}_{args.format}.png" for p in args.input
+            ]
         else:
             output_paths = [args.output]
         for i, path in enumerate(output_paths):
@@ -156,7 +160,7 @@ def rgb_depth_convert(command_args, prog, description):
                 linear.convert("RGB").save(path)
             else:
                 log.convert("RGB").save(path)
-    
+
     if args.headless:
         return
     # Create a figure and plot the initial image
@@ -213,6 +217,7 @@ COMMANDS = {
 
 def main() -> int:
     import armory.__main__ as armory_main
+
     armory_main.COMMANDS = COMMANDS
     # TODO the run method now returns a status code instead of sys.exit directly
     # the rest of the COMMANDS should conform
