@@ -105,17 +105,18 @@ def rgb_depth_convert(command_args, prog, description):
         "-s",
         "--show",
         action="store_true",
+        default=True,
         help="Show converted depth image using matplotlib"
         + "\n  Note:\trequires X11 forwarding & GUI backend"
         + "\n\tinstalled (ex. PyQt5) to work over ssh."
         + "\n  See:\thttps://matplotlib.org/faq/usage_faq.html#what-is-a-backend",
     )
-    parser.add_argument(
-        "--format",
-        type=str,
-        default="original",
-        choices=["log", "linear", "original"],
-    )
+    # parser.add_argument(
+    #     "--format",
+    #     type=str,
+    #     default="original",
+    #     choices=["log", "linear", "original"],
+    # )
 
     _debug(parser)
     args = parser.parse_args(command_args)
