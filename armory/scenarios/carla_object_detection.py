@@ -22,10 +22,7 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
         if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
         # super().load_test_dataset(test_split_default="dev") # dev no longer in use
-        # per reference: "The test split don't have any annotations (only images)"
-        # https://www.tensorflow.org/datasets/catalog/coco
-        # super().load_test_dataset(test_split_default="test")
-        super().load_test_dataset(test_split_default="validation")
+        super().load_test_dataset(test_split_default="test")
 
     def next(self):
         super().next()
