@@ -41,7 +41,7 @@
                 "test": {
                     "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
                     "properties": {
-                        "dbatch_size": {
+                        "batch_size": {
                             "minimum": 1,
                             "type": "integer"
                         },
