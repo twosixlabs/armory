@@ -5,8 +5,6 @@ Standard preprocessing for different datasets
 
 import tensorflow as tf
 
-# import numpy as np
-
 
 REGISTERED_PREPROCESSORS = {}
 DEFAULT = "DEFAULT"
@@ -188,10 +186,6 @@ def infer_from_dataset_info(info, split):
 
 @register
 def coco(element):
-    # return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
-    #     element["image"], element["objects"]
-    # )
-    # return image_to_canon(element["image"])
     return image_to_canon(element["image"]), coco_label_preprocessing(
         element["objects"]
     )
@@ -298,18 +292,7 @@ def coco_label_preprocessing(y):
         default_value=tf.constant(-1),
         name="object_index",
     )
-    # breakpoint()
-    # for label_dict in y:
-    #     # label_dict["boxes"] = label_dict.pop("bbox").reshape(-1, 4)
-    #     label_dict["boxes"] = label_dict.pop("bbox")
-    #     # label_dict["labels"] = np.vectorize(idx_map.__getitem__)(
-    #     #     label_dict.pop("label").reshape(
-    #     #         -1,
-    #     #     )
-    #     # )
-    #     label_dict["labels"] = label_dict.pop("label")
+
     y["boxes"] = y.pop("bbox")
-    # y["labels"] = y.pop("label")
-    # y["labels"] = np.vectorize(idx_map.__getitem__)(y.pop("label"))
     y["labels"] = table.lookup(y.pop("label"))
     return y
