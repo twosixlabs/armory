@@ -4,6 +4,7 @@ Standard preprocessing for different datasets
 
 
 import tensorflow as tf
+from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
 
 REGISTERED_PREPROCESSORS = {}
@@ -72,6 +73,73 @@ def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
     )
+
+
+@register
+def apricot_dev(element):
+    return image_to_canon(element["image"]), apricot_label_preprocessing(
+        replace_magic_val(element["objects"])
+    )
+
+
+# simple copy paste at this point - needs to be converted to work with tensors
+def apricot_label_preprocessing(y):
+    """
+    Convert labels to list of dicts. If batch_size > 1, this will already be the case.
+    Decrement labels of non-patch objects by 1 to be 0-indexed
+    """
+    # if isinstance(y, dict):
+    #     y = [y]
+    # for y_dict in y:
+    #     y_dict["labels"] -= y_dict["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+    #     y_dict["labels"] = y_dict["labels"].reshape((-1,))
+    rhs = y["labels"]
+    y["labels"] = tf.where(
+        tf.not_equal(rhs, ADV_PATCH_MAGIC_NUMBER_LABEL_ID),
+        rhs - 1,
+        rhs,
+    )
+    return y
+
+
+def replace_magic_val(y):
+    raw_adv_patch_category_id = 12
+    rhs = y["labels"]
+    y["labels"] = tf.where(
+        tf.equal(rhs, raw_adv_patch_category_id),
+        tf.ones_like(rhs, dtype=tf.int64) * ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+        rhs,
+    )
+    return y
+
+
+# need function for lambda function passed to datasets._generator_from_tfds as an argument for lambda_map
+# which seems to get applied as ds.map prior to preprocessing_fn and label_preprocessing_fn
+# raw_adv_patch_category_id = 12
+
+# def replace_magic_val(data, raw_val, transformed_val, sub_key):
+#     rhs = data[sub_key]
+#     data[sub_key] = tf.where(
+#         tf.equal(rhs, raw_val),
+#         tf.ones_like(rhs, dtype=tf.int64) * transformed_val,
+#         rhs,
+#     )
+#     return data
+
+# return datasets._generator_from_tfds(
+#     ...
+#     supervised_xy_keys=("image", "objects"),
+#     lambda_map=lambda x, y: (
+#         x,
+#         replace_magic_val(
+#             y,
+#             raw_adv_patch_category_id,
+#             ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+#             "labels",
+#         ),
+#     ),
+#     ...
+# )
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
