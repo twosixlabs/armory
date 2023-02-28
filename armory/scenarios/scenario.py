@@ -230,15 +230,19 @@ class Scenario:
                 "summary_writer"
             ] = f"{self.scenario_output_dir}/tfevents_{self.time_stamp}"
         if attack_type == "preloaded":
-            preloaded_split = attack_config.get("kwargs", {}).get(
-                "split", "adversarial"
-            )
-            self.test_dataset = config_loading.load_adversarial_dataset(
-                attack_config,
-                epochs=1,
-                split=preloaded_split,
-                num_batches=self.num_eval_batches,
-                shuffle_files=False,
+            # preloaded_split = attack_config.get("kwargs", {}).get(
+            #     "split", "adversarial"
+            # )
+            # self.test_dataset = config_loading.load_adversarial_dataset(
+            #     attack_config,
+            #     epochs=1,
+            #     split=preloaded_split,
+            #     num_batches=self.num_eval_batches,
+            #     shuffle_files=False,
+            # )
+            kwargs = copy.deepcopy(self.config["attack"].get("kwargs"))
+            self.test_dataset = config_load.load_dataset(
+                name=attack_config.get("name"), **kwargs
             )
             targeted = attack_config.get("targeted", False)
         else:
