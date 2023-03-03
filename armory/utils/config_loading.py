@@ -79,6 +79,11 @@ def load_dataset(dataset_config, *args, num_batches=None, check_run=False, **kwa
     if check_run:
         return EvalGenerator(dataset, num_eval_batches=1)
     if num_batches:
+        if num_batches > dataset.batches_per_epoch:
+            # since num-eval-batches only applies at test time, we can assume there is only 1 epoch
+            raise ValueError(
+                f"{num_batches} eval batches were requested, but dataset has only {dataset.batches_per_epoch} batches of size {dataset.batch_size}"
+            )
         return EvalGenerator(dataset, num_eval_batches=num_batches)
     return dataset
 
