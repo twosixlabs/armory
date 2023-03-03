@@ -1034,11 +1034,11 @@ def carla_over_obj_det_train(
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
-    Training set for CARLA object detection dataset, containing RGB and depth channels.
+    Training set for CARLA overhead object detection dataset, containing RGB and depth channels.
     """
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the carla_obj_det_train dataset"
+            "Filtering by class is not supported for the carla_over_obj_det_train dataset"
         )
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
