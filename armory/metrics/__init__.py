@@ -3,7 +3,7 @@ from typing import Callable
 
 try:
     from armory.metrics import compute, perturbation, statistical, task
-except ImportError as e:
+except ImportError:
     raise ImportError(
         "armory engine dependencies are not installed. "
         "Please install armory-testbed[engine] to use metrics."
