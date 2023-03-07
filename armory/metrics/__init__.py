@@ -1,7 +1,13 @@
 import importlib
 from typing import Callable
 
-from armory.metrics import compute, perturbation, statistical, task
+try:
+    from armory.metrics import compute, perturbation, statistical, task
+except ImportError:
+    raise ImportError(
+        "armory engine dependencies are not installed. "
+        "Please install armory-testbed[engine] to use metrics."
+    )
 from armory.metrics.common import get_result_formatter, result_formatter, supported
 
 
