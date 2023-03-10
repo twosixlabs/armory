@@ -5,8 +5,7 @@ Adversarial Robustness Evaluation Test Bed
 from pathlib import Path
 
 from armory.logs import log
-from armory.utils import version, typedef
-
+from armory.utils import typedef, version
 
 Config = typedef.Config
 

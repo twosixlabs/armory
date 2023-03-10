@@ -5,10 +5,9 @@ CARLA Multi-Object Tracking Scenario
 
 from armory.instrument import GlobalMeter
 from armory.instrument.config import ResultsLogWriter
+from armory.logs import log
 from armory.metrics.task import GlobalHOTA
 from armory.scenarios.carla_video_tracking import CarlaVideoTracking
-
-from armory.logs import log
 
 
 class CarlaMOT(CarlaVideoTracking):

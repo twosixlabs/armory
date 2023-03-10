@@ -3,10 +3,10 @@ Utils to pull external repos for evaluation
 """
 import contextlib
 import os
-import tarfile
 import shutil
 import sys
-from typing import Union, List
+import tarfile
+from typing import List, Union
 
 import requests
 

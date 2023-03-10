@@ -1,14 +1,17 @@
+#! /usr/bin/env python3
+
 import argparse
 from pathlib import Path
 import shutil
 import subprocess
 import sys
 
+from armory import __version__ as armory_version
 
 script_dir = Path(__file__).parent
 root_dir = script_dir.parent
 
-armory_frameworks = ["pytorch", "pytorch-deepspeech", "tf2", "carla-mot"]
+armory_frameworks = ["armory", "pytorch-deepspeech"]
 
 # NOTE: Podman is not officially supported, but this enables
 #       use as a drop-in replacement for building.
@@ -105,16 +108,15 @@ def build_worker(framework, version, platform, base_tag, **kwargs):
         )
     print(f"EXEC\tPreparing to run:\n" f"\t\t{' '.join(build_command)}")
     if not kwargs.get("dry_run"):
-        build_process = subprocess.run(build_command)
-        exit(build_process.returncode)
+        return subprocess.run(build_command).returncode
 
 
 def init(*args, **kwargs):
     """Kicks off the build process."""
+    exit_code = 0  # 0 = success, 1 = failure
     frameworks = [kwargs.get("framework", False)]
     if frameworks == ["all"]:
         frameworks = armory_frameworks
-    from armory import __version__ as armory_version
 
     print(f"EXEC:\tRetrieved version {armory_version}.")
     print("EXEC:\tCleaning up...")
@@ -122,7 +124,9 @@ def init(*args, **kwargs):
         del kwargs[key]
     for framework in frameworks:
         print(f"EXEC:\tBuilding {framework} container.")
-        build_worker(framework, armory_version, **kwargs)
+        if status := build_worker(framework, armory_version, **kwargs):
+            exit_code = status
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

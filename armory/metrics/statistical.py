@@ -117,7 +117,7 @@ def make_contingency_tables(
         A map (Dict[int, np.ndarray]) of the per-class contingency tables.
     """
 
-    y = np.array(y).astype(np.int).flatten()
+    y = np.array(y).astype(np.int64).flatten()
     flagged_A = np.array(flagged_A).astype(np.bool_).flatten()
     flagged_B = np.array(flagged_B).astype(np.bool_).flatten()
 

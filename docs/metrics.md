@@ -24,7 +24,6 @@ Desired metrics and flags are placed under the key `"metric"` dictionary in the 
 }
 ```
 The `perturbation` and `task` fields can be null, a single string, or a list of strings.
-Strings must be a valid armory metric from `armory.utils.metrics`, which are also described in the Metrics section below.
 The perturbation metrics measure the difference between the benign and adversarial inputs `x`.
 The task metrics measure the task performance on the predicted value w.r.t the true value `y`, for both benign and adversarial inputs.
 If task metrics take keyword arguments, such as `"iou_threshold"`, these can be (optionally) added a list of kwarg dicts.
@@ -129,6 +128,13 @@ These metrics typically take a list or array of results as their single argument
 
 The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detection` metrics with parameters adapted to those respective scenarios.
 
+As mentioned, these functions generally compare `y_pred` against `y`, that is, the metric compares a benign or adversarial prediction to the ground truth.  It is also possible to use these metrics to compare adversarial predictions against benign predictions.  This is not enabled in off-the-shelf Armory code, but can be easily implemented through one small code modification, by simply adding ```self.metrics_logger.add_tasks_wrt_benign_predictions()``` to the ```load_metrics()``` function of the scenario.  For example, if you create a new scenario inheriting ```scenario.py```, you can implement ```load_metrics()``` this way:
+```
+def load_metrics(self):
+    super().load_metrics()
+    self.metrics_logger.add_tasks_wrt_benign_predictions()
+```
+
 | Name | Namespace | Description |
 |-------|-------|-------|
 | `categorical_accuracy` | `task.batch.categorical_accuracy` | Categorical Accuracy |
@@ -143,17 +149,17 @@ The `apricot`, `carla`, and `dapricot` metrics are effectively the `object_detec
 | `video_tracking_mean_iou` | `task.batch.video_tracking_mean_iou` | Mean IOU between ground-truth and predicted boxes, averaged over all frames for a video |
 | `video_tracking_mean_success_rate` | `task.batch.video_tracking_mean_success_rate` | Mean success rate averaged over all multiple IOU thresholds and all frames |
 | `object_detection_AP_per_class` | `task.population.object_detection_AP_per_class` | Object Detection average precision per class |
-| `object_detection_disappearance_rate` | `task.population.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
-| `object_detection_hallucinations_per_image` | `task.population.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
+| `object_detection_disappearance_rate` | `task.batch.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
+| `object_detection_hallucinations_per_image` | `task.batch.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
 | `object_detection_mAP` | `task.population.object_detection_mAP` | Object Detection mean average precision |
-| `object_detection_misclassification_rate` | `task.population.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
-| `object_detection_true_positive_rate` | `task.population.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+| `object_detection_misclassification_rate` | `task.batch.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
+| `object_detection_true_positive_rate` | `task.batch.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
 | `apricot_patch_targeted_AP_per_class` | `task.population.apricot_patch_targeted_AP_per_class` | OD metric applied to apricot scenario |
 | `carla_od_AP_per_class` | `task.population.carla_od_AP_per_class` | OD metric applied to carla scenario |
-| `carla_od_disappearance_rate`  | `task.population.carla_od_disappearance_rate` | OD metric applied to carla scenario |
-| `carla_od_hallucinations_per_image` | `task.population.carla_od_hallucinations_per_image` | OD metric applied to carla scenario |
-| `carla_od_misclassification_rate` | `task.population.carla_od_misclassification_rate` | OD metric applied to carla scenario |
-| `carla_od_true_positive_rate` | `task.population.carla_od_true_positive_rate` | OD metric applied to carla scenario |
+| `carla_od_disappearance_rate`  | `task.batch.carla_od_disappearance_rate` | OD metric applied to carla scenario |
+| `carla_od_hallucinations_per_image` | `task.batch.carla_od_hallucinations_per_image` | OD metric applied to carla scenario |
+| `carla_od_misclassification_rate` | `task.batch.carla_od_misclassification_rate` | OD metric applied to carla scenario |
+| `carla_od_true_positive_rate` | `task.batch.carla_od_true_positive_rate` | OD metric applied to carla scenario |
 | `dapricot_patch_target_success` | `task.population.dapricot_patch_target_success` | OD metric applied to dapricot scenario |
 | `dapricot_patch_targeted_AP_per_class` | `task.population.dapricot_patch_targeted_AP_per_class` | OD metric applied to dapricot scenario |
 | `abstains` | `task.batch.abstains` | Takes a batch matrix of inputs and returns 1 for each row that are all 0 (abstention) |
@@ -206,14 +212,15 @@ In order for your metric to get loaded, it must be retrievable via the following
 ```
 metrics.get(name)
 ```
-where `name` is the `str` name of your function.
-There are two ways of doing this.
+where `name` is the `str` name of your function. Suppose your metric is defined in `my_project/metrics.py` as `hot_dog_ness`.
 
-1) You can provide the full `.`-separated path to the metric function in the config, e.g., `"my_project.metrics.hot_dog_ness"`
-In this case, `metrics.get("my_project.metrics.hot_dog_ness")` will try to import `hot_dog_ness` from `my_project.metrics`.
-This case will only work as intended if `hot_dog_ness` is a batchwise function that outputs a list (or array) or results, one per element in the batch.
+Using the custom metric requires providing the full `.`-separated path to the metric function in the config, e.g., `"my_project.metrics.hot_dog_ness"`.
+In this case, `metrics.get("my_project.metrics.hot_dog_ness")` will try to import `hot_dog_ness` from `my_project.metrics`. Note the following caveats:
+- This case will only work as intended if `hot_dog_ness` is a batchwise function that outputs a list (or array) of results, one per element in the batch
+- By default, armory will try to calculate a mean from the output of the custom metric
+- Should the name of the custom metric collide with any existing functions supported by armory, armory will throw an error notifying the user of the collision as well as request a name change for the custom metric
 
-2) An alternative is to use one of the existing decorators in `task` or `perturbation` to register your metric.
+*Optional* An alternative is to use one of the existing decorators in `task` or `perturbation` to register your metric. This is useful for applying a custom metric as a non-batchwise operation and suppressing the mean calculation for outputs with specific formats.
 These decorators, their associated namespaces, and the intended APIs of the metric functions they decorate, are:
 - `metrics.perturbation.elementwise` - `metrics.perturbation.element` - takes a single pair of `x_i` and `x_adv_i` and returns a single perturbation distance for that element.
 - `metrics.perturbation.batchwise` - `metrics.perturbation.batch` - takes a batch of `x` and `x_adv` and returns a list of results, one per data element.
@@ -229,16 +236,6 @@ from armory import metrics
 def my_accuracy_metric(y_i, y_pred_i):
     return y_i == np.argmax(y_pred_i)
 ``` 
-NOTE: when using decorators, this uses the local name of the metric, and so in this case `"my_accuracy_metric"` should be in the config, NOT `"my_project.metrics.my_accuracy_metric"`.
-It will generate an error if the name is already used.
-A different name can be used by calling the decorator method directly:
-```
-from armory import metrics
-def my_accuracy_metric(y_i, y_pred_i):
-    return y_i == np.argmax(y_pred_i)
-
-metrics.task.elementwise(my_accuracy_metric, "a_different_name")
-```
 
 Armory performs all built-in metric operations as batches, not as individual elements, so using the `elementwise` decorators will also produce a batchwise version of it that loops through the individual elements and provides a batchwise result.
 NOTE: when armory uses `get`, it will get the batchwise version of a metric.
@@ -359,7 +356,7 @@ assert results == [7, 11]
 
 Since these all use a global Hub object, it doesn't matter which python files they are instantatied in.
 Probe should be instantiated in the file or class you are trying to measure.
-Meters and writers can be instantiated in your initial setup, and can be connected before probes are constructed.
+Meters and writers can be instantiated in your initial setup (please refer to [User Initialization](./scenarios.md#user-initialization) for more details about using the `user_init` block), and can be connected before probes are constructed.
 
 #### Direct Recording
 
@@ -435,22 +432,6 @@ More generally,
 probe.update(func1, func2, func3, my_var=y)
 ```
 will publish the value `func3(func2(func1(y)))`. 
-
-#### Hooking
-
-Probes can also hook models to enable capturing values without modifying the target code.
-Currently, hooking is only implemented for PyTorch, but TensorFlow is on the roadmap.
-
-To hook a model module, you can use the `hook` function.
-For instance, 
-```python
-# probe.hook(module, *preprocessing, input=None, output=None)
-probe.hook(convnet.layer1[0].conv2, lambda x: x.detach().cpu().numpy(), output="b")
-```
-This essentially wraps the `probe.update` call with a hooking function.
-This is intended for usage that cannot or does not modify the target codebase.
-
-More general hooking (e.g., for python methods) is TBD.
 
 #### Interactive Testing
 

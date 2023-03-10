@@ -17,10 +17,14 @@ We will update black versioning annually following their [Stability Policy](http
 As of version 0.16.1 `tools/format_json.py` no longer exists. Instead the built-in [json.tool](https://docs.python.org/3/library/json.html#module-json.tool) is used along with the `--sort-keys` and `--indent=4` flags.
 
 We use [Flake8](https://flake8.pycqa.org/) for non-formatting PEP style enforcement.
-```
-flake8
-```
+
+    flake8
+
 Our repo-specific Flake8 configuration is detailed in `.flake8`.
+
+We use [isort](https://pycqa.github.io/isort/) to sort Python imports.
+
+    isort --profile black *
 
 
 ### Pre-commit Hooks
@@ -62,9 +66,9 @@ Docstring
 import json
 import os
 
-import requests
-import numpy as np
 from art import defences
+import numpy as np
+import requests
 
 from armory.docker.management import ManagementInstance
 from armory.utils.external_repo import download_and_extract_repos

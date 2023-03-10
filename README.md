@@ -8,6 +8,7 @@
 [![License: MIT][license-badge]][license-url]
 [![Docs][docs-badge]][docs-url]
 [![Code style: black][style-badge]][style-url]
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7561756.svg)](https://doi.org/10.5281/zenodo.7561756)
 
 
 # Overview
@@ -46,7 +47,7 @@ There are three ways to interact with Armory's container system.
 
 ## armory run
 * `armory run <path/to/config.json>`
-This will run a [configuration file](/docs/configuration_files.md) end to end. Stdout
+This will run a [configuration file](//github.com/twosixlabs/armory/raw/master/docs/configuration_files.md) end to end. Stdout
 and stderror logs will be displayed to the user, and the container will be removed
 gracefully upon completion. Results from the evaluation can be found in your output
 directory.
@@ -61,21 +62,21 @@ from the evaluation can be found in the output directory. To later close the
 interactive container simply run CTRL+C from the terminal where this command was ran.
 
 ## armory launch
-* `armory launch <pytorch|tf2|pytorch-deepspeech|carla-mot>`
+* `armory launch <armory|pytorch-deepspeech>`
 This will launch a framework specific container, with appropriate mounted volumes, for
 the user to attach to for debugging purposes. A command to attach to the container will
 be returned from this call, and it can be ran in a separate terminal. To later close
 the interactive container simply run CTRL+C from the terminal where this command was
 ran.
 
-* `armory launch <pytorch|tf2|pytorch-deepspeech|carla-mot> --jupyter`.
+* `armory launch <armory|pytorch-deepspeech> --jupyter`.
 Similar to the interactive launch, this will spin up a container for a specific
 framework, but will instead return the web address of a jupyter lab server where
 debugging can be performed. To close the jupyter server simply run CTRL+C from the
 terminal where this command was ran.
 
 ## armory exec
-* `armory exec <pytorch|tf2|pytorch-deepspeech|carla-mot> -- <cmd>`
+* `armory exec <armory|pytorch-deepspeech> -- <cmd>`
 This will run a specific command within a framework specific container. A notable use
 case for this would be to run test cases using pytest. After completion of the command
 the container will be removed.
@@ -99,22 +100,22 @@ datasets, and scenarios can be used.
 
 Additionally, volumes (such as your current working directory) will be mounted from
 your system host so that you can modify code to be run, and retrieve outputs.
-For more information on these mounts, please see our [Docker documentation](/docs/docker.md#docker-volume-mounts)
+For more information on these mounts, please see our [Docker documentation](//github.com/twosixlabs/armory/raw/master/docs/docker.md#docker-volume-mounts)
 
 # Scenarios
 Armory provides several baseline threat-model scenarios for various data modalities.
 When running an armory configuration file, the robustness of a defense will be
 evaluated against that given scenario. For more information please see our
-[Scenario Documentation](/docs/scenarios.md).
+[Scenario Documentation](//github.com/twosixlabs/armory/raw/master/docs/scenarios.md).
 
 # FAQs
-Please see the [frequently asked questions](/docs/faqs.md) documentation for more information on:
+Please see the [frequently asked questions](//github.com/twosixlabs/armory/raw/master/docs/faqs.md) documentation for more information on:
 * Dataset format and preprocessing
 * Access to underlying models from wrapped classifiers.
 
 # Contributing
 Armory is an open source project and as such we welcome contributions! Please refer to
-our [contribution docs](/.github/CONTRIBUTING.md) for how to get started.
+our [contribution docs](//github.com/twosixlabs/armory/raw/master/.github/CONTRIBUTING.md) for how to get started.
 
 # Acknowledgment
 This material is based upon work supported by the Defense Advanced Research Projects

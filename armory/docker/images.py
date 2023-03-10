@@ -2,35 +2,26 @@
 Enables programmatic accessing of most recent docker images
 """
 
-import docker
-import docker.errors
 import requests
 
 import armory
+from armory.logs import is_progress, log
 from armory.utils import version
-from armory.logs import log, is_progress
+import docker
+import docker.errors
 
-TAG = version.to_docker_tag(armory.__version__)
 log.trace(f"armory.__version__: {armory.__version__}")
 
-DOCKER_REPOSITORY = "twosixarmory"
+TAG = version.to_docker_tag(armory.__version__)
+ARMORY_IMAGE_NAME = f"twosixarmory/armory:{TAG}"
+DEEPSPEECH_IMAGE_NAME = f"twosixarmory/pytorch-deepspeech:{TAG}"
 
-PYTORCH = f"{DOCKER_REPOSITORY}/pytorch:{TAG}"
-PYTORCH_DEEPSPEECH = f"{DOCKER_REPOSITORY}/pytorch-deepspeech:{TAG}"
-TF2 = f"{DOCKER_REPOSITORY}/tf2:{TAG}"
-CARLA_MOT = f"{DOCKER_REPOSITORY}/carla-mot:{TAG}"
-ALL = (
-    PYTORCH,
-    PYTORCH_DEEPSPEECH,
-    TF2,
-    CARLA_MOT,
-)
-REPOSITORIES = tuple(x.split(":")[0] for x in ALL)
 IMAGE_MAP = {
-    "pytorch": PYTORCH,
-    "pytorch-deepspeech": PYTORCH_DEEPSPEECH,
-    "tf2": TF2,
-    "carla-mot": CARLA_MOT,
+    "armory": ARMORY_IMAGE_NAME,
+    "tf2": ARMORY_IMAGE_NAME,
+    "pytorch": ARMORY_IMAGE_NAME,
+    "carla-mot": ARMORY_IMAGE_NAME,
+    "pytorch-deepspeech": DEEPSPEECH_IMAGE_NAME,
 }
 
 
@@ -71,7 +62,7 @@ def is_armory(image_name: str):
     Return whether image_name refers to an armory docker image
     """
     user, repo, _ = split_name(image_name)
-    if user and user != DOCKER_REPOSITORY:
+    if user and user != "twosixarmory":
         return False
     if repo == "tf1":
         raise ValueError("tf1 docker image is deprecated. Use Armory version < 0.15.0")

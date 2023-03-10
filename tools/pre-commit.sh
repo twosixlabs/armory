@@ -63,6 +63,12 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
         echo "🎱 Executing 'flake8' formatter..."
         python -m flake8 --config=.flake8 ${TARGET_FILES}
         CHECK_EXIT_STATUS $?
+
+        ############
+        # isort
+        echo "⏬ Executing 'isort' import sorter..."
+        isort $TARGET_FILES
+        CHECK_EXIT_STATUS $?
     fi
 
 

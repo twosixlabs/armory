@@ -15,21 +15,17 @@ import os
 import re
 import sys
 
-import docker
 from jsonschema import ValidationError
 
 import armory
-
-from armory.logs import log
-
-from armory import paths
-from armory import arguments
+from armory import arguments, paths
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
-from armory.docker import images
+import armory.logs
+from armory.logs import log
 from armory.utils.configuration import load_config, load_config_stdin
 from armory.utils.version import to_docker_tag
-import armory.logs
+import docker
 
 
 class PortNumber(argparse.Action):
@@ -81,14 +77,15 @@ class Command(argparse.Action):
 
 class DockerImage(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if values in images.ALL:
+        images = armory.docker.images.IMAGE_MAP
+        if values in images.values():
             setattr(namespace, self.dest, values)
-        elif values.lower() in images.IMAGE_MAP:
-            setattr(namespace, self.dest, images.IMAGE_MAP[values])
+        elif values.lower() in images.keys():
+            setattr(namespace, self.dest, images[values])
         else:
             log.info(
                 f"WARNING: {values} not in "
-                f"{list(images.IMAGE_MAP.keys()) + list(images.IMAGE_MAP.values())}. "
+                f"{list(images.keys()) + list(images.values())}. "
                 "Attempting to load custom Docker image."
             )
             setattr(namespace, self.dest, values)
@@ -191,7 +188,7 @@ def _docker_image(parser):
         "docker_image",
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -199,10 +196,10 @@ def _docker_image(parser):
 def _docker_image_optional(parser):
     parser.add_argument(
         "--docker-image",
-        default=images.PYTORCH,
+        default=armory.docker.images.ARMORY_IMAGE_NAME,
         metavar="<docker image>",
         type=str,
-        help="docker image framework: 'tf2', 'pytorch', or 'pytorch-deepspeech'",
+        help="docker image framework: 'armory', or 'pytorch-deepspeech'",
         action=DockerImage,
     )
 
@@ -405,14 +402,14 @@ def run(command_args, prog, description) -> int:
 def _pull_docker_images(docker_client=None):
     if docker_client is None:
         docker_client = docker.from_env(version="auto")
-    for image in images.ALL:
+    for image in armory.docker.images.IMAGE_MAP.values():
         try:
             docker_client.images.get(image)
         except docker.errors.ImageNotFound:
             try:
                 log.info(f"Image {image} was not found. Downloading...")
                 repository, tag = ":".split(image)
-                images.pull_verbose(docker_client, repository, tag=tag)
+                armory.docker.images.pull_verbose(docker_client, repository, tag=tag)
             except docker.errors.NotFound:
                 log.exception(
                     f"Docker image {image} does not exist for this version. "
@@ -433,6 +430,7 @@ def download(command_args, prog, description):
         metavar="<download data config file>",
         dest="download_config",
         type=str,
+        default="armory/configs/download_data.json",
         action=DownloadConfig,
         help=f"Configuration for download of data. See {DEFAULT_SCENARIO}. Note: file must be under current working directory.",
     )
@@ -452,8 +450,7 @@ def download(command_args, prog, description):
     if args.no_docker:
         log.info("Downloading requested datasets and model weights in host mode...")
         paths.set_mode("host")
-        from armory.data import datasets
-        from armory.data import model_weights
+        from armory.data import datasets, model_weights
 
         datasets.download_all(args.download_config, args.scenario)
         model_weights.download_all(args.download_config, args.scenario)

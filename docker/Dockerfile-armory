@@ -1,20 +1,33 @@
 ARG base_image_tag
 
+
 FROM twosixarmory/base:${base_image_tag} AS armory-local
 
-WORKDIR /armory-repo
+# pip Configuration - https://pip.pypa.io/en/stable/user_guide/#config-file
+ARG PIP_DISABLE_PIP_VERSION_CHECK=1
+ARG PIP_NO_CACHE_DIR=1
 
 # NOTE: This COPY command is filtered using the `.dockerignore` file
 #       in the root of the repo.
 COPY ./ /armory-repo
 
+WORKDIR /armory-repo
+
 RUN echo "Updating pip" && \
     pip install --upgrade pip && \
     echo "Building Armory from local source" && \
-    pip install --no-compile --no-cache-dir --editable '.[engine,pytorch,jupyter]' && \
+    pip install --no-compile --editable '.[all]' && \
     echo "Configuring Armory..." && \
     armory configure --use-default && \
     echo "Cleaning up..." && \
     rm -rf /armory-repo/.git
+
+RUN pip install \
+        git+https://github.com/ifzhang/ByteTrack.git \
+        thop \
+        lap \
+        Cython && \
+    # Requires cython for install, so will fail if run in the same pip install as cython
+    pip install cython-bbox
 
 WORKDIR /workspace

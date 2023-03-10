@@ -1,5 +1,4 @@
-from art.defences.preprocessor import VideoCompression
-from art.defences.preprocessor import VideoCompressionPyTorch
+from art.defences.preprocessor import VideoCompression, VideoCompressionPyTorch
 import numpy as np
 
 
