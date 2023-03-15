@@ -60,6 +60,7 @@ class CacheTrigger:
             raise ValueError("Shift + Backdoor length is greater than audio's length.")
 
         audio[shift : shift + bd_length] += self.scaled_trigger
+        audio = np.clip(audio, -1.0, 1.0)
         return audio.astype(original_dtype)
 
 

@@ -1,9 +1,9 @@
 {
-    "_description": "CIFAR10 poison image classification, sleeper agent attack",
+    "_description": "CIFAR10 poison image classification, sleeper agent attack, spectral signatures defense",
     "adhoc": {
         "compute_fairness_metrics": false,
         "experiment_id": 0,
-        "explanatory_model": "cifar10_silhouette_model",
+        "explanatory_model": "cifar10_explanatory_model",
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "source_class": 0,
@@ -50,7 +50,7 @@
         "name": "SleeperAgentAttack"
     },
     "dataset": {
-        "batch_size": 512,
+        "batch_size": 128,
         "framework": "numpy",
         "module": "armory.data.datasets",
         "name": "cifar10"
@@ -68,7 +68,6 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {
-            "cifar_stem": true,
             "data_means": [
                 0.4914,
                 0.4822,
@@ -83,7 +82,7 @@
             "pretrained": false
         },
         "module": "armory.baseline_models.pytorch.resnet18",
-        "name": "get_art_model",
+        "name": "get_art_model_cifar_sleeper_agent",
         "weights_file": null,
         "wrapper_kwargs": {
             "input_shape": [
@@ -91,7 +90,7 @@
                 32,
                 3
             ],
-            "learning_rate": 0.001,
+            "learning_rate": 0.1,
             "nb_classes": 10
         }
     },

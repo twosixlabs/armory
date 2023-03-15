@@ -8,6 +8,7 @@
 [![License: MIT][license-badge]][license-url]
 [![Docs][docs-badge]][docs-url]
 [![Code style: black][style-badge]][style-url]
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7561756.svg)](https://doi.org/10.5281/zenodo.7561756)
 
 
 # Overview
