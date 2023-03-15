@@ -68,11 +68,26 @@ def digit(element):
 
 
 @register
+def carla_obj_det_test(element, modality="rgb"):
+    return carla_multimodal_obj_det(element["image"], modality=modality), (
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
+        element["patch_metadata"],
+    )
+
+
+@register
 def carla_obj_det_dev(element, modality="rgb"):
     return carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
         element["patch_metadata"],
     )
+
+
+@register
+def carla_obj_det_train(element, modality="rgb"):
+    return carla_multimodal_obj_det(
+        element["image"], modality=modality
+    ), convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
 
 
 @register
@@ -122,6 +137,13 @@ def carla_video_tracking(element, max_frames=None):
 
 carla_video_tracking_dev = register(carla_video_tracking, "carla_video_tracking_dev")
 carla_video_tracking_test = register(carla_video_tracking, "carla_video_tracking_test")
+
+
+@register
+def carla_over_obj_det_train(element, modality="rgb"):
+    return carla_multimodal_obj_det(
+        element["image"], modality=modality
+    ), convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
 
 
 @register
