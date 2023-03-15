@@ -75,7 +75,7 @@ def linear_depth_to_rgb(depth_m):
     Reference: https://carla.readthedocs.io/en/stable/cameras_and_sensors/#camera-depth-map
     depth_m: scalar or array, nonnegative
     returns: tuple of three scalars or arrays in [0,1]
-    """ 
+    """
     depth = depth_m / 1000.0 * (256**3 - 1)
     if isinstance(depth, np.ndarray):
         depth = np.round(depth)

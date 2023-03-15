@@ -22,6 +22,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
     """
     Apply patch attack to RGB channels and (optionally) masked PGD attack to depth channels.
     """
+
     def __init__(self, estimator, **kwargs):
 
         # Maximum depth perturbation from a flat patch
@@ -68,27 +69,45 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             patch_grads = self._patch.grad
             patch_gradients = patch_grads.sign() * self.learning_rate
 
-            if images.shape[-1] == 6:                
+            if images.shape[-1] == 6:
                 depth_grads = self.depth_perturbation.grad
-                grads_linear = rgb_depth_to_linear(depth_grads[:,0,:,:], depth_grads[:,1,:,:], depth_grads[:,2,:,:])
-                depth_linear = rgb_depth_to_linear(self.depth_perturbation[:,0,:,:], self.depth_perturbation[:,1,:,:], self.depth_perturbation[:,2,:,:])
-                depth_linear = depth_linear + grads_linear.sign() * self.learning_rate_depth
+                grads_linear = rgb_depth_to_linear(
+                    depth_grads[:, 0, :, :],
+                    depth_grads[:, 1, :, :],
+                    depth_grads[:, 2, :, :],
+                )
+                depth_linear = rgb_depth_to_linear(
+                    self.depth_perturbation[:, 0, :, :],
+                    self.depth_perturbation[:, 1, :, :],
+                    self.depth_perturbation[:, 2, :, :],
+                )
+                depth_linear = (
+                    depth_linear + grads_linear.sign() * self.learning_rate_depth
+                )
 
             with torch.no_grad():
                 self._patch[:] = torch.clamp(
                     self._patch + patch_gradients,
                     min=self.estimator.clip_values[0],
                     max=self.estimator.clip_values[1],
-                )    
+                )
 
                 if images.shape[-1] == 6:
-                    images_depth = torch.permute(images[:,:,:,3:], (0,3,1,2))
-                    images_depth_linear = rgb_depth_to_linear(images_depth[:,0,:,:], images_depth[:,1,:,:], images_depth[:,2,:,:])
-                    depth_linear = torch.clamp(images_depth_linear + depth_linear, min=self.min_depth, max=self.max_depth)
+                    images_depth = torch.permute(images[:, :, :, 3:], (0, 3, 1, 2))
+                    images_depth_linear = rgb_depth_to_linear(
+                        images_depth[:, 0, :, :],
+                        images_depth[:, 1, :, :],
+                        images_depth[:, 2, :, :],
+                    )
+                    depth_linear = torch.clamp(
+                        images_depth_linear + depth_linear,
+                        min=self.min_depth,
+                        max=self.max_depth,
+                    )
                     depth_r, depth_g, depth_b = linear_depth_to_rgb(depth_linear)
                     perturbed_images = torch.stack([depth_r, depth_g, depth_b], dim=1)
                     self.depth_perturbation[:] = perturbed_images - images_depth
-                            
+
         else:
             raise ValueError(
                 "Adam optimizer for CARLA Adversarial Patch not supported."
@@ -130,9 +149,9 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
         nb_samples = images.shape[0]
 
-        images_rgb = images[:,:3,:,:]
+        images_rgb = images[:, :3, :, :]
         if images.shape[1] == 6:
-            images_depth = images[:,3:,:,:]
+            images_depth = images[:, 3:, :, :]
 
         image_mask = self._get_circular_patch_mask(nb_samples=nb_samples)
         image_mask = image_mask.float()
@@ -269,7 +288,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         values, _ = torch.max(green_screen, dim=1, keepdim=True)
         values_ratio = values / v_avg
         values_ratio = torch.repeat_interleave(values_ratio, dim=1, repeats=3)
-       
+
         patched_images = (
             images_rgb * inverted_mask
             + padded_patch * values_ratio * image_mask
@@ -289,7 +308,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         # Apply perturbation to depth channels
         if images.shape[1] == 6:
             perturbed_images = images_depth + self.depth_perturbation * ~foreground_mask
-            
+
             perturbed_images = torch.clamp(
                 perturbed_images,
                 min=self.estimator.clip_values[0],
@@ -347,23 +366,49 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                     (patch_width, patch_height),
                 )
             else:
-                patch_init = np.random.randint(0, 255, size=self.patch_shape) / 255            
+                patch_init = np.random.randint(0, 255, size=self.patch_shape) / 255
 
             self._patch = torch.tensor(
                 patch_init, requires_grad=True, device=self.estimator.device
-            )         
-            
-            # initialize depth variables
-            if x.shape[-1] == 6:                
-                depth_linear = rgb_depth_to_linear(x[i,:,:,3], x[i,:,:,4], x[i,:,:,5])                
-                max_depth = depth_linear + self.depth_delta_meters
-                min_depth = depth_linear - self.depth_delta_meters                
-                self.max_depth = torch.tensor(np.expand_dims(max_depth, axis=0), dtype=torch.float32, device=self.estimator.device)
-                self.min_depth = torch.tensor(np.expand_dims(min_depth, axis=0), dtype=torch.float32, device=self.estimator.device)
-                self.depth_perturbation = torch.zeros(1, 3, x.shape[1], x.shape[2], requires_grad=True, device=self.estimator.device)                
+            )
 
-            patch, _ = super().generate(np.expand_dims(x[i], axis=0), y=[y_gt])            
-            
+            # initialize depth variables
+            if x.shape[-1] == 6:
+                # check if depth image is log-depth
+                if np.all(x[i, :, :, 3] == x[i, :, :, 4]) and np.all(
+                    x[i, :, :, 3] == x[i, :, :, 5]
+                ):
+                    depth_linear = log_to_linear(x[i, :, :, 3:])
+                    max_depth = linear_to_log(depth_linear + self.depth_delta_meters)
+                    min_depth = linear_to_log(depth_linear - self.depth_delta_meters)
+                else:
+                    depth_linear = rgb_depth_to_linear(
+                        x[i, :, :, 3], x[i, :, :, 4], x[i, :, :, 5]
+                    )
+                    max_depth = depth_linear + self.depth_delta_meters
+                    min_depth = depth_linear - self.depth_delta_meters
+
+                self.max_depth = torch.tensor(
+                    np.expand_dims(max_depth, axis=0),
+                    dtype=torch.float32,
+                    device=self.estimator.device,
+                )
+                self.min_depth = torch.tensor(
+                    np.expand_dims(min_depth, axis=0),
+                    dtype=torch.float32,
+                    device=self.estimator.device,
+                )
+                self.depth_perturbation = torch.zeros(
+                    1,
+                    3,
+                    x.shape[1],
+                    x.shape[2],
+                    requires_grad=True,
+                    device=self.estimator.device,
+                )
+
+            patch, _ = super().generate(np.expand_dims(x[i], axis=0), y=[y_gt])
+
             # Patch image
             x_tensor = torch.tensor(np.expand_dims(x[i], axis=0)).to(
                 self.estimator.device
@@ -391,4 +436,4 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             attacked_images.append(patched_image)
 
-        return np.array(attacked_images)  
+        return np.array(attacked_images)
