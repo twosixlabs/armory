@@ -381,12 +381,16 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                     depth_linear = log_to_linear(x[i, :, :, 3:])
                     max_depth = linear_to_log(depth_linear + self.depth_delta_meters)
                     min_depth = linear_to_log(depth_linear - self.depth_delta_meters)
+                    max_depth = np.minimum(1.0, max_depth)
+                    min_depth = np.maximum(0.0 min_depth)
                 else:
                     depth_linear = rgb_depth_to_linear(
                         x[i, :, :, 3], x[i, :, :, 4], x[i, :, :, 5]
                     )
                     max_depth = depth_linear + self.depth_delta_meters
                     min_depth = depth_linear - self.depth_delta_meters
+                    max_depth = np.minimum(1000.0, max_depth)
+                    min_depth = np.maximum(0.0, min_depth)
 
                 self.max_depth = torch.tensor(
                     np.expand_dims(max_depth, axis=0),
