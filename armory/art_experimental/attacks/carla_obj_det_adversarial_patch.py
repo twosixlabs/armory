@@ -33,11 +33,20 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         self.max_depth = None
         self.patch_base_image = kwargs.pop("patch_base_image", None)
 
+        # HSV bounds are user-defined to limit perturbation regions
+        self.hsv_lower_bound = np.array(
+            kwargs.pop("hsv_lower_bound", [0, 0, 0])
+        )  # [0, 0, 0] means unbounded below
+        self.hsv_upper_bound = np.array(
+            kwargs.pop("hsv_upper_bound", [255, 255, 255])
+        )  # [255, 255, 255] means unbounded above
+
         super().__init__(estimator=estimator, **kwargs)
 
-    def create_initial_image(self, size):
+    def create_initial_image(self, size, hsv_lower_bound, hsv_upper_bound):
         """
-        Create initial patch based on a user-defined image
+        Create initial patch based on a user-defined image and
+        create perturbation mask based on HSV bounds
         """
         module_path = globals()["__file__"]
         # user-defined image is assumed to reside in the same location as the attack module
@@ -49,9 +58,19 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
+        hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
+        # find the colors within the boundaries
+        mask = cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound)
+        mask = np.expand_dims(mask, 2)
+        # cv2.imwrite(
+        #     "mask.png", mask
+        # )  # visualize perturbable regions. Comment out if not needed.
+
         patch_base = np.transpose(im, (2, 0, 1))
         patch_base = patch_base / 255.0
-        return patch_base
+        mask = np.transpose(mask, (2, 0, 1))
+        mask = mask / 255.0
+        return patch_base, mask
 
     def _train_step(
         self,
@@ -67,7 +86,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
         if self._optimizer_string == "pgd":
             patch_grads = self._patch.grad
-            patch_gradients = patch_grads.sign() * self.learning_rate
+            patch_gradients = patch_grads.sign() * self.learning_rate * self.patch_mask
 
             if images.shape[-1] == 6:
                 depth_grads = self.depth_perturbation.grad
@@ -362,15 +381,19 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             # self._patch needs to be re-initialized with the correct shape
             if self.patch_base_image is not None:
-                patch_init = self.create_initial_image(
+                patch_init, patch_mask = self.create_initial_image(
                     (patch_width, patch_height),
+                    self.hsv_lower_bound,
+                    self.hsv_upper_bound,
                 )
             else:
                 patch_init = np.random.randint(0, 255, size=self.patch_shape) / 255
+                patch_mask = np.ones_like(patch_init)
 
             self._patch = torch.tensor(
                 patch_init, requires_grad=True, device=self.estimator.device
             )
+            self.patch_mask = torch.Tensor(patch_mask).to(self.estimator.device)
 
             # initialize depth variables
             if x.shape[-1] == 6:
@@ -382,7 +405,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                     max_depth = linear_to_log(depth_linear + self.depth_delta_meters)
                     min_depth = linear_to_log(depth_linear - self.depth_delta_meters)
                     max_depth = np.minimum(1.0, max_depth)
-                    min_depth = np.maximum(0.0 min_depth)
+                    min_depth = np.maximum(0.0, min_depth)
                 else:
                     depth_linear = rgb_depth_to_linear(
                         x[i, :, :, 3], x[i, :, :, 4], x[i, :, :, 5]
