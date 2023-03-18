@@ -9,7 +9,6 @@ import numpy as np
 import torch
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    get_avg_depth_value,
     linear_depth_to_rgb,
     rgb_depth_to_linear,
     linear_to_log,
