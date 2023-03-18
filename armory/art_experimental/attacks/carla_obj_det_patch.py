@@ -9,8 +9,8 @@ import numpy as np
 from tqdm.auto import trange
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
-    get_avg_depth_value,
     linear_depth_to_rgb,
+    rgb_depth_to_linear,
     linear_to_log,
     log_to_linear,
 )
@@ -274,18 +274,22 @@ class CARLADapricotPatch(RobustDPatch):
         # Maximum depth perturbation from a flat patch
         self.depth_delta_meters = kwargs.pop("depth_delta_meters", 0.03)
         self.learning_rate_depth = kwargs.pop("learning_rate_depth", 0.0001)
-        self.max_depth_r = None
-        self.min_depth_r = None
-        self.max_depth_g = None
-        self.min_depth_g = None
-        self.max_depth_b = None
-        self.min_depth_b = None
-
+        self.depth_perturbation = None
+        self.max_depth = None
+        self.min_depth = None
         self.patch_base_image = kwargs.pop("patch_base_image", None)
+
+        # HSV bounds are user-defined to limit perturbation regions
+        self.hsv_lower_bound = np.array(
+            kwargs.pop("hsv_lower_bound", [0, 0, 0])
+        )  # [0, 0, 0] means unbounded below
+        self.hsv_upper_bound = np.array(
+            kwargs.pop("hsv_upper_bound", [255, 255, 255])
+        )  # [255, 255, 255] means unbounded above
 
         super().__init__(estimator=estimator, **kwargs)
 
-    def create_initial_image(self, size):
+    def create_initial_image(self, size, hsv_lower_bound, hsv_upper_bound):
         """
         Create initial patch based on a user-defined image
         """
@@ -299,8 +303,17 @@ class CARLADapricotPatch(RobustDPatch):
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
+        hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
+        # find the colors within the boundaries
+        mask = cv2.inRange(hsv, hsv_lower_bound, hsv_upper_bound)
+        mask = np.expand_dims(mask, 2)
+        # cv2.imwrite(
+        #     "mask.png", mask
+        # )  # visualize perturbable regions. Comment out if not needed.
+
         patch_base = im / 255.0
-        return patch_base
+        mask = mask / 255.0
+        return patch_base, mask
 
     def inner_generate(  # type: ignore
         self, x: np.ndarray, y: Optional[List[Dict[str, np.ndarray]]] = None, **kwargs
@@ -311,11 +324,6 @@ class CARLADapricotPatch(RobustDPatch):
         :param y: Target labels for object detector.
         :return: Adversarial patch.
         """
-        channel_index = 1 if self.estimator.channels_first else x.ndim - 1
-        if x.shape[channel_index] != self.patch_shape[channel_index - 1]:
-            raise ValueError(
-                "The color channel index of the images and the patch have to be identical."
-            )
         if y is None and self.targeted:
             raise ValueError(
                 "The targeted version of RobustDPatch attack requires target labels provided to `y`."
@@ -363,7 +371,8 @@ class CARLADapricotPatch(RobustDPatch):
             self.max_iter, desc="RobustDPatch iteration", disable=not self.verbose
         ):
             num_batches = math.ceil(x.shape[0] / self.batch_size)
-            patch_gradients_old = np.zeros_like(self._patch)
+            patch_gradients = np.zeros_like(self._patch)
+            depth_gradients = None
 
             for e_step in range(self.sample_size):
 
@@ -391,17 +400,23 @@ class CARLADapricotPatch(RobustDPatch):
                         x=patched_images,
                         y=patch_target,
                         standardise_output=True,
-                    )
+                    )  # (B,H,W,C)
 
-                    gradients = self._untransform_gradients(
-                        gradients,
+                    gradients_rgb = gradients[:, :, :, :3]
+                    if gradients.shape[-1] == 6:
+                        if depth_gradients is None:
+                            depth_gradients = gradients[:, :, :, 3:]
+                        else:
+                            depth_gradients = np.concatenate(
+                                (depth_gradients, gradients[:, :, :, 3:]), axis=0
+                            )
+
+                    gradients_rgb = self._untransform_gradients(
+                        gradients_rgb,
                         transforms,
                         channels_first=self.estimator.channels_first,
                     )
-
-                    patch_gradients = patch_gradients_old + np.sum(gradients, axis=0)
-
-                    patch_gradients_old = patch_gradients
+                    patch_gradients = patch_gradients + np.sum(gradients_rgb, axis=0)
 
             # Write summary
             if self.summary_writer is not None:  # pragma: no cover
@@ -420,60 +435,52 @@ class CARLADapricotPatch(RobustDPatch):
                     targeted=self.targeted,
                 )
 
-            self._patch[:, :, :3] = (
-                self._patch[:, :, :3]
-                + np.sign(patch_gradients[:, :, :3])
+            self._patch = (
+                self._patch
+                + np.sign(patch_gradients)
                 * (1 - 2 * int(self.targeted))
                 * self.learning_rate
+                * self.patch_mask
             )
 
-            if patch_gradients.shape[-1] == 6:
-                patch_gradients[:, :, 3:] = np.mean(
-                    patch_gradients[:, :, 3:], axis=2, keepdims=True
+            # Update depth perturbation
+            if gradients.shape[-1] == 6:
+                grads_linear = rgb_depth_to_linear(
+                    depth_gradients[:, :, :, 0],
+                    depth_gradients[:, :, :, 1],
+                    depth_gradients[:, :, :, 2],
+                ).astype("float32")
+                depth_linear = rgb_depth_to_linear(
+                    self.depth_perturbation[:, :, :, 0],
+                    self.depth_perturbation[:, :, :, 1],
+                    self.depth_perturbation[:, :, :, 2],
+                ).astype("float32")
+                depth_linear = (
+                    depth_linear + np.sign(grads_linear) * self.learning_rate_depth
                 )
 
-                # Depth uses a different learning rate than rgb
-                self._patch[:, :, 3:] = (
-                    self._patch[:, :, 3:]
-                    + np.sign(patch_gradients[:, :, 3:])
-                    * (1 - 2 * int(self.targeted))
-                    * self.learning_rate_depth
+                images_depth = patched_images[:, :, :, 3:]
+                images_depth_linear = rgb_depth_to_linear(
+                    images_depth[:, :, :, 0],
+                    images_depth[:, :, :, 1],
+                    images_depth[:, :, :, 2],
+                ).astype("float32")
+                depth_linear = np.clip(
+                    images_depth_linear + depth_linear,
+                    self.min_depth,
+                    self.max_depth,
                 )
-
-                if self.depth_type == "linear":
-                    # clip Depth channels so perturbation is constrained by meters
-                    self._patch[:, :, 3] = np.clip(
-                        self._patch[:, :, 3],
-                        a_min=self.min_depth_r,
-                        a_max=self.max_depth_r,
-                    )
-                    self._patch[:, :, 4] = np.clip(
-                        self._patch[:, :, 4],
-                        a_min=self.min_depth_g,
-                        a_max=self.max_depth_g,
-                    )
-                    self._patch[:, :, 5] = np.clip(
-                        self._patch[:, :, 5],
-                        a_min=self.min_depth_b,
-                        a_max=self.max_depth_b,
-                    )
-                elif self.depth_type == "log":
-                    # clip Depth channels so perturbation is constrained by meters
-                    self._patch[:, :, 3:] = np.clip(
-                        self._patch[:, :, 3:],
-                        a_min=self.min_depth,
-                        a_max=self.max_depth,
-                    )
-                else:
-                    raise ValueError(
-                        f"Expected depth_type in ('linear', 'log'), found {self.depth_type}"
-                    )
+                depth_r, depth_g, depth_b = linear_depth_to_rgb(depth_linear)
+                perturbed_images = np.stack(
+                    [depth_r, depth_g, depth_b], axis=-1
+                ).astype("float32")
+                self.depth_perturbation = perturbed_images - images_depth
 
             if self.estimator.clip_values is not None:
                 self._patch = np.clip(
                     self._patch,
-                    a_min=self.estimator.clip_values[0],
-                    a_max=self.estimator.clip_values[1],
+                    self.estimator.clip_values[0],
+                    self.estimator.clip_values[1],
                 )
 
         if self.summary_writer is not None:
@@ -507,59 +514,59 @@ class CARLADapricotPatch(RobustDPatch):
 
         # Apply patch:
         x_patch = []
-        for xi, gs_coords in zip(x_copy, self.gs_coords):
+        for i in range(len(x_copy)):
+            xi = x_copy[i]
+            gs_coords = self.gs_coords[i]
 
             if xi.shape[-1] == 3:
-                rgb_img = (xi * 255.0).astype("float32")
+                rgb_img = xi.astype("float32")
             else:
-                rgb_img = (xi[:, :, :3] * 255.0).astype("float32")
-                depth_img = (xi[:, :, 3:] * 255.0).astype("float32")
+                rgb_img = xi[:, :, :3].astype("float32")  # (H,W,3)
+                depth_img = xi[:, :, 3:].astype("float32")  # (H,W,3)
+                depth_perturbation = self.depth_perturbation[i]  # (H,W,3)
+                foreground = self.foreground[i]  # (H,W,1)
 
             # apply patch using DAPRICOT transform to RGB channels only
             # insert_patch() uses BGR color ordering for input and output
-            rgb_img_with_patch = insert_patch(
-                gs_coords,
-                rgb_img[:, :, ::-1],  # input image needs to be BGR
-                patch_copy[:, :, :3] * 255.0,
-                self.patch_geometric_shape,
-                cc_gt=self.cc_gt,
-                cc_scene=self.cc_scene,
-                apply_realistic_effects=self.apply_realistic_effects,
-                rgb=True,
+            rgb_img_with_patch = (
+                insert_patch(
+                    gs_coords,
+                    rgb_img[:, :, ::-1] * 255.0,  # input image needs to be BGR
+                    patch_copy * 255.0,
+                    self.patch_geometric_shape,
+                    cc_gt=self.cc_gt,
+                    cc_scene=self.cc_scene,
+                    apply_realistic_effects=self.apply_realistic_effects,
+                    rgb=True,
+                )
+                / 255.0
             )
 
             # embed patch into background
             rgb_img_with_patch[
                 np.all(self.binarized_patch_mask == 0, axis=-1)
-            ] = rgb_img[np.all(self.binarized_patch_mask == 0, axis=-1)][:, ::-1]
+            ] = rgb_img[np.all(self.binarized_patch_mask == 0, axis=-1)][
+                :, ::-1
+            ]  # (H,W,3)
 
             if xi.shape[-1] == 3:
                 img_with_patch = rgb_img_with_patch.copy()
             else:
-                # apply patch using DAPRICOT transform to Depth channels only
-                # insert_patch() uses BGR color ordering for input and output
-                depth_img_with_patch = insert_patch(
-                    gs_coords,
-                    depth_img[:, :, ::-1],  # input image needs to be BGR
-                    patch_copy[:, :, 3:] * 255.0,
-                    self.patch_geometric_shape,
-                    cc_gt=self.cc_gt,
-                    cc_scene=self.cc_scene,
-                    apply_realistic_effects=False,
-                    rgb=False,
-                )
+                # apply depth perturbation to depth channels
+                depth_img = depth_img + depth_perturbation * foreground  # (H,W,3)
 
-                # embed patch into background
-                depth_img_with_patch[
-                    np.all(self.binarized_patch_mask == 0, axis=-1)
-                ] = depth_img[np.all(self.binarized_patch_mask == 0, axis=-1)][:, ::-1]
+                depth_img = np.clip(
+                    depth_img,
+                    self.estimator.clip_values[0],
+                    self.estimator.clip_values[1],
+                )
 
                 img_with_patch = np.concatenate(
-                    (depth_img_with_patch, rgb_img_with_patch), axis=-1
+                    (depth_img[:, :, ::-1], rgb_img_with_patch), axis=-1
                 )
 
-            x_patch.append(img_with_patch[:, :, ::-1] / 255.0)  # convert back to RGB
-        x_patch = np.asarray(x_patch)
+            x_patch.append(img_with_patch[:, :, ::-1])  # convert back to RGB
+        x_patch = np.asarray(x_patch)  # (B,H,W,3)
 
         # 1) crop images: not used.
         if self.crop_range[0] != 0 and self.crop_range[1] != 0:
@@ -571,8 +578,8 @@ class CARLADapricotPatch(RobustDPatch):
 
         # 3) adjust brightness:
         brightness = random.uniform(*self.brightness_range)
-        x_copy = brightness * x_copy
-        x_patch = brightness * x_patch
+        x_copy[..., :3] = brightness * x_copy[..., :3]
+        x_patch[..., :3] = brightness * x_patch[..., :3]
 
         transformations.update({"brightness": brightness})
 
@@ -639,6 +646,10 @@ class CARLADapricotPatch(RobustDPatch):
         if x.shape[0] > 1:
             log.info("To perform per-example patch attack, batch size must be 1")
         assert x.shape[-1] in [3, 6], "x must have either 3 or 6 color channels"
+        if x.shape[-1] == 6 and self.sample_size != 1:
+            raise ValueError(
+                "Sample size must be 1 for multimodality input because expectation over transformation cannot be applied to depth perturbation"
+            )
 
         num_imgs = x.shape[0]
         attacked_images = []
@@ -646,25 +657,25 @@ class CARLADapricotPatch(RobustDPatch):
         for i in range(num_imgs):
 
             if x.shape[-1] == 3:
-                rgb_img = (x[i] * 255.0).astype("float32")
+                rgb_img = x[i].astype("float32")
             else:
-                rgb_img = (x[i][:, :, :3] * 255.0).astype("float32")
-                depth_img = (x[i][:, :, 3:] * 255.0).astype("float32")
+                rgb_img = x[i, :, :, :3].astype("float32")  # (H,W,3)
+                depth_img = x[i, :, :, 3:].astype("float32")  # (H,W,3)
 
-            gs_coords = y_patch_metadata[i]["gs_coords"]
+            gs_coords = y_patch_metadata[i]["gs_coords"]  # (4,2)
             patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
             patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
             self.patch_shape = (
                 patch_height,
                 patch_width,
-                x.shape[-1],
+                3,
             )
 
             patch_geometric_shape = y_patch_metadata[i].get("shape", "rect")
             self.patch_geometric_shape = str(patch_geometric_shape)
 
             # this masked to embed patch into the background in the event of occlusion
-            self.binarized_patch_mask = y_patch_metadata[i]["mask"]
+            self.binarized_patch_mask = y_patch_metadata[i]["mask"]  # (H,W,3)
 
             # get colorchecker information from ground truth and scene
             self.cc_gt = y_patch_metadata[i].get("cc_ground_truth", None)
@@ -680,25 +691,11 @@ class CARLADapricotPatch(RobustDPatch):
 
             # self._patch needs to be re-initialized with the correct shape
             if self.patch_base_image is not None:
-                self.patch_base = self.create_initial_image(
+                self._patch, self.patch_mask = self.create_initial_image(
                     (patch_width, patch_height),
+                    self.hsv_lower_bound,
+                    self.hsv_upper_bound,
                 )
-
-                if x.shape[-1] == 3:
-                    self._patch = self.patch_base
-                else:
-                    self._patch = np.dstack(
-                        (
-                            self.patch_base,
-                            np.random.randint(0, 255, size=self.patch_base.shape)
-                            / 255
-                            * (
-                                self.estimator.clip_values[1]
-                                - self.estimator.clip_values[0]
-                            )
-                            + self.estimator.clip_values[0],
-                        )
-                    )
             else:
                 self._patch = (
                     np.random.randint(0, 255, size=self.patch_shape)
@@ -706,6 +703,7 @@ class CARLADapricotPatch(RobustDPatch):
                     * (self.estimator.clip_values[1] - self.estimator.clip_values[0])
                     + self.estimator.clip_values[0]
                 )
+                self.patch_mask = np.ones_like(self._patch)
 
             self._patch = np.clip(
                 self._patch,
@@ -715,55 +713,35 @@ class CARLADapricotPatch(RobustDPatch):
 
             self.gs_coords = [gs_coords]
 
-            if (
-                self.patch_shape[-1] == 6
-            ):  # initialize depth patch with average depth value of green screen
+            # initialize depth variables
+            if x.shape[-1] == 6:
 
-                # check if depth image is log-depth, which is the case for Eval 5 Carla OD dataset
-                if (
-                    x.shape[-1] == 6
-                    and np.all(x[i, :, :, 3] == x[i, :, :, 4])
-                    and np.all(x[i, :, :, 3] == x[i, :, :, 5])
+                if np.all(x[i, :, :, 3] == x[i, :, :, 4]) and np.all(
+                    x[i, :, :, 3] == x[i, :, :, 5]
                 ):
-                    self.depth_type = "log"
-                    if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
-                        avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
-                    else:
-                        avg_patch_depth = get_avg_depth_value(x[i][:, :, 3], gs_coords)
-
-                    avg_patch_depth_meters = log_to_linear(avg_patch_depth)
-                    max_depth_meters = avg_patch_depth_meters + self.depth_delta_meters
-                    min_depth_meters = avg_patch_depth_meters - self.depth_delta_meters
-                    self.max_depth = linear_to_log(max_depth_meters)
-                    self.min_depth = linear_to_log(min_depth_meters)
-                    self._patch[:, :, 3:] = avg_patch_depth
-
-                # depth in the Eval 6 Carla OD dataset is linear rather than log
+                    depth_linear = log_to_linear(x[i, :, :, 3:])
+                    self.max_depth = np.minimum(
+                        1.0, linear_to_log(depth_linear + self.depth_delta_meters)
+                    )
+                    self.min_depth = np.maximum(
+                        0.0, linear_to_log(depth_linear - self.depth_delta_meters)
+                    )
                 else:
-                    self.depth_type = "linear"
-                    if "avg_patch_depth" in y_patch_metadata[i]:  # for Eval 6 metadata
-                        avg_patch_depth = y_patch_metadata[i]["avg_patch_depth"]
-                    else:
-                        raise ValueError(
-                            "Dataset does not contain patch metadata for average patch depth"
-                        )
+                    depth_linear = rgb_depth_to_linear(
+                        x[i, :, :, 3], x[i, :, :, 4], x[i, :, :, 5]
+                    )
+                    self.max_depth = np.minimum(
+                        1000.0, depth_linear + self.depth_delta_meters
+                    )
+                    self.min_depth = np.maximum(
+                        0.0, depth_linear - self.depth_delta_meters
+                    )
 
-                    max_depth = avg_patch_depth + self.depth_delta_meters
-                    min_depth = avg_patch_depth - self.depth_delta_meters
-                    (
-                        self.max_depth_r,
-                        self.max_depth_g,
-                        self.max_depth_b,
-                    ) = linear_depth_to_rgb(max_depth)
-                    (
-                        self.min_depth_r,
-                        self.min_depth_g,
-                        self.min_depth_b,
-                    ) = linear_depth_to_rgb(min_depth)
-                    rv, gv, bv = linear_depth_to_rgb(avg_patch_depth)
-                    self._patch[:, :, 3] = rv
-                    self._patch[:, :, 4] = gv
-                    self._patch[:, :, 5] = bv
+                self.depth_perturbation = np.zeros(
+                    (1, *x.shape[1:3], 3), dtype=np.float32
+                )  # (1,H,W,3)
+                self.foreground = np.all(self.binarized_patch_mask == 255, axis=-1)
+                self.foreground = np.expand_dims(self.foreground, (-1, 0))  # (1,H,W,1)
 
             if y is None:
                 patch = self.inner_generate(
@@ -774,48 +752,43 @@ class CARLADapricotPatch(RobustDPatch):
                     np.expand_dims(x[i], axis=0), y=[y[i]]
                 )  # targeted attack
 
-            # apply patch using DAPRICOT transform to RGB channels only
-            # insert_patch() uses BGR color ordering for input and output
-            rgb_img_with_patch = insert_patch(
-                self.gs_coords[0],
-                rgb_img[:, :, ::-1],
-                patch[:, :, :3] * 255.0,
-                self.patch_geometric_shape,
-                cc_gt=self.cc_gt,
-                cc_scene=self.cc_scene,
-                apply_realistic_effects=self.apply_realistic_effects,
-                rgb=True,
+            rgb_img_with_patch = (
+                insert_patch(
+                    self.gs_coords[0],
+                    rgb_img[:, :, ::-1] * 255.0,
+                    patch * 255.0,
+                    self.patch_geometric_shape,
+                    cc_gt=self.cc_gt,
+                    cc_scene=self.cc_scene,
+                    apply_realistic_effects=self.apply_realistic_effects,
+                    rgb=True,
+                )
+                / 255.0
             )
 
             # embed patch into background
             rgb_img_with_patch[
                 np.all(self.binarized_patch_mask == 0, axis=-1)
-            ] = rgb_img[np.all(self.binarized_patch_mask == 0, axis=-1)][:, ::-1]
+            ] = rgb_img[np.all(self.binarized_patch_mask == 0, axis=-1)][
+                :, ::-1
+            ]  # (H,W,3)
 
             if x.shape[-1] == 3:
                 img_with_patch = rgb_img_with_patch.copy()
             else:
-                # apply patch using DAPRICOT transform to Depth channels only
-                # insert_patch() uses BGR color ordering for input and output
-                depth_img_with_patch = insert_patch(
-                    self.gs_coords[0],
-                    depth_img[:, :, ::-1],
-                    patch[:, :, 3:] * 255.0,
-                    self.patch_geometric_shape,
-                    cc_gt=self.cc_gt,
-                    cc_scene=self.cc_scene,
-                    apply_realistic_effects=False,
-                    rgb=False,
-                )
+                depth_img = (
+                    depth_img + self.depth_perturbation[0] * self.foreground[0]
+                )  # (H,W,3)
 
-                # embed patch into background
-                depth_img_with_patch[
-                    np.all(self.binarized_patch_mask == 0, axis=-1)
-                ] = depth_img[np.all(self.binarized_patch_mask == 0, axis=-1)][:, ::-1]
+                depth_img = np.clip(
+                    depth_img,
+                    self.estimator.clip_values[0],
+                    self.estimator.clip_values[1],
+                )
 
                 img_with_patch = np.concatenate(
-                    (depth_img_with_patch, rgb_img_with_patch), axis=-1
+                    (depth_img[:, :, ::-1], rgb_img_with_patch), axis=-1
                 )
-            attacked_images.append(img_with_patch[:, :, ::-1] / 255.0)
+            attacked_images.append(img_with_patch[:, :, ::-1])
 
-        return np.array(attacked_images)
+        return np.array(attacked_images)  # (B,H,W,3)
