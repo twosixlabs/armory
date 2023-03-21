@@ -89,19 +89,25 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             if images.shape[-1] == 6:
                 depth_grads = self.depth_perturbation.grad
-                grads_linear = rgb_depth_to_linear(
-                    depth_grads[:, 0, :, :],
-                    depth_grads[:, 1, :, :],
-                    depth_grads[:, 2, :, :],
-                )
-                depth_linear = rgb_depth_to_linear(
-                    self.depth_perturbation[:, 0, :, :],
-                    self.depth_perturbation[:, 1, :, :],
-                    self.depth_perturbation[:, 2, :, :],
-                )
-                depth_linear = (
-                    depth_linear + grads_linear.sign() * self.learning_rate_depth
-                )
+                if self.depth_type == "log":
+                    depth_log = (
+                        self.depth_perturbation
+                        + depth_grads.sign() * self.learning_rate_depth
+                    )
+                else:
+                    grads_linear = rgb_depth_to_linear(
+                        depth_grads[:, 0, :, :],
+                        depth_grads[:, 1, :, :],
+                        depth_grads[:, 2, :, :],
+                    )
+                    depth_linear = rgb_depth_to_linear(
+                        self.depth_perturbation[:, 0, :, :],
+                        self.depth_perturbation[:, 1, :, :],
+                        self.depth_perturbation[:, 2, :, :],
+                    )
+                    depth_linear = (
+                        depth_linear + grads_linear.sign() * self.learning_rate_depth
+                    )
 
             with torch.no_grad():
                 self._patch[:] = torch.clamp(
@@ -112,19 +118,29 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
                 if images.shape[-1] == 6:
                     images_depth = torch.permute(images[:, :, :, 3:], (0, 3, 1, 2))
-                    images_depth_linear = rgb_depth_to_linear(
-                        images_depth[:, 0, :, :],
-                        images_depth[:, 1, :, :],
-                        images_depth[:, 2, :, :],
-                    )
-                    depth_linear = torch.clamp(
-                        images_depth_linear + depth_linear,
-                        min=self.min_depth,
-                        max=self.max_depth,
-                    )
-                    depth_r, depth_g, depth_b = linear_depth_to_rgb(depth_linear)
-                    perturbed_images = torch.stack([depth_r, depth_g, depth_b], dim=1)
-                    self.depth_perturbation[:] = perturbed_images - images_depth
+                    if self.depth_type == "log":
+                        perturbed_images = torch.clamp(
+                            images_depth + depth_log,
+                            min=self.min_depth,
+                            max=self.max_depth,
+                        )
+                        self.depth_perturbation[:] = perturbed_images - images_depth
+                    else:
+                        images_depth_linear = rgb_depth_to_linear(
+                            images_depth[:, 0, :, :],
+                            images_depth[:, 1, :, :],
+                            images_depth[:, 2, :, :],
+                        )
+                        depth_linear = torch.clamp(
+                            images_depth_linear + depth_linear,
+                            min=self.min_depth,
+                            max=self.max_depth,
+                        )
+                        depth_r, depth_g, depth_b = linear_depth_to_rgb(depth_linear)
+                        perturbed_images = torch.stack(
+                            [depth_r, depth_g, depth_b], dim=1
+                        )
+                        self.depth_perturbation[:] = perturbed_images - images_depth
 
         else:
             raise ValueError(
@@ -400,12 +416,14 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                 if np.all(x[i, :, :, 3] == x[i, :, :, 4]) and np.all(
                     x[i, :, :, 3] == x[i, :, :, 5]
                 ):
+                    self.depth_type = "log"
                     depth_linear = log_to_linear(x[i, :, :, 3:])
                     max_depth = linear_to_log(depth_linear + self.depth_delta_meters)
                     min_depth = linear_to_log(depth_linear - self.depth_delta_meters)
-                    max_depth = np.minimum(1.0, max_depth)
-                    min_depth = np.maximum(0.0, min_depth)
+                    max_depth = np.transpose(np.minimum(1.0, max_depth), (2, 0, 1))
+                    min_depth = np.transpose(np.maximum(0.0, min_depth), (2, 0, 1))
                 else:
+                    self.depth_type = "linear"
                     depth_linear = rgb_depth_to_linear(
                         x[i, :, :, 3], x[i, :, :, 4], x[i, :, :, 5]
                     )
