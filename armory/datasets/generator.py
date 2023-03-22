@@ -128,9 +128,6 @@ class ArmoryDataGenerator:
             # https://github.com/tensorflow/datasets/blob/v4.7.0/tensorflow_datasets/core/dataset_utils.py#L141-L176
             raise NotImplementedError(f"framework {framework}")
 
-        if info.metadata is None:
-            info.metadata = tfds.core.MetadataDict()
-
         self._set_params(
             iterator=iterator,
             split=split,
@@ -144,7 +141,7 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
-            metadata=info.metadata,
+            metadata=info.metadata if info.metadata else tfds.core.MetadataDict(),
         )
 
     def _set_params(self, **kwargs):
