@@ -141,6 +141,7 @@ class ArmoryDataGenerator:
             shuffle_elements=shuffle_elements,
             element_filter=element_filter,
             element_map=element_map,
+            metadata=info.metadata if info.metadata else tfds.core.MetadataDict(),
         )
 
     def _set_params(self, **kwargs):

@@ -10,6 +10,8 @@ import numpy as np
 from armory.instrument.export import ExportMeter, VideoTrackingExporter
 from armory.scenarios.scenario import Scenario
 
+DEFAULT_FRAME_RATE = 10
+
 
 class CarlaVideoTracking(Scenario):
     def __init__(self, *args, **kwargs):
@@ -24,9 +26,23 @@ class CarlaVideoTracking(Scenario):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_test_dataset(test_split_default="dev")
 
+    def _split_batches_into_list(self, x: dict) -> list:
+        """Fix for tfdsv4 upgrade - separate batches into list"""
+        if not isinstance(x, dict):
+            return x
+        expected_batches = list(x.values())[0].shape[0]
+        if not all(
+            isinstance(x[k], np.ndarray) and x[k].shape[0] == expected_batches
+            for k in x
+        ):
+            raise ValueError(
+                f"Expected all values to have the same length (batches), but got {x}"
+            )
+        return [dict((k, v[i]) for k, v in x.items()) for i in range(expected_batches)]
+
     def next(self):
         super().next()
-        self.y, self.y_patch_metadata = self.y
+        self.y, self.y_patch_metadata = map(self._split_batches_into_list, self.y)
         self.probe.update(y=self.y, y_patch_metadata=self.y_patch_metadata)
 
     def run_benign(self):
@@ -57,7 +73,7 @@ class CarlaVideoTracking(Scenario):
             x_adv = self.attack.generate(
                 x=x,
                 y=y_target,
-                y_patch_metadata=[self.y_patch_metadata],
+                y_patch_metadata=self.y_patch_metadata,
                 **self.generate_kwargs,
             )
 
@@ -76,7 +92,7 @@ class CarlaVideoTracking(Scenario):
     def _load_sample_exporter(self):
         return VideoTrackingExporter(
             self.export_dir,
-            frame_rate=self.test_dataset.context.frame_rate,
+            frame_rate=self.test_dataset.metadata.get("frame_rate", DEFAULT_FRAME_RATE),
         )
 
     def load_export_meters(self):
@@ -86,7 +102,7 @@ class CarlaVideoTracking(Scenario):
         # Add export meters that export examples with boxes overlaid
         self.sample_exporter_with_boxes = VideoTrackingExporter(
             self.export_dir,
-            frame_rate=self.test_dataset.context.frame_rate,
+            frame_rate=self.test_dataset.metadata.get("frame_rate", DEFAULT_FRAME_RATE),
             default_export_kwargs={"with_boxes": True},
         )
         for probe_data, probe_pred in [("x", "y_pred"), ("x_adv", "y_pred_adv")]:
