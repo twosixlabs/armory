@@ -4,14 +4,12 @@ from typing import Optional
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
-from armory.art_experimental.attacks.carla_obj_det_utils import (
-    PatchMask
-)
 import cv2
 import numpy as np
 import torch
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
+    PatchMask,
     get_avg_depth_value,
     linear_depth_to_rgb,
     linear_to_log,
@@ -378,7 +376,9 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             # Add patch mask to the image mask
             if self.patch_mask is not None:
                 orig_patch_mask = self.binarized_patch_mask.copy()
-                projected_mask = self.patch_mask.project(self.binarized_patch_mask.shape, gs_coords, as_bool=True)
+                projected_mask = self.patch_mask.project(
+                    self.binarized_patch_mask.shape, gs_coords, as_bool=True
+                )
                 self.binarized_patch_mask *= projected_mask
 
             # self._patch needs to be re-initialized with the correct shape
@@ -478,7 +478,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                     projected_mask=projected_mask,
                     gs_coords=gs_coords,
                     patch_init=patch_init,
-                    orig_patch_mask=orig_patch_mask
+                    orig_patch_mask=orig_patch_mask,
                 )
 
             patched_image = np.clip(
