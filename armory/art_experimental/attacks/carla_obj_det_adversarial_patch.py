@@ -4,6 +4,9 @@ from typing import Optional
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
     AdversarialPatchPyTorch,
 )
+from armory.art_experimental.attacks.carla_obj_det_utils import (
+    PatchMask
+)
 import cv2
 import numpy as np
 import torch
@@ -31,6 +34,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         self.min_depth_b = None
 
         self.patch_base_image = kwargs.pop("patch_base_image", None)
+        self.patch_mask = PatchMask.from_kwargs(kwargs)
 
         super().__init__(estimator=estimator, **kwargs)
 
@@ -371,6 +375,12 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             # Use this mask to embed patch into the background in the event of occlusion
             self.binarized_patch_mask = y_patch_metadata[i]["mask"]
 
+            # Add patch mask to the image mask
+            if self.patch_mask is not None:
+                orig_patch_mask = self.binarized_patch_mask.copy()
+                projected_mask = self.patch_mask.project(self.binarized_patch_mask.shape, gs_coords, as_bool=True)
+                self.binarized_patch_mask *= projected_mask
+
             # self._patch needs to be re-initialized with the correct shape
             if self.patch_base_image is not None:
                 self.patch_base = self.create_initial_image(
@@ -460,6 +470,16 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             patched_image[np.all(self.binarized_patch_mask == 0, axis=-1)] = x[i][
                 np.all(self.binarized_patch_mask == 0, axis=-1)
             ]
+
+            # Embed patch mask fill into masked region
+            if self.patch_mask is not None:
+                patched_image = self.patch_mask.fill_masked_region(
+                    patched_image=patched_image,
+                    projected_mask=projected_mask,
+                    gs_coords=gs_coords,
+                    patch_init=patch_init,
+                    orig_patch_mask=orig_patch_mask
+                )
 
             patched_image = np.clip(
                 patched_image,
