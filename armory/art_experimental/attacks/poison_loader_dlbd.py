@@ -33,11 +33,19 @@ def poison_loader_dlbd(**kwargs):
         size = tuple(size)
         mode = kwargs.get("mode", "RGB")
         blend = kwargs.get("blend", 0.6)
-        base_img_size_x = kwargs.get("base_img_size_x", 48)
-        base_img_size_y = kwargs.get("base_img_size_y", 48)
+        
         channels_first = kwargs.get("channels_first", False)
-        x_shift = kwargs.get("x_shift", (base_img_size_x - size[0]) // 2)
-        y_shift = kwargs.get("y_shift", (base_img_size_y - size[1]) // 2)
+        if "x_shift" in kwargs and "y_shift" in kwargs:
+            x_shift = kwargs.get("x_shift")
+            y_shift = kwargs.get("y_shift")
+        else:
+            # default to center of image
+            base_img_size_x = kwargs.get("base_img_size_x")
+            base_img_size_y = kwargs.get("base_img_size_y")
+            if base_img_size_x is None or base_img_size_y is None:
+                raise ValueError("Attack config should specify either x_shift and y_shift, or base_img_size_x and base_img_size_y ")
+            x_shift = (base_img_size_x - size[0]) // 2
+            y_shift = (base_img_size_y - size[1]) // 2
 
         def mod(x):
             return perturbations.insert_image(
