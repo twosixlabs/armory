@@ -11,7 +11,6 @@ import shutil
 
 from armory import paths
 
-
 LABELS = [
     "airplane",
     "airport",

@@ -20,13 +20,14 @@
 # be considered redundant, but I don't expect the near-duplication to be particularly
 # costly.
 
-import sys
 import datetime
-import loguru
-import logging
-from typing import List
 import functools
+import logging
 import os
+import sys
+from typing import List
+
+import loguru
 
 log = loguru.logger
 

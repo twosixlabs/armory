@@ -2,17 +2,18 @@
 Modified ByteTrack (https://arxiv.org/pdf/2110.06864.pdf) by replacing YOLOX object
 detector with a PyTorch Faster-RCNN Resnet50-FPN object detector
 """
-from typing import Optional, List
+import dataclasses
+from typing import List, Optional
 
-import numpy as np
 from art.estimators.object_detection import PyTorchFasterRCNN
+import numpy as np
 import torch
 from torchvision import models
-import dataclasses
-
-from yolox.tracker.byte_tracker import (
+from yolox.tracker.byte_tracker import (  # clone from https://github.com/ifzhang/ByteTrack
     BYTETracker,
-)  # clone from https://github.com/ifzhang/ByteTrack
+)
+
+from armory.data.adversarial_datasets import mot_array_to_coco
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -83,7 +84,7 @@ class PyTorchTracker(PyTorchFasterRCNN):
                  - scores [N]: the scores or each prediction.
         """
         return super().predict(x, **kwargs)
-    
+
     def mot_array_to_coco(batch):
         """
         Map from 3D array (batch_size x detections x 9) to extended coco format

@@ -4,11 +4,11 @@ Multimodal image classification, currently designed for So2Sat dataset
 
 import numpy as np
 
-from armory.logs import log
-from armory.instrument import Meter
-from armory.scenarios.scenario import Scenario
 from armory import metrics
+from armory.instrument import Meter
 from armory.instrument.export import So2SatExporter
+from armory.logs import log
+from armory.scenarios.scenario import Scenario
 
 
 class So2SatClassification(Scenario):
@@ -28,6 +28,21 @@ class So2SatClassification(Scenario):
         if self.perturbation_metrics is not None:
             if isinstance(self.perturbation_metrics, str):
                 self.perturbation_metrics = [self.perturbation_metrics]
+
+        # TFDS allows for two options for so2sat dset builder_config param: 'all' and 'rgb', but
+        # So2SatClassification scenario requires 'all'
+        for t in ["train", "test"]:
+            dset_subconfig = self.config["dataset"].get(t)
+            if dset_subconfig is not None:
+                dset_tfds_builder_config = (
+                    self.config["dataset"].get(t).get("config", "all")
+                )
+                if dset_tfds_builder_config != "all":
+                    raise ValueError(
+                        "TFDS so2sat config options are ('all', 'rgb'), but So2SatClassification "
+                        "requires 'all'."
+                    )
+                self.config["dataset"][t]["config"] = dset_tfds_builder_config
 
     def load_attack(self):
         attack_config = self.config["attack"]

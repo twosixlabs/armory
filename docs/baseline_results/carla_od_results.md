@@ -30,7 +30,7 @@ Find reference baseline configurations [here](https://github.com/twosixlabs/armo
 
 ## CARLA Overhead OD Dataset
 
-Dev data results obtained using Armory 0.16.0
+Dev data results obtained using Armory 0.16.0, Test data results obtained using Armory 0.16.1
 
 Single Modality (RGB) Object Detection
 
@@ -39,7 +39,7 @@ Single Modality (RGB) Object Detection
 | Dev  | no       | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.64        | 0.36                        | 1.9                              | 0.02                            | 0.62                        |  0.16            | 0.64                             | 31.0                                 | 0.009                               | 0.35                            | 20        |
 | Dev  | no       | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.64        | 0.36                        | 1.9                              | 0.02                            | 0.62                        |  0.42            | 0.43                             | 12.0                                 | 0.009                               | 0.56                            | 20        |
 | Dev  | yes      | Robust DPatch     | learning_rate=0.002, max_iter=2000 | 0.51        | 0.44                        | 3.1                              | 0.02                            | 0.54                        |  0.41            | 0.52                             | 9.8                                  | 0.01                                | 0.47                            | 20        |
-
+| Test | no       | Adversarial Patch | learning_rate=0.003, max_iter=1000 | 0.60        | 0.42                        | 3.6                              | 0.03                            | 0.55                        |  0.04            | 0.81                             | 54.1                                 | 0.0                                 | 0.19                            | 15        |
 
 Multimodality (RGB+depth) Object Detection
 
@@ -49,6 +49,7 @@ Multimodality (RGB+depth) Object Detection
 | Dev  | yes      | Adversarial Patch | depth_delta_meters=0.03, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.67        | 0.34                        | 0.9                              | 0.02                            | 0.64                        | 0.56             | 0.48                             | 1.1                                  | 0.02                                | 0.50                            | 20        |
 | Dev  | no       | Robust DPatch     | depth_delta_meters=0.03, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.63        | 0.38                        | 0.7                              | 0.02                            | 0.61                        | 0.54             | 0.42                             | 0.65                                 | 0.02                                | 0.56                            | 20        |
 | Dev  | yes      | Robust DPatch     | depth_delta_meters=0.03, learning_rate=0.002, learning_rate_depth=0.0001, max_iter=2000 | 0.67        | 0.34                        | 0.9                              | 0.02                            | 0.64                        | 0.65             | 0.38                             | 0.9                                  | 0.02                                | 0.60                            | 20        |
+| Test | no       | Adversarial Patch | depth_delta_meters=0.03, learning_rate=0.003, learning_rate_depth=0.0001, max_iter=1000 | 0.58        | 0.39                        | 0.8                              | 0.03                            | 0.58                        | 0.19             | 0.72                             | 15.8                                 | 0.01                                | 0.23                            | 15        |
 
 
 Defended results not available for Adversarial Patch attack against single modality because JPEG Compression defense is not implemented in PyTorch and so is not fully differentiable

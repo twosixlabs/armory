@@ -11,35 +11,33 @@ The 'downloads' subdirectory under <dataset_dir> is reserved for caching.
 import json
 import os
 import re
-from typing import Callable, Union, Tuple, List
+from typing import Callable, List, Tuple, Union
 
+from PIL import Image, ImageOps
+from art.data_generators import DataGenerator
 import numpy as np
-from armory.logs import log
-from PIL import ImageOps, Image
-
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from art.data_generators import DataGenerator
 
-from armory.data.utils import (
-    download_verify_dataset_cache,
-    _read_validate_scenario_config,
-    add_checksums_dir,
-)
 from armory import paths
-from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
-from armory.data.librispeech import librispeech_full as lf  # noqa: F401
-from armory.data.resisc45 import resisc45_split  # noqa: F401
-from armory.data.resisc10 import resisc10_poison  # noqa: F401
-from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
-from armory.data.xview import xview as xv  # noqa: F401
-from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
-from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.carla_object_detection import carla_obj_det_train as codt  # noqa: F401
 from armory.data.carla_overhead_object_detection import (  # noqa: F401
     carla_over_obj_det_train as coodt,
 )
-
+from armory.data.digit import digit as digit_tfds  # noqa: F401
+from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
+from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
+from armory.data.librispeech import librispeech_full as lf  # noqa: F401
+from armory.data.resisc10 import resisc10_poison  # noqa: F401
+from armory.data.resisc45 import resisc45_split  # noqa: F401
+from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
+from armory.data.utils import (
+    _read_validate_scenario_config,
+    add_checksums_dir,
+    download_verify_dataset_cache,
+)
+from armory.data.xview import xview as xv  # noqa: F401
+from armory.logs import log
 
 os.environ["KMP_WARNINGS"] = "0"
 

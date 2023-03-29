@@ -1,9 +1,10 @@
 """carla_video_tracking_dev dataset."""
 
-import os
 import glob
-import numpy as np
+import os
+
 from PIL import Image
+import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 

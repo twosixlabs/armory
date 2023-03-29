@@ -1,11 +1,11 @@
 """carla_obj_det_dev dataset."""
 
 import collections
+from copy import deepcopy
 import json
 import os
-from copy import deepcopy
-import numpy as np
 
+import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 

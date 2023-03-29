@@ -1,7 +1,6 @@
+from art.attacks.poisoning import PoisoningAttackBackdoor
 import librosa
 import numpy as np
-
-from art.attacks.poisoning import PoisoningAttackBackdoor
 
 from armory.utils import triggers
 
@@ -61,6 +60,7 @@ class CacheTrigger:
             raise ValueError("Shift + Backdoor length is greater than audio's length.")
 
         audio[shift : shift + bd_length] += self.scaled_trigger
+        audio = np.clip(audio, -1.0, 1.0)
         return audio.astype(original_dtype)
 
 

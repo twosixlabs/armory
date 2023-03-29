@@ -1,15 +1,16 @@
-import os
 import abc
-import numpy as np
-import ffmpeg
-import pickle
-from PIL import Image, ImageDraw
-from scipy.io import wavfile
-import json
 from copy import deepcopy
+import json
+import os
+import pickle
 
-from armory.logs import log
+from PIL import Image, ImageDraw
+import ffmpeg
+import numpy as np
+from scipy.io import wavfile
+
 from armory.instrument import Meter
+from armory.logs import log
 
 
 class SampleExporter:
@@ -97,7 +98,9 @@ class ImageClassificationExporter(SampleExporter):
             x_i_mode = x[..., :3]
         else:
             raise ValueError(f"Expected 1, 3, or 6 channels, found {x.shape[-1]}")
-        image = Image.fromarray(np.uint8(np.clip(x_i_mode, 0.0, 1.0) * 255.0), mode)
+        image = Image.fromarray(
+            np.uint8(np.round(np.clip(x_i_mode, 0.0, 1.0) * 255.0)), mode
+        )
         return image
 
 
@@ -309,7 +312,7 @@ class VideoClassificationExporter(SampleExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             pil_frames.append(image)
         return pil_frames
@@ -396,8 +399,12 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         :param x: floating point np array of shape (num_frames, H, W, C=3) in [0.0, 1.0]
         :param with_boxes: boolean indicating whether to display bounding boxes
-        :param y: ground-truth label dict
-        :param y_pred: predicted label dict
+        :param y: either (1) a dict with "boxes" key mapping to dict with keys for each frame index,
+                  each frame index key mapping to a numpy array of shape (num_boxes_in_frame, 4) or
+                  (2) coco-formatted List[dict] of length # total boxes across all frames, where
+                  each dict has an "image_id" key and a "bbox" key mapping to a sequence of
+                  [x1, y1, width, height]
+        :param y_pred: " "
         :return: List[PIL.Image.Image] of length equal to num_frames
         """
         if not with_boxes:
@@ -410,24 +417,36 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         pil_frames = []
         for n_frame, x_frame in enumerate(x):
-            pixels = np.uint8(np.clip(x_frame, 0.0, 1.0) * 255.0)
+            pixels = np.uint8(np.round(np.clip(x_frame, 0.0, 1.0) * 255.0))
             image = Image.fromarray(pixels, "RGB")
             box_layer = ImageDraw.Draw(image)
 
-            if y is not None:
-                bboxes_true = y["boxes"][n_frame].astype("float32")
-                if bboxes_true.ndim == 1:
-                    box_layer.rectangle(bboxes_true, outline="red", width=2)
-                else:
-                    for bbox_true in bboxes_true:
-                        box_layer.rectangle(bbox_true, outline="red", width=2)
-            if y_pred is not None:
-                bboxes_pred = y_pred["boxes"][n_frame]
-                if bboxes_pred.ndim == 1:
-                    box_layer.rectangle(bboxes_pred, outline="white", width=2)
-                else:
-                    for bbox_pred in bboxes_pred:
-                        box_layer.rectangle(bbox_pred, outline="white", width=2)
+            for annotation, box_color in zip([y, y_pred], ["red", "white"]):
+                if annotation is not None:
+                    if isinstance(annotation, dict):
+                        bboxes_true = annotation["boxes"][n_frame].astype("float32")
+                        if bboxes_true.ndim == 1:
+                            box_layer.rectangle(bboxes_true, outline=box_color, width=2)
+                        else:
+                            for bbox_true in bboxes_true:
+                                box_layer.rectangle(
+                                    bbox_true, outline=box_color, width=2
+                                )
+                    elif isinstance(annotation, list):
+                        bboxes_true = [
+                            box_anno["bbox"]
+                            for box_anno in annotation
+                            if box_anno["image_id"] == n_frame
+                        ]
+                        for bbox_true in bboxes_true:
+                            box_x, box_y, box_width, box_height = bbox_true
+                            box_layer.rectangle(
+                                (box_x, box_y, box_x + box_width, box_y + box_height),
+                                outline=box_color,
+                                width=2,
+                            )
+                    else:
+                        raise TypeError(f"Found unexpected type {type(annotation)}")
             pil_frames.append(image)
 
         return pil_frames
@@ -533,7 +552,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vh.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vh - sar_min)), "L")
+            return Image.fromarray(
+                np.uint8(np.round(sar_scale * (x_vh - sar_min))), "L"
+            )
 
         elif modality == "vv":
             x_vv = np.log10(
@@ -549,7 +570,9 @@ class So2SatExporter(SampleExporter):
             sar_max = x_vv.max()
             sar_scale = 255.0 / (sar_max - sar_min)
 
-            return Image.fromarray(np.uint8(sar_scale * (x_vv - sar_min)), "L")
+            return Image.fromarray(
+                np.uint8(np.round(sar_scale * (x_vv - sar_min))), "L"
+            )
 
         elif modality == "eo":
             eo_images = []
@@ -559,7 +582,10 @@ class So2SatExporter(SampleExporter):
             eo_scale = 255.0 / (eo_max - eo_min)
             for c in range(4, 14):
                 eo = Image.fromarray(
-                    np.uint8(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min)), "L"
+                    np.uint8(
+                        np.round(eo_scale * (np.clip(x[..., c], 0.0, 1.0) - eo_min))
+                    ),
+                    "L",
                 )
                 eo_images.append(eo)
 

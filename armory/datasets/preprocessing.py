@@ -42,12 +42,37 @@ def supervised_image_classification(element):
 mnist = register(supervised_image_classification, "mnist")
 cifar10 = register(supervised_image_classification, "cifar10")
 cifar100 = register(supervised_image_classification, "cifar100")
+imagenette = register(supervised_image_classification, "imagenette")
 resisc45 = register(supervised_image_classification, "resisc45")
+
+
+@register
+def so2sat(element):
+    # This preprocessing function assumes a so2sat builder_config of 'all' (i.e. multimodal)
+    # as opposed to 'rgb'
+    sentinel_1 = element["sentinel1"]
+    sentinel_2 = element["sentinel2"]
+
+    sar = sentinel_1[..., :4]
+    sar /= 128.0
+
+    eo = sentinel_2
+    eo /= 4.0
+    sar_eo_combined = tf.concat([sar, eo], axis=-1)
+    return sar_eo_combined, element["label"]
 
 
 @register
 def digit(element):
     return (audio_to_canon(element["audio"]), element["label"])
+
+
+@register
+def carla_obj_det_test(element, modality="rgb"):
+    return carla_multimodal_obj_det(element["image"], modality=modality), (
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
+        element["patch_metadata"],
+    )
 
 
 @register
@@ -59,6 +84,13 @@ def carla_obj_det_dev(element, modality="rgb"):
 
 
 @register
+def carla_obj_det_train(element, modality="rgb"):
+    return carla_multimodal_obj_det(
+        element["image"], modality=modality
+    ), convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
+
+
+@register
 def carla_over_obj_det_dev(element, modality="rgb"):
     return carla_multimodal_obj_det(element["image"], modality=modality), (
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"]),
@@ -66,10 +98,58 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
+def carla_video_tracking_preprocess(x, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        x = x[:max_frames, :]
+    x = tf.cast(x, tf.float32) / 255.0
+    return x
+
+
+def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        y = y[:max_frames, :]
+        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
+    # Update labels
+    y = {"boxes": y}
+    y_patch_metadata = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
+        for k, v in y_patch_metadata.items()
+    }
+    return y, y_patch_metadata
+
+
+def carla_video_tracking(element, max_frames=None):
+    return carla_video_tracking_preprocess(
+        element["video"],
+        max_frames=max_frames,
+    ), carla_video_tracking_preprocess_labels(
+        element["bboxes"], element["patch_metadata"], max_frames=max_frames
+    )
+
+
+carla_video_tracking_dev = register(carla_video_tracking, "carla_video_tracking_dev")
+carla_video_tracking_test = register(carla_video_tracking, "carla_video_tracking_test")
+
+
+@register
+def carla_over_obj_det_train(element, modality="rgb"):
+    return carla_multimodal_obj_det(
+        element["image"], modality=modality
+    ), convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
+
+
 @register
 def carla_multi_object_tracking_dev(element, coco_format=True):
     breakpoint()
-    return carla_multi_object_tracking(element["video"], )
+    pass
 
 
 @register

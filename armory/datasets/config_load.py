@@ -8,6 +8,7 @@ from armory.datasets import load, preprocessing, generator, filtering
 def load_dataset(
     name=None,
     version=None,
+    config=None,
     batch_size=1,
     num_batches=None,
     epochs=1,
@@ -24,7 +25,9 @@ def load_dataset(
     # All are keyword elements by design
     if name is None:
         raise ValueError("name must be specified, not None")
-    info, ds_dict = load.load(name, version=version, shuffle_files=shuffle_files)
+    info, ds_dict = load.load(
+        name, version=version, config=config, shuffle_files=shuffle_files
+    )
 
     if class_ids is None:
         element_filter = None
