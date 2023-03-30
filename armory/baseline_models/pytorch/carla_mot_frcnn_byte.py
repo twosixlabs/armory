@@ -85,51 +85,6 @@ class PyTorchTracker(PyTorchFasterRCNN):
         """
         return super().predict(x, **kwargs)
 
-    def mot_array_to_coco(batch):
-        """
-        Map from 3D array (batch_size x detections x 9) to extended coco format
-            of dimension (batch_size x frames x detections_per_frame)
-
-        NOTE: 'image_id' is given as the frame of a video, so is not unique
-        """
-        if batch.ndim == 2:
-            not_batch = True
-            batch = [batch]
-        elif batch.ndim == 3:
-            not_batch = False
-        else:
-            raise ValueError(f"batch.ndim {batch.ndim} is not in (2, 3)")
-
-        output = np.empty(len(batch), dtype=object)
-        for i, array in enumerate(batch):
-            if not len(array):
-                # no object detections
-                output.append([])
-                continue
-
-            frames = []
-            for detection in array:
-                frames.append(
-                    {
-                        # TODO: should image_id include video number as well?
-                        "image_id": int(np.round(detection[0])),
-                        "category_id": int(np.round(detection[7])),
-                        "bbox": [float(x) for x in detection[2:6]],
-                        "score": float(detection[6]),
-                        # The following are extended fields
-                        "object_id": int(
-                            np.round(detection[1])
-                        ),  # for a specific object across frames
-                        "visibility": float(detection[8]),
-                    }
-                )
-            output[i] = frames
-
-        if not_batch:
-            output = output[0]
-
-        return output
-
     def predict(self, x):
         """
         Perform tracking prediction for a batch of inputs by performing object detection, updating Kalman filters, and outputing filter predictions.
