@@ -1356,9 +1356,7 @@ def _object_detection_poisoning_get_targeted_mr_dr(
         num_gt_boxes = len(gt_boxes)
 
         # Initialize array to count misclassified
-        true_positive_array = np.zeros((num_gt_boxes,))
         targeted_misclassification_array = np.zeros((num_gt_boxes,))
-        disappearance_array = np.zeros((num_gt_boxes,))
 
         # Only consider the model's confident predictions
         conf_pred_indices = np.where(y_pred["scores"] > score_threshold)[0]
