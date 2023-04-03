@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 import torch
@@ -9,6 +8,7 @@ from pytorchyolo.models import load_model
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class Yolo(torch.nn.Module):
     def __init__(self, model):
@@ -44,6 +44,6 @@ def get_art_model(
         optimizer=optimizer,
         clip_values=(0, 1),
         channels_first=False,
-        attack_losses=("loss_total",)
+        attack_losses=("loss_total",),
     )
     return detector

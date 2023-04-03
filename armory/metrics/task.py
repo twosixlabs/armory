@@ -1312,16 +1312,21 @@ def carla_od_AP_per_class(y_list, y_pred_list, iou_threshold=0.5, mean=True):
 
 
 def _object_detection_poisoning_get_targeted_mr_dr(
-    y_list, y_pred_list, source_class=None, target_class=None, iou_threshold=0.5, score_threshold=0.5,
+    y_list,
+    y_pred_list,
+    source_class=None,
+    target_class=None,
+    iou_threshold=0.5,
+    score_threshold=0.5,
 ):
-    """ 
+    """
     Modeled after _object_detection_get_tpr_mr_dr_hr.
-    This function computes the targeted misclassification rate and disappearance rate, 
+    This function computes the targeted misclassification rate and disappearance rate,
     for object detection poisoning.  Works for both Regional and Global Misclassification.
-    Object Generation (hallucination) is computed in a separate function 
+    Object Generation (hallucination) is computed in a separate function
     (object_detection_poisoning_targeted_generation_rate) because it has slightly different inputs.
 
-    For Disappearance and Regional Misclassification, it is assumed that 
+    For Disappearance and Regional Misclassification, it is assumed that
     all source class boxes have been triggered.
     For Disappearance, target_class is None.
     For Global Misclassification, source_class is None.
@@ -1339,7 +1344,6 @@ def _object_detection_poisoning_get_targeted_mr_dr(
 
     targeted_misclassification_rate_per_img = []
     disappearance_rate_per_img = []
-
 
     for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         if source_class is not None:
@@ -1382,11 +1386,16 @@ def _object_detection_poisoning_get_targeted_mr_dr(
 
         targeted_misclassification_rate = (targeted_misclassification_array > 0).mean()
 
-        # Any ground-truth box that had no overlapping predicted box 
+        # Any ground-truth box that had no overlapping predicted box
         # is considered a disappearance
         for y_box in gt_boxes:
             # Compute IOU between GT box and all confident predictions (no matter the predicted label)
-            ious = np.array([_intersection_over_union(y_box, a) for a in y_pred['boxes'][conf_pred_indices]])
+            ious = np.array(
+                [
+                    _intersection_over_union(y_box, a)
+                    for a in y_pred["boxes"][conf_pred_indices]
+                ]
+            )
             # Determine which predicted boxes the gt box overlaps with
             overlap_indices = np.where(ious > iou_threshold)[0]
             if len(overlap_indices) == 0:
@@ -1395,17 +1404,22 @@ def _object_detection_poisoning_get_targeted_mr_dr(
         if num_gt_boxes != 0:
             disappearance_rate = num_disappearances / num_gt_boxes
             disappearance_rate_per_img.append(disappearance_rate)
-            # If the image had no boxe in source_class 0, it should 
+            # If the image had no boxe in source_class 0, it should
             # not contribute to disappearance rate
 
         targeted_misclassification_rate_per_img.append(targeted_misclassification_rate)
-        
+
     return targeted_misclassification_rate_per_img, disappearance_rate_per_img
 
 
 @batchwise
 def object_detection_poisoning_targeted_misclassification_rate(
-    y_list, y_pred_list, target_class, source_class=None, iou_threshold=0.5, score_threshold=0.5,
+    y_list,
+    y_pred_list,
+    target_class,
+    source_class=None,
+    iou_threshold=0.5,
+    score_threshold=0.5,
 ):
     """
     Compute the global or regional misclassification rate for object detection poisoning.  This is
@@ -1431,17 +1445,21 @@ def object_detection_poisoning_targeted_misclassification_rate(
         target_class=target_class,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
-        )
+    )
 
     return mr_per_image
 
 
 @batchwise
 def object_detection_poisoning_targeted_disappearance_rate(
-    y_list, y_pred_list, source_class, iou_threshold=0.5, score_threshold=0.5,
+    y_list,
+    y_pred_list,
+    source_class,
+    iou_threshold=0.5,
+    score_threshold=0.5,
 ):
     """
-    Compute the object disappearance rate for object detection poisoning.  This is a targeted 
+    Compute the object disappearance rate for object detection poisoning.  This is a targeted
     metric, meaning a disappearance only counts if the object was from the source class.
 
     y_list (list): of length equal to the number of input examples. Each element in the list
@@ -1462,7 +1480,7 @@ def object_detection_poisoning_targeted_disappearance_rate(
         source_class=source_class,
         iou_threshold=iou_threshold,
         score_threshold=score_threshold,
-        )
+    )
 
     return dr_per_image
 
@@ -1471,19 +1489,19 @@ def object_detection_poisoning_targeted_disappearance_rate(
 def object_detection_poisoning_targeted_generation_rate(
     y_target_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
 ):
-    """ 
+    """
     Compute the rate of object generation for object detection poisoning.  This is a targeted
     metric, meaning a hallucinated object only counts if it aligns with the poisoned target label.
 
-    y_target_list (list): poisoned labels of length equal to the number of input examples. 
-        Each element in the list should be a dict with "labels" and "boxes" keys mapping 
+    y_target_list (list): poisoned labels of length equal to the number of input examples.
+        Each element in the list should be a dict with "labels" and "boxes" keys mapping
         to a numpy array of shape (N,) and (N, 4) respectively where N = number of boxes.
         For each image, "boxes" and "labels" include the bbox and label to be hallucinated.
     y_pred_list (list): of length equal to the number of input examples. Each element in the
         list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
         array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
 
-    returns: a list of length equal to the number of images; each element is 1 or 0 indicating 
+    returns: a list of length equal to the number of images; each element is 1 or 0 indicating
         whether the trigger was successful on that image.
     """
 
@@ -1500,7 +1518,12 @@ def object_detection_poisoning_targeted_generation_rate(
         conf_pred_labels = y_pred["labels"][conf_pred_indices]
 
         # Compute IOU between target box and all confident predictions
-        ious = np.array([_intersection_over_union(target_box, a) for a in y_pred['boxes'][conf_pred_indices]])
+        ious = np.array(
+            [
+                _intersection_over_union(target_box, a)
+                for a in y_pred["boxes"][conf_pred_indices]
+            ]
+        )
         # Determine which predicted boxes, if any, the target box overlaps with
         overlap_indices = np.where(ious > iou_threshold)[0]
 

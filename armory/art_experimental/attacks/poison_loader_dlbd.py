@@ -33,7 +33,7 @@ def poison_loader_dlbd(**kwargs):
         size = tuple(size)
         mode = kwargs.get("mode", "RGB")
         blend = kwargs.get("blend", 0.6)
-        
+
         channels_first = kwargs.get("channels_first", False)
         if "x_shift" in kwargs and "y_shift" in kwargs:
             x_shift = kwargs.get("x_shift")
@@ -43,7 +43,9 @@ def poison_loader_dlbd(**kwargs):
             base_img_size_x = kwargs.get("base_img_size_x")
             base_img_size_y = kwargs.get("base_img_size_y")
             if base_img_size_x is None or base_img_size_y is None:
-                raise ValueError("Attack config should specify either x_shift and y_shift, or base_img_size_x and base_img_size_y ")
+                raise ValueError(
+                    "Attack config should specify either x_shift and y_shift, or base_img_size_x and base_img_size_y "
+                )
             x_shift = (base_img_size_x - size[0]) // 2
             y_shift = (base_img_size_y - size[1]) // 2
 
