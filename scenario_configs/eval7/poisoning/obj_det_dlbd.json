@@ -7,7 +7,7 @@
         "explanatory_model": null,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class":0,
+        "source_class": 0,
         "split_id": 0,
         "target_class": 1,
         "train_epochs": 1,
@@ -17,7 +17,7 @@
         "knowledge": "black",
         "kwargs": {
             "attack_variant": "BadDetRegionalMisclassificationAttack",
-            "backdoor_kwargs":{
+            "backdoor_kwargs": {
                 "backdoor_path": "htbd.png",
                 "blend": 0.8,
                 "channels_first": false,
@@ -38,11 +38,11 @@
     "dataset": {
         "batch_size": 1,
         "eval_split": "dev",
-        "train_split": "dev",
         "framework": "numpy",
         "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev"
+        "name": "carla_obj_det_dev",
+        "train_split": "dev"
     },
     "defense": null,
     "metric": null,
@@ -50,10 +50,10 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {
-            "pretrained": true,
-            "progress": true,
             "num_classes": 91,
-            "pretrained_backbone": true
+            "pretrained": true,
+            "pretrained_backbone": true,
+            "progress": true
         },
         "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
         "name": "get_art_model",
