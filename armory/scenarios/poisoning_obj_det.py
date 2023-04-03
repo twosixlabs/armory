@@ -27,8 +27,8 @@ class ObjectDetectionPoisoningScenario(Poison):
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
         self.use_poison = bool(adhoc_config["poison_dataset"])
-        self.source_class = adhoc_config.get("source_class") # None for 3 attacks
-        self.target_class = adhoc_config.get("target_class")
+        self.source_class = adhoc_config.get("source_class") # None for GMA, OGA
+        self.target_class = adhoc_config.get("target_class") # None for ODA
         
 
         if self.use_poison:
@@ -37,9 +37,9 @@ class ObjectDetectionPoisoningScenario(Poison):
             kwargs = attack_config["kwargs"]
             self.attack_variant = kwargs["attack_variant"]
             kwargs["percent_poison"] = adhoc_config["fraction_poisoned"]
-            if self.target_class:
+            if self.target_class is not None:
                 kwargs["class_target"] = self.target_class
-            if self.source_class:
+            if self.source_class is not None:
                 kwargs["class_source"] = self.source_class
             
 
@@ -115,7 +115,7 @@ class ObjectDetectionPoisoningScenario(Poison):
     def make_AP_meter(self, name, y, y_pred, target_class=None):
         # A little helper function to make metrics
         metric_kwargs = {}
-        if target_class:
+        if target_class is not None:
             metric_kwargs = {"class_list":[target_class]}
         self.hub.connect_meter(
             Meter(
@@ -144,7 +144,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         # The paper uses short but vague names for the metrics, which are here replaced with longer
         # more descriptive names.  The paper's names will be mentioned in the comments for reference.
-        target = self.target_class if self.target_class else self.source_class
+        target = self.target_class if self.target_class is not None else self.source_class
 
         ## 1 mAP benign test all classes ##
         #    mAP_benign

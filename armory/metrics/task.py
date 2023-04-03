@@ -1342,7 +1342,7 @@ def _object_detection_poisoning_get_targeted_mr_dr(
 
 
     for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
-        if source_class:
+        if source_class is not None:
             # Filter out non-source ground-truth classes
             indices_to_keep = np.where(np.isin(y["labels"], source_class))
             gt_boxes = y["boxes"][indices_to_keep]
