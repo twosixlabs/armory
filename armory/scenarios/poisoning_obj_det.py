@@ -1,17 +1,16 @@
 import copy
 
-from PIL import Image
 import numpy as np
 
-from art.attacks.poisoning import BadDetRegionalMisclassificationAttack, BadDetGlobalMisclassificationAttack
-from art.attacks.poisoning import BadDetObjectGenerationAttack, BadDetObjectDisappearanceAttack
-
 from armory import metrics
-from armory.logs import log
 from armory.instrument import LogWriter, Meter, ResultsWriter
-from armory.scenarios.poison import Poison, DatasetPoisoner
-from armory.scenarios.utils import from_categorical
-from armory.utils import config_loading, triggers
+from armory.scenarios.poison import Poison
+from armory.utils import config_loading
+from armory.instrument.export import (
+    CocoBoxFormatMeter,
+    ExportMeter,
+    ObjectDetectionExporter,
+)
 
 """
 Paper link: https://arxiv.org/pdf/2205.14497.pdf
@@ -19,7 +18,6 @@ Paper link: https://arxiv.org/pdf/2205.14497.pdf
 
 
 class ObjectDetectionPoisoningScenario(Poison):
-    
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
@@ -27,12 +25,11 @@ class ObjectDetectionPoisoningScenario(Poison):
             raise ValueError("preloaded attacks not currently supported for poisoning")
 
         self.use_poison = bool(adhoc_config["poison_dataset"])
-        self.source_class = adhoc_config.get("source_class") # None for GMA, OGA
-        self.target_class = adhoc_config.get("target_class") # None for ODA
-        
+        self.source_class = adhoc_config.get("source_class")  # None for GMA, OGA
+        self.target_class = adhoc_config.get("target_class")  # None for ODA
 
         if self.use_poison:
-                
+
             # Set additional attack config kwargs
             kwargs = attack_config["kwargs"]
             self.attack_variant = kwargs["attack_variant"]
@@ -41,7 +38,6 @@ class ObjectDetectionPoisoningScenario(Poison):
                 kwargs["class_target"] = self.target_class
             if self.source_class is not None:
                 kwargs["class_source"] = self.source_class
-            
 
             # attack = config_loading.load(attack_config)
             # self.poisoner = DatasetPoisoner(
@@ -50,7 +46,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             #     self.target_class, #
             #     fraction = kwargs["percent_poison"]
             # )
-            self.poisoner = config_loading.load(attack_config)  
+            self.poisoner = config_loading.load(attack_config)
             # try not having an extra DataPoisoner object which adds no functionality
             # TODO if this works out, either way clean up around here.
 
@@ -66,10 +62,9 @@ class ObjectDetectionPoisoningScenario(Poison):
             #     fraction = 1
             # )
 
-
     def poison_dataset(self):
         self.hub.set_context(stage="poison")
-        self.y_clean = self.y_clean[::2] # TODO metadata
+        self.y_clean = self.y_clean[::2]  # TODO metadata
         if self.use_poison:
             self.x_poison, self.y_poison = self.poisoner.poison(
                 self.x_clean, self.y_clean
@@ -85,7 +80,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                     if (self.x_clean[i] != self.x_poison[i]).any()
                 ]
             )
-            
+
         else:
             self.x_poison, self.y_poison, poison_index = (
                 self.x_clean,
@@ -111,12 +106,11 @@ class ObjectDetectionPoisoningScenario(Poison):
         #         f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
         #     )
 
-
     def make_AP_meter(self, name, y, y_pred, target_class=None):
         # A little helper function to make metrics
         metric_kwargs = {}
         if target_class is not None:
-            metric_kwargs = {"class_list":[target_class]}
+            metric_kwargs = {"class_list": [target_class]}
         self.hub.connect_meter(
             Meter(
                 name,
@@ -144,29 +138,30 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         # The paper uses short but vague names for the metrics, which are here replaced with longer
         # more descriptive names.  The paper's names will be mentioned in the comments for reference.
-        target = self.target_class if self.target_class is not None else self.source_class
+        target = (
+            self.target_class if self.target_class is not None else self.source_class
+        )
 
-        ## 1 mAP benign test all classes ##
+        #  1 mAP benign test all classes  #
         #    mAP_benign
         self.make_AP_meter(
-            "mAP_on_benign_test_data_all_classes", 
+            "mAP_on_benign_test_data_all_classes",
             "scenario.y",
             "scenario.y_pred",
-            )
+        )
 
-        ## 2 AP benign test target class ##
+        #  2 AP benign test target class  #
         #    AP_benign
         self.make_AP_meter(
             "AP_on_benign_test_data_target_class",
             "scenario.y",
             "scenario.y_pred",
-            target
-            )
-
+            target,
+        )
 
         if self.use_poison:
 
-            ## 3 mAP adv test, adv labels ##
+            #  3 mAP adv test, adv labels  #
             #    mAP_attack
             self.make_AP_meter(
                 "mAP_on_adv_test_data_with_poison_labels_all_classes",
@@ -174,7 +169,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                 "scenario.y_pred_adv",
             )
 
-            ## 4 mAP adv test, adv labels, target class ##
+            #  4 mAP adv test, adv labels, target class  #
             #    AP_attack
             #    Not applicable to Disappearance
             if self.target_class is not None:
@@ -182,10 +177,10 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "AP_on_adv_test_data_with_poison_labels_target_class",
                     "scenario.y_adv",
                     "scenario.y_pred_adv",
-                    target
-                    )
-            
-            ## 5 mAP adv test, clean labels   ##
+                    target,
+                )
+
+            #  5 mAP adv test, clean labels   #
             #    mAP_attack+benign
             #    Not applicable to Generation
             if self.attack_variant != "BadDetObjectGenerationAttack":
@@ -195,7 +190,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "scenario.y_pred_adv",
                 )
 
-            ## 6 AP adv test, clean labels, target class ##
+            #  6 AP adv test, clean labels, target class  #
             #    AP_attack+benign
             #    Not applicable to Generation
             if self.attack_variant != "BadDetObjectGenerationAttack":
@@ -203,20 +198,28 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "AP_on_adv_test_data_with_clean_labels_target_class",
                     "scenario.y",
                     "scenario.y_pred_adv",
-                    target
-                    )
+                    target,
+                )
 
-            ## 7 Attack Success Rate ##
-            
+            #  7 Attack Success Rate  #
+
             # ASR -- Misclassification
-            if self.attack_variant in ["BadDetRegionalMisclassificationAttack", "BadDetGlobalMisclassificationAttack"]:
+            if self.attack_variant in [
+                "BadDetRegionalMisclassificationAttack",
+                "BadDetGlobalMisclassificationAttack",
+            ]:
                 self.hub.connect_meter(
                     Meter(
                         "attack_success_rate_misclassification",
-                        metrics.get("object_detection_poisoning_targeted_misclassification_rate"),
+                        metrics.get(
+                            "object_detection_poisoning_targeted_misclassification_rate"
+                        ),
                         "scenario.y",
                         "scenario.y_pred_adv",
-                        metric_kwargs = {"target_class":self.target_class, "source_class":self.source_class},
+                        metric_kwargs={
+                            "target_class": self.target_class,
+                            "source_class": self.source_class,
+                        },
                         final=np.mean,
                         final_name="attack_success_rate_misclassification",
                         record_final_only=True,
@@ -228,10 +231,12 @@ class ObjectDetectionPoisoningScenario(Poison):
                 self.hub.connect_meter(
                     Meter(
                         "attack_success_rate_disappearance",
-                        metrics.get("object_detection_poisoning_targeted_disappearance_rate"),
+                        metrics.get(
+                            "object_detection_poisoning_targeted_disappearance_rate"
+                        ),
                         "scenario.y",
                         "scenario.y_pred_adv",
-                        metric_kwargs = {"source_class":self.source_class},
+                        metric_kwargs={"source_class": self.source_class},
                         final=np.mean,
                         final_name="attack_success_rate_disappearance",
                         record_final_only=True,
@@ -243,7 +248,9 @@ class ObjectDetectionPoisoningScenario(Poison):
                 self.hub.connect_meter(
                     Meter(
                         "attack_success_rate_generation",
-                        metrics.get("object_detection_poisoning_targeted_generation_rate"),
+                        metrics.get(
+                            "object_detection_poisoning_targeted_generation_rate"
+                        ),
                         "scenario.y_adv",
                         "scenario.y_pred_adv",
                         final=np.mean,
@@ -260,7 +267,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
-        x, y = self.x, self.y
+        x = self.x
 
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
@@ -298,11 +305,11 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
 
-
     def load_fairness_metrics(self):
-        raise NotImplementedError("The fairness metrics have not been implemented for object detection poisoning")
+        raise NotImplementedError(
+            "The fairness metrics have not been implemented for object detection poisoning"
+        )
         # TODO
-
 
     def load_export_meters(self):
         super().load_export_meters()
@@ -330,13 +337,10 @@ class ObjectDetectionPoisoningScenario(Poison):
         )
         self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
-
     def _load_sample_exporter(self):
         return ObjectDetectionExporter(self.export_dir)
-    
+
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
             self.export_dir, default_export_kwargs={"with_boxes": True}
         )
-
-
