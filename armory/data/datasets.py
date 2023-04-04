@@ -31,6 +31,7 @@ from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc10 import resisc10_poison  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
+from armory.data.mscoco import mscoco_poisoning as mp  # noqa: F401
 from armory.data.utils import (
     _read_validate_scenario_config,
     add_checksums_dir,
@@ -1512,6 +1513,54 @@ def librispeech_dev_clean_asr(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
+    )
+
+
+def mscoco_poisoning(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = coco_canonical_preprocessing,
+    label_preprocessing_fn: Callable = None,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    A subset of the mscoco dataset for object detection poisoning.
+    Uses classes 5 (airplane), 6 (bus), 7 (train)
+
+    Contains 10349 images of varying size.
+
+    split - one of ("train", "validation")
+
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    if "class_ids" in kwargs:
+        raise ValueError(
+            "Filtering by class is not supported for the mscoco_poisoning dataset"
+        )
+    return _generator_from_tfds(
+        "mscoco_poisoning/2017:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        variable_length=bool(batch_size > 1),
+        variable_y=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=coco_context,
         **kwargs,
     )
 
