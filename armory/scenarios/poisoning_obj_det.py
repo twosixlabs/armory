@@ -1,6 +1,8 @@
 import copy
 
 import numpy as np
+import torch
+from torchvision.ops import nms
 
 from armory import metrics
 from armory.instrument import LogWriter, Meter, ResultsWriter
@@ -265,13 +267,50 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.hub.connect_writer(self.results_writer, default=True)
         self.hub.connect_writer(LogWriter(), default=True)
 
+    def non_maximum_supression(self, predictions):
+        MAX_PRE_NMS_BOXES = 10000
+        MAX_POST_NMS_BOXES = 100
+        CONF_THRESHOLD = 0.0
+        IOU_THRESHOLD = 0.5
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        boxes = predictions['boxes']
+        labels = predictions['labels']
+        scores = predictions['scores']
+
+        # Filter by confidence score
+        boxes = boxes[scores > CONF_THRESHOLD]
+        labels = labels[scores > CONF_THRESHOLD]
+        scores = scores[scores > CONF_THRESHOLD]
+
+        # Sort by decreasing scores
+        sort_ind = np.argsort(scores)[::-1]
+        boxes = boxes[sort_ind[:MAX_PRE_NMS_BOXES]]
+        labels = labels[sort_ind[:MAX_PRE_NMS_BOXES]]
+        scores = scores[sort_ind[:MAX_PRE_NMS_BOXES]]
+
+        # Calculate non-maximum-suppression indices
+        boxes = torch.from_numpy(boxes).to(device)
+        labels = torch.from_numpy(labels).to(device)
+        scores = torch.from_numpy(scores).to(device)
+        idx = nms(boxes, scores, IOU_THRESHOLD)
+        if idx.shape[0] > MAX_POST_NMS_BOXES:
+            idx = idx[:MAX_POST_NMS_BOXES]
+
+        boxes = boxes[idx].detach().cpu().numpy()
+        labels = labels[idx].detach().cpu().numpy()
+        scores = scores[idx].detach().cpu().numpy()
+
+        return {'boxes': boxes, 'labels': labels, 'scores': scores}
+
     def run_benign(self):
         self.hub.set_context(stage="benign")
         x = self.x
 
         x.flags.writeable = False
         y_pred = self.model.predict(x, **self.predict_kwargs)
-
+        y_pred = [self.non_maximum_supression(pred) for pred in y_pred]
         self.probe.update(y_pred=y_pred)
         # source = y == self.source_class TODO
         # uses source->target trigger
@@ -293,6 +332,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
+        y_pred_adv = [self.non_maximum_supression(pred) for pred in y_pred_adv]
         self.probe.update(x_adv=x_adv, y_adv=y_adv, y_pred_adv=y_pred_adv)
 
         # uses source->target trigger TODO
