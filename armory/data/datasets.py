@@ -1516,6 +1516,30 @@ def librispeech_dev_clean_asr(
         **kwargs,
     )
 
+def mscoco_label_preprocessing(x,y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
+    """
+
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict.pop("bbox").reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[1:3]
+        converted_boxes *= [width, height, width, height]
+        label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict.pop("label").reshape((-1,))
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
+    
 
 def mscoco_poisoning(
     split: str = "train",
@@ -1523,7 +1547,7 @@ def mscoco_poisoning(
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = coco_canonical_preprocessing,
-    label_preprocessing_fn: Callable = None,
+    label_preprocessing_fn: Callable = mscoco_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -1533,10 +1557,16 @@ def mscoco_poisoning(
     """
     A subset of the mscoco dataset for object detection poisoning.
     Uses classes 5 (airplane), 6 (bus), 7 (train)
-
-    Contains 10349 images of varying size.
+    Images vary in size.
 
     split - one of ("train", "validation")
+
+    Train
+        Total images: 10349
+        Total class instances: [(5, 5135), (6, 6069), (7, 4571)]
+    Val
+        Total images: 434
+        Total class instances: [(5, 143), (6, 285), (7, 190)]
 
     """
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
