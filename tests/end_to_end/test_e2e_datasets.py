@@ -873,6 +873,32 @@ def test_carla_multi_object_tracking_test():
             assert key in y_patch_metadata
 
 
+def test_mscoco_poisoning():
+
+    train_size = 10349
+    dataset = datasets.mscoco_poisoning(
+        split="train",
+    )
+    assert dataset.size == train_size
+
+    val_size = 434
+    dataset = datasets.mscoco_poisoning(
+        split="validation",
+    )
+    assert dataset.size == val_size
+
+    for i in range(8):
+        x, y = dataset.get_batch()
+        assert x.shape[0] == 1
+        assert x.shape[-1] == 3
+        assert isinstance(y, list)
+        assert len(y) == 1
+        y_dict = y[0]
+        assert isinstance(y_dict, dict)
+        for obj_key in ["labels", "boxes", "area"]:
+            assert obj_key in y_dict
+
+
 def test_variable_length(armory_dataset_dir):
     """
     Test batches with variable length items using digit dataset

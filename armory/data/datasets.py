@@ -1516,7 +1516,8 @@ def librispeech_dev_clean_asr(
         **kwargs,
     )
 
-def mscoco_label_preprocessing(x,y):
+
+def mscoco_label_preprocessing(x, y):
     """
     Converts boxes from TF format to PyTorch format
     TF format: [y1/height, x1/width, y2/height, x2/width]
@@ -1539,7 +1540,7 @@ def mscoco_label_preprocessing(x,y):
         label_dict["labels"] = label_dict.pop("label").reshape((-1,))
         y_preprocessed.append(label_dict)
     return y_preprocessed
-    
+
 
 def mscoco_poisoning(
     split: str = "train",
