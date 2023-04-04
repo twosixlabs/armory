@@ -35,7 +35,7 @@ def get_art_model(
     model_wrapper = Yolo(model)
 
     params = [p for p in model_wrapper.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=0.01)
+    optimizer = torch.optim.SGD(params, lr=0.01, momentum=0.9, nesterov=True)
 
     detector = PyTorchYolo(
         model=model_wrapper,
