@@ -1,5 +1,5 @@
 """
-Pytorch Faster-RCNN for xView object detection
+Pytorch Faster-RCNN for COCO object detection
 """
 from typing import Optional
 
@@ -10,23 +10,16 @@ from art.estimators.object_detection import PyTorchFasterRCNN
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-NUM_CLASSES = 63
-
-
 def make_fastrcnn_model(weights_path: Optional[str] = None) -> torch.nn.Module:
     """
-    This is an MSCOCO pre-trained model that's fine-tuned on xView.
-    This model only performs inference and is not trainable. To perform other
-    custom fine-tuning, please follow instructions at
+    This is an MSCOCO pre-trained model.
+    This model only performs inference and is not trainable.
+    To perform custom fine-tuning, please follow instructions at
     https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
     """
 
     # load a model pre-trained on COCO
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    # # get number of input features for the classifier
-    # in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # # replace the pre-trained head with a new one
-    # model.roi_heads.box_predictor = FastRCNNPredictor(in_features, NUM_CLASSES)
 
     if weights_path:
         checkpoint = torch.load(weights_path, map_location=DEVICE)

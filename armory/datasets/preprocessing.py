@@ -194,13 +194,10 @@ def coco(element):
 def coco_label_preprocessing(x, y):
     """
     If batch_size is 1, this function converts the single y dictionary to a list of length 1.
-    This function converts COCO labels from a 0-79 range to the standard 0-89 with 10 unused indices
+    This function converts COCO labels from a 0-79 range to the standard 1-90 with 10 unused indices
     (see https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_label_map.pbtxt).
-    The label map used matches the link above, with the note that labels start from 0 rather than 1.
+    The label map used matches the link above.
     """
-    # # This will be true only when batch_size is 1
-    # if isinstance(y, dict):
-    #     y = [y]
     idx_map = {
         0: 1,
         1: 2,
