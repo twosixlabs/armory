@@ -34,6 +34,18 @@
         "url": null,
         "version": "3.0.2"
     },
+    "coco": {
+        "sha256": "02217d49400cbfa5a2b4233888e739be8e49788301e099c5a3b9793916873da5",
+        "size": 87331889854,
+        "subdir": [
+            "coco/2014/1.1.0",
+            "coco/2017/1.1.0",
+            "coco/2017_panoptic/1.1.0",
+            "coco/.config"
+        ],
+        "url": null,
+        "version": "1.1.0"
+    },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",
         "size": 8349857,
