@@ -4,7 +4,7 @@ import json
 import os
 import pickle
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import ffmpeg
 import numpy as np
 from scipy.io import wavfile
@@ -173,9 +173,20 @@ class ObjectDetectionExporter(ImageClassificationExporter):
 
         if y_pred is not None:
             bboxes_pred = y_pred["boxes"][y_pred["scores"] > score_threshold]
+            labels_pred = y_pred["labels"][y_pred["scores"] > score_threshold]
 
-            for pred_box in bboxes_pred:
+            for pred_box, label in zip(bboxes_pred, labels_pred):
                 box_layer.rectangle(pred_box, outline="white", width=2)
+                box_layer.rectangle(
+                    (pred_box[0], pred_box[1] - 10, pred_box[0] + 10, pred_box[1]),
+                    fill="white",
+                )
+                box_layer.text(
+                    (pred_box[0] + 3, pred_box[1] - 10),
+                    str(label),
+                    font=ImageFont.load_default(),
+                    fill="black",
+                )
 
         return image
 
