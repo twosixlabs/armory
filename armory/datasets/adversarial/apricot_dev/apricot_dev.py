@@ -170,7 +170,7 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
                     "image_id": tf.int64,
                     "area": tf.int64,  # un-normalized area
                     "boxes": tfds.features.BBoxFeature(),  # normalized bounding box [ymin, xmin, ymax, xmax]
-                    "labels": tfds.features.ClassLabel(num_classes=91),
+                    "labels": tfds.features.ClassLabel(num_classes=81),
                     "is_crowd": tf.bool,
                     "is_warped": tf.bool,
                     "angle": tfds.features.Tensor(shape=(3,), dtype=tf.int64),
