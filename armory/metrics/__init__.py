@@ -2,7 +2,7 @@ import importlib
 from typing import Callable
 
 from armory.metrics import compute, perturbation, statistical, task
-from armory.metrics.common import supported, result_formatter, get_result_formatter
+from armory.metrics.common import get_result_formatter, result_formatter, supported
 
 
 def _instantiate_validate(function, name, instantiate_if_class=True):

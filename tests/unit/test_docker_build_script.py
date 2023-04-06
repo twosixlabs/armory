@@ -1,7 +1,8 @@
-import pytest
-import subprocess
-import re
 import os
+import re
+import subprocess
+
+import pytest
 
 pytestmark = [pytest.mark.docker_required, pytest.mark.unit]
 

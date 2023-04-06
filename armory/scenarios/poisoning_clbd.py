@@ -6,11 +6,10 @@ import copy
 
 import numpy as np
 
-from armory.utils import config_loading
-from armory.scenarios.poison import DatasetPoisoner
-from armory.scenarios.poison import Poison
-from armory.scenarios.utils import to_categorical, from_categorical
 from armory.logs import log
+from armory.scenarios.poison import DatasetPoisoner, Poison
+from armory.scenarios.utils import from_categorical, to_categorical
+from armory.utils import config_loading
 
 
 class CleanDatasetPoisoner:

@@ -12,13 +12,13 @@ from typing import Optional
 from tqdm import tqdm
 
 import armory
-from armory import Config, paths, metrics
 from armory.datasets import config_load, generator
-from armory.instrument import get_hub, get_probe, del_globals, MetricsLogger
+from armory import Config, metrics, paths
+from armory.instrument import MetricsLogger, del_globals, get_hub, get_probe
 from armory.instrument.export import ExportMeter, PredictionMeter
+from armory.logs import log
 from armory.metrics import compute
 from armory.utils import config_loading, json_utils
-from armory.logs import log
 
 
 class Scenario:
@@ -205,9 +205,7 @@ class Scenario:
 
         if self.defense_type == "Trainer":
             log.info(f"Training with {type(self.trainer)} Trainer defense...")
-            self.trainer.fit_generator(
-                art_generator, nb_epochs=self.num_train_epochs, **self.fit_kwargs
-            )
+            self.trainer.fit_generator(self.train_dataset, **self.fit_kwargs)
         else:
             log.info(f"Fitting model {self.model_name}...")
             self.model.fit_generator(

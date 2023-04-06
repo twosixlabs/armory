@@ -4,9 +4,9 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.object_detection import ObjectDetectionTask
 from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
+from armory.scenarios.object_detection import ObjectDetectionTask
 
 
 class CarlaObjectDetectionTask(ObjectDetectionTask):
