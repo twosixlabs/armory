@@ -190,13 +190,9 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
         # TODO(apricot_dev): Downloads the data and defines the splits
-        # path = dl_manager.download_and_extract("https://todo-data-url")
         paths = dl_manager.download_and_extract(_URLS)
 
         # TODO(apricot_dev): Returns the Dict[split names, Iterator[Key, Example]]
-        # return {
-        #     "train": self._generate_examples(path / "train_imgs"),
-        # }
         return [
             tfds.core.SplitGenerator(
                 name=split,
@@ -208,11 +204,6 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, path, model):
         """Yields examples."""
         # TODO(apricot_dev): Yields (key, example) tuples from the dataset
-        # for f in path.glob("*.jpeg"):
-        #     yield "key", {
-        #         "image": f,
-        #         "label": "yes",
-        #     }
 
         annotation_path = os.path.join(
             path, "Annotations/apricot_dev_all_annotations.json"
