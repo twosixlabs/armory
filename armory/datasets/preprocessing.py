@@ -99,6 +99,47 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
+def carla_video_tracking_preprocess(x, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        x = x[:max_frames, :]
+    x = tf.cast(x, tf.float32) / 255.0
+    return x
+
+
+def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        y = y[:max_frames, :]
+        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
+    # Update labels
+    y = {"boxes": y}
+    y_patch_metadata = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
+        for k, v in y_patch_metadata.items()
+    }
+    return y, y_patch_metadata
+
+
+def carla_video_tracking(element, max_frames=None):
+    return carla_video_tracking_preprocess(
+        element["video"],
+        max_frames=max_frames,
+    ), carla_video_tracking_preprocess_labels(
+        element["bboxes"], element["patch_metadata"], max_frames=max_frames
+    )
+
+
+carla_video_tracking_dev = register(carla_video_tracking, "carla_video_tracking_dev")
+carla_video_tracking_test = register(carla_video_tracking, "carla_video_tracking_test")
+
+
 @register
 def carla_over_obj_det_train(element, modality="rgb"):
     return carla_multimodal_obj_det(

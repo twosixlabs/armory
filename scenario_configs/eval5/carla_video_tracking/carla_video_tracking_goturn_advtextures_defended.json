@@ -14,11 +14,11 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 1,
-        "eval_split": "dev",
-        "framework": "numpy",
-        "module": "armory.data.adversarial_datasets",
-        "name": "carla_video_tracking_dev"
+        "test": {
+            "batch_size": 1,
+            "split": "dev",
+            "name": "carla_video_tracking_dev"
+        }
     },
     "defense": {
         "kwargs": {
