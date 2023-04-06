@@ -156,6 +156,9 @@ def xview(element):
 
 @register
 def apricot_dev(element):
+    # commented code should correspond to how apricot_dev was preprocessed before
+    # will not work as intended with current approach, but keeping for now
+    # to revisit should any issues pop up
     # return image_to_canon(element["image"]), apricot_label_preprocessing(
     #     replace_magic_val(element["objects"])
     # )
@@ -164,17 +167,11 @@ def apricot_dev(element):
     )
 
 
-# simple copy paste at this point - needs to be converted to work with tensors
 def apricot_label_preprocessing(y):
     """
     Convert labels to list of dicts. If batch_size > 1, this will already be the case.
     Decrement labels of non-patch objects by 1 to be 0-indexed
     """
-    # if isinstance(y, dict):
-    #     y = [y]
-    # for y_dict in y:
-    #     y_dict["labels"] -= y_dict["labels"] != ADV_PATCH_MAGIC_NUMBER_LABEL_ID
-    #     y_dict["labels"] = y_dict["labels"].reshape((-1,))
     rhs = y["labels"]
     y["labels"] = tf.where(
         tf.not_equal(rhs, ADV_PATCH_MAGIC_NUMBER_LABEL_ID),
@@ -184,6 +181,8 @@ def apricot_label_preprocessing(y):
     return y
 
 
+# unclear whether this operation is necessary, but keeping for now
+# to revisit should any issues pop up
 def replace_magic_val(y):
     raw_adv_patch_category_id = 12
     rhs = y["labels"]
@@ -193,35 +192,6 @@ def replace_magic_val(y):
         rhs,
     )
     return y
-
-
-# need function for lambda function passed to datasets._generator_from_tfds as an argument for lambda_map
-# which seems to get applied as ds.map prior to preprocessing_fn and label_preprocessing_fn
-# raw_adv_patch_category_id = 12
-
-# def replace_magic_val(data, raw_val, transformed_val, sub_key):
-#     rhs = data[sub_key]
-#     data[sub_key] = tf.where(
-#         tf.equal(rhs, raw_val),
-#         tf.ones_like(rhs, dtype=tf.int64) * transformed_val,
-#         rhs,
-#     )
-#     return data
-
-# return datasets._generator_from_tfds(
-#     ...
-#     supervised_xy_keys=("image", "objects"),
-#     lambda_map=lambda x, y: (
-#         x,
-#         replace_magic_val(
-#             y,
-#             raw_adv_patch_category_id,
-#             ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
-#             "labels",
-#         ),
-#     ),
-#     ...
-# )
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
