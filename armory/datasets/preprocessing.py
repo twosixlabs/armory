@@ -156,36 +156,11 @@ def xview(element):
 
 @register
 def apricot_dev(element):
-    # commented code should correspond to how apricot_dev was preprocessed before
-    # will not work as intended with current approach, but keeping for now
-    # to revisit should any issues pop up
-    # return image_to_canon(element["image"]), apricot_label_preprocessing(
-    #     replace_magic_val(element["objects"])
-    # )
-    # return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
-    #     element["image"], element["objects"]
-    # )
     return image_to_canon(element["image"]), replace_magic_val(
         convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
     )
 
 
-def apricot_label_preprocessing(y):
-    """
-    Convert labels to list of dicts. If batch_size > 1, this will already be the case.
-    Decrement labels of non-patch objects by 1 to be 0-indexed
-    """
-    rhs = y["labels"]
-    y["labels"] = tf.where(
-        tf.not_equal(rhs, ADV_PATCH_MAGIC_NUMBER_LABEL_ID),
-        rhs - 1,
-        rhs,
-    )
-    return y
-
-
-# unclear whether this operation is necessary, but keeping for now
-# to revisit should any issues pop up
 def replace_magic_val(y):
     raw_adv_patch_category_id = 12
     rhs = y["labels"]
