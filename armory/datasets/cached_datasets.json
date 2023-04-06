@@ -34,6 +34,19 @@
         "url": null,
         "version": "1.0.0"
     },
+    "carla_video_tracking_dev": {
+        "sha256": "958d470dcd394928050f4123a7af05b0e389ceeec6fa0a3261df55a65e553b69",
+        "size": 1281628036,
+        "subdir": "carla_video_tracking_dev/2.0.0",
+        "url": null,
+        "version": "2.0.0"
+    },
+    "carla_video_tracking_test": {
+        "sha256": "8c52281611807243cba425ad3a588f4abca40dfb2b3ab828b9ad8a5191a7df10",
+        "size": 388218968,
+        "subdir": "carla_video_tracking_test/2.0.0",
+        "url": null,
+        "version": "2.0.0"
     "carla_over_obj_det_train": {
         "sha256": "1fa2626726df4de8c0878f97ededdde90d4c55a4a845c8cee8db26a9797a2c6f",
         "size": 14396331191,
@@ -54,6 +67,18 @@
         "subdir": "cifar100/3.0.2",
         "url": null,
         "version": "3.0.2"
+    },
+    "coco": {
+        "sha256": "02217d49400cbfa5a2b4233888e739be8e49788301e099c5a3b9793916873da5",
+        "size": 87331889854,
+        "subdir": [
+            "coco/2014/1.1.0",
+            "coco/2017/1.1.0",
+            "coco/2017_panoptic/1.1.0",
+            "coco/.config"
+        ],
+        "url": null,
+        "version": "1.1.0"
     },
     "digit": {
         "sha256": "805fb5e33caf2029e13f4146c9d06fdb437ac5b0f0aa9668e3201922b617c559",

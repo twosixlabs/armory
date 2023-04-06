@@ -98,6 +98,47 @@ def carla_over_obj_det_dev(element, modality="rgb"):
     )
 
 
+def carla_video_tracking_preprocess(x, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        x = x[:max_frames, :]
+    x = tf.cast(x, tf.float32) / 255.0
+    return x
+
+
+def carla_video_tracking_preprocess_labels(y, y_patch_metadata, max_frames=None):
+    # Clip
+    if max_frames:
+        max_frames = int(max_frames)
+        if max_frames <= 0:
+            raise ValueError(f"max_frames {max_frames} must be > 0")
+        y = y[:max_frames, :]
+        y_patch_metadata = {k: v[:max_frames, :] for (k, v) in y_patch_metadata.items()}
+    # Update labels
+    y = {"boxes": y}
+    y_patch_metadata = {
+        k: (tf.squeeze(v, axis=0) if v.shape[0] == 1 else v)
+        for k, v in y_patch_metadata.items()
+    }
+    return y, y_patch_metadata
+
+
+def carla_video_tracking(element, max_frames=None):
+    return carla_video_tracking_preprocess(
+        element["video"],
+        max_frames=max_frames,
+    ), carla_video_tracking_preprocess_labels(
+        element["bboxes"], element["patch_metadata"], max_frames=max_frames
+    )
+
+
+carla_video_tracking_dev = register(carla_video_tracking, "carla_video_tracking_dev")
+carla_video_tracking_test = register(carla_video_tracking, "carla_video_tracking_test")
+
+
 @register
 def carla_over_obj_det_train(element, modality="rgb"):
     return carla_multimodal_obj_det(
@@ -220,3 +261,116 @@ def convert_tf_obj_det_label_to_pytorch(x, y_object):
 
 def infer_from_dataset_info(info, split):
     raise NotImplementedError
+
+
+@register
+def coco(element):
+    return image_to_canon(element["image"]), coco_label_preprocessing(
+        element["image"], element["objects"]
+    )
+
+
+def coco_label_preprocessing(x, y):
+    """
+    If batch_size is 1, this function converts the single y dictionary to a list of length 1.
+    This function converts COCO labels from a 0-79 range to the standard 1-90 with 10 unused indices
+    (see https://github.com/tensorflow/models/blob/master/research/object_detection/data/mscoco_label_map.pbtxt).
+    The label map used matches the link above.
+    """
+    idx_map = {
+        0: 1,
+        1: 2,
+        2: 3,
+        3: 4,
+        4: 5,
+        5: 6,
+        6: 7,
+        7: 8,
+        8: 9,
+        9: 10,
+        10: 11,
+        11: 13,
+        12: 14,
+        13: 15,
+        14: 16,
+        15: 17,
+        16: 18,
+        17: 19,
+        18: 20,
+        19: 21,
+        20: 22,
+        21: 23,
+        22: 24,
+        23: 25,
+        24: 27,
+        25: 28,
+        26: 31,
+        27: 32,
+        28: 33,
+        29: 34,
+        30: 35,
+        31: 36,
+        32: 37,
+        33: 38,
+        34: 39,
+        35: 40,
+        36: 41,
+        37: 42,
+        38: 43,
+        39: 44,
+        40: 46,
+        41: 47,
+        42: 48,
+        43: 49,
+        44: 50,
+        45: 51,
+        46: 52,
+        47: 53,
+        48: 54,
+        49: 55,
+        50: 56,
+        51: 57,
+        52: 58,
+        53: 59,
+        54: 60,
+        55: 61,
+        56: 62,
+        57: 63,
+        58: 64,
+        59: 65,
+        60: 67,
+        61: 70,
+        62: 72,
+        63: 73,
+        64: 74,
+        65: 75,
+        66: 76,
+        67: 77,
+        68: 78,
+        69: 79,
+        70: 80,
+        71: 81,
+        72: 82,
+        73: 84,
+        74: 85,
+        75: 86,
+        76: 87,
+        77: 88,
+        78: 89,
+        79: 90,
+    }
+
+    keys, values = list(zip(*idx_map.items()))
+    table = tf.lookup.StaticHashTable(
+        initializer=tf.lookup.KeyValueTensorInitializer(
+            keys=tf.constant(keys, dtype=tf.int64),
+            values=tf.constant(values),
+        ),
+        default_value=tf.constant(-1),
+        name="object_index",
+    )
+
+    y["boxes"] = y.pop("bbox")
+    y = convert_tf_obj_det_label_to_pytorch(x, y)
+    y["labels"] = table.lookup(y.pop("label"))
+    return y

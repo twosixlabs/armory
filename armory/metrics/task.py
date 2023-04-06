@@ -522,7 +522,7 @@ def _check_video_tracking_input(y, y_pred):
     y_pred (List[Dict, ...]): same as above
     """
     for input in [y, y_pred]:
-        assert isinstance(input, list)
+        assert isinstance(input, list), f"Expected List[Dict, ...] got {type(input)}"
         for input_dict_i in input:
             assert isinstance(input_dict_i, dict)
             assert "boxes" in input_dict_i
