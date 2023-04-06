@@ -103,23 +103,6 @@ class ApricotDev(tfds.core.GeneratorBasedBuilder):
     def _info(self) -> tfds.core.DatasetInfo:
         """Returns the dataset metadata."""
         # TODO(apricot_dev): Specifies the tfds.core.DatasetInfo object
-        # return tfds.core.DatasetInfo(
-        #     builder=self,
-        #     description=_DESCRIPTION,
-        #     features=tfds.features.FeaturesDict(
-        #         {
-        #             # These are the features of your dataset like images, labels ...
-        #             "image": tfds.features.Image(shape=(None, None, 3)),
-        #             "label": tfds.features.ClassLabel(names=["no", "yes"]),
-        #         }
-        #     ),
-        #     # If there's a common (input, target) tuple from the
-        #     # features, specify them here. They'll be used if
-        #     # `as_supervised=True` in `builder.as_dataset`.
-        #     supervised_keys=("image", "label"),  # Set to `None` to disable
-        #     homepage="https://dataset-homepage/",
-        #     citation=_CITATION,
-        # )
 
         features = {
             "image": tfds.features.Image(encoding_format="jpeg"),
