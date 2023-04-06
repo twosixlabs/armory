@@ -1,23 +1,18 @@
 import logging
 import os
-import requests
 
 import pytest
+import requests
 
+from armory import __version__, paths
 import docker
 from docker.errors import ImageNotFound
-
-
-from armory import paths, __version__
-
 
 logger = logging.getLogger(__name__)
 
 REQUIRED_DOCKER_IMAGES = [
-    f"twosixarmory/pytorch:{__version__}",
-    f"twosixarmory/tf2:{__version__}",
+    f"twosixarmory/armory:{__version__}",
     f"twosixarmory/pytorch-deepspeech:{__version__}",
-    f"twosixarmory/carla-mot:{__version__}",
 ]
 
 
@@ -158,8 +153,9 @@ def armory_dataset_dir():
 
 @pytest.fixture
 def dataset_generator():
-    import torch
     import tensorflow as tf
+    import torch
+
     from armory.data import datasets
     from armory.data.datasets import ArmoryDataGenerator
 
@@ -210,8 +206,8 @@ def dataset_generator():
 # override caplog fixture to receve loguru messages as described in
 # https://loguru.readthedocs.io/en/stable/resources/migration.html#making-things-work-with-pytest-and-caplog
 
-from loguru import logger as loguru_logger
 from _pytest.logging import LogCaptureFixture
+from loguru import logger as loguru_logger
 
 # It is good that this fixture is implemented as a generator function so
 # that we don't have to worry about the armory.logs sinks added or removed.

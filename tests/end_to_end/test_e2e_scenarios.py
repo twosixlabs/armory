@@ -10,14 +10,13 @@ Example:
     $ clear; pytest --verbose tests/end_to_end/test_e2e_scenarios.py --scenario-path scenario_configs/cifar10_baseline.json --github-ci
 """
 
-import pytest
+from pathlib import Path
 import unittest
 
-from pathlib import Path
+import pytest
 
 from armory import paths
 from armory.__main__ import run
-
 
 # Marks all tests in this file as `end_to_end`
 pytestmark = pytest.mark.end_to_end  # noqa: F821
