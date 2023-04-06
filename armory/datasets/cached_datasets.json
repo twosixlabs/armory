@@ -1,7 +1,7 @@
 {
     "apricot_dev": {
-        "sha256": "1591132c1e0eb7d6716769b3a3375533028d4b66e7d9a8c982cbe8f2e5bdedfc",
-        "size": 591002730,
+        "sha256": "87a9e7f9142ca243c1f4b7efe71fba2865fce599307691eb3b48af82d589a209",
+        "size": 590995069,
         "subdir": "apricot_dev/1.0.2",
         "url": null,
         "version": "1.0.2"
@@ -34,6 +34,13 @@
         "url": null,
         "version": "1.0.0"
     },
+    "carla_over_obj_det_train": {
+        "sha256": "1fa2626726df4de8c0878f97ededdde90d4c55a4a845c8cee8db26a9797a2c6f",
+        "size": 14396331191,
+        "subdir": "carla_over_obj_det_train/1.0.0",
+        "url": null,
+        "version": "1.0.0"
+    },
     "carla_video_tracking_dev": {
         "sha256": "958d470dcd394928050f4123a7af05b0e389ceeec6fa0a3261df55a65e553b69",
         "size": 1281628036,
@@ -47,12 +54,6 @@
         "subdir": "carla_video_tracking_test/2.0.0",
         "url": null,
         "version": "2.0.0"
-    "carla_over_obj_det_train": {
-        "sha256": "1fa2626726df4de8c0878f97ededdde90d4c55a4a845c8cee8db26a9797a2c6f",
-        "size": 14396331191,
-        "subdir": "carla_over_obj_det_train/1.0.0",
-        "url": null,
-        "version": "1.0.0"
     },
     "cifar10": {
         "sha256": "05bf2d90665560e08ca6cf6e896b503ed4b83cd0e332d3a2e5970c9329acbaee",
