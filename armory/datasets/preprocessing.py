@@ -162,8 +162,11 @@ def apricot_dev(element):
     # return image_to_canon(element["image"]), apricot_label_preprocessing(
     #     replace_magic_val(element["objects"])
     # )
-    return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
-        element["image"], element["objects"]
+    # return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
+    #     element["image"], element["objects"]
+    # )
+    return image_to_canon(element["image"]), replace_magic_val(
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
     )
 
 
