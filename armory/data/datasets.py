@@ -1573,9 +1573,7 @@ def minicoco(
     preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
 
     if "class_ids" in kwargs:
-        raise ValueError(
-            "Filtering by class is not supported for the minicoco dataset"
-        )
+        raise ValueError("Filtering by class is not supported for the minicoco dataset")
     return _generator_from_tfds(
         "minicoco/2017:1.0.0",
         split=split,
