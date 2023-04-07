@@ -31,7 +31,7 @@ from armory.data.librispeech import librispeech_full as lf  # noqa: F401
 from armory.data.resisc10 import resisc10_poison  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
-from armory.data.mscoco import mscoco_poisoning as mp  # noqa: F401
+from armory.data.minicoco import minicoco as mc  # noqa: F401
 from armory.data.utils import (
     _read_validate_scenario_config,
     add_checksums_dir,
@@ -1517,7 +1517,7 @@ def librispeech_dev_clean_asr(
     )
 
 
-def mscoco_label_preprocessing(x, y):
+def minicoco_label_preprocessing(x, y):
     """
     Converts boxes from TF format to PyTorch format
     TF format: [y1/height, x1/width, y2/height, x2/width]
@@ -1542,13 +1542,13 @@ def mscoco_label_preprocessing(x, y):
     return y_preprocessed
 
 
-def mscoco_poisoning(
+def minicoco(
     split: str = "train",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
     preprocessing_fn: Callable = coco_canonical_preprocessing,
-    label_preprocessing_fn: Callable = mscoco_label_preprocessing,
+    label_preprocessing_fn: Callable = minicoco_label_preprocessing,
     fit_preprocessing_fn: Callable = None,
     cache_dataset: bool = True,
     framework: str = "numpy",
@@ -1574,10 +1574,10 @@ def mscoco_poisoning(
 
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the mscoco_poisoning dataset"
+            "Filtering by class is not supported for the minicoco dataset"
         )
     return _generator_from_tfds(
-        "mscoco_poisoning/2017:1.0.0",
+        "minicoco/2017:1.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

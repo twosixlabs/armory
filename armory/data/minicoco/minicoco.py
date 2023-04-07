@@ -71,7 +71,7 @@ class CocoConfig(tfds.core.BuilderConfig):
         self.splits = splits
 
 
-class MscocoPoisoning(tfds.core.GeneratorBasedBuilder):
+class MiniCoco(tfds.core.GeneratorBasedBuilder):
     """
     MS Coco poisoning dataset.
     Derived from https://github.com/tensorflow/datasets/blob/master/tensorflow_datasets/object_detection/coco.py

@@ -873,16 +873,16 @@ def test_carla_multi_object_tracking_test():
             assert key in y_patch_metadata
 
 
-def test_mscoco_poisoning():
+def test_minicoco():
 
     train_size = 10349
-    dataset = datasets.mscoco_poisoning(
+    dataset = datasets.minicoco(
         split="train",
     )
     assert dataset.size == train_size
 
     val_size = 434
-    dataset = datasets.mscoco_poisoning(
+    dataset = datasets.minicoco(
         split="validation",
     )
     assert dataset.size == val_size
