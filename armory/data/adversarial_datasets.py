@@ -661,15 +661,15 @@ def carla_over_obj_det_dev(
     **kwargs,
 ):
     """
-    Dev set for CARLA object detection dataset, containing RGB and depth channels. The dev
+    Dev set for CARLA overhead object detection dataset, containing RGB and depth channels. The dev
     set also contains green screens for adversarial patch insertion.
     """
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the carla_obj_det_dev dataset"
+            "Filtering by class is not supported for the carla_over_obj_det_dev dataset"
         )
     if batch_size != 1:
-        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+        raise ValueError("carla_over_obj_det_dev batch size must be set to 1")
 
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
@@ -729,15 +729,15 @@ def carla_over_obj_det_test(
     **kwargs,
 ):
     """
-    Dev set for CARLA object detection dataset, containing RGB and depth channels. The test
+    Test set for CARLA overhead object detection dataset, containing RGB and depth channels. The test
     set also contains green screens for adversarial patch insertion.
     """
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the carla_obj_det_test dataset"
+            "Filtering by class is not supported for the carla_over_obj_det_test dataset"
         )
     if batch_size != 1:
-        raise ValueError("carla_obj_det_test batch size must be set to 1")
+        raise ValueError("carla_over_obj_det_test batch size must be set to 1")
 
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
@@ -924,7 +924,7 @@ def carla_video_tracking_dev(
             "Filtering by class is not supported for the carla_video_tracking_dev dataset"
         )
     if batch_size != 1:
-        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+        raise ValueError("carla_video_tracking_dev batch size must be set to 1")
 
     if max_frames:
         clip = datasets.ClipFrames(max_frames)
@@ -975,10 +975,10 @@ def carla_video_tracking_test(
     """
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the carla_video_tracking_dev dataset"
+            "Filtering by class is not supported for the carla_video_tracking_test dataset"
         )
     if batch_size != 1:
-        raise ValueError("carla_obj_det_dev batch size must be set to 1")
+        raise ValueError("carla_video_tracking_test batch size must be set to 1")
 
     if max_frames:
         clip = datasets.ClipFrames(max_frames)
