@@ -114,7 +114,7 @@ math = [
 
 datasets = [
     "armory-testbed[tensorflow]",
-    "tensorflow-datasets >= 4.6.0",
+    "tensorflow-datasets >= 4.6.0, != 4.9.0",
     "protobuf",
 ]
 
