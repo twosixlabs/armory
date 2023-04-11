@@ -25,7 +25,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
     def __init__(self, estimator, **kwargs):
 
         # Maximum depth perturbation from a flat patch
-        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 0.03)
+        self.depth_delta_meters = kwargs.pop("depth_delta_meters", 3)
         self.learning_rate_depth = kwargs.pop("learning_rate_depth", 0.0001)
         self.depth_perturbation = None
         self.min_depth = None
@@ -393,6 +393,21 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             # Use this mask to embed patch into the background in the event of occlusion
             self.binarized_patch_mask = y_patch_metadata[i]["mask"]
+
+            # Eval7 contains a mixture of patch locations.
+            # Patches that lie flat on the sidewalk or street are constrained to 0.03m depth perturbation, and they are best used to create disappearance errors.
+            # Patches located elsewhere (i.e., that do not impede pedestrian/vehicle motion) are constrained to 3m depth perturbation, and they are best used to create hallucinations.
+            # Therefore, the depth perturbation bound for each patch is input-dependent.
+            if x.shape[-1] == 6:
+                if "max_depth_perturb_meters" in y_patch_metadata[i].keys():
+                    self.depth_delta_meters = y_patch_metadata[i][
+                        "max_depth_perturb_meters"
+                    ]
+                    log.info(
+                        'This dataset contains input-dependent depth perturbation bounds, and the user-defined "depth_delta_meters" has been reset to {} meters'.format(
+                            y_patch_metadata[i]["max_depth_perturb_meters"]
+                        )
+                    )
 
             # self._patch needs to be re-initialized with the correct shape
             if self.patch_base_image is not None:
