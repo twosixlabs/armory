@@ -1,9 +1,12 @@
 import copy
+import imgaug.augmenters as iaa
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 
 import numpy as np
 import torch
 from torchvision.ops import nms
 
+from armory.logs import log
 from armory import metrics
 from armory.instrument import LogWriter, Meter, ResultsWriter
 from armory.scenarios.poison import Poison
@@ -167,7 +170,6 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def poison_dataset(self):
         self.hub.set_context(stage="poison")
-        self.y_clean = self.y_clean[::2]  # TODO metadata
         if self.use_poison:
             self.x_poison, self.y_poison = self.poisoner.poison(
                 self.x_clean, self.y_clean
@@ -405,6 +407,20 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         return {'boxes': boxes, 'labels': labels, 'scores': scores}
 
+    def next(self):
+        self.hub.set_context(stage="next")
+        x, y = next(self.test_dataset)
+        i = self.i + 1
+        self.hub.set_context(batch=i)
+        
+        self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
+        x, y[0]['boxes'], y[0]['labels'] = self.apply_augmentation(
+                x, y, 416, 416, resize_only=True)
+        x = np.array([x])  # add batch dim back on
+        
+        self.i, self.x, self.y = i, x, y
+        self.probe.update(i=i, x=x, y=y)
+
     def run_benign(self):
         self.hub.set_context(stage="benign")
         x = self.x
@@ -468,20 +484,21 @@ class ObjectDetectionPoisoningScenario(Poison):
             if self.skip_attack:
                 break
 
-        coco_box_format_meter = CocoBoxFormatMeter(
-            "coco_box_format_meter",
-            self.export_dir,
-            y_probe="scenario.y",
-            y_pred_clean_probe="scenario.y_pred" if not self.skip_benign else None,
-            y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
-            max_batches=self.num_export_batches,
-        )
-        self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
+        # TODO y objects are missing "image_id" which is used by coco_format_meter
+        # coco_box_format_meter = CocoBoxFormatMeter(
+        #     "coco_box_format_meter",
+        #     self.export_dir,
+        #     y_probe="scenario.y",
+        #     y_pred_clean_probe="scenario.y_pred" if not self.skip_benign else None,
+        #     y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
+        #     max_batches=self.num_export_batches,
+        # )
+        # self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
         return ObjectDetectionExporter(self.export_dir)
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.export_dir, default_export_kwargs={"with_boxes": True}
+            self.export_dir, default_export_kwargs={"with_boxes": True, "score_threshold": 0.0} # TODO set final score threshold
         )
