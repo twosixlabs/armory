@@ -20,6 +20,107 @@ Paper link: https://arxiv.org/pdf/2205.14497.pdf
 
 
 class ObjectDetectionPoisoningScenario(Poison):
+
+    def apply_augmentation(self, image, y_dict, resize_width, resize_height, resize_only=True):
+        # Apply data augmentations using imgaug following https://github.com/eriklindernoren/PyTorch-YOLOv3/blob/master/pytorchyolo/utils/transforms.py
+        # image: np.ndarray
+        # boxes: np.ndarray of format (x1,y1,x2,y2), where 0<=x<W, 0<=y<H
+        # resize_width, resize_height: new image dimension
+        
+        if len(image.shape) == 4:
+            if image.shape[0] == 1:
+                image = np.squeeze(image, axis=0)
+            else:
+                raise ValueError(f"apply_augmentation currently only operates on single images or batches of batch_size=1.  Got shape {image.shape}")
+        if type(y_dict) == list:
+            y_dict = y_dict[0] # if list is longer than 1, then the above error will already have been raised.
+
+        boxes = y_dict["boxes"]
+        labels = y_dict["labels"]
+
+        # Define augmentations
+        if not resize_only:
+            augmentations = iaa.Sequential([
+                iaa.Affine(rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)),
+                iaa.Fliplr(0.5),
+                iaa.PadToAspectRatio(1.0, position='center-center'),
+                iaa.Resize({'height': resize_height, 'width': resize_width}, interpolation='nearest')
+            ])
+        else:
+            augmentations = iaa.Sequential([            
+                iaa.PadToAspectRatio(1.0, position='center-center'),
+                iaa.Resize({'height': resize_height, 'width': resize_width}, interpolation='nearest')
+            ])
+
+        # Convert bounding boxes to imgaug
+        bounding_boxes = BoundingBoxesOnImage(
+            [BoundingBox(*box, label) for box, label in zip(boxes, labels)],
+            shape=image.shape)
+
+        # Apply augmentations
+        img, bounding_boxes = augmentations(
+            image=image,
+            bounding_boxes=bounding_boxes)
+
+        # Clip out of image boxes
+        bounding_boxes = bounding_boxes.clip_out_of_image()
+
+        # Convert bounding boxes back to numpy
+        boxes = np.zeros((len(bounding_boxes), 4))
+        labels = np.zeros(len(bounding_boxes))
+        for box_idx, box in enumerate(bounding_boxes):
+            labels[box_idx] = box.label
+            boxes[box_idx, 0] = box.x1
+            boxes[box_idx, 1] = box.y1
+            boxes[box_idx, 2] = box.x2
+            boxes[box_idx, 3] = box.y2
+        
+        return img, boxes, labels
+
+
+    def load_train_dataset(self, train_split_default=None):
+        """
+        Load and create in memory dataset
+            detect_poison does not currently support data generators
+        """
+        # This is inherited and modified slightly to apply image resizing and augmentation
+        # which in the future will be done by a preprocessor in ART.
+        if train_split_default is not None:
+            raise ValueError(
+                "train_split_default not used in this loading method for poison"
+            )
+        adhoc_config = self.config.get("adhoc") or {}
+        self.train_epochs = adhoc_config["train_epochs"]
+        self.fit_batch_size = adhoc_config.get(
+            "fit_batch_size", self.config["dataset"]["batch_size"]
+        )
+
+        self.label_function = lambda y: y
+
+        dataset_config = self.config["dataset"]
+        log.info(f"Loading dataset {dataset_config['name']}...")
+        ds = config_loading.load_dataset(
+            dataset_config,
+            split=dataset_config.get("train_split", "train"),
+            **self.dataset_kwargs,
+        )
+        log.info("Loading and resizing data")
+        x_clean, y_clean = [], []
+        i = 0
+        for xc, yc in list(ds):
+            print(i)
+            i += 1
+            img, yc[0]['boxes'], yc[0]['labels'] = self.apply_augmentation(xc, yc, 416, 416, resize_only=False)
+            x_clean.append(img)
+            y_clean.append(yc[0])
+
+
+        print("data resized")
+        self.x_clean = np.array(x_clean)
+        self.y_clean = np.array(y_clean, dtype='object')
+
+
+
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
         attack_config = self.config["attack"]
