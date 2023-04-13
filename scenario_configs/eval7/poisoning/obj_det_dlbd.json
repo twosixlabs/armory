@@ -5,12 +5,12 @@
         "defense_categorical_labels": false,
         "experiment_id": 0,
         "explanatory_model": null,
-        "fraction_poisoned": 0.1,
+        "fraction_poisoned": 0.5,
         "poison_dataset": true,
-        "source_class": 0,
+        "source_class": 2,
         "split_id": 0,
-        "target_class": 1,
-        "train_epochs": 1,
+        "target_class": 0,
+        "train_epochs": 50,
         "use_poison_filtering_defense": false
     },
     "attack": {
@@ -25,8 +25,8 @@
                 "poison_type": "image",
                 "random": false,
                 "size": [
-                    6,
-                    6
+                    4,
+                    4
                 ],
                 "x_shift": 0,
                 "y_shift": 0
@@ -36,28 +36,22 @@
         "name": "poison_loader_obj_det"
     },
     "dataset": {
-        "batch_size": 1,
-        "eval_split": "dev",
+        "batch_size": 32,
+        "eval_split": "validation",
         "framework": "numpy",
-        "modality": "rgb",
-        "module": "armory.data.adversarial_datasets",
-        "name": "carla_obj_det_dev",
-        "train_split": "dev"
+        "module": "armory.data.datasets",
+        "name": "minicoco",
+        "train_split": "train"
     },
     "defense": null,
     "metric": null,
     "model": {
         "fit": true,
         "fit_kwargs": {},
-        "model_kwargs": {
-            "num_classes": 91,
-            "pretrained": true,
-            "pretrained_backbone": true,
-            "progress": true
-        },
-        "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
+        "model_kwargs": {},
+        "module": "armory.baseline_models.pytorch.yolov3",
         "name": "get_art_model",
-        "weights_file": null,
+        "weights_file": "yolov3.weights",
         "wrapper_kwargs": {}
     },
     "scenario": {
