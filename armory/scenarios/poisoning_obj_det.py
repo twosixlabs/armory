@@ -230,6 +230,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         )
 
     def load_metrics(self):
+        self.score_threshold = 0.0 # TODO set final score threshold
         if self.use_filtering_defense:
             # Filtering metrics
             self.hub.connect_meter(
@@ -324,6 +325,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                         metric_kwargs={
                             "target_class": self.target_class,
                             "source_class": self.source_class,
+                            "score_threshold": self.score_threshold
                         },
                         final=np.mean,
                         final_name="attack_success_rate_misclassification",
@@ -341,7 +343,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                         ),
                         "scenario.y",
                         "scenario.y_pred_adv",
-                        metric_kwargs={"source_class": self.source_class},
+                        metric_kwargs={"source_class": self.source_class, "score_threshold": self.score_threshold},
                         final=np.mean,
                         final_name="attack_success_rate_disappearance",
                         record_final_only=True,
@@ -358,6 +360,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                         ),
                         "scenario.y_adv",
                         "scenario.y_pred_adv",
+                        metric_kwargs={"score_threshold": self.score_threshold},
                         final=np.mean,
                         final_name="attack_success_rate_generation",
                         record_final_only=True,
@@ -373,7 +376,6 @@ class ObjectDetectionPoisoningScenario(Poison):
     def non_maximum_supression(self, predictions):
         MAX_PRE_NMS_BOXES = 10000
         MAX_POST_NMS_BOXES = 100
-        CONF_THRESHOLD = 0.0
         IOU_THRESHOLD = 0.5
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -383,9 +385,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         scores = predictions['scores']
 
         # Filter by confidence score
-        boxes = boxes[scores > CONF_THRESHOLD]
-        labels = labels[scores > CONF_THRESHOLD]
-        scores = scores[scores > CONF_THRESHOLD]
+        boxes = boxes[scores > self.score_threshold]
+        labels = labels[scores > self.score_threshold]
+        scores = scores[scores > self.score_threshold]
 
         # Sort by decreasing scores
         sort_ind = np.argsort(scores)[::-1]
@@ -500,5 +502,5 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.export_dir, default_export_kwargs={"with_boxes": True, "score_threshold": 0.0} # TODO set final score threshold
+            self.export_dir, default_export_kwargs={"with_boxes": True, "score_threshold": self.score_threshold}
         )
