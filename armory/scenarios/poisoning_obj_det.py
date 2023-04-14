@@ -96,7 +96,30 @@ class ObjectDetectionPoisoningScenario(Poison):
         # Remove boxes/labels from y if the patch wouldn't fit.
         # If no boxes/labels are left, return False as a signal to skip this iamge completely.
         # TODO
-        return y
+        new_y = {"boxes":[], "labels":[], "scores":[]}
+
+        for box, label in zip(y['boxes'], y['labels']):
+            if box[2] - box[0] >= self.patch_x_dim and box[3] - box[1] >= self.patch_y_dim:
+                # TODO check if the patch has shift applied
+                new_y["boxes"].append(box)
+                new_y["labels"].append(label)
+                new_y["scores"].append(1)
+        
+            else:
+                self.n_boxes_removed_by_class[label] += 1
+
+        if len(new_y['labels']) != len(y["labels"]):
+            self.n_images_affected += 1
+
+        if len(new_y['labels']) > 0:
+            new_y["boxes"] = np.array(new_y["boxes"])
+            new_y["labels"] = np.array(new_y["labels"])
+            new_y["scores"] = np.array(new_y["scores"])
+            return y
+        else: 
+            self.n_images_removed += 1
+            return None
+
 
     def load_train_dataset(self, train_split_default=None):
         """
@@ -130,15 +153,27 @@ class ObjectDetectionPoisoningScenario(Poison):
         # which is why this is done here and not in the model.
         self.patch_x_dim, self.patch_y_dim = self.config["attack"]["kwargs"]["backdoor_kwargs"]["size"]
 
+        self.n_boxes_removed_by_class = {0:0, 1:0, 2:0}
+        self.n_images_removed = 0
+        self.n_images_affected = 0
         x_clean, y_clean = [], []
         for xc, yc in list(ds):
             img, yc = self.apply_augmentation([xc], yc, 416, 416)
-            self.filter_label(yc) 
-            x_clean.append(img)
-            y_clean.append(yc[0])
+            yc = self.filter_label(yc[0]) # TODO not necessary for OGA or GMA 
+            if yc is not None:
+                x_clean.append(img)
+                y_clean.append(yc)
 
         self.x_clean = np.concatenate(x_clean, axis=0)
         self.y_clean = np.array(y_clean, dtype='object')
+
+        if self.n_images_removed > 0:
+            log.info("Filtered out boxees where patch wouldn't fit")
+            log.info(f"N boxes removed by class: {self.n_boxes_removed_by_class}")
+            log.info(f"N total images removed: {self.n_images_removed}")
+            log.info(f"N images with at least one box removed: {self.n_images_affected}")
+        
+
 
 
     def load_poisoner(self):
