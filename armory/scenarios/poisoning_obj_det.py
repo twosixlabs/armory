@@ -8,12 +8,10 @@ from torchvision.ops import nms
 
 from armory.logs import log
 from armory import metrics
-from armory.data.datasets import NumpyDataGenerator
 from armory.instrument import LogWriter, Meter, ResultsWriter
 from armory.scenarios.poison import Poison
 from armory.utils import config_loading
 from armory.instrument.export import (
-    CocoBoxFormatMeter,
     ExportMeter,
     ObjectDetectionExporter,
 )
@@ -22,35 +20,43 @@ from armory.instrument.export import (
 Paper link: https://arxiv.org/pdf/2205.14497.pdf
 """
 
-import tracemalloc
 
 class ObjectDetectionPoisoningScenario(Poison):
-
-    def apply_augmentation(self, images, y_dicts, resize_width=None, resize_height=None):
+    def apply_augmentation(
+        self, images, y_dicts, resize_width=None, resize_height=None
+    ):
         # Apply data augmentations using imgaug following https://github.com/eriklindernoren/PyTorch-YOLOv3/blob/master/pytorchyolo/utils/transforms.py
         # image: np.ndarray
         # y_dicts: list of y objects containing "labels" and "boxes"
         # resize_width, resize_height: new image dimension
         # If resize_width and height are provided, this will resize data.  Otherwise it will apply augmentations.
-        
 
         # Define augmentations
-        if resize_width is not None: # TODO raise error if only one is None
-            augmentations = iaa.Sequential([            
-                iaa.PadToAspectRatio(1.0, position='center-center'),
-                iaa.Resize({'height': resize_height, 'width': resize_width}, interpolation='nearest')
-            ])
+        if resize_width is not None:  # TODO raise error if only one is None
+            augmentations = iaa.Sequential(
+                [
+                    iaa.PadToAspectRatio(1.0, position="center-center"),
+                    iaa.Resize(
+                        {"height": resize_height, "width": resize_width},
+                        interpolation="nearest",
+                    ),
+                ]
+            )
         else:
-            augmentations = iaa.Sequential([
-                iaa.Affine(rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)),
-                iaa.Fliplr(0.5),
-            ])
+            augmentations = iaa.Sequential(
+                [
+                    iaa.Affine(
+                        rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)
+                    ),
+                    iaa.Fliplr(0.5),
+                ]
+            )
 
         aug_images = []
         aug_ydicts = []
 
         for image, y_dict in zip(images, y_dicts):
-            # TODO sequential should be able to do a batch of images instead of looping.  
+            # TODO sequential should be able to do a batch of images instead of looping.
             # not sure about BoundingBoxesOnImage though
 
             if len(image.shape) == 4 and image.shape[0] == 1:
@@ -62,12 +68,13 @@ class ObjectDetectionPoisoningScenario(Poison):
             # Convert bounding boxes to imgaug
             bounding_boxes = BoundingBoxesOnImage(
                 [BoundingBox(*box, label) for box, label in zip(boxes, labels)],
-                shape=image.shape)
+                shape=image.shape,
+            )
 
             # Apply augmentations
             img, bounding_boxes = augmentations(
-                image=image,
-                bounding_boxes=bounding_boxes)
+                image=image, bounding_boxes=bounding_boxes
+            )
 
             # Clip out of image boxes
             bounding_boxes = bounding_boxes.clip_out_of_image()
@@ -83,43 +90,42 @@ class ObjectDetectionPoisoningScenario(Poison):
                 boxes[box_idx, 3] = box.y2
 
             aug_images.append(img)
-            aug_ydicts.append({
-                        'boxes': boxes,
-                        'labels': labels,
-                        'scores': np.ones_like(labels)
-                    })
+            aug_ydicts.append(
+                {"boxes": boxes, "labels": labels, "scores": np.ones_like(labels)}
+            )
 
         return np.array(aug_images, dtype=np.float32), aug_ydicts
-
 
     def filter_label(self, y):
         # Remove boxes/labels from y if the patch wouldn't fit.
         # If no boxes/labels are left, return False as a signal to skip this iamge completely.
         # TODO
-        new_y = {"boxes":[], "labels":[], "scores":[]}
+        new_y = {"boxes": [], "labels": [], "scores": []}
 
-        for box, label in zip(y['boxes'], y['labels']):
-            if box[2] - box[0] >= self.patch_x_dim and box[3] - box[1] >= self.patch_y_dim:
+        for box, label in zip(y["boxes"], y["labels"]):
+            if (
+                box[2] - box[0] >= self.patch_x_dim
+                and box[3] - box[1] >= self.patch_y_dim
+            ):
                 # TODO check if the patch has shift applied
                 new_y["boxes"].append(box)
                 new_y["labels"].append(label)
                 new_y["scores"].append(1)
-        
+
             else:
                 self.n_boxes_removed_by_class[label] += 1
 
-        if len(new_y['labels']) != len(y["labels"]):
+        if len(new_y["labels"]) != len(y["labels"]):
             self.n_images_affected += 1
 
-        if len(new_y['labels']) > 0:
+        if len(new_y["labels"]) > 0:
             new_y["boxes"] = np.array(new_y["boxes"])
             new_y["labels"] = np.array(new_y["labels"])
             new_y["scores"] = np.array(new_y["scores"])
             return y
-        else: 
+        else:
             self.n_images_removed += 1
             return None
-
 
     def load_train_dataset(self, train_split_default=None):
         """
@@ -141,7 +147,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.label_function = lambda y: y
 
         dataset_config = copy.deepcopy(self.config["dataset"])
-        dataset_config["batch_size"] = 1  # load with batch size 1 to simplify looping and filtering small boxes
+        dataset_config[
+            "batch_size"
+        ] = 1  # load with batch size 1 to simplify looping and filtering small boxes
         log.info(f"Loading dataset {dataset_config['name']}...")
         ds = config_loading.load_dataset(
             dataset_config,
@@ -151,30 +159,31 @@ class ObjectDetectionPoisoningScenario(Poison):
         log.info("Loading and resizing data")
         # It is desired to resize the data before poisoning occurs,
         # which is why this is done here and not in the model.
-        self.patch_x_dim, self.patch_y_dim = self.config["attack"]["kwargs"]["backdoor_kwargs"]["size"]
+        self.patch_x_dim, self.patch_y_dim = self.config["attack"]["kwargs"][
+            "backdoor_kwargs"
+        ]["size"]
 
-        self.n_boxes_removed_by_class = {0:0, 1:0, 2:0}
+        self.n_boxes_removed_by_class = {0: 0, 1: 0, 2: 0}
         self.n_images_removed = 0
         self.n_images_affected = 0
         x_clean, y_clean = [], []
         for xc, yc in list(ds):
             img, yc = self.apply_augmentation([xc], yc, 416, 416)
-            yc = self.filter_label(yc[0]) # TODO not necessary for OGA or GMA 
+            yc = self.filter_label(yc[0])  # TODO not necessary for OGA or GMA
             if yc is not None:
                 x_clean.append(img)
                 y_clean.append(yc)
 
         self.x_clean = np.concatenate(x_clean, axis=0)
-        self.y_clean = np.array(y_clean, dtype='object')
+        self.y_clean = np.array(y_clean, dtype="object")
 
         if self.n_images_removed > 0:
             log.info("Filtered out boxees where patch wouldn't fit")
             log.info(f"N boxes removed by class: {self.n_boxes_removed_by_class}")
             log.info(f"N total images removed: {self.n_images_removed}")
-            log.info(f"N images with at least one box removed: {self.n_images_affected}")
-        
-
-
+            log.info(
+                f"N images with at least one box removed: {self.n_images_affected}"
+            )
 
     def load_poisoner(self):
         adhoc_config = self.config.get("adhoc") or {}
@@ -263,10 +272,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         #         f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
         #     )
 
-
     def fit(self):
         # This function is over-ridden to apply random image augmentation every epoch.
-        # Supposedly, this will be handled in ART in a future update, at which point this 
+        # Supposedly, this will be handled in ART in a future update, at which point this
         # should be unnecessary.
         # Also, it appears that if you pass a new NumpyDataGenerator to model.fit_generator()
         # at each epoch, the old Generators do not get released from memory, resulting in a leak.
@@ -279,15 +287,19 @@ class ObjectDetectionPoisoningScenario(Poison):
             #  Every epoch, apply random augmentation
             for epoch in range(self.train_epochs):
                 log.info(f"Applying augmentations for epoch {epoch}")
-                aug_x_train, aug_y_train = self.apply_augmentation(self.x_train, self.y_train)
+                aug_x_train, aug_y_train = self.apply_augmentation(
+                    self.x_train, self.y_train
+                )
                 log.info("Augmentation finished, training model")
 
                 # Manually call model.fit with small batches
                 for i in range(0, len(aug_y_train), self.fit_batch_size):
                     if i + self.fit_batch_size < len(aug_y_train):
                         self.model.fit(
-                            aug_x_train[i: i+self.fit_batch_size],
-                            self.label_function(aug_y_train[i: i+self.fit_batch_size]),
+                            aug_x_train[i : i + self.fit_batch_size],
+                            self.label_function(
+                                aug_y_train[i : i + self.fit_batch_size]
+                            ),
                             batch_size=self.fit_batch_size,
                             nb_epochs=1,
                             verbose=False,
@@ -295,7 +307,6 @@ class ObjectDetectionPoisoningScenario(Poison):
                         )
         else:
             log.warning("All data points filtered by defense. Skipping training")
-
 
     def make_AP_meter(self, name, y, y_pred, target_class=None):
         # A little helper function to make metrics
@@ -316,7 +327,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         )
 
     def load_metrics(self):
-        self.score_threshold = 0.0 # TODO set final score threshold
+        self.score_threshold = 0.0  # TODO set final score threshold
         if self.use_filtering_defense:
             # Filtering metrics
             self.hub.connect_meter(
@@ -411,7 +422,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                         metric_kwargs={
                             "target_class": self.target_class,
                             "source_class": self.source_class,
-                            "score_threshold": self.score_threshold
+                            "score_threshold": self.score_threshold,
                         },
                         final=np.mean,
                         final_name="attack_success_rate_misclassification",
@@ -429,7 +440,10 @@ class ObjectDetectionPoisoningScenario(Poison):
                         ),
                         "scenario.y",
                         "scenario.y_pred_adv",
-                        metric_kwargs={"source_class": self.source_class, "score_threshold": self.score_threshold},
+                        metric_kwargs={
+                            "source_class": self.source_class,
+                            "score_threshold": self.score_threshold,
+                        },
                         final=np.mean,
                         final_name="attack_success_rate_disappearance",
                         record_final_only=True,
@@ -468,9 +482,9 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        boxes = predictions['boxes']
-        labels = predictions['labels']
-        scores = predictions['scores']
+        boxes = predictions["boxes"]
+        labels = predictions["labels"]
+        scores = predictions["scores"]
 
         # Filter by confidence score
         boxes = boxes[scores > self.score_threshold]
@@ -495,7 +509,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         labels = labels[idx].detach().cpu().numpy()
         scores = scores[idx].detach().cpu().numpy()
 
-        return {'boxes': boxes, 'labels': labels, 'scores': scores}
+        return {"boxes": boxes, "labels": labels, "scores": scores}
 
     def next(self):
         # Over-ridden to resize data.
@@ -504,7 +518,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         x, y = next(self.test_dataset)
         i = self.i + 1
         self.hub.set_context(batch=i)
-        
+
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
         x, y = self.apply_augmentation(x, y, 416, 416)
         if len(x.shape) == 3:
@@ -513,8 +527,8 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         # TODO self.filter_label():
         # If patch does not fit in boxes, skip image or remove small boxes
-        # 
-        
+        #
+
         self.i, self.x, self.y = i, x, y
         self.probe.update(i=i, x=x, y=y)
 
@@ -597,5 +611,9 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def _load_sample_exporter_with_boxes(self):
         return ObjectDetectionExporter(
-            self.export_dir, default_export_kwargs={"with_boxes": True, "score_threshold": self.score_threshold}
+            self.export_dir,
+            default_export_kwargs={
+                "with_boxes": True,
+                "score_threshold": self.score_threshold,
+            },
         )
