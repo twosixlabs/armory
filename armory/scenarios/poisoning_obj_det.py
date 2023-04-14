@@ -8,6 +8,7 @@ from torchvision.ops import nms
 
 from armory.logs import log
 from armory import metrics
+from armory.data.datasets import NumpyDataGenerator
 from armory.instrument import LogWriter, Meter, ResultsWriter
 from armory.scenarios.poison import Poison
 from armory.utils import config_loading
@@ -21,65 +22,81 @@ from armory.instrument.export import (
 Paper link: https://arxiv.org/pdf/2205.14497.pdf
 """
 
+import tracemalloc
 
 class ObjectDetectionPoisoningScenario(Poison):
 
-    def apply_augmentation(self, image, y_dict, resize_width, resize_height, resize_only=True):
+    def apply_augmentation(self, images, y_dicts, resize_width=None, resize_height=None):
         # Apply data augmentations using imgaug following https://github.com/eriklindernoren/PyTorch-YOLOv3/blob/master/pytorchyolo/utils/transforms.py
         # image: np.ndarray
-        # boxes: np.ndarray of format (x1,y1,x2,y2), where 0<=x<W, 0<=y<H
+        # y_dicts: list of y objects containing "labels" and "boxes"
         # resize_width, resize_height: new image dimension
+        # If resize_width and height are provided, this will resize data.  Otherwise it will apply augmentations.
         
-        if len(image.shape) == 4:
-            if image.shape[0] == 1:
-                image = np.squeeze(image, axis=0)
-            else:
-                raise ValueError(f"apply_augmentation currently only operates on single images or batches of batch_size=1.  Got shape {image.shape}")
-        if type(y_dict) == list:
-            y_dict = y_dict[0] # if list is longer than 1, then the above error will already have been raised.
-
-        boxes = y_dict["boxes"]
-        labels = y_dict["labels"]
 
         # Define augmentations
-        if not resize_only:
-            augmentations = iaa.Sequential([
-                iaa.Affine(rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)),
-                iaa.Fliplr(0.5),
-                iaa.PadToAspectRatio(1.0, position='center-center'),
-                iaa.Resize({'height': resize_height, 'width': resize_width}, interpolation='nearest')
-            ])
-        else:
+        if resize_width is not None: # TODO raise error if only one is None
             augmentations = iaa.Sequential([            
                 iaa.PadToAspectRatio(1.0, position='center-center'),
                 iaa.Resize({'height': resize_height, 'width': resize_width}, interpolation='nearest')
             ])
+        else:
+            augmentations = iaa.Sequential([
+                iaa.Affine(rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)),
+                iaa.Fliplr(0.5),
+            ])
 
-        # Convert bounding boxes to imgaug
-        bounding_boxes = BoundingBoxesOnImage(
-            [BoundingBox(*box, label) for box, label in zip(boxes, labels)],
-            shape=image.shape)
+        aug_images = []
+        aug_ydicts = []
 
-        # Apply augmentations
-        img, bounding_boxes = augmentations(
-            image=image,
-            bounding_boxes=bounding_boxes)
+        for image, y_dict in zip(images, y_dicts):
+            # TODO sequential should be able to do a batch of images instead of looping.  
+            # not sure about BoundingBoxesOnImage though
 
-        # Clip out of image boxes
-        bounding_boxes = bounding_boxes.clip_out_of_image()
+            if len(image.shape) == 4 and image.shape[0] == 1:
+                image = np.squeeze(image, axis=0)
 
-        # Convert bounding boxes back to numpy
-        boxes = np.zeros((len(bounding_boxes), 4))
-        labels = np.zeros(len(bounding_boxes))
-        for box_idx, box in enumerate(bounding_boxes):
-            labels[box_idx] = box.label
-            boxes[box_idx, 0] = box.x1
-            boxes[box_idx, 1] = box.y1
-            boxes[box_idx, 2] = box.x2
-            boxes[box_idx, 3] = box.y2
-        
-        return img, boxes, labels
+            boxes = y_dict["boxes"]
+            labels = y_dict["labels"]
 
+            # Convert bounding boxes to imgaug
+            bounding_boxes = BoundingBoxesOnImage(
+                [BoundingBox(*box, label) for box, label in zip(boxes, labels)],
+                shape=image.shape)
+
+            # Apply augmentations
+            img, bounding_boxes = augmentations(
+                image=image,
+                bounding_boxes=bounding_boxes)
+
+            # Clip out of image boxes
+            bounding_boxes = bounding_boxes.clip_out_of_image()
+
+            # Convert bounding boxes back to numpy
+            boxes = np.zeros((len(bounding_boxes), 4))
+            labels = np.zeros(len(bounding_boxes))
+            for box_idx, box in enumerate(bounding_boxes):
+                labels[box_idx] = box.label
+                boxes[box_idx, 0] = box.x1
+                boxes[box_idx, 1] = box.y1
+                boxes[box_idx, 2] = box.x2
+                boxes[box_idx, 3] = box.y2
+
+            aug_images.append(img)
+            aug_ydicts.append({
+                        'boxes': boxes,
+                        'labels': labels,
+                        'scores': np.ones_like(labels)
+                    })
+
+        return np.array(aug_images, dtype=np.float32), aug_ydicts
+
+
+    def filter_label(self, y):
+        # Remove boxes/labels from y if the patch wouldn't fit.
+        # If no boxes/labels are left, return False as a signal to skip this iamge completely.
+        # TODO
+        return y
 
     def load_train_dataset(self, train_split_default=None):
         """
@@ -100,7 +117,8 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         self.label_function = lambda y: y
 
-        dataset_config = self.config["dataset"]
+        dataset_config = copy.deepcopy(self.config["dataset"])
+        dataset_config["batch_size"] = 1  # load with batch size 1 to simplify looping and filtering small boxes
         log.info(f"Loading dataset {dataset_config['name']}...")
         ds = config_loading.load_dataset(
             dataset_config,
@@ -108,20 +126,19 @@ class ObjectDetectionPoisoningScenario(Poison):
             **self.dataset_kwargs,
         )
         log.info("Loading and resizing data")
+        # It is desired to resize the data before poisoning occurs,
+        # which is why this is done here and not in the model.
+        self.patch_x_dim, self.patch_y_dim = self.config["attack"]["kwargs"]["backdoor_kwargs"]["size"]
+
         x_clean, y_clean = [], []
-        i = 0
         for xc, yc in list(ds):
-            print(i)
-            i += 1
-            img, yc[0]['boxes'], yc[0]['labels'] = self.apply_augmentation(xc, yc, 416, 416, resize_only=False)
+            img, yc = self.apply_augmentation([xc], yc, 416, 416)
+            self.filter_label(yc) 
             x_clean.append(img)
             y_clean.append(yc[0])
 
-
-        print("data resized")
-        self.x_clean = np.array(x_clean)
+        self.x_clean = np.concatenate(x_clean, axis=0)
         self.y_clean = np.array(y_clean, dtype='object')
-
 
 
     def load_poisoner(self):
@@ -215,7 +232,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         # A little helper function to make metrics
         metric_kwargs = {}
         if target_class is not None:
-            metric_kwargs = {"class_list": [target_class]}
+            metric_kwargs["class_list"] = [target_class]
         self.hub.connect_meter(
             Meter(
                 name,
@@ -374,6 +391,8 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.hub.connect_writer(LogWriter(), default=True)
 
     def non_maximum_supression(self, predictions):
+        # This may be handled in ART in the future.
+
         MAX_PRE_NMS_BOXES = 10000
         MAX_POST_NMS_BOXES = 100
         IOU_THRESHOLD = 0.5
@@ -410,15 +429,22 @@ class ObjectDetectionPoisoningScenario(Poison):
         return {'boxes': boxes, 'labels': labels, 'scores': scores}
 
     def next(self):
+        # Over-ridden to resize data.
+
         self.hub.set_context(stage="next")
         x, y = next(self.test_dataset)
         i = self.i + 1
         self.hub.set_context(batch=i)
         
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
-        x, y[0]['boxes'], y[0]['labels'] = self.apply_augmentation(
-                x, y, 416, 416, resize_only=True)
-        x = np.array([x])  # add batch dim back on
+        x, y = self.apply_augmentation(x, y, 416, 416)
+        if len(x.shape) == 3:
+            print("APPLY AUGMENTATION did not return x with batch dimension")
+            x = np.array([x])  # add batch dim back on
+
+        # TODO self.filter_label():
+        # If patch does not fit in boxes, skip image or remove small boxes
+        # 
         
         self.i, self.x, self.y = i, x, y
         self.probe.update(i=i, x=x, y=y)
