@@ -228,6 +228,40 @@ class ObjectDetectionPoisoningScenario(Poison):
         #         f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
         #     )
 
+
+    def fit(self):
+        # This function is over-ridden to apply random image augmentation every epoch.
+        # Supposedly, this will be handled in ART in a future update, at which point this 
+        # should be unnecessary.
+        # Also, it appears that if you pass a new NumpyDataGenerator to model.fit_generator()
+        # at each epoch, the old Generators do not get released from memory, resulting in a leak.
+        # So here we manually batch the data and use model.fit().
+
+        if len(self.x_train):
+            self.hub.set_context(stage="fit")
+            log.info("Fitting model")
+
+            #  Every epoch, apply random augmentation
+            for epoch in range(self.train_epochs):
+                log.info(f"Applying augmentations for epoch {epoch}")
+                aug_x_train, aug_y_train = self.apply_augmentation(self.x_train, self.y_train)
+                log.info("Augmentation finished, training model")
+
+                # Manually call model.fit with small batches
+                for i in range(0, len(aug_y_train), self.fit_batch_size):
+                    if i + self.fit_batch_size < len(aug_y_train):
+                        self.model.fit(
+                            aug_x_train[i: i+self.fit_batch_size],
+                            self.label_function(aug_y_train[i: i+self.fit_batch_size]),
+                            batch_size=self.fit_batch_size,
+                            nb_epochs=1,
+                            verbose=False,
+                            shuffle=True,
+                        )
+        else:
+            log.warning("All data points filtered by defense. Skipping training")
+
+
     def make_AP_meter(self, name, y, y_pred, target_class=None):
         # A little helper function to make metrics
         metric_kwargs = {}
