@@ -1,12 +1,12 @@
 * text=auto
 
 # Tools
-/tools/* text eol=lf
+/tools/** text eol=lf
 
 # Documentation
 docs/** linguist-documentation
 notebooks/** linguist-documentation
-tutorials linguist-documentation
+tutorials/** linguist-documentation
 
 # Source files
 # ============
