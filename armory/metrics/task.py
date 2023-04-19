@@ -1404,6 +1404,9 @@ def _object_detection_poisoning_get_targeted_mr_dr(
             if len(overlap_indices) == 0:
                 num_disappearances += 1
 
+        disappearance_rate = num_disappearances / num_gt_boxes
+        disappearance_rate_per_img.append(disappearance_rate)
+
         targeted_misclassification_rate_per_img.append(targeted_misclassification_rate)
 
     return targeted_misclassification_rate_per_img, disappearance_rate_per_img
