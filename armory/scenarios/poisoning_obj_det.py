@@ -5,6 +5,7 @@ from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 import numpy as np
 import torch
 from torchvision.ops import nms
+from tqdm import tqdm
 
 from armory.logs import log
 from armory import metrics
@@ -101,7 +102,9 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         if type(y) == list:
             if len(y) > 1:
-                raise ValueError(f"filter_label accepts lists of length 1, got length {len(y)}")
+                raise ValueError(
+                    f"filter_label accepts lists of length 1, got length {len(y)}"
+                )
             y = y[0]
         for box, label in zip(y["boxes"], y["labels"]):
             if (
@@ -144,9 +147,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.fit_batch_size = adhoc_config.get(
             "fit_batch_size", self.config["dataset"]["batch_size"]
         )
-        self.config["dataset"]["batch_size"] = 1 
-        # Set batch size to 1 for loading data, this makes filtering small boxes easier
-        # Note, does not affect training since fit_batch_size is already set above.
+        self.config["dataset"]["batch_size"] = 1
+        # Set batch size to 1 for loading data, this simplifies filtering small boxes.
+        # Note, training is unaffected since self.fit_batch_size is already set above.
 
         self.label_function = lambda y: y
 
@@ -170,7 +173,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         x_clean, y_clean = [], []
         for xc, yc in list(ds):
             img, yc = self.apply_augmentation([xc], yc, 416, 416)
-            yc = self.filter_label(yc[0])  # TODO not necessary for OGA or GMA
+            yc = self.filter_label(yc)  # TODO not necessary for OGA or GMA
             if yc is not None:
                 x_clean.append(img)
                 y_clean.append(yc)
@@ -207,28 +210,13 @@ class ObjectDetectionPoisoningScenario(Poison):
             if self.source_class is not None:
                 kwargs["class_source"] = self.source_class
 
-            # attack = config_loading.load(attack_config)
-            # self.poisoner = DatasetPoisoner(
-            #     attack,
-            #     self.source_class, #
-            #     self.target_class, #
-            #     fraction = kwargs["percent_poison"]
-            # )
             self.poisoner = config_loading.load(attack_config)
-            # try not having an extra DataPoisoner object which adds no functionality
-            # TODO if this works out, either way clean up around here.
 
             # Need separate poisoner for test time because this attack is constructed
             # with a poison percentage, which differs at train and test times.
             test_attack_config = copy.deepcopy(attack_config)
             test_attack_config["kwargs"]["percent_poison"] = 1
             self.test_poisoner = config_loading.load(test_attack_config)
-            # self.test_poisoner = DatasetPoisoner(
-            #     test_attack,
-            #     self.source_class, #
-            #     self.target_class, #
-            #     fraction = 1
-            # )
 
     def poison_dataset(self):
         self.hub.set_context(stage="poison")
@@ -266,12 +254,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.probe.update(poisoned=self.poisoned, poison_index=self.poison_index)
         self.hub.record("N_poisoned_train_samples", self.n_poisoned)
         self.hub.record("N_clean_train_samples", self.n_clean)
-        # self.train_set_class_labels = sorted(np.unique(self.y_clean))
         self.probe.update(y_clean=self.y_clean)
-        # for y in self.train_set_class_labels: TODO need this?
-        #     self.hub.record(
-        #         f"class_{y}_N_train_samples", int(np.sum(self.y_clean == y))
-        #     )
 
     def fit(self):
         # This function is over-ridden to apply random image augmentation every epoch.
@@ -345,6 +328,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         target = (
             self.target_class if self.target_class is not None else self.source_class
         )
+        # TODO change "target class" part of the metric names to be less misleading
 
         #  1 mAP benign test all classes  #
         #    mAP_benign
@@ -516,10 +500,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         log.info("Running inference on benign and adversarial examples")
         for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
             self.next()
-            if not self.skip_this_sample: # skip ones with boxes too small for trigger
+            if not self.skip_this_sample:  # skip ones with boxes too small for trigger
                 self.evaluate_current()
         self.hub.set_context(stage="finished")
-
 
     def next(self):
         # Over-ridden to resize data.
@@ -528,7 +511,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         x, y = next(self.test_dataset)
         i = self.i + 1
         self.hub.set_context(batch=i)
-        assert(len(y)==1) # TODO remove, but we do assume batch size is 1
+        assert len(y) == 1  # TODO remove, but we do assume batch size is 1
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
         x, y = self.apply_augmentation(x, y, 416, 416)
         if len(x.shape) == 3:
@@ -626,6 +609,6 @@ class ObjectDetectionPoisoningScenario(Poison):
             self.export_dir,
             default_export_kwargs={
                 "with_boxes": True,
-                "score_threshold": self.score_threshold,
+                "score_threshold": 0.1,  # TODO higher than used for metrics??
             },
         )
