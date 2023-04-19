@@ -45,9 +45,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         else:
             augmentations = iaa.Sequential(
                 [
-                    iaa.Affine(
-                        rotate=(0, 0), translate_percent=(0.0, 0.0), scale=(0.8, 1.2)
-                    ),
                     iaa.Fliplr(0.5),
                 ]
             )
