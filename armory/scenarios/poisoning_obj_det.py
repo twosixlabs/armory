@@ -512,6 +512,15 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         return {"boxes": boxes, "labels": labels, "scores": scores}
 
+    def evaluate_all(self):
+        log.info("Running inference on benign and adversarial examples")
+        for _ in tqdm(range(len(self.test_dataset)), desc="Evaluation"):
+            self.next()
+            if not self.skip_this_sample: # skip ones with boxes too small for trigger
+                self.evaluate_current()
+        self.hub.set_context(stage="finished")
+
+
     def next(self):
         # Over-ridden to resize data.
 
@@ -519,19 +528,21 @@ class ObjectDetectionPoisoningScenario(Poison):
         x, y = next(self.test_dataset)
         i = self.i + 1
         self.hub.set_context(batch=i)
-
+        assert(len(y)==1) # TODO remove, but we do assume batch size is 1
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
         x, y = self.apply_augmentation(x, y, 416, 416)
         if len(x.shape) == 3:
             print("APPLY AUGMENTATION did not return x with batch dimension")
             x = np.array([x])  # add batch dim back on
 
-        # TODO self.filter_label():
-        # If patch does not fit in boxes, skip image or remove small boxes
-        #
-
-        self.i, self.x, self.y = i, x, y
-        self.probe.update(i=i, x=x, y=y)
+        self.skip_this_sample = False
+        y = self.filter_label(y)
+        if y is None:
+            self.skip_this_sample = True
+        else:
+            y = [y]
+            self.i, self.x, self.y = i, x, y
+            self.probe.update(i=i, x=x, y=y)
 
     def run_benign(self):
         self.hub.set_context(stage="benign")
@@ -553,7 +564,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def run_attack(self):
         self.hub.set_context(stage="attack")
-        x, y = self.x, [self.y[0]]  # TODO carla data... what to do about metadata dict
+        x, y = self.x, self.y
         # source = self.source
 
         x_adv, y_adv = self.test_poisoner.poison(x, y)
