@@ -1358,6 +1358,9 @@ def _object_detection_poisoning_get_targeted_mr_dr(
         # initialize count of disappearances
         num_disappearances = 0
         num_gt_boxes = len(gt_boxes)
+        if num_gt_boxes == 0:
+            # no source boxes -- skip this image
+            continue
 
         # Initialize array to count misclassified
         targeted_misclassification_array = np.zeros((num_gt_boxes,))
@@ -1400,12 +1403,6 @@ def _object_detection_poisoning_get_targeted_mr_dr(
             overlap_indices = np.where(ious > iou_threshold)[0]
             if len(overlap_indices) == 0:
                 num_disappearances += 1
-
-        if num_gt_boxes != 0:
-            disappearance_rate = num_disappearances / num_gt_boxes
-            disappearance_rate_per_img.append(disappearance_rate)
-            # If the image had no boxe in source_class 0, it should
-            # not contribute to disappearance rate
 
         targeted_misclassification_rate_per_img.append(targeted_misclassification_rate)
 
