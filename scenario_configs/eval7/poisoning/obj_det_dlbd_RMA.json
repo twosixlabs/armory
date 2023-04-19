@@ -5,11 +5,11 @@
         "defense_categorical_labels": false,
         "experiment_id": 0,
         "explanatory_model": null,
-        "fraction_poisoned": 0.3,
+        "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 2,
+        "source_class": 1,
         "split_id": 0,
-        "target_class": 0,
+        "target_class": 2,
         "train_epochs": 50,
         "use_poison_filtering_defense": false
     },
@@ -51,7 +51,7 @@
         "model_kwargs": {},
         "module": "armory.baseline_models.pytorch.yolov3",
         "name": "get_art_model",
-        "weights_file": "yolov3.weights",
+        "weights_file": "darknet53.conv.74",
         "wrapper_kwargs": {}
     },
     "scenario": {
