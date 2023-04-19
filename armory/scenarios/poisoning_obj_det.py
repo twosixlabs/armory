@@ -95,10 +95,14 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def filter_label(self, y):
         # Remove boxes/labels from y if the patch wouldn't fit.
-        # If no boxes/labels are left, return False as a signal to skip this iamge completely.
-        # TODO
+        # If no boxes/labels are left, return False as a signal to skip this image completely.
+
         new_y = {"boxes": [], "labels": [], "scores": []}
 
+        if type(y) == list:
+            if len(y) > 1:
+                raise ValueError(f"filter_label accepts lists of length 1, got length {len(y)}")
+            y = y[0]
         for box, label in zip(y["boxes"], y["labels"]):
             if (
                 box[2] - box[0] >= self.patch_x_dim
@@ -119,7 +123,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             new_y["boxes"] = np.array(new_y["boxes"])
             new_y["labels"] = np.array(new_y["labels"])
             new_y["scores"] = np.array(new_y["scores"])
-            return y
+            return new_y
         else:
             self.n_images_removed += 1
             return None
