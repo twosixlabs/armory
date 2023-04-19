@@ -144,13 +144,13 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.fit_batch_size = adhoc_config.get(
             "fit_batch_size", self.config["dataset"]["batch_size"]
         )
+        self.config["dataset"]["batch_size"] = 1 
+        # Set batch size to 1 for loading data, this makes filtering small boxes easier
+        # Note, does not affect training since fit_batch_size is already set above.
 
         self.label_function = lambda y: y
 
-        dataset_config = copy.deepcopy(self.config["dataset"])
-        dataset_config[
-            "batch_size"
-        ] = 1  # load with batch size 1 to simplify looping and filtering small boxes
+        dataset_config = self.config["dataset"]
         log.info(f"Loading dataset {dataset_config['name']}...")
         ds = config_loading.load_dataset(
             dataset_config,
