@@ -1,5 +1,5 @@
 {
-    "_description": "Minicoco Baddet Object Detection Poisoning -- RMA",
+    "_description": "Minicoco Baddet Object Detection Poisoning -- OGA",
     "adhoc": {
         "compute_fairness_metrics": false,
         "defense_categorical_labels": false,
@@ -7,7 +7,6 @@
         "explanatory_model": null,
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
-        "source_class": 1,
         "split_id": 0,
         "target_class": 2,
         "train_epochs": 50,
