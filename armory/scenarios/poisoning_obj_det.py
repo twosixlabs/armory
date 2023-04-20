@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from armory.logs import log
 from armory import metrics
-from armory.instrument import LogWriter, Meter, ResultsWriter
+from armory.instrument import LogWriter, Meter, ResultsWriter, GlobalMeter
 from armory.scenarios.poison import Poison
 from armory.utils import config_loading
 from armory.instrument.export import (
@@ -24,21 +24,21 @@ Paper link: https://arxiv.org/pdf/2205.14497.pdf
 
 class ObjectDetectionPoisoningScenario(Poison):
     def apply_augmentation(
-        self, images, y_dicts, resize_width=None, resize_height=None
+        self, images, y_dicts, resize_dims=None,
     ):
         # Apply data augmentations using imgaug following https://github.com/eriklindernoren/PyTorch-YOLOv3/blob/master/pytorchyolo/utils/transforms.py
         # image: np.ndarray
         # y_dicts: list of y objects containing "labels" and "boxes"
-        # resize_width, resize_height: new image dimension
-        # If resize_width and height are provided, this will resize data.  Otherwise it will apply augmentations.
+        # resize_dims: tuple, new image dimension
+        # If resize_dims is provided, this will resize data.  Otherwise it will apply augmentations.
 
         # Define augmentations
-        if resize_width is not None:  # TODO raise error if only one is None
+        if resize_dims is not None:
             augmentations = iaa.Sequential(
                 [
                     iaa.PadToAspectRatio(1.0, position="center-center"),
                     iaa.Resize(
-                        {"height": resize_height, "width": resize_width},
+                        {"height": resize_dims[0], "width": resize_dims[1]},
                         interpolation="nearest",
                     ),
                 ]
@@ -54,8 +54,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         aug_ydicts = []
 
         for image, y_dict in zip(images, y_dicts):
-            # TODO sequential should be able to do a batch of images instead of looping.
-            # not sure about BoundingBoxesOnImage though
 
             if len(image.shape) == 4 and image.shape[0] == 1:
                 image = np.squeeze(image, axis=0)
@@ -143,6 +141,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                 "train_split_default not used in this loading method for poison"
             )
         adhoc_config = self.config.get("adhoc") or {}
+        self.attack_variant = self.config["attack"]["kwargs"]["attack_variant"]
         self.train_epochs = adhoc_config["train_epochs"]
         self.fit_batch_size = adhoc_config.get(
             "fit_batch_size", self.config["dataset"]["batch_size"]
@@ -172,8 +171,13 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.n_images_affected = 0
         x_clean, y_clean = [], []
         for xc, yc in list(ds):
-            img, yc = self.apply_augmentation([xc], yc, 416, 416)
-            yc = self.filter_label(yc)  # TODO not necessary for OGA or GMA
+            img, yc = self.apply_augmentation([xc], yc, (416, 416))
+            if self.attack_variant in [
+                "BadDetRegionalMisclassificationAttack",
+                "BadDetObjectDisappearanceAttack"
+            ]:
+                # Not necessary for OGA or GMA because the patch is not applied in a box
+                yc = self.filter_label(yc)
             if yc is not None:
                 x_clean.append(img)
                 y_clean.append(yc)
@@ -328,7 +332,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         target = (
             self.target_class if self.target_class is not None else self.source_class
         )
-        # TODO change "target class" part of the metric names to be less misleading
+        # TODO reduce to three AP metrics, which all report mean and per class.
 
         #  1 mAP benign test all classes  #
         #    mAP_benign
@@ -511,15 +515,18 @@ class ObjectDetectionPoisoningScenario(Poison):
         x, y = next(self.test_dataset)
         i = self.i + 1
         self.hub.set_context(batch=i)
-        assert len(y) == 1  # TODO remove, but we do assume batch size is 1
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
-        x, y = self.apply_augmentation(x, y, 416, 416)
+        x, y = self.apply_augmentation(x, y, (416, 416))
         if len(x.shape) == 3:
             print("APPLY AUGMENTATION did not return x with batch dimension")
             x = np.array([x])  # add batch dim back on
 
         self.skip_this_sample = False
-        y = self.filter_label(y)
+        if self.attack_variant in [
+                "BadDetRegionalMisclassificationAttack",
+                "BadDetObjectDisappearanceAttack"
+            ]:
+            y = self.filter_label(y)
         if y is None:
             self.skip_this_sample = True
         else:
@@ -535,21 +542,13 @@ class ObjectDetectionPoisoningScenario(Poison):
         y_pred = self.model.predict(x, **self.predict_kwargs)
         y_pred = [self.non_maximum_supression(pred) for pred in y_pred]
         self.probe.update(y_pred=y_pred)
-        # source = y == self.source_class TODO
-        # uses source->target trigger
-        # if source.any():
-        #     self.probe.update(y_source=y[source], y_pred_source=y_pred[source])
-
         self.y_pred = y_pred
-        # self.source = source
         if self.explanatory_model is not None:
             self.run_explanatory()
 
     def run_attack(self):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
-        # source = self.source
-
         x_adv, y_adv = self.test_poisoner.poison(x, y)
 
         self.hub.set_context(stage="adversarial")
@@ -558,13 +557,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         y_pred_adv = [self.non_maximum_supression(pred) for pred in y_pred_adv]
         self.probe.update(x_adv=x_adv, y_adv=y_adv, y_pred_adv=y_pred_adv)
 
-        # uses source->target trigger TODO
-        # if source.any():
-        #     self.probe.update(
-        #         target_class_source=[self.target_class] * source.sum(),
-        #         y_pred_adv_source=y_pred_adv[source],
-        #     )
-
         self.x_adv = x_adv
         self.y_pred_adv = y_pred_adv
 
@@ -572,7 +564,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         raise NotImplementedError(
             "The fairness metrics have not been implemented for object detection poisoning"
         )
-        # TODO
 
     def load_export_meters(self):
         super().load_export_meters()
@@ -590,7 +581,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             if self.skip_attack:
                 break
 
-        # TODO y objects are missing "image_id" which is used by coco_format_meter
+        # Note: y objects are missing "image_id" which is used by coco_format_meter
         # coco_box_format_meter = CocoBoxFormatMeter(
         #     "coco_box_format_meter",
         #     self.export_dir,
