@@ -296,23 +296,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         else:
             log.warning("All data points filtered by defense. Skipping training")
 
-    def make_AP_meter(self, name, y, y_pred, target_class=None):
-        # A little helper function to make metrics
-        metric_kwargs = {}
-        if target_class is not None:
-            metric_kwargs["class_list"] = [target_class]
-        self.hub.connect_meter(
-            Meter(
-                name,
-                metrics.get("object_detection_mAP"),
-                y,
-                y_pred,
-                metric_kwargs=metric_kwargs,
-                final=np.mean,
-                final_name=name,
-                record_final_only=True,
-            )
-        )
 
     def load_metrics(self):
         self.score_threshold = 0.0  # TODO set final score threshold
@@ -327,73 +310,40 @@ class ObjectDetectionPoisoningScenario(Poison):
                 )
             )
 
-        # The paper uses short but vague names for the metrics, which are here replaced with longer
-        # more descriptive names.  The paper's names will be mentioned in the comments for reference.
-        target = (
-            self.target_class if self.target_class is not None else self.source_class
-        )
-        # TODO reduce to three AP metrics, which all report mean and per class.
-
-        #  1 mAP benign test all classes  #
-        #    mAP_benign
-        self.make_AP_meter(
-            "mAP_on_benign_test_data_all_classes",
-            "scenario.y",
-            "scenario.y_pred",
-        )
-
-        #  2 AP benign test target class  #
-        #    AP_benign
-        self.make_AP_meter(
-            "AP_on_benign_test_data_target_class",
-            "scenario.y",
-            "scenario.y_pred",
-            target,
+        # mAP on benign test data
+        self.hub.connect_meter(
+            GlobalMeter(
+                "AP_on_benign_test_data",
+                metrics.get("object_detection_AP_per_class"),
+                "scenario.y",
+                "scenario.y_pred",
+            )
         )
 
         if self.use_poison:
 
-            #  3 mAP adv test, adv labels  #
-            #    mAP_attack
-            self.make_AP_meter(
-                "mAP_on_adv_test_data_with_poison_labels_all_classes",
-                "scenario.y_adv",
-                "scenario.y_pred_adv",
-            )
-
-            #  4 mAP adv test, adv labels, target class  #
-            #    AP_attack
-            #    Not applicable to Disappearance
-            if self.target_class is not None:
-                self.make_AP_meter(
-                    "AP_on_adv_test_data_with_poison_labels_target_class",
+            # mAP adv preds, poison labels
+            self.hub.connect_meter(
+                GlobalMeter(
+                    "AP_on_adv_test_data_with_poison_labels",
+                    metrics.get("object_detection_AP_per_class"),
                     "scenario.y_adv",
                     "scenario.y_pred_adv",
-                    target,
                 )
+            )
 
-            #  5 mAP adv test, clean labels   #
-            #    mAP_attack+benign
+            # mAP adv preds, clean labels
             #    Not applicable to Generation
             if self.attack_variant != "BadDetObjectGenerationAttack":
-                self.make_AP_meter(
-                    "mAP_on_adv_test_data_with_clean_labels_all_classes",
-                    "scenario.y",
-                    "scenario.y_pred_adv",
+                self.hub.connect_meter(
+                    GlobalMeter(
+                        "AP_on_adv_test_data_with_clean_labels",
+                        metrics.get("object_detection_AP_per_class"),
+                        "scenario.y",
+                        "scenario.y_pred_adv",
+                    )
                 )
 
-            #  6 AP adv test, clean labels, target class  #
-            #    AP_attack+benign
-            #    Not applicable to Generation
-            if self.attack_variant != "BadDetObjectGenerationAttack":
-                self.make_AP_meter(
-                    "AP_on_adv_test_data_with_clean_labels_target_class",
-                    "scenario.y",
-                    "scenario.y_pred_adv",
-                    target,
-                )
-
-            #  7 Attack Success Rate  #
 
             # ASR -- Misclassification
             if self.attack_variant in [
