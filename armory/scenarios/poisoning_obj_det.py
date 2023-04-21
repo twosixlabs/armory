@@ -24,7 +24,10 @@ Paper link: https://arxiv.org/pdf/2205.14497.pdf
 
 class ObjectDetectionPoisoningScenario(Poison):
     def apply_augmentation(
-        self, images, y_dicts, resize_dims=None,
+        self,
+        images,
+        y_dicts,
+        resize_dims=None,
     ):
         # Apply data augmentations using imgaug following https://github.com/eriklindernoren/PyTorch-YOLOv3/blob/master/pytorchyolo/utils/transforms.py
         # image: np.ndarray
@@ -173,7 +176,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             img, yc = self.apply_augmentation([xc], yc, (416, 416))
             if self.attack_variant in [
                 "BadDetRegionalMisclassificationAttack",
-                "BadDetObjectDisappearanceAttack"
+                "BadDetObjectDisappearanceAttack",
             ]:
                 # Not necessary for OGA or GMA because the patch is not applied in a box
                 yc = self.filter_label(yc)
@@ -295,7 +298,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         else:
             log.warning("All data points filtered by defense. Skipping training")
 
-
     def add_asr_metric(self, name, metric, labels, kwargs={}):
         kwargs["score_threshold"] = self.score_threshold
         self.hub.connect_meter(
@@ -364,11 +366,12 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "attack_success_rate_misclassification",
                     "object_detection_poisoning_targeted_misclassification_rate",
                     "scenario.y",
-                    {"target_class": self.target_class,
-                    "source_class": self.source_class,
+                    {
+                        "target_class": self.target_class,
+                        "source_class": self.source_class,
                     },
                 )
-            
+
             # ASR -- Disappearance
             elif "Disappearance" in self.attack_variant:
                 self.add_asr_metric(
@@ -453,9 +456,9 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         self.skip_this_sample = False
         if self.attack_variant in [
-                "BadDetRegionalMisclassificationAttack",
-                "BadDetObjectDisappearanceAttack"
-            ]:
+            "BadDetRegionalMisclassificationAttack",
+            "BadDetObjectDisappearanceAttack",
+        ]:
             y = self.filter_label(y)
         if y is None:
             self.skip_this_sample = True
