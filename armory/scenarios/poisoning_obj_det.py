@@ -98,12 +98,11 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         new_y = {"boxes": [], "labels": [], "scores": []}
 
-        if type(y) == list:
-            if len(y) > 1:
-                raise ValueError(
-                    f"filter_label accepts lists of length 1, got length {len(y)}"
-                )
-            y = y[0]
+        if len(y) > 1:
+            raise ValueError(
+                f"filter_label accepts lists of length 1, got length {len(y)}"
+            )
+        y = y[0]
         for box, label in zip(y["boxes"], y["labels"]):
             if (
                 box[2] - box[0] >= self.patch_x_dim
@@ -124,7 +123,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             new_y["boxes"] = np.array(new_y["boxes"])
             new_y["labels"] = np.array(new_y["labels"])
             new_y["scores"] = np.array(new_y["scores"])
-            return new_y
+            return [new_y]
         else:
             self.n_images_removed += 1
             return None
@@ -180,7 +179,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                 yc = self.filter_label(yc)
             if yc is not None:
                 x_clean.append(img)
-                y_clean.append(yc)
+                y_clean.extend(yc)
 
         self.x_clean = np.concatenate(x_clean, axis=0)
         self.y_clean = np.array(y_clean, dtype="object")
@@ -297,6 +296,21 @@ class ObjectDetectionPoisoningScenario(Poison):
             log.warning("All data points filtered by defense. Skipping training")
 
 
+    def add_asr_metric(self, name, metric, labels, kwargs={}):
+        kwargs["score_threshold"] = self.score_threshold
+        self.hub.connect_meter(
+            Meter(
+                name,
+                metrics.get(metric),
+                labels,
+                "scenario.y_pred_adv",
+                metric_kwargs=kwargs,
+                final=np.mean,
+                final_name=name,
+                record_final_only=True,
+            )
+        )
+
     def load_metrics(self):
         self.score_threshold = 0.0  # TODO set final score threshold
         if self.use_filtering_defense:
@@ -344,66 +358,32 @@ class ObjectDetectionPoisoningScenario(Poison):
                     )
                 )
 
-
             # ASR -- Misclassification
-            if self.attack_variant in [
-                "BadDetRegionalMisclassificationAttack",
-                "BadDetGlobalMisclassificationAttack",
-            ]:
-                self.hub.connect_meter(
-                    Meter(
-                        "attack_success_rate_misclassification",
-                        metrics.get(
-                            "object_detection_poisoning_targeted_misclassification_rate"
-                        ),
-                        "scenario.y",
-                        "scenario.y_pred_adv",
-                        metric_kwargs={
-                            "target_class": self.target_class,
-                            "source_class": self.source_class,
-                            "score_threshold": self.score_threshold,
-                        },
-                        final=np.mean,
-                        final_name="attack_success_rate_misclassification",
-                        record_final_only=True,
-                    )
+            if "Misclassification" in self.attack_variant:
+                self.add_asr_metric(
+                    "attack_success_rate_misclassification",
+                    "object_detection_poisoning_targeted_misclassification_rate",
+                    "scenario.y",
+                    {"target_class": self.target_class,
+                    "source_class": self.source_class,
+                    },
                 )
-
+            
             # ASR -- Disappearance
-            if self.attack_variant == "BadDetObjectDisappearanceAttack":
-                self.hub.connect_meter(
-                    Meter(
-                        "attack_success_rate_disappearance",
-                        metrics.get(
-                            "object_detection_poisoning_targeted_disappearance_rate"
-                        ),
-                        "scenario.y",
-                        "scenario.y_pred_adv",
-                        metric_kwargs={
-                            "source_class": self.source_class,
-                            "score_threshold": self.score_threshold,
-                        },
-                        final=np.mean,
-                        final_name="attack_success_rate_disappearance",
-                        record_final_only=True,
-                    )
+            elif "Disappearance" in self.attack_variant:
+                self.add_asr_metric(
+                    "attack_success_rate_disappearance",
+                    "object_detection_poisoning_targeted_disappearance_rate",
+                    "scenario.y",
+                    {"source_class": self.source_class},
                 )
 
             # ASR -- Generation
-            if self.attack_variant == "BadDetObjectGenerationAttack":
-                self.hub.connect_meter(
-                    Meter(
-                        "attack_success_rate_generation",
-                        metrics.get(
-                            "object_detection_poisoning_targeted_generation_rate"
-                        ),
-                        "scenario.y_adv",
-                        "scenario.y_pred_adv",
-                        metric_kwargs={"score_threshold": self.score_threshold},
-                        final=np.mean,
-                        final_name="attack_success_rate_generation",
-                        record_final_only=True,
-                    )
+            elif "Generation" in self.attack_variant:
+                self.add_asr_metric(
+                    "attack_success_rate_generation",
+                    "object_detection_poisoning_targeted_generation_rate",
+                    "scenario.y_adv",
                 )
 
         if self.config["adhoc"].get("compute_fairness_metrics"):
@@ -480,7 +460,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         if y is None:
             self.skip_this_sample = True
         else:
-            y = [y]
             self.i, self.x, self.y = i, x, y
             self.probe.update(i=i, x=x, y=y)
 
