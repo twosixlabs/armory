@@ -3,9 +3,9 @@ from typing import Callable
 
 try:
     from armory.metrics import compute, perturbation, statistical, task
-except ImportError as e:
+except ImportError:
     raise ImportError(
-        f"armory engine dependencies are not installed. {e}. "
+        "armory engine dependencies are not installed. "
         "Please install armory-testbed[engine] to use metrics."
     )
 from armory.metrics.common import get_result_formatter, result_formatter, supported
