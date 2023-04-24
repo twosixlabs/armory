@@ -87,10 +87,10 @@ pushd $PROJECT_ROOT > /dev/null || exit 1
                 continue
             fi
 
-            python -m json.tool --sort-keys --indent=4 ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
+            python -m json.tool --sort-keys ${TARGET_FILE} 2>&1 | diff - ${TARGET_FILE} > /dev/null 2>&1
 
             if [ $? -ne 0 ] ; then
-                JSON_PATCH="`python -m json.tool --sort-keys --indent=4 ${TARGET_FILE}`"
+                JSON_PATCH="`python -m json.tool --sort-keys ${TARGET_FILE}`"
                 if [[ ! -z "${JSON_PATCH// }" ]]; then
                     echo "${JSON_PATCH}" > ${TARGET_FILE}    # The double quotes are important here!
                     echo "📄 $(tput bold)modified ${TARGET_FILE}$(tput sgr0)"
