@@ -111,7 +111,6 @@ class ObjectDetectionPoisoningScenario(Poison):
                 box[2] - box[0] >= self.patch_x_dim
                 and box[3] - box[1] >= self.patch_y_dim
             ):
-                # TODO check if the patch has shift applied
                 new_y["boxes"].append(box)
                 new_y["labels"].append(label)
                 new_y["scores"].append(1)
@@ -161,7 +160,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             split=dataset_config.get("train_split", "train"),
             **self.dataset_kwargs,
         )
-        log.info("Loading and resizing data")
+        log.info("Resizing data")
         # It is desired to resize the data before poisoning occurs,
         # which is why this is done here and not in the model.
         self.patch_x_dim, self.patch_y_dim = self.config["attack"]["kwargs"][
@@ -230,7 +229,6 @@ class ObjectDetectionPoisoningScenario(Poison):
             self.x_poison, self.y_poison = self.poisoner.poison(
                 self.x_clean, self.y_clean
             )
-            # self.x_poison = np.array(self.x_poison)
             self.y_poison = np.array(self.y_poison)
 
             # this attack does not return poison indices, find them manually
@@ -314,7 +312,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         )
 
     def load_metrics(self):
-        self.score_threshold = 0.0  # TODO set final score threshold
+        self.score_threshold = 0.0
         if self.use_filtering_defense:
             # Filtering metrics
             self.hub.connect_meter(
@@ -450,9 +448,6 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.hub.set_context(batch=i)
         self.y_pred, self.y_target, self.x_adv, self.y_pred_adv = None, None, None, None
         x, y = self.apply_augmentation(x, y, (416, 416))
-        if len(x.shape) == 3:
-            print("APPLY AUGMENTATION did not return x with batch dimension")
-            x = np.array([x])  # add batch dim back on
 
         self.skip_this_sample = False
         if self.attack_variant in [
@@ -532,6 +527,6 @@ class ObjectDetectionPoisoningScenario(Poison):
             self.export_dir,
             default_export_kwargs={
                 "with_boxes": True,
-                "score_threshold": 0.1,  # TODO higher than used for metrics??
+                "score_threshold": 0.1,
             },
         )
