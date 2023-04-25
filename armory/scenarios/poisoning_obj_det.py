@@ -186,12 +186,12 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.x_clean = np.concatenate(x_clean, axis=0)
         self.y_clean = np.array(y_clean, dtype="object")
 
-        if self.n_images_removed > 0:
-            log.info("Filtered out boxees where patch wouldn't fit")
-            log.info(f"N boxes removed by class: {self.n_boxes_removed_by_class}")
-            log.info(f"N total images removed: {self.n_images_removed}")
+        if self.n_images_affected > 0:
             log.info(
-                f"N images with at least one box removed: {self.n_images_affected}"
+                f"Filtered out boxes where patch wouldn't fit:\n \
+                    N boxes removed by class: {self.n_boxes_removed_by_class}\n \
+                    N total images removed: {self.n_images_removed}\n \
+                    N images with at least one box removed: {self.n_images_affected}"
             )
 
     def load_poisoner(self):
@@ -274,11 +274,10 @@ class ObjectDetectionPoisoningScenario(Poison):
 
             #  Every epoch, apply random augmentation
             for epoch in range(self.train_epochs):
-                log.info(f"Applying augmentations for epoch {epoch}")
+                log.info(f"Augmenting and training for epoch {epoch}")
                 aug_x_train, aug_y_train = self.apply_augmentation(
                     self.x_train, self.y_train
                 )
-                log.info("Augmentation finished, training model")
 
                 # Manually call model.fit with small batches
                 for i in range(0, len(aug_y_train), self.fit_batch_size):
