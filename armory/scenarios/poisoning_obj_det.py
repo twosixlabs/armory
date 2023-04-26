@@ -296,6 +296,7 @@ class ObjectDetectionPoisoningScenario(Poison):
             log.warning("All data points filtered by defense. Skipping training")
 
     def add_asr_metric(self, name, metric, labels, kwargs={}):
+        # Helper function for connecting ASR meters
         kwargs["score_threshold"] = self.score_threshold
         self.hub.connect_meter(
             Meter(
@@ -323,39 +324,43 @@ class ObjectDetectionPoisoningScenario(Poison):
                 )
             )
 
-        # mAP on benign test data
-        self.hub.connect_meter(
-            GlobalMeter(
-                "AP_on_benign_test_data",
-                metrics.get("object_detection_AP_per_class"),
-                "scenario.y",
-                "scenario.y_pred",
-            )
-        )
+        for metric_name in [
+            "object_detection_AP_per_class",
+            "object_detection_mAP_tide",
+        ]:
+            short_name = metric_name[17:]  # remove "object_detection_"
 
-        if self.use_poison:
-
-            # mAP adv preds, poison labels
+            # mAP on benign test data
             self.hub.connect_meter(
                 GlobalMeter(
-                    "AP_on_adv_test_data_with_poison_labels",
-                    metrics.get("object_detection_AP_per_class"),
-                    "scenario.y_adv",
-                    "scenario.y_pred_adv",
+                    f"{short_name}_on_benign_test_data",
+                    metrics.get(metric_name),
+                    "scenario.y",
+                    "scenario.y_pred",
                 )
             )
 
-            # mAP adv preds, clean labels
-            #    Not applicable to Generation
-            if self.attack_variant != "BadDetObjectGenerationAttack":
+            if self.use_poison:
+                # mAP adv preds, poison labels
                 self.hub.connect_meter(
                     GlobalMeter(
-                        "AP_on_adv_test_data_with_clean_labels",
-                        metrics.get("object_detection_AP_per_class"),
-                        "scenario.y",
+                        f"{short_name}_on_adv_test_data_with_poison_labels",
+                        metrics.get(metric_name),
+                        "scenario.y_adv",
                         "scenario.y_pred_adv",
                     )
                 )
+                # mAP adv preds, clean labels
+                #    Not applicable to Generation
+                if self.attack_variant != "BadDetObjectGenerationAttack":
+                    self.hub.connect_meter(
+                        GlobalMeter(
+                            f"{short_name}_on_adv_test_data_with_clean_labels",
+                            metrics.get(metric_name),
+                            "scenario.y",
+                            "scenario.y_pred_adv",
+                        )
+                    )
 
             # ASR -- Misclassification
             if "Misclassification" in self.attack_variant:
