@@ -55,7 +55,6 @@ class ObjectDetectionPoisoningScenario(Poison):
 
         aug_images = []
         aug_ydicts = []
-
         for image, y_dict in zip(images, y_dicts):
 
             if len(image.shape) == 4 and image.shape[0] == 1:
@@ -511,17 +510,6 @@ class ObjectDetectionPoisoningScenario(Poison):
             self.hub.connect_meter(export_with_boxes_meter, use_default_writers=False)
             if self.skip_attack:
                 break
-
-        # Note: y objects are missing "image_id" which is used by coco_format_meter
-        # coco_box_format_meter = CocoBoxFormatMeter(
-        #     "coco_box_format_meter",
-        #     self.export_dir,
-        #     y_probe="scenario.y",
-        #     y_pred_clean_probe="scenario.y_pred" if not self.skip_benign else None,
-        #     y_pred_adv_probe="scenario.y_pred_adv" if not self.skip_attack else None,
-        #     max_batches=self.num_export_batches,
-        # )
-        # self.hub.connect_meter(coco_box_format_meter, use_default_writers=False)
 
     def _load_sample_exporter(self):
         return ObjectDetectionExporter(self.export_dir)
