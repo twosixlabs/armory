@@ -361,7 +361,8 @@ class ObjectDetectionPoisoningScenario(Poison):
                         )
                     )
 
-            # ASR -- Misclassification
+        if self.use_poison:
+            # Attack success rate
             if "Misclassification" in self.attack_variant:
                 self.add_asr_metric(
                     "attack_success_rate_misclassification",
@@ -372,8 +373,6 @@ class ObjectDetectionPoisoningScenario(Poison):
                         "source_class": self.source_class,
                     },
                 )
-
-            # ASR -- Disappearance
             elif "Disappearance" in self.attack_variant:
                 self.add_asr_metric(
                     "attack_success_rate_disappearance",
@@ -381,8 +380,6 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "scenario.y",
                     {"source_class": self.source_class},
                 )
-
-            # ASR -- Generation
             elif "Generation" in self.attack_variant:
                 self.add_asr_metric(
                     "attack_success_rate_generation",
