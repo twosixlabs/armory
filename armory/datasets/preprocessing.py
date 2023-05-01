@@ -4,6 +4,7 @@ Standard preprocessing for different datasets
 
 
 import tensorflow as tf
+from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
 
 
 REGISTERED_PREPROCESSORS = {}
@@ -151,6 +152,24 @@ def xview(element):
     return image_to_canon(element["image"]), convert_tf_obj_det_label_to_pytorch(
         element["image"], element["objects"]
     )
+
+
+@register
+def apricot_dev(element):
+    return image_to_canon(element["image"]), replace_magic_val(
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
+    )
+
+
+def replace_magic_val(y):
+    raw_adv_patch_category_id = 12
+    rhs = y["labels"]
+    y["labels"] = tf.where(
+        tf.equal(rhs, raw_adv_patch_category_id),
+        tf.ones_like(rhs, dtype=tf.int64) * ADV_PATCH_MAGIC_NUMBER_LABEL_ID,
+        rhs,
+    )
+    return y
 
 
 def image_to_canon(image, resize=None, target_dtype=tf.float32, input_type="uint8"):
