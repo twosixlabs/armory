@@ -7,7 +7,6 @@
             "batch_size": 1,
             "split": "frcnn"
         },
-        "module": "filler.to.bypass.validate_config.error",
         "name": "apricot_dev",
         "type": "preloaded",
         "use_label": false
