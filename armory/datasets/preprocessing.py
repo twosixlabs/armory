@@ -161,6 +161,13 @@ def apricot_dev(element):
     )
 
 
+@register
+def apricot_test(element):
+    return image_to_canon(element["image"]), replace_magic_val(
+        convert_tf_obj_det_label_to_pytorch(element["image"], element["objects"])
+    )
+
+
 def replace_magic_val(y):
     raw_adv_patch_category_id = 12
     rhs = y["labels"]
