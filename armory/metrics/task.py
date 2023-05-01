@@ -1347,13 +1347,17 @@ def _object_detection_poisoning_get_targeted_mr_dr(
 
     for img_idx, (y, y_pred) in enumerate(zip(y_list, y_pred_list)):
         if source_class is not None:
-            # Filter out non-source ground-truth classes
+            # Disappearance, or regional misclass with source class:
+            # Only consider source class ground truth boxes
             indices_to_keep = np.where(np.isin(y["labels"], source_class))
             gt_boxes = y["boxes"][indices_to_keep]
             gt_labels = y["labels"][indices_to_keep]
-        else:
-            gt_boxes = y["boxes"]
-            gt_labels = y["labels"]
+        elif target_class is not None:
+            # Global misclass, or regional but with no source class:
+            # Ignore target class ground truth boxes
+            indices_to_keep = np.where(~np.isin(y["labels"], target_class))
+            gt_boxes = y["boxes"][indices_to_keep]
+            gt_labels = y["labels"][indices_to_keep]
 
         # initialize count of disappearances
         num_disappearances = 0

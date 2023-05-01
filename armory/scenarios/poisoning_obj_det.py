@@ -96,7 +96,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def filter_label(self, y):
         # Remove boxes/labels from y if the patch wouldn't fit.
-        # If no boxes/labels are left, return False as a signal to skip this image completely.
+        # If no boxes/labels are left, return None as a signal to skip this image completely.
 
         new_y = {"boxes": [], "labels": [], "scores": []}
 
@@ -261,8 +261,8 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def fit(self):
         # This function is over-ridden to apply random image augmentation every epoch.
-        # Supposedly, this will be handled in ART in a future update, at which point this
-        # should be unnecessary.
+        # Supposedly, augmentation will be handled in ART in a future update, at which
+        # point this should be unnecessary.
         # Also, it appears that if you pass a new NumpyDataGenerator to model.fit_generator()
         # at each epoch, the old Generators do not get released from memory, resulting in a leak.
         # So here we manually batch the data and use model.fit().
