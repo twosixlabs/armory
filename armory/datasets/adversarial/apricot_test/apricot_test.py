@@ -103,23 +103,6 @@ class ApricotTest(tfds.core.GeneratorBasedBuilder):
     def _info(self) -> tfds.core.DatasetInfo:
         """Returns the dataset metadata."""
         # TODO(apricot_test): Specifies the tfds.core.DatasetInfo object
-        # return tfds.core.DatasetInfo(
-        #     builder=self,
-        #     description=_DESCRIPTION,
-        #     features=tfds.features.FeaturesDict(
-        #         {
-        #             # These are the features of your dataset like images, labels ...
-        #             "image": tfds.features.Image(shape=(None, None, 3)),
-        #             "label": tfds.features.ClassLabel(names=["no", "yes"]),
-        #         }
-        #     ),
-        #     # If there's a common (input, target) tuple from the
-        #     # features, specify them here. They'll be used if
-        #     # `as_supervised=True` in `builder.as_dataset`.
-        #     supervised_keys=("image", "label"),  # Set to `None` to disable
-        #     homepage="https://dataset-homepage/",
-        #     citation=_CITATION,
-        # )
 
         features = {
             "image": tfds.features.Image(encoding_format="jpeg"),
@@ -190,13 +173,9 @@ class ApricotTest(tfds.core.GeneratorBasedBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
         # TODO(apricot_test): Downloads the data and defines the splits
-        # path = dl_manager.download_and_extract("https://todo-data-url")
         paths = dl_manager.download_and_extract(_URLS)
 
         # TODO(apricot_test): Returns the Dict[split names, Iterator[Key, Example]]
-        # return {
-        #     "train": self._generate_examples(path / "train_imgs"),
-        # }
         return [
             tfds.core.SplitGenerator(
                 name=split,
@@ -208,11 +187,6 @@ class ApricotTest(tfds.core.GeneratorBasedBuilder):
     def _generate_examples(self, path, model):
         """Yields examples."""
         # TODO(apricot_test): Yields (key, example) tuples from the dataset
-        # for f in path.glob("*.jpeg"):
-        #     yield "key", {
-        #         "image": f,
-        #         "label": "yes",
-        #     }
 
         annotation_path = os.path.join(
             path, "Annotations/apricot_test_all_annotations.json"
