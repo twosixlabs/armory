@@ -6,6 +6,18 @@
             "type": "object"
         },
         "attack": {
+            "if": {
+                "not": {
+                    "properties": {
+                        "type": {
+                            "const": "preloaded"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                }
+            },
             "properties": {
                 "knowledge": {
                     "enum": [
@@ -30,9 +42,13 @@
             "required": [
                 "knowledge",
                 "kwargs",
-                "module",
                 "name"
             ],
+            "then": {
+                "required": [
+                    "module"
+                ]
+            },
             "type": "object"
         },
         "dataset": {
