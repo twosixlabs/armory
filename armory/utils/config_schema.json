@@ -6,6 +6,18 @@
             "type": "object"
         },
         "attack": {
+            "if": {
+                "not": {
+                    "properties": {
+                        "type": {
+                            "const": "preloaded"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ]
+                }
+            },
             "properties": {
                 "knowledge": {
                     "enum": [
@@ -30,12 +42,17 @@
             "required": [
                 "knowledge",
                 "kwargs",
-                "module",
                 "name"
             ],
+            "then": {
+                "required": [
+                    "module"
+                ]
+            },
             "type": "object"
         },
         "dataset": {
+            "additionalProperties": false,
             "properties": {
                 "test": {
                     "$comment": "See load_dataset() kwargs in armory/datasets/config_load.py",
@@ -75,7 +92,6 @@
             "required": [
                 "test"
             ],
-            "additionalProperties": false,
             "type": "object"
         },
         "defense": {

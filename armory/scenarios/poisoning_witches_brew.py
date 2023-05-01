@@ -1,13 +1,13 @@
-import os
 import copy
+import os
 
 import numpy as np
 
-from armory.scenarios.poison import Poison
-from armory.logs import log
-from armory.utils import config_loading
 from armory import metrics, paths
-from armory.instrument import Meter, GlobalMeter, LogWriter, ResultsWriter
+from armory.instrument import GlobalMeter, LogWriter, Meter, ResultsWriter
+from armory.logs import log
+from armory.scenarios.poison import Poison
+from armory.utils import config_loading
 
 
 class DatasetPoisonerWitchesBrew:
@@ -354,7 +354,7 @@ class WitchesBrewScenario(Poison):
     def load_test_dataset(self, test_split_default="test"):
         # Over-ridden because we need batch_size = 1 for the test set for this attack.
         if self.config["dataset"].get("test").get("batch_size") != 1:
-            raise ValueError(f"batch_size must be set to 1 for test set")
+            raise ValueError("batch_size must be set to 1 for test set")
         super().load_test_dataset(test_split_default=test_split_default)
 
     def load_metrics(self):

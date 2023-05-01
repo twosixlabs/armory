@@ -1,5 +1,5 @@
-import torch
 import tensorflow as tf
+import torch
 
 
 class TFToTorchGenerator(torch.utils.data.IterableDataset):

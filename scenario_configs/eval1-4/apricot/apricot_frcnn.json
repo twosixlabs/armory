@@ -1,24 +1,22 @@
 {
-    "_description": "",
+    "_description": "APRICOT object detection, contributed by MITRE Corporation",
     "adhoc": null,
     "attack": {
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "eps": 0.2,
-            "eps_step": 0.1,
-            "minimal": false,
-            "num_random_init": 0,
-            "targeted": false
+            "split": "frcnn"
         },
-        "module": "art.attacks.evasion",
-        "name": "FastGradientMethod"
+        "name": "apricot_dev",
+        "type": "preloaded",
+        "use_label": false
     },
     "dataset": {
-        "batch_size": 64,
-        "framework": "numpy",
-        "module": "armory.data.datasets",
-        "name": "mnist"
+        "test": {
+            "batch_size": 1,
+            "name": "apricot_dev",
+            "split": "frcnn"
+        }
     },
     "defense": null,
     "metric": {
@@ -26,25 +24,26 @@
         "perturbation": "linf",
         "record_metric_per_sample": false,
         "task": [
-            "categorical_accuracy"
+            "apricot_patch_targeted_AP_per_class",
+            "object_detection_AP_per_class"
         ]
     },
     "model": {
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {},
-        "module": "armory.baseline_models.keras.mnist",
+        "module": "armory.baseline_models.pytorch.mscoco_frcnn",
         "name": "get_art_model",
-        "weights_file": "undefended_mnist_5epochs.h5",
+        "weights_file": null,
         "wrapper_kwargs": {}
     },
     "scenario": {
         "kwargs": {},
-        "module": "armory.scenarios.image_classification",
-        "name": "ImageClassificationTask"
+        "module": "armory.scenarios.object_detection",
+        "name": "ObjectDetectionTask"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/tf1",
+        "docker_image": "twosixarmory/armory",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,

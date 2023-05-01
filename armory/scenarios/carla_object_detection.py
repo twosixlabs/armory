@@ -4,9 +4,9 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.object_detection import ObjectDetectionTask
 from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
+from armory.scenarios.object_detection import ObjectDetectionTask
 
 
 class CarlaObjectDetectionTask(ObjectDetectionTask):
@@ -21,7 +21,7 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
     def load_test_dataset(self):
         if self.config["dataset"].get("test").get("batch_size") != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
-        super().load_test_dataset(test_split_default="dev")
+        super().load_test_dataset(test_split_default="test")
 
     def next(self):
         super().next()

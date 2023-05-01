@@ -2,23 +2,22 @@
 Evaluators control launching of ARMORY evaluations.
 """
 import base64
-import os
-import json
-import shutil
-import time
 import datetime
+import json
+import os
+import shutil
 import sys
+import time
 
 import requests
 
 import armory
+from armory import environment, paths
 from armory.configuration import load_global_config
-from armory.docker.management import ManagementInstance, ArmoryInstance
 from armory.docker.host_management import HostManagementInstance
+from armory.docker.management import ArmoryInstance, ManagementInstance
+from armory.logs import added_filters, is_debug, log
 from armory.utils.printing import bold, red
-from armory import paths
-from armory import environment
-from armory.logs import log, is_debug, added_filters
 
 
 class Evaluator(object):

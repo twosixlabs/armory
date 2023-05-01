@@ -1,0 +1,71 @@
+# this is derived from 2-test-stand-alone.yml with
+# 1. uses a self-hosted runner
+# 2. removes the python version matrix and non-linux tasks
+
+# TODO: there are likely all kinds of statefullness problems because the
+# self hosted runner is not-ephemeral
+---
+name: self-hosted tests
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  stand-alone-test:
+    name: quick-test on self-hosted
+    runs-on: [self-hosted]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Get history and tags for SCM versioning to work
+      - name: git checkout
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+          # Verify .git folder
+          if [ ! -d "./.git" ]; then
+            echo "Expected ./.git folder to exist"
+            exit 1
+          fi
+
+      - name: using python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Activate virtualenv
+        run: |
+          now=venv-$(date -Ins)
+          python -m venv $now
+          source $now/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+
+      - name: 🌱 Setup Test Enviroment
+        run: |
+          python -m pip install --upgrade pip build
+
+      - name: ⚙️ Installing Armory
+        shell: bash
+        run: |
+          pip install --no-compile --editable '.[developer,engine,pytorch]'
+          armory configure --use-defaults
+
+      - name: check host configuration
+        shell: bash
+        run: |
+          pytest -c pyproject.toml -s ./tests/unit/test_configuration.py
+
+      - name: standalone tests
+        shell: bash
+        run: |
+          pytest -c pyproject.toml -m "not docker_required and unit" ./tests/
+
+      - name: 🤞 Run Stand Alone End-to-End Tests
+        shell: bash
+        run: |
+          pytest -c pyproject.toml -s ./tests/end_to_end/test_no_docker.py

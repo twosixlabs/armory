@@ -4,8 +4,10 @@ Classifier evaluation within ARMORY
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.scenarios.scenario import Scenario
 from armory.instrument.export import VideoClassificationExporter
+from armory.scenarios.scenario import Scenario
+
+DEFAULT_FRAME_RATE = 10
 
 
 class Ucf101(Scenario):
@@ -20,6 +22,5 @@ class Ucf101(Scenario):
     def _load_sample_exporter(self):
         return VideoClassificationExporter(
             self.export_dir,
-            # frame_rate=self.test_dataset.context.frame_rate,
-            frame_rate=10,
+            frame_rate=self.test_dataset.metadata.get("frame_rate", DEFAULT_FRAME_RATE),
         )

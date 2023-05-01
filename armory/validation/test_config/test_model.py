@@ -1,11 +1,12 @@
-import warnings
-import numpy as np
 import json
+import warnings
+
+from art.estimators.classification.classifier import ClassifierMixin
+from art.estimators.object_detection import ObjectDetectorMixin
+from art.estimators.speech_recognition import SpeechRecognizerMixin
+import numpy as np
 
 from armory.utils.config_loading import load_model
-from art.estimators.classification.classifier import ClassifierMixin
-from art.estimators.speech_recognition import SpeechRecognizerMixin
-from art.estimators.object_detection import ObjectDetectorMixin
 
 
 class TestModel:

@@ -1,8 +1,7 @@
 from importlib import import_module
 
-import numpy as np
 from art.attacks import EvasionAttack
-
+import numpy as np
 
 from armory.logs import log
 

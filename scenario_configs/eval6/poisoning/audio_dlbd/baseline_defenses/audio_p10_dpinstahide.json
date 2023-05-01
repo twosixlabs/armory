@@ -1,0 +1,84 @@
+{
+    "_description": "Speech Commands DLBD poison audio classification, DP Instahide defense",
+    "adhoc": {
+        "compute_fairness_metrics": false,
+        "experiment_id": 0,
+        "explanatory_model": null,
+        "fit_defense_classifier_outside_defense": false,
+        "fraction_poisoned": 0.1,
+        "poison_dataset": true,
+        "source_class": 11,
+        "split_id": 0,
+        "target_class": 2,
+        "train_epochs": 20,
+        "use_poison_filtering_defense": false
+    },
+    "attack": {
+        "knowledge": "black",
+        "kwargs": {
+            "backdoor_kwargs": {
+                "backdoor_path": "clapping.wav",
+                "duration": 1,
+                "random": false,
+                "sampling_rate": 16000,
+                "scale": 0.1,
+                "shift": 0
+            }
+        },
+        "module": "armory.art_experimental.attacks.poison_loader_audio",
+        "name": "poison_loader_audio"
+    },
+    "dataset": {
+        "batch_size": 64,
+        "framework": "numpy",
+        "module": "armory.data.datasets",
+        "name": "speech_commands",
+        "pad_data": true
+    },
+    "defense": {
+        "kwargs": {
+            "augmentations": {
+                "kwargs": {
+                    "apply_fit": true,
+                    "apply_predict": false,
+                    "num_classes": 12,
+                    "num_mix": 2
+                },
+                "name": "Mixup"
+            },
+            "clip_values": [
+                0,
+                1
+            ],
+            "noise": "laplacian",
+            "scale": 0.1
+        },
+        "module": "art.defences.trainer",
+        "name": "DPInstaHideTrainer",
+        "type": "Trainer"
+    },
+    "metric": null,
+    "model": {
+        "fit": true,
+        "fit_kwargs": {},
+        "model_kwargs": {},
+        "module": "armory.baseline_models.tf_graph.audio_resnet50",
+        "name": "get_art_model",
+        "weights_file": null,
+        "wrapper_kwargs": {}
+    },
+    "scenario": {
+        "kwargs": {},
+        "module": "armory.scenarios.poison",
+        "name": "Poison"
+    },
+    "sysconfig": {
+        "docker_image": "twosixarmory/pytorch",
+        "external_github_repo": null,
+        "gpus": "all",
+        "output_dir": null,
+        "output_filename": null,
+        "set_pythonhashseed": true,
+        "use_gpu": false
+    }
+}

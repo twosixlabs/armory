@@ -1,13 +1,20 @@
+from copy import deepcopy
 from typing import Optional
 
+from art.estimators.classification import KerasClassifier
 import numpy as np
-from copy import deepcopy
 import tensorflow as tf
 from tensorflow import slice
-from tensorflow.keras import Sequential, Model
-from tensorflow.keras.layers import Dense, Flatten, Conv2D
-from tensorflow.keras.layers import MaxPooling2D, Input, concatenate, Lambda
-from art.estimators.classification import KerasClassifier
+from tensorflow.keras import Model, Sequential
+from tensorflow.keras.layers import (
+    Conv2D,
+    Dense,
+    Flatten,
+    Input,
+    Lambda,
+    MaxPooling2D,
+    concatenate,
+)
 from tensorflow.keras.optimizers import SGD
 
 tf.compat.v1.disable_eager_execution()

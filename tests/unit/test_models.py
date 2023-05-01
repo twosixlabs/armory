@@ -1,5 +1,7 @@
-import pytest
 from importlib import import_module
+
+import pytest
+
 from armory.data.utils import maybe_download_weights_from_s3
 
 # Mark all tests in this file as `unit`
