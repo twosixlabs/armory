@@ -24,11 +24,15 @@
         "use_label": true
     },
     "dataset": {
-        "batch_size": 1,
-        "framework": "numpy",
-        "max_frames": 512,
-        "module": "armory.data.datasets",
-        "name": "ucf101"
+        "test": {
+            "batch_size": 1,
+            "config": "ucf101_1",
+            "framework": "numpy",
+            "name": "ucf101",
+            "preprocessor_kwargs": {
+                "max_frames": 512
+            }
+        }
     },
     "defense": null,
     "metric": {
