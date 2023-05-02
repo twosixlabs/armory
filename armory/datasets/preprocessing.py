@@ -48,6 +48,14 @@ resisc45 = register(supervised_image_classification, "resisc45")
 
 
 @register
+def supervised_video_classification(element, max_frames=None):
+    return (video_to_canon(element["video"], max_frames=max_frames), element["label"])
+
+
+ucf101 = register(supervised_video_classification, "ucf101")
+
+
+@register
 def so2sat(element):
     # This preprocessing function assumes a so2sat builder_config of 'all' (i.e. multimodal)
     # as opposed to 'rgb'

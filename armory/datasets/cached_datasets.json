@@ -135,6 +135,19 @@
         "url": null,
         "version": "2.1.0"
     },
+    "ucf101": {
+        "sha256": "cc4ea799c6b8d39918bb4bc5c5198879f06c61bd1e8f7ae692c0bb188f997335",
+        "size": 30745304860,
+        "subdir": [
+            "ucf101/ucf101_1_256/2.0.0",
+            "ucf101/ucf101_1/2.0.0",
+            "ucf101/ucf101_2/2.0.0",
+            "ucf101/ucf101_3/2.0.0",
+            "ucf101/.config"
+        ],
+        "url": null,
+        "version": "2.0.0"
+    },
     "xview": {
         "sha256": "8e5d67c2b6419bf7ff7cb9851a590903078f608501b65735a14e65717f1bc9a1",
         "size": 1327668423,
