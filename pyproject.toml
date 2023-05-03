@@ -129,6 +129,12 @@ jupyter = [
     "ipywidgets",
 ]
 
+yolo = [
+    "armory-testbed[engine]",
+    "armory-testbed[tensorflow]",
+    "pytorchyolo",
+]
+
 all = [
     "armory-testbed[developer]",
     "armory-testbed[engine]",
