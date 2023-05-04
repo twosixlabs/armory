@@ -95,7 +95,15 @@ class Evaluator(object):
         if self.config["sysconfig"].get("use_gpu", None):
             gpus = self.config["sysconfig"].get("gpus")
             if gpus is not None:
-                self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+                if self.no_docker:
+                    self.extra_env_vars["CUDA_VISIBLE_DEVICES"] = gpus
+                else:
+                    self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
+        else:
+            if self.no_docker:
+                # Must be explicitly set for no-docker
+                self.extra_env_vars["CUDA_VISIBLE_DEVICES"] = "-1"
+
         if self.config["sysconfig"].get("set_pythonhashseed"):
             self.extra_env_vars["PYTHONHASHSEED"] = "0"
 
