@@ -92,7 +92,9 @@ class Evaluator(object):
         if not self.armory_global_config["verify_ssl"]:
             self.extra_env_vars["VERIFY_SSL"] = "false"
 
-        cuda_var_exists = True if os.getenv("CUDA_VISIBLE_DEVICES") is not None else False
+        cuda_var_exists = (
+            True if os.getenv("CUDA_VISIBLE_DEVICES") is not None else False
+        )
         # Existing value should override armory flags
 
         # Set visible gpus
