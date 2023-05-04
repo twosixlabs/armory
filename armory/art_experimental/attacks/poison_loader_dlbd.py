@@ -35,19 +35,24 @@ def poison_loader_dlbd(**kwargs):
         blend = kwargs.get("blend", 0.6)
 
         channels_first = kwargs.get("channels_first", False)
-        if "x_shift" in kwargs and "y_shift" in kwargs:
+
+        random_placement = kwargs.get("random", False)
+        if random_placement:
+            x_shift = 0
+            y_shift = 0
+        elif "x_shift" in kwargs and "y_shift" in kwargs:
             x_shift = kwargs.get("x_shift")
             y_shift = kwargs.get("y_shift")
-        else:
+        elif "base_img_size_x" in kwargs and "base_img_size_y" in kwargs:
             # default to center of image
             base_img_size_x = kwargs.get("base_img_size_x")
             base_img_size_y = kwargs.get("base_img_size_y")
-            if base_img_size_x is None or base_img_size_y is None:
-                raise ValueError(
-                    "Attack config should specify either x_shift and y_shift, or base_img_size_x and base_img_size_y "
-                )
             x_shift = (base_img_size_x - size[0]) // 2
             y_shift = (base_img_size_y - size[1]) // 2
+        else:
+            raise ValueError(
+                "Attack config must have one of: 1) 'random': true, 2) x_shift and y_shift, or 3) base_img_size_x and base_img_size_y"
+            )
 
         def mod(x):
             return perturbations.insert_image(
@@ -59,7 +64,7 @@ def poison_loader_dlbd(**kwargs):
                 y_shift=y_shift,
                 channels_first=channels_first,
                 blend=blend,
-                random=False,
+                random=random_placement,
             )
 
     else:
