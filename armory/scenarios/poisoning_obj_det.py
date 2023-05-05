@@ -217,7 +217,8 @@ class ObjectDetectionPoisoningScenario(Poison):
 
             if "num_test_triggers" in kwargs:
                 self.num_test_triggers = kwargs.pop("num_test_triggers")
-            else: self.num_test_triggers = 1
+            else:
+                self.num_test_triggers = 1
 
             self.poisoner = config_loading.load(attack_config)
 
@@ -497,7 +498,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def load_fairness_metrics(self):
         raise NotImplementedError(
-            "The fairness metrics have not been implemented for object detection poisoning"
+            "As currently defined, the fairness metrics are not applicable to object detection data"
         )
 
     def load_export_meters(self):
