@@ -498,7 +498,7 @@ class ObjectDetectionPoisoningScenario(Poison):
 
     def load_fairness_metrics(self):
         raise NotImplementedError(
-            "As currently defined, the fairness metrics are not applicable to object detection data"
+            "As currently defined, the fairness metrics are not applicable to object detection data."
         )
 
     def load_export_meters(self):
