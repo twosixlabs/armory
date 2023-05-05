@@ -107,8 +107,9 @@ class ObjectDetectionPoisoningScenario(Poison):
         y = y[0]
         for box, label in zip(y["boxes"], y["labels"]):
             if (
-                box[2] - box[0] >= self.patch_x_dim
-                and box[3] - box[1] >= self.patch_y_dim
+                box[2] - box[0] > self.patch_x_dim + 1
+                and box[3] - box[1] > self.patch_y_dim + 1
+                # TODO: remove +1 after ART 1.15.0 fixes a bug
             ):
                 new_y["boxes"].append(box)
                 new_y["labels"].append(label)
