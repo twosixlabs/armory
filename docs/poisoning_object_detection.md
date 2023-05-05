@@ -31,7 +31,9 @@ The configuration files for each attack are similar.  The source and target clas
 - OGA - target class.
 
 In addition, OGA requires the specification of a bbox size for the generated bounding box.
-This is set under ```"attack"/"kwargs"/"backdoor_kwargs"``` as ```"bbox_height"``` and ```"bbox_width"```.
+This is set under ```"attack"/"kwargs"``` as ```"bbox_height"``` and ```"bbox_width"```.
+
+The OGA config can also specify the number of triggers to be added to each image at test time, by setting ```"num_test_triggers"``` under ```"attack"/"kwargs"```.
 
 
 ## Metrics
