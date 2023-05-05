@@ -1491,7 +1491,7 @@ def object_detection_poisoning_targeted_disappearance_rate(
 
 @batchwise
 def object_detection_poisoning_targeted_generation_rate(
-    y_target_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5
+    y_target_list, y_pred_list, iou_threshold=0.5, score_threshold=0.5, num_triggers=1
 ):
     """
     Compute the rate of object generation for object detection poisoning.  This is a targeted
@@ -1513,29 +1513,37 @@ def object_detection_poisoning_targeted_generation_rate(
 
     for img_idx, (y, y_pred) in enumerate(zip(y_target_list, y_pred_list)):
 
+        n_generations = 0
         # ART adds one trigger per image, and the associated box/label is the final one in y
-        target_box = y["boxes"][-1]
-        target_label = y["labels"][-1]
 
-        # Only consider the model's confident predictions
-        conf_pred_indices = np.where(y_pred["scores"] > score_threshold)[0]
-        conf_pred_labels = y_pred["labels"][conf_pred_indices]
+        for target_box, target_label in zip(
+            y["boxes"][-num_triggers:], y["labels"][-num_triggers:]
+        ):
 
-        # Compute IOU between target box and all confident predictions
-        ious = np.array(
-            [
-                _intersection_over_union(target_box, a)
-                for a in y_pred["boxes"][conf_pred_indices]
-            ]
-        )
-        # Determine which predicted boxes, if any, the target box overlaps with
-        overlap_indices = np.where(ious > iou_threshold)[0]
+            target_box = y["boxes"][-1]
+            target_label = y["labels"][-1]
 
-        # If an overlapping box has target_label, that means the target object was successfully generated
-        if target_label in conf_pred_labels[overlap_indices]:
-            generation_rate_per_image.append(1)
-        else:
-            generation_rate_per_image.append(0)
+            # Only consider the model's confident predictions
+            conf_pred_indices = np.where(y_pred["scores"] > score_threshold)[0]
+            conf_pred_labels = y_pred["labels"][conf_pred_indices]
+
+            # Compute IOU between target box and all confident predictions
+            ious = np.array(
+                [
+                    _intersection_over_union(target_box, a)
+                    for a in y_pred["boxes"][conf_pred_indices]
+                ]
+            )
+            # Determine which predicted boxes, if any, the target box overlaps with
+            overlap_indices = np.where(ious > iou_threshold)[0]
+
+            # If an overlapping box has target_label, that means the target object was successfully generated
+            if target_label in conf_pred_labels[overlap_indices]:
+                n_generations += 1
+            #     generation_rate_per_image.append(1)
+            # else:
+            #     generation_rate_per_image.append(0)
+        generation_rate_per_image.append(n_generations / num_triggers)
 
     return generation_rate_per_image
 
