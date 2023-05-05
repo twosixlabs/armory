@@ -8,7 +8,29 @@ import numpy as np
 import tensorflow as tf
 
 from armory.data import datasets
+from armory.data.adversarial import (  # noqa: F401
+    dapricot_dev,
+    dapricot_test,
+    gtsrb_bh_poison_micronnet,
+)
+from armory.data.adversarial import (  # noqa: F401
+    resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
+    ucf101_mars_perturbation_and_patch_adversarial_112x112,
+)
+from armory.data.adversarial import carla_mot_dev as cmotd  # noqa: F401
+from armory.data.adversarial import apricot_dev, apricot_test  # noqa: F401
+from armory.data.adversarial import carla_mot_test as cmott  # noqa: F401
+from armory.data.adversarial import carla_obj_det_dev as codd  # noqa: F401
+from armory.data.adversarial import carla_obj_det_test as codt  # noqa: F401
+from armory.data.adversarial import carla_over_obj_det_dev as coodd  # noqa: F401
+from armory.data.adversarial import carla_over_obj_det_test as coodt  # noqa: F401
+from armory.data.adversarial import carla_video_tracking_dev as cvtd  # noqa: F401
+from armory.data.adversarial import carla_video_tracking_test as cvtt  # noqa: F401
+from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
+from armory.data.adversarial import librispeech_adversarial as LA  # noqa: F401
 from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+
+# Although these imports are unreferenced in this file, they are required for tfds to know they exist.
 
 imagenet_adversarial_context = datasets.ImageContext(x_shape=(224, 224, 3))
 librispeech_adversarial_context = datasets.AudioContext(
