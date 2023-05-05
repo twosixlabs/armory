@@ -96,7 +96,9 @@ class Evaluator(object):
             True if os.getenv("CUDA_VISIBLE_DEVICES") is not None else False
         )
         if cuda_var_exists and self.no_docker:
-            log.warning("CUDA_VISIBLE_DEVICES is set; any Armoy gpu instructions will be ignored")
+            log.warning(
+                "CUDA_VISIBLE_DEVICES is set; any Armoy gpu instructions will be ignored"
+            )
             # Existing value should override armory flags
 
         # Set visible gpus
