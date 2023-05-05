@@ -215,6 +215,10 @@ class ObjectDetectionPoisoningScenario(Poison):
             if self.source_class is not None:
                 kwargs["class_source"] = self.source_class
 
+            if "num_test_triggers" in kwargs:
+                self.num_test_triggers = kwargs.pop("num_test_triggers")
+            else: self.num_test_triggers = 1
+
             self.poisoner = config_loading.load(attack_config)
 
             # Need separate poisoner for test time because this attack is constructed
@@ -386,6 +390,7 @@ class ObjectDetectionPoisoningScenario(Poison):
                     "attack_success_rate_generation",
                     "object_detection_poisoning_targeted_generation_rate",
                     "scenario.y_adv",
+                    {"num_triggers": self.num_test_triggers},
                 )
 
         if self.config["adhoc"].get("compute_fairness_metrics"):
@@ -477,8 +482,10 @@ class ObjectDetectionPoisoningScenario(Poison):
     def run_attack(self):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
-        x_adv, y_adv = self.test_poisoner.poison(x, y)
-
+        for i in range(self.num_test_triggers):
+            # Generation can add multiple triggers one at a time
+            x, y = self.test_poisoner.poison(x, y)
+        x_adv, y_adv = x, y
         self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
