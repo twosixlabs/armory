@@ -30,8 +30,7 @@ def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchYolo:
 
-    model_path = "armory/baseline_models/pytorch/yolov3.cfg"
-    model = load_model(model_path=model_path, weights_path=weights_path)
+    model = load_model(weights_path=weights_path, **model_kwargs)
     model_wrapper = Yolo(model)
 
     params = [p for p in model_wrapper.parameters() if p.requires_grad]
@@ -45,5 +44,6 @@ def get_art_model(
         clip_values=(0, 1),
         channels_first=False,
         attack_losses=("loss_total",),
+        **wrapper_kwargs,
     )
     return detector
