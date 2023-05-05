@@ -95,7 +95,9 @@ class Evaluator(object):
         cuda_var_exists = (
             True if os.getenv("CUDA_VISIBLE_DEVICES") is not None else False
         )
-        # Existing value should override armory flags
+        if cuda_var_exists and self.no_docker:
+            log.warning("CUDA_VISIBLE_DEVICES is set; any Armoy gpu instructions will be ignored")
+            # Existing value should override armory flags
 
         # Set visible gpus
         if self.config["sysconfig"].get("use_gpu", None):
@@ -107,7 +109,7 @@ class Evaluator(object):
                     self.extra_env_vars["NVIDIA_VISIBLE_DEVICES"] = gpus
         else:
             if self.no_docker and not cuda_var_exists:
-                # Must be explicitly set for no-docker
+                # Block gpus for no-docker mode
                 self.extra_env_vars["CUDA_VISIBLE_DEVICES"] = "-1"
 
         if self.config["sysconfig"].get("set_pythonhashseed"):
