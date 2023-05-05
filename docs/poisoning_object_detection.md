@@ -24,6 +24,12 @@ A backdoor trigger is added to a random spot in a fraction of the training image
 
 ## Configuration Files
 
+The desired attack version is loaded in the config under ```"attack"/"kwargs"/"attack_variant"```.  It should be one of the following:
+- "BadDetRegionalMisclassificationAttack",
+- "BadDetGlobalMisclassificationAttack",
+- "BadDetObjectDisappearanceAttack",
+- "BadDetObjectGenerationAttack",
+
 The configuration files for each attack are similar.  The source and target class requirements are as follows:
 - RMA - source and target class; source can also be None and the attack will poison all classes.
 - GMA - target class.
