@@ -65,7 +65,7 @@ For targeted attacks, each metric will be reported twice for adversarial data: o
 
 The `armory.metrics` module contains functionality to measure a variety of metrics:
 - `armory.metrics.perturbation` metrics measure adversarial perturbations such as `lp` distance
-- `armory.metrics.task` metrics measure task performance such as categorical accuracy 
+- `armory.metrics.task` metrics measure task performance such as categorical accuracy
 - `armory.metrics.statistical` metrics measure statistical quantities such as KL divergence
 - `armory.metrics.poisoning` module contains helper functions to measure fairness statistics relevant to poisoning and filtering scenarios
 
@@ -152,8 +152,9 @@ def load_metrics(self):
 | `object_detection_disappearance_rate` | `task.batch.object_detection_disappearance_rate` | Object Detection Disappearance Rate |
 | `object_detection_hallucinations_per_image` | `task.batch.object_detection_hallucinations_per_image` | Object Detection Hallucinations Per Image |
 | `object_detection_mAP` | `task.population.object_detection_mAP` | Object Detection mean average precision |
+| `object_detection_mAP_tide` | `task.population.object_detection_mAP_tide` | [TIDE version](https://dbolya.github.io/tide/) of mean average precision for object detection |
 | `object_detection_misclassification_rate` | `task.batch.object_detection_misclassification_rate` | Object Detection Misclassification Rate |
-| `object_detection_true_positive_rate` | `task.batch.object_detection_true_positive_rate` | Object Detection True Positive Rate | 
+| `object_detection_true_positive_rate` | `task.batch.object_detection_true_positive_rate` | Object Detection True Positive Rate |
 | `apricot_patch_targeted_AP_per_class` | `task.population.apricot_patch_targeted_AP_per_class` | OD metric applied to apricot scenario |
 | `carla_od_AP_per_class` | `task.population.carla_od_AP_per_class` | OD metric applied to carla scenario |
 | `carla_od_disappearance_rate`  | `task.batch.carla_od_disappearance_rate` | OD metric applied to carla scenario |
@@ -235,7 +236,7 @@ from armory import metrics
 @metrics.task.elementwise
 def my_accuracy_metric(y_i, y_pred_i):
     return y_i == np.argmax(y_pred_i)
-``` 
+```
 
 Armory performs all built-in metric operations as batches, not as individual elements, so using the `elementwise` decorators will also produce a batchwise version of it that loops through the individual elements and provides a batchwise result.
 NOTE: when armory uses `get`, it will get the batchwise version of a metric.
@@ -431,7 +432,7 @@ More generally,
 ```python
 probe.update(func1, func2, func3, my_var=y)
 ```
-will publish the value `func3(func2(func1(y)))`. 
+will publish the value `func3(func2(func1(y)))`.
 
 #### Interactive Testing
 
@@ -442,7 +443,7 @@ from armory.instrument import get_probe, MockSink
 probe = get_probe("my_name")
 probe.set_sink(MockSink())
 probe.update(variable_name=17)
-# update probe variable my_name.variable_name to 17 
+# update probe variable my_name.variable_name to 17
 ```
 This will print all probe updates to the screen.
 
@@ -471,7 +472,7 @@ You will need to construct a meter, connect it to a hub, and (optionally) add a 
 To instantiate a Meter:
 ```python
 from armory.instrument import Meter
-meter = Meter( 
+meter = Meter(
     name,
     metric,
     *metric_arg_names,
@@ -534,7 +535,7 @@ meter = Meter(
     final_kwargs=None,
     record_final_only=True,
 )
-``` 
+```
 
 A more succinct way of doing this, which also handles the case when only batches of `w` and `z` are supplied to the meter, is to use `GlobalMeter`:
 ```python
