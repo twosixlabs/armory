@@ -23,9 +23,9 @@ from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
 from armory.logs import log
+from armory.utils.cli import log_current_branch
 from armory.utils.configuration import load_config, load_config_stdin
 from armory.utils.version import to_docker_tag
-from armory.utils.cli import log_current_branch
 import docker
 
 
@@ -734,6 +734,7 @@ def utils(command_args, prog, description):
 
     if args.branch:
         log_current_branch()
+
 
 # command, (function, description)
 PROGRAM = "armory"
