@@ -18,7 +18,7 @@
         "kwargs": {
             "attack_variant": "BadDetRegionalMisclassificationAttack",
             "backdoor_kwargs": {
-                "backdoor_path": "htbd.png",
+                "backdoor_path": "baby-on-board.png",
                 "blend": 0.8,
                 "channels_first": false,
                 "mode": "RGB",
