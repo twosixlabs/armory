@@ -219,10 +219,11 @@ class ObjectDetectionPoisoningScenario(Poison):
             if self.source_class is not None:
                 kwargs["class_source"] = self.source_class
 
-            if "num_test_triggers" in kwargs:
-                self.num_test_triggers = kwargs.pop("num_test_triggers")
-            else:
-                self.num_test_triggers = 1
+            self.num_test_triggers = kwargs.pop("num_test_triggers", 1)
+            if self.num_test_triggers > 1 and "Generation" not in self.attack_variant:
+                raise ValueError(
+                    f"{self.attack_variant} does not support multiple test-time triggers.  Please remove 'num_test_triggers' from config"
+                )
 
             self.poisoner = config_loading.load(attack_config)
 
@@ -321,7 +322,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         )
 
     def load_metrics(self):
-        self.score_threshold = 0.0
+        self.score_threshold = self.config["adhoc"].get("score_threshold", 0.05)
         if self.use_filtering_defense:
             # Filtering metrics
             self.hub.connect_meter(
@@ -488,7 +489,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.hub.set_context(stage="attack")
         x, y = self.x, self.y
         for i in range(self.num_test_triggers):
-            # Generation can add multiple triggers one at a time
+            # Generation can add multiple triggers to one image
             x, y = self.test_poisoner.poison(x, y)
         x_adv, y_adv = x, y
         self.hub.set_context(stage="adversarial")
@@ -529,6 +530,6 @@ class ObjectDetectionPoisoningScenario(Poison):
             self.export_dir,
             default_export_kwargs={
                 "with_boxes": True,
-                "score_threshold": 0.1,
+                "score_threshold": self.config["adhoc"].get("export_threshold", 0.05),
             },
         )
