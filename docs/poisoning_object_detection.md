@@ -41,6 +41,8 @@ This is set under ```"attack"/"kwargs"``` as ```"bbox_height"``` and ```"bbox_wi
 
 The OGA config can also specify the number of triggers to be added to each image at test time, by setting ```"num_test_triggers"``` under ```"attack"/"kwargs"```.
 
+Another configurable value is independent score thresholds for metrics and visualization.  If the PytorchYolo model is only trained for about 50 epochs, its predictions are not very confident.  The score threshold defaults to 0.05.  Using a threshold of 0.0 may increase mAP, while a threshold of 0.1 will reduce the number of extra boxes in exported visualizations.  Hence ```"score_threshold"``` and ```"export_threshold"``` can be independently set in the ```"adhoc"``` section of the config.
+
 
 ## Metrics
 
