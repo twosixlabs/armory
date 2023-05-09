@@ -1,5 +1,10 @@
 # Object Detection Poisoning
 
+Object Detection Poisoning (using the YOLOv3 model) requires [PytorchYolo](https://github.com/eriklindernoren/PyTorch-YOLOv3) (with its accompanying dependencies).  Armory currently does not include this in the base docker image, neither does it maintain a separate docker image just to support this.
+
+To run, please install via ```pip install .[yolo]``` and run using ```--no-docker```.
+
+
 ## Threat Model
 [BadDet](https://arxiv.org/pdf/2205.14497.pdf) Object Detection Poisoning comprises 4 separate dirty-label object detection attacks.  
 
@@ -18,8 +23,6 @@ In a fraction of training images, a backdoor trigger is inserted within the boun
 ### Object Generation Attack (OGA)
 
 A backdoor trigger is added to a random spot in a fraction of the training image, and a fake bounding box is added with a target label.  At test time, inserting the trigger causes the hallucination of a target object.
-
-
 
 
 ## Configuration Files
