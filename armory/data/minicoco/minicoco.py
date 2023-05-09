@@ -6,7 +6,6 @@ import collections
 import json
 import os
 
-from etils import epath
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
@@ -254,7 +253,7 @@ class CocoAnnotation(object):
     """Coco annotation helper class."""
 
     def __init__(self, annotation_path):
-        with epath.Path(annotation_path).open() as f:
+        with tf.io.gfile.GFile(annotation_path) as f:
             data = json.load(f)
         self._data = data
 

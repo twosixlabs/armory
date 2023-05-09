@@ -1534,7 +1534,7 @@ def minicoco_label_preprocessing(x, y):
     for i, label_dict in enumerate(y):
         orig_boxes = label_dict.pop("bbox").reshape((-1, 4))
         converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
-        height, width = x[i].shape[1:3]
+        height, width = x[i].shape[0:2]
         converted_boxes *= [width, height, width, height]
         label_dict["boxes"] = converted_boxes
         label_dict["labels"] = label_dict.pop("label").reshape((-1,))

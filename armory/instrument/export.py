@@ -169,14 +169,17 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
-                box_layer.rectangle(true_box, outline="red", width=2)
+                box_layer.rectangle(true_box.astype("float32"), outline="red", width=2)
+                # rectangle() gives a very unhelpful error if the box is float64
 
         if y_pred is not None:
             bboxes_pred = y_pred["boxes"][y_pred["scores"] > score_threshold]
             labels_pred = y_pred["labels"][y_pred["scores"] > score_threshold]
 
             for pred_box, label in zip(bboxes_pred, labels_pred):
-                box_layer.rectangle(pred_box, outline="white", width=2)
+                box_layer.rectangle(
+                    pred_box.astype("float32"), outline="white", width=2
+                )
                 box_layer.rectangle(
                     (pred_box[0], pred_box[1] - 10, pred_box[0] + 10, pred_box[1]),
                     fill="white",
