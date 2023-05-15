@@ -315,11 +315,12 @@ class Poison(Scenario):
         self.hub.record("N_samples_removed", self.removed.sum())
 
         if self.use_filtering_defense:
-            for y in self.train_set_class_labels:
-                self.hub.record(
-                    f"class_{y}_N_train_samples_removed",
-                    int(np.sum(self.y_clean[self.removed] == y)),
-                )
+            if hasattr(self, "train_set_class_labels"):
+                for y in self.train_set_class_labels:
+                    self.hub.record(
+                        f"class_{y}_N_train_samples_removed",
+                        int(np.sum(self.y_clean[self.removed] == y)),
+                    )
 
     def fit(self):
         if len(self.x_train):

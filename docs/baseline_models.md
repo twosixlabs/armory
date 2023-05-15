@@ -47,6 +47,7 @@ The model files can be found in [armory/baseline_models/pytorch](../armory/basel
 | CARLA Faster-RCNN (depth)|        `carla_depth_weights_eval5.pt`         |
 | CARLA Faster-RCNN (multimodal)|      `carla_multimodal_naive_weights.pt`      |
 | CARLA GoTurn|           `pytorch_goturn.pth.tar`            |
+| YOLOv3 | `darknet53.conv.74`         |
 
 ### TensorFlow 1
 The model file can be found in [armory/baseline_models/tf_graph](../armory/baseline_models/tf_graph). 
