@@ -1,15 +1,22 @@
 # Speech Commands Dirty-label Backdoor Baseline Evaluation
 
-**All tables are the mean of 3 runs.**  Results obtained with Armory 0.16.5 March 2022.
-
+**All tables are the mean of 3 runs.**  Results obtained with Armory 0.16.6 February 2023.
 
 Source class: 11
 
 Target class: 2
 
-Shift: 0
+The source class has about 54K examples compared to the 1-3K in the other classes, which may partly explain why the attack success rate is so high even at very low poison percentages.
 
-Scale: as noted
+The following table shows the scale parameters used for each trigger.  These were chosen so that Clapping and Car Horn had equal energy, and Whistle and Dog Clicker had equal energy.
+
+| Trigger | Scale |
+|---------|-------|
+| Clapping | 0.1 |
+| Whistle | 0.1 |
+| Car Horn | 0.0903 |
+| Dog Clicker | 0.2695 |
+
 
 ## Whistle Trigger
 
@@ -220,6 +227,19 @@ Scale: 0.2695
 | 30 |  0.902 | 0.949 | 0.827 | 0.933 |
 
 
+### DP-Instahide
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.667 | 0.984 | - | - |
+| 0.5 |  0.603 | 0.980 | 0.568 | 0.425 |
+| 01 |  0.622 | 0.971 | 0.548 | 0.911 |
+| 05 |  0.677 | 0.960 | 0.599 | 0.955 |
+| 10 |  0.633 | 0.975 | 0.553 | 0.990 |
+| 20 |  0.679 | 0.972 | 0.598 | 0.997 |
+| 30 |  0.698 | 0.971 | 0.617 | 0.996 |
+
+
 
 ## Car Horn Trigger
 
@@ -288,3 +308,17 @@ Scale: 0.0903
 | 10 |  0.938 | 0.977 | 0.933 | 0.056 |
 | 20 |  0.891 | 0.983 | 0.833 | 0.702 |
 | 30 |  0.922 | 0.962 | 0.843 | 0.985 |
+
+
+### DP-Instahide
+
+| Poison Percentage | Benign all classes | Benign source class | Adv. all classes | Attack success rate |
+| ------- | ------- | ------- | ------- | ------- |
+| 00 |  0.573 | 0.984 | - | - |
+| 0.5 |  0.641 | 0.975 | 0.620 | 0.266 |
+| 01 |  0.613 | 0.980 | 0.585 | 0.334 |
+| 05 |  0.633 | 0.978 | 0.555 | 0.949 |
+| 10 |  0.617 | 0.967 | 0.581 | 0.444 |
+| 20 |  0.676 | 0.947 | 0.601 | 0.940 |
+| 30 |  0.663 | 0.907 | 0.588 | 0.989 |
+
