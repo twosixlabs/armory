@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 def in_polygon(x, y, vertices):
@@ -76,6 +77,13 @@ def linear_depth_to_rgb(depth_m):
     returns: tuple of three scalars or arrays in [0,1]
     """
     depth = depth_m / 1000.0 * (256**3 - 1)
+    if isinstance(depth, np.ndarray):
+        depth = np.round(depth)
+    elif torch.is_tensor(depth):
+        depth = torch.round(depth)
+    else:
+        depth = round(depth)
+
     r = depth % 256
     g = ((depth - r) / 256.0) % 256
     b = (depth - r - g * 256) / 256**2

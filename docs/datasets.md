@@ -24,6 +24,7 @@ These tfrecord files will be pulled from S3 if not available on your
 | [resisc45](https://arxiv.org/abs/1703.00121) | REmote Sensing Image Scene Classification | (N, 256, 256, 3) | float32 | (N,) | int64 | train, validation, test | 
 | [Coco2017](https://arxiv.org/abs/1405.0312) | Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, validation, test | 
 | [xView](https://arxiv.org/pdf/1802.07856) | Objects in Context in Overhead Imagery | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, test | 
+| [minicoco](https://arxiv.org/abs/1405.0312) | A 3-class subset of Common Objects in Context | (N, variable_height, variable_width, 3) | float32 | n/a | List[dict] | train, validation |
 
 NOTE: the Coco2017 dataset's class labels are 0-indexed (start from 0).
 <br>

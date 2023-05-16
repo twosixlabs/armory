@@ -4,7 +4,7 @@ import json
 import os
 import pickle
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import ffmpeg
 import numpy as np
 from scipy.io import wavfile
@@ -169,13 +169,27 @@ class ObjectDetectionExporter(ImageClassificationExporter):
             for true_box, label in zip(bboxes_true, labels_true):
                 if classes_to_skip is not None and label in classes_to_skip:
                     continue
-                box_layer.rectangle(true_box, outline="red", width=2)
+                box_layer.rectangle(true_box.astype("float32"), outline="red", width=2)
+                # rectangle() gives a very unhelpful error if the box is float64
 
         if y_pred is not None:
             bboxes_pred = y_pred["boxes"][y_pred["scores"] > score_threshold]
+            labels_pred = y_pred["labels"][y_pred["scores"] > score_threshold]
 
-            for pred_box in bboxes_pred:
-                box_layer.rectangle(pred_box, outline="white", width=2)
+            for pred_box, label in zip(bboxes_pred, labels_pred):
+                box_layer.rectangle(
+                    pred_box.astype("float32"), outline="white", width=2
+                )
+                box_layer.rectangle(
+                    (pred_box[0], pred_box[1] - 10, pred_box[0] + 10, pred_box[1]),
+                    fill="white",
+                )
+                box_layer.text(
+                    (pred_box[0] + 3, pred_box[1] - 10),
+                    str(label),
+                    font=ImageFont.load_default(),
+                    fill="black",
+                )
 
         return image
 
@@ -327,13 +341,11 @@ class VideoTrackingExporter(VideoClassificationExporter):
 
         if y.ndim == 1:
             y = np.expand_dims(y, 0)
-        y_dict = {
-            int(timestep - 1): [] for timestep in set(y[:, 0])
-        }  # 0-index timesteps
+        y_dict = {int(timestep): [] for timestep in set(y[:, 0])}
 
         for pred in y:
             # TODO filter out boxes with low confidence?
-            timestep = int(pred[0] - 1)
+            timestep = int(pred[0])
             x0, y0 = pred[2], pred[3]
             x1, y1 = pred[2] + pred[4], pred[3] + pred[5]
             y_dict[timestep].append([x0, y0, x1, y1])

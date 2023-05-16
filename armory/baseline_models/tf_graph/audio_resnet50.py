@@ -53,6 +53,7 @@ def get_art_model(
 
     loss_object = losses.SparseCategoricalCrossentropy()
 
+    @tf.function
     def train_step(model, samples, labels):
         with tf.GradientTape() as tape:
             predictions = model(samples, training=True)

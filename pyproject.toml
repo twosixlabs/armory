@@ -66,7 +66,7 @@ developer =[
 ]
 
 engine = [
-    "adversarial-robustness-toolbox == 1.13.0",
+    "adversarial-robustness-toolbox == 1.14.1",
     "Pillow",              # Data dependencies
     "boto3",               # Needed for armory.data.utils
     "botocore" ,           # Needed for armory.data.utils
@@ -114,7 +114,7 @@ math = [
 
 datasets = [
     "armory-testbed[tensorflow]",
-    "tensorflow-datasets >= 4.6.0",
+    "tensorflow-datasets >= 4.6.0, != 4.9.0",
     "protobuf",
 ]
 
@@ -127,6 +127,12 @@ jupyter = [
     "jupyterlab",
     "jupyterlab_widgets",
     "ipywidgets",
+]
+
+yolo = [
+    "armory-testbed[engine]",
+    "armory-testbed[tensorflow]",
+    "pytorchyolo",
 ]
 
 all = [

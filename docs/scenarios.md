@@ -338,6 +338,7 @@ on MSCOCO objects and fine-tuned on xView.
 * **Metrics of Interest:**
   * Primary metrics:
     * Average precision (mean, per-class) of ground truth classes, Patch Size
+    * TIDE OD metrics
   * Derivative metrics - see end of document
 * **Baseline Attacks:**
   * [Masked PGD](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/evasion/projected_gradient_descent/projected_gradient_descent.py)
@@ -401,7 +402,7 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * Adversary objectives:
     * Targeted misclassification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack
+    * Digital dirty label poisoning attack
 * **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
   * accuracy_on_benign_test_data_all_classes
   * accuracy_on_benign_test_data_source_class
@@ -412,6 +413,7 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
 * **Baseline Defenses:**
   * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
   * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [DP-InstaHide](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/trainer/dp_instahide_trainer.py)
   * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
@@ -434,7 +436,7 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
   * Adversary objectives:
     * Targeted misclassification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack
+    * Digital clean label poisoning attack
 * **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
   * accuracy_on_benign_test_data_all_classes
   * accuracy_on_benign_test_data_source_class
@@ -445,6 +447,7 @@ For a complete overview of the poisoning scenarios, threat models, attacks, and 
 * **Baseline Defenses:**
   * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
   * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [DP-InstaHide](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/trainer/dp_instahide_trainer.py)
   * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
@@ -459,13 +462,13 @@ For a complete overview, see the [poisoning doc](poisoning.md).
   Datasets for Sleeper Agent include but are not limited to:
   * Cifar10
 * **Baseline Models:**
-  Armory includes several models which may be used for this scenario:
+  Models include but are not limited to:
 * [Resnet18](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/resnet18.py)
 * **Threat Scenario:**
   * Adversary objectives:
     * Targeted misclassification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack
+    * Digital clean label poisoning attack
 * **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
   * accuracy_on_benign_test_data_all_classes
   * accuracy_on_benign_test_data_source_class
@@ -476,6 +479,7 @@ For a complete overview, see the [poisoning doc](poisoning.md).
 * **Baseline Defenses:**
   * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
   * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [DP-InstaHide](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/trainer/dp_instahide_trainer.py)
   * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
@@ -483,7 +487,7 @@ For a complete overview, see the [poisoning doc](poisoning.md).
 
 
 #### Poisoning: Witches' Brew
-* **Description:** This scenario implements the Witches' Brew attack.  In this scenario, the attacker poisons train samples through gradient matching, to induce misclassification on a few individual pre-chosen test images.  For a complete overview, see the [poisoning doc](poisoning.md).
+* **Description:** This scenario implements the Witches' Brew attack.  In this scenario, the attacker poisons train samples through gradient matching, to induce misclassification on a few individual pre-chosen test images.  For a complete overview, see the [witches' brew poisoning doc](poisoning_witches_brew.md).
 * **Datasets:**
   The following datasets have been successfully used in this scenario:
   * GTSRB
@@ -496,8 +500,8 @@ For a complete overview, see the [poisoning doc](poisoning.md).
   * Adversary objectives:
     * Targeted misclassification
   * Adversary Operating Environment:
-    * Non-real time, digital evasion attack
-* **Metrics of Interest:** See the [poisoning doc](poisoning.md) for a full description of these metrics.
+    * Digital clean label poisoning attack
+* **Metrics of Interest:** See the [WB poisoning doc](poisoning_witches_brew.md) for a full description of these metrics.
   * accuracy_on_trigger_images
   * accuracy_on_non_trigger_images
   * attack_success_rate
@@ -506,11 +510,44 @@ For a complete overview, see the [poisoning doc](poisoning.md).
 * **Baseline Defenses:**
   * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
   * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [DP-InstaHide](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/trainer/dp_instahide_trainer.py)
   * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
   * [Cifar10 results](baseline_results/cifar10_witches_brew_results.md)
   * [GTSRB results](baseline_results/gtsrb_witches_brew_results.md)
+
+
+#### Poisoning: Object Detection
+* **Description:** This scenario implements the four BadDet Object Detection Poisoning attacks: Regional Misclassification, Global Misclassification, Object Disappearance, and Object Generation.  For a complete overview, see the [object detection poisoning doc](poisoning_object_detection.md).
+* **Datasets:**
+  Datasets of interest include but are not limited to:
+  * Minicoco
+* **Baseline Models:**
+  Object Detection models in Armory include but are not limited to:
+  * [YOLOv3](https://github.com/twosixlabs/armory/blob/master/armory/baseline_models/pytorch/yolov3.py)
+* **Threat Scenario:**
+  * Adversary objectives:
+    * Targeted misclassification (regional and global)
+    * Targeted object generation
+    * Targeted object disappearance
+  * Adversary Operating Environment:
+    * Digital dirty label poisoning attack
+* **Metrics of Interest:** See the [OD poisoning doc](poisoning_object_detection.md) for a full description of these metrics.
+  * AP on benign data
+  * AP on adversarial data with benign labels
+  * AP on adversarial data wtih adversarial labels
+  * Attack success rate (misclassification, disappearance, generation)
+  * TIDE OD metrics
+* **Baseline Defenses:**
+  * [Activation Clustering](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/activation_defence.py)
+  * [Spectral Signatures](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/detector/poison/spectral_signature_defense.py)
+  * [DP-InstaHide](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/defences/trainer/dp_instahide_trainer.py)
+  * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
+  * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
+* **Baseline Evaluations:**
+  * Minicoco Results to be added
+
 
 
 ## Creating a new scenario

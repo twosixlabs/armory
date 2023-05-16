@@ -32,9 +32,7 @@ At test time, the adversary applies the trigger to source-class images in order 
 
 ### Witches' brew
 
-[Witches' Brew](https://arxiv.org/abs/2009.02276) is a clean-label attack but there is no backdoor or trigger involved.  The adversary selects individual `source` images from the test set; these are the images that the adversary wants to misclassify as `target` and are called _triggers_, not to be confused with the backdoor trigger described before.  The attack uses a gradient-matching algorithm to modify a portion of the train-set target class, such that the unmodified test-set triggers will be misclassified.
-
-Because witches' brew is so different a threat model from the backdoor attacks that `poison.py` was initially built for, it has its own scenario.
+[Witches' Brew](https://arxiv.org/abs/2009.02276) is a clean-label attack that does not use a backdoor trigger.  The associated scenario is complex enough to warrant its own document, [Witches' Brew Poisoning](poisoning_witches_brew.md).
 
 
 ### Sleeper Agent
@@ -42,6 +40,10 @@ Because witches' brew is so different a threat model from the backdoor attacks t
 [Sleeper Agent](https://arxiv.org/abs/2106.08970) is a clean-label attack that applies $l_\infty$ bounded perturbations to a set of training images to embed a hidden trigger into the model that can be applied at inference time.
 This threat model does not assume access to the target architecture, but instead trains a surrogate model to produce the perturbations.
 This approach uses gradient alignment to optimize the perturbations for the trigger.
+
+
+### BadDet Object Detection Poisoning
+[BadDet](https://arxiv.org/pdf/2205.14497.pdf) Object Detection Poisoning comprises 4 separate dirty-label object detection attacks which are described in [poisoning_object_detection.md](poisoning_object_detection.md).
 
 
 ## Configuration files
@@ -56,62 +58,9 @@ The `adhoc` section of the config is where most of the configuration action happ
 
 The `adhoc` section is where `source_class`, `target_class`, and `train_epochs` are set.  The fields `compute_fairness_metrics` and `explanatory_model` go together, because the explanatory model is used to compute the fairness metrics, as described in the next section.  If the defense is a filtering defense and is separate from the model, it can be turned off with `use_poison_filtering_defense:false`.  Dataset poisoning can be turned off by setting `poison_dataset:false`; this has been the de facto approach to testing 0% poison, because ART throws an error in some cases when fraction poisoned is set to 0.  A final flag to note is `fit_defense_classifier_outside_defense`; this pertains to filters or other defenses that are external to the model and defaults to `true`.  If the defense does not require a trained model to operate, you can save time by setting this to `false`, because even if no defense classifier is provided, it will automatically train a copy of the model under evaluation .
 
-The remaining sections are fairly straightforward.  The `attack` section carries the parameters for the attack (those not specified under `adhoc`, that is), including the size, position, and blend of backdoor triggers if applicable.  The `defense` section for the _perfect filter_ baseline defense merits some explanation.  Because a perfect filter requires knowledge of which data were poisoned, and this information is not available to defenses, the perfect filter is implemented directly in scenario code.  However, Armory config validation currently requires a value for `module` and `name` under the `defense` section: the baseline configs set these to `"null"` (the string) although any string will work because the scenario ignores those values if `perfect_filter:true` is present in `defense/kwargs`.
+The remaining sections are fairly straightforward.  The `attack` section carries the parameters for the attack (those not specified under `adhoc`, that is), including the size, position, and blend of backdoor triggers if applicable.  These are described under ```kwargs/backdoor_kwargs``` and typically depend on the exact ART object being loaded to perform the attack.  Refer to ART for relevant documentation.
 
-### Sleeper Agent parameters
-
-The configuration parameters for sleeper agent largely follows from the [ART implementation](https://github.com/Trusted-AI/adversarial-robustness-toolbox/blob/main/art/attacks/poisoning/sleeper_agent_attack.py).
-A couple of key differences include the `patch` kwarg being a path to a file instead of an array, with `patch_size` being used to resize the image to the desired size, and `k_trigger` being the number of train images to select for generating the trigger.
-Other differences are minor word changes, and can be found [here](https://github.com/twosixlabs/armory/blob/master/armory/scenarios/poisoning_sleeper_agent.py#L101-L113).
-
-
-### Witches' Brew trigger specification
-
-Witches' Brew requires a `source_class`, `target_class`, and `trigger_index`.  The field `target_class` is required, but either of the other two may be left `null`.  If `trigger_index` is `null`, triggers will be chosen randomly from the source class.  If `source_class` is `null`, it will be inferred from the class labels of images at the provided trigger index. 
-
-Witches' Brew seeks to misclassify individual images; each has to be specified explicitly.  If multiple triggers are desired, there are several equivalent ways to accomplish this.  Some examples will illustrate.  Suppose you want three trigger images from class 1, each with a target class of 0.  The following configurations are equivalent:
-
-```
-source_class: 1
-target_class: 0
-trigger_index: [null, null, null]
-
-source_class: [1,1,1]
-target_class: 0
-trigger_index: null
-
-source_class: 1
-target_class: [0,0,0]
-trigger_index: null
-
-source_class: [1,1,1]
-target_class: [0,0,0]
-trigger_index: null
-
-source_class: [1,1,1]
-target_class: [0,0,0]
-trigger_index: [null, null, null]
-```
-Similarly, you can request triggers from different source classes by doing something like this:
-```
-source_class: [1,2,3]
-target_class: 0
-trigger_index: null
-```
-(selects triggers randomly from classes 1, 2, and 3, each with a target of 0).
-
-Or this:
-```
-source_class: [null, null, null]
-target_class: [4,5,6]
-trigger_index: [10,20,30]
-```
-(Uses images 10, 20, and 30 as triggers, whatever their source label, with targets of 4, 5, and 6 respectively.  Note that source and target class may not be the same.)
-
-
-### Witches' Brew dataset saving and loading
-
-Because generating poisoned data takes so much longer for Witches' Brew than for the backdoor attacks, Armory provides a means to save and load a poisoned dataset.  A filepath may be provided in the config under `attack/kwargs/data_filepath`.  If this path does not exist, Armory will generate the dataset and save it to that path.  If the path does exist, Armory will load it and check that it was generated consistent with what the current config is requesting, in terms of source, target, perturbation bound, and so forth.  If there are any discrepancies, a helpful error is raised.  If you are loading a pre-generated dataset, `source_class`, `target_class`, and `trigger_index` may all be null.  If you want to re-generate a poisoned dataset that already exists, you can delete the old one or rename it.  Alternatively, you may set `attack/kwargs/overwrite_presaved_data:true`, but use caution: if you forget to reset it to `false`, or pass the config to someone else, it can take a lot of time to re-generate the poison.
+The `defense` section for the _perfect filter_ baseline defense merits some explanation.  Because a perfect filter requires knowledge of which data were poisoned, and this information is not available to defenses, the perfect filter is implemented directly in scenario code.  However, Armory config validation currently requires a value for `module` and `name` under the `defense` section: the baseline configs set these to `"null"` (the string) although any string will work because the scenario ignores those values if `perfect_filter:true` is present in `defense/kwargs`.
 
 
 ## Metrics
@@ -168,18 +117,6 @@ $e^{\mathrm{KL}(p||q)}$, where
 
 $\mathrm{KL}(p||q) = \sum_i{p(C_i)\log}{\frac{p(C_i)}{q(C_i)}}$.
  
-
-
-### Witches' Brew
-
-Because test-time data is not poisoned for the witches' brew attack, it doesn't make sense to use the four primary metrics described above.  Instead, we have these three:
-- `accuracy_on_trigger_images`
-- `accuracy_on_non_trigger_images`
-- `attack_success_rate`
-
-`attack_success_rate` is the percentage of trigger images which were classified as their respective target classes, while `accuracy_on_trigger_images` is the percentage of trigger images that were classified as their natural labels (source classes).  Similarly, `accuracy_on_non_trigger_images` is the classification accuracy on non-trigger images.
-
-The fairness and filter metrics remain the same.
 
 ## Avoiding Out-Of-Memory (OOM) Errors
 

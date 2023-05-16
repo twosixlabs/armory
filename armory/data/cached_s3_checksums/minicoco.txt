@@ -1,0 +1,1 @@
+armory-public-data minicoco/minicoco_1.0.0.tar.gz 1901090523 8e5566f4714510b81ba014e00a462f32f63921ce4e2ab966d7e19e29a44eba24
