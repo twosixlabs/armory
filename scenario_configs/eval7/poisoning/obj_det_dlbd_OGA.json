@@ -65,7 +65,7 @@
         "name": "ObjectDetectionPoisoningScenario"
     },
     "sysconfig": {
-        "docker_image": "twosixarmory/armory",
+        "docker_image": "twosixarmory/yolo",
         "external_github_repo": null,
         "gpus": "all",
         "output_dir": null,
