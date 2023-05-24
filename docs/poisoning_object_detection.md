@@ -1,12 +1,12 @@
 # Object Detection Poisoning
 
-Object Detection Poisoning (using the YOLOv3 model) requires [PytorchYolo](https://github.com/eriklindernoren/PyTorch-YOLOv3) (with its accompanying dependencies).  Armory currently does not include this in the base docker image, neither does it maintain a separate docker image just to support this.
+Object Detection Poisoning (using the YOLOv3 model) requires [PytorchYolo](https://github.com/eriklindernoren/PyTorch-YOLOv3) (with its accompanying dependencies).  Armory currently does not include this in the base docker image, however, support does exist in the `twosixarmory/yolo` image.
 
 To run, please install via ```pip install .[yolo]``` and run using ```--no-docker```.
 
 
 ## Threat Model
-[BadDet](https://arxiv.org/pdf/2205.14497.pdf) Object Detection Poisoning comprises 4 separate dirty-label object detection attacks.  
+[BadDet](https://arxiv.org/pdf/2205.14497.pdf) Object Detection Poisoning comprises 4 separate dirty-label object detection attacks.
 
 ### Regional Misclassification Attack (RMA)
 
@@ -62,6 +62,6 @@ The fairness metrics, as currently defined, are not applicable.
 
 ## Additional Notes
 
-The OD poisoning scenario code performs some dataset operations which may seem out of place.  The data is padded and resized for YOLOv3 and augmented for training.  Non-maximum suppression is applied to the model's predictions.  Finally, for RMA and ODA, bounding boxes that are too small to contain the trigger are removed; if an image has no other bounding boxes, that image is removed from the dataset.  
+The OD poisoning scenario code performs some dataset operations which may seem out of place.  The data is padded and resized for YOLOv3 and augmented for training.  Non-maximum suppression is applied to the model's predictions.  Finally, for RMA and ODA, bounding boxes that are too small to contain the trigger are removed; if an image has no other bounding boxes, that image is removed from the dataset.
 
 The ART PytorchYolo class will in a future day take over some of these operations, which will simplify the scenario code.
