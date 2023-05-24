@@ -19,11 +19,11 @@ from jsonschema import ValidationError
 
 import armory
 from armory import arguments, paths
+from armory.cli.tools import log_current_branch, rgb_depth_convert
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
 from armory.logs import log
-from armory.cli.tools import log_current_branch
 from armory.utils.configuration import load_config, load_config_stdin
 from armory.utils.version import to_docker_tag
 import docker
@@ -719,21 +719,46 @@ def exec(command_args, prog, description):
     sys.exit(exit_code)
 
 
-def utils(command_args, prog, description):
-    parser = argparse.ArgumentParser(prog=prog, description=description)
-    _debug(parser)
+UTILS_COMMANDS = {
+    "get-branch": (log_current_branch, "log the current git branch of armory"),
+    "rgb-convert": (rgb_depth_convert, "converts rgb depth images to another format"),
+}
 
-    parser.add_argument(
-        "--branch",
-        action="store_true",
-        help="Print the current branch name",
+
+def utils_usage():
+    lines = [
+        f"{PROGRAM} <command>",
+        "",
+        "ARMORY Adversarial Robustness Evaluation Test Bed",
+        "https://github.com/twosixlabs/armory",
+        "",
+        "Commands:",
+    ]
+    for name, (func, description) in UTILS_COMMANDS.items():
+        lines.append(f"    {name} - {description}")
+    lines.extend(
+        [
+            "    -v, --version - get current armory version",
+            "",
+            f"Run '{PROGRAM} <command> --help' for more information on a command.",
+            " ",
+        ]
     )
+    return "\n".join(lines)
 
-    args = parser.parse_args(command_args)
-    armory.logs.update_filters(args.log_level, args.debug)
 
-    if args.branch:
-        log_current_branch()
+def utils(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, usage=utils_usage())
+    parser.add_argument(
+        "command",
+        choices=UTILS_COMMANDS.keys(),
+        help="utility command to run",
+    )
+    args = parser.parse_args(sys.argv[2:3])
+
+    func, description = UTILS_COMMANDS[args.command]
+    prog = f"{PROGRAM} {args.command}"
+    return func(sys.argv[3:], prog, description)
 
 
 # command, (function, description)
