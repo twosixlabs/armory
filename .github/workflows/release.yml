@@ -75,6 +75,7 @@ jobs:
         include:
           - image: armory
           - image: pytorch-deepspeech
+          - image: yolo
     steps:
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
