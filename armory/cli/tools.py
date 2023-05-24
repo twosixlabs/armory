@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from typing import Literal, Union
 
-from PIL import Image
 import numpy as np
 
 from armory.logs import log, update_filters
@@ -49,32 +48,6 @@ def log_current_branch(command_args, prog, description):
         log.info("Unable to determine git branch")
 
 
-def _load_image(path: Union[str, Path]) -> Image:
-    if isinstance(path, str):
-        path = Path(path)
-    if not path.is_file():
-        raise ValueError(f"{path} does not exist")
-    return Image.open(path)
-
-
-def _load_images(path: Union[str, Path, list]) -> list:
-    if isinstance(path, list):
-        return [_load_image(p) for p in path]
-    elif isinstance(path, str):
-        path = Path(path)
-    if path.is_dir():
-        files = path.glob("*depth.png")
-        try:
-            files = sorted(files, key=lambda p: int(p.stem.split("_")[1]))
-        except Exception as e:
-            log.error(f"Unable to sort files in {path}: {e}")
-        files = [_load_image(p) for p in files]
-        if len(files) > 0:
-            return files
-        raise ValueError(f"{path} does not contain any depth images")
-    return [_load_image(path)]
-
-
 def rgb_depth_convert(command_args, prog, description):
     try:
         from matplotlib import widgets
@@ -91,6 +64,30 @@ def rgb_depth_convert(command_args, prog, description):
             "Pillow is required to convert depth images.\n"
             "Please install with `pip install pillow`."
         )
+
+    def _load_image(path: Union[str, Path]) -> Image:
+        if isinstance(path, str):
+            path = Path(path)
+        if not path.is_file():
+            raise ValueError(f"{path} does not exist")
+        return Image.open(path)
+
+    def _load_images(path: Union[str, Path, list]) -> list:
+        if isinstance(path, list):
+            return [_load_image(p) for p in path]
+        elif isinstance(path, str):
+            path = Path(path)
+        if path.is_dir():
+            files = path.glob("*depth.png")
+            try:
+                files = sorted(files, key=lambda p: int(p.stem.split("_")[1]))
+            except Exception as e:
+                log.error(f"Unable to sort files in {path}: {e}")
+            files = [_load_image(p) for p in files]
+            if len(files) > 0:
+                return files
+            raise ValueError(f"{path} does not contain any depth images")
+        return [_load_image(path)]
 
     parser = argparse.ArgumentParser(
         prog=prog,
