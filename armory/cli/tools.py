@@ -77,13 +77,6 @@ def _load_images(path: Union[str, Path, list]) -> list:
 
 def rgb_depth_convert(command_args, prog, description):
     try:
-        import numpy as np
-    except ImportError:
-        raise ImportError(
-            "numpy is required to convert depth images.\n"
-            "Please install with `pip install numpy`."
-        )
-    try:
         from matplotlib import widgets
         import matplotlib.pyplot as plt
     except ImportError:
@@ -282,7 +275,9 @@ def rgb_depth_convert(command_args, prog, description):
         fig.canvas.draw_idle()
 
     # Add buttons to the plot
-    apply_action = lambda but, dtype: but.on_clicked(lambda ev: show(ev, dtype))
+    def apply_action(but, dtype):
+        but.on_clicked(lambda ev: show(ev, dtype))
+
     linear_ax = fig.add_axes([0.7, 0.9, 0.2, 0.05])
     linear_button = widgets.Button(linear_ax, "Show Linear")
     apply_action(linear_button, "linear")
