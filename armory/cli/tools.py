@@ -227,6 +227,7 @@ def rgb_depth_convert(command_args, prog, description):
     if args.headless:
         return
     # Create a figure and plot the initial image
+    global display_type
     display_type = "original"
     fig, ax = plt.subplots()
     im = ax.imshow(images[0])
