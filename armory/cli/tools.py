@@ -3,8 +3,6 @@ import os
 from pathlib import Path
 from typing import Literal, Union
 
-import numpy as np
-
 from armory.logs import log, update_filters
 
 
@@ -49,6 +47,13 @@ def log_current_branch(command_args, prog, description):
 
 
 def rgb_depth_convert(command_args, prog, description):
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError(
+            "numpy is required to convert depth images.\n"
+            "Please install with `pip install numpy`."
+        )
     try:
         from matplotlib import widgets
         import matplotlib.pyplot as plt
