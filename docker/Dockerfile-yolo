@@ -17,9 +17,6 @@ RUN echo "Building Armory from local source"                         && \
       python -m pip install --upgrade pip                            && \
     echo "Installing Armory..."                                      && \
       pip install --no-compile --no-cache-dir --editable '.[yolo]'   && \
-    echo "Installing Additional Dependencies Armory..."              && \
-      pip install --upgrade numpy==1.23.4                            && \
-      pip install pytorchyolo                                        && \
     echo "Configuring Armory..."                                     && \
       armory configure --use-default                                 && \
     echo "Cleaning up..."                                            && \
