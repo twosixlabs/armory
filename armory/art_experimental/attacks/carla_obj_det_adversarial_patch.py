@@ -8,11 +8,12 @@ import cv2
 import numpy as np
 import torch
 
+from armory import paths
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     linear_depth_to_rgb,
-    rgb_depth_to_linear,
     linear_to_log,
     log_to_linear,
+    rgb_depth_to_linear,
 )
 from armory.logs import log
 
@@ -48,10 +49,27 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         create perturbation mask based on HSV bounds
         """
         module_path = globals()["__file__"]
+        module_folder = os.path.dirname(module_path)
         # user-defined image is assumed to reside in the same location as the attack module
         patch_base_image_path = os.path.abspath(
-            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
+            os.path.join(module_folder, self.patch_base_image)
         )
+        # if the image does not exist, check paths.DockerPaths().cwd and paths.HostPaths().cwd
+        if not os.path.exists(patch_base_image_path):
+            docker_cwd = paths.DockerPaths().cwd
+            host_cwd = paths.HostPaths().cwd
+            patch_base_image_path = os.path.abspath(
+                os.path.join(docker_cwd, self.patch_base_image)
+            )
+            if not os.path.exists(patch_base_image_path):
+                patch_base_image_path = os.path.abspath(
+                    os.path.join(host_cwd, self.patch_base_image)
+                )
+                if not os.path.exists(patch_base_image_path):
+                    raise FileNotFoundError(
+                        f"Cannot find patch base image at {patch_base_image_path}. "
+                        "Make sure it is in your cwd or {module_folder}."
+                    )
 
         im = cv2.imread(patch_base_image_path)
         im = cv2.resize(im, size)
