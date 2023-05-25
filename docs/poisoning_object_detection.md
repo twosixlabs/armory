@@ -2,7 +2,7 @@
 
 Object Detection Poisoning (using the YOLOv3 model) requires [PytorchYolo](https://github.com/eriklindernoren/PyTorch-YOLOv3) (with its accompanying dependencies).  Armory currently does not include this in the base docker image, however, support does exist in the `twosixarmory/yolo` image.
 
-To run, install the `yolo` dependencies via ```pip install .[yolo]```.
+Object Detection Poisoning (using the YOLOv3 model) requires `PytorchYolo` (with its accompanying dependencies). Armory includes this in the `twosixarmory/yolo` docker image; it can also be installed via `pip install .[yolo]` and run using the `--no-docker` flag.
 
 ## Threat Model
 [BadDet](https://arxiv.org/pdf/2205.14497.pdf) Object Detection Poisoning comprises 4 separate dirty-label object detection attacks.
