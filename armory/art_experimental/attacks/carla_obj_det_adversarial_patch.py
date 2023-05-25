@@ -54,19 +54,11 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         patch_base_image_path = os.path.abspath(
             os.path.join(module_folder, self.patch_base_image)
         )
-        # if the image does not exist, check paths.DockerPaths().cwd
+        # if the image does not exist, check cwd
         if not os.path.exists(patch_base_image_path):
-            # TODO: determine if in docker mode smartly
-            docker_cwd = paths.DockerPaths().cwd
-            host_cwd = paths.HostPaths().cwd
             patch_base_image_path = os.path.abspath(
-                os.path.join(docker_cwd, self.patch_base_image)
+                os.path.join(paths.runtime_paths().cwd, self.patch_base_image)
             )
-            # check host cwd if docker cwd does not exist
-            if not os.path.exists(patch_base_image_path):
-                patch_base_image_path = os.path.abspath(
-                    os.path.join(host_cwd, self.patch_base_image)
-                )
         # image not in cwd or module, check if it is a url to an image
         if not os.path.exists(patch_base_image_path):
             import requests
