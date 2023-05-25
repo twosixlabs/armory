@@ -290,10 +290,8 @@ class ObjectDetectionPoisoningScenario(Poison):
                     # if i + self.fit_batch_size < len(aug_y_train):
                     batch_end = min(len(aug_y_train), i + self.fit_batch_size)
                     self.model.fit(
-                        aug_x_train[i : batch_end],
-                        self.label_function(
-                            aug_y_train[i : batch_end]
-                        ),
+                        aug_x_train[i:batch_end],
+                        self.label_function(aug_y_train[i:batch_end]),
                         batch_size=self.fit_batch_size,
                         nb_epochs=1,
                         verbose=False,
