@@ -1,11 +1,7 @@
 import copy
 
-try:
-    import imgaug.augmenters as iaa
-    from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
-except ImportError:
-    raise ImportError("imgaug is not installed. Please install via pip install .[yolo]")
-
+import imgaug.augmenters as iaa
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
 import numpy as np
 import torch
 from torchvision.ops import nms
