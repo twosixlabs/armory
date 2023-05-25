@@ -9,9 +9,9 @@
         "fraction_poisoned": 0.1,
         "poison_dataset": true,
         "score_threshold": 0.05,
-        "source_class": 1,
+        "source_class": 0,
         "split_id": 0,
-        "target_class": 2,
+        "target_class": 1,
         "train_epochs": 50,
         "use_poison_filtering_defense": false
     },
