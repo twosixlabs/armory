@@ -54,24 +54,37 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         patch_base_image_path = os.path.abspath(
             os.path.join(module_folder, self.patch_base_image)
         )
-        # if the image does not exist, check paths.DockerPaths().cwd and paths.HostPaths().cwd
+        # if the image does not exist, check paths.DockerPaths().cwd
         if not os.path.exists(patch_base_image_path):
+            # TODO: determine if in docker mode smartly
             docker_cwd = paths.DockerPaths().cwd
             host_cwd = paths.HostPaths().cwd
             patch_base_image_path = os.path.abspath(
                 os.path.join(docker_cwd, self.patch_base_image)
             )
+            # check host cwd if docker cwd does not exist
             if not os.path.exists(patch_base_image_path):
                 patch_base_image_path = os.path.abspath(
                     os.path.join(host_cwd, self.patch_base_image)
                 )
-                if not os.path.exists(patch_base_image_path):
-                    raise FileNotFoundError(
-                        f"Cannot find patch base image at {patch_base_image_path}. "
-                        "Make sure it is in your cwd or {module_folder}."
-                    )
+        # image not in cwd or module, check if it is a url to an image
+        if not os.path.exists(patch_base_image_path):
+            import requests
 
-        im = cv2.imread(patch_base_image_path)
+            try:
+                response = requests.get(self.patch_base_image, allow_redirects=True)
+                im = cv2.imdecode(
+                    np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR
+                )
+            except Exception as e:
+                log.exception(e)
+                raise FileNotFoundError(
+                    f"Cannot find patch base image at {self.patch_base_image}. "
+                    f"Make sure it is in your cwd or {module_folder} or provide a valid url."
+                )
+        else:
+            im = cv2.imread(patch_base_image_path)
+
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
