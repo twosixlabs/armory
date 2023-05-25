@@ -132,6 +132,7 @@ jupyter = [
 yolo = [
     "armory-testbed[engine]",
     "armory-testbed[tensorflow]",
+    "numpy == 1.23.4",
     "pytorchyolo",
 ]
 
