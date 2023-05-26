@@ -113,7 +113,6 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
         if self._optimizer_string == "pgd":
             patch_grads = self._patch.grad
-            breakpoint()
             patch_gradients = (
                 patch_grads.sign() * self.learning_rate * self.patch_color_mask
             )
@@ -430,6 +429,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                 projected_mask = self.patch_mask.project(
                     self.binarized_patch_mask.shape, gs_coords, as_bool=True
                 )
+                # binarized_patch_mask already handled in loss function
                 self.binarized_patch_mask *= projected_mask
 
             # Eval7 contains a mixture of patch locations.

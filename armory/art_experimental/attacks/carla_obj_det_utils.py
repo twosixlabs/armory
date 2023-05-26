@@ -227,7 +227,7 @@ class PatchMask:
 
         if as_bool:
             # Convert mask to be only 0s and 1s
-            mask_transformed = np.where(mask_transformed < 255, 0, 1)
+            mask_transformed = np.where(mask_transformed > 0, 0, 1)
 
             # Convert the transformed mask tensor to be a boolean mask
             mask_transformed = mask_transformed.astype(bool)
@@ -244,7 +244,6 @@ class PatchMask:
         """Project the mask onto an image of the given shape."""
         if mask is None:
             mask = self._load()
-        breakpoint()
         proj = self.project_mask(mask, shape, gs_coords, as_bool=as_bool)
         if self.invert:
             proj = ~proj
