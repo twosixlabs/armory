@@ -353,25 +353,23 @@ def sierpinski(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
     return _write(outdir, bbox_inches="tight", pad_inches=0)
 
 
-_SHAPES = {
-    f.__name__: f
-    for f in (asterisk, circle, grid, concentric_circles, jxcr_gear, sierpinski)
-}
-
-
 @dataclass
 class Shape:
     func: callable
+    _SHAPES = {
+        f.__name__: f
+        for f in (asterisk, circle, grid, concentric_circles, jxcr_gear, sierpinski)
+    }
 
     @classmethod
     def from_name(cls, name) -> "Shape":
         if name is None:
             return
-        if name not in _SHAPES:
+        if name not in cls._SHAPES:
             raise ValueError(
-                f"Invalid shape name: {name}. Must be one of: {_SHAPES.keys()}"
+                f"Invalid shape name: {name}. Must be one of: {cls._SHAPES.keys()}"
             )
-        return cls(_SHAPES[name])
+        return cls(cls._SHAPES[name])
 
     @property
     def array(self):
@@ -382,9 +380,9 @@ class Shape:
 
     @property
     def name(self):
-        if self.func.__name__ in _SHAPES:
+        if self.func.__name__ in self._SHAPES:
             return self.func.__name__
-        candidates = [k for k, v in _SHAPES.items() if v == self.func]
+        candidates = [k for k, v in self._SHAPES.items() if v == self.func]
         if len(candidates) == 1:
             return candidates[0]
         raise ValueError(f"Could not find name for shape: {self.func}")
@@ -392,19 +390,28 @@ class Shape:
     def save(self, outdir=os.path.join(os.path.dirname(__file__), "masks")):
         return self.func(outdir)
 
+    def show(self):
+        plt.imshow(self.array)
+        plt.show()
+
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser("Generate various png masks")
-    parser.add_argument("shape", choices=_SHAPES.keys() + ["all"])
+    parser.add_argument("shape", choices=Shape._SHAPES.keys() + ["all"])
+    parser.add_argument("--show", action="store_true", help="Show the generated mask")
     args = parser.parse_args()
 
     if args.shape == "all":
-        for shape in _SHAPES:
-            shape()
+        for shape in Shape._SHAPES:
+            generated = shape()
+            if args.show:
+                breakpoint()
+                plt.imshow(generated)
+                plt.show()
     else:
-        for shape in _SHAPES:
+        for shape in Shape._SHAPES:
             if shape.__name__ == args.shape:
                 shape()
                 break

@@ -19,6 +19,7 @@ from jsonschema import ValidationError
 
 import armory
 from armory import arguments, paths
+from armory.cli.tools import CLI_COMMANDS
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
@@ -627,7 +628,6 @@ def configure(command_args, prog, description):
     print(resolved)
     save = None
     while save is None:
-
         if os.path.isfile(default_host_paths.armory_config):
             print("WARNING: this will overwrite existing configuration.")
             print("    Press Ctrl-C to abort.")
@@ -718,6 +718,42 @@ def exec(command_args, prog, description):
     sys.exit(exit_code)
 
 
+def utils_usage():
+    lines = [
+        f"{PROGRAM} <command>",
+        "",
+        "ARMORY Adversarial Robustness Evaluation Test Bed",
+        "https://github.com/twosixlabs/armory",
+        "",
+        "Commands:",
+    ]
+    for name, (func, description) in CLI_COMMANDS.items():
+        lines.append(f"    {name} - {description}")
+    lines.extend(
+        [
+            "    -v, --version - get current armory version",
+            "",
+            f"Run '{PROGRAM} <command> --help' for more information on a command.",
+            " ",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def utils(command_args, prog, description):
+    parser = argparse.ArgumentParser(prog=prog, usage=utils_usage())
+    parser.add_argument(
+        "command",
+        choices=CLI_COMMANDS.keys(),
+        help="utility command to run",
+    )
+    args = parser.parse_args(sys.argv[2:3])
+
+    func, description = CLI_COMMANDS[args.command]
+    prog = f"{PROGRAM} {args.command}"
+    return func(sys.argv[3:], prog, description)
+
+
 # command, (function, description)
 PROGRAM = "armory"
 COMMANDS = {
@@ -729,6 +765,7 @@ COMMANDS = {
     "configure": (configure, "set up armory and dataset paths"),
     "launch": (launch, "launch a given docker container in armory"),
     "exec": (exec, "run a single exec command in the container"),
+    "utils": (utils, "run a utility script"),
 }
 
 

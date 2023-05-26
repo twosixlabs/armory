@@ -262,7 +262,6 @@ def test_generator_construction(
 
 
 def test_digit(armory_dataset_dir):
-
     epochs = 1
     batch_size = 1
     num_users = 3
@@ -289,7 +288,6 @@ def test_digit(armory_dataset_dir):
 
 
 def test_imagenet_adv(armory_dataset_dir):
-
     batch_size = 100
     total_size = 1000
     test_dataset = adversarial_datasets.imagenet_adversarial(
@@ -312,7 +310,6 @@ def test_imagenet_adv(armory_dataset_dir):
 
 
 def test_german_traffic_sign(armory_dataset_dir):
-
     for split, size in [("train", 39209), ("test", 12630)]:
         batch_size = 1
         epochs = 1
@@ -331,7 +328,6 @@ def test_german_traffic_sign(armory_dataset_dir):
 
 
 def test_imagenette(armory_dataset_dir):
-
     if not os.path.isdir(
         os.path.join(armory_dataset_dir, "imagenette", "full-size", "0.1.0")
     ):
@@ -355,7 +351,6 @@ def test_imagenette(armory_dataset_dir):
 
 
 def test_ucf101(armory_dataset_dir):
-
     if not os.path.isdir(
         os.path.join(armory_dataset_dir, "ucf101", "ucf101_1", "2.0.0")
     ):
@@ -379,7 +374,6 @@ def test_ucf101(armory_dataset_dir):
 
 
 def test_librispeech(armory_dataset_dir):
-
     if not os.path.exists(
         os.path.join(armory_dataset_dir, "librispeech_dev_clean_split")
     ):
@@ -411,7 +405,6 @@ def test_librispeech(armory_dataset_dir):
 
 
 def test_librispeech_adversarial(armory_dataset_dir):
-
     if not os.path.exists(
         os.path.join(armory_dataset_dir, "librispeech_adversarial", "1.0.0")
     ):
@@ -442,7 +435,6 @@ def test_librispeech_adversarial(armory_dataset_dir):
 
 
 def test_resisc45_adversarial_224x224(armory_dataset_dir):
-
     size = 225
     split = "adversarial"
     batch_size = 16
@@ -468,7 +460,6 @@ def test_resisc45_adversarial_224x224(armory_dataset_dir):
 
 
 def test_coco2017(armory_dataset_dir):
-
     if not os.path.exists(os.path.join(armory_dataset_dir, "coco", "2017", "1.1.0")):
         pytest.skip("coco2017 dataset not downloaded.")
 
@@ -492,7 +483,6 @@ def test_coco2017(armory_dataset_dir):
 
 
 def test_dapricot_dev():
-
     split_size = 27
     split = "small"
     dataset = adversarial_datasets.dapricot_dev_adversarial(
@@ -516,7 +506,6 @@ def test_dapricot_dev():
 
 
 def test_dapricot_test():
-
     split_size = 108
     split = "small"
     dataset = adversarial_datasets.dapricot_test_adversarial(
@@ -568,7 +557,6 @@ def test_carla_obj_det_train():
 
 
 def test_carla_obj_det_dev():
-
     ds_rgb = adversarial_datasets.carla_obj_det_dev(split="dev", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_dev(split="dev", modality="depth")
     ds_multimodal = adversarial_datasets.carla_obj_det_dev(split="dev", modality="both")
@@ -601,7 +589,6 @@ def test_carla_obj_det_dev():
 
 
 def test_carla_obj_det_test():
-
     ds_rgb = adversarial_datasets.carla_obj_det_test(split="test", modality="rgb")
     ds_depth = adversarial_datasets.carla_obj_det_test(split="test", modality="depth")
     ds_multimodal = adversarial_datasets.carla_obj_det_test(
@@ -670,7 +657,6 @@ def test_carla_overhead_obj_det_train():
 
 
 def test_carla_overhead_obj_det_dev():
-
     ds_rgb = adversarial_datasets.carla_over_obj_det_dev(split="dev", modality="rgb")
     ds_depth = adversarial_datasets.carla_over_obj_det_dev(
         split="dev", modality="depth"
@@ -705,7 +691,6 @@ def test_carla_overhead_obj_det_dev():
 
 
 def test_carla_overhead_obj_det_test():
-
     ds_rgb = adversarial_datasets.carla_over_obj_det_test(split="test", modality="rgb")
     ds_depth = adversarial_datasets.carla_over_obj_det_test(
         split="test", modality="depth"
@@ -736,7 +721,6 @@ def test_carla_overhead_obj_det_test():
 
 
 def test_carla_video_tracking_dev():
-
     dataset = adversarial_datasets.carla_video_tracking_dev(split="dev")
     assert dataset.size == 20
     for x, y in dataset:
@@ -756,7 +740,6 @@ def test_carla_video_tracking_dev():
 
 
 def test_carla_video_tracking_test():
-
     dataset = adversarial_datasets.carla_video_tracking_test(split="test")
     assert dataset.size == 20
     for x, y in dataset:
@@ -776,7 +759,6 @@ def test_carla_video_tracking_test():
 
 
 def test_ucf101_adversarial_112x112(armory_dataset_dir):
-
     if not os.path.isdir(
         os.path.join(
             armory_dataset_dir,
@@ -808,7 +790,6 @@ def test_ucf101_adversarial_112x112(armory_dataset_dir):
 
 
 def test_speech_commands(armory_dataset_dir):
-
     batch_size = 16
     ds_test_size = 4890
     ds_train_size = 85511
@@ -838,7 +819,6 @@ def test_speech_commands(armory_dataset_dir):
 
 
 def test_carla_multi_object_tracking_dev():
-
     dataset = adversarial_datasets.carla_multi_object_tracking_dev(split="dev")
     assert dataset.size == 20
     for x, y in dataset:
@@ -856,7 +836,6 @@ def test_carla_multi_object_tracking_dev():
 
 
 def test_carla_multi_object_tracking_test():
-
     dataset = adversarial_datasets.carla_multi_object_tracking_test(split="test")
     assert dataset.size == 10
     for x, y in dataset:
@@ -871,6 +850,31 @@ def test_carla_multi_object_tracking_test():
         assert isinstance(y_patch_metadata, dict)
         for key in ["gs_coords", "masks"]:
             assert key in y_patch_metadata
+
+
+def test_minicoco():
+    train_size = 10349
+    dataset = datasets.minicoco(
+        split="train",
+    )
+    assert dataset.size == train_size
+
+    val_size = 434
+    dataset = datasets.minicoco(
+        split="validation",
+    )
+    assert dataset.size == val_size
+
+    for i in range(8):
+        x, y = dataset.get_batch()
+        assert x.shape[0] == 1
+        assert x.shape[-1] == 3
+        assert isinstance(y, list)
+        assert len(y) == 1
+        y_dict = y[0]
+        assert isinstance(y_dict, dict)
+        for obj_key in ["labels", "boxes", "area"]:
+            assert obj_key in y_dict
 
 
 def test_variable_length(armory_dataset_dir):

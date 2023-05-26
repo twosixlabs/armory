@@ -20,7 +20,6 @@ def get_spectrogram(audio):
 
 
 def make_audio_resnet(sequential=True, **kwargs) -> tf.keras.Model:
-
     inputs = keras.Input(shape=(16000,))
     spectrogram = Lambda(lambda audio: get_spectrogram(audio))(inputs)
 
@@ -48,11 +47,11 @@ def make_audio_resnet(sequential=True, **kwargs) -> tf.keras.Model:
 def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ):
-
     model = make_audio_resnet(sequential=True, **model_kwargs)
 
     loss_object = losses.SparseCategoricalCrossentropy()
 
+    @tf.function
     def train_step(model, samples, labels):
         with tf.GradientTape() as tape:
             predictions = model(samples, training=True)

@@ -28,6 +28,7 @@ from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.librispeech import librispeech_full as lf  # noqa: F401
+from armory.data.minicoco import minicoco as mc  # noqa: F401
 from armory.data.resisc10 import resisc10_poison  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
@@ -1034,11 +1035,11 @@ def carla_over_obj_det_train(
     **kwargs,
 ) -> ArmoryDataGenerator:
     """
-    Training set for CARLA object detection dataset, containing RGB and depth channels.
+    Training set for CARLA overhead object detection dataset, containing RGB and depth channels.
     """
     if "class_ids" in kwargs:
         raise ValueError(
-            "Filtering by class is not supported for the carla_obj_det_train dataset"
+            "Filtering by class is not supported for the carla_over_obj_det_train dataset"
         )
     modality = kwargs.pop("modality", "rgb")
     if modality not in ["rgb", "depth", "both"]:
@@ -1210,7 +1211,6 @@ def speech_commands(
     pad_data: bool = False,
     **kwargs,
 ) -> ArmoryDataGenerator:
-
     """
     An audio dataset of spoken commands
     https://www.tensorflow.org/datasets/catalog/speech_commands
@@ -1512,6 +1512,83 @@ def librispeech_dev_clean_asr(
         framework=framework,
         shuffle_files=shuffle_files,
         context=librispeech_dev_clean_context,
+        **kwargs,
+    )
+
+
+def minicoco_label_preprocessing(x, y):
+    """
+    Converts boxes from TF format to PyTorch format
+    TF format: [y1/height, x1/width, y2/height, x2/width]
+    PyTorch format: [x1, y1, x2, y2] (unnormalized)
+
+    Additionally, if batch_size is 1, this function converts the single y dictionary
+    to a list of length 1.
+    """
+
+    y_preprocessed = []
+    # This will be true only when batch_size is 1
+    if isinstance(y, dict):
+        y = [y]
+    for i, label_dict in enumerate(y):
+        orig_boxes = label_dict.pop("bbox").reshape((-1, 4))
+        converted_boxes = orig_boxes[:, [1, 0, 3, 2]]
+        height, width = x[i].shape[0:2]
+        converted_boxes *= [width, height, width, height]
+        label_dict["boxes"] = converted_boxes
+        label_dict["labels"] = label_dict.pop("label").reshape((-1,))
+        y_preprocessed.append(label_dict)
+    return y_preprocessed
+
+
+def minicoco(
+    split: str = "train",
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    preprocessing_fn: Callable = coco_canonical_preprocessing,
+    label_preprocessing_fn: Callable = minicoco_label_preprocessing,
+    fit_preprocessing_fn: Callable = None,
+    cache_dataset: bool = True,
+    framework: str = "numpy",
+    shuffle_files: bool = True,
+    **kwargs,
+) -> ArmoryDataGenerator:
+    """
+    A subset of the mscoco dataset for object detection poisoning.
+    Uses classes 5 (airplane), 6 (bus), 7 (train)
+    Images vary in size.
+
+    split - one of ("train", "validation")
+
+    Train
+        Total images: 10349
+        Total class instances: [(5, 5135), (6, 6069), (7, 4571)]
+    Val
+        Total images: 434
+        Total class instances: [(5, 143), (6, 285), (7, 190)]
+
+    """
+    preprocessing_fn = preprocessing_chain(preprocessing_fn, fit_preprocessing_fn)
+
+    if "class_ids" in kwargs:
+        raise ValueError("Filtering by class is not supported for the minicoco dataset")
+    return _generator_from_tfds(
+        "minicoco/2017:1.0.0",
+        split=split,
+        batch_size=batch_size,
+        epochs=epochs,
+        dataset_dir=dataset_dir,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+        as_supervised=False,
+        supervised_xy_keys=("image", "objects"),
+        variable_length=bool(batch_size > 1),
+        variable_y=bool(batch_size > 1),
+        cache_dataset=cache_dataset,
+        framework=framework,
+        shuffle_files=shuffle_files,
+        context=coco_context,
         **kwargs,
     )
 
