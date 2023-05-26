@@ -6,15 +6,19 @@ from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
 )
 import cv2
 import numpy as np
+import requests
 import torch
 
+from armory import paths
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     linear_depth_to_rgb,
-    rgb_depth_to_linear,
     linear_to_log,
     log_to_linear,
+    rgb_depth_to_linear,
 )
 from armory.logs import log
+
+VALID_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg"]
 
 
 class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
@@ -48,12 +52,43 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         create perturbation mask based on HSV bounds
         """
         module_path = globals()["__file__"]
+        module_folder = os.path.dirname(module_path)
         # user-defined image is assumed to reside in the same location as the attack module
         patch_base_image_path = os.path.abspath(
-            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
+            os.path.join(module_folder, self.patch_base_image)
         )
+        # if the image does not exist, check cwd
+        if not os.path.exists(patch_base_image_path):
+            patch_base_image_path = os.path.abspath(
+                os.path.join(paths.runtime_paths().cwd, self.patch_base_image)
+            )
+        # image not in cwd or module, check if it is a url to an image
+        if not os.path.exists(patch_base_image_path):
+            # Send a HEAD request
+            response = requests.head(self.patch_base_image, allow_redirects=True)
 
-        im = cv2.imread(patch_base_image_path)
+            # Check the status code
+            if response.status_code != 200:
+                raise FileNotFoundError(
+                    f"Cannot find patch base image at {self.patch_base_image}. "
+                    f"Make sure it is in your cwd or {module_folder} or provide a valid url."
+                )
+            # If the status code is 200, check the content type
+            content_type = response.headers.get("content-type")
+            if content_type not in VALID_IMAGE_TYPES:
+                raise ValueError(
+                    f"Returned content at {self.patch_base_image} is not a valid image type. "
+                    f"Expected types are {VALID_IMAGE_TYPES}, but received {content_type}"
+                )
+
+            # If content type is valid, download the image
+            response = requests.get(self.patch_base_image, allow_redirects=True)
+            im = cv2.imdecode(
+                np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR
+            )
+        else:
+            im = cv2.imread(patch_base_image_path)
+
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
