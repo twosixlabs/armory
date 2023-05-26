@@ -91,3 +91,27 @@ jobs:
                 -c /armory-repo/pyproject.toml                 \
                 -m "pytorch_deepspeech"                        \
                 ./tests/
+
+  docker-yolo-unit:
+    name: ☁️ Docker Yolo Image Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐄 checkout armory full depth with tags for scm
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Use Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: ⚙️ Install Armory
+        shell: bash
+        run: |
+          pip install .
+          armory configure --use-defaults
+
+      - name: 🚧 Build the Container
+        run: |
+          python docker/build.py --framework yolo
