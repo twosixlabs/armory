@@ -287,7 +287,6 @@ class ObjectDetectionPoisoningScenario(Poison):
 
                 # Manually call model.fit with small batches
                 for i in range(0, len(aug_y_train), self.fit_batch_size):
-                    # if i + self.fit_batch_size < len(aug_y_train):
                     batch_end = min(len(aug_y_train), i + self.fit_batch_size)
                     self.model.fit(
                         aug_x_train[i:batch_end],
