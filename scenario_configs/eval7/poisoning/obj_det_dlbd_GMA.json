@@ -10,7 +10,7 @@
         "poison_dataset": true,
         "score_threshold": 0.05,
         "split_id": 0,
-        "target_class": 2,
+        "target_class": 1,
         "train_epochs": 50,
         "use_poison_filtering_defense": false
     },
