@@ -286,17 +286,15 @@ class ObjectDetectionPoisoningScenario(Poison):
 
                 # Manually call model.fit with small batches
                 for i in range(0, len(aug_y_train), self.fit_batch_size):
-                    if i + self.fit_batch_size < len(aug_y_train):
-                        self.model.fit(
-                            aug_x_train[i : i + self.fit_batch_size],
-                            self.label_function(
-                                aug_y_train[i : i + self.fit_batch_size]
-                            ),
-                            batch_size=self.fit_batch_size,
-                            nb_epochs=1,
-                            verbose=False,
-                            shuffle=True,
-                        )
+                    batch_end = min(len(aug_y_train), i + self.fit_batch_size)
+                    self.model.fit(
+                        aug_x_train[i:batch_end],
+                        self.label_function(aug_y_train[i:batch_end]),
+                        batch_size=self.fit_batch_size,
+                        nb_epochs=1,
+                        verbose=False,
+                        shuffle=True,
+                    )
         else:
             log.warning("All data points filtered by defense. Skipping training")
 
