@@ -11,6 +11,7 @@ def poison_loader_audio(**kwargs):
     backdoor_kwargs = kwargs.pop("backdoor_kwargs")
 
     if "backdoor_path" in backdoor_kwargs:
+
         backdoor_kwargs["backdoor_path"] = triggers.get_path(
             backdoor_kwargs["backdoor_path"]
         )

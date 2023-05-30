@@ -5,24 +5,9 @@
         "knowledge": "white",
         "kwargs": {
             "batch_size": 1,
-            "hsv_lower_bound": [
-                0.0,
-                0.0,
-                0.0
-            ],
-            "hsv_upper_bound": [
-                20.0,
-                255.0,
-                255.0
-            ],
             "learning_rate": 0.003,
             "max_iter": 1000,
             "optimizer": "pgd",
-            "patch_base_image": "base_images/stable_diffusion_adversarial_patch_batch_0_9.png",
-            "patch_mask": {
-                "fill": "0xFF01FF",
-                "shape": "jxcr_gear"
-            },
             "targeted": false,
             "verbose": true
         },
@@ -32,11 +17,11 @@
     },
     "dataset": {
         "batch_size": 1,
-        "eval_split": "test",
+        "eval_split": "dev",
         "framework": "numpy",
         "modality": "rgb",
         "module": "armory.data.adversarial_datasets",
-        "name": "carla_over_obj_det_test"
+        "name": "carla_over_obj_det_dev"
     },
     "defense": null,
     "metric": {

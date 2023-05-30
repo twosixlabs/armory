@@ -375,6 +375,7 @@ class CARLADapricotPatch(RobustDPatch):
             depth_gradients = None
 
             for e_step in range(self.sample_size):
+
                 for i_batch in range(num_batches):
                     i_batch_start = i_batch * self.batch_size
                     i_batch_end = min((i_batch + 1) * self.batch_size, x.shape[0])
@@ -665,6 +666,7 @@ class CARLADapricotPatch(RobustDPatch):
         attacked_images = []
 
         for i in range(num_imgs):
+
             if x.shape[-1] == 3:
                 rgb_img = x[i].astype("float32")
             else:
@@ -739,6 +741,7 @@ class CARLADapricotPatch(RobustDPatch):
 
             # initialize depth variables
             if x.shape[-1] == 6:
+
                 if np.all(x[i, :, :, 3] == x[i, :, :, 4]) and np.all(
                     x[i, :, :, 3] == x[i, :, :, 5]
                 ):

@@ -1,11 +1,7 @@
 import copy
 
-try:
-    from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
-    import imgaug.augmenters as iaa
-except ImportError:
-    raise ImportError("imgaug is not installed. Please install via pip install .[yolo]")
-
+from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+import imgaug.augmenters as iaa
 import numpy as np
 import torch
 from torchvision.ops import nms
@@ -57,6 +53,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         aug_images = []
         aug_ydicts = []
         for image, y_dict in zip(images, y_dicts):
+
             if len(image.shape) == 4 and image.shape[0] == 1:
                 image = np.squeeze(image, axis=0)
 
@@ -205,6 +202,7 @@ class ObjectDetectionPoisoningScenario(Poison):
         self.target_class = adhoc_config.get("target_class")  # None for ODA
 
         if self.use_poison:
+
             # Set additional attack config kwargs
             kwargs = attack_config["kwargs"]
             self.attack_variant = kwargs["attack_variant"]

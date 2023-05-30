@@ -27,6 +27,7 @@ class Yolo(torch.nn.Module):
 def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchYolo:
+
     model = load_model(weights_path=weights_path, **model_kwargs)
     model_wrapper = Yolo(model)
 
