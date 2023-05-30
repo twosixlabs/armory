@@ -1,8 +1,6 @@
 # -------------- Project ------------------
 */__about__.py
 
-base_images/
-
 
 # ------------- Template ------------------
 # Ignore dataset, tmp, and output directories
