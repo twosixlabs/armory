@@ -19,7 +19,7 @@ from jsonschema import ValidationError
 
 import armory
 from armory import arguments, paths
-from armory.cli.tools import CLI_COMMANDS
+from armory.cli import CLI_COMMANDS
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
