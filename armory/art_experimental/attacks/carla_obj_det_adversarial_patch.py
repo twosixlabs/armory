@@ -45,14 +45,6 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             kwargs.pop("hsv_upper_bound", [255, 255, 255])
         )  # [255, 255, 255] means unbounded above
 
-        # HSV bounds are user-defined to limit perturbation regions
-        self.hsv_lower_bound = np.array(
-            kwargs.pop("hsv_lower_bound", [0, 0, 0])
-        )  # [0, 0, 0] means unbounded below
-        self.hsv_upper_bound = np.array(
-            kwargs.pop("hsv_upper_bound", [255, 255, 255])
-        )  # [255, 255, 255] means unbounded above
-
         super().__init__(estimator=estimator, **kwargs)
 
     def create_initial_image(self, size, hsv_lower_bound, hsv_upper_bound):

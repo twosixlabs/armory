@@ -144,7 +144,9 @@ class PatchMask:
         elif isinstance(mask, dict):
             return PatchMask(
                 path=mask.get("path", None),
-                shape=Shape.from_name(mask.get("shape", None)),
+                shape=Shape.from_name(
+                    mask.get("shape", None), mask.get("shape_kwargs", None)
+                ),
                 invert=mask.get("invert", True),
                 fill=mask.get("fill", "init"),
             )
@@ -226,11 +228,7 @@ class PatchMask:
         mask_transformed = cv2.warpPerspective(resized_mask, M, target_shape[:2][::-1])
 
         if as_bool:
-            # Convert mask to be only 0s and 1s
-            mask_transformed = np.where(mask_transformed > 0, 0, 1)
-
-            # Convert the transformed mask tensor to be a boolean mask
-            mask_transformed = mask_transformed.astype(bool)
+            return np.where(mask_transformed == 0, False, True)
 
         return mask_transformed
 
@@ -245,6 +243,14 @@ class PatchMask:
         if mask is None:
             mask = self._load()
         proj = self.project_mask(mask, shape, gs_coords, as_bool=as_bool)
+        # remove whitespace and transparency
+        proj = np.where(proj.all(axis=-1), 0, proj.any(axis=-1)).astype(mask.dtype)
+        if proj.dtype == np.uint8:
+            proj = proj * 255
+        # add back channels
+        proj = np.stack([proj] * 3, axis=-1)
+        if as_bool:
+            proj = proj.astype(bool)
         if self.invert:
             proj = ~proj
         return proj
@@ -275,12 +281,13 @@ class PatchMask:
                 )
             fill[fill == 0] = 1  # hack
             fill = np.ones_like(patch_init) * fill[:, np.newaxis, np.newaxis] / 255
-        elif os.path.isfile(self.fill):
+        elif os.path.isfile(valid_path := self._path_search(self.fill)):
+            self.fill = valid_path
             fill = cv2.imread(self.fill, cv2.IMREAD_UNCHANGED)
             patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
             patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
             fill = cv2.resize(fill, (patch_width, patch_height))
-            if any(fill == 0):
+            if (fill == 0).any():
                 log.warning(
                     "Patch mask fill color a contains 0 in RGB. Setting to 1 instead."
                 )
@@ -288,7 +295,8 @@ class PatchMask:
             fill = np.transpose(fill, (2, 0, 1)).astype(patched_image.dtype) / 255
         else:
             raise ValueError(
-                "Invalid patch mask fill value. Must be 'init', 'random', '0xRRGGBB', or a valid filepath."
+                f"Invalid patch mask fill value. Must be 'init', 'random', '0xRRGGBB', or a valid filepath."
+                f" Got {self.fill}"
             )
         fill = np.transpose(fill, (1, 2, 0)).astype(patched_image.dtype)
         projected_init = self.project_mask(
@@ -315,7 +323,19 @@ class PatchMask:
             )
             assert masked_init.shape == patched_image_inverse_mask.shape
         # import matplotlib.pyplot as plt
-        # plt.imshow(patched_image_inverse_mask + masked_init)
-        # plt.savefig('tmp.png')
+        # fig, ax = plt.subplots(2, 3, figsize=(12, 8))
+        # ax[0][0].imshow(patched_image[:,:,:3])
+        # ax[0][0].set_title("masked adversarial perturbation")
+        # ax[0][1].imshow(projected_init[:,:,:3])
+        # ax[0][1].set_title("projected initialization image")
+        # ax[0][2].imshow(gs_mask.astype(float)[:,:,:3])
+        # ax[0][2].set_title("init image embedding mask")
+        # ax[1][0].imshow(masked_init[:,:,:3])
+        # ax[1][0].set_title("init embedding")
+        # ax[1][1].imshow(patched_image_inverse_mask[:,:,:3])
+        # ax[1][1].set_title("patched image w/o embedding")
+        # ax[1][2].imshow(patched_image_inverse_mask[:,:,:3] + masked_init[:,:,:3])
+        # ax[1][2].set_title("patched image w/ embedding")
+        # plt.show()
         # breakpoint()
         return patched_image_inverse_mask + masked_init

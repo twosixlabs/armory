@@ -1,11 +1,12 @@
 # To add a new shape, add its name and function to _SHAPES
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import inspect
 from io import BytesIO
 import os
 from pathlib import Path
 from typing import Union
 
+# TODO: add dependencies to pyproject.toml
 from PIL import Image
 import cairosvg
 import matplotlib.pyplot as plt
@@ -25,10 +26,11 @@ def _write(outdir: Union[str, Path, BytesIO], **kwargs):
     else:
         outfile = outdir
     plt.savefig(outfile, transparent=True, **kwargs)
+    plt.close()
     return outfile
 
 
-def asterisk(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
+def asterisk(outdir: Union[str, Path, BytesIO], **kwarg_catcher) -> Union[str, BytesIO]:
     if not isinstance(outdir, BytesIO) and not os.path.isdir(outdir):
         raise ValueError(f"outdir must be valid a directory or BytesIO, got: {outdir}")
     theta = np.linspace(0, 2 * np.pi, 18, endpoint=False)
@@ -48,7 +50,7 @@ def asterisk(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
     return _write(outdir)
 
 
-def circle(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
+def circle(outdir: Union[str, Path, BytesIO], **kwarg_catcher) -> Union[str, BytesIO]:
     if not isinstance(outdir, BytesIO) and not os.path.isdir(outdir):
         raise ValueError(f"outdir must be valid a directory, got: {outdir}")
     radius = 1
@@ -82,6 +84,7 @@ def grid(
     num_circles=25,
     circle_radius=0.5,
     circle_spacing=2.5,
+    **kwarg_catcher,
 ) -> Union[str, BytesIO]:
     if not isinstance(outdir, BytesIO) and not os.path.isdir(outdir):
         raise ValueError(f"outdir must be valid a directory, got: {outdir}")
@@ -201,6 +204,7 @@ def concentric_circles(
     rad=100,
     width=500,
     height=500,
+    **kwarg_catcher,
 ) -> Union[str, BytesIO]:
     if not isinstance(outdir, BytesIO) and not os.path.isdir(outdir):
         raise ValueError(f"outdir must be valid a directory or BytesIO, got: {outdir}")
@@ -269,7 +273,9 @@ def _kite_line(rotation, cx, cy, ox, oy):
     )
 
 
-def jxcr_gear(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
+def jxcr_gear(
+    outdir: Union[str, Path, BytesIO], **kwarg_catcher
+) -> Union[str, BytesIO]:
     kite_elems = _kites(8, 250, 250)
     kite_line_elems = _kite_lines(
         8, 250, 250, 250, 50
@@ -325,7 +331,9 @@ def _sierpinski(n, p1, p2, p3):
         return np.vstack((s1, s2, s3))
 
 
-def sierpinski(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
+def sierpinski(
+    outdir: Union[str, Path, BytesIO], **kwarg_catcher
+) -> Union[str, BytesIO]:
     depth = 5  # depth of recursion
     # Triangle vertices
     p1 = np.array([0, 0])
@@ -356,25 +364,26 @@ def sierpinski(outdir: Union[str, Path, BytesIO]) -> Union[str, BytesIO]:
 @dataclass
 class Shape:
     func: callable
+    kwargs: dict = field(default_factory=dict)
     _SHAPES = {
         f.__name__: f
         for f in (asterisk, circle, grid, concentric_circles, jxcr_gear, sierpinski)
     }
 
     @classmethod
-    def from_name(cls, name) -> "Shape":
+    def from_name(cls, name, kwargs) -> "Shape":
         if name is None:
             return
         if name not in cls._SHAPES:
             raise ValueError(
                 f"Invalid shape name: {name}. Must be one of: {cls._SHAPES.keys()}"
             )
-        return cls(cls._SHAPES[name])
+        return cls(cls._SHAPES[name], kwargs)
 
     @property
     def array(self):
         with BytesIO() as f:
-            self.func(f)
+            self.func(f, **self.kwargs)
             f.seek(0)
             return np.array(Image.open(f))
 
@@ -388,30 +397,8 @@ class Shape:
         raise ValueError(f"Could not find name for shape: {self.func}")
 
     def save(self, outdir=os.path.join(os.path.dirname(__file__), "masks")):
-        return self.func(outdir)
+        return self.func(outdir, **self.kwargs)
 
     def show(self):
         plt.imshow(self.array)
         plt.show()
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser("Generate various png masks")
-    parser.add_argument("shape", choices=Shape._SHAPES.keys() + ["all"])
-    parser.add_argument("--show", action="store_true", help="Show the generated mask")
-    args = parser.parse_args()
-
-    if args.shape == "all":
-        for shape in Shape._SHAPES:
-            generated = shape()
-            if args.show:
-                breakpoint()
-                plt.imshow(generated)
-                plt.show()
-    else:
-        for shape in Shape._SHAPES:
-            if shape.__name__ == args.shape:
-                shape()
-                break

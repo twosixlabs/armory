@@ -4,19 +4,38 @@ from pathlib import Path
 from armory.utils.shape_gen import Shape
 
 
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def format_help(self):
+        help_message = super().format_help()
+        replacement = "Available shapes:\n"
+        modified_help_message = help_message.replace(
+            "positional arguments:", replacement
+        )
+        search_msg = replacement + "\n"
+        search_start = modified_help_message.find(search_msg) + len(search_msg) - 1
+        search_end = modified_help_message.find("}", search_start) + 1
+        modified_help_message = (
+            modified_help_message[:search_start]
+            + "\n".join(f"\t{name}" for name in list(Shape._SHAPES.keys()) + ["all"])
+            + modified_help_message[search_end:]
+        )
+        return modified_help_message
+
+
 def generate_shapes(command_args, prog, description):
     parser = argparse.ArgumentParser(
         prog=prog,
         description=description,
-        formatter_class=argparse.RawTextHelpFormatter,
+        formatter_class=CustomHelpFormatter,
     )
     parser.add_argument(
         "shape",
         choices=list(Shape._SHAPES.keys()) + ["all"],
-        help="Shape to generate or 'all' to generate all shapes",
     )
     parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--show", action="store_true")
+    parser.add_argument(
+        "--show", action="store_true", help="Show the generated shape using matplotlib"
+    )
 
     args = parser.parse_args(command_args)
 
