@@ -78,6 +78,8 @@ engine = [
     "opencv-python == 4.5.5.62",          # Needed for CARLA baseline scenario
     "opencv-python-headless == 4.5.5.62", # Needed for CARLA baseline scenario
     "tensorboardx",
+    "CairoSVG",  # Needed for shape_gen
+    "svg.py",    # Needed for shape_gen
 ]
 
 pytorch = [
