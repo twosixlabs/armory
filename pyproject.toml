@@ -63,6 +63,8 @@ developer =[
     "flake8",
     "bandit[toml]", # code scanning
     "hydra-core",   # configuration
+    "CairoSVG",  # Needed for shape_gen
+    "svg.py",    # Needed for shape_gen
 ]
 
 engine = [
