@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 from typing import Union
 
-# TODO: add dependencies to pyproject.toml
 from PIL import Image
 import cairosvg
 import matplotlib.pyplot as plt
