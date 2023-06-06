@@ -1,28 +1,31 @@
 import argparse
 from pathlib import Path
 
-from armory.utils.shape_gen import Shape
-
-
-class CustomHelpFormatter(argparse.HelpFormatter):
-    def format_help(self):
-        help_message = super().format_help()
-        replacement = "Available shapes:\n"
-        modified_help_message = help_message.replace(
-            "positional arguments:", replacement
-        )
-        search_msg = replacement + "\n"
-        search_start = modified_help_message.find(search_msg) + len(search_msg) - 1
-        search_end = modified_help_message.find("}", search_start) + 1
-        modified_help_message = (
-            modified_help_message[:search_start]
-            + "\n".join(f"\t{name}" for name in list(Shape._SHAPES.keys()) + ["all"])
-            + modified_help_message[search_end:]
-        )
-        return modified_help_message
-
 
 def generate_shapes(command_args, prog, description):
+    from armory.utils.shape_gen import (  # move to lazy load to avoid PIL import error
+        Shape,
+    )
+
+    class CustomHelpFormatter(argparse.HelpFormatter):
+        def format_help(self):
+            help_message = super().format_help()
+            replacement = "Available shapes:\n"
+            modified_help_message = help_message.replace(
+                "positional arguments:", replacement
+            )
+            search_msg = replacement + "\n"
+            search_start = modified_help_message.find(search_msg) + len(search_msg) - 1
+            search_end = modified_help_message.find("}", search_start) + 1
+            modified_help_message = (
+                modified_help_message[:search_start]
+                + "\n".join(
+                    f"\t{name}" for name in list(Shape._SHAPES.keys()) + ["all"]
+                )
+                + modified_help_message[search_end:]
+            )
+            return modified_help_message
+
     parser = argparse.ArgumentParser(
         prog=prog,
         description=description,

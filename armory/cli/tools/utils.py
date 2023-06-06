@@ -1,4 +1,4 @@
-# Helper from armory.__main__
+# Helper from armory.__main__. Duplicated due to circular import.
 def _debug(parser):
     parser.add_argument(
         "-d",

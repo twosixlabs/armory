@@ -164,7 +164,7 @@ include = [
   "pyproject.toml",
 ]
 exclude = [
-  "tools/",
+  "/tools",
 ]
 
 [tool.hatch.build.hooks.vcs]
