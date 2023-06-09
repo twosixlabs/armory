@@ -10,6 +10,7 @@ from armory.instrument.instrument import (
     PrintWriter,
     Probe,
     ResultsWriter,
+    ResultsLogWriter,
     Writer,
     del_globals,
     get_hub,
