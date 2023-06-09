@@ -641,6 +641,69 @@ def video_tracking_mean_success_rate(y, y_pred):
 
 
 @populationwise
+def object_detection_AP_per_class_by_distance_from_patch(
+    y_list,
+    y_pred_list,
+    y_patch_metadata_list,
+    iou_threshold=0.5,
+    class_list=None,
+    mean=True,
+    increment=50,
+):
+
+    y_distances_list = []
+    y_pred_distances_list = []
+    result = {}
+
+    for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
+        # For each image, find centroid of patch and compute distance to centroid of each box
+        patch_centroid = metadata["gs_coords"].mean(axis=0)
+        y_centroids = (y["boxes"][:, :2] + y["boxes"][:, 2:]) / 2
+        y_distances = np.linalg.norm(y_centroids - patch_centroid, axis=1)
+        pred_centroids = (y_pred["boxes"][:, :2] + y_pred["boxes"][:, 2:]) / 2
+        pred_distances = np.linalg.norm(pred_centroids - patch_centroid, axis=1)
+        y_distances_list.append(y_distances)
+        y_pred_distances_list.append(pred_distances)
+
+    max_distance = max(
+        max([max(d) for d in y_distances_list]),
+        max([max(d) for d in y_pred_distances_list]),
+    )
+    threshold = increment
+    final = False
+    while not final:
+        # Compute mAP restricted to boxes whose distance to patch is less than 'threshold'
+
+        if threshold > max_distance:
+            final = True
+
+        # Build new y_lists with only sufficiently close boxes
+        y_list_ = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+            }
+            for y, y_d in zip(y_list, y_distances_list)
+        ]
+        y_pred_list_ = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+                "scores": y["scores"][y_d < threshold],
+            }
+            for y, y_d in zip(y_pred_list, y_pred_distances_list)
+        ]
+
+        # Add mAP to result dict
+        result[threshold] = object_detection_AP_per_class(
+            y_list_, y_pred_list_, iou_threshold, class_list, mean
+        )
+        threshold += increment
+
+    return result
+
+
+@populationwise
 def object_detection_AP_per_class(
     y_list,
     y_pred_list,
