@@ -7,6 +7,8 @@ Scenario Contributor: MITRE Corporation
 from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
 from armory.scenarios.object_detection import ObjectDetectionTask
+from armory.instrument import GlobalMeter, ResultsLogWriter
+from armory import metrics
 
 
 class CarlaObjectDetectionTask(ObjectDetectionTask):
@@ -22,6 +24,31 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
         if self.config["dataset"]["batch_size"] != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
+
+    def load_metrics(self):
+        super().load_metrics()
+
+        # These metrics are loaded here manually because y_patch_metadata cannot be passed through the default MetricsLogger loading code.
+        # I will attempt to update that in the near future.
+        meters = [
+            GlobalMeter(
+                "benign_AP_per_class_by_distance_from_patch",
+                metrics.get("object_detection_AP_per_class_by_distance_from_patch"),
+                "scenario.y",
+                "scenario.y_pred",
+                "scenario.y_patch_metadata",
+            ),
+            GlobalMeter(
+                "adversarial_AP_per_class_by_distance_from_patch",
+                metrics.get("object_detection_AP_per_class_by_distance_from_patch"),
+                "scenario.y",
+                "scenario.y_pred_adv",
+                "scenario.y_patch_metadata",
+            ),
+        ]
+        for meter in meters:
+            self.hub.connect_meter(meter)
+        self.hub.connect_writer(ResultsLogWriter(), meters=meters, default=False)
 
     def next(self):
         super().next()
