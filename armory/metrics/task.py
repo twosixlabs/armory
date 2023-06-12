@@ -534,6 +534,25 @@ def _check_video_tracking_input(y, y_pred):
         assert y_box_array_shape == y_pred_box_array_shape
 
 
+def _intersection(box_1, box_2):
+    """ Return the area of the intersection of two boxes
+    """
+    x_left = max(box_1[1], box_2[1])
+    x_right = min(box_1[3], box_2[3])
+    y_top = max(box_1[0], box_2[0])
+    y_bottom = min(box_1[2], box_2[2])
+
+    return max(0, x_right - x_left) * max(0, y_bottom - y_top)
+
+def _union(box_1, box_2):
+    """ Return the area of the union of two boxes
+    """
+    box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
+    box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
+    intersect_area = _intersection(box_1, box_2)
+    return box_1_area + box_2_area - intersect_area
+    
+
 def _intersection_over_union(box_1, box_2):
     """
     Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
@@ -548,20 +567,13 @@ def _intersection_over_union(box_1, box_2):
     ):
         log.warning("One set of boxes appears to be normalized while the other is not")
 
-    # Determine coordinates of intersection box
-    x_left = max(box_1[1], box_2[1])
-    x_right = min(box_1[3], box_2[3])
-    y_top = max(box_1[0], box_2[0])
-    y_bottom = min(box_1[2], box_2[2])
-
-    intersect_area = max(0, x_right - x_left) * max(0, y_bottom - y_top)
+    intersect_area = _intersection(box_1, box_2)
     if intersect_area == 0:
         return 0
 
-    box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
-    box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
+    union_area = _union(box_1, box_2)
 
-    iou = intersect_area / (box_1_area + box_2_area - intersect_area)
+    iou = intersect_area / union_area
     assert iou >= 0
     assert iou <= 1
     return iou
