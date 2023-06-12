@@ -535,8 +535,7 @@ def _check_video_tracking_input(y, y_pred):
 
 
 def _intersection(box_1, box_2):
-    """ Return the area of the intersection of two boxes
-    """
+    """Return the area of the intersection of two boxes"""
     x_left = max(box_1[1], box_2[1])
     x_right = min(box_1[3], box_2[3])
     y_top = max(box_1[0], box_2[0])
@@ -544,14 +543,14 @@ def _intersection(box_1, box_2):
 
     return max(0, x_right - x_left) * max(0, y_bottom - y_top)
 
+
 def _union(box_1, box_2):
-    """ Return the area of the union of two boxes
-    """
+    """Return the area of the union of two boxes"""
     box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
     box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
     intersect_area = _intersection(box_1, box_2)
     return box_1_area + box_2_area - intersect_area
-    
+
 
 def _intersection_over_union(box_1, box_2):
     """
@@ -577,6 +576,29 @@ def _intersection_over_union(box_1, box_2):
     assert iou >= 0
     assert iou <= 1
     return iou
+
+
+def _generalized_intersection_over_union(box_1, box_2):
+    """https://giou.stanford.edu/
+    Note that the call to _intersection_over_union will check the format of the input boxes.
+    """
+
+    # Find c: the area of smallest box enclosing both boxes
+    top = min(box_1[0], box_2[0])
+    left = min(box_1[1], box_2[1])
+    bottom = max(box_1[2], box_2[2])
+    right = max(box_1[3], box_2[3])
+    c = max(bottom - top, 0) * max(right - left, 0)
+
+    # GIoU = IoU -  ((C - (A U B)) | / C)
+    u = _union(box_1, box_2)
+    c_term = (c - u) / c if c > 0 else 0
+    iou = _intersection_over_union(box_1, box_2)
+    giou = iou - c_term
+
+    assert giou >= -1
+    assert giou <= 1
+    return giou
 
 
 @batchwise
