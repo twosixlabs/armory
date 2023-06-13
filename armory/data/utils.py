@@ -248,7 +248,7 @@ def move_merge(source, dest):
 
 def download_verify_dataset_cache(dataset_dir, checksum_file, name):
     found_checksum_flag = False
-    log.info("Attempting download_verigy_dataset_cache with dataset_dir")
+    log.info("Attempting download_verify_dataset_cache with dataset_dir")
     for checksum_dir in CHECKSUMS_DIRS:
         checksum_file_full_path = os.path.join(checksum_dir, checksum_file)
         if os.path.exists(checksum_file_full_path):
