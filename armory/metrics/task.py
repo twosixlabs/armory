@@ -701,9 +701,7 @@ def _generalized_intersection_over_union(box_1, box_2):
 
     box_1 and box_2 are either shape (4,) with format [x1, y1, x2, y2] (defining a rectangle),
         or shape (N,2) where each element is of the form [x, y] (defining an arbitrary polygon)
-
     """
-
     box_1 = _validate_input_box_for_giou(box_1)
     box_2 = _validate_input_box_for_giou(box_2)
 
@@ -814,25 +812,19 @@ def object_detection_AP_per_class_by_min_giou_from_patch(
     for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
         # For each image, use GIoU as proxy for distance between boxes and patch.
         # GIoU is positive if there is overlap.
-        # Note: patch is quadrilateral but not necessarily square.  We use the smallest enclosing box instead.
         patch = metadata["gs_coords"]
-        smallest_box_enclosing_patch = np.array(
-            [min(patch[:, 0]), min(patch[:, 1]), max(patch[:, 0]), max(patch[:, 1])]
-        )
         y_distances = [
-            _generalized_intersection_over_union(box, smallest_box_enclosing_patch)
-            for box in y["boxes"]
+            _generalized_intersection_over_union(box, patch) for box in y["boxes"]
         ]
         pred_distances = [
-            _generalized_intersection_over_union(box, smallest_box_enclosing_patch)
-            for box in y_pred["boxes"]
+            _generalized_intersection_over_union(box, patch) for box in y_pred["boxes"]
         ]
         y_distances_list.append(y_distances)
         y_pred_distances_list.append(pred_distances)
 
     # Compute mAP for boxes restricted to a minimum GIoU
     for threshold in np.arange(0, -1 - increment, -increment):
-        # Build new y_lists containing only boxes with large enough GIoU
+        # Start with 0 -- all boxes that overlap the patch
         y_list_ = [
             {
                 "boxes": y["boxes"][y_d > threshold],
