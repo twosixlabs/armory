@@ -578,6 +578,119 @@ def _intersection_over_union(box_1, box_2):
     return iou
 
 
+def _area_of_polygon(points):
+    # Shoelace formula, implementation due to https://stackoverflow.com/a/30408825
+    # points is shape (N, 2) and points must be in a consistent clockwise or counterclockwise order
+
+    x = points[:, 0]
+    y = points[:, 1]
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+
+def _area_of_convex_hull(points):
+    # Return area of convex hull of set of 2D points.
+    # points is shape (N, 2).
+
+    from scipy.spatial import ConvexHull
+
+    return ConvexHull(points).volume
+
+
+def _orient_box_counterclockwise(box):
+    # Reverse box vertices if orientation is clockwise.
+    # https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+    # Assumes box is convex, so arbitrary vertices can be used.
+
+    a, b, c = box[0], box[1], box[2]
+    det = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
+    if det < 0:
+        # negative determinant => clockwise orientation
+        box = box[::-1]
+    return box
+
+
+def _intersection_nonsquare(box_1, box_2):
+    """
+    Find the area of the intersection of two convex polygons.
+    box_1 and box_2 are lists or arrays of 2D points, not necessarily the same length.
+    It is required, but not verified, that box_1 and box_2 are oriented counter-clockwise.
+
+    Adapted with deepest gratitude from https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping#Python
+    This version returns the area, not just the points defining the polygon.
+    In computing the area, we assume that the intersection is a convex set, hence the input boxes must be convex.
+    This assumption could be relaxed with some additional verification of the algorithm's output.
+    """
+
+    def inside(p):
+        inside = (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (
+            p[0] - cp1[0]
+        )
+        return inside
+
+    def computeIntersection():
+        # Find the intersection of two line segments cp1-cp2 and s-e defined outside the function
+        # See https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+        # Note: this is called only if the line segments are known to intersect.  Thus there is no
+        # risk of divisiding by 0 when computing n3 below
+        dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
+        dp = [s[0] - e[0], s[1] - e[1]]
+        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+        n2 = s[0] * e[1] - s[1] * e[0]
+        n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
+        return [(n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3]
+
+    box_1 = _orient_box_counterclockwise(box_1)
+    box_2 = _orient_box_counterclockwise(box_2)
+    outputList = box_1
+    cp1 = box_2[-1]
+
+    for point in box_2:
+        if len(outputList) == 0:
+            # All points of box1 are on the far side of the plane cp1-cp2, hence intersection is empty
+            return 0
+
+        cp2 = point
+        # cp1 and cp2 define an edge of box2
+        inputList = outputList
+        outputList = []
+        s = inputList[-1]
+
+        for subjectVertex in inputList:
+            e = subjectVertex
+            # s and e define edge of box1
+            if inside(e):
+                if not inside(s):
+                    outputList.append(computeIntersection())
+                outputList.append(e)
+            elif inside(s):
+                outputList.append(computeIntersection())
+            s = e
+        cp1 = cp2
+
+    if len(outputList) == 0:
+        # The intersection is empty
+        return 0
+
+    # Compute area using convex_hull, in case points are not ordered.
+    # (Assumption: input boxes are convex)
+    area = _area_of_convex_hull(outputList)
+
+    return area
+
+
+def _validate_input_box_for_giou(box):
+    if len(box.shape) == 1:
+        assert box[2] >= box[0]
+        assert box[3] >= box[1]
+        box = np.array(
+            [[box[0], box[1]], [box[0], box[3]], [box[2], box[3]], [box[2], box[1]]]
+        )
+    for pt in box:
+        assert len(pt) == 2
+
+    return box
+
+
 def _generalized_intersection_over_union(box_1, box_2):
     """https://giou.stanford.edu/
     Note that the call to _intersection_over_union will check the format of the input boxes.
