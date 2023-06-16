@@ -692,22 +692,31 @@ def _validate_input_box_for_giou(box):
 
 
 def _generalized_intersection_over_union(box_1, box_2):
-    """https://giou.stanford.edu/
-    Note that the call to _intersection_over_union will check the format of the input boxes.
+    """
+    https://giou.stanford.edu/
+
+    Return the GIoU between two convex polygons.
+        (Convexity is currently required by _orient_box_counterclockwise and _intersection_nonsquare.
+        This requirement can be relaxed in the future if desired.)
+
+    box_1 and box_2 are either shape (4,) with format [x1, y1, x2, y2] (defining a rectangle),
+        or shape (N,2) where each element is of the form [x, y] (defining an arbitrary polygon)
+
     """
 
-    # Find c: the area of smallest box enclosing both boxes
-    top = min(box_1[0], box_2[0])
-    left = min(box_1[1], box_2[1])
-    bottom = max(box_1[2], box_2[2])
-    right = max(box_1[3], box_2[3])
-    c = max(bottom - top, 0) * max(right - left, 0)
+    box_1 = _validate_input_box_for_giou(box_1)
+    box_2 = _validate_input_box_for_giou(box_2)
+
+    # Find C: the area of convex hull enclosing both boxes
+    C = _area_of_convex_hull(np.vstack((box_1, box_2)))
 
     # GIoU = IoU -  ((C - (A U B)) | / C)
-    u = _union(box_1, box_2)
-    c_term = (c - u) / c if c > 0 else 0
-    iou = _intersection_over_union(box_1, box_2)
-    giou = iou - c_term
+    intersection = _intersection_nonsquare(box_1, box_2)
+    union = _area_of_polygon(box_1) + _area_of_polygon(box_2) - intersection
+    IoU = (intersection / union) if union > 0 else 0
+
+    c_term = (C - union) / C if C > 0 else 0
+    giou = IoU - c_term
 
     assert giou >= -1
     assert giou <= 1
