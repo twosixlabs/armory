@@ -11,6 +11,8 @@ Relevant parameters:
 ```
 (Source class is N/A for these two attacks)
 
+See [the paper](https://arxiv.org/pdf/2205.14497.pdf) for a detailed description of each metric recorded.
+
 # Global Misclassification Attack
 
 ## Globe trigger
