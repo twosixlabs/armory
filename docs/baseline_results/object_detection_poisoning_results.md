@@ -1,3 +1,16 @@
+# Object Detection Poisoning Baseline Evaluation
+
+Containing results for Global Misclassification and Object Generation attacks.
+
+**All tables are the mean of 3 runs.**  Results obtained with Armory 0.17.2 June 2023.
+
+Relevant parameters:
+```
+"target_class": 1
+"score_threshold": 0.05,
+```
+(Source class is N/A for these two attacks)
+
 # Global Misclassification Attack
 
 ## Globe trigger
@@ -82,6 +95,12 @@
 
 
 # Object Generation Attack
+
+Generated box parameters:
+```
+"bbox_height": 70,
+"bbox_width": 50
+```
 
 ## Globe Trigger
 
