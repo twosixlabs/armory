@@ -546,7 +546,7 @@ For a complete overview, see the [poisoning doc](poisoning.md).
   * [Random Filter](https://github.com/twosixlabs/armory/blob/master/armory/art_experimental/poison_detection/random_filter.py)
   * [Perfect Filter](https://github.com/twosixlabs/armory/blob/1d6caa9166313c1409edbbc5f089d2bc774b5230/armory/scenarios/poison.py#L233-L235)
 * **Baseline Evaluations:**
-  * Minicoco Results to be added
+  * [MiniCoco results](baseline_results/object_detection_poisoning_results.md)
 
 
 
