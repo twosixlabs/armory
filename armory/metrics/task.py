@@ -579,8 +579,16 @@ def _intersection_over_union(box_1, box_2):
 
 
 def _area_of_polygon(points):
-    # Shoelace formula, implementation due to https://stackoverflow.com/a/30408825
-    # points is shape (N, 2) and points must be in a consistent clockwise or counterclockwise order
+    """
+    Shoelace formula for area of a polygon.
+    https://en.wikipedia.org/wiki/Shoelace_formula
+
+    points is an array or list of shape (N, 2) and points may be in clockwise or counterclockwise order
+    """
+
+    if type(points) == list:
+        points = np.array(points)
+    assert points.shape[1] == 2
 
     x = points[:, 0]
     y = points[:, 1]
@@ -588,40 +596,95 @@ def _area_of_polygon(points):
 
 
 def _area_of_convex_hull(points):
-    # Return area of convex hull of set of 2D points.
-    # points is shape (N, 2).
+    """
+    Return area of convex hull of set of 2D points.
+    points is an array of shape (N, 2).
+    """
 
     from scipy.spatial import ConvexHull
 
+    assert points.shape[1] == 2
     return ConvexHull(points).volume
 
 
-def _orient_box_counterclockwise(box):
-    # Reverse box vertices if orientation is clockwise.
-    # https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
-    # Assumes box is convex, so arbitrary vertices can be used.
+def _is_convex(poly):
+    """
+    Return True if poly is a convex polygon, else False.
+    poly is an array of shape (N,2)
+    """
 
-    a, b, c = box[0], box[1], box[2]
-    det = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])
-    if det < 0:
-        # negative determinant => clockwise orientation
-        box = box[::-1]
-    return box
+    assert poly.shape[1] == 2
+
+    for i in range(len(poly)):
+        if (poly[i] == poly[i - 1]).all():
+            raise ValueError(f"Adjacent points should not be identical: {poly}")
+
+    # A polygon is convex if the cross product has the same sign at all vertices.
+    signs = [
+        np.sign(np.cross(poly[i - 1] - poly[i], poly[i - 2] - poly[i - 1]))
+        for i in range(len(poly))
+    ]
+
+    if (np.array(signs) == 0).all():
+        raise ValueError("Input polygon is a straight line.")
+
+    return not (1 in signs and -1 in signs)
 
 
-def _intersection_nonsquare(box_1, box_2):
+def _orient_polygon_counterclockwise(poly):
+    """
+    Reverse polygon vertices if orientation is clockwise.
+    https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+    Assumes polygon is convex, so arbitrary vertices can be used.
+    This can be relaxed in the future if needed, see link.
+
+    poly is array of shape (N,2)
+
+    Returns (N,2) array of indices oriented counterclockwise
+    """
+
+    assert poly.shape[1] == 2
+
+    if len(poly) < 3:
+        raise ValueError("Input polygon must have at least 3 vertices.")
+
+    if not _is_convex(poly):
+        raise ValueError(
+            "Input polygon should be convex, or this function can be extended for the non-convex case."
+        )
+
+    cross = np.cross(poly[1] - poly[0], poly[2] - poly[1])
+
+    if cross == 0:
+        log.warning("Input polygon has vertex along straight line segment.")
+        if len(poly) > 3:
+            # remove redundant vertex
+            return _orient_polygon_counterclockwise(np.vstack((poly[0], poly[2:])))
+        else:
+            raise ValueError("Input polygon is a straight line and has no orientation.")
+
+    if cross < 0:
+        # negative cross product => clockwise orientation
+        poly = poly[::-1]
+    return poly
+
+
+def _polygon_intersection(poly_1, poly_2):
     """
     Find the area of the intersection of two convex polygons.
-    box_1 and box_2 are lists or arrays of 2D points, not necessarily the same length.
-    It is required, but not verified, that box_1 and box_2 are oriented counter-clockwise.
+
+    poly_1 and poly_2 are arrays of 2D points, not necessarily the same length.
+    They may be oriented either clockwise or counter-clockwise.
 
     Adapted with deepest gratitude from https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping#Python
     This version returns the area, not just the points defining the polygon.
-    In computing the area, we assume that the intersection is a convex set, hence the input boxes must be convex.
-    This assumption could be relaxed with some additional verification of the algorithm's output.
+
+    Behavior of this algorithm is not verified for non-convex polygons, the intersection of which may be disconnected.
     """
 
     def inside(p):
+        # Given a hyperplane defined by cp1 and cp2 (outside the function), determine which side
+        # of the hyperplane p lies on
         inside = (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (
             p[0] - cp1[0]
         )
@@ -639,25 +702,30 @@ def _intersection_nonsquare(box_1, box_2):
         n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
         return [(n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3]
 
-    box_1 = _orient_box_counterclockwise(box_1)
-    box_2 = _orient_box_counterclockwise(box_2)
-    outputList = box_1
-    cp1 = box_2[-1]
+    assert poly_1.shape[1] == 2
+    assert poly_2.shape[1] == 2
 
-    for point in box_2:
+    poly_1 = _orient_polygon_counterclockwise(poly_1)
+    poly_2 = _orient_polygon_counterclockwise(poly_2)
+    outputList = poly_1
+    cp1 = poly_2[-1]
+
+    # Loop over sides of poly_2
+    for point in poly_2:
         if len(outputList) == 0:
             # All points of box1 are on the far side of the plane cp1-cp2, hence intersection is empty
             return 0
 
         cp2 = point
-        # cp1 and cp2 define an edge of box2
+        # cp1 and cp2 define an edge of poly_2
         inputList = outputList
         outputList = []
         s = inputList[-1]
 
+        # Loop over sides of poly_1
         for subjectVertex in inputList:
             e = subjectVertex
-            # s and e define edge of box1
+            # s and e define edge of poly_1
             if inside(e):
                 if not inside(s):
                     outputList.append(computeIntersection())
@@ -671,46 +739,53 @@ def _intersection_nonsquare(box_1, box_2):
         # The intersection is empty
         return 0
 
-    # Compute area using convex_hull, in case points are not ordered.
-    # (Assumption: input boxes are convex)
-    area = _area_of_convex_hull(outputList)
+    area = _area_of_polygon(outputList)
 
     return area
 
 
-def _validate_input_box_for_giou(box):
-    if len(box.shape) == 1:
-        assert box[2] >= box[0]
-        assert box[3] >= box[1]
-        box = np.array(
-            [[box[0], box[1]], [box[0], box[3]], [box[2], box[3]], [box[2], box[1]]]
+def _validate_input_polygon_for_giou(poly):
+    """
+    Standardize polygon format for GIoU input.
+    Converts two-corner rect format to four-corner rect and validates shape
+    """
+
+    if len(poly.shape) == 1:
+        assert poly[2] >= poly[0]
+        assert poly[3] >= poly[1]
+        poly = np.array(
+            [
+                [poly[0], poly[1]],
+                [poly[0], poly[3]],
+                [poly[2], poly[3]],
+                [poly[2], poly[1]],
+            ]
         )
-    for pt in box:
+    for pt in poly:
         assert len(pt) == 2
 
-    return box
+    return poly
 
 
-def _generalized_intersection_over_union(box_1, box_2):
+def _generalized_intersection_over_union(poly_1, poly_2):
     """
     https://giou.stanford.edu/
 
     Return the GIoU between two convex polygons.
-        (Convexity is currently required by _orient_box_counterclockwise and _intersection_nonsquare.
-        This requirement can be relaxed in the future if desired.)
+        (Convexity is required by _polygon_intersection.)
 
-    box_1 and box_2 are either shape (4,) with format [x1, y1, x2, y2] (defining a rectangle),
+    poly_1 and poly_2 are either shape (4,) with format [x1, y1, x2, y2] (defining a rectangle),
         or shape (N,2) where each element is of the form [x, y] (defining an arbitrary polygon)
     """
-    box_1 = _validate_input_box_for_giou(box_1)
-    box_2 = _validate_input_box_for_giou(box_2)
+    poly_1 = _validate_input_polygon_for_giou(poly_1)
+    poly_2 = _validate_input_polygon_for_giou(poly_2)
 
-    # Find C: the area of convex hull enclosing both boxes
-    C = _area_of_convex_hull(np.vstack((box_1, box_2)))
+    # Find C: the area of convex hull enclosing both polygons
+    C = _area_of_convex_hull(np.vstack((poly_1, poly_2)))
 
     # GIoU = IoU -  ((C - (A U B)) | / C)
-    intersection = _intersection_nonsquare(box_1, box_2)
-    union = _area_of_polygon(box_1) + _area_of_polygon(box_2) - intersection
+    intersection = _polygon_intersection(poly_1, poly_2)
+    union = _area_of_polygon(poly_1) + _area_of_polygon(poly_2) - intersection
     IoU = (intersection / union) if union > 0 else 0
 
     c_term = (C - union) / C if C > 0 else 0
@@ -804,6 +879,33 @@ def object_detection_AP_per_class_by_min_giou_from_patch(
     mean=True,
     increment=0.1,
 ):
+    """
+    Mean average precision for adversarial object detection, organizing results according to
+    how far boxes are from the patch.  The motivation is that a patch is most effective against
+    nearby objects, and reporting mAP over a range of distances from the patch will give additional
+    insight into the attack's behavior.
+
+    This function uses GIoU as a proxy for distance to patch.  GIoU ranges from -1 to 1, with positive
+    values indicating overlap and smaller negative values indicating a greater distance.
+
+    This function returns a dictionary, where the keys are the GIoU thresholds, and the values are mAP
+    for all objects within that range of the patch.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    y_patch_metadata_list (list): of length equal to the number of input examples.  Each element
+        is a dict with a "gs_coords" key mapping to a numpy array of shape (4,2).
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+    mean: if False, returns a dict mapping each class to its average precision (AP)
+        if True, calls `mean_ap` on the AP dict and returns a encapsulating dict:
+        {'class': {<class_0>: <class_0_AP>, ...}, 'mean': <mean_AP>}
+    increment: the amount to increment the distance threshold for each reported mAP value
+    """
 
     y_distances_list = []
     y_pred_distances_list = []
