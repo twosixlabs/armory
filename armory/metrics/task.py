@@ -870,7 +870,7 @@ def video_tracking_mean_success_rate(y, y_pred):
 
 
 @populationwise
-def object_detection_AP_per_class_by_min_giou_from_patch(
+def object_detection_AP_per_class_by_giou_from_patch(
     y_list,
     y_pred_list,
     y_patch_metadata_list,
@@ -888,8 +888,9 @@ def object_detection_AP_per_class_by_min_giou_from_patch(
     This function uses GIoU as a proxy for distance to patch.  GIoU ranges from -1 to 1, with positive
     values indicating overlap and smaller negative values indicating a greater distance.
 
-    This function returns a dictionary, where the keys are the GIoU thresholds, and the values are mAP
-    for all objects within that range of the patch.
+    This function returns a dictionary with two subdictionaries, "cumulative_by_min_giou" and
+    "cumulative_by_max_giou".  In each case, the keys are the GIoU thresholds, and the values the are 
+    mAP for all objects with whose GIoU is greater (resp. lower) than the threshold.
 
     y_list (list): of length equal to the number of input examples. Each element in the list
         should be a dict with "labels" and "boxes" keys mapping to a numpy array of
@@ -909,12 +910,16 @@ def object_detection_AP_per_class_by_min_giou_from_patch(
 
     y_distances_list = []
     y_pred_distances_list = []
-    result = {}
+    result = {
+        "cumulative_by_min_giou":{},
+        "cumulative_by_max_giou":{},
+    }
 
     for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
         # For each image, use GIoU as proxy for distance between boxes and patch.
         # GIoU is positive if there is overlap.
         patch = metadata["gs_coords"]
+        assert patch.shape == (4,2)
         y_distances = [
             _generalized_intersection_over_union(box, patch) for box in y["boxes"]
         ]
@@ -924,29 +929,56 @@ def object_detection_AP_per_class_by_min_giou_from_patch(
         y_distances_list.append(y_distances)
         y_pred_distances_list.append(pred_distances)
 
-    # Compute mAP for boxes restricted to a minimum GIoU
+    # Compute mAP for boxes restricted to GIoU range
     for threshold in np.arange(0, -1 - increment, -increment):
         # Start with 0 -- all boxes that overlap the patch
-        y_list_ = [
+        y_list_min = [
             {
-                "boxes": y["boxes"][y_d > threshold],
-                "labels": y["labels"][y_d > threshold],
+                "boxes": y["boxes"][y_d >= threshold],
+                "labels": y["labels"][y_d >= threshold],
             }
             for y, y_d in zip(y_list, y_distances_list)
         ]
-        y_pred_list_ = [
+        y_pred_list_min = [
             {
-                "boxes": y["boxes"][y_d > threshold],
-                "labels": y["labels"][y_d > threshold],
-                "scores": y["scores"][y_d > threshold],
+                "boxes": y["boxes"][y_d >= threshold],
+                "labels": y["labels"][y_d >= threshold],
+                "scores": y["scores"][y_d >= threshold],
+            }
+            for y, y_d in zip(y_pred_list, y_pred_distances_list)
+        ]
+        ap = object_detection_AP_per_class(
+            y_list_min, y_pred_list_min, iou_threshold, class_list, mean
+        )
+        if not np.isnan(ap["mean"]):
+            # Possibly nan if there are no boxes on or near the patch
+            result["cumulative_by_min_giou"][threshold] = ap
+
+
+        y_list_max = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+            }
+            for y, y_d in zip(y_list, y_distances_list)
+        ]
+        y_pred_list_max = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+                "scores": y["scores"][y_d < threshold],
             }
             for y, y_d in zip(y_pred_list, y_pred_distances_list)
         ]
 
-        # Add mAP to result dict
-        result[threshold] = object_detection_AP_per_class(
-            y_list_, y_pred_list_, iou_threshold, class_list, mean
+        ap = object_detection_AP_per_class(
+            y_list_max, y_pred_list_max, iou_threshold, class_list, mean
         )
+        if not np.isnan(ap["mean"]):
+            # May be nan for smallest giou thresholds where there are no boxes
+            result["cumulative_by_max_giou"][threshold] = ap
+
+        
 
     return result
 
