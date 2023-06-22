@@ -32,15 +32,15 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
         # I will attempt to update that in the near future.
         meters = [
             GlobalMeter(
-                "benign_AP_per_class_by_min_giou_from_patch",
-                metrics.get("object_detection_AP_per_class_by_min_giou_from_patch"),
+                "benign_AP_per_class_by_giou_from_patch",
+                metrics.get("object_detection_AP_per_class_by_giou_from_patch"),
                 "scenario.y",
                 "scenario.y_pred",
                 "scenario.y_patch_metadata",
             ),
             GlobalMeter(
-                "adversarial_AP_per_class_by_min_giou_from_patch",
-                metrics.get("object_detection_AP_per_class_by_min_giou_from_patch"),
+                "adversarial_AP_per_class_by_giou_from_patch",
+                metrics.get("object_detection_AP_per_class_by_giou_from_patch"),
                 "scenario.y",
                 "scenario.y_pred_adv",
                 "scenario.y_patch_metadata",
