@@ -889,7 +889,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
     values indicating overlap and smaller negative values indicating a greater distance.
 
     This function returns a dictionary with two subdictionaries, "cumulative_by_min_giou" and
-    "cumulative_by_max_giou".  In each case, the keys are the GIoU thresholds, and the values the are 
+    "cumulative_by_max_giou".  In each case, the keys are the GIoU thresholds, and the values the are
     mAP for all objects with whose GIoU is greater (resp. lower) than the threshold.
 
     y_list (list): of length equal to the number of input examples. Each element in the list
@@ -911,15 +911,15 @@ def object_detection_AP_per_class_by_giou_from_patch(
     y_distances_list = []
     y_pred_distances_list = []
     result = {
-        "cumulative_by_min_giou":{},
-        "cumulative_by_max_giou":{},
+        "cumulative_by_min_giou": {},
+        "cumulative_by_max_giou": {},
     }
 
     for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
         # For each image, use GIoU as proxy for distance between boxes and patch.
         # GIoU is positive if there is overlap.
         patch = metadata["gs_coords"]
-        assert patch.shape == (4,2)
+        assert patch.shape == (4, 2)
         y_distances = [
             _generalized_intersection_over_union(box, patch) for box in y["boxes"]
         ]
@@ -954,7 +954,6 @@ def object_detection_AP_per_class_by_giou_from_patch(
             # Possibly nan if there are no boxes on or near the patch
             result["cumulative_by_min_giou"][threshold] = ap
 
-
         y_list_max = [
             {
                 "boxes": y["boxes"][y_d < threshold],
@@ -977,8 +976,6 @@ def object_detection_AP_per_class_by_giou_from_patch(
         if not np.isnan(ap["mean"]):
             # May be nan for smallest giou thresholds where there are no boxes
             result["cumulative_by_max_giou"][threshold] = ap
-
-        
 
     return result
 
