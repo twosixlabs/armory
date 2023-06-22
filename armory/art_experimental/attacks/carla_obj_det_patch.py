@@ -770,6 +770,23 @@ class CARLADapricotPatch(RobustDPatch):
                 )  # (1,H,W,3)
                 self.foreground = np.all(self.binarized_patch_mask == 255, axis=-1)
                 self.foreground = np.expand_dims(self.foreground, (-1, 0))  # (1,H,W,1)
+                # ensure area perturbed in depth is consistent with area perturbed in RGB
+                h, _ = cv2.findHomography(
+                    np.array(
+                        [
+                            [0, 0],
+                            [patch_width - 1, 0],
+                            [patch_width - 1, patch_height - 1],
+                            [0, patch_height - 1],
+                        ]
+                    ),
+                    gs_coords,
+                )
+                rgb_mask = np.ones((patch_height, patch_width, 3), dtype=np.float32)
+                rgb_mask = cv2.warpPerspective(
+                    rgb_mask, h, (x.shape[2], x.shape[1]), cv2.INTER_CUBIC
+                )
+                self.foreground = self.foreground * rgb_mask[:, :, 0:1]
 
             if y is None:
                 patch = self.inner_generate(
