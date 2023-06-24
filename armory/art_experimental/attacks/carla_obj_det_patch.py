@@ -450,7 +450,9 @@ class CARLADapricotPatch(RobustDPatch):
                 if self.depth_type == "log":
                     depth_log = (
                         self.depth_perturbation
-                        + np.sign(depth_gradients) * self.learning_rate_depth
+                        + np.sign(depth_gradients)
+                        * (1 - 2 * int(self.targeted))
+                        * self.learning_rate_depth
                     )
                     perturbed_images = np.clip(
                         images_depth + depth_log, self.min_depth, self.max_depth
@@ -468,7 +470,10 @@ class CARLADapricotPatch(RobustDPatch):
                         self.depth_perturbation[:, :, :, 2],
                     ).astype("float32")
                     depth_linear = (
-                        depth_linear + np.sign(grads_linear) * self.learning_rate_depth
+                        depth_linear
+                        + np.sign(grads_linear)
+                        * (1 - 2 * int(self.targeted))
+                        * self.learning_rate_depth
                     )
 
                     images_depth_linear = rgb_depth_to_linear(
