@@ -913,6 +913,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
     result = {
         "cumulative_by_min_giou": {},
         "cumulative_by_max_giou": {},
+        "histogram_left": {},
     }
 
     for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
@@ -920,12 +921,12 @@ def object_detection_AP_per_class_by_giou_from_patch(
         # GIoU is positive if there is overlap.
         patch = metadata["gs_coords"]
         assert patch.shape == (4, 2)
-        y_distances = [
+        y_distances = np.array([
             _generalized_intersection_over_union(box, patch) for box in y["boxes"]
-        ]
-        pred_distances = [
+        ])
+        pred_distances = np.array([
             _generalized_intersection_over_union(box, patch) for box in y_pred["boxes"]
-        ]
+        ])
         y_distances_list.append(y_distances)
         y_pred_distances_list.append(pred_distances)
 
@@ -979,7 +980,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
 
         histogram_bin_top = threshold + increment
         if histogram_bin_top > 0:
-            histogram_bin_top = 1.0
+            histogram_bin_top = 1
         y_list_range = [
            {
                 "boxes": y["boxes"][(y_d >= threshold) & (y_d < histogram_bin_top)],
@@ -999,7 +1000,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
             y_list_range, y_pred_list_range, iou_threshold, class_list, mean
         )
         if not np.isnan(ap["mean"]):
-            result["histogram_"][threshold] = ap
+            result["histogram_left"][threshold] = ap
 
     return result
 
