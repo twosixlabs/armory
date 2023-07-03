@@ -17,7 +17,10 @@
         "name": "CARLAAdversarialPatchPyTorch",
         "targeted_labels": {
             "kwargs": {
-                "hallucination_per_label": [300, 300]
+                "hallucination_per_label": [
+                    300,
+                    300
+                ]
             },
             "module": "armory.utils.labels",
             "name": "CARLAOverObjectDetectionRandomTargeter"
