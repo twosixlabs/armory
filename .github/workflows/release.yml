@@ -35,7 +35,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
 
       - name: 🔨 Build wheel
         run: |
@@ -86,7 +85,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ github.event.client_payload.branch }}
 
       - name: 🌎 Setup Build Environment
         run: |
