@@ -155,7 +155,7 @@ class CARLAOverObjectDetectionRandomTargeter:
                     )
             self.hallucination_per_label = hallucination_per_label
         elif isinstance(hallucination_per_label, int):
-            if hallucination_per_label[idx] < 0:
+            if hallucination_per_label < 0:
                 raise ValueError(
                     f"hallucination_per_label {hallucination_per_label} must be a nonnegative int"
                 )
