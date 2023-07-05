@@ -145,6 +145,10 @@ class CARLAOverObjectDetectionRandomTargeter:
         self.Y_MAX = 960
 
         if isinstance(hallucination_per_label, list):
+            if len(hallucination_per_label) != len(self.hallucination_labels):
+                raise ValueError(
+                    f"hallucination_per_label list must have length {len(self.hallucination_labels)}"
+                )
             for idx in range(len(hallucination_per_label)):
                 if (
                     not isinstance(hallucination_per_label[idx], int)
