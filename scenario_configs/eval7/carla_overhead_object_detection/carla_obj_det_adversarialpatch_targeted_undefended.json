@@ -51,6 +51,8 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
+            "max_size": 1280,
+            "min_size": 960,
             "num_classes": 3
         },
         "module": "armory.baseline_models.pytorch.carla_single_modality_object_detection_frcnn",
