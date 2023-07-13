@@ -48,7 +48,6 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
         ]
         for meter in meters:
             self.hub.connect_meter(meter)
-        self.hub.connect_writer(ResultsLogWriter(), meters=meters, default=False)
 
     def next(self):
         super().next()
