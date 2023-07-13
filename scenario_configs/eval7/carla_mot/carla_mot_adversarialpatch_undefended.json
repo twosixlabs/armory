@@ -39,6 +39,8 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
+            "max_size": 1280,
+            "min_size": 960,
             "num_classes": 2
         },
         "module": "armory.baseline_models.pytorch.carla_mot_frcnn_byte",

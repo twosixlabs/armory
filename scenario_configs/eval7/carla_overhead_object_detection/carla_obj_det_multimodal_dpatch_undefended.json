@@ -40,7 +40,10 @@
     "model": {
         "fit": false,
         "fit_kwargs": {},
-        "model_kwargs": {},
+        "model_kwargs": {
+            "max_size": 1280,
+            "min_size": 960
+        },
         "module": "armory.baseline_models.pytorch.carla_multimodality_object_detection_frcnn",
         "name": "get_art_model_mm",
         "weights_file": "carla_multimodal_naive_weights_eval7and8.pt",

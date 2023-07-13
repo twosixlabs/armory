@@ -108,6 +108,11 @@ def get_art_model_mm(
 ) -> PyTorchFasterRCNN:
 
     num_classes = model_kwargs.pop("num_classes", 3)
+    frcnn_kwargs = {
+        arg: model_kwargs.pop(arg)
+        for arg in ["min_size", "max_size"]
+        if arg in model_kwargs
+    }
 
     backbone = MultimodalNaive(**model_kwargs)
 
@@ -116,6 +121,7 @@ def get_art_model_mm(
         num_classes=num_classes,
         image_mean=[0.485, 0.456, 0.406, 0.0, 0.0, 0.0],
         image_std=[0.229, 0.224, 0.225, 1.0, 1.0, 1.0],
+        **frcnn_kwargs,
     )
     model.to(DEVICE)
 

@@ -348,6 +348,9 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         ).to(self.estimator.device)
         foreground_mask = torch.permute(foreground_mask, (2, 0, 1))
         foreground_mask = torch.unsqueeze(foreground_mask, dim=0)
+        foreground_mask = ~(
+            ~foreground_mask * image_mask.bool()
+        )  # ensure area perturbed in depth is consistent with area perturbed in RGB
 
         # Adjust green screen brightness
         v_avg = (

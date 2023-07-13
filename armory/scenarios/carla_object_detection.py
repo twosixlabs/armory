@@ -71,7 +71,7 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
             if self.use_label:
                 y_target = y
             elif self.targeted:
-                y_target = self.label_targeter.generate(y)
+                y_target = self.label_targeter.generate(y, self.y_patch_metadata)
             else:
                 y_target = None
 
