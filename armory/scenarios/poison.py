@@ -389,14 +389,20 @@ class Poison(Scenario):
             self.init_explanatory()
 
     def load_fairness_metrics(self):
-        explanatory_config = self.config["adhoc"].get("explanatory_model")
-        if explanatory_config:
-            self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
+        majority_masks_config = self.config["adhoc"].get("majority_masks")
+        if majority_masks_config:
+            # Attempt to load majority masks first, if provided
+            self.majority_masks = np.load(majority_masks_config)
         else:
-            # compute_fairness_metrics was true, but there is no explanatory config
-            raise ValueError(
-                "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
-            )
+            # Load explanatory model otherwise
+            explanatory_config = self.config["adhoc"].get("explanatory_model")
+            if explanatory_config:
+                self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
+            else:
+                # compute_fairness_metrics was true, but there is no explanatory config
+                raise ValueError(
+                    "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
+                )
 
         if not self.check_run and self.use_filtering_defense:
             self.hub.connect_meter(
@@ -574,48 +580,63 @@ class Poison(Scenario):
         """
         get majority ceilings on unpoisoned part of train set
         """
-        if self.explanatory_model is None:
-            raise ValueError("No explanatory model")
-        if self.fit_generator:
-            batch_size = self.fit_batch_size
+        if self.majority_masks is not None:
+            # Use pre-computed majority masks if provided
+            self.majority_mask_train_unpoisoned = self.majority_masks["train"]
+            self.majority_ceilings = None
         else:
-            batch_size = None
-        class_majority_mask = metrics.get("class_majority_mask")
-        activations = self.explanatory_model.get_activations(
-            self.x_poison[~self.poisoned],
-            batch_size=batch_size,
-        )
-        (
-            self.majority_mask_train_unpoisoned,
-            self.majority_ceilings,
-        ) = class_majority_mask(
-            activations,
-            self.y_poison[~self.poisoned],
-        )
+            # Calculate majority masks from explanatory model otherwise
+            if self.explanatory_model is None:
+                raise ValueError("No explanatory model")
+
+            if self.fit_generator:
+                batch_size = self.fit_batch_size
+            else:
+                batch_size = None
+            class_majority_mask = metrics.get("class_majority_mask")
+            activations = self.explanatory_model.get_activations(
+                self.x_poison[~self.poisoned],
+                batch_size=batch_size,
+            )
+            (
+                self.majority_mask_train_unpoisoned,
+                self.majority_ceilings,
+            ) = class_majority_mask(
+                activations,
+                self.y_poison[~self.poisoned],
+            )
+
         return self.majority_mask_train_unpoisoned, self.majority_ceilings
 
     def get_test_majority_mask(self):
         """
         get majority ceilings on unpoisoned part of test set
         """
-        if self.explanatory_model is None:
-            raise ValueError("No explanatory model")
-        if not hasattr(self, "majority_ceilings"):
-            raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
-        class_majority_mask = metrics.get("class_majority_mask")
-        if self.fit_generator:
-            batch_size = self.fit_batch_size
+        if self.majority_masks is not None:
+            # Use pre-computed majority masks if provided
+            self.majority_mask_train_unpoisoned = self.majority_masks["train"]
+            self.majority_ceilings = None
         else:
-            batch_size = None
-        activations = self.explanatory_model.get_activations(
-            self.test_x, batch_size=batch_size
-        )
-        # use copy of majority ceilings computed from train set
-        self.majority_mask_test_set, _ = class_majority_mask(
-            activations,
-            self.test_y,
-            majority_ceilings=copy.copy(self.majority_ceilings),
-        )
+            # Calculate majority masks from explanatory model otherwise
+            if self.explanatory_model is None:
+                raise ValueError("No explanatory model")
+            if not hasattr(self, "majority_ceilings"):
+                raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
+
+            class_majority_mask = metrics.get("class_majority_mask")
+            if self.fit_generator:
+                batch_size = self.fit_batch_size
+            else:
+                batch_size = None
+            activations = self.explanatory_model.get_activations(
+                self.test_x, batch_size=batch_size
+            )
+            # use copy of majority ceilings computed from train set
+            self.majority_mask_test_set, _ = class_majority_mask(
+                activations,
+                self.test_y,
+                majority_ceilings=copy.copy(self.majority_ceilings),
+            )
 
         return self.majority_mask_test_set
 
