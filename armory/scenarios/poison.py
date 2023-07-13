@@ -109,6 +109,7 @@ class Poison(Scenario):
             raise NotImplementedError("triggered=False attacks are not implemented")
         self.triggered = triggered
         self.explanatory_model = None
+        self.majority_masks = None
         self.fit_generator = fit_generator
 
     def set_random_seed(self):
@@ -385,19 +386,23 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.i = -1
-        if self.explanatory_model is not None:
+        if self.explanatory_model is not None or self.majority_masks is not None:
             self.init_explanatory()
 
     def load_fairness_metrics(self):
         majority_masks_config = self.config["adhoc"].get("majority_masks")
         if majority_masks_config:
             # Attempt to load majority masks first, if provided
+            log.info("Using pre-computed majority masks...")
             self.majority_masks = np.load(majority_masks_config)
         else:
             # Load explanatory model otherwise
+            log.info("Using explanatory model...")
             explanatory_config = self.config["adhoc"].get("explanatory_model")
             if explanatory_config:
-                self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
+                self.explanatory_model = ExplanatoryModel.from_config(
+                    explanatory_config
+                )
             else:
                 # compute_fairness_metrics was true, but there is no explanatory config
                 raise ValueError(
@@ -528,7 +533,7 @@ class Poison(Scenario):
 
         self.y_pred = y_pred
         self.source = source
-        if self.explanatory_model is not None:
+        if self.explanatory_model is not None or self.majority_masks is not None:
             self.run_explanatory()
 
     def run_attack(self):
@@ -582,7 +587,9 @@ class Poison(Scenario):
         """
         if self.majority_masks is not None:
             # Use pre-computed majority masks if provided
-            self.majority_mask_train_unpoisoned = self.majority_masks["train"]
+            self.majority_mask_train_unpoisoned = self.majority_masks["train"][
+                ~self.poisoned
+            ]
             self.majority_ceilings = None
         else:
             # Calculate majority masks from explanatory model otherwise
@@ -614,14 +621,15 @@ class Poison(Scenario):
         """
         if self.majority_masks is not None:
             # Use pre-computed majority masks if provided
-            self.majority_mask_train_unpoisoned = self.majority_masks["train"]
-            self.majority_ceilings = None
+            self.majority_mask_test_set = self.majority_masks["test"]
         else:
             # Calculate majority masks from explanatory model otherwise
             if self.explanatory_model is None:
                 raise ValueError("No explanatory model")
             if not hasattr(self, "majority_ceilings"):
-                raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
+                raise ValueError(
+                    "Must first call 'get_train_majority_mask_and_ceilings'"
+                )
 
             class_majority_mask = metrics.get("class_majority_mask")
             if self.fit_generator:
@@ -684,7 +692,9 @@ class Poison(Scenario):
             )
 
     def finalize_results(self):
-        if getattr(self, "explanatory_model") and not self.check_run:
+        if (
+            getattr(self, "explanatory_model") or getattr(self, "majority_masks")
+        ) and not self.check_run:
             self.finalize_explanatory()
             self.compute_explanatory()
         self.hub.close()
