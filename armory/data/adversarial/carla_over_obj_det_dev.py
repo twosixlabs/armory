@@ -24,17 +24,18 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_dev_2.0.0.tar.gz"
+_URLS = "carla_over_od_dev_2.0.1.tar.gz"
 # fmt: on
 
 
 class CarlaOverObjDetDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_dev dataset."""
 
-    VERSION = tfds.core.Version("2.0.0")
+    VERSION = tfds.core.Version("2.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Eval6 update from CarlaObjDetDev with images collected from overhead perspectives",
         "2.0.0": "Eval7 images collected from overhead perspectives, where patches on the sidewalk/street are constrained to +-0.03m depth perturbation and patches located elsewhere are constrained to +-3m",
+        "2.0.1": "Updated green screen coordinates in select images to fix imperfect patch coverage",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:

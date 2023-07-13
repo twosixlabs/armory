@@ -1,1 +1,1 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_test_1.0.0.tar.gz  342710393 a4adbfae4c3d0c887ffa7b9605901deb142b7001bef7eb13e8ba21504fbf2453
+carla_mot_test_1.0.1.tar.gz 342711005 a75045f7363df45990ea6f2363b68cec3ca9610f5632833dc9217e6e01f5a3bc
