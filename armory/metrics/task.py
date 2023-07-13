@@ -921,12 +921,15 @@ def object_detection_AP_per_class_by_giou_from_patch(
         # GIoU is positive if there is overlap.
         patch = metadata["gs_coords"]
         assert patch.shape == (4, 2)
-        y_distances = np.array([
-            _generalized_intersection_over_union(box, patch) for box in y["boxes"]
-        ])
-        pred_distances = np.array([
-            _generalized_intersection_over_union(box, patch) for box in y_pred["boxes"]
-        ])
+        y_distances = np.array(
+            [_generalized_intersection_over_union(box, patch) for box in y["boxes"]]
+        )
+        pred_distances = np.array(
+            [
+                _generalized_intersection_over_union(box, patch)
+                for box in y_pred["boxes"]
+            ]
+        )
         y_distances_list.append(y_distances)
         y_pred_distances_list.append(pred_distances)
 
@@ -982,7 +985,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
         if histogram_bin_top > 0:
             histogram_bin_top = 1
         y_list_range = [
-           {
+            {
                 "boxes": y["boxes"][(y_d >= threshold) & (y_d < histogram_bin_top)],
                 "labels": y["labels"][(y_d >= threshold) & (y_d < histogram_bin_top)],
             }

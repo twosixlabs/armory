@@ -7,7 +7,7 @@ Scenario Contributor: MITRE Corporation
 from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
 from armory.scenarios.object_detection import ObjectDetectionTask
-from armory.instrument import GlobalMeter, ResultsLogWriter
+from armory.instrument import GlobalMeter
 from armory import metrics
 
 
