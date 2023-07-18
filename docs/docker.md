@@ -4,11 +4,13 @@ inside a docker container.
 
 
 ## Images
-There are two docker images that are currently published to dockerhub for every release of
+There are three docker images that are currently published to dockerhub
 the armory framework:
 
 1. `twosixarmory/armory:<version>`
 2. `twosixarmory/pytorch-deepspeech:<version>`
+3. `twosixarmory/yolo:<version>`
+
 
 NOTE: as of Armory version 0.15.0, we no longer support or publish a `tf1` image.
 If `tf1` functionality is needed, please use the `tf2` image and use `tf1` compatibility mode.

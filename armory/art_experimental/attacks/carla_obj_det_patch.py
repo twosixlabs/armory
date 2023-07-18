@@ -450,7 +450,9 @@ class CARLADapricotPatch(RobustDPatch):
                 if self.depth_type == "log":
                     depth_log = (
                         self.depth_perturbation
-                        + np.sign(depth_gradients) * self.learning_rate_depth
+                        + np.sign(depth_gradients)
+                        * (1 - 2 * int(self.targeted))
+                        * self.learning_rate_depth
                     )
                     perturbed_images = np.clip(
                         images_depth + depth_log, self.min_depth, self.max_depth
@@ -468,7 +470,10 @@ class CARLADapricotPatch(RobustDPatch):
                         self.depth_perturbation[:, :, :, 2],
                     ).astype("float32")
                     depth_linear = (
-                        depth_linear + np.sign(grads_linear) * self.learning_rate_depth
+                        depth_linear
+                        + np.sign(grads_linear)
+                        * (1 - 2 * int(self.targeted))
+                        * self.learning_rate_depth
                     )
 
                     images_depth_linear = rgb_depth_to_linear(
@@ -770,6 +775,23 @@ class CARLADapricotPatch(RobustDPatch):
                 )  # (1,H,W,3)
                 self.foreground = np.all(self.binarized_patch_mask == 255, axis=-1)
                 self.foreground = np.expand_dims(self.foreground, (-1, 0))  # (1,H,W,1)
+                # ensure area perturbed in depth is consistent with area perturbed in RGB
+                h, _ = cv2.findHomography(
+                    np.array(
+                        [
+                            [0, 0],
+                            [patch_width - 1, 0],
+                            [patch_width - 1, patch_height - 1],
+                            [0, patch_height - 1],
+                        ]
+                    ),
+                    gs_coords,
+                )
+                rgb_mask = np.ones((patch_height, patch_width, 3), dtype=np.float32)
+                rgb_mask = cv2.warpPerspective(
+                    rgb_mask, h, (x.shape[2], x.shape[1]), cv2.INTER_CUBIC
+                )
+                self.foreground = self.foreground * rgb_mask[:, :, 0:1]
 
             if y is None:
                 patch = self.inner_generate(

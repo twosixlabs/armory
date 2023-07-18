@@ -1,0 +1,25 @@
+# More details on the pytorchyolo installation can be found here:
+# https://github.com/eriklindernoren/PyTorch-YOLOv3
+
+ARG base_image_tag
+
+FROM twosixarmory/base:${base_image_tag} AS armory-local
+
+WORKDIR /armory-repo
+
+# NOTE: This COPY command is filtered using the `.dockerignore` file
+#       in the root of the repo.
+COPY ./ /armory-repo
+
+
+RUN echo "Building Armory from local source"                         && \
+    echo "Updating Base Image..."                                    && \
+      python -m pip install --upgrade pip                            && \
+    echo "Installing Armory..."                                      && \
+      pip install --no-compile --no-cache-dir --editable '.[yolo]'   && \
+    echo "Configuring Armory..."                                     && \
+      armory configure --use-default                                 && \
+    echo "Cleaning up..."                                            && \
+      rm -rf /armory-repo/.git
+
+WORKDIR /workspace
