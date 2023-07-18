@@ -1,5 +1,8 @@
 ---
+
 site_name: Armory
+
+theme: readthedocs
 nav:
   - Home: index.md
   - Getting Started: getting_started.md
@@ -29,4 +32,3 @@ nav:
       - Contributing: contributing.md
       - Style: style.md
       - Testing: developers/testing.md
-theme: readthedocs
