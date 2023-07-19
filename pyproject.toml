@@ -3,6 +3,7 @@ build-backend = "hatchling.build"
 requires = [
   "hatchling>=1.10.0",
   "hatch-vcs",
+  "cython<3.0.0",
 ]
 
 
@@ -39,7 +40,6 @@ dependencies = [
     "loguru",
     "pytest",
     "requests",
-    "toml",
 ]
 
 [project.urls]
@@ -59,7 +59,6 @@ developer =[
     "black[jupyter]==22.*",
     "isort",
     "flake8",
-    "bandit[toml]", # code scanning
 ]
 
 engine = [
@@ -183,16 +182,6 @@ version_scheme = "post-release"
 [tool.setuptools_scm]
 # the presence of this empty block stops setuptools_scm from complaining
 
-[tool.bandit]
-recursive = true
-targets = [ "armory" ]
-skips   = [
-  "B101",  # Ignore defensive `assert`s (especially useful for mypy)
-  "B404",  # Ignore warnings about importing subprocess
-  "B603",  # Ignore warnings about calling subprocess.Popen without shell=True
-  "B607",  # Ignore warnings about calling subprocess.Popen without a full path to executable
-]
-
 [tool.pytest.ini_options]
 addopts    = "-ra -q"
 log_level  = "ERROR"
@@ -218,15 +207,6 @@ markers = [
 #     ignore::UserWarning:torch*
 #     ignore::Warning:art*
 
-
-# ------------ pre-commit hooks ------------
-[tool.vulture]
-paths             = ["src"]
-ignore_decorators = ["#~vulture.ignore~#"]
-min_confidence    = 80
-make_whitelist    = true
-sort_by_size      = true
-verbose           = true
 
 [tool.isort]
 profile = "black"

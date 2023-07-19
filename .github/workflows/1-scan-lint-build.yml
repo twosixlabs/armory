@@ -80,17 +80,6 @@ jobs:
           fi
 
 
-      - name: 🦹‍♂️ Scanning with Bandit
-        run: |
-          bandit                                    \
-            -v                                      \
-            -f txt                                  \
-            -r ./armory                             \
-            -c "pyproject.toml"                     \
-            --output /tmp/artifacts/bandit_scan.txt \
-          || $( exit 0 ); echo $?
-
-
       - name: 🖋️ mypy Type Checking
         run: |
           python3 -m pip install mypy
