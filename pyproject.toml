@@ -56,12 +56,10 @@ armory = "armory.__main__:main"
 developer =[
     "hatch", # build tool
     "wheel", # build tool
-    "mkdocs",
     "black[jupyter]==22.*",
     "isort",
     "flake8",
     "bandit[toml]", # code scanning
-    "hydra-core",   # configuration
 ]
 
 engine = [
