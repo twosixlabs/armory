@@ -7,8 +7,6 @@ Scenario Contributor: MITRE Corporation
 from armory.instrument.export import ObjectDetectionExporter
 from armory.logs import log
 from armory.scenarios.object_detection import ObjectDetectionTask
-from armory.instrument import GlobalMeter
-from armory import metrics
 
 
 class CarlaObjectDetectionTask(ObjectDetectionTask):
@@ -28,26 +26,18 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
     def load_metrics(self):
         super().load_metrics()
 
-        # These metrics are loaded here manually because y_patch_metadata cannot be passed through the default MetricsLogger loading code.
-        # I will attempt to update that in the near future.
-        meters = [
-            GlobalMeter(
-                "benign_AP_per_class_by_giou_from_patch",
-                metrics.get("object_detection_AP_per_class_by_giou_from_patch"),
-                "scenario.y",
-                "scenario.y_pred",
-                "scenario.y_patch_metadata",
-            ),
-            GlobalMeter(
-                "adversarial_AP_per_class_by_giou_from_patch",
-                metrics.get("object_detection_AP_per_class_by_giou_from_patch"),
-                "scenario.y",
-                "scenario.y_pred_adv",
-                "scenario.y_patch_metadata",
-            ),
-        ]
-        for meter in meters:
-            self.hub.connect_meter(meter)
+        self.metrics_logger.add_custom_task(
+            "object_detection_AP_per_class_by_giou_from_patch",
+            ["scenario.y", "scenario.y_pred", "scenario.y_patch_metadata"],
+            "benign_",
+            load_writer=False,
+        )
+        self.metrics_logger.add_custom_task(
+            "object_detection_AP_per_class_by_giou_from_patch",
+            ["scenario.y", "scenario.y_pred_adv", "scenario.y_patch_metadata"],
+            "adversarial_",
+            load_writer=False,
+        )
 
     def next(self):
         super().next()
