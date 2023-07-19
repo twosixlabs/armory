@@ -52,7 +52,7 @@
         "fit": true,
         "fit_kwargs": {},
         "model_kwargs": {
-            "model_path": "armory/baseline_models/pytorch/yolov3.cfg"
+            "model_path": "yolov3.cfg"
         },
         "module": "armory.baseline_models.pytorch.yolov3",
         "name": "get_art_model",
