@@ -40,6 +40,8 @@ dependencies = [
     "loguru",
     "pytest",
     "requests",
+    # See https://github.com/yaml/pyyaml/issues/724 for issues with pyyaml 5.4.1
+    "PyYAML>=5.1,<7.0",
 ]
 
 [project.urls]
