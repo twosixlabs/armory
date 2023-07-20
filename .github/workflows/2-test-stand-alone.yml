@@ -46,7 +46,7 @@ jobs:
         run: |
           # See https://github.com/yaml/pyyaml/issues/724 for issues with pyyaml 5.4.1
           pip install wheel cython
-          pip install "pyyaml>=5.1,<7.0",
+          pip install "pyyaml>=5.1,<7.0"
 
           pip install --no-compile --editable '.[developer,engine,pytorch]'
           armory configure --use-defaults
