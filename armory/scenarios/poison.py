@@ -19,6 +19,7 @@ from armory.metrics.poisoning import ExplanatoryModel
 from armory.scenarios.scenario import Scenario
 from armory.scenarios.utils import to_categorical
 from armory.utils import config_loading
+from armory.data import majority_masks as majority_mask_dir
 
 
 class DatasetPoisoner:
@@ -390,11 +391,13 @@ class Poison(Scenario):
             self.init_explanatory()
 
     def load_fairness_metrics(self):
-        majority_masks_config = self.config["adhoc"].get("majority_masks")
-        if majority_masks_config:
+        majority_mask_file = self.config["adhoc"].get("majority_masks")
+        if majority_mask_file:
             # Attempt to load majority masks first, if provided
             log.info("Using pre-computed majority masks...")
-            self.majority_masks = np.load(majority_masks_config)
+            self.majority_masks = np.load(
+                majority_mask_dir.get_path(majority_mask_file)
+            )
         else:
             # Load explanatory model otherwise
             log.info("Using explanatory model...")
@@ -404,9 +407,9 @@ class Poison(Scenario):
                     explanatory_config
                 )
             else:
-                # compute_fairness_metrics was true, but there is no explanatory config
+                # compute_fairness_metrics was true, but there is no explanatory config or masks
                 raise ValueError(
-                    "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
+                    "If computing fairness metrics, must specify 'explanatory_model' or 'majority_masks' under 'adhoc'"
                 )
 
         if not self.check_run and self.use_filtering_defense:
