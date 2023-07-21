@@ -24,7 +24,7 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "carla_over_od_dev_2.0.1.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_dev_2.0.1.tar.gz"
 # fmt: on
 
 
