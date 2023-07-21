@@ -1,1 +1,1 @@
-carla_mot_test_1.0.1.tar.gz 342710111 a3857b0d684be3be14fc365f7cfc59fb14a8a9167c259b6395fc12d578861970
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_test_1.0.1.tar.gz 342710111 a3857b0d684be3be14fc365f7cfc59fb14a8a9167c259b6395fc12d578861970

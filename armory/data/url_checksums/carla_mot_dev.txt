@@ -1,1 +1,1 @@
-carla_mot_dev_1.0.1.tar.gz 704302804 439c93a85f65acccd1368e2bc6a9d9c30e6253642bdc8bb676da9d2667564acd
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.1.tar.gz 704302804 439c93a85f65acccd1368e2bc6a9d9c30e6253642bdc8bb676da9d2667564acd
