@@ -31,7 +31,7 @@ class CarlaMOTTest(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
-        "1.0.1": "Updated green screen coordinates so a patch appears static in each video.",
+        "1.0.1": "Updated green screen coordinates and RGB/instance segmentation misalignment to eliminate patch spatial movement or flickering",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
