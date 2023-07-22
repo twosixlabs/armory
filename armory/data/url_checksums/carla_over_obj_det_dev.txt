@@ -1,1 +1,1 @@
-carla_over_od_dev_2.0.1.tar.gz 64846910 499cd578a8c9ebb4dc2b8578e9ae3ac89c60bd57d55250327f683e164944a749
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_dev_2.0.1.tar.gz 64846910 499cd578a8c9ebb4dc2b8578e9ae3ac89c60bd57d55250327f683e164944a749
