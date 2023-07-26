@@ -739,7 +739,7 @@ def carla_over_obj_det_dev(
 
 
 def carla_over_obj_det_test(
-    split: str = "test",
+    split: str = "test_hallucination",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -789,7 +789,7 @@ def carla_over_obj_det_test(
     )
 
     return datasets._generator_from_tfds(
-        "carla_over_obj_det_test:1.0.0",
+        "carla_over_obj_det_test:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,
