@@ -43,7 +43,7 @@ dependencies = [
 
 [project.urls]
 Source        = "https://github.com/twosixlabs/armory"
-Documentation = "https://armory.readthedocs.io/en/latest/"
+Documentation = "https://github.com/twosixlabs/armory"
 
 [project.scripts]
 armory = "armory.__main__:main"
