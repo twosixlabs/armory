@@ -2,14 +2,14 @@
 Utility functions for visualizing the output of the metric "object_detection_AP_per_class_by_giou_from_patch."
 This metric captures how adversarial AP varies as objects get farther from the patch.
 
-There are two functions which produce slightly different plots: 
+There are two functions which produce slightly different plots:
 plot_mAP_by_giou_with_patch, and plot_single_giou_threshold.
 
-plot_mAP_by_giou_with_patch() shows how the mAP changes over a range of GIoU values.  It 
+plot_mAP_by_giou_with_patch() shows how the mAP changes over a range of GIoU values.  It
 can display this in three "flavors": cumulative by max GIoU, cumulative by min GIoU,
 or as a histogram.  The first flavor represents all objects outside each given range of GIoU
-(i.e. further from the patch, or more negative GIoU).  The second flavor is all objects within 
-each range (i.e. closer to the patch, or more positive GIoU).  The histogram version reports AP 
+(i.e. further from the patch, or more negative GIoU).  The second flavor is all objects within
+each range (i.e. closer to the patch, or more positive GIoU).  The histogram version reports AP
 for disjoint intervals of GIoU value.
 
 plot_single_giou_threshold() only considers one user-specified GIoU threshold, and shows
