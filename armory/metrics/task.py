@@ -956,7 +956,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
         )
         if not np.isnan(ap["mean"]):
             # Possibly nan if there are no boxes on or near the patch
-            result["cumulative_by_min_giou"][threshold] = ap
+            result["cumulative_by_min_giou"][f"{threshold:.1f}"] = ap
 
         y_list_max = [
             {
@@ -979,7 +979,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
         )
         if not np.isnan(ap["mean"]):
             # May be nan for smallest giou thresholds where there are no boxes
-            result["cumulative_by_max_giou"][threshold] = ap
+            result["cumulative_by_max_giou"][f"{threshold:.1f}"] = ap
 
         histogram_bin_top = threshold + increment
         if histogram_bin_top > 0:
@@ -1003,7 +1003,7 @@ def object_detection_AP_per_class_by_giou_from_patch(
             y_list_range, y_pred_list_range, iou_threshold, class_list, mean
         )
         if not np.isnan(ap["mean"]):
-            result["histogram_left"][threshold] = ap
+            result["histogram_left"][f"{threshold:.1f}"] = ap
 
     return result
 
