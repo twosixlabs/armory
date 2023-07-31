@@ -644,9 +644,9 @@ def check_shapes(actual, target):
     actual and target should be tuples
         actual should not have None values
     """
-    if type(actual) != tuple:
+    if type(actual) != tuple: # noqa
         raise ValueError(f"actual shape {actual} is not a tuple")
-    if type(target) != tuple:
+    if type(target) != tuple: # noqa
         raise ValueError(f"target shape {target} is not a tuple")
     if None in actual:
         raise ValueError(f"None should not be in actual shape {actual}")
