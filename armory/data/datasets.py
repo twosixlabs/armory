@@ -28,10 +28,10 @@ from armory.data.digit import digit as digit_tfds  # noqa: F401
 from armory.data.german_traffic_sign import german_traffic_sign as gtsrb  # noqa: F401
 from armory.data.librispeech import librispeech_dev_clean_split  # noqa: F401
 from armory.data.librispeech import librispeech_full as lf  # noqa: F401
+from armory.data.minicoco import minicoco as mc  # noqa: F401
 from armory.data.resisc10 import resisc10_poison  # noqa: F401
 from armory.data.resisc45 import resisc45_split  # noqa: F401
 from armory.data.ucf101 import ucf101_clean as uc  # noqa: F401
-from armory.data.minicoco import minicoco as mc  # noqa: F401
 from armory.data.utils import (
     _read_validate_scenario_config,
     add_checksums_dir,

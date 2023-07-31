@@ -1,21 +1,18 @@
 import copy
 
-import imgaug.augmenters as iaa
 from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+import imgaug.augmenters as iaa
 import numpy as np
 import torch
 from torchvision.ops import nms
 from tqdm import tqdm
 
-from armory.logs import log
 from armory import metrics
-from armory.instrument import LogWriter, Meter, ResultsWriter, GlobalMeter
+from armory.instrument import GlobalMeter, LogWriter, Meter, ResultsWriter
+from armory.instrument.export import ExportMeter, ObjectDetectionExporter
+from armory.logs import log
 from armory.scenarios.poison import Poison
 from armory.utils import config_loading
-from armory.instrument.export import (
-    ExportMeter,
-    ObjectDetectionExporter,
-)
 
 """
 Paper link: https://arxiv.org/pdf/2205.14497.pdf

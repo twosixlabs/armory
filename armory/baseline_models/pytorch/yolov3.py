@@ -1,11 +1,9 @@
 from typing import Optional
 
-import torch
-
 from art.estimators.object_detection import PyTorchYolo
-from pytorchyolo.utils.loss import compute_loss
 from pytorchyolo.models import load_model
-
+from pytorchyolo.utils.loss import compute_loss
+import torch
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
