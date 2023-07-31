@@ -17,8 +17,8 @@ from armory.data.adversarial import (  # noqa: F401
     resisc45_densenet121_univpatch_and_univperturbation_adversarial_224x224,
     ucf101_mars_perturbation_and_patch_adversarial_112x112,
 )
-from armory.data.adversarial import carla_mot_dev as cmotd  # noqa: F401
 from armory.data.adversarial import apricot_dev, apricot_test  # noqa: F401
+from armory.data.adversarial import carla_mot_dev as cmotd  # noqa: F401
 from armory.data.adversarial import carla_mot_test as cmott  # noqa: F401
 from armory.data.adversarial import carla_obj_det_dev as codd  # noqa: F401
 from armory.data.adversarial import carla_obj_det_test as codt  # noqa: F401
@@ -739,7 +739,7 @@ def carla_over_obj_det_dev(
 
 
 def carla_over_obj_det_test(
-    split: str = "test",
+    split: str = "test_hallucination",
     epochs: int = 1,
     batch_size: int = 1,
     dataset_dir: str = None,
@@ -789,7 +789,7 @@ def carla_over_obj_det_test(
     )
 
     return datasets._generator_from_tfds(
-        "carla_over_obj_det_test:1.0.0",
+        "carla_over_obj_det_test:2.0.0",
         split=split,
         batch_size=batch_size,
         epochs=epochs,

@@ -10,9 +10,9 @@ from tqdm.auto import trange
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     linear_depth_to_rgb,
-    rgb_depth_to_linear,
     linear_to_log,
     log_to_linear,
+    rgb_depth_to_linear,
 )
 from armory.logs import log
 from armory.utils.external_repo import ExternalRepoImport

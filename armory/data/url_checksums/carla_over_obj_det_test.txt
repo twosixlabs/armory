@@ -1,1 +1,1 @@
-https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_test_1.0.0.tar.gz 54806190 fbf713db40b29fa23cbc9ebe11c0e5269c283251d63bbe05b635326a53b6f342
+https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_test_2.0.0.tar.gz 153756875 96f5e4e0846c8e4b970691ff750c0ec4631dd92ac527ddd633eb9b0bbae648a4

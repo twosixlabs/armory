@@ -1,10 +1,10 @@
 from typing import Optional
 
+from art.estimators.object_detection import PyTorchYolo
+from pytorchyolo.models import load_model
+from pytorchyolo.utils.loss import compute_loss
 import torch
 
-from art.estimators.object_detection import PyTorchYolo
-from pytorchyolo.utils.loss import compute_loss
-from pytorchyolo.models import load_model
 from armory.baseline_models import model_configs
 
 
