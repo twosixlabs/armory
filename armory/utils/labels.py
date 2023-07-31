@@ -266,6 +266,6 @@ class MatchedTranscriptLengthTargeter:
 
     def generate(self, y):
         y_target = [self._generate(y_i) for y_i in y]
-        if type(y) != list: # noqa
+        if type(y) != list:  # noqa
             y_target = np.array(y_target)
         return y_target
