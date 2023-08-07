@@ -22,19 +22,6 @@ RUN echo "Building Armory from local source"                                    
     echo "Cleaning up..."                                                               && \
       rm -rf /armory-repo/.git
 
-## Tensorflow Patches
-#  see: https://github.com/tensorflow/tensorflow/issues/56927
-#  see: https://github.com/keras-team/keras/issues/17422#issuecomment-1539388368
-ENV CONDA_PREFIX=/opt/conda
-ENV XLA_FLAGS=--xla_gpu_cuda_data_dir=$CONDA_PREFIX/lib/
-
-RUN echo "Applying TensorFlow patches" && \
-    mamba install -c nvidia cuda-nvcc=11.3.58 && \
-    mkdir -p $CONDA_PREFIX/etc/conda/activate.d && \
-    mkdir -p $CONDA_PREFIX/lib/nvvm/libdevice && \
-    cp $CONDA_PREFIX/lib/libdevice.10.bc $CONDA_PREFIX/lib/nvvm/libdevice/
-
-
 WORKDIR /workspace
 
 
