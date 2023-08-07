@@ -8,7 +8,9 @@ WORKDIR /armory-repo
 #       in the root of the repo.
 COPY ./ /armory-repo
 
-RUN pip install git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
+RUN echo "Installing Hydra" && \
+    pip install hydra-core && \
+    pip install git+https://github.com/romesco/hydra-lightning/\#subdirectory=hydra-configs-pytorch-lightning
 
 RUN echo "Building Armory from local source"                                            && \
     echo "Updating Base Image..."                                                       && \
@@ -19,7 +21,6 @@ RUN echo "Building Armory from local source"                                    
       armory configure --use-default                                                    && \
     echo "Cleaning up..."                                                               && \
       rm -rf /armory-repo/.git
-
 
 ## Tensorflow Patches
 #  see: https://github.com/tensorflow/tensorflow/issues/56927
@@ -40,9 +41,6 @@ WORKDIR /workspace
 # ------------------------------------------------------------------
 # DEVELOPER NOTES:
 # ------------------------------------------------------------------
-# TODO: determine if this environment setup is needed
-#  $ ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
-
 # NOTE:
 #  - pytorch-lightning >= 1.5.0 will break Deep Speech 2
 #  - torchmetrics >= 0.8.0 will break pytorch-lightning 1.4
