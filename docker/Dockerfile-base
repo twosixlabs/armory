@@ -10,6 +10,16 @@
 
 FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04
 
+ENV PATH=/opt/conda/bin:$PATH
+# TensorFlow requirement
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
+
+WORKDIR /armory-repo/
+
+# NOTE: This COPY command is filtered using the `.dockerignore` file
+#       in the root of the repo.
+COPY ./ /armory-repo
+
 # Temporary fix for broken nvidia package checksum
 # RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
 
@@ -33,22 +43,10 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
     rm ~/miniconda.sh && \
     /opt/conda/bin/conda clean -tipsy && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
-#    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
-#    echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
-#    echo "conda activate base" >> ~/.bashrc && \
-#    echo 'alias ll="ls -al"' >> ~/.bashrc
-
-ENV PATH=/opt/conda/bin:$PATH
-
-# TensorFlow requirement
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
 
 # NOTE: using mamba because conda fails when trying to solve for environment
 RUN conda install -c conda-forge -n base mamba \
     && conda clean --all
-
-WORKDIR /armory-repo/
-COPY environment.yml /armory-repo/
 
 RUN mamba env update -f environment.yml -n base --prune \
     && mamba clean --all
@@ -60,17 +58,6 @@ RUN mamba env update -f environment.yml -n base --prune \
 # NOTE: Armory requirements and ART requirements are installed here to make patch updates fast and small
 RUN echo "Installing TensorFlow and ART/Armory requirements via pip"
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    # tensorflow-datasets==4.6 \
-    # tensorflow==2.10 \
-    tensorboardx \
-    boto3 \
-    opencv-python \
-    ffmpeg-python \
-    pytest \
-    loguru \
-    docker \
-    jsonschema \
-    requests \
     pydub \
     transformers \
     six \
@@ -79,5 +66,7 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
 # transformers is used for the Entailment metric only
 # pydub required for ART mp3 defense
 
+# Install base requirements
+RUN pip install --editable '.[engine]'
 
 WORKDIR /workspace
