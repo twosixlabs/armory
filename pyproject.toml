@@ -104,7 +104,7 @@ math = [
     "numpy",
     "pandas",
     "scipy >= 1.4.1",
-    "scikit-learn < 1.1.0",   # ART requires scikit-learn >=0.22.2,<1.1.0
+    "scikit-learn>=0.22.2,<1.2.0",   # ART requires scikit-learn >=0.22.2,<1.2.0
     "matplotlib",
 ]
 
