@@ -16,9 +16,7 @@ ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/conda/lib/
 
 WORKDIR /armory-repo/
 
-# NOTE: This COPY command is filtered using the `.dockerignore` file
-#       in the root of the repo.
-COPY ./ /armory-repo
+COPY environment.yml /armory-repo/
 
 # Temporary fix for broken nvidia package checksum
 # RUN rm -f /etc/apt/sources.list.d/nvidia-ml.list
@@ -58,6 +56,17 @@ RUN mamba env update -f environment.yml -n base --prune \
 # NOTE: Armory requirements and ART requirements are installed here to make patch updates fast and small
 RUN echo "Installing TensorFlow and ART/Armory requirements via pip"
 RUN /opt/conda/bin/pip install --no-cache-dir \
+    tensorflow-datasets \
+    tensorflow \
+    tensorboardx \
+    boto3 \
+    opencv-python \
+    ffmpeg-python \
+    pytest \
+    loguru \
+    docker \
+    jsonschema \
+    requests \
     pydub \
     transformers \
     six \
@@ -65,8 +74,5 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tqdm
 # transformers is used for the Entailment metric only
 # pydub required for ART mp3 defense
-
-# Install base requirements
-RUN pip install --editable ".[engine,pytorch,tensorflow,jupyter]"
 
 WORKDIR /workspace
