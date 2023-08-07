@@ -60,8 +60,8 @@ RUN mamba env update -f environment.yml -n base --prune \
 # NOTE: Armory requirements and ART requirements are installed here to make patch updates fast and small
 RUN echo "Installing TensorFlow and ART/Armory requirements via pip"
 RUN /opt/conda/bin/pip install --no-cache-dir \
-    tensorflow-datasets==4.6 \
-    tensorflow==2.10 \
+    # tensorflow-datasets==4.6 \
+    # tensorflow==2.10 \
     tensorboardx \
     boto3 \
     opencv-python \
@@ -78,5 +78,6 @@ RUN /opt/conda/bin/pip install --no-cache-dir \
     tqdm
 # transformers is used for the Entailment metric only
 # pydub required for ART mp3 defense
+
 
 WORKDIR /workspace

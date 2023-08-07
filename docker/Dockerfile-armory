@@ -30,8 +30,5 @@ RUN pip install \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install cython-bbox
 
-## Pin Tensorflow version
-# see: https://github.com/twosixlabs/armory/pull/1968
-RUN pip install tensorflow==2.10.0
 
 WORKDIR /workspace
