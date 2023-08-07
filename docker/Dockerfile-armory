@@ -32,6 +32,6 @@ RUN pip install \
 
 ## Pin Tensorflow version
 # see: https://github.com/twosixlabs/armory/pull/1968
-RUN pip install --upgrade tensorflow==2.10.0
+RUN pip install tensorflow==2.10.0
 
 WORKDIR /workspace
