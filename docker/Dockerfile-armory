@@ -30,5 +30,4 @@ RUN pip install \
     # Requires cython for install, so will fail if run in the same pip install as cython
     pip install cython-bbox
 
-
 WORKDIR /workspace
