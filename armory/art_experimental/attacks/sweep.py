@@ -142,7 +142,7 @@ class SweepAttack(EvasionAttack):
             return metric_result > self.metric_threshold
 
     def _get_metric_result(self, y, y_pred):
-        if isinstance(y, np.ndarray) and y.dtype == np.object:
+        if isinstance(y, np.ndarray) and y.dtype == object:
             # convert np object array to list of dicts
             metric_result = self.metric_fn([y[0]], y_pred)
         else:
