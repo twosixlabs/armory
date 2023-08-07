@@ -16,10 +16,7 @@ dependencies:
   - matplotlib
   - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
   - librosa
+  - cudnn  # cudnn required for tensorflow
   - pandas
   - protobuf
-  - nvidia     # Required for tensorflow. See: https://github.com/tensorflow/tensorflow/issues/58681#issuecomment-1406967453
-  - cuda-nvcc  # Required for tensorflow. See: https://github.com/tensorflow/tensorflow/issues/58681#issuecomment-1406967453
-  - cudnn      # cudnn required for tensorflow
-
 prefix: /opt/conda
