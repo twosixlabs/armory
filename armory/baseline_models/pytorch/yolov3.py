@@ -7,7 +7,6 @@ import torch
 
 from armory.baseline_models import model_configs
 
-
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
