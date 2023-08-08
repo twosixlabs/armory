@@ -77,7 +77,7 @@ engine = [
 
 pytorch = [
     "armory-testbed[engine,datasets,math]",
-    "torch",
+    "torch == 1.12", # Pytorch 2 will break parts of armory
     "torchaudio",
     "torchvision",
 ]
