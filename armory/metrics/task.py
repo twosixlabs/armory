@@ -586,7 +586,7 @@ def _area_of_polygon(points):
     points is an array or list of shape (N, 2) and points may be in clockwise or counterclockwise order
     """
 
-    if type(points) == list:
+    if isinstance(points, list):
         points = np.array(points)
     assert points.shape[1] == 2
 
