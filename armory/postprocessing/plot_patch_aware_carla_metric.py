@@ -48,6 +48,8 @@ def _init_plots(json_filepath, include_classes, n_flavors=1):
         blob = json.load(f)
         results = blob["results"]
 
+    if "adversarial_object_detection_AP_per_class_by_giou_from_patch" not in results:
+        raise ValueError("Provided json does not have results.adversarial_object_detection_AP_per_class_by_giou_from_patch.")
     adv_giou = results["adversarial_object_detection_AP_per_class_by_giou_from_patch"][
         0
     ]
