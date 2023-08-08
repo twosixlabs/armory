@@ -9,6 +9,7 @@ from armory.instrument.instrument import (
     NullWriter,
     PrintWriter,
     Probe,
+    ResultsLogWriter,
     ResultsWriter,
     Writer,
     del_globals,

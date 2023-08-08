@@ -144,6 +144,32 @@ class MetricsLogger:
         )
         self.connect(meters, writer)
 
+    def add_custom_task(
+        self,
+        task,
+        inputs,
+        prefix,
+        metric_kwargs=None,
+        use_mean=True,
+        record_final_only=True,
+        suffix="",
+        load_writer=True,
+    ):
+        meter = task_meter(
+            task,
+            prefix,
+            metric_kwargs,
+            inputs,
+            use_mean=use_mean,
+            record_final_only=record_final_only,
+            suffix=suffix,
+        )
+        if load_writer:
+            writer = ResultsLogWriter(format_string="{name}: {result}")
+        else:
+            writer = None
+        self.connect([meter], writer)
+
     def add_tasks_wrt_benign_predictions(self):
         """
         Measure adversarial predictions w.r.t. benign predictions
@@ -220,8 +246,7 @@ def task_meter(
     name,
     prefix,
     metric_kwargs,
-    y,
-    y_pred,
+    inputs,
     use_mean=True,
     record_final_only=True,
     suffix="",
@@ -246,8 +271,7 @@ def task_meter(
         return GlobalMeter(
             f"{prefix}{name}{suffix}",
             metric,
-            y,
-            y_pred,
+            *inputs,
             final_kwargs=metric_kwargs,
             final_result_formatter=result_formatter,
         )
@@ -268,8 +292,7 @@ def task_meter(
     return Meter(
         f"{prefix}{name}{suffix}",
         metric,
-        y,
-        y_pred,
+        *inputs,
         metric_kwargs=metric_kwargs,
         result_formatter=result_formatter,
         final=final,
@@ -304,8 +327,7 @@ def task_meters(
             name,
             prefix,
             metric_kwargs,
-            y,
-            y_pred,
+            [y, y_pred],
             use_mean=use_mean,
             record_final_only=record_final_only,
             suffix=suffix,
