@@ -5,18 +5,36 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pytorch=1.12
-  - torchvision
-  - torchaudio
-  - cudatoolkit=11.6
-  - scikit-learn=1.0  # ART requires scikit-learn >=0.22.2,<1.1.0
+  - conda-forge::pip
+  - conda-forge::cudatoolkit = 11.6
+  - conda-forge::cudnn  # cudnn required for tensorflow
+  - conda-forge::tensorflow = 2.10.0  # If using python version <= 3.9
+  - pytorch::pytorch < 1.13.0
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - scikit-learn < 1.2.0  # ART requires scikit-learn >=0.22.2,<1.1.0
   - jupyterlab
-  - jupyterlab_widgets
-  - ipywidgets
   - matplotlib
-  - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
   - librosa
-  - cudnn  # cudnn required for tensorflow
   - pandas
   - protobuf
-prefix: /opt/conda
+  - conda-forge::ffmpeg  # conda-forge ffmpeg comes with libx264 encoder, which the pytorch channel version does not include. This encoder is required for video compression defenses (ART) and video exporting. Future work could migrate this to libopenh264 encoder, which is available in both channels.
+  - pip:
+    - setuptools_scm
+    - boto3
+    - opencv-python
+    - ffmpeg-python
+    - pytest
+    - loguru
+    - docker
+    - jsonschema
+    - requests
+    - pydub # pydub required for ART mp3 defense
+    - transformers # transformers is used for the Entailment metric only
+    - six
+    - setuptools
+    - tqdm
+    - wheel
+    - tensorflow-datasets
+    - tensorboardx
+prefix: /opt/mamba
