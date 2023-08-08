@@ -5,7 +5,8 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pytorch=1.12
+  - tensorflow
+  - pytorch
   - torchvision
   - torchaudio
   - cudatoolkit=11.6
