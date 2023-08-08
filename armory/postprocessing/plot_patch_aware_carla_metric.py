@@ -62,7 +62,7 @@ def _init_plots(json_filepath, include_classes, n_flavors=1):
 
     fig, axes = plt.subplots(n_class + 1, n_flavors, sharex=True, sharey=True)
     # Ensure axes are in an array for consistent reference
-    if type(axes) != np.array or len(axes.shape) == 1:
+    if not isinstance(axes, np.ndarray) or len(axes.shape) == 1:
         axes = np.array(axes).reshape(n_class + 1, n_flavors)
 
     axes[0, 0].set_ylabel("Mean AP")
