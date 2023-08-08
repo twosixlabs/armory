@@ -211,7 +211,8 @@ def plot_single_giou_threshold(
             ax.bar_label(rects, fmt="%.2f", label_type="center", fontsize=fontsize)
             multiplier *= -1
 
-        ax.set_xticks(x + width, ["Below threshold", "Above threshold"])
+        ax.set_xticks(x + width)
+        ax.set_xticklabels(["Below threshold", "Above threshold"])
 
     # Plot mean data
     add_bars(axes[0, 0], np.array([d["mean"] for d in ap_dicts]).reshape(2, 2))
