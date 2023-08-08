@@ -26,7 +26,6 @@ import json
 from matplotlib import pyplot as plt
 import numpy as np
 
-
 ben_color = "tab:blue"
 adv_color = "tab:red"
 
@@ -49,7 +48,9 @@ def _init_plots(json_filepath, include_classes, n_flavors=1):
         results = blob["results"]
 
     if "adversarial_object_detection_AP_per_class_by_giou_from_patch" not in results:
-        raise ValueError("Provided json does not have results.adversarial_object_detection_AP_per_class_by_giou_from_patch.")
+        raise ValueError(
+            "Provided json does not have results.adversarial_object_detection_AP_per_class_by_giou_from_patch."
+        )
     adv_giou = results["adversarial_object_detection_AP_per_class_by_giou_from_patch"][
         0
     ]
