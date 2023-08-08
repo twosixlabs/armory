@@ -26,10 +26,6 @@ WORKDIR /workspace
 # ------------------------------------------------------------------
 # DEVELOPER NOTES:
 # ------------------------------------------------------------------
-# TODO: determine if this environment setup is needed
-#  $ ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/lib64"
-
-# NOTE:
 #  - pytorch-lightning >= 1.5.0 will break Deep Speech 2
 #  - torchmetrics >= 0.8.0 will break pytorch-lightning 1.4
 #  - hydra-lightning installs omegaconf
