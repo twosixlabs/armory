@@ -6,9 +6,9 @@
         "kwargs": {
             "batch_frame_size": 2,
             "coco_format": true,
-            "learning_rate": 0.02,
+            "learning_rate": 0.2,
             "max_iter": 100,
-            "optimizer": "pgd",
+            "optimizer": "Adam",
             "targeted": false,
             "verbose": true
         },

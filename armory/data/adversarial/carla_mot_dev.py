@@ -22,15 +22,16 @@ _CITATION = """
 }
 """
 
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_mot_dev_1.0.1.tar.gz"
 
 
 class CarlaMOTDev(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_mot_dev dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("1.0.1")
     RELEASE_NOTES = {
         "1.0.0": "Initial release.",
+        "1.0.1": "Updated green screen coordinates so a patch appears static in each video.",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -135,4 +136,4 @@ def create_gs_coords(gs_coords_files):
     for f in gs_coords_files:
         gs_coords.append(np.load(f))
 
-    return np.array(gs_coords, dtype=np.int)
+    return np.array(gs_coords, dtype=int)
