@@ -125,6 +125,110 @@ class ObjectDetectionFixedLabelTargeter:
         return targeted_y
 
 
+class CARLAOverObjectDetectionRandomTargeter:
+    """
+    Generate random annotations of CARLA objects, specifically pedestrians and vehicles,
+    using known statistics from the CARLA overhead dataset
+    """
+
+    def __init__(self, *, hallucination_per_label=[100, 100]):
+        # Object statistics from the CARLA Eval 6 overhead training data
+        self.hallucination_labels = [1, 2]  # [pedestrian, vehicle]
+        self.hallucination_slopes = [0.27, 0.43]
+        self.hallucination_intercepts = [18.0, 40.0]
+        self.hallucination_min_widths = [6.0, 6.0]
+        self.hallucination_max_widths = [81.0, 277.0]
+        self.hallucination_width_means = [25.5, 56.3]
+        self.hallucination_width_stds = [13.0, 32.9]
+        self.hallucination_per_label = hallucination_per_label
+        self.X_MAX = 1280  # input resolution
+        self.Y_MAX = 960
+
+        if isinstance(hallucination_per_label, list):
+            if len(hallucination_per_label) != len(self.hallucination_labels):
+                raise ValueError(
+                    f"hallucination_per_label list must have length {len(self.hallucination_labels)}"
+                )
+            for idx in range(len(hallucination_per_label)):
+                if (
+                    not isinstance(hallucination_per_label[idx], int)
+                    or hallucination_per_label[idx] < 0
+                ):
+                    raise ValueError(
+                        f"hallucination_per_label {hallucination_per_label[idx]} must be a nonnegative int"
+                    )
+            self.hallucination_per_label = hallucination_per_label
+        elif isinstance(hallucination_per_label, int):
+            if hallucination_per_label < 0:
+                raise ValueError(
+                    f"hallucination_per_label {hallucination_per_label} must be a nonnegative int"
+                )
+            self.hallucination_per_label = [hallucination_per_label] * len(
+                self.hallucination_labels
+            )
+        else:
+            raise ValueError(
+                f"hallucination_per_label {hallucination_per_label} must be a nonnegative int or a list of nonnegative int"
+            )
+
+    def generate(self, y, y_patch_metadata):
+        from collections import defaultdict
+
+        labels = self.hallucination_labels
+        slopes = self.hallucination_slopes
+        intercepts = self.hallucination_intercepts
+        min_widths = self.hallucination_min_widths
+        max_widths = self.hallucination_max_widths
+        width_means = self.hallucination_width_means
+        width_stds = self.hallucination_width_stds
+        num_hallucinations_per_class = self.hallucination_per_label
+
+        y_out = []
+        for i in range(len(y)):
+            gs_coords = y_patch_metadata[i]["gs_coords"]
+            x_min = min(gs_coords[:, 0])
+            x_max = max(gs_coords[:, 0])
+            y_min = min(gs_coords[:, 1])
+            y_max = max(gs_coords[:, 1])
+
+            targeted_y = defaultdict(list)
+            for idx in range(len(labels)):
+                targeted_y["labels"].extend(
+                    num_hallucinations_per_class[idx] * [labels[idx]]
+                )
+                targeted_y["scores"].extend(num_hallucinations_per_class[idx] * [1.0])
+                ws = np.minimum(
+                    max_widths[idx],
+                    np.maximum(
+                        min_widths[idx],
+                        width_means[idx]
+                        + width_stds[idx]
+                        * np.random.randn(num_hallucinations_per_class[idx]),
+                    ),
+                )
+                hs = intercepts[idx] + slopes[idx] * ws
+                lefts = np.random.uniform(
+                    x_min, x_max, num_hallucinations_per_class[idx]
+                )
+                tops = np.random.uniform(
+                    y_min, y_max, num_hallucinations_per_class[idx]
+                )
+
+                for lt, tp, w, h in zip(lefts, tops, ws, hs):
+                    x0 = int(lt)
+                    y0 = int(tp)
+                    x1 = int(min(self.X_MAX - 1, lt + w))
+                    y1 = int(min(self.Y_MAX - 1, tp + h))
+                    targeted_y["boxes"].extend([[x0, y0, x1, y1]])
+
+            targeted_y["labels"] = np.array(targeted_y["labels"])
+            targeted_y["scores"] = np.array(targeted_y["scores"])
+            targeted_y["boxes"] = np.array(targeted_y["boxes"])
+            y_out.append(targeted_y)
+
+        return y_out
+
+
 class MatchedTranscriptLengthTargeter:
     """
     Targets labels of a length close to the true label
@@ -162,6 +266,6 @@ class MatchedTranscriptLengthTargeter:
 
     def generate(self, y):
         y_target = [self._generate(y_i) for y_i in y]
-        if type(y) != list:
+        if type(y) != list:  # noqa
             y_target = np.array(y_target)
         return y_target

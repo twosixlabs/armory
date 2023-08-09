@@ -19,7 +19,11 @@ from jsonschema import ValidationError
 
 import armory
 from armory import arguments, paths
-from armory.cli.tools import log_current_branch, rgb_depth_convert
+from armory.cli.tools import (
+    log_current_branch,
+    plot_mAP_by_giou_with_patch_cli,
+    rgb_depth_convert,
+)
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
@@ -722,6 +726,10 @@ def exec(command_args, prog, description):
 UTILS_COMMANDS = {
     "get-branch": (log_current_branch, "log the current git branch of armory"),
     "rgb-convert": (rgb_depth_convert, "converts rgb depth images to another format"),
+    "plot-mAP-by-giou": (
+        plot_mAP_by_giou_with_patch_cli,
+        "Visualize the output of the metric 'object_detection_AP_per_class_by_giou_from_patch.'",
+    ),
 }
 
 

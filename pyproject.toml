@@ -38,14 +38,12 @@ dependencies = [
     "jsonschema",
     "loguru",
     "pytest",
-    "PyYAML",
     "requests",
-    "toml",
 ]
 
 [project.urls]
 Source        = "https://github.com/twosixlabs/armory"
-Documentation = "https://armory.readthedocs.io/en/latest/"
+Documentation = "https://github.com/twosixlabs/armory"
 
 [project.scripts]
 armory = "armory.__main__:main"
@@ -57,16 +55,13 @@ armory = "armory.__main__:main"
 developer =[
     "hatch", # build tool
     "wheel", # build tool
-    "mkdocs",
     "black[jupyter]==22.*",
     "isort",
     "flake8",
-    "bandit[toml]", # code scanning
-    "hydra-core",   # configuration
 ]
 
 engine = [
-    "adversarial-robustness-toolbox == 1.14.1",
+    "adversarial-robustness-toolbox == 1.15.0",
     "Pillow",              # Data dependencies
     "boto3",               # Needed for armory.data.utils
     "botocore" ,           # Needed for armory.data.utils
@@ -82,7 +77,7 @@ engine = [
 
 pytorch = [
     "armory-testbed[engine,datasets,math]",
-    "torch",
+    "torch >=1.12.0,<=1.13.1", # Pytorch 2 will break parts of armory
     "torchaudio",
     "torchvision",
 ]
@@ -90,7 +85,8 @@ pytorch = [
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
     "tf-models-official",
-    "tensorflow >= 2.10.0",
+    "tensorflow == 2.10.0; python_version < '3.10'",
+    "tensorflow >= 2.5.0; python_version >= '3.10'",
 ]
 
 deepspeech = [
@@ -102,13 +98,14 @@ deepspeech = [
     "google-cloud-storage",
     "transformers",
     "pytorch-lightning < 1.5.0",
+    "hydra-core",
 ]
 
 math = [
     "numpy",
     "pandas",
     "scipy >= 1.4.1",
-    "scikit-learn < 1.1.0",   # ART requires scikit-learn >=0.22.2,<1.1.0
+    "scikit-learn>=0.22.2,<1.2.0",   # ART requires scikit-learn >=0.22.2,<1.2.0
     "matplotlib",
 ]
 
@@ -186,16 +183,6 @@ version_scheme = "post-release"
 [tool.setuptools_scm]
 # the presence of this empty block stops setuptools_scm from complaining
 
-[tool.bandit]
-recursive = true
-targets = [ "armory" ]
-skips   = [
-  "B101",  # Ignore defensive `assert`s (especially useful for mypy)
-  "B404",  # Ignore warnings about importing subprocess
-  "B603",  # Ignore warnings about calling subprocess.Popen without shell=True
-  "B607",  # Ignore warnings about calling subprocess.Popen without a full path to executable
-]
-
 [tool.pytest.ini_options]
 addopts    = "-ra -q"
 log_level  = "ERROR"
@@ -221,15 +208,6 @@ markers = [
 #     ignore::UserWarning:torch*
 #     ignore::Warning:art*
 
-
-# ------------ pre-commit hooks ------------
-[tool.vulture]
-paths             = ["src"]
-ignore_decorators = ["#~vulture.ignore~#"]
-min_confidence    = 80
-make_whitelist    = true
-sort_by_size      = true
-verbose           = true
 
 [tool.isort]
 profile = "black"

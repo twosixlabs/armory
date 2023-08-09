@@ -115,8 +115,13 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         import torch  # lgtm [py/repeated-import]
 
         self.estimator.model.zero_grad()
+        # only zero gradients when there is a non-pgd optimizer; pgd optimizer appears to perform better when gradients accumulate
+        if self._optimizer_string == "Adam":
+            self._optimizer_rgb.zero_grad(set_to_none=True)
+            if images.shape[-1] == 6:
+                self._optimizer_depth.zero_grad(set_to_none=True)
         loss = self._loss(images, target, mask)
-        loss.backward(retain_graph=True)
+        loss.backward(retain_graph=False)
 
         if self._optimizer_string == "pgd":
             patch_grads = self._patch.grad
@@ -159,7 +164,6 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                             min=self.min_depth,
                             max=self.max_depth,
                         )
-                        self.depth_perturbation[:] = perturbed_images - images_depth
                     else:
                         images_depth_linear = rgb_depth_to_linear(
                             images_depth[:, 0, :, :],
@@ -175,12 +179,49 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                         perturbed_images = torch.stack(
                             [depth_r, depth_g, depth_b], dim=1
                         )
-                        self.depth_perturbation[:] = perturbed_images - images_depth
+                    self.depth_perturbation[:] = perturbed_images - images_depth
 
         else:
-            raise ValueError(
-                "Adam optimizer for CARLA Adversarial Patch not supported."
-            )
+            self._optimizer_rgb.step()
+            if images.shape[-1] == 6:
+                self._optimizer_depth.step()
+
+            with torch.no_grad():
+                self._patch[:] = torch.clamp(
+                    self._patch,
+                    min=self.estimator.clip_values[0],
+                    max=self.estimator.clip_values[1],
+                )
+
+                if images.shape[-1] == 6:
+                    images_depth = torch.permute(images[:, :, :, 3:], (0, 3, 1, 2))
+                    if self.depth_type == "log":
+                        perturbed_images = torch.clamp(
+                            images_depth + self.depth_perturbation,
+                            min=self.min_depth,
+                            max=self.max_depth,
+                        )
+                    else:
+                        images_depth_linear = rgb_depth_to_linear(
+                            images_depth[:, 0, :, :],
+                            images_depth[:, 1, :, :],
+                            images_depth[:, 2, :, :],
+                        )
+                        depth_linear = rgb_depth_to_linear(
+                            self.depth_perturbation[:, 0, :, :],
+                            self.depth_perturbation[:, 1, :, :],
+                            self.depth_perturbation[:, 2, :, :],
+                        )
+                        depth_linear = torch.clamp(
+                            images_depth_linear + depth_linear,
+                            min=self.min_depth,
+                            max=self.max_depth,
+                        )
+                        depth_r, depth_g, depth_b = linear_depth_to_rgb(depth_linear)
+                        perturbed_images = torch.stack(
+                            [depth_r, depth_g, depth_b], dim=1
+                        )
+                    self.depth_perturbation[:] = perturbed_images - images_depth
 
         return loss
 
@@ -348,6 +389,9 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         ).to(self.estimator.device)
         foreground_mask = torch.permute(foreground_mask, (2, 0, 1))
         foreground_mask = torch.unsqueeze(foreground_mask, dim=0)
+        foreground_mask = ~(
+            ~foreground_mask * image_mask.bool()
+        )  # ensure area perturbed in depth is consistent with area perturbed in RGB
 
         # Adjust green screen brightness
         v_avg = (
@@ -500,6 +544,15 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
                     requires_grad=True,
                     device=self.estimator.device,
                 )
+
+            if self._optimizer_string == "Adam":
+                self._optimizer_rgb = torch.optim.Adam(
+                    [self._patch], lr=self.learning_rate
+                )
+                if x.shape[-1] == 6:
+                    self._optimizer_depth = torch.optim.Adam(
+                        [self.depth_perturbation], lr=self.learning_rate_depth
+                    )
 
             patch, _ = super().generate(np.expand_dims(x[i], axis=0), y=[y_gt])
 
