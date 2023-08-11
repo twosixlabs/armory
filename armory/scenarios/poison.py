@@ -309,7 +309,7 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
-        self.removed = (1 - self.indices_to_keep).astype(np.bool)
+        self.removed = (1 - self.indices_to_keep).astype(np.bool_)
         self.probe.update(
             removed=self.removed, predicted_dirty_mask=~self.indices_to_keep
         )
