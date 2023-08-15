@@ -1,5 +1,5 @@
 # `armory utils` usage
-Information available with `armory utils --help` as well.
+Additional utility functions provided to support armory usage. Information available with `armory utils --help` as well.
 
 ## Provided utilities
 1. [get-branch](#get-branch)
