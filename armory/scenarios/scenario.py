@@ -10,6 +10,7 @@ import time
 from typing import Optional
 
 from tqdm import tqdm
+from torch import Tensor
 
 import armory
 from armory import Config, metrics, paths
@@ -359,6 +360,11 @@ class Scenario:
         x.flags.writeable = False
         with self.profiler.measure("Inference"):
             y_pred = self.model.predict(x, **self.predict_kwargs)
+        # sanitize model output
+        for _dict in y_pred:
+            for key, value in _dict.items():
+                if isinstance(value, Tensor):
+                    _dict[key] = value.detach().cpu().numpy()
         self.y_pred = y_pred
         self.probe.update(y_pred=y_pred)
 
@@ -404,6 +410,12 @@ class Scenario:
             # Ensure that input sample isn't overwritten by model
             x_adv.flags.writeable = False
             y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
+
+        # sanitize model output
+        for _dict in y_pred_adv:
+            for key, value in _dict.items():
+                if isinstance(value, Tensor):
+                    _dict[key] = value.detach().cpu().numpy()
 
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
         if self.targeted:
