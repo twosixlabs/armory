@@ -9,8 +9,8 @@ import sys
 import time
 from typing import Optional
 
-from tqdm import tqdm
 from torch import Tensor
+from tqdm import tqdm
 
 import armory
 from armory import Config, metrics, paths
