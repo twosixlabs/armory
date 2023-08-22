@@ -52,6 +52,6 @@ def generate_shapes(command_args, prog, description):
     else:
         generated = Shape.from_name(args.shape)
         if args.output_dir is not None:
-            generated.save(args.output_dir / f"{args.shape}.png")
+            generated.save(args.output_dir)
         if args.show:
             generated.show()

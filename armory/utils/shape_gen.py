@@ -6,16 +6,11 @@ import os
 from pathlib import Path
 from typing import Union
 
-try:
-    from PIL import Image
-    import cairosvg
-    import matplotlib.pyplot as plt
-    import svg
-except ImportError as e:
-    raise ImportError(
-        "Could not import shape generation dependencies. Please install the optional shape generation dependencies by running: pip install armory-testbed[utils]"
-    ) from e
+from PIL import Image
+import cairosvg
+import matplotlib.pyplot as plt
 import numpy as np
+import svg
 
 RADIUS_INNER = -50  # 25
 STROKE_WIDTH = 2
@@ -365,6 +360,53 @@ def sierpinski(
     return _write(outdir, bbox_inches="tight", pad_inches=0)
 
 
+# def donut(
+#         outdir: Union[str, Path, BytesIO],
+#         **kwarg_catcher,
+# ):
+#     if not isinstance(outdir, BytesIO) and not os.path.isdir(outdir):
+#         raise ValueError(f"outdir must be valid a directory, got: {outdir}")
+#     def create_donut(cx, cy, outer_radius, inner_radius):
+#         donut_group = svg.Group()
+
+#         outer_circle = svg.shapes.Circle(
+#             center=(cx, cy),
+#             r=outer_radius,
+#             stroke="#F73859",
+#             fill="transparent",
+#             stroke_width=STROKE_WIDTH,
+#         )
+#         donut_group.add(outer_circle)
+
+#         inner_circle = svg.shapes.Circle(
+#             center=(cx, cy),
+#             r=inner_radius,
+#             stroke="#F73859",
+#             fill="transparent",
+#             stroke_width=STROKE_WIDTH,
+#         )
+#         donut_group.add(inner_circle)
+
+#         return donut_group
+
+#     return _write_svg(
+#         shape=svg.SVG(
+#             size=(500, 500),
+#             elements=[
+#                 create_donut(250, 250, 200, 125),
+#                 svg.shapes.Circle(
+#                     center=(250, 250),
+#                     r=25,
+#                     stroke="#F73859",
+#                     fill="#F73859",
+#                     stroke_width=2,
+#                 ),
+#             ],
+#         ),
+#         outdir=outdir,
+#     )
+
+
 @dataclass
 class Shape:
     func: callable
@@ -375,14 +417,14 @@ class Shape:
     }
 
     @classmethod
-    def from_name(cls, name, kwargs) -> "Shape":
+    def from_name(cls, name, **kwargs) -> "Shape":
         if name is None:
             return
         if name not in cls._SHAPES:
             raise ValueError(
                 f"Invalid shape name: {name}. Must be one of: {cls._SHAPES.keys()}"
             )
-        return cls(cls._SHAPES[name], kwargs)
+        return cls(cls._SHAPES[name], **kwargs)
 
     @property
     def array(self):
