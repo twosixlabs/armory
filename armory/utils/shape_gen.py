@@ -6,11 +6,16 @@ import os
 from pathlib import Path
 from typing import Union
 
-from PIL import Image
-import cairosvg
-import matplotlib.pyplot as plt
+try:
+    from PIL import Image
+    import cairosvg
+    import matplotlib.pyplot as plt
+    import svg
+except ImportError as e:
+    raise ImportError(
+        "Could not import shape generation dependencies. Please install the optional shape generation dependencies by running: pip install armory-testbed[utils]"
+    ) from e
 import numpy as np
-import svg
 
 RADIUS_INNER = -50  # 25
 STROKE_WIDTH = 2

@@ -23,6 +23,22 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
 
+    def load_metrics(self):
+        super().load_metrics()
+
+        self.metrics_logger.add_custom_task(
+            "object_detection_AP_per_class_by_giou_from_patch",
+            ["scenario.y", "scenario.y_pred", "scenario.y_patch_metadata"],
+            "benign_",
+            load_writer=False,
+        )
+        self.metrics_logger.add_custom_task(
+            "object_detection_AP_per_class_by_giou_from_patch",
+            ["scenario.y", "scenario.y_pred_adv", "scenario.y_patch_metadata"],
+            "adversarial_",
+            load_writer=False,
+        )
+
     def next(self):
         super().next()
         # The CARLA dev and test sets (as opposed to train/val) contain green-screens
@@ -45,7 +61,7 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
             if self.use_label:
                 y_target = y
             elif self.targeted:
-                y_target = self.label_targeter.generate(y)
+                y_target = self.label_targeter.generate(y, self.y_patch_metadata)
             else:
                 y_target = None
 

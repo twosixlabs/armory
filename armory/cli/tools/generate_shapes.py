@@ -1,12 +1,10 @@
 import argparse
 from pathlib import Path
 
+from armory.utils.shape_gen import Shape
+
 
 def generate_shapes(command_args, prog, description):
-    from armory.utils.shape_gen import (  # move to lazy load to avoid PIL import error
-        Shape,
-    )
-
     class CustomHelpFormatter(argparse.HelpFormatter):
         def format_help(self):
             help_message = super().format_help()

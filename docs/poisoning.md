@@ -1,13 +1,13 @@
 # Poisoning
 
-Updated October 2022
+Updated June 2023
 
 Armory supports a handful of specific poisoning threat models and attacks.  This document will first describe these, providing enough background for newcomers to get up to speed on what these attacks do.  Then, the peculiarities of the poisoning configs will be addressed, including lots of helpful information about Witches' Brew.  Finally, we will describe the poisoning-specific metrics.
 
 
 ## Threat Models
 
-There are currently four threat models handled by Armory: dirty-label backdoor, clean-label backdoor, Witches' Brew (clean-label gradient matching), and Sleeper Agent.  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
+Armory supports several poisoning threat models: dirty-label backdoor, clean-label backdoor, Witches' Brew and Sleeper Agent (clean-label gradient matching), and Object Detection (dirty-label backdoor).  In a backdoor attack, an adversary adds a small trigger, or backdoor, to a small portion of the train set in order to gain control of the the model at test time.
 The trigger is usually a small (but not imperceptible) image superposed on the data, and the adversary's goal is to force the model to misclassify test images that have the trigger applied.  Armory includes several trigger images under `utils/triggers/`.
 
 
@@ -20,7 +20,7 @@ In a [Dirty-label Backdoor (DLBD) Attack](https://arxiv.org/abs/1708.06733), tra
 
 #### Audio
 
-The DLBD attack for audio is similar to that of video. The difference is that instead of the trigger being an image that is placed over the existing image, the trigger is a short audio clip that is mixed with the existing audio. Example configs for speech are [here](../scenario_configs/eval6/poisoning)
+The DLBD attack for audio is similar to that of image. The difference is that instead of the trigger being an image that is placed over the existing image, the trigger is a short audio clip that is mixed with the existing audio. Example configs for speech are [here](../scenario_configs/eval6/poisoning)
 Current triggers include a whistle and clapping.
 
 ### Clean-label backdoor

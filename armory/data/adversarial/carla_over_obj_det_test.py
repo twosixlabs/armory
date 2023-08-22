@@ -24,16 +24,17 @@ _CITATION = """
 """
 
 # fmt: off
-_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_test_1.0.0.tar.gz"
+_URLS = "https://armory-public-data.s3.us-east-2.amazonaws.com/carla/carla_over_od_test_2.0.0.tar.gz"
 # fmt: on
 
 
 class CarlaOverObjDetTest(tfds.core.GeneratorBasedBuilder):
     """DatasetBuilder for carla_obj_det_test dataset."""
 
-    VERSION = tfds.core.Version("1.0.0")
+    VERSION = tfds.core.Version("2.0.0")
     RELEASE_NOTES = {
         "1.0.0": "Eval6 update from CarlaObjDetTest with images collected from overhead perspectives",
+        "2.0.0": "Eval7 images collected from overhead perspectives, where patches on the sidewalk/street are constrained to +-0.03m depth perturbation and patches located elsewhere are constrained to +-3m",
     }
 
     def _info(self) -> tfds.core.DatasetInfo:
@@ -86,6 +87,9 @@ class CarlaOverObjDetTest(tfds.core.GeneratorBasedBuilder):
                     # mask[x,y] == 1 indicates patch pixel; 0 otherwise
                     "mask": tfds.features.Image(shape=(960, 1280, 3)),
                     "avg_patch_depth": tfds.features.Tensor(shape=(), dtype=tf.float64),
+                    "max_depth_perturb_meters": tfds.features.Tensor(
+                        shape=(), dtype=tf.float64
+                    ),
                 }
             ),
         }
@@ -102,9 +106,13 @@ class CarlaOverObjDetTest(tfds.core.GeneratorBasedBuilder):
         path = dl_manager.download_and_extract(_URLS)
         return [
             tfds.core.SplitGenerator(
-                name="test",
-                gen_kwargs={"path": os.path.join(path, "test")},
-            )
+                name="test_hallucination",
+                gen_kwargs={"path": os.path.join(path, "test/hallucination")},
+            ),
+            tfds.core.SplitGenerator(
+                name="test_disappearance",
+                gen_kwargs={"path": os.path.join(path, "test/disappearance")},
+            ),
         ]
 
     def _generate_examples(self, path):
@@ -142,6 +150,13 @@ class CarlaOverObjDetTest(tfds.core.GeneratorBasedBuilder):
             fpath_depth = os.path.join(depth_folder, fname)  # depth image path
             image_depth = deepcopy(image_rgb)
             image_depth["file_name"] = fpath_depth
+
+            # Set depth perturbation bound based on split
+            if "hallucination" in path:
+                max_depth_perturb_meters = 3.0
+
+            else:
+                max_depth_perturb_meters = 0.03
 
             # get object annotations for each image
             annotations = cocoanno.get_annotations(image_rgb["id"])
@@ -188,6 +203,7 @@ class CarlaOverObjDetTest(tfds.core.GeneratorBasedBuilder):
                         )
                     ),
                     "mask": os.path.join(path, foreground_mask_folder, fname),
+                    "max_depth_perturb_meters": max_depth_perturb_meters,
                 },
             }
 

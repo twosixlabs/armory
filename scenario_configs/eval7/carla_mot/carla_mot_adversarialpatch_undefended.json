@@ -6,9 +6,9 @@
         "kwargs": {
             "batch_frame_size": 2,
             "coco_format": true,
-            "learning_rate": 0.02,
+            "learning_rate": 0.2,
             "max_iter": 100,
-            "optimizer": "pgd",
+            "optimizer": "Adam",
             "targeted": false,
             "verbose": true
         },
@@ -39,6 +39,8 @@
         "fit": false,
         "fit_kwargs": {},
         "model_kwargs": {
+            "max_size": 1280,
+            "min_size": 960,
             "num_classes": 2
         },
         "module": "armory.baseline_models.pytorch.carla_mot_frcnn_byte",
