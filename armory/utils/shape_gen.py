@@ -424,7 +424,7 @@ class Shape:
             raise ValueError(
                 f"Invalid shape name: {name}. Must be one of: {cls._SHAPES.keys()}"
             )
-        return cls(cls._SHAPES[name], **kwargs)
+        return cls(func=cls._SHAPES[name], **kwargs)
 
     @property
     def array(self):

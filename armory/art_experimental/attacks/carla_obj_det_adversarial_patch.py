@@ -7,20 +7,17 @@ from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
 )
 import cv2
 import numpy as np
-import requests
 import torch
 
-from armory import paths
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     PatchMask,
+    fetch_file_or_url,
     linear_depth_to_rgb,
     linear_to_log,
     log_to_linear,
     rgb_depth_to_linear,
 )
 from armory.logs import log
-
-VALID_IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg"]
 
 
 class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
@@ -36,7 +33,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         self.min_depth = None
         self.max_depth = None
         self.patch_base_image = kwargs.pop("patch_base_image", None)
-        self.patch_mask = PatchMask.from_kwargs(kwargs)
+        self.patch_mask = PatchMask.from_kwargs(kwargs.pop("patch_mask", None))
 
         # HSV bounds are user-defined to limit perturbation regions
         self.hsv_lower_bound = np.array(
@@ -59,49 +56,8 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             )
         module_path = globals()["__file__"]
         module_folder = os.path.dirname(module_path)
-        # user-defined image is assumed to reside in the same location as the attack module
-        patch_base_image_path = os.path.abspath(
-            os.path.join(module_folder, self.patch_base_image)
-        )
-        # if the image does not exist iterate through path
-        if not os.path.exists(patch_base_image_path):
-            _path = sys.path.copy()
-            if (_cwd := paths.runtime_paths().cwd) not in _path:
-                _path.insert(0, _cwd)
-            for path in _path:
-                patch_base_image_path = os.path.abspath(
-                    os.path.join(path, self.patch_base_image)
-                )
-                if os.path.exists(patch_base_image_path):
-                    break
-            del _path, _cwd
-        # image not in cwd or module, check if it is a url to an image
-        if not os.path.exists(patch_base_image_path):
-            # Send a HEAD request
-            response = requests.head(self.patch_base_image, allow_redirects=True)
 
-            # Check the status code
-            if response.status_code != 200:
-                raise FileNotFoundError(
-                    f"Cannot find patch base image at {self.patch_base_image}. "
-                    f"Make sure it is in your cwd or {module_folder} or provide a valid url."
-                )
-            # If the status code is 200, check the content type
-            content_type = response.headers.get("content-type")
-            if content_type not in VALID_IMAGE_TYPES:
-                raise ValueError(
-                    f"Returned content at {self.patch_base_image} is not a valid image type. "
-                    f"Expected types are {VALID_IMAGE_TYPES}, but received {content_type}"
-                )
-
-            # If content type is valid, download the image
-            response = requests.get(self.patch_base_image, allow_redirects=True)
-            im = cv2.imdecode(
-                np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR
-            )
-        else:
-            im = cv2.imread(patch_base_image_path)
-
+        im = fetch_file_or_url(self.patch_base_image, local_path=module_folder)
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
