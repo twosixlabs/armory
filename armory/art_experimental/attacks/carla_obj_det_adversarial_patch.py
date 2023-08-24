@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Optional
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
