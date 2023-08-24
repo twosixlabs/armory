@@ -44,30 +44,30 @@ Example Usage:
 <br>
 <pre>
 "attack": {
-        "knowledge": "white",
-        "kwargs": {
-            "batch_size": 1,
-            "learning_rate": 0.1,
-            "max_iter": 2,
-            "optimizer": "pgd",
-            "targeted": false,
-            "verbose": true,
-            "patch_base_image": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/%5BCARLA_OD%5D_stable_diffusion_gemstones.png?raw=true",
-            "patch_mask": {
-                "shape": "grid",
-                "shape_kwargs": {
-                    "num_circles": 5,
-                    "circle_radius": 0.1,
-                    "circle_spacing": 2
-                },
-                "invert": false,
-                "fill": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/white_w_black_text.png?raw=true"
-            }
-        },
-        "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
-        "name": "CARLAAdversarialPatchPyTorch",
-        "use_label": true
+    "knowledge": "white",
+    "kwargs": {
+        "batch_size": 1,
+        "learning_rate": 0.1,
+        "max_iter": 2,
+        "optimizer": "pgd",
+        "targeted": false,
+        "verbose": true,
+        "patch_base_image": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/%5BCARLA_OD%5D_stable_diffusion_gemstones.png?raw=true",
+        "patch_mask": {
+            "shape": "grid",
+            "shape_kwargs": {
+                "num_circles": 5,
+                "circle_radius": 0.1,
+                "circle_spacing": 2
+            },
+            "invert": false,
+            "fill": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/white_w_black_text.png?raw=true"
+        }
     },
+    "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
+    "name": "CARLAAdversarialPatchPyTorch",
+    "use_label": true
+},
 </pre>
 </details>
 
