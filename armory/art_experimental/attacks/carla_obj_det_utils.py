@@ -173,13 +173,14 @@ def fetch_image_from_file_or_url(
     returns: np.ndarray, image
     """
     # check if path_or_url is likely a url or a path using regex
+    _fallthrough = [_check_for_local_image, _check_for_url]
     if re.match(r"^(?:http|ftp)s?://", path_or_url):
-        if (im := _check_for_url(path_or_url, imread_flags)) is not None:
+        # check for url first if it looks like one
+        _fallthrough = [_check_for_url, _check_for_local_image]
+    for _check in _fallthrough:
+        if (im := _check(path_or_url, imread_flags)) is not None:
             return im
-    if (im := _check_for_local_image(path_or_url, imread_flags)) is not None:
-        return im
-    else:
-        raise ValueError(f"Could not find file at {path_or_url}.")
+    raise ValueError(f"Could not find file at {path_or_url}.")
 
 
 @dataclass
