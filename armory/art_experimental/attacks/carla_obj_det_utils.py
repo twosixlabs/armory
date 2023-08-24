@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import inspect
 import os
+import re
 import sys
 from typing import Optional, Tuple
 
@@ -9,7 +10,6 @@ import numpy as np
 import requests
 import torch
 
-from armory import paths
 from armory.logs import log
 from armory.utils.shape_gen import Shape
 
@@ -121,50 +121,65 @@ def rgb_depth_to_linear(r, g, b):
     return depth_m
 
 
-def fetch_file_or_url(path_or_url, local_path=os.path.dirname(__file__)):
-    """
-    Fetches a file from a local path or a url.
-    path_or_url: string, path to a file or a url
-    local_path: string, top level directory to look for the file if it is a local path
-    returns: string, path to the file
-    """
-    # user-defined image is assumed to reside in the same location as the attack module
-    patch_base_image_path = os.path.abspath(os.path.join(local_path, path_or_url))
-    # if the image does not exist iterate through path
-    if not os.path.exists(patch_base_image_path):
-        _path = sys.path.copy()
-        if (_cwd := paths.runtime_paths().cwd) not in _path:
-            _path.insert(0, _cwd)
-        for path in _path:
-            patch_base_image_path = os.path.abspath(os.path.join(path, path_or_url))
-            if os.path.exists(patch_base_image_path):
-                break
-        del _path, _cwd
-    # image not in cwd or module, check if it is a url to an image
-    if not os.path.exists(patch_base_image_path):
-        # Send a HEAD request
-        response = requests.head(path_or_url, allow_redirects=True)
+def _check_for_file(
+    path,
+    offset=2,
+) -> Optional[str]:
+    """Looks for file in calling_module + cwd + *sys.path."""
+    _calling_module = os.path.dirname(inspect.stack()[offset].filename)
+    for p in [_calling_module, os.getcwd(), *sys.path]:
+        if os.path.exists(abs_path := os.path.join(p, path)):
+            return abs_path
 
-        # Check the status code
-        if response.status_code != 200:
-            raise FileNotFoundError(
-                f"Cannot find patch base image at {path_or_url}. "
-                f"Make sure it is in your cwd or {local_path} or provide a valid url."
-            )
-        # If the status code is 200, check the content type
-        content_type = response.headers.get("content-type")
-        if content_type not in VALID_IMAGE_TYPES:
-            raise ValueError(
-                f"Returned content at {path_or_url} is not a valid image type. "
-                f"Expected types are {VALID_IMAGE_TYPES}, but received {content_type}"
-            )
 
-        # If content type is valid, download the image
-        response = requests.get(path_or_url, allow_redirects=True)
-        im = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
-    else:
-        im = cv2.imread(patch_base_image_path)
+def _check_for_local_image(path, imread_flags) -> Optional[np.ndarray]:
+    """Grabs image from local path."""
+    if (abs_path := _check_for_file(path, offset=3)) is not None:
+        return cv2.imread(abs_path, imread_flags)
+
+
+def _check_for_url(url, imread_flags) -> Optional[np.ndarray]:
+    """Grabs image from url."""
+    # Send a HEAD request
+    response = requests.head(url, allow_redirects=True)
+
+    # Check the status code
+    if response.status_code != 200:
+        log.warning(f"Received {response.status_code} from {url}. ")
+        return
+    # If the status code is 200, check the content type
+    content_type = response.headers.get("content-type")
+    if content_type not in VALID_IMAGE_TYPES:
+        raise ValueError(
+            f"Returned content at {url} is not a valid image type. "
+            f"Expected types are {VALID_IMAGE_TYPES}, but received {content_type}"
+        )
+
+    # If content type is valid, download the image
+    response = requests.get(url, allow_redirects=True)
+    im = cv2.imdecode(np.frombuffer(response.content, np.uint8), imread_flags)
     return im
+
+
+def fetch_image_from_file_or_url(
+    path_or_url, imread_flags=cv2.IMREAD_UNCHANGED
+) -> np.ndarray:
+    """
+    Fetches an image file from unknown path or url.
+    Searches calling_module, cwd, and sys.path for the file.
+    Then checks if the path is a url and downloads the file.
+    path_or_url: string, path to a file or a url
+    imread_flags: cv2.imread flags
+    returns: np.ndarray, image
+    """
+    # check if path_or_url is likely a url or a path using regex
+    if re.match(r"^(?:http|ftp)s?://", path_or_url):
+        if (im := _check_for_url(path_or_url, imread_flags)) is not None:
+            return im
+    elif (im := _check_for_local_image(path_or_url, imread_flags)) is not None:
+        return im
+    else:
+        raise ValueError(f"Could not find file at {path_or_url}.")
 
 
 @dataclass
@@ -204,44 +219,18 @@ class PatchMask:
             return None
         raise ValueError(f"patch_mask must be a string or dictionary, got: {mask}")
 
-    @staticmethod
-    def _path_search(path, stack_offset=1):
-        if os.path.exists(path):
-            return path
-        # Get call stack filepaths, removing duplicates and non-files
-        call_stack = [
-            *dict.fromkeys(
-                [x.filename for x in inspect.stack() if os.path.exists(x.filename)]
-            )
-        ]
-        calling_module = call_stack[stack_offset]
-        calling_path = os.path.abspath(
-            os.path.join(os.path.dirname(calling_module), path)
-        )
-        if os.path.exists(calling_path):
-            return calling_path
-        cur_module = call_stack[0]
-        cur_path = os.path.abspath(os.path.join(os.path.dirname(cur_module), path))
-        if os.path.exists(cur_path):
-            return cur_path
-        raise ValueError(
-            f"Could not find mask image {path}. Must be in same dir as {calling_module} or {cur_module}."
-        )
-
     def __post_init__(self):
         if self.shape is not None:
             if self.path is not None:
                 log.warning("Ignoring patch_mask.path because patch_mask.shape is set.")
                 self.path = None
-        else:
-            self.path = self._path_search(self.path, stack_offset=1)
 
     def _load(self) -> np.ndarray:
         """Load the mask image."""
         if self.shape is not None:
             mask = self.shape.array
         else:
-            mask = cv2.imread(self.path, cv2.IMREAD_UNCHANGED)
+            mask = fetch_image_from_file_or_url(self.path)
         _src = self.shape.name if self.shape is not None else self.path
         if mask is None:
             raise ValueError(f"Could not load mask image {_src}")
@@ -331,9 +320,7 @@ class PatchMask:
                 )
             fill[fill == 0] = 1  # hack
             fill = np.ones_like(patch_init) * fill[:, np.newaxis, np.newaxis] / 255
-        elif os.path.isfile(valid_path := self._path_search(self.fill)):
-            self.fill = valid_path
-            fill = cv2.imread(self.fill, cv2.IMREAD_UNCHANGED)
+        elif (fill := fetch_image_from_file_or_url(self.fill)) is not None:
             patch_width = np.max(gs_coords[:, 0]) - np.min(gs_coords[:, 0])
             patch_height = np.max(gs_coords[:, 1]) - np.min(gs_coords[:, 1])
             fill = cv2.resize(fill, (patch_width, patch_height))

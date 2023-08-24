@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
@@ -10,7 +9,7 @@ import torch
 
 from armory.art_experimental.attacks.carla_obj_det_utils import (
     PatchMask,
-    fetch_file_or_url,
+    fetch_image_from_file_or_url,
     linear_depth_to_rgb,
     linear_to_log,
     log_to_linear,
@@ -53,10 +52,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             raise ValueError(
                 "patch_base_image must be a string path to an image or a url to an image"
             )
-        module_path = globals()["__file__"]
-        module_folder = os.path.dirname(module_path)
-
-        im = fetch_file_or_url(self.patch_base_image, local_path=module_folder)
+        im = fetch_image_from_file_or_url(self.patch_base_image)
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
