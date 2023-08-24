@@ -31,7 +31,7 @@ entire dictionary or just the `path` as a string.
             Will ignore path if both are supplied.
     invert: Whether to invert the mask. Defaults to True.
     fill:   How to fill the masked area, one of:
-        - "init": Fill with the patch_initialization values.
+        - "init": Fill with the patch_initialization values. (default)
         - "random": Fill with random values.
         - color: Fill with a single color, specified with hex RGB values (0xRRGGBB).
         - path: Fill with an image specified by path or url
