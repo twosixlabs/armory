@@ -112,7 +112,7 @@ def grid(
         + (circle_spacing - circle_radius * 2) * (num_circles - 1),
     )
 
-    # Create 10x10 grid of circles
+    # Create grid of circles
     for i in range(num_circles):
         for j in range(num_circles):
             # Calculate center of circle
