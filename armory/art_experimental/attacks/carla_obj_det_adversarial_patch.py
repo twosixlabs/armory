@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
@@ -57,11 +58,18 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         patch_base_image_path = os.path.abspath(
             os.path.join(module_folder, self.patch_base_image)
         )
-        # if the image does not exist, check cwd
+        # if the image does not exist iterate through path
         if not os.path.exists(patch_base_image_path):
-            patch_base_image_path = os.path.abspath(
-                os.path.join(paths.runtime_paths().cwd, self.patch_base_image)
-            )
+            _path = sys.path.copy()
+            if (_cwd := paths.runtime_paths().cwd) not in _path:
+                _path.insert(0, _cwd)
+            for path in _path:
+                patch_base_image_path = os.path.abspath(
+                    os.path.join(path, self.patch_base_image)
+                )
+                if os.path.exists(patch_base_image_path):
+                    break
+            del _path, _cwd
         # image not in cwd or module, check if it is a url to an image
         if not os.path.exists(patch_base_image_path):
             # Send a HEAD request
