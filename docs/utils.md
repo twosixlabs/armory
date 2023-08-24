@@ -59,3 +59,23 @@ optional arguments:
 ```
 
 See [our write-up](https://docs.google.com/document/d/1_8_nRQmHhK5ieHNcGhoRtBZcRY_cXid6e5keySER5eU/edit?usp=sharing) for more details.
+
+## [shape-gen](../armory/utils/shape_gen.py)
+
+    usage: armory shape-gen [-h] [--output-dir OUTPUT_DIR] [--show] {asterisk,circle,grid,concentric_circles,jxcr_gear,sierpinski,all}
+
+    Generate shapes as png files
+
+    Available shapes:
+            asterisk
+            circle
+            grid
+            concentric_circles
+            jxcr_gear
+            sierpinski
+            all
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --output-dir OUTPUT_DIR
+      --show                Show the generated shape using matplotlib

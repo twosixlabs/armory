@@ -36,9 +36,47 @@ entire dictionary or just the `path` as a string.
         - color: Fill with a single color, specified with hex RGB values (0xRRGGBB).
         - path: Fill with an image specified by path or url
 
-Valid shapes can be found [here](./utils.md#shape-gen).
+Valid shapes can be found [here](./utils.md##shape-gen).
 
-See [#1904](https://github.com/twosixlabs/armory/pull/1904) for example usage.
+Example Usage:
+<details closed>
+<summary>Attack kwargs from config</summary>
+<br>
+<pre>
+"attack": {
+        "knowledge": "white",
+        "kwargs": {
+            "batch_size": 1,
+            "learning_rate": 0.1,
+            "max_iter": 2,
+            "optimizer": "pgd",
+            "targeted": false,
+            "verbose": true,
+            "patch_base_image": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/%5BCARLA_OD%5D_stable_diffusion_gemstones.png?raw=true",
+            "patch_mask": {
+                "shape": "grid",
+                "shape_kwargs": {
+                    "num_circles": 5,
+                    "circle_radius": 0.1,
+                    "circle_spacing": 2
+                },
+                "invert": false,
+                "fill": "https://github.com/jprokos26/armory/blob/public-base-images/armory/art_experimental/attacks/base_images/white_w_black_text.png?raw=true"
+            }
+        },
+        "module": "armory.art_experimental.attacks.carla_obj_det_adversarial_patch",
+        "name": "CARLAAdversarialPatchPyTorch",
+        "use_label": true
+    },
+</pre>
+</details>
+
+<details closed>
+<summary>Resultant image</summary>
+<br>
+<img width="860" alt="image" src="https://github.com/twosixlabs/armory/assets/107635150/1fa38445-5aa3-459f-b54e-04e855528f03">
+</details>
+
 
 ### [CARLAMOTAdversarialPatchPyTorch](../armory/art_experimental/attacks/carla_mot_adversarial_patch.py)
 ```json
