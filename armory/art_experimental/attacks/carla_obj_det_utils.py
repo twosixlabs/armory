@@ -176,7 +176,7 @@ def fetch_image_from_file_or_url(
     if re.match(r"^(?:http|ftp)s?://", path_or_url):
         if (im := _check_for_url(path_or_url, imread_flags)) is not None:
             return im
-    elif (im := _check_for_local_image(path_or_url, imread_flags)) is not None:
+    if (im := _check_for_local_image(path_or_url, imread_flags)) is not None:
         return im
     else:
         raise ValueError(f"Could not find file at {path_or_url}.")
@@ -359,20 +359,4 @@ class PatchMask:
                 (masked_init, patched_image[:, :, 3:6] * gs_mask[:, :, :3]), axis=-1
             )
             assert masked_init.shape == patched_image_inverse_mask.shape
-        # import matplotlib.pyplot as plt
-        # fig, ax = plt.subplots(2, 3, figsize=(12, 8))
-        # ax[0][0].imshow(patched_image[:,:,:3])
-        # ax[0][0].set_title("masked adversarial perturbation")
-        # ax[0][1].imshow(projected_init[:,:,:3])
-        # ax[0][1].set_title("projected initialization image")
-        # ax[0][2].imshow(gs_mask.astype(float)[:,:,:3])
-        # ax[0][2].set_title("init image embedding mask")
-        # ax[1][0].imshow(masked_init[:,:,:3])
-        # ax[1][0].set_title("init embedding")
-        # ax[1][1].imshow(patched_image_inverse_mask[:,:,:3])
-        # ax[1][1].set_title("patched image w/o embedding")
-        # ax[1][2].imshow(patched_image_inverse_mask[:,:,:3] + masked_init[:,:,:3])
-        # ax[1][2].set_title("patched image w/ embedding")
-        # plt.show()
-        # breakpoint()
         return patched_image_inverse_mask + masked_init

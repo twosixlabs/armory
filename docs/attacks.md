@@ -36,7 +36,7 @@ entire dictionary or just the `path` as a string.
         - color: Fill with a single color, specified with hex RGB values (0xRRGGBB).
         - path: Fill with an image specified by path or url
 
-Valid shapes can be found [here](./utils.md##shape-gen).
+Must supply either `path` or `shape`. Valid shapes can be found [here](./utils.md##shape-gen).
 
 Example Usage:
 <details closed>
