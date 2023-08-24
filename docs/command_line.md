@@ -129,3 +129,8 @@ sysconfig specifications.
 
 
   [conf]: configuration_files.md#sysconfig-and-command-line-arguments
+
+
+## CLI Utilities
+* `armory utils <util-command>`
+Additional armory utility functions are provided using the above command. See [utils.md](./utils.md) for more info.
