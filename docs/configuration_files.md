@@ -146,6 +146,9 @@ All configuration files are verified against the jsonschema definition at run ti
     }
 }
 ```
+### attack config "kwargs" field
+Some attacks, such as [carla_obj_det_adversarial_patch](../armory/art_experimental/attacks/carla_obj_det_adversarial_patch.py),
+accept additional kwargs. Further documentation is available in [attacks.md](./attacks.md).
 
 ### attack config "type" field
 The supported values for the `"type"` field in attack configs are as follows: 

@@ -29,6 +29,7 @@ RUN apt-get -y -qq update && \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libarchive13 \
+    libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 # libgl1-mesa-glx is needed for cv2 (opencv-python)
 # libarchive13 is needed for mamba
