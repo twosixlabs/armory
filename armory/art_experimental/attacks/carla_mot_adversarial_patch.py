@@ -1,4 +1,3 @@
-import os
 from typing import Optional, Tuple
 
 from art.attacks.evasion.adversarial_patch.adversarial_patch_pytorch import (
@@ -9,6 +8,9 @@ import numpy as np
 import torch
 from tqdm import trange
 
+from armory.art_experimental.attacks.carla_obj_det_utils import (
+    fetch_image_from_file_or_url,
+)
 from armory.logs import log
 
 
@@ -19,6 +21,10 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             "batch_frame_size", 1
         )  # number of frames to attack per iteration
         self.patch_base_image = kwargs.pop("patch_base_image", None)
+        if kwargs.pop("patch_mask", None) is not None:
+            raise NotImplementedError(
+                "patch_mask is not supported for CARLA MOT Adversarial Patch"
+            )
         self.coco_format = bool(coco_format)
 
         super().__init__(estimator=estimator, **kwargs)
@@ -66,13 +72,11 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
         """
         Create initial patch based on a user-defined image
         """
-        module_path = globals()["__file__"]
-        # user-defined image is assumed to reside in the same location as the attack module
-        patch_base_image_path = os.path.abspath(
-            os.path.join(os.path.join(module_path, "../"), self.patch_base_image)
-        )
-
-        im = cv2.imread(patch_base_image_path)
+        if not isinstance(self.patch_base_image, str):
+            raise ValueError(
+                "patch_base_image must be a string path to an image or a url to an image"
+            )
+        im = fetch_image_from_file_or_url(self.patch_base_image)
         im = cv2.resize(im, size)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
 
