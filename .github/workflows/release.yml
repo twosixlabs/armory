@@ -69,6 +69,14 @@ jobs:
     needs: [release-wheel]
     runs-on: ubuntu-latest
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
         with:
@@ -111,6 +119,14 @@ jobs:
           - image: pytorch-deepspeech
           - image: yolo
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
         with:
