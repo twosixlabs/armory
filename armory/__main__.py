@@ -20,6 +20,7 @@ from jsonschema import ValidationError
 import armory
 from armory import arguments, paths
 from armory.cli.tools import (
+    collect_armory_outputs,
     log_current_branch,
     plot_mAP_by_giou_with_patch_cli,
     rgb_depth_convert,
@@ -730,6 +731,7 @@ UTILS_COMMANDS = {
         plot_mAP_by_giou_with_patch_cli,
         "Visualize the output of the metric 'object_detection_AP_per_class_by_giou_from_patch.'",
     ),
+    "collect-output": (collect_armory_outputs, "clean armory outputs directory"),
 }
 
 
