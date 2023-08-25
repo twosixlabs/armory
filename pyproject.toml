@@ -15,8 +15,7 @@ readme      = "README.md"
 dynamic     = [ "version" ]
 license     = "MIT"
 authors = [
-  { name = "Two Six Technologies", email = "armory@twosixtech.com" },
-]
+  { name = "Two Six Technologies", email = "armory@twosixtech.com" }, ]
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -39,6 +38,10 @@ dependencies = [
     "loguru",
     "pytest",
     "requests",
+    "Pillow",
+    "CairoSVG",
+    "svg.py",
+    "matplotlib",
 ]
 
 [project.urls]
@@ -58,6 +61,8 @@ developer =[
     "black[jupyter]==22.*",
     "isort",
     "flake8",
+    "bandit[toml]", # code scanning
+    "hydra-core",   # configuration
 ]
 
 engine = [
@@ -155,7 +160,7 @@ include = [
   "pyproject.toml",
 ]
 exclude = [
-  "tools/",
+  "/tools",
 ]
 
 [tool.hatch.build.hooks.vcs]
