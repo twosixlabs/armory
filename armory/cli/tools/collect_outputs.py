@@ -1,11 +1,11 @@
 import argparse
 import os
 
-# from pathlib import Path
-
 from armory import paths
 from armory.cli.tools.utils import _debug
 from armory.logs import log, update_filters
+
+# from pathlib import Path
 
 
 def collect_armory_outputs(command_args, prog, description):
