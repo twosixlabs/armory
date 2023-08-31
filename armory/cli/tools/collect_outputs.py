@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 from typing import Generator
+from collections import defaultdict
 
 from armory import paths
 from armory.cli.tools.utils import _debug
@@ -10,7 +11,6 @@ from armory.logs import log, update_filters
 
 
 def _clean(output_dir):
-    breakpoint()
     clean_dir = output_dir / ".cleaned"
     # get all directories containing _only_ armory-log.txt and colored-log.txt
     empty_dirs = [
@@ -53,8 +53,8 @@ def _get_attack_kwargs(d) -> str:
         "patch_base_image": "base_image",
     }
     ignore_keys = {"optimizer", "targeted", "verbose", "patch_base_image"}
-    _ = d["config"]["attack"]["kwargs"].pop("patch_mask", None)
-    return "\n".join(
+    _ = d["config"]["attack"]["kwargs"].pop("patch_mask", None)  # remove patch_mask
+    return " ".join(
         [
             f"{name_map.get(k, k)}={v}"
             for k, v in d["config"]["attack"]["kwargs"].items()
@@ -134,6 +134,18 @@ def _parse_markdown_table(headers, rows):
 
 def collect_armory_outputs(command_args, prog, description):
     """Collect results from armory output_directory and organize into tables."""
+    # We need to check both output dirs since `--no-docker` isn't passed
+    _host = os.path.isdir(paths.HostPaths().output_dir)
+    _dock = os.path.isdir(paths.DockerPaths().output_dir)
+    if not _host and not _dock:
+        raise ValueError("No output dir found. Please run a task first.")
+    if _host and _dock:
+        raise ValueError(
+            "Found both host and docker output dirs, cannot determine which to use."
+        )
+    output_dir = Path(
+        paths.HostPaths().output_dir if _host else paths.DockerPaths().output_dir
+    )
     parser = argparse.ArgumentParser(
         prog=prog,
         description=description,
@@ -145,6 +157,15 @@ def collect_armory_outputs(command_args, prog, description):
         type=str,
         help="Glob pattern to match json outputs. Defaults to `*.json`.",
         default="*.json",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default=str(output_dir / "%s_results.md"),
+        help="Path to output tables. Defaults to {}.".format(
+            output_dir / "%s_results.md % <ATTACK>"
+        ),
     )
     parser.add_argument(
         "--clean",
@@ -161,18 +182,6 @@ def collect_armory_outputs(command_args, prog, description):
     args = parser.parse_args(command_args)
     update_filters(args.log_level, args.debug)
 
-    # We need to check both output dirs since `--no-docker` isn't passed
-    _host = os.path.isdir(paths.HostPaths().output_dir)
-    _dock = os.path.isdir(paths.DockerPaths().output_dir)
-    if not _host and not _dock:
-        raise ValueError("No output dir found. Please run a task first.")
-    if _host and _dock:
-        raise ValueError(
-            "Found both host and docker output dirs, cannot determine which to use."
-        )
-    output_dir = Path(
-        paths.HostPaths().output_dir if _host else paths.DockerPaths().output_dir
-    )
     if args.clean:
         _clean(output_dir)
 
@@ -185,20 +194,25 @@ def collect_armory_outputs(command_args, prog, description):
     )
 
     # parse them into tables
-    tables = {
-        _parse_carla_adversarial_patch: [],
-    }
+    tables = defaultdict(list)
     for result in results:
         # load json
         with open(result, "r") as f:
             json_data = json.load(f)
         # parse json
+        attack_name = json_data["config"]["attack"]["name"]
         parser = PARSERS.get(json_data["config"]["attack"]["name"], PARSERS["default"])
         row = list(parser(json_data, result))
-        tables[parser].append(row)
+        tables[attack_name].append(row)
 
-    for parse_fn, table_rows in tables.items():
+    for attack, table_rows in tables.items():
+        parse_fn = PARSERS.get(attack, PARSERS["default"])
         headers = HEADERS[parse_fn]
         table = _parse_markdown_table(headers, table_rows)
-        log.info(f"Results for {parse_fn.__name__}:\n{table}")
-        breakpoint()
+        log.debug(f"Results for {attack}:\n{table}")
+
+        # write to file
+        output_path = args.output % attack if "%s" in str(args.output) else args.output
+        with open(output_path, "w") as f:
+            f.write(table)
+        log.info(f"Wrote results to {output_path}")
