@@ -79,12 +79,19 @@ def _get_mAP(d) -> str:
     return "/".join(builder)
 
 
-def _get_dict_value(string: str, d: dict = None):
+def _get_dict_value(string: str, d: dict = None, **kwargs):
     """Return a lambda that indexes into a nested dict using the supplied string."""
     # this function exists so I don't have to type out brackets and quotes
     if d is None:
-        return lambda d: reduce(operator.getitem, string.split("."), d)
-    return _get_dict_value(string)(d)
+        getters = string.split(".")
+        getters = [int(s) if s.isdigit() else s for s in getters]
+        return lambda d: reduce(operator.getitem, getters, d)
+    try:
+        return _get_dict_value(string)(d)
+    except KeyError as e:
+        if "default_value" in kwargs:
+            return kwargs["default_value"]
+        raise e
 
 
 def _round_rate(rate: Optional[Union[float, list]], places: int = 2) -> float:
@@ -119,6 +126,21 @@ def _benign_adversarial_helper(d, key: str, places=2) -> str:
     return f"{benign_rate}/{adversarial_rate}"
 
 
+def _tide_helper(d, key: str, places=4) -> str:
+    benign_rate, adversarial_rate = (
+        _round_rate(
+            _get_dict_value(
+                f"results.{which}_object_detection_mAP_tide.0.errors.{key}",
+                d,
+                default_value=None,
+            ),
+            places=places,
+        )
+        for which in ("benign", "adversarial")
+    )
+    return f"{benign_rate}/{adversarial_rate}"
+
+
 # "Run Name" "Defense" "Dataset" "Attack" "Attack Params" "mAP" "Disappearance Rate" "Hallucinations per Img" "Misclassification Rate" "True Positive Rate" "dAP_Bkg" "dAP_Both" "dAP_Cls" "dAP_Dupe" "dAP_Loc" "dAP_Miss" "dAP_FalseNeg" "dAP_FalsePos"
 CARLA_HEADERS = {
     "Run": _get_run_name,
@@ -139,7 +161,14 @@ CARLA_HEADERS = {
     "True Positive Rate": lambda d: _benign_adversarial_helper(
         d, "carla_od_true_positive_rate"
     ),
-    "dAP_Bkg": lambda d: _benign_adversarial_helper(d, "carla_od_dAP_Bkg"),
+    "dAP_Bkg": lambda d: _tide_helper(d, "main.dAP.Bkg"),
+    "dAP_Both": lambda d: _tide_helper(d, "main.dAP.Both"),
+    "dAP_Cls": lambda d: _tide_helper(d, "main.dAP.Cls"),
+    "dAP_Dupe": lambda d: _tide_helper(d, "main.dAP.Dupe"),
+    "dAP_Loc": lambda d: _tide_helper(d, "main.dAP.Loc"),
+    "dAP_Miss": lambda d: _tide_helper(d, "main.dAP.Miss"),
+    "dAP_FalseNeg": lambda d: _tide_helper(d, "special.dAP.FalseNeg"),
+    "dAP_FalsePos": lambda d: _tide_helper(d, "special.dAP.FalsePos"),
 }
 
 
