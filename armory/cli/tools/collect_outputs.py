@@ -35,9 +35,22 @@ def _clean(output_dir: str):
 
 
 def _get_run_name(d) -> str:
-    filepath = d["config"]["sysconfig"].get("filepath", None)
+    fallthrough = [
+        "config.sysconfig.filepath",
+        "config.sysconfig.config_filepath",
+        "config.sysconfig.output_filename",
+    ]
+    filepath = None
+    while filepath is None and len(fallthrough) > 0:
+        filepath = _get_dict_value(fallthrough.pop(0), d, default_value=None)
     if filepath is None:
-        filepath = d["config"]["sysconfig"].get("config_filepath", None)
+        # can't find config filepath, just return result filepath as %s
+        return "%s"
+    p_filepath = Path(filepath)
+    if p_filepath.is_absolute():
+        output_dir = _get_output_dir()
+        common = os.path.commonpath([output_dir, p_filepath])
+        filepath = p_filepath.relative_to(common)
     return f"[{filepath}](%s)"
 
 
@@ -54,8 +67,17 @@ def _get_attack_kwargs(d) -> str:
         "learning_rate_depth": "lrd",
         # "max_iter": "max_iter",
         "patch_base_image": "base_image",
+        "learning_rate_schedule": "lrs",
     }
-    ignore_keys = {"optimizer", "targeted", "verbose", "patch_base_image"}
+    ignore_keys = {
+        "optimizer",
+        "targeted",
+        "verbose",
+        "patch_base_image",
+        "patch",
+        "device_name",
+        "batch_size",
+    }
     _ = d["config"]["attack"]["kwargs"].pop("patch_mask", None)  # remove patch_mask
     return " ".join(
         [
@@ -79,15 +101,24 @@ def _get_mAP(d) -> str:
     return "/".join(builder)
 
 
+def _getitem(d, getters, **kwargs):
+    try:
+        return reduce(operator.getitem, getters, d)
+    except (TypeError, KeyError) as e:
+        if "default_value" in kwargs:
+            return kwargs["default_value"]
+        raise e
+
+
 def _get_dict_value(string: str, d: dict = None, **kwargs):
     """Return a lambda that indexes into a nested dict using the supplied string."""
     # this function exists so I don't have to type out brackets and quotes
     if d is None:
         getters = string.split(".")
         getters = [int(s) if s.isdigit() else s for s in getters]
-        return lambda d: reduce(operator.getitem, getters, d)
+        return lambda d: _getitem(d, getters, **kwargs)
     try:
-        return _get_dict_value(string)(d)
+        return _get_dict_value(string, **kwargs)(d)
     except KeyError as e:
         if "default_value" in kwargs:
             return kwargs["default_value"]
@@ -104,6 +135,8 @@ def _round_rate(rate: Optional[Union[float, list]], places: int = 2) -> float:
 
 def _unknown_mean_key_helper(d, key: str, places=2) -> str:
     # Don't know which key it will be under, so try both
+    if key == "carla_od_disappearance_rate":
+        breakpoint()
     if "_mean" not in key:
         raise ValueError(f"Key {key} does not contain '_mean'")
     try:
@@ -141,12 +174,34 @@ def _tide_helper(d, key: str, places=4) -> str:
     return f"{benign_rate}/{adversarial_rate}"
 
 
-# "Run Name" "Defense" "Dataset" "Attack" "Attack Params" "mAP" "Disappearance Rate" "Hallucinations per Img" "Misclassification Rate" "True Positive Rate" "dAP_Bkg" "dAP_Both" "dAP_Cls" "dAP_Dupe" "dAP_Loc" "dAP_Miss" "dAP_FalseNeg" "dAP_FalsePos"
+def _parse_json_data(
+    headers, json_data, filepath, absolute=False, **kwargs
+) -> Generator[str, None, None]:
+    """return a row of the table given a dict of headers (& parsers) and json_data"""
+    row = [None] * len(headers)
+    for i, parse in enumerate(headers.values()):
+        try:
+            value = parse(json_data)
+        except Exception as e:
+            log.error(f"Error parsing {list(headers.keys())[i]} from {filepath}:\n{e}")
+            breakpoint()
+            log.error(f"json_data:\n{json_data}")
+
+        if value is not None and "%s" in value:
+            if absolute:
+                value = value % Path(filepath).absolute()
+            else:
+                value = value % Path(filepath).relative_to(_get_output_dir())
+        yield value
+        row[i] = value
+    log.debug(f"Parsed {filepath}:\n{row}")
+
+
 CARLA_HEADERS = {
     "Run": _get_run_name,
-    "Defense": lambda d: "",
+    "Defense": _get_dict_value("config.defense.name", default_value="None"),
     "Dataset": _get_dataset_name,
-    "Attack": lambda d: d["config"]["attack"]["name"],
+    "Attack": _get_dict_value("config.attack.name", default_value="None"),
     "Attack Params": _get_attack_kwargs,
     "mAP": _get_mAP,
     "Disappearance Rate": lambda d: _benign_adversarial_helper(
@@ -176,35 +231,39 @@ def _parse_carla_adversarial_patch(
     json_data, filepath, absolute=False, **kwargs
 ) -> Generator[str, None, None]:
     """return a row of the table for a CARLA adversarial patch attack"""
-    row = [None] * len(CARLA_HEADERS)
-    for i, parse in enumerate(CARLA_HEADERS.values()):
-        try:
-            value = parse(json_data)
-        except Exception as e:
-            log.error(
-                f"Error parsing {list(CARLA_HEADERS.keys())[i]} from {filepath}:\n{e}"
-            )
-            breakpoint()
-            log.error(f"json_data:\n{json_data}")
+    return _parse_json_data(
+        CARLA_HEADERS, json_data, filepath, absolute=absolute, **kwargs
+    )
 
-        if "%s" in value:
-            if absolute:
-                value = value % Path(filepath).absolute()
-            else:
-                value = value % Path(filepath).relative_to(_get_output_dir())
-        yield value
-        row[i] = value
-    log.debug(f"Parsed {filepath}:\n{row}")
+
+SLEEPER_AGENT_HEADERS = {
+    "Run": _get_run_name,
+    "Defense": _get_dict_value("config.defense.name", default_value="None"),
+    "Dataset": _get_dataset_name,
+    "Attack": _get_dict_value("config.attack.name", default_value="None"),
+    "Attack Params": _get_attack_kwargs,
+}
+
+
+def _parse_sleeper_agent(
+    json_data, filepath, absolute=False, **kwargs
+) -> Generator[str, None, None]:
+    """return a row of the table for a CARLA adversarial patch attack"""
+    return _parse_json_data(
+        SLEEPER_AGENT_HEADERS, json_data, filepath, absolute=absolute, **kwargs
+    )
 
 
 HEADERS = {
     _parse_carla_adversarial_patch: CARLA_HEADERS,
+    _parse_sleeper_agent: SLEEPER_AGENT_HEADERS,
 }
 
 
 PARSERS = {
     "default": _parse_carla_adversarial_patch,
     "CARLAAdversarialPatchPyTorch": _parse_carla_adversarial_patch,
+    "SleeperAgentAttack": _parse_sleeper_agent,
 }
 
 
@@ -214,13 +273,17 @@ def _parse_markdown_table(headers, rows):
     stacked vertically separated by a newline."""
     if isinstance(headers[0], list):
         return "\n\n".join([_parse_markdown_table(h, r) for h, r in zip(headers, rows)])
-    table = "\n".join(
-        [
-            "|".join(headers),
-            "|".join(["---"] * len(headers)),
-            *["|".join(row) for row in rows],
-        ]
-    )
+    try:
+        table = "\n".join(
+            [
+                "|".join(headers),
+                "|".join(["---"] * len(headers)),
+                *["|".join(row) for row in rows],
+            ]
+        )
+    except Exception as e:
+        breakpoint()
+        raise e
     return table
 
 
@@ -296,7 +359,8 @@ def _write_results(attacks, table, output):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:
         f.write(table)
-    log.info(f"Wrote {attack_name} results to {output_path}")
+    lines = len(table.split("\n")) - 1
+    log.info(f"Wrote {lines} {attack_name} results to {output_path}")
 
 
 def collect_armory_outputs(command_args, prog, description):
@@ -335,6 +399,7 @@ def collect_armory_outputs(command_args, prog, description):
     tables = defaultdict(list)
     collation = defaultdict(set)
     for result in results:
+        log.debug(f"Loading {result}")
         # load json
         with open(result, "r") as f:
             json_data = json.load(f)
@@ -369,6 +434,7 @@ def collect_armory_outputs(command_args, prog, description):
                 )
 
             for attack in attacks:
+                log.info(f"Collating {attack} into {tgt_collate}")
                 tables[tgt_collate].extend(tables[attack])
                 del tables[attack]
 
@@ -390,7 +456,6 @@ def collect_armory_outputs(command_args, prog, description):
             try:
                 table = _parse_markdown_table(headers, table_rows)
             except Exception as e:
-                log.error(f"Error parsing table for {attack}:\n{e}")
-                breakpoint()
-                log.error(f"Table rows:\n{table_rows}")
+                log.error(f"Error parsing table for {attack}")
+                raise e
             _write_results([attack], table, args.output)
