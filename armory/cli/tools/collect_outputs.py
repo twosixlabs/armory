@@ -187,7 +187,7 @@ def _parse_json_data(
             breakpoint()
             log.error(f"json_data:\n{json_data}")
 
-        if value is not None and "%s" in value:
+        if value is not None and isinstance(value, str) and "%s" in value:
             if absolute:
                 value = value % Path(filepath).absolute()
             else:
@@ -227,43 +227,23 @@ CARLA_HEADERS = {
 }
 
 
-def _parse_carla_adversarial_patch(
-    json_data, filepath, absolute=False, **kwargs
-) -> Generator[str, None, None]:
-    """return a row of the table for a CARLA adversarial patch attack"""
-    return _parse_json_data(
-        CARLA_HEADERS, json_data, filepath, absolute=absolute, **kwargs
-    )
-
-
 SLEEPER_AGENT_HEADERS = {
     "Run": _get_run_name,
     "Defense": _get_dict_value("config.defense.name", default_value="None"),
     "Dataset": _get_dataset_name,
     "Attack": _get_dict_value("config.attack.name", default_value="None"),
     "Attack Params": _get_attack_kwargs,
+    "Poison %": _get_dict_value("config.adhoc.fraction_poisoned", default_value=None),
+    "Attack Success Rate": _get_dict_value(
+        "results.attack_success_rate.0", default_value=None
+    ),
 }
-
-
-def _parse_sleeper_agent(
-    json_data, filepath, absolute=False, **kwargs
-) -> Generator[str, None, None]:
-    """return a row of the table for a CARLA adversarial patch attack"""
-    return _parse_json_data(
-        SLEEPER_AGENT_HEADERS, json_data, filepath, absolute=absolute, **kwargs
-    )
 
 
 HEADERS = {
-    _parse_carla_adversarial_patch: CARLA_HEADERS,
-    _parse_sleeper_agent: SLEEPER_AGENT_HEADERS,
-}
-
-
-PARSERS = {
-    "default": _parse_carla_adversarial_patch,
-    "CARLAAdversarialPatchPyTorch": _parse_carla_adversarial_patch,
-    "SleeperAgentAttack": _parse_sleeper_agent,
+    "CARLAAdversarialPatchPyTorch": CARLA_HEADERS,
+    "SleeperAgentAttack": SLEEPER_AGENT_HEADERS,
+    "MITMPoisonSleeperAgent": SLEEPER_AGENT_HEADERS,
 }
 
 
@@ -278,7 +258,7 @@ def _parse_markdown_table(headers, rows):
             [
                 "|".join(headers),
                 "|".join(["---"] * len(headers)),
-                *["|".join(row) for row in rows],
+                *["|".join(map(str, row)) for row in rows],
             ]
         )
     except Exception as e:
@@ -349,6 +329,12 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
         action="store_true",
         help="Use absolute path for hyperlinks in the output tables.",
     )
+    parser.add_argument(
+        "--default",
+        type=str,
+        default="CARLAAdversarialPatchPyTorch",
+        help="Default attack to use for headers. Defaults to CARLAAdversarialPatchPyTorch.",
+    )
     _debug(parser)
 
 
@@ -379,8 +365,11 @@ def collect_armory_outputs(command_args, prog, description):
         args.collate = "config.scenario.name"
 
     for at in args.unify or []:
-        if at not in PARSERS:
+        if at not in HEADERS:
             raise ValueError(f"Unrecognized attack {at}")
+
+    if args.default not in HEADERS:
+        raise ValueError(f"Unrecognized default attack {args.default}")
 
     if args.clean:
         _clean(output_dir)
@@ -390,7 +379,7 @@ def collect_armory_outputs(command_args, prog, description):
     results = list(
         filter(
             lambda p: p.parent.name != "saved_samples",
-            Path(output_dir).rglob("[!.]" + args.glob),
+            Path(output_dir).rglob("*/" + args.glob),
         )
     )
     log.info(f"Found {len(results)} results files.")
@@ -405,8 +394,14 @@ def collect_armory_outputs(command_args, prog, description):
             json_data = json.load(f)
         # parse json
         attack_name = json_data["config"]["attack"]["name"]
-        parser = PARSERS.get(json_data["config"]["attack"]["name"], PARSERS["default"])
-        row = list(parser(json_data, result, absolute=args.absolute))
+        row = list(
+            _parse_json_data(
+                HEADERS.get(attack_name, HEADERS[args.default]),
+                json_data,
+                result,
+                absolute=args.absolute,
+            )
+        )
         if args.collate is not False:
             try:
                 tgt_collate = reduce(
@@ -422,11 +417,10 @@ def collect_armory_outputs(command_args, prog, description):
     if args.collate is not False:
         for tgt_collate, attacks in collation.items():
             # make sure all attacks have the same headers
-            headers = list(
-                HEADERS[PARSERS.get(list(attacks)[0], PARSERS["default"])].keys()
-            )
+            first = attacks.pop()
             if any(
-                headers != list(HEADERS[PARSERS.get(a, PARSERS["default"])].keys())
+                HEADERS.get(first, HEADERS[args.default])
+                is not HEADERS.get(a, HEADERS[args.default])
                 for a in attacks
             ):
                 raise ValueError(
@@ -443,16 +437,15 @@ def collect_armory_outputs(command_args, prog, description):
             attacks = tables.keys()
         else:
             attacks = args.unify
-        headers = [
-            list(HEADERS[PARSERS.get(a, PARSERS["default"])].keys()) for a in attacks
-        ]
+        headers = [list(HEADERS.get(a, HEADERS[args.default]).keys()) for a in attacks]
         rows = [tables[a] for a in attacks]
         table = _parse_markdown_table(headers, rows)
         _write_results(attacks, table, args.output)
     else:
-        for attack, table_rows in tables.items():
-            parse_fn = PARSERS.get(attack, PARSERS["default"])
-            headers = list(HEADERS[parse_fn].keys())
+        for attack, table_rows in sorted(
+            tables.items(), key=lambda x: len(x[1]), reverse=True
+        ):
+            headers = list(HEADERS.get(attack, HEADERS[args.default]).keys())
             try:
                 table = _parse_markdown_table(headers, table_rows)
             except Exception as e:
