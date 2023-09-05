@@ -5,6 +5,7 @@ import json
 import operator
 import os
 from pathlib import Path
+import re
 from typing import Generator, Optional, Union
 
 from armory import paths
@@ -174,6 +175,21 @@ def _tide_helper(d, key: str, places=4) -> str:
     return f"{benign_rate}/{adversarial_rate}"
 
 
+def _benign_poisoned_helper(d, key: str, places=4) -> str:
+    benign_rate, poisoned_rate = (
+        _round_rate(
+            _get_dict_value(
+                f"results.accuracy_on_{which}_{key}.0",
+                d,
+                default_value=None,
+            ),
+            places=places,
+        )
+        for which in ("benign", "poisoned")
+    )
+    return f"{benign_rate}/{poisoned_rate}"
+
+
 def _parse_json_data(
     headers, json_data, filepath, absolute=False, **kwargs
 ) -> Generator[str, None, None]:
@@ -199,9 +215,9 @@ def _parse_json_data(
 
 CARLA_HEADERS = {
     "Run": _get_run_name,
-    "Defense": _get_dict_value("config.defense.name", default_value="None"),
+    "Defense": _get_dict_value("config.defense.name", default_value=None),
     "Dataset": _get_dataset_name,
-    "Attack": _get_dict_value("config.attack.name", default_value="None"),
+    "Attack": _get_dict_value("config.attack.name", default_value=None),
     "Attack Params": _get_attack_kwargs,
     "mAP": _get_mAP,
     "Disappearance Rate": lambda d: _benign_adversarial_helper(
@@ -229,13 +245,16 @@ CARLA_HEADERS = {
 
 SLEEPER_AGENT_HEADERS = {
     "Run": _get_run_name,
-    "Defense": _get_dict_value("config.defense.name", default_value="None"),
+    "Defense": _get_dict_value("config.defense.name", default_value=None),
     "Dataset": _get_dataset_name,
-    "Attack": _get_dict_value("config.attack.name", default_value="None"),
+    "Attack": _get_dict_value("config.attack.name", default_value=None),
     "Attack Params": _get_attack_kwargs,
     "Poison %": _get_dict_value("config.adhoc.fraction_poisoned", default_value=None),
     "Attack Success Rate": _get_dict_value(
         "results.attack_success_rate.0", default_value=None
+    ),
+    "Accuracy (Benign/Poisoned)": lambda d: _benign_poisoned_helper(
+        d, "test_data_all_classes"
     ),
 }
 
@@ -335,6 +354,19 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
         default="CARLAAdversarialPatchPyTorch",
         help="Default attack to use for headers. Defaults to CARLAAdversarialPatchPyTorch.",
     )
+    parser.add_argument(
+        "--sort",
+        type=str,
+        nargs="?",
+        default=False,
+        help="Sort results by the supplied header(s).",
+        metavar="HEADER",
+    )
+    parser.add_argument(
+        "--filter",
+        type=str,
+        help="Filter results to only those matching the supplied regex.",
+    )
     _debug(parser)
 
 
@@ -402,6 +434,10 @@ def collect_armory_outputs(command_args, prog, description):
                 absolute=args.absolute,
             )
         )
+        if args.filter is not None:
+            if not re.search(args.filter, row[0]):
+                log.debug(f"Skipping {result} due to filter")
+                continue
         if args.collate is not False:
             try:
                 tgt_collate = reduce(
@@ -412,6 +448,7 @@ def collect_armory_outputs(command_args, prog, description):
             else:
                 collation[str(tgt_collate)].add(attack_name)
         tables[attack_name].append(row)
+    log.info(f"Parsed {len(tables)} results.")
 
     # collate results
     if args.collate is not False:
@@ -431,6 +468,16 @@ def collect_armory_outputs(command_args, prog, description):
                 log.info(f"Collating {attack} into {tgt_collate}")
                 tables[tgt_collate].extend(tables[attack])
                 del tables[attack]
+
+    # sort results
+    if args.sort is not False:
+        if args.sort is None:
+            args.sort = ["Run"]
+        log.debug(f"Sorting results by {args.sort}")
+        for attack, table_rows in tables.items():
+            headers = list(HEADERS.get(attack, HEADERS[args.default]).keys())
+            sort_indices = [headers.index(s) for s in args.sort]
+            table_rows.sort(key=lambda x: tuple(x[i] for i in sort_indices if i != -1))
 
     if args.unify is not None:
         if len(args.unify) == 0:
