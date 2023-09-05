@@ -15,7 +15,8 @@ readme      = "README.md"
 dynamic     = [ "version" ]
 license     = "MIT"
 authors = [
-  { name = "Two Six Technologies", email = "armory@twosixtech.com" }, ]
+  { name = "Two Six Technologies", email = "armory@twosixtech.com" },
+]
 
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -38,10 +39,6 @@ dependencies = [
     "loguru",
     "pytest",
     "requests",
-    "Pillow",
-    "CairoSVG",
-    "svg.py",
-    "matplotlib",
 ]
 
 [project.urls]
@@ -61,12 +58,10 @@ developer =[
     "black[jupyter]==22.*",
     "isort",
     "flake8",
-    "bandit[toml]", # code scanning
-    "hydra-core",   # configuration
 ]
 
 engine = [
-    "adversarial-robustness-toolbox == 1.15.1",
+    "adversarial-robustness-toolbox == 1.15.0",
     "Pillow",              # Data dependencies
     "boto3",               # Needed for armory.data.utils
     "botocore" ,           # Needed for armory.data.utils
@@ -89,9 +84,8 @@ pytorch = [
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
-    "tf-models-official",
-    "tensorflow == 2.10.0; python_version < '3.10'",
-    "tensorflow >= 2.5.0; python_version >= '3.10'",
+    "tf-models-official >= 2.13.1",
+    "tensorflow",
 ]
 
 deepspeech = [
@@ -160,7 +154,7 @@ include = [
   "pyproject.toml",
 ]
 exclude = [
-  "/tools",
+  "tools/",
 ]
 
 [tool.hatch.build.hooks.vcs]
