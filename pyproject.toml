@@ -84,7 +84,7 @@ pytorch = [
 
 tensorflow = [
     "armory-testbed[engine,datasets,math]",
-    "tf-models-official",
+    "tf-models-official >= 2.13.1",
     "tensorflow == 2.10.0; python_version < '3.10'",
     "tensorflow >= 2.5.0; python_version >= '3.10'",
 ]
