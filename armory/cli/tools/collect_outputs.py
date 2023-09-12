@@ -1,12 +1,13 @@
 import argparse
 from collections import defaultdict
-from functools import cache, reduce
+from functools import lru_cache, reduce
 import json
 import operator
 import os
 from pathlib import Path
 import re
 from typing import Generator, Optional, Union
+
 from PIL import Image
 
 from armory import paths
@@ -318,7 +319,7 @@ def _parse_markdown_table(headers, rows):
     return table
 
 
-@cache
+@lru_cache(maxsize=None)
 def _get_output_dir() -> str:
     """Return the output directory"""
     _host = os.path.isdir(paths.HostPaths().output_dir)
