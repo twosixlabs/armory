@@ -43,7 +43,6 @@ def maybe_download_weights_from_s3(
     saved_model_dir = paths.runtime_paths().saved_model_dir
     filepath = os.path.join(saved_model_dir, weights_file)
 
-    breakpoint()
     if os.path.isfile(filepath):
         log.info(f"Using available {weights_file} in Armory `saved_model_dir`")
     else:

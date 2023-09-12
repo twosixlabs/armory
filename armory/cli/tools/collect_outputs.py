@@ -167,8 +167,6 @@ def _round_rate(rate: Optional[Union[float, list]], places: int = 2) -> float:
 
 def _unknown_mean_key_helper(d, key: str, places=2) -> str:
     # Don't know which key it will be under, so try both
-    if key == "carla_od_disappearance_rate":
-        breakpoint()
     if "_mean" not in key:
         raise ValueError(f"Key {key} does not contain '_mean'")
     try:
@@ -231,8 +229,8 @@ def _parse_json_data(
             value = parse(json_data)
         except Exception as e:
             log.error(f"Error parsing {list(headers.keys())[i]} from {filepath}:\n{e}")
-            breakpoint()
             log.error(f"json_data:\n{json_data}")
+            raise e
 
         if value is not None and isinstance(value, str) and "%s" in value:
             if absolute:
@@ -305,17 +303,13 @@ def _parse_markdown_table(headers, rows):
     stacked vertically separated by a newline."""
     if isinstance(headers[0], list):
         return "\n\n".join([_parse_markdown_table(h, r) for h, r in zip(headers, rows)])
-    try:
-        table = "\n".join(
-            [
-                "|".join(headers),
-                "|".join(["---"] * len(headers)),
-                *["|".join(map(str, row)) for row in rows],
-            ]
-        )
-    except Exception as e:
-        breakpoint()
-        raise e
+    table = "\n".join(
+        [
+            "|".join(headers),
+            "|".join(["---"] * len(headers)),
+            *["|".join(map(str, row)) for row in rows],
+        ]
+    )
     return table
 
 
