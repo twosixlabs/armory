@@ -7,9 +7,10 @@ import os
 from pathlib import Path
 import re
 from typing import Generator, Optional, Union
+from PIL import Image
 
 from armory import paths
-from armory.cli.tools.utils import _debug
+from armory.cli.tools.utils import _debug, simple_progress_bar
 from armory.logs import log, update_filters
 
 
@@ -33,6 +34,35 @@ def _clean(output_dir: str):
         target = clean_dir / d.relative_to(output_dir)
         target.parent.mkdir(parents=True, exist_ok=True)
         d.rename(target)
+    # delete all pairs of .png files NAME.png and NAME_adv.png where both files are equivalent
+    # (i.e. NAME.png is a copy of NAME_adv.png)
+    log.info("Cleaning up duplicate .png files")
+
+    pngs = list(
+        filter(
+            lambda p: "MITM" in str(p),
+            output_dir.rglob("*x.png"),
+        )
+    )
+    unlinks = set()
+    for png in simple_progress_bar(pngs, msg="Checking equality..."):
+        adv = png.parent / (png.stem + "_adv.png")
+        if adv.exists() and Image.open(png).tobytes() == Image.open(adv).tobytes():
+            # log.debug(f"Deleting {png}")
+            unlinks.add(png)
+            unlinks.add(adv)
+        # else:
+        # log.debug(f"Keeping {adv}")
+    log.info(
+        f"Found {len(pngs) - len(unlinks) // 2}/{len(pngs)} non-duplicate .png pairs. Moving the rest to {clean_dir}/pngs/"
+    )
+    for png in simple_progress_bar(unlinks, msg="Moving files..."):
+        target = clean_dir / png.relative_to(output_dir)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        png.rename(target)
+    log.info(
+        f"Moved {len(unlinks) // 2} pairs of duplicate .png files to {clean_dir}/pngs/"
+    )
 
 
 def _get_run_name(d) -> str:
@@ -49,10 +79,10 @@ def _get_run_name(d) -> str:
         return "%s"
     p_filepath = Path(filepath)
     if p_filepath.is_absolute():
-        output_dir = _get_output_dir()
-        common = os.path.commonpath([output_dir, p_filepath])
+        common = os.path.commonpath([Path.cwd(), p_filepath])
         filepath = p_filepath.relative_to(common)
-    return f"[{filepath}](%s)"
+    return f"[{filepath}]({filepath})"
+    # return f"[{filepath}](%s)"
 
 
 def _get_dataset_name(d) -> str:
@@ -240,6 +270,7 @@ CARLA_HEADERS = {
     "dAP_Miss": lambda d: _tide_helper(d, "main.dAP.Miss"),
     "dAP_FalseNeg": lambda d: _tide_helper(d, "special.dAP.FalseNeg"),
     "dAP_FalsePos": lambda d: _tide_helper(d, "special.dAP.FalsePos"),
+    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value='results')}/%s)",
 }
 
 
@@ -256,6 +287,7 @@ SLEEPER_AGENT_HEADERS = {
     "Accuracy (Benign/Poisoned)": lambda d: _benign_poisoned_helper(
         d, "test_data_all_classes"
     ),
+    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value=None, d=d)}/%s)",
 }
 
 
@@ -312,8 +344,8 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
         "--output",
         "-o",
         type=str,
-        default=os.path.join(output_dir, "results/%s.md"),
-        help=f'Path to output tables. Defaults to "{os.path.join(output_dir, f"results/%s.md")}" where "%s" is replaced with the attack name if supplied.',
+        default=Path(output_dir).parent / "results/%s.md",
+        help=f'Path to output tables. Defaults to "{Path(output_dir).parent / f"results/%s.md"}" where "%s" is replaced with the attack name if supplied.',
     )
     parser.add_argument(
         "--clean",
@@ -382,11 +414,29 @@ def _split_markdown_href(name: str) -> tuple[Optional[str], Optional[str]]:
     return name, path
 
 
+def _safe_symlink(src: Path, dst: Path):
+    if isinstance(src, str):
+        src = Path(src)
+    if isinstance(dst, str):
+        dst = Path(dst)
+    if dst.exists():
+        if src.resolve() == dst.resolve():
+            log.debug(f"Symlink {dst} already exists.")
+            return
+        else:
+            log.warning(
+                f"Symlink {dst} used to point to {dst.resolve()}, but now points to {src.resolve()}."
+            )
+            os.remove(dst)
+    os.symlink(src, dst)
+    log.debug(f"Created symlink {dst} -> {src}")
+
+
 def _write_results(attacks, headers, rows, output):
     table = _parse_markdown_table(headers, rows)
     log.debug(f"Results for {attacks}:\n{table}")
     attack_name = "combined" if len(attacks) > 1 else attacks[0]
-    output_path = Path(output % attack_name if "%s" in str(output) else output)
+    output_path = Path(str(output) % attack_name if "%s" in str(output) else output)
     os.makedirs(output_path.parent, exist_ok=True)
     with open(output_path, "w") as f:
         f.write(table)
@@ -394,30 +444,26 @@ def _write_results(attacks, headers, rows, output):
     log.info(f"Wrote {lines} {attack_name} results to {output_path}.")
     log.debug(f"Creating symlinks to results in {output_path.with_suffix('')}/")
     for row in rows:
-        name = row[0]
-        if name is None:
+        res = row[-1]
+        if res is None:
             continue
-        config_path, result_path = map(Path, _split_markdown_href(name))
+        _, result_path = map(Path, _split_markdown_href(res))
         # if we have a result_path, symlink it
         if result_path is not None:
-            if not Path(result_path).exists():
-                log.warning(
-                    f"Result path {result_path} does not exist, skipping symlink."
-                )
-                continue
-            symlink_path = output_path.with_suffix("") / result_path.parent.name
-            os.makedirs(symlink_path.parent, exist_ok=True)
-            if symlink_path.exists():
-                if result_path.parent == symlink_path.resolve():
-                    log.debug(f"Symlink {symlink_path} already exists.")
-                    continue
-                else:
+            # get rid of attack name prepend as this is added to make symlinks work
+            result_path = Path(str(result_path).replace(f"{attack_name}/", ""))
+            if not result_path.exists():
+                result_path = Path(_get_output_dir()) / result_path
+                if not result_path.exists():
                     log.warning(
-                        f"Symlink {symlink_path} used to point to {symlink_path.resolve()}, but now points to {result_path.parent}."
+                        f"Result path {result_path} does not exist, skipping symlink."
                     )
-                    os.remove(symlink_path)
-            os.symlink(result_path.parent, symlink_path)
-            log.debug(f"Created symlink {symlink_path} -> {result_path.parent}")
+                    continue
+            os.makedirs(output_path.with_suffix(""), exist_ok=True)
+            _safe_symlink(
+                result_path.parent,
+                output_path.with_suffix("") / result_path.parent.name,
+            )
 
 
 def collect_armory_outputs(command_args, prog, description):
@@ -443,7 +489,7 @@ def collect_armory_outputs(command_args, prog, description):
         raise ValueError(f"Unrecognized default attack {args.default}")
 
     if args.clean:
-        _clean(output_dir)
+        return _clean(output_dir)
 
     # get json results files
     log.info(f"Recursive globbing for {args.glob} in {output_dir}")
