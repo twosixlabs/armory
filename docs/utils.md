@@ -5,7 +5,8 @@ Additional utility functions provided to support armory usage. Information avail
 1. [get-branch](#get-branch)
 2. [rgb-convert](#rgb-convert)
 3. [plot-mAP-by-giou](#plot-map-by-giou)
-4. [collect-outputs](#collect-outputs)
+4. [shape-gen](#shape-gen)
+5. [collect-outputs](#collect-outputs)
 
 
 ## [get-branch](../armory/cli/tools.py#L24)
