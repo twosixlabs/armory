@@ -5,6 +5,7 @@ Additional utility functions provided to support armory usage. Information avail
 1. [get-branch](#get-branch)
 2. [rgb-convert](#rgb-convert)
 3. [plot-mAP-by-giou](#plot-map-by-giou)
+4. [collect-outputs](#collect-outputs)
 
 
 ## [get-branch](../armory/cli/tools.py#L24)
@@ -79,3 +80,52 @@ See [our write-up](https://docs.google.com/document/d/1_8_nRQmHhK5ieHNcGhoRtBZcR
       -h, --help            show this help message and exit
       --output-dir OUTPUT_DIR
       --show                Show the generated shape using matplotlib
+
+
+## [collect-outputs](../armory/cli/tools/collect_outputs.py)
+Generate evaluation tables automatically using various flags. Optionally organize by performer, attack type, or any other config field.
+
+Additionally supply `--clean` to automatically clean up your output directory. This:
+- Removes folders with just `armory-log.txt` and `colored-log.txt`
+- Removes pairs of duplicate png images from `saved_samples` where `...x.png` is equivalent to `...x_adv.png`.
+- Removed files are placed in `ARMORY_OUTPUT_DIR/.cleaned`
+_Note that extracted config path is always relative to CWD_
+
+Currently only supports `CARLAAdversarialPatchPyTorch` and `SleeperAgentAttack` & `MITMPoisonSleeperAgent`
+
+
+```shell
+Convert runs from the output directory into tables
+
+options:
+  -h, --help            show this help message and exit
+  --glob GLOB, -g GLOB  Glob pattern to match json outputs. Defaults to `*.json`.
+  --output OUTPUT, -o OUTPUT
+                        Path to output tables. Defaults to /home/jonathan.prokos/.armory/results/ATTACK.md where str format placeholder is replaced with ATTACK name if supplied.
+  --clean               Clean up all failed runs (directories containing _only_ {armory,colored}-log.txt).
+                        Moves them to a new directory called .cleaned.
+  --unify [ATTACK ...]  Unify results from multiple attacks into a single markdown file. Takes a list of attack names to unify.
+                        Defaults to all attacks if no attack is supplied. Does not output individual tables. 
+  --collate [KWARG], -c [KWARG]
+                        Combine attack results based on the supplied kwarg. Defaults to `config.metric.task`.
+  --absolute            Use absolute path for hyperlinks in the output tables.
+  --default DEFAULT     Default attack to use for headers. Defaults to CARLAAdversarialPatchPyTorch.
+  --sort [HEADER]       Sort results by the supplied header(s).
+  --filter FILTER       Filter results to only those matching the supplied regex.
+  -d, --debug           synonym for --log-level=armory:debug
+  --log-level LOG_LEVEL
+                        set log level per-module (ex. art:debug) can be used mulitple times
+```
+
+Example usage:
+```shell
+cd ~/git/twosixlabs/gard-evaluatsion/MITM_sleeper_agent/jprokos26
+python3 -m armory utils collect-outputs --collate --glob "*Poison*.json" --sort --filter "diffusion"
+cp -Lr ~/.armory/results/SleeperAgentAttack* .
+git commit -am "Adding diffusion sleeper results"
+```
+Which gives me the following in a [markdown file](https://github.com/twosixlabs/gard-evaluations/blob/eval7-jp-MITM_sleeper/MITM_sleeper_agent/jprokos26/SleeperAgentAttack.md):
+
+Run|Defense|Dataset|Attack|Attack Params|Poison %|Attack Success Rate|Accuracy (Benign/Poisoned)|output
+---|---|---|---|---|---|---|---|---
+[configs/diffusion/00673/cifar10_sleeper_agent_p10_MITM.json](configs/diffusion/00673/cifar10_sleeper_agent_p10_MITM.json)|BoostedWeakLearners|cifar10|SleeperAgentAttack|epsilon=0.0627 k_trigger=1000 lrs=[[0.1, 0.01, 0.001, 0.0001, 1e-05], [250, 350, 400, 430, 460]] max_epochs=500 max_trials=1 model_retrain=True model_retraining_epoch=80 patch_size=8 patching_strategy=random retraining_factor=4 selection_strategy=max-norm|0.1|0.053|0.64/0.6364|[result json](SleeperAgentAttack/MITM_2023-08-31T011535.882149/MITMPoisonSleeperAgent_1693444544.json)

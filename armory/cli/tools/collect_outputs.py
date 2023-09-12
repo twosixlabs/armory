@@ -341,12 +341,13 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
         help="Glob pattern to match json outputs. Defaults to `*.json`.",
         default="*.json",
     )
+    output_default = Path(output_dir).parent / "results/%s.md"
     parser.add_argument(
         "--output",
         "-o",
         type=str,
-        default=Path(output_dir).parent / "results/%s.md",
-        help=f'Path to output tables. Defaults to "{Path(output_dir).parent / f"results/%s.md"}" where "%s" is replaced with the attack name if supplied.',
+        default=output_default,
+        help=f"Path to output tables. Defaults to {output_default.parent / 'ATTACK.md'} where str format placeholder is replaced with ATTACK name if supplied.",
     )
     parser.add_argument(
         "--clean",
