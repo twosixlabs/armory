@@ -313,10 +313,7 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
         "-o",
         type=str,
         default=os.path.join(output_dir, "results/%s.md"),
-        help='Path to output tables. Defaults to "{}".'.format(
-            os.path.join(output_dir, "results/{}.md")
-        )
-        + "\n{} is replaced with the attack name if supplied.",
+        help=f'Path to output tables. Defaults to "{os.path.join(output_dir, f"results/%s.md")}" where "%s" is replaced with the attack name if supplied.',
     )
     parser.add_argument(
         "--clean",
@@ -370,15 +367,57 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
     _debug(parser)
 
 
-def _write_results(attacks, table, output):
+def _split_markdown_href(name: str) -> tuple[Optional[str], Optional[str]]:
+    """Split a name into a name and a path.
+    Run name is usually result filepath and path is config filepath"""
+    if name is None:
+        return None, None
+    pattern = r"\[([^]]+)\]\(([^)]+)\)"
+    hits = re.findall(pattern, name)
+    if len(hits) == 0:
+        return name, None
+    if len(hits) > 1:
+        raise ValueError(f"Found multiple links in name {name}")
+    name, path = hits[0]
+    return name, path
+
+
+def _write_results(attacks, headers, rows, output):
+    table = _parse_markdown_table(headers, rows)
     log.debug(f"Results for {attacks}:\n{table}")
     attack_name = "combined" if len(attacks) > 1 else attacks[0]
-    output_path = output % attack_name if "%s" in str(output) else output
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    output_path = Path(output % attack_name if "%s" in str(output) else output)
+    os.makedirs(output_path.parent, exist_ok=True)
     with open(output_path, "w") as f:
         f.write(table)
     lines = len(table.split("\n")) - 1
-    log.info(f"Wrote {lines} {attack_name} results to {output_path}")
+    log.info(f"Wrote {lines} {attack_name} results to {output_path}.")
+    log.debug(f"Creating symlinks to results in {output_path.with_suffix('')}/")
+    for row in rows:
+        name = row[0]
+        if name is None:
+            continue
+        config_path, result_path = map(Path, _split_markdown_href(name))
+        # if we have a result_path, symlink it
+        if result_path is not None:
+            if not Path(result_path).exists():
+                log.warning(
+                    f"Result path {result_path} does not exist, skipping symlink."
+                )
+                continue
+            symlink_path = output_path.with_suffix("") / result_path.parent.name
+            os.makedirs(symlink_path.parent, exist_ok=True)
+            if symlink_path.exists():
+                if result_path.parent == symlink_path.resolve():
+                    log.debug(f"Symlink {symlink_path} already exists.")
+                    continue
+                else:
+                    log.warning(
+                        f"Symlink {symlink_path} used to point to {symlink_path.resolve()}, but now points to {result_path.parent}."
+                    )
+                    os.remove(symlink_path)
+            os.symlink(result_path.parent, symlink_path)
+            log.debug(f"Created symlink {symlink_path} -> {result_path.parent}")
 
 
 def collect_armory_outputs(command_args, prog, description):
@@ -410,7 +449,7 @@ def collect_armory_outputs(command_args, prog, description):
     log.info(f"Recursive globbing for {args.glob} in {output_dir}")
     results = list(
         filter(
-            lambda p: p.parent.name != "saved_samples",
+            lambda p: p.parent.name != "saved_samples" and p.resolve() == p,
             Path(output_dir).rglob("*/" + args.glob),
         )
     )
@@ -486,16 +525,10 @@ def collect_armory_outputs(command_args, prog, description):
             attacks = args.unify
         headers = [list(HEADERS.get(a, HEADERS[args.default]).keys()) for a in attacks]
         rows = [tables[a] for a in attacks]
-        table = _parse_markdown_table(headers, rows)
-        _write_results(attacks, table, args.output)
+        _write_results(attacks, headers, rows, args.output)
     else:
-        for attack, table_rows in sorted(
+        for attack, rows in sorted(
             tables.items(), key=lambda x: len(x[1]), reverse=True
         ):
             headers = list(HEADERS.get(attack, HEADERS[args.default]).keys())
-            try:
-                table = _parse_markdown_table(headers, table_rows)
-            except Exception as e:
-                log.error(f"Error parsing table for {attack}")
-                raise e
-            _write_results([attack], table, args.output)
+            _write_results([attack], headers, rows, args.output)
