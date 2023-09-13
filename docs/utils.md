@@ -102,7 +102,7 @@ options:
   -h, --help            show this help message and exit
   --glob GLOB, -g GLOB  Glob pattern to match json outputs. Defaults to `*.json`.
   --output OUTPUT, -o OUTPUT
-                        Path to output tables. Defaults to /home/jonathan.prokos/.armory/results/ATTACK.md where str format placeholder is replaced with ATTACK name if supplied.
+                        Path to output tables. Defaults to ARMORY_OUTPUT_DIR/../results/ATTACK.md where str format placeholder is replaced with ATTACK name if supplied.
   --clean               Clean up all failed runs (directories containing _only_ {armory,colored}-log.txt).
                         Moves them to a new directory called .cleaned.
   --unify [ATTACK ...]  Unify results from multiple attacks into a single markdown file. Takes a list of attack names to unify.
