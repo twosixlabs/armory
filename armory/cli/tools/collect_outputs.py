@@ -6,7 +6,8 @@ import operator
 import os
 from pathlib import Path
 import re
-from typing import Generator, Optional, Union, Tuple
+import time
+from typing import Generator, Optional, Tuple, Union
 
 from PIL import Image
 
@@ -15,10 +16,11 @@ from armory.cli.tools.utils import _debug, simple_progress_bar
 from armory.logs import log, update_filters
 
 
-def _clean(output_dir: str):
+def _clean(output_dir: str, expiration: int = 6 * 60 * 60):
     output_dir = Path(output_dir)
     clean_dir = output_dir / ".cleaned"
     # get all directories containing _only_ armory-log.txt and colored-log.txt
+    # ignore directories modified within the last 6 hours (to prevent active runs from being deleted)
     empty_dirs = [
         d
         for d in output_dir.rglob("**/")
@@ -27,6 +29,7 @@ def _clean(output_dir: str):
         and len(list(d.glob("*"))) == 2
         and any([f.name == "armory-log.txt" for f in d.glob("*")])
         and any([f.name == "colored-log.txt" for f in d.glob("*")])
+        and d.stat().st_mtime - time.time() > expiration
     ]
     log.info(
         f"Found {len(empty_dirs)} empty directories to clean. Moving to {clean_dir}"
@@ -267,7 +270,7 @@ CARLA_HEADERS = {
     "dAP_Miss": lambda d: _tide_helper(d, "main.dAP.Miss"),
     "dAP_FalseNeg": lambda d: _tide_helper(d, "special.dAP.FalseNeg"),
     "dAP_FalsePos": lambda d: _tide_helper(d, "special.dAP.FalsePos"),
-    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value='results')}/%s)",
+    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value='results', d=d)}/%s)",
 }
 
 
@@ -284,7 +287,7 @@ SLEEPER_AGENT_HEADERS = {
     "Accuracy (Benign/Poisoned)": lambda d: _benign_poisoned_helper(
         d, "test_data_all_classes"
     ),
-    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value=None, d=d)}/%s)",
+    "output": lambda d: f"[result json]({_get_dict_value('config.attack.name', default_value='results', d=d)}/%s)",
 }
 
 
