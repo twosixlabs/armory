@@ -6,7 +6,7 @@ import operator
 import os
 from pathlib import Path
 import re
-from typing import Generator, Optional, Union
+from typing import Generator, Optional, Union, Tuple
 
 from PIL import Image
 
@@ -37,23 +37,21 @@ def _clean(output_dir: str):
         d.rename(target)
     # delete all pairs of .png files NAME.png and NAME_adv.png where both files are equivalent
     # (i.e. NAME.png is a copy of NAME_adv.png)
-    log.info("Cleaning up duplicate .png files")
+    log.info("Cleaning up duplicate poisoned .png files")
 
     pngs = list(
         filter(
-            lambda p: "MITM" in str(p),
+            lambda p: len(list(p.parent.parent.glob("*Poison*"))) > 0,
             output_dir.rglob("*x.png"),
         )
     )
+    log.debug(f"Found {len(pngs)} .png files to check for duplicates.")
     unlinks = set()
     for png in simple_progress_bar(pngs, msg="Checking equality..."):
         adv = png.parent / (png.stem + "_adv.png")
         if adv.exists() and Image.open(png).tobytes() == Image.open(adv).tobytes():
-            # log.debug(f"Deleting {png}")
             unlinks.add(png)
             unlinks.add(adv)
-        # else:
-        # log.debug(f"Keeping {adv}")
     log.info(
         f"Found {len(pngs) - len(unlinks) // 2}/{len(pngs)} non-duplicate .png pairs. Moving the rest to {clean_dir}/pngs/"
     )
@@ -395,7 +393,7 @@ def _add_parser_args(parser, output_dir: str = _get_output_dir()):
     _debug(parser)
 
 
-def _split_markdown_href(name: str) -> tuple[Optional[str], Optional[str]]:
+def _split_markdown_href(name: str) -> Tuple[Optional[str], Optional[str]]:
     """Split a name into a name and a path.
     Run name is usually result filepath and path is config filepath"""
     if name is None:
