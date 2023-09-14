@@ -304,10 +304,14 @@ def _parse_markdown_table(headers, rows):
     stacked vertically separated by a newline."""
     if isinstance(headers[0], list):
         return "\n\n".join([_parse_markdown_table(h, r) for h, r in zip(headers, rows)])
+    rows = [[str(r) for r in row] for row in rows]
+    column_widths = [max(map(len, col)) for col in zip(*rows, headers)]
+    headers = [f"{h:<{w}}" for h, w in zip(headers, column_widths)]
+    rows = [[f"{r:<{w}}" for r, w in zip(row, column_widths)] for row in rows]
     table = "\n".join(
         [
             "|".join(headers),
-            "|".join(["---"] * len(headers)),
+            "|".join(["-" * w for w in column_widths]),
             *["|".join(map(str, row)) for row in rows],
         ]
     )
