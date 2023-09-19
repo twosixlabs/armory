@@ -4,7 +4,7 @@ CARLA object detection
 Scenario Contributor: MITRE Corporation
 """
 
-from armory.instrument.export import ObjectDetectionExporter
+from armory.instrument.export import ExportMeter, ObjectDetectionExporter
 from armory.logs import log
 from armory.scenarios.object_detection import ObjectDetectionTask
 
@@ -22,6 +22,17 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
         if self.config["dataset"]["batch_size"] != 1:
             raise ValueError("batch_size must be 1 for evaluation.")
         super().load_dataset(eval_split_default="dev")
+    
+    def load_export_meters(self):
+        super().load_export_meters()
+
+        export_meter = ExportMeter(
+            "perturbation_exporter",
+            self.sample_exporter,
+            f"scenario.perturbation",
+            max_batches=self.num_export_batches,
+        )
+        self.hub.connect_meter(export_meter, use_default_writers=False)
 
     def load_metrics(self):
         super().load_metrics()
@@ -72,12 +83,17 @@ class CarlaObjectDetectionTask(ObjectDetectionTask):
                 **self.generate_kwargs,
             )
 
+            if hasattr(self.attack, "perturbations"):
+                perturbations = self.attack.perturbations
+
         # Ensure that input sample isn't overwritten by model
         self.hub.set_context(stage="adversarial")
         x_adv.flags.writeable = False
         y_pred_adv = self.model.predict(x_adv, **self.predict_kwargs)
 
         self.probe.update(x_adv=x_adv, y_pred_adv=y_pred_adv)
+        if hasattr(self.attack, "perturbations"):
+            self.probe.update(perturbation=perturbations)
         if self.targeted:
             self.probe.update(y_target=y_target)
 

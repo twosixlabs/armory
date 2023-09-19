@@ -44,6 +44,8 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             kwargs.pop("hsv_upper_bound", [255, 255, 255])
         )  # [255, 255, 255] means unbounded above
 
+        self.perturbations = []
+
         super().__init__(estimator=estimator, **kwargs)
 
     def create_initial_image(self, size, hsv_lower_bound, hsv_upper_bound):
@@ -449,6 +451,7 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
         num_imgs = x.shape[0]
         attacked_images = []
+        self.perturbations = []
         for i in range(num_imgs):
             # Adversarial patch attack, when used for object detection, requires ground truth
             y_gt = dict()
@@ -556,6 +559,11 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             patch, _ = super().generate(np.expand_dims(x[i], axis=0), y=[y_gt])
 
+            # Extract perturbation image
+            perturbation = self._patch.detach().cpu().numpy()
+            perturbation = np.transpose(perturbation, (1, 2, 0))
+            self.perturbations.append(perturbation)
+
             # Patch image
             x_tensor = torch.tensor(np.expand_dims(x[i], axis=0)).to(
                 self.estimator.device
@@ -583,4 +591,5 @@ class CARLAAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
             attacked_images.append(patched_image)
 
+        self.perturbations = np.array(self.perturbations)
         return np.array(attacked_images)
