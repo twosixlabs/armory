@@ -19,7 +19,7 @@ from jsonschema import ValidationError
 
 import armory
 from armory import arguments, paths
-from armory.cli.tools import log_current_branch, rgb_depth_convert
+from armory.cli import CLI_COMMANDS
 from armory.configuration import load_global_config, save_config
 from armory.eval import Evaluator
 import armory.logs
@@ -628,7 +628,6 @@ def configure(command_args, prog, description):
     print(resolved)
     save = None
     while save is None:
-
         if os.path.isfile(default_host_paths.armory_config):
             print("WARNING: this will overwrite existing configuration.")
             print("    Press Ctrl-C to abort.")
@@ -719,12 +718,6 @@ def exec(command_args, prog, description):
     sys.exit(exit_code)
 
 
-UTILS_COMMANDS = {
-    "get-branch": (log_current_branch, "log the current git branch of armory"),
-    "rgb-convert": (rgb_depth_convert, "converts rgb depth images to another format"),
-}
-
-
 def utils_usage():
     lines = [
         f"{PROGRAM} <command>",
@@ -734,7 +727,7 @@ def utils_usage():
         "",
         "Commands:",
     ]
-    for name, (func, description) in UTILS_COMMANDS.items():
+    for name, (func, description) in CLI_COMMANDS.items():
         lines.append(f"    {name} - {description}")
     lines.extend(
         [
@@ -751,12 +744,12 @@ def utils(command_args, prog, description):
     parser = argparse.ArgumentParser(prog=prog, usage=utils_usage())
     parser.add_argument(
         "command",
-        choices=UTILS_COMMANDS.keys(),
+        choices=CLI_COMMANDS.keys(),
         help="utility command to run",
     )
     args = parser.parse_args(sys.argv[2:3])
 
-    func, description = UTILS_COMMANDS[args.command]
+    func, description = CLI_COMMANDS[args.command]
     prog = f"{PROGRAM} {args.command}"
     return func(sys.argv[3:], prog, description)
 

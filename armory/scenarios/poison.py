@@ -11,6 +11,7 @@ import numpy as np
 from tensorflow.random import set_seed as tf_set_seed
 
 from armory import metrics
+from armory.data import majority_masks as majority_mask_dir
 from armory.data.datasets import NumpyDataGenerator
 from armory.instrument import GlobalMeter, LogWriter, Meter, ResultsWriter
 from armory.instrument.export import ImageClassificationExporter
@@ -109,6 +110,7 @@ class Poison(Scenario):
             raise NotImplementedError("triggered=False attacks are not implemented")
         self.triggered = triggered
         self.explanatory_model = None
+        self.majority_masks = None
         self.fit_generator = fit_generator
 
     def set_random_seed(self):
@@ -307,7 +309,7 @@ class Poison(Scenario):
         self.x_train = self.x_poison[indices_to_keep]
         self.y_train = self.y_poison[indices_to_keep]
         self.indices_to_keep = indices_to_keep
-        self.removed = (1 - self.indices_to_keep).astype(np.bool)
+        self.removed = (1 - self.indices_to_keep).astype(np.bool_)
         self.probe.update(
             removed=self.removed, predicted_dirty_mask=~self.indices_to_keep
         )
@@ -385,18 +387,30 @@ class Poison(Scenario):
             **self.dataset_kwargs,
         )
         self.i = -1
-        if self.explanatory_model is not None:
+        if self.explanatory_model is not None or self.majority_masks is not None:
             self.init_explanatory()
 
     def load_fairness_metrics(self):
-        explanatory_config = self.config["adhoc"].get("explanatory_model")
-        if explanatory_config:
-            self.explanatory_model = ExplanatoryModel.from_config(explanatory_config)
-        else:
-            # compute_fairness_metrics was true, but there is no explanatory config
-            raise ValueError(
-                "If computing fairness metrics, must specify 'explanatory_model' under 'adhoc'"
+        majority_mask_file = self.config["adhoc"].get("majority_masks")
+        if majority_mask_file:
+            # Attempt to load majority masks first, if provided
+            log.info("Using pre-computed majority masks...")
+            self.majority_masks = np.load(
+                majority_mask_dir.get_path(majority_mask_file)
             )
+        else:
+            # Load explanatory model otherwise
+            log.info("Using explanatory model...")
+            explanatory_config = self.config["adhoc"].get("explanatory_model")
+            if explanatory_config:
+                self.explanatory_model = ExplanatoryModel.from_config(
+                    explanatory_config
+                )
+            else:
+                # compute_fairness_metrics was true, but there is no explanatory config or masks
+                raise ValueError(
+                    "If computing fairness metrics, must specify 'explanatory_model' or 'majority_masks' under 'adhoc'"
+                )
 
         if not self.check_run and self.use_filtering_defense:
             self.hub.connect_meter(
@@ -522,7 +536,7 @@ class Poison(Scenario):
 
         self.y_pred = y_pred
         self.source = source
-        if self.explanatory_model is not None:
+        if self.explanatory_model is not None or self.majority_masks is not None:
             self.run_explanatory()
 
     def run_attack(self):
@@ -574,48 +588,66 @@ class Poison(Scenario):
         """
         get majority ceilings on unpoisoned part of train set
         """
-        if self.explanatory_model is None:
-            raise ValueError("No explanatory model")
-        if self.fit_generator:
-            batch_size = self.fit_batch_size
+        if self.majority_masks is not None:
+            # Use pre-computed majority masks if provided
+            self.majority_mask_train_unpoisoned = self.majority_masks["train"][
+                ~self.poisoned
+            ]
+            self.majority_ceilings = None
         else:
-            batch_size = None
-        class_majority_mask = metrics.get("class_majority_mask")
-        activations = self.explanatory_model.get_activations(
-            self.x_poison[~self.poisoned],
-            batch_size=batch_size,
-        )
-        (
-            self.majority_mask_train_unpoisoned,
-            self.majority_ceilings,
-        ) = class_majority_mask(
-            activations,
-            self.y_poison[~self.poisoned],
-        )
+            # Calculate majority masks from explanatory model otherwise
+            if self.explanatory_model is None:
+                raise ValueError("No explanatory model")
+
+            if self.fit_generator:
+                batch_size = self.fit_batch_size
+            else:
+                batch_size = None
+            class_majority_mask = metrics.get("class_majority_mask")
+            activations = self.explanatory_model.get_activations(
+                self.x_poison[~self.poisoned],
+                batch_size=batch_size,
+            )
+            (
+                self.majority_mask_train_unpoisoned,
+                self.majority_ceilings,
+            ) = class_majority_mask(
+                activations,
+                self.y_poison[~self.poisoned],
+            )
+
         return self.majority_mask_train_unpoisoned, self.majority_ceilings
 
     def get_test_majority_mask(self):
         """
         get majority ceilings on unpoisoned part of test set
         """
-        if self.explanatory_model is None:
-            raise ValueError("No explanatory model")
-        if not hasattr(self, "majority_ceilings"):
-            raise ValueError("Must first call 'get_train_majority_mask_and_ceilings'")
-        class_majority_mask = metrics.get("class_majority_mask")
-        if self.fit_generator:
-            batch_size = self.fit_batch_size
+        if self.majority_masks is not None:
+            # Use pre-computed majority masks if provided
+            self.majority_mask_test_set = self.majority_masks["test"]
         else:
-            batch_size = None
-        activations = self.explanatory_model.get_activations(
-            self.test_x, batch_size=batch_size
-        )
-        # use copy of majority ceilings computed from train set
-        self.majority_mask_test_set, _ = class_majority_mask(
-            activations,
-            self.test_y,
-            majority_ceilings=copy.copy(self.majority_ceilings),
-        )
+            # Calculate majority masks from explanatory model otherwise
+            if self.explanatory_model is None:
+                raise ValueError("No explanatory model")
+            if not hasattr(self, "majority_ceilings"):
+                raise ValueError(
+                    "Must first call 'get_train_majority_mask_and_ceilings'"
+                )
+
+            class_majority_mask = metrics.get("class_majority_mask")
+            if self.fit_generator:
+                batch_size = self.fit_batch_size
+            else:
+                batch_size = None
+            activations = self.explanatory_model.get_activations(
+                self.test_x, batch_size=batch_size
+            )
+            # use copy of majority ceilings computed from train set
+            self.majority_mask_test_set, _ = class_majority_mask(
+                activations,
+                self.test_y,
+                majority_ceilings=copy.copy(self.majority_ceilings),
+            )
 
         return self.majority_mask_test_set
 
@@ -663,7 +695,9 @@ class Poison(Scenario):
             )
 
     def finalize_results(self):
-        if getattr(self, "explanatory_model") and not self.check_run:
+        if (
+            getattr(self, "explanatory_model") or getattr(self, "majority_masks")
+        ) and not self.check_run:
             self.finalize_explanatory()
             self.compute_explanatory()
         self.hub.close()

@@ -23,6 +23,45 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
 
         super().__init__(estimator=estimator, **kwargs)
 
+    # Set`loss.backward(retain_graph=False)` and zero out Adam optimizer gradients before each attack iteration
+    def _train_step(
+        self,
+        images: "torch.Tensor",
+        target: "torch.Tensor",
+        mask: Optional["torch.Tensor"] = None,
+    ) -> "torch.Tensor":
+
+        self.estimator.model.zero_grad()
+        # only zero gradients when there is a non-pgd optimizer; pgd optimizer appears to perform better when gradients accumulate
+        if self._optimizer_string == "Adam":
+            self._optimizer.zero_grad(set_to_none=True)
+        loss = self._loss(images, target, mask)
+        loss.backward(retain_graph=False)
+
+        if self._optimizer_string == "pgd":
+            if self._patch.grad is not None:
+                gradients = self._patch.grad.sign() * self.learning_rate
+            else:
+                raise ValueError("Gradient term in PyTorch model is `None`.")
+
+            with torch.no_grad():
+                self._patch[:] = torch.clamp(
+                    self._patch + gradients,
+                    min=self.estimator.clip_values[0],
+                    max=self.estimator.clip_values[1],
+                )
+        else:
+            self._optimizer.step()
+
+            with torch.no_grad():
+                self._patch[:] = torch.clamp(
+                    self._patch,
+                    min=self.estimator.clip_values[0],
+                    max=self.estimator.clip_values[1],
+                )
+
+        return loss
+
     def create_initial_image(self, size):
         """
         Create initial patch based on a user-defined image
@@ -400,7 +439,7 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             # Use this mask to embed patch into the background in the event of occlusion
             self.patch_masks_video = y_patch_metadata[i]["masks"]
 
-            # self._patch needs to be re-initialized with the correct shape
+            # self._patch and optimizer need to be re-initialized
             if self.patch_base_image is not None:
                 self.patch_base = self.create_initial_image(
                     (patch_width, patch_height),
@@ -412,6 +451,8 @@ class CARLAMOTAdversarialPatchPyTorch(AdversarialPatchPyTorch):
             self._patch = torch.tensor(
                 patch_init, requires_grad=True, device=self.estimator.device
             )
+            if self._optimizer_string == "Adam":
+                self._optimizer = torch.optim.Adam([self._patch], lr=self.learning_rate)
 
             # Perform batch attack by attacking multiple frames from the same video
             for batch_i in range(0, x[i].shape[0], self.batch_frame_size):

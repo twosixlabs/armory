@@ -13,6 +13,14 @@ jobs:
     name: ☁️ Docker Armory Image Tests
     runs-on: ubuntu-latest
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:
@@ -50,6 +58,14 @@ jobs:
     name: ☁️ Docker Deepspeech Image Tests
     runs-on: ubuntu-latest
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:
@@ -96,6 +112,14 @@ jobs:
     name: ☁️ Docker Yolo Image Tests
     runs-on: ubuntu-latest
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐄 checkout armory full depth with tags for scm
         uses: actions/checkout@v3
         with:

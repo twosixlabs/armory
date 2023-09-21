@@ -3,8 +3,8 @@ from importlib import import_module
 
 from PIL import Image
 import numpy as np
-import torch
 import tensorflow as tf
+import torch
 
 from armory.data.utils import maybe_download_weights_from_s3
 

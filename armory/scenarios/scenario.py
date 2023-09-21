@@ -67,6 +67,9 @@ class Scenario:
         self._check_config_and_cli_args(
             config, num_eval_batches, skip_benign, skip_attack, skip_misclassified
         )
+        self.original_config = copy.deepcopy(
+            config
+        )  # Save original for output json, since some scenarios/models modify it
         self.config = config
         self.num_eval_batches = num_eval_batches
         self.skip_benign = bool(skip_benign)
@@ -466,7 +469,7 @@ class Scenario:
 
         output = {
             "armory_version": armory.__version__,
-            "config": self.config,
+            "config": self.original_config,
             "results": self.results,
             "timestamp": int(self.time_stamp),
         }

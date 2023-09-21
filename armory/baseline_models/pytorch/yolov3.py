@@ -1,11 +1,11 @@
 from typing import Optional
 
+from art.estimators.object_detection import PyTorchYolo
+from pytorchyolo.models import load_model
+from pytorchyolo.utils.loss import compute_loss
 import torch
 
-from art.estimators.object_detection import PyTorchYolo
-from pytorchyolo.utils.loss import compute_loss
-from pytorchyolo.models import load_model
-
+from armory.baseline_models import model_configs
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -30,6 +30,7 @@ def get_art_model(
     model_kwargs: dict, wrapper_kwargs: dict, weights_path: Optional[str] = None
 ) -> PyTorchYolo:
 
+    model_kwargs["model_path"] = model_configs.get_path(model_kwargs["model_path"])
     model = load_model(weights_path=weights_path, **model_kwargs)
     model_wrapper = Yolo(model)
 

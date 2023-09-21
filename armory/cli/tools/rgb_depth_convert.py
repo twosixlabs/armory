@@ -1,49 +1,9 @@
 import argparse
-import os
 from pathlib import Path
 from typing import Literal, Union
 
+from armory.cli.tools.utils import _debug
 from armory.logs import log, update_filters
-
-
-# Helper from armory.__main__
-def _debug(parser):
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="synonym for --log-level=armory:debug",
-    )
-    parser.add_argument(
-        "--log-level",
-        action="append",
-        help="set log level per-module (ex. art:debug) can be used mulitple times",
-    )
-
-
-def log_current_branch(command_args, prog, description):
-    """Log the current git branch of armory. Works independent of the current working directory."""
-    try:
-        from armory.__about__ import __version__
-
-        log.info(f"Armory version: {__version__}")
-    except ModuleNotFoundError:
-        log.info("Unable to extract armory version from __about__.py")
-    try:
-        import git
-
-        repo = git.Repo(
-            os.path.dirname(os.path.realpath(__file__)), search_parent_directories=True
-        )
-        log.info(f"Git branch: {repo.active_branch}")
-    except ImportError:
-        log.info(
-            "Unable to import gitpython, cannot determine git branch. Please install GitPython."
-        )
-    except git.exc.InvalidGitRepositoryError:
-        log.info("Unable to find .git directory, cannot determine git branch")
-    except git.exc.GitCommandError:
-        log.info("Unable to determine git branch")
 
 
 def rgb_depth_convert(command_args, prog, description):
@@ -295,3 +255,48 @@ def rgb_depth_convert(command_args, prog, description):
 
     # Show the plot
     plt.show()
+
+
+def plot_mAP_by_giou_with_patch_cli(command_args, prog, description):
+    from armory.postprocessing.plot_patch_aware_carla_metric import (
+        plot_mAP_by_giou_with_patch,
+    )
+
+    parser = argparse.ArgumentParser(
+        prog=prog,
+        description=description,
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+
+    parser.add_argument(
+        "input",
+        type=Path,
+        help="Path to json. Must have 'results.adversarial_object_detection_AP_per_class_by_giou_from_patch' key.",
+    )
+    parser.add_argument(
+        "--flavors",
+        type=str,
+        nargs="+",
+        default=None,
+        choices=["cumulative_by_max_giou", "cumulative_by_min_giou", "histogram_left"],
+        help="Flavors of mAP by giou to plot. Subset of ['cumulative_by_max_giou', 'cumulative_by_min_giou', 'histogram_left'] or None to plot all.",
+    )
+    parser.add_argument("--headless", action="store_true", help="Don't show the plot")
+    parser.add_argument(
+        "--output", type=Path, default=None, help="Path to save the plot"
+    )
+    parser.add_argument(
+        "--exclude-classes",
+        action="store_true",
+        help="Don't include subplot for each class.",
+    )
+    _debug(parser)
+
+    args = parser.parse_args(command_args)
+    plot_mAP_by_giou_with_patch(
+        args.input,
+        flavors=args.flavors,
+        show=not args.headless,
+        output_filepath=args.output,
+        include_classes=not args.exclude_classes,
+    )

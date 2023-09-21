@@ -64,6 +64,49 @@ jobs:
             dist/*.whl
 
 
+  release-base-image:
+    name: Build and Release Base Image
+    needs: [release-wheel]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
+      - name: 🐍 Setup Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      - name: 📩 Checkout Armory w/ full depth(for tags and SCM)
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: 🌎 Setup Build Environment
+        run: |
+          pip install pip>=22.2.2
+          pip install .
+          armory configure --use-defaults
+
+      - name: ☁️ Login to DockerHub
+        if: ${{ env.RELEASE_DRY_RUN == 'false' }}
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🔨 Build and Push Base Image
+        run: |
+          echo "Building Base Image"
+          sed -i 's/\r$//' docker/build-base.sh
+          bash docker/build-base.sh
+
+
   release-docker:
     name: Build and Release Docker Images
     needs: [release-wheel]
@@ -76,6 +119,14 @@ jobs:
           - image: pytorch-deepspeech
           - image: yolo
     steps:
+      - name: 💿 Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 35000
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
+          remove-android: 'true'
+
       - name: 🐍 Setup Python 3.9
         uses: actions/setup-python@v4
         with:

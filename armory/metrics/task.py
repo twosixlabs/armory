@@ -534,6 +534,24 @@ def _check_video_tracking_input(y, y_pred):
         assert y_box_array_shape == y_pred_box_array_shape
 
 
+def _intersection(box_1, box_2):
+    """Return the area of the intersection of two boxes"""
+    x_left = max(box_1[1], box_2[1])
+    x_right = min(box_1[3], box_2[3])
+    y_top = max(box_1[0], box_2[0])
+    y_bottom = min(box_1[2], box_2[2])
+
+    return max(0, x_right - x_left) * max(0, y_bottom - y_top)
+
+
+def _union(box_1, box_2):
+    """Return the area of the union of two boxes"""
+    box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
+    box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
+    intersect_area = _intersection(box_1, box_2)
+    return box_1_area + box_2_area - intersect_area
+
+
 def _intersection_over_union(box_1, box_2):
     """
     Assumes each input has shape (4,) and format [y1, x1, y2, x2] or [x1, y1, x2, y2]
@@ -548,23 +566,234 @@ def _intersection_over_union(box_1, box_2):
     ):
         log.warning("One set of boxes appears to be normalized while the other is not")
 
-    # Determine coordinates of intersection box
-    x_left = max(box_1[1], box_2[1])
-    x_right = min(box_1[3], box_2[3])
-    y_top = max(box_1[0], box_2[0])
-    y_bottom = min(box_1[2], box_2[2])
-
-    intersect_area = max(0, x_right - x_left) * max(0, y_bottom - y_top)
+    intersect_area = _intersection(box_1, box_2)
     if intersect_area == 0:
         return 0
 
-    box_1_area = (box_1[3] - box_1[1]) * (box_1[2] - box_1[0])
-    box_2_area = (box_2[3] - box_2[1]) * (box_2[2] - box_2[0])
+    union_area = _union(box_1, box_2)
 
-    iou = intersect_area / (box_1_area + box_2_area - intersect_area)
+    iou = intersect_area / union_area
     assert iou >= 0
     assert iou <= 1
     return iou
+
+
+def _area_of_polygon(points):
+    """
+    Shoelace formula for area of a polygon.
+    https://en.wikipedia.org/wiki/Shoelace_formula
+
+    points is an array or list of shape (N, 2) and points may be in clockwise or counterclockwise order
+    """
+
+    if isinstance(points, list):
+        points = np.array(points)
+    assert points.shape[1] == 2
+
+    x = points[:, 0]
+    y = points[:, 1]
+    return 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+
+def _area_of_convex_hull(points):
+    """
+    Return area of convex hull of set of 2D points.
+    points is an array of shape (N, 2).
+    """
+
+    from scipy.spatial import ConvexHull
+
+    assert points.shape[1] == 2
+    return ConvexHull(points).volume
+
+
+def _is_convex(poly):
+    """
+    Return True if poly is a convex polygon, else False.
+    poly is an array of shape (N,2)
+    """
+
+    assert poly.shape[1] == 2
+
+    for i in range(len(poly)):
+        if (poly[i] == poly[i - 1]).all():
+            raise ValueError(f"Adjacent points should not be identical: {poly}")
+
+    # A polygon is convex if the cross product has the same sign at all vertices.
+    signs = [
+        np.sign(np.cross(poly[i - 1] - poly[i], poly[i - 2] - poly[i - 1]))
+        for i in range(len(poly))
+    ]
+
+    if (np.array(signs) == 0).all():
+        raise ValueError("Input polygon is a straight line.")
+
+    return not (1 in signs and -1 in signs)
+
+
+def _orient_polygon_counterclockwise(poly):
+    """
+    Reverse polygon vertices if orientation is clockwise.
+    https://en.wikipedia.org/wiki/Curve_orientation#Orientation_of_a_simple_polygon
+    Assumes polygon is convex, so arbitrary vertices can be used.
+    This can be relaxed in the future if needed, see link.
+
+    poly is array of shape (N,2)
+
+    Returns (N,2) array of indices oriented counterclockwise
+    """
+
+    assert poly.shape[1] == 2
+
+    if len(poly) < 3:
+        raise ValueError("Input polygon must have at least 3 vertices.")
+
+    if not _is_convex(poly):
+        raise ValueError(
+            "Input polygon should be convex, or this function can be extended for the non-convex case."
+        )
+
+    cross = np.cross(poly[1] - poly[0], poly[2] - poly[1])
+
+    if cross == 0:
+        log.warning("Input polygon has vertex along straight line segment.")
+        if len(poly) > 3:
+            # remove redundant vertex
+            return _orient_polygon_counterclockwise(np.vstack((poly[0], poly[2:])))
+        else:
+            raise ValueError("Input polygon is a straight line and has no orientation.")
+
+    if cross < 0:
+        # negative cross product => clockwise orientation
+        poly = poly[::-1]
+    return poly
+
+
+def _polygon_intersection(poly_1, poly_2):
+    """
+    Find the area of the intersection of two convex polygons.
+
+    poly_1 and poly_2 are arrays of 2D points, not necessarily the same length.
+    They may be oriented either clockwise or counter-clockwise.
+
+    Adapted with deepest gratitude from https://rosettacode.org/wiki/Sutherland-Hodgman_polygon_clipping#Python
+    This version returns the area, not just the points defining the polygon.
+
+    Behavior of this algorithm is not verified for non-convex polygons, the intersection of which may be disconnected.
+    """
+
+    def inside(p):
+        # Given a hyperplane defined by cp1 and cp2 (outside the function), determine which side
+        # of the hyperplane p lies on
+        inside = (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (
+            p[0] - cp1[0]
+        )
+        return inside
+
+    def computeIntersection():
+        # Find the intersection of two line segments cp1-cp2 and s-e defined outside the function
+        # See https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+        # Note: this is called only if the line segments are known to intersect.  Thus there is no
+        # risk of divisiding by 0 when computing n3 below
+        dc = [cp1[0] - cp2[0], cp1[1] - cp2[1]]
+        dp = [s[0] - e[0], s[1] - e[1]]
+        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+        n2 = s[0] * e[1] - s[1] * e[0]
+        n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
+        return [(n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3]
+
+    assert poly_1.shape[1] == 2
+    assert poly_2.shape[1] == 2
+
+    poly_1 = _orient_polygon_counterclockwise(poly_1)
+    poly_2 = _orient_polygon_counterclockwise(poly_2)
+    outputList = poly_1
+    cp1 = poly_2[-1]
+
+    # Loop over sides of poly_2
+    for point in poly_2:
+        if len(outputList) == 0:
+            # All points of box1 are on the far side of the plane cp1-cp2, hence intersection is empty
+            return 0
+
+        cp2 = point
+        # cp1 and cp2 define an edge of poly_2
+        inputList = outputList
+        outputList = []
+        s = inputList[-1]
+
+        # Loop over sides of poly_1
+        for subjectVertex in inputList:
+            e = subjectVertex
+            # s and e define edge of poly_1
+            if inside(e):
+                if not inside(s):
+                    outputList.append(computeIntersection())
+                outputList.append(e)
+            elif inside(s):
+                outputList.append(computeIntersection())
+            s = e
+        cp1 = cp2
+
+    if len(outputList) == 0:
+        # The intersection is empty
+        return 0
+
+    area = _area_of_polygon(outputList)
+
+    return area
+
+
+def _validate_input_polygon_for_giou(poly):
+    """
+    Standardize polygon format for GIoU input.
+    Converts two-corner rect format to four-corner rect and validates shape
+    """
+
+    if len(poly.shape) == 1:
+        assert poly[2] >= poly[0]
+        assert poly[3] >= poly[1]
+        poly = np.array(
+            [
+                [poly[0], poly[1]],
+                [poly[0], poly[3]],
+                [poly[2], poly[3]],
+                [poly[2], poly[1]],
+            ]
+        )
+    for pt in poly:
+        assert len(pt) == 2
+
+    return poly
+
+
+def _generalized_intersection_over_union(poly_1, poly_2):
+    """
+    https://giou.stanford.edu/
+
+    Return the GIoU between two convex polygons.
+        (Convexity is required by _polygon_intersection.)
+
+    poly_1 and poly_2 are either shape (4,) with format [x1, y1, x2, y2] (defining a rectangle),
+        or shape (N,2) where each element is of the form [x, y] (defining an arbitrary polygon)
+    """
+    poly_1 = _validate_input_polygon_for_giou(poly_1)
+    poly_2 = _validate_input_polygon_for_giou(poly_2)
+
+    # Find C: the area of convex hull enclosing both polygons
+    C = _area_of_convex_hull(np.vstack((poly_1, poly_2)))
+
+    # GIoU = IoU -  ((C - (A U B)) | / C)
+    intersection = _polygon_intersection(poly_1, poly_2)
+    union = _area_of_polygon(poly_1) + _area_of_polygon(poly_2) - intersection
+    IoU = (intersection / union) if union > 0 else 0
+
+    c_term = (C - union) / C if C > 0 else 0
+    giou = IoU - c_term
+
+    assert giou >= -1
+    assert giou <= 1
+    return giou
 
 
 @batchwise
@@ -638,6 +867,145 @@ def video_tracking_mean_success_rate(y, y_pred):
         mean_success_rates.append(success.mean())
 
     return mean_success_rates
+
+
+@populationwise
+def object_detection_AP_per_class_by_giou_from_patch(
+    y_list,
+    y_pred_list,
+    y_patch_metadata_list,
+    iou_threshold=0.5,
+    class_list=None,
+    mean=True,
+    increment=0.1,
+):
+    """
+    Mean average precision for adversarial object detection, organizing results according to
+    how far boxes are from the patch.  The motivation is that a patch is most effective against
+    nearby objects, and reporting mAP over a range of distances from the patch will give additional
+    insight into the attack's behavior.
+
+    This function uses GIoU as a proxy for distance to patch.  GIoU ranges from -1 to 1, with positive
+    values indicating overlap and smaller negative values indicating a greater distance.
+
+    This function returns a dictionary with two subdictionaries, "cumulative_by_min_giou" and
+    "cumulative_by_max_giou".  In each case, the keys are the GIoU thresholds, and the values the are
+    mAP for all objects with whose GIoU is greater (resp. lower) than the threshold.
+
+    y_list (list): of length equal to the number of input examples. Each element in the list
+        should be a dict with "labels" and "boxes" keys mapping to a numpy array of
+        shape (N,) and (N, 4) respectively where N = number of boxes.
+    y_pred_list (list): of length equal to the number of input examples. Each element in the
+        list should be a dict with "labels", "boxes", and "scores" keys mapping to a numpy
+        array of shape (N,), (N, 4), and (N,) respectively where N = number of boxes.
+    y_patch_metadata_list (list): of length equal to the number of input examples.  Each element
+        is a dict with a "gs_coords" key mapping to a numpy array of shape (4,2).
+    class_list (list, optional): a list of classes, such that all predictions and ground-truths
+        with labels NOT in class_list are to be ignored.
+    mean: if False, returns a dict mapping each class to its average precision (AP)
+        if True, calls `mean_ap` on the AP dict and returns a encapsulating dict:
+        {'class': {<class_0>: <class_0_AP>, ...}, 'mean': <mean_AP>}
+    increment: the amount to increment the distance threshold for each reported mAP value
+    """
+
+    y_distances_list = []
+    y_pred_distances_list = []
+    result = {
+        "cumulative_by_min_giou": {},
+        "cumulative_by_max_giou": {},
+        "histogram_left": {},
+    }
+
+    for y, y_pred, metadata in zip(y_list, y_pred_list, y_patch_metadata_list):
+        # For each image, use GIoU as proxy for distance between boxes and patch.
+        # GIoU is positive if there is overlap.
+        patch = metadata["gs_coords"]
+        assert patch.shape == (4, 2)
+        y_distances = np.array(
+            [_generalized_intersection_over_union(box, patch) for box in y["boxes"]]
+        )
+        pred_distances = np.array(
+            [
+                _generalized_intersection_over_union(box, patch)
+                for box in y_pred["boxes"]
+            ]
+        )
+        y_distances_list.append(y_distances)
+        y_pred_distances_list.append(pred_distances)
+
+    # Compute mAP for boxes restricted to GIoU range
+    for threshold in np.arange(0, -1 - increment, -increment):
+        # Start with 0 -- all boxes that overlap the patch
+        y_list_min = [
+            {
+                "boxes": y["boxes"][y_d >= threshold],
+                "labels": y["labels"][y_d >= threshold],
+            }
+            for y, y_d in zip(y_list, y_distances_list)
+        ]
+        y_pred_list_min = [
+            {
+                "boxes": y["boxes"][y_d >= threshold],
+                "labels": y["labels"][y_d >= threshold],
+                "scores": y["scores"][y_d >= threshold],
+            }
+            for y, y_d in zip(y_pred_list, y_pred_distances_list)
+        ]
+        ap = object_detection_AP_per_class(
+            y_list_min, y_pred_list_min, iou_threshold, class_list, mean
+        )
+        if not np.isnan(ap["mean"]):
+            # Possibly nan if there are no boxes on or near the patch
+            result["cumulative_by_min_giou"][f"{threshold:.1f}"] = ap
+
+        y_list_max = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+            }
+            for y, y_d in zip(y_list, y_distances_list)
+        ]
+        y_pred_list_max = [
+            {
+                "boxes": y["boxes"][y_d < threshold],
+                "labels": y["labels"][y_d < threshold],
+                "scores": y["scores"][y_d < threshold],
+            }
+            for y, y_d in zip(y_pred_list, y_pred_distances_list)
+        ]
+
+        ap = object_detection_AP_per_class(
+            y_list_max, y_pred_list_max, iou_threshold, class_list, mean
+        )
+        if not np.isnan(ap["mean"]):
+            # May be nan for smallest giou thresholds where there are no boxes
+            result["cumulative_by_max_giou"][f"{threshold:.1f}"] = ap
+
+        histogram_bin_top = threshold + increment
+        if histogram_bin_top > 0:
+            histogram_bin_top = 1
+        y_list_range = [
+            {
+                "boxes": y["boxes"][(y_d >= threshold) & (y_d < histogram_bin_top)],
+                "labels": y["labels"][(y_d >= threshold) & (y_d < histogram_bin_top)],
+            }
+            for y, y_d in zip(y_list, y_distances_list)
+        ]
+        y_pred_list_range = [
+            {
+                "boxes": y["boxes"][(y_d >= threshold) & (y_d < histogram_bin_top)],
+                "labels": y["labels"][(y_d >= threshold) & (y_d < histogram_bin_top)],
+                "scores": y["scores"][(y_d >= threshold) & (y_d < histogram_bin_top)],
+            }
+            for y, y_d in zip(y_pred_list, y_pred_distances_list)
+        ]
+        ap = object_detection_AP_per_class(
+            y_list_range, y_pred_list_range, iou_threshold, class_list, mean
+        )
+        if not np.isnan(ap["mean"]):
+            result["histogram_left"][f"{threshold:.1f}"] = ap
+
+    return result
 
 
 @populationwise
