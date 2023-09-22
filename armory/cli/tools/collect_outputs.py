@@ -549,6 +549,7 @@ def collect_armory_outputs(command_args, prog, description):
                 raise ValueError(
                     f"Collation failed: attacks {attacks} have different headers."
                 )
+            attacks.add(first)
 
             for attack in attacks:
                 log.info(f"Collating {attack} into {tgt_collate}")
