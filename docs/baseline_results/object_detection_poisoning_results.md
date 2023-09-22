@@ -13,6 +13,8 @@ Relevant parameters:
 
 See [the paper](https://arxiv.org/pdf/2205.14497.pdf) for a detailed description of each metric recorded.
 
+Example configs exist at [scenario_configs/eval7/poisoning](https://github.com/twosixlabs/armory/tree/master/scenario_configs/eval7/poisoning).  The relevant triggers can be found in [armory/utils/triggers/](https://github.com/twosixlabs/armory/tree/master/armory/utils/triggers)
+
 # Global Misclassification Attack
 
 ## Globe trigger
