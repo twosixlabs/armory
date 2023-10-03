@@ -1991,6 +1991,66 @@ def coco2017(
     )
 
 
+def coco_image_preprocessing(x):
+    x = np.array(x)
+    x = x.astype(np.float32)
+    normalized_x = (x - np.min(x)) / (np.max(x) - np.min(x))
+
+    # add a batch dimension
+    normalized_x = np.expand_dims(normalized_x, axis=0)
+
+    return normalized_x
+
+
+def custom_coco_label_preprocessing(x, y):
+    boxes = []
+    labels = []
+    image_id = []
+    y_transformed = {}
+    for label_dict in y:
+        # convert bbox format from [x, y, width, height] to [x1, y1, x2, y2]
+        bbox = label_dict.pop("bbox")
+        bbox[2] = bbox[0] + bbox[2]
+        bbox[3] = bbox[1] + bbox[3]
+
+        boxes.append(bbox)
+        labels.append(label_dict.pop("category_id"))
+        image_id.append(label_dict.pop("image_id"))
+    
+    y_transformed["boxes"] = np.array(boxes, dtype=np.float32)
+    y_transformed["labels"] = np.array(labels)
+    y_transformed["image_id"] = np.array(image_id)
+    y_transformed = [y_transformed]
+
+    return y_transformed
+
+
+def custom_coco_dataset(
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    ann_file: str = None,
+    preprocessing_fn: Callable = coco_image_preprocessing,
+    label_preprocessing_fn: Callable = custom_coco_label_preprocessing,
+    framework: str = "pytorch",
+    **kwargs,
+) -> ArmoryDataGenerator:
+
+    from torchvision.datasets import CocoDetection
+
+    ds = CocoDetection(root=dataset_dir, annFile=ann_file)
+    generator = ArmoryDataGenerator(
+        iter(ds),
+        size=len(ds),
+        batch_size=batch_size,
+        epochs=epochs,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+    )
+
+    return generator
+
+
 class So2SatContext:
     def __init__(self):
         self.default_type = np.float32
