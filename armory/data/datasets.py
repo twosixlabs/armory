@@ -2003,11 +2003,15 @@ def coco_image_preprocessing(x):
 
 
 def custom_coco_label_preprocessing(x, y):
+    y_tmp = y
+    if isinstance(y, tuple):
+        y_tmp, y_metadata = y
+
     boxes = []
     labels = []
     image_id = []
     y_transformed = {}
-    for label_dict in y:
+    for label_dict in y_tmp:
         # convert bbox format from [x, y, width, height] to [x1, y1, x2, y2]
         bbox = label_dict.pop("bbox")
         bbox[2] = bbox[0] + bbox[2]
@@ -2020,9 +2024,13 @@ def custom_coco_label_preprocessing(x, y):
     y_transformed["boxes"] = np.array(boxes, dtype=np.float32)
     y_transformed["labels"] = np.array(labels)
     y_transformed["image_id"] = np.array(image_id)
-    y_transformed = [y_transformed]
 
-    return y_transformed
+    if isinstance(y, tuple):
+        y = (y_transformed, y_metadata)
+    else:
+        y = [y_transformed]
+
+    return y
 
 
 def custom_coco_dataset(
