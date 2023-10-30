@@ -150,7 +150,7 @@ Agency (DARPA).
 [python-url]: https://pypi.org/project/armory-testbed
 [license-badge]: https://img.shields.io/badge/License-MIT-yellow.svg
 [license-url]: https://opensource.org/licenses/MIT
-[docs-badge]: https://github.com/twosixlabs/armory/docs/assets/docs-badge.svg
-[docs-url]: https://github.com/twosixlabs/armory/docs
+[docs-badge]: docs/assets/docs-badge.svg
+[docs-url]: https://github.com/twosixlabs/armory/tree/master/docs
 [style-badge]: https://img.shields.io/badge/code%20style-black-000000.svg
 [style-url]: https://github.com/ambv/black
