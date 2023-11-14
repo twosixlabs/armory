@@ -1,3 +1,18 @@
+# Deprecation Notice
+
+This repository, now known as GARD-Armory is only to be used by performers involved 
+in the DARPA GARD research program. The adversarial evaluation capabiites that GARD-Armory
+provides for the laboratory work in GARD has been reworked into a more flexible, easily imported,
+readily composible [armory-library](https://github.com/twosixlabs/armory-library). 
+
+Thus, anyone interested in Armory who is not associated with the GARD project should look
+to https://github.com/twosixlabs/armory-library for the Armory that remains under active development. 
+One can install the most recent release from that repository with
+
+    pip install armory-library
+
+
+
 <div align="center">
 <img src="/docs/assets/logo.png" width="50%" title="Armory Logo">
 </div>

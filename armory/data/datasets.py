@@ -828,7 +828,7 @@ class AudioContext:
 
 
 def canonical_audio_preprocess(context, batch):
-    if batch.dtype == np.object:
+    if batch.dtype == object:
         for x in batch:
             check_shapes(x.shape, context.x_shape)
             assert x.dtype == context.input_type
@@ -1692,8 +1692,8 @@ class ClipFrames:
         self.max_frames = max_frames
 
     def __call__(self, batch):
-        if batch.dtype == np.object:
-            clipped_batch = np.empty_like(batch, dtype=np.object)
+        if batch.dtype == object:
+            clipped_batch = np.empty_like(batch, dtype=object)
             clipped_batch[:] = [x[: self.max_frames] for x in batch]
             return clipped_batch
         else:
