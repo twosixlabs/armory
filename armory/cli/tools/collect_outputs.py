@@ -12,7 +12,7 @@ from typing import Generator, Optional, Tuple, Union
 from PIL import Image
 
 from armory import paths
-from armory.cli.tools.utils import _debug, simple_progress_bar, human_sort
+from armory.cli.tools.utils import _debug, human_sort, simple_progress_bar
 from armory.logs import log, update_filters
 
 

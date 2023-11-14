@@ -92,7 +92,7 @@ Additionally supply `--clean` to automatically clean up your output directory. T
 - Removed files are placed in `ARMORY_OUTPUT_DIR/.cleaned`
 _Note that extracted config path is always relative to CWD_
 
-Currently only supports `CARLAAdversarialPatchPyTorch` and `SleeperAgentAttack` & `MITMPoisonSleeperAgent`
+Currently only supports headers defined by HEADERS in [armory/cli/tools/collect_outputs.py#L376](../armory/cli/tools/collect_outputs.py#L376).
 
 
 ```shell
@@ -102,17 +102,27 @@ options:
   -h, --help            show this help message and exit
   --glob GLOB, -g GLOB  Glob pattern to match json outputs. Defaults to `*.json`.
   --output OUTPUT, -o OUTPUT
-                        Path to output tables. Defaults to ARMORY_OUTPUT_DIR/../results/ATTACK.md where str format placeholder is replaced with ATTACK name if supplied.
+                        Path to output tables. Defaults to /home/jonathan.prokos/.armory/results/ATTACK.md where str format placeholder is replaced with ATTACK name if supplied.
   --clean               Clean up all failed runs (directories containing _only_ {armory,colored}-log.txt).
                         Moves them to a new directory called .cleaned.
   --unify [ATTACK ...]  Unify results from multiple attacks into a single markdown file. Takes a list of attack names to unify.
                         Defaults to all attacks if no attack is supplied. Does not output individual tables. 
   --collate [KWARG], -c [KWARG]
                         Combine attack results based on the supplied kwarg. Defaults to `config.metric.task`.
-  --absolute            Use absolute path for hyperlinks in the output tables.
+  --absolute            Use absolute path for hyperlinks in the output tables. Does not create symbolic links.
+  --config-dir CONFIG_DIR
+                        Path to link run configs from. Defaults to current directory.
   --default DEFAULT     Default attack to use for headers. Defaults to CARLAAdversarialPatchPyTorch.
   --sort [HEADER]       Sort results by the supplied header(s).
   --filter FILTER       Filter results to only those matching the supplied regex.
+  --ignore-header IGNORE_HEADER [IGNORE_HEADER ...], -x IGNORE_HEADER [IGNORE_HEADER ...]
+                        Ignore the supplied headers when parsing results.
+  --ignore-kwargs IGNORE_KWARGS [IGNORE_KWARGS ...]
+                        Ignore the supplied kwargs when parsing attack params.
+  --keep-kwargs KEEP_KWARGS [KEEP_KWARGS ...]
+                        Only keep the supplied kwargs when parsing attack params.
+  --ignore-short-runs [IGNORE_SHORT_RUNS]
+                        Ignore runs with runtime less than this value (in minutes). Defaults to 1 minute.
   -d, --debug           synonym for --log-level=armory:debug
   --log-level LOG_LEVEL
                         set log level per-module (ex. art:debug) can be used mulitple times
