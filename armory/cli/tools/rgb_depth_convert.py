@@ -293,6 +293,7 @@ def plot_mAP_by_giou_with_patch_cli(command_args, prog, description):
     _debug(parser)
 
     args = parser.parse_args(command_args)
+    update_filters(args.log_level, args.debug)
     plot_mAP_by_giou_with_patch(
         args.input,
         flavors=args.flavors,

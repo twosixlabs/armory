@@ -1,3 +1,4 @@
+from armory.cli.tools.collect_outputs import collect_armory_outputs
 from armory.cli.tools.generate_shapes import generate_shapes
 from armory.cli.tools.log_current_branch import log_current_branch
 from armory.cli.tools.plot_mAP_by_giou_with_patch_cli import (
@@ -12,5 +13,9 @@ CLI_COMMANDS = {
     "plot-mAP-by-giou": (
         plot_mAP_by_giou_with_patch_cli,
         "Visualize the output of the metric 'object_detection_AP_per_class_by_giou_from_patch.'",
+    ),
+    "collect-outputs": (
+        collect_armory_outputs,
+        "Convert runs from the output directory into tables",
     ),
 }
