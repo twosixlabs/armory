@@ -29,6 +29,7 @@ from armory.data.adversarial import carla_video_tracking_test as cvtt  # noqa: F
 from armory.data.adversarial import imagenet_adversarial as IA  # noqa: F401
 from armory.data.adversarial import librispeech_adversarial as LA  # noqa: F401
 from armory.data.adversarial.apricot_metadata import ADV_PATCH_MAGIC_NUMBER_LABEL_ID
+from armory.data.adversarial import carla_over_obj_det_custom as coodc
 
 # Although these imports are unreferenced in this file, they are required for tfds to know they exist.
 
@@ -872,6 +873,29 @@ def carla_obj_det_test(
         supervised_xy_keys=("image", ("objects", "patch_metadata")),
         **kwargs,
     )
+
+
+def carla_over_obj_det_custom(
+    epochs: int = 1,
+    batch_size: int = 1,
+    dataset_dir: str = None,
+    ann_file: str = None,
+    preprocessing_fn: Callable = datasets.coco_image_preprocessing,
+    label_preprocessing_fn: Callable = datasets.custom_coco_label_preprocessing,
+    framework: str = "pytorch",
+    **kwargs,
+) -> datasets.ArmoryDataGenerator:
+    ds = coodc.CarlaOverObjtDetCustom(root=dataset_dir, annFile=ann_file)
+    generator = datasets.ArmoryDataGenerator(
+        iter(ds),
+        size=len(ds),
+        batch_size=batch_size,
+        epochs=epochs,
+        preprocessing_fn=preprocessing_fn,
+        label_preprocessing_fn=label_preprocessing_fn,
+    )
+
+    return generator
 
 
 class ClipVideoTrackingLabels:
