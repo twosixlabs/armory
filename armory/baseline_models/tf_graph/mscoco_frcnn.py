@@ -6,9 +6,9 @@ object_detection/g3doc/tf1_detection_zoo.md)
 """
 
 from art.estimators.object_detection.tensorflow_faster_rcnn import TensorFlowFasterRCNN
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
-tf.compat.v1.disable_eager_execution()
+tf.disable_eager_execution()
 
 
 def get_art_model(model_kwargs, wrapper_kwargs, weights_file=None):
